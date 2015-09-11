@@ -32,24 +32,26 @@ Once you build the ```FBSimulatorControl.framework```, it can be linked into you
 
 To launch Safari on an iPhone 5, you can use the following:
 
-	FBSimulatorManagementOptions options =
-	  FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
-	  FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
-	  FBSimulatorManagementOptionsDeleteOnFree;
-	
-	FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-	  configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-	  bucket:0
-	  options:options];
-	
-	FBSimulatorControl *control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
-	
+    FBSimulatorManagementOptions options =
+      FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
+      FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
+      FBSimulatorManagementOptionsDeleteOnFree;
+    
+    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
+      configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+      bucket:0
+      options:options];
+    
+    FBSimulatorControl *control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
+    
+    NSError *error = nil;
+    FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+    
     FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
       configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
       arguments:@[]
       environment:@{}];
-	
-	NSError *error = nil;
+    
     BOOL success = [[[session.interact
       bootSimulator]
       launchApplication:appLaunch]
