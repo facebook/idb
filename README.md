@@ -28,7 +28,7 @@ Once you build the ```FBSimulatorControl.framework```, it can be linked into you
 ```OTHER_LDFLAGS``` should include ```-rpath "$DEVELOPER_LIBRARY_DIR/Frameworks" -rpath "$DEVELOPER_LIBRARY_DIR/PrivateFrameworks" -rpath "$SDKROOT/System/Library/PrivateFrameworks" -rpath "$DEVELOPER_DIR/../SharedFrameworks" -rpath "$DEVELOPER_DIR/../Frameworks"```
 
 ## Usage
-[The tests](FBSimulatorControlTests/FBSimulatorControlEndToEndTests.m) should provide you with some basic guidance for getting started. Run them to see multiple-simulator launching in action.
+[The tests](FBSimulatorControlTests/Tests/FBSimulatorControlApplicationLaunchTests.m#L63) should provide you with some basic guidance for getting started. Run them to see multiple-simulator launching in action.
 
 To launch Safari on an iPhone 5, you can use the following:
 
