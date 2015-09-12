@@ -25,6 +25,7 @@
     NSString *fromRunningProcess = [self developerDirectoryFromRunningProcess];
     if (fromXcodeSelect && !fromRunningProcess) {
       developerDirectory = fromXcodeSelect;
+      return;
     }
     NSCAssert(
       [fromRunningProcess isEqualToString:fromXcodeSelect],
