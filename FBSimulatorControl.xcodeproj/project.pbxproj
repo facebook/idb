@@ -45,6 +45,37 @@
 		AAC083761B9FB89600451648 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
 		AAC083781B9FBA7600451648 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AAC083791B9FBACB00451648 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
+		E54FBF051BA8A6EB00ACDD15 /* FBDispatchSourceNotifier.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4A01BA1CE070053141E /* FBDispatchSourceNotifier.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF061BA8A6EB00ACDD15 /* FBProcessLaunchConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4A21BA1CE070053141E /* FBProcessLaunchConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF071BA8A6EB00ACDD15 /* FBSimulator.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4A41BA1CE070053141E /* FBSimulator.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF081BA8A6EB00ACDD15 /* FBSimulatorApplication.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4A71BA1CE070053141E /* FBSimulatorApplication.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF091BA8A6EB00ACDD15 /* FBSimulatorConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4A91BA1CE070053141E /* FBSimulatorConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF0A1BA8A6EB00ACDD15 /* FBSimulatorConfiguration+Convenience.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4AB1BA1CE070053141E /* FBSimulatorConfiguration+Convenience.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF0B1BA8A6EB00ACDD15 /* FBSimulatorConfiguration+DTMobile.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4AD1BA1CE070053141E /* FBSimulatorConfiguration+DTMobile.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF0C1BA8A6EB00ACDD15 /* FBSimulatorControl.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4B11BA1CE070053141E /* FBSimulatorControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF0D1BA8A6EB00ACDD15 /* FBSimulatorControlConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4B41BA1CE070053141E /* FBSimulatorControlConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF0E1BA8A6EB00ACDD15 /* FBSimulatorControlStaticConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4B61BA1CE070053141E /* FBSimulatorControlStaticConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF0F1BA8A6EB00ACDD15 /* FBSimulatorInteraction.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4B81BA1CE070053141E /* FBSimulatorInteraction.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF101BA8A6EB00ACDD15 /* FBSimulatorPool.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4BB1BA1CE070053141E /* FBSimulatorPool.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF111BA8A6EB00ACDD15 /* FBSimulatorSession.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4BE1BA1CE070053141E /* FBSimulatorSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF121BA8A6EB00ACDD15 /* FBSimulatorSession+Convenience.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4C01BA1CE070053141E /* FBSimulatorSession+Convenience.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF131BA8A6EB00ACDD15 /* FBSimulatorSessionInteraction.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4C31BA1CE070053141E /* FBSimulatorSessionInteraction.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF141BA8A6EB00ACDD15 /* FBSimulatorSessionInteraction+Diagnostics.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4C51BA1CE070053141E /* FBSimulatorSessionInteraction+Diagnostics.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF151BA8A6EB00ACDD15 /* FBSimulatorSessionLifecycle.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4C81BA1CE070053141E /* FBSimulatorSessionLifecycle.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF161BA8A6EB00ACDD15 /* FBSimulatorSessionState.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4CA1BA1CE070053141E /* FBSimulatorSessionState.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF171BA8A6EB00ACDD15 /* FBSimulatorSessionState+Queries.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4CD1BA1CE070053141E /* FBSimulatorSessionState+Queries.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF181BA8A6EB00ACDD15 /* FBSimulatorSessionStateGenerator.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4CF1BA1CE070053141E /* FBSimulatorSessionStateGenerator.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF191BA8A6EB00ACDD15 /* FBTaskExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4D11BA1CE070053141E /* FBTaskExecutor.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF1A1BA8A6EB00ACDD15 /* FBTerminationHandle.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4D31BA1CE070053141E /* FBTerminationHandle.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF1B1BA8A6EB00ACDD15 /* NSRunLoop+SimulatorControlAdditions.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4D51BA1CE070053141E /* NSRunLoop+SimulatorControlAdditions.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E54FBF1C1BA8A71900ACDD15 /* FBSimulator+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4A61BA1CE070053141E /* FBSimulator+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E54FBF1D1BA8A71900ACDD15 /* FBSimulatorConfiguration+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4AF1BA1CE070053141E /* FBSimulatorConfiguration+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E54FBF1E1BA8A71900ACDD15 /* FBSimulatorControl+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4B31BA1CE070053141E /* FBSimulatorControl+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E54FBF1F1BA8A71900ACDD15 /* FBSimulatorInteraction+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4BA1BA1CE070053141E /* FBSimulatorInteraction+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E54FBF201BA8A71900ACDD15 /* FBSimulatorPool+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4BD1BA1CE070053141E /* FBSimulatorPool+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E54FBF211BA8A71900ACDD15 /* FBSimulatorSession+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4C21BA1CE070053141E /* FBSimulatorSession+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E54FBF221BA8A71900ACDD15 /* FBSimulatorSessionInteraction+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4C71BA1CE070053141E /* FBSimulatorSessionInteraction+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E54FBF231BA8A71A00ACDD15 /* FBSimulatorSessionState+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA51E4CC1BA1CE070053141E /* FBSimulatorSessionState+Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		E7A30F041AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E291AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework */; };
 		E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
 		E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
@@ -1497,6 +1528,47 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		E54FBF041BA8A63900ACDD15 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E54FBF051BA8A6EB00ACDD15 /* FBDispatchSourceNotifier.h in Headers */,
+				E54FBF061BA8A6EB00ACDD15 /* FBProcessLaunchConfiguration.h in Headers */,
+				E54FBF071BA8A6EB00ACDD15 /* FBSimulator.h in Headers */,
+				E54FBF081BA8A6EB00ACDD15 /* FBSimulatorApplication.h in Headers */,
+				E54FBF091BA8A6EB00ACDD15 /* FBSimulatorConfiguration.h in Headers */,
+				E54FBF0A1BA8A6EB00ACDD15 /* FBSimulatorConfiguration+Convenience.h in Headers */,
+				E54FBF0B1BA8A6EB00ACDD15 /* FBSimulatorConfiguration+DTMobile.h in Headers */,
+				E54FBF0C1BA8A6EB00ACDD15 /* FBSimulatorControl.h in Headers */,
+				E54FBF0D1BA8A6EB00ACDD15 /* FBSimulatorControlConfiguration.h in Headers */,
+				E54FBF0E1BA8A6EB00ACDD15 /* FBSimulatorControlStaticConfiguration.h in Headers */,
+				E54FBF0F1BA8A6EB00ACDD15 /* FBSimulatorInteraction.h in Headers */,
+				E54FBF101BA8A6EB00ACDD15 /* FBSimulatorPool.h in Headers */,
+				E54FBF111BA8A6EB00ACDD15 /* FBSimulatorSession.h in Headers */,
+				E54FBF121BA8A6EB00ACDD15 /* FBSimulatorSession+Convenience.h in Headers */,
+				E54FBF131BA8A6EB00ACDD15 /* FBSimulatorSessionInteraction.h in Headers */,
+				E54FBF141BA8A6EB00ACDD15 /* FBSimulatorSessionInteraction+Diagnostics.h in Headers */,
+				E54FBF151BA8A6EB00ACDD15 /* FBSimulatorSessionLifecycle.h in Headers */,
+				E54FBF161BA8A6EB00ACDD15 /* FBSimulatorSessionState.h in Headers */,
+				E54FBF171BA8A6EB00ACDD15 /* FBSimulatorSessionState+Queries.h in Headers */,
+				E54FBF181BA8A6EB00ACDD15 /* FBSimulatorSessionStateGenerator.h in Headers */,
+				E54FBF191BA8A6EB00ACDD15 /* FBTaskExecutor.h in Headers */,
+				E54FBF1A1BA8A6EB00ACDD15 /* FBTerminationHandle.h in Headers */,
+				E54FBF1B1BA8A6EB00ACDD15 /* NSRunLoop+SimulatorControlAdditions.h in Headers */,
+				E54FBF1C1BA8A71900ACDD15 /* FBSimulator+Private.h in Headers */,
+				E54FBF1D1BA8A71900ACDD15 /* FBSimulatorConfiguration+Private.h in Headers */,
+				E54FBF1E1BA8A71900ACDD15 /* FBSimulatorControl+Private.h in Headers */,
+				E54FBF1F1BA8A71900ACDD15 /* FBSimulatorInteraction+Private.h in Headers */,
+				E54FBF201BA8A71900ACDD15 /* FBSimulatorPool+Private.h in Headers */,
+				E54FBF211BA8A71900ACDD15 /* FBSimulatorSession+Private.h in Headers */,
+				E54FBF221BA8A71900ACDD15 /* FBSimulatorSessionInteraction+Private.h in Headers */,
+				E54FBF231BA8A71A00ACDD15 /* FBSimulatorSessionState+Private.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		AA819DB11B9FB40D002F58CA /* FBSimulatorControlTests */ = {
 			isa = PBXNativeTarget;
@@ -1524,6 +1596,7 @@
 			buildPhases = (
 				1870857F0000000000000000 /* Sources */,
 				4F426D880000000000000000 /* Frameworks */,
+				E54FBF041BA8A63900ACDD15 /* Headers */,
 			);
 			buildRules = (
 			);
