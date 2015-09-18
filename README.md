@@ -1,6 +1,8 @@
 # FBSimulatorControl
 A Mac OS X library for managing, booting and interacting with multiple iOS Simulators simultaneously.
 
+[![Build Status](https://travis-ci.org/facebook/FBSimulatorControl.svg?branch=master)](https://travis-ci.org/facebook/FBSimulatorControl)
+
 ## Features
 - Boots multiple iOS Simulators within the same host process or across processes.
 - Does not have to be run from Xcode/`xcodebuild`. Simulators can be launched by a process that has not been spawned by Xcode.
