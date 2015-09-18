@@ -11,14 +11,16 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBProcessLaunchConfiguration.h"
-#import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorPool.h"
-#import "FBSimulatorSession.h"
-#import "FBSimulatorSessionState+Queries.h"
-#import "FBSimulatorSessionStateGenerator.h"
+#import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
+#import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorApplication.h>
+#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorPool.h>
+#import <FBSimulatorControl/FBSimulatorSession.h>
+#import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
+#import <FBSimulatorControl/FBSimulatorSessionStateGenerator.h>
+
+#import "FBSimulatorSessionStateAssertion.h"
 
 @interface FBSimulatorStateTests : XCTestCase
 
@@ -31,6 +33,10 @@
 - (void)setUp
 {
   OCMockObject *session = [OCMockObject mockForClass:FBSimulatorSession.class];
+  OCMockObject *simulator = [OCMockObject mockForClass:FBSimulator.class];
+  [[[session stub] andReturn:simulator] simulator];
+  [(FBSimulator *)[[simulator stub] andReturnValue:OCMOCK_VALUE(FBSimulatorStateCreating)] state];
+
   self.generator = [FBSimulatorSessionStateGenerator generatorWithSession:(id)session];
 }
 
@@ -105,6 +111,26 @@
   XCTAssertEqualObjects(diagnostic, [state diagnosticNamed:@"SECRIT" forApplication:appLaunch.application]);
   XCTAssertEqual(state.allDiagnostics.count, 1);
   XCTAssertEqualObjects(diagnostic, state.allDiagnostics[@"SECRIT"]);
+}
+
+- (void)testChangesToSimulatorState
+{
+  FBSimulatorSessionState *state = [[[[[[[self.generator
+    updateLifecycle:FBSimulatorSessionLifecycleStateStarted]
+    updateSimulatorState:FBSimulatorStateCreating]
+    updateSimulatorState:FBSimulatorStateBooting]
+    updateSimulatorState:FBSimulatorStateBooted]
+    updateSimulatorState:FBSimulatorStateShuttingDown]
+    updateSimulatorState:FBSimulatorStateShutdown]
+    currentState];
+
+  [[FBSimulatorSessionStateAssertion forState:state] assertChangesToSimulatorState:@[
+    @(FBSimulatorStateCreating),
+    @(FBSimulatorStateBooting),
+    @(FBSimulatorStateBooted),
+    @(FBSimulatorStateShuttingDown),
+    @(FBSimulatorStateShutdown)
+  ]];
 }
 
 @end

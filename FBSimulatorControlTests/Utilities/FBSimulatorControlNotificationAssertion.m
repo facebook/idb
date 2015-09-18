@@ -9,7 +9,7 @@
 
 #import "FBSimulatorControlNotificationAssertion.h"
 
-#import "FBSimulatorSessionLifecycle.h"
+#import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
 
 @interface FBSimulatorControlNotificationAssertion ()
 
