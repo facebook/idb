@@ -70,7 +70,7 @@
 - (NSArray *)unmanagedSimulators
 {
   // TODO(7849941): Figure out the equality semantics of SimDevice to see if we can use Sets to do this instead.
-  NSRegularExpression *regex = [self.class managedSimulatorPoolOffsetRegex];
+  NSRegularExpression *regex = [self managedSimulatorPoolOffsetRegex];
 
   NSMutableArray *unmanagedSimulators = [NSMutableArray array];
   for (SimDevice *device in self.deviceSet.availableDevices) {
@@ -462,7 +462,8 @@
   SimDeviceType *targetType = configuration.deviceType;
   SimRuntime *targetRuntime = configuration.runtime;
   NSString *targetName = [NSString stringWithFormat:
-    @"E2E_%ld_%ld_%@_%@",
+    @"%@_%ld_%ld_%@_%@",
+    self.configuration.namePrefix,
     self.configuration.bucketID,
     [self nextAvailableOffsetForDeviceType:targetType runtime:targetRuntime],
     targetType.name,
@@ -510,7 +511,7 @@
 
 - (FBSimulator *)inflateSimulatorFromSimDevice:(SimDevice *)device mustBeSelfManaged:(BOOL)mustBeManaged
 {
-  FBSimulator *simulator = [self.class inflateSimulatorFromSimDevice:device];
+  FBSimulator *simulator = [self inflateSimulatorFromSimDevice:device];
   if (!simulator) {
     return nil;
   }
@@ -523,9 +524,9 @@
   return simulator;
 }
 
-+ (FBSimulator *)inflateSimulatorFromSimDevice:(SimDevice *)device
+- (FBSimulator *)inflateSimulatorFromSimDevice:(SimDevice *)device
 {
-  NSRegularExpression *regex = [self.class managedSimulatorPoolOffsetRegex];
+  NSRegularExpression *regex = [self managedSimulatorPoolOffsetRegex];
   NSTextCheckingResult *result = [regex firstMatchInString:device.name options:0 range:NSMakeRange(0, device.name.length)];
   if (result.range.length == 0) {
     return nil;
@@ -541,15 +542,15 @@
   return simulator;
 }
 
-+ (NSRegularExpression *)managedSimulatorPoolOffsetRegex
+- (NSRegularExpression *)managedSimulatorPoolOffsetRegex
 {
-  static dispatch_once_t onceToken;
-  static NSRegularExpression *regex;
-  dispatch_once(&onceToken, ^{
-    regex = [NSRegularExpression regularExpressionWithPattern:@"E2E_(\\d+)_(\\d+)" options:0 error:nil];
-    NSCAssert(regex, @"Regex should compile");
-  });
-  return regex;
+  if (!_managedSimulatorPoolOffsetRegex) {
+    NSString *regexString = [NSString stringWithFormat:@"%@_(\\d+)_(\\d+)", self.configuration.namePrefix];
+    _managedSimulatorPoolOffsetRegex = [NSRegularExpression regularExpressionWithPattern:regexString options:0 error:nil];
+    NSCAssert(_managedSimulatorPoolOffsetRegex, @"Regex '%@' for '%@' should compile", regexString, NSStringFromSelector(_cmd));
+  }
+
+  return _managedSimulatorPoolOffsetRegex;
 }
 
 @end

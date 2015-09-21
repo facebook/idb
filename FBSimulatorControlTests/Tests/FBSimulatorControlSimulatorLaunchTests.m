@@ -53,6 +53,7 @@
 
   FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    namePrefix:nil
     bucket:0
     options:options];
 

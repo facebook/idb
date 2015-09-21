@@ -29,6 +29,7 @@
 {
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    namePrefix:nil
     bucket:0
     options:FBSimulatorManagementOptionsEraseOnFree];
 
@@ -60,6 +61,7 @@
 {
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    namePrefix:nil
     bucket:0
     options:FBSimulatorManagementOptionsDeleteOnFree];
 
@@ -89,6 +91,7 @@
 {
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    namePrefix:nil
     bucket:0
     options:FBSimulatorManagementOptionsDeleteOnFree];
 

@@ -11,6 +11,11 @@
 
 @class FBSimulatorApplication;
 
+/**
+ The default prefix for Pool-Managed Simulators
+ */
+extern NSString *const FBSimulatorControlConfigurationDefaultNamePrefix;
+
 typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
   FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart = 1 << 0,
   FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart = 1 << 1,
@@ -27,16 +32,23 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
  Creates and returns a new Configuration with the provided parameters.
 
  @param simulatorApplication the FBSimulatorApplication for the Simulator.app.
+ @param namePrefix the String to prefix all `FBSimulatorControl` managed Simulators with. Will default to 'E2E' if nil.
  @param bucketID the Bucket of the launched Simulators. Multiple processes cannot share the same Bucket ID.
  @param options the options for Simulator Management.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication bucket:(NSInteger)bucketID options:(FBSimulatorManagementOptions)options;
++ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication namePrefix:(NSString *)namePrefix bucket:(NSInteger)bucketID options:(FBSimulatorManagementOptions)options;
 
 /**
  The FBSimulatorApplication for the Simulator.app.
  */
 @property (nonatomic, copy, readonly) FBSimulatorApplication *simulatorApplication;
+
+/**
+ The String to prefix all `FBSimulatorControl` Simulators with.
+ Simulators in the same Pool will share the same `namePrefix` and `bucketID`.
+ */
+@property (nonatomic, copy, readonly) NSString *namePrefix;
 
 /**
  The Bucket of the launched Simulators. Multiple processes cannot share the same Bucket ID.
