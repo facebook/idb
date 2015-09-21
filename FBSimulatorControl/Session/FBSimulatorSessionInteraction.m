@@ -47,7 +47,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   return [self interact:^ BOOL (NSError **error) {
     id<FBTask> task = [FBTaskExecutor.sharedInstance
       taskWithLaunchPath:simulator.simulatorApplication.binary.path
-      arguments:@[@"--args", @"-CurrentDeviceUDID", simulator.udid]];
+      arguments:@[@"--args", @"-CurrentDeviceUDID", simulator.udid, @"-ConnectHardwareKeyboard", @"0"]];
 
     [lifecycle simulatorWillStart:simulator];
     [task startAsynchronously];
