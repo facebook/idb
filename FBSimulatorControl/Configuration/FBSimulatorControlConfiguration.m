@@ -11,9 +11,12 @@
 
 #import "FBSimulatorApplication.h"
 
+NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
+
 @interface FBSimulatorControlConfiguration ()
 
 @property (nonatomic, copy, readwrite) FBSimulatorApplication *simulatorApplication;
+@property (nonatomic, copy, readwrite) NSString *namePrefix;
 @property (nonatomic, assign, readwrite) NSInteger bucketID;
 @property (nonatomic, assign, readwrite) FBSimulatorManagementOptions options;
 
@@ -21,13 +24,14 @@
 
 @implementation FBSimulatorControlConfiguration
 
-+ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication bucket:(NSInteger)bucketID options:(FBSimulatorManagementOptions)options
++ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication namePrefix:(NSString *)namePrefix bucket:(NSInteger)bucketID options:(FBSimulatorManagementOptions)options
 {
   NSParameterAssert(simulatorApplication);
   NSParameterAssert(bucketID >= 0);
 
   FBSimulatorControlConfiguration *configuration = [self new];
   configuration.simulatorApplication = simulatorApplication;
+  configuration.namePrefix = namePrefix.length > 0 ? namePrefix : FBSimulatorControlConfigurationDefaultNamePrefix;
   configuration.bucketID = bucketID;
   configuration.options = options;
   return configuration;
@@ -37,13 +41,14 @@
 {
   return [self.class
     configurationWithSimulatorApplication:self.simulatorApplication
+    namePrefix:self.namePrefix
     bucket:self.bucketID
     options:self.options];
 }
 
 - (NSUInteger)hash
 {
-  return self.simulatorApplication.hash | self.bucketID | self.options;
+  return self.simulatorApplication.hash | self.namePrefix.hash | self.bucketID | self.options;
 }
 
 - (BOOL)isEqual:(FBSimulatorControlConfiguration *)object
@@ -52,15 +57,17 @@
     return NO;
   }
   return [self.simulatorApplication isEqual:object.simulatorApplication] &&
-  self.options == object.options &&
-  self.bucketID == object.bucketID;
+         [self.namePrefix isEqualToString:object.namePrefix] &&
+         self.bucketID == object.bucketID &&
+         self.options == object.options;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Pool Config | Sim App %@ | Bucket Id %ld | Options %ld",
+    @"Pool Config | Sim App %@ | Prefix %@ | Bucket Id %ld | Options %ld",
     self.simulatorApplication,
+    self.namePrefix,
     self.bucketID,
     self.options
   ];

@@ -64,6 +64,7 @@
 
   FBSimulatorControlConfiguration *poolConfig = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    namePrefix:nil
     bucket:1
     options:0];
   self.pool = [FBSimulatorPool poolWithConfiguration:poolConfig deviceSet:(id)deviceSet];
