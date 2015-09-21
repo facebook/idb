@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-
 #import "FBTerminationHandle.h"
 
 @interface FBTerminationHandle_Block : NSObject<FBTerminationHandle>

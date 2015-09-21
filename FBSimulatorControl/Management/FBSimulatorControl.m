@@ -10,10 +10,6 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControl+Private.h"
 
-#import "DTiPhoneSimulatorApplicationSpecifier.h"
-#import "DTiPhoneSimulatorSession.h"
-#import "DTiPhoneSimulatorSessionConfig.h"
-#import "DVTPlatform.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -21,6 +17,13 @@
 #import "FBSimulatorSession+Convenience.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState.h"
+
+#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorApplicationSpecifier.h>
+#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSession.h>
+#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSessionConfig.h>
+
+#import <DVTFoundation/DVTPlatform.h>
+
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>

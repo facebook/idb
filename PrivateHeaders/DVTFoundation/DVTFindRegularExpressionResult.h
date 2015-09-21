@@ -6,8 +6,8 @@
 
 #import <DVTFoundation/DVTFindResult.h>
 
-#import "NSCoding.h"
-#import "NSCopying.h"
+#import <Foundation/Foundation.h>
+#import <Foundation/Foundation.h>
 
 @class NSString, NSTextCheckingResult;
 

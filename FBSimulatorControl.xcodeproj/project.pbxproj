@@ -216,9 +216,7 @@
 		AA48775F1BAC74DC007F7D23 /* NSString-cputype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-cputype.h"; sourceTree = "<group>"; };
 		AA4877601BAC74DC007F7D23 /* NSUserDefaults-SimDefaults.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSUserDefaults-SimDefaults.h"; sourceTree = "<group>"; };
 		AA4877611BAC74DC007F7D23 /* SimDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevice.h; sourceTree = "<group>"; };
-		AA4877621BAC74DC007F7D23 /* SimDevice.h.orig */ = {isa = PBXFileReference; lastKnownFileType = text; path = SimDevice.h.orig; sourceTree = "<group>"; };
 		AA4877631BAC74DC007F7D23 /* SimDeviceNotificationManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceNotificationManager.h; sourceTree = "<group>"; };
-		AA4877641BAC74DC007F7D23 /* SimDeviceNotificationManager.h.orig */ = {isa = PBXFileReference; lastKnownFileType = text; path = SimDeviceNotificationManager.h.orig; sourceTree = "<group>"; };
 		AA4877651BAC74DC007F7D23 /* SimDeviceNotifier-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceNotifier-Protocol.h"; sourceTree = "<group>"; };
 		AA4877661BAC74DC007F7D23 /* SimDeviceSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceSet.h; sourceTree = "<group>"; };
 		AA4877671BAC74DC007F7D23 /* SimDeviceType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceType.h; sourceTree = "<group>"; };
@@ -976,9 +974,7 @@
 				AA48775F1BAC74DC007F7D23 /* NSString-cputype.h */,
 				AA4877601BAC74DC007F7D23 /* NSUserDefaults-SimDefaults.h */,
 				AA4877611BAC74DC007F7D23 /* SimDevice.h */,
-				AA4877621BAC74DC007F7D23 /* SimDevice.h.orig */,
 				AA4877631BAC74DC007F7D23 /* SimDeviceNotificationManager.h */,
-				AA4877641BAC74DC007F7D23 /* SimDeviceNotificationManager.h.orig */,
 				AA4877651BAC74DC007F7D23 /* SimDeviceNotifier-Protocol.h */,
 				AA4877661BAC74DC007F7D23 /* SimDeviceSet.h */,
 				AA4877671BAC74DC007F7D23 /* SimDeviceType.h */,

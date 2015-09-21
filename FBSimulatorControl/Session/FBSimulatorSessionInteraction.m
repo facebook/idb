@@ -22,6 +22,7 @@
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBSimulatorSessionState.h"
 #import "FBTaskExecutor.h"
+
 #import <CoreSimulator/SimDevice.h>
 
 NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;

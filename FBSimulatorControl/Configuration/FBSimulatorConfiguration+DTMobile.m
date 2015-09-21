@@ -10,6 +10,7 @@
 #import "FBSimulatorConfiguration+DTMobile.h"
 
 #import "FBSimulatorConfiguration+Private.h"
+
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 

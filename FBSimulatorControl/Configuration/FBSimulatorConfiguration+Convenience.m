@@ -10,6 +10,7 @@
 #import "FBSimulatorConfiguration+Convenience.h"
 
 #import "FBSimulatorConfiguration+DTMobile.h"
+
 #import <CoreSimulator/SimRuntime.h>
 
 @implementation FBSimulatorConfiguration (Convenience)
