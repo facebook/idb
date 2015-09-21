@@ -211,10 +211,24 @@
 
 - (BOOL)deleteSimulator:(FBSimulator *)simulator withError:(NSError **)error
 {
+  NSString *udid = simulator.udid;
+
   NSError *innerError = nil;
   if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
     return [[[[FBSimulatorError describeFormat:@"Failed to Delete simulator %@", simulator] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
+
+  // Deleting the device from the set can still leave it around for a few seconds.
+  // in order to prevent racing with methods that may reallocate the newly-deleted device, we should wait for the device to no longer be present in the set.
+  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:30 untilTrue:^ BOOL {
+    NSSet *udidSet = [self.allPooledSimulators valueForKey:@"udid"];
+    return ![udidSet containsObject:udid];
+  }];
+
+  if (!wasRemovedFromDeviceSet) {
+    return [[[FBSimulatorError describe:@"Simulator should have been removed from set but wasn't "] inSimulator:simulator] failBool:error];
+  }
+
   return YES;
 }
 
