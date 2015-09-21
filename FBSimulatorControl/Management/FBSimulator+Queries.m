@@ -42,7 +42,7 @@
 {
   NSNumber *launchdSimProcessIdentifier = self.launchdSimProcessIdentifier;
   if (!launchdSimProcessIdentifier) {
-    return nil;
+    return @[];
   }
 
   NSString *allProcesses = [[[FBTaskExecutor.sharedInstance

@@ -21,13 +21,4 @@
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration;
 
-+ (NSError *)errorForDescription:(NSString *)description;
-+ (BOOL)failBoolWithError:(NSError *)failureCause errorOut:(NSError **)errorOut;
-+ (BOOL)failBoolWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut;
-+ (BOOL)failBoolWithErrorMessage:(NSString *)errorMessage errorOut:(NSError **)errorOut;
-
-+ (id)failWithErrorMessage:(NSString *)errorMessage errorOut:(NSError **)errorOut;
-+ (id)failWithError:(NSError *)failureCause errorOut:(NSError **)errorOut;
-+ (id)failWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut;
-
 @end

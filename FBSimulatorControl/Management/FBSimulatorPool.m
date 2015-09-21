@@ -15,9 +15,9 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+DTMobile.h"
 #import "FBSimulatorConfiguration.h"
-#import "FBSimulatorControl+Private.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLogger.h"
 #import "FBTaskExecutor+Convenience.h"
@@ -97,16 +97,16 @@
 
 - (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
-  FBSimulator *device = [self findOrCreateDeviceWithConfiguration:configuration error:error];
-  if (!device) {
+  FBSimulator *simulator = [self findOrCreateSimulatorWithConfiguration:configuration error:error];
+  if (!simulator) {
     return nil;
   }
-  if (![self prepareDeviceForUsage:device configuration:configuration error:error]) {
+  if (![self prepareSimulatorForUsage:simulator configuration:configuration error:error]) {
     return nil;
   }
 
-  [self.allocatedWorkingSet addObject:device];
-  return device;
+  [self.allocatedWorkingSet addObject:simulator];
+  return simulator;
 }
 
 - (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -115,14 +115,14 @@
 
   NSError *innerError = nil;
   if (![self killSimulators:@[simulator] withError:&innerError]) {
-    return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to Free Device in Killing Device" errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Killing Device" errorOut:error];
   }
 
-  // When 'deleting' on free, there's no point in erasing first
+  // When Deleting on Free, there's no point in erasing first, so return early.
   BOOL deleteOnFree = (self.configuration.options & FBSimulatorManagementOptionsDeleteOnFree) == FBSimulatorManagementOptionsDeleteOnFree;
   if (deleteOnFree) {
     if (![self deleteSimulator:simulator withError:&innerError]) {
-      return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to Free Device in Deleting Device" errorOut:error];
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Deleting Device" errorOut:error];
     }
     return YES;
   }
@@ -130,7 +130,7 @@
   BOOL eraseOnFree = (self.configuration.options & FBSimulatorManagementOptionsEraseOnFree) == FBSimulatorManagementOptionsEraseOnFree;
   if (eraseOnFree) {
     if (![self eraseSimulator:simulator withError:&innerError]) {
-      return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to Free Device in Erasing Device" errorOut:error];
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Erasing Device" errorOut:error];
     }
     return YES;
   }
@@ -154,13 +154,13 @@
   // Overlapping Xcode instances can't run on the same machine
   NSError *innerError = nil;
   if (![self blanketKillSimulatorsFromDifferentXcodeVersion:&innerError]) {
-    return [FBSimulatorControl failWithError:innerError errorOut:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   // We want to blanket kill all the Simulator Applications that belong to the current Xcode version
   // but aren't launched in the automated CurretnDeviceUDID way.
   if (![self blanketKillSimulatorAppsWithPidFilter:@"grep -v CurrentDeviceUDID |" error:&innerError]) {
-    return [FBSimulatorControl failWithError:innerError errorOut:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   // This will make sure that the devices are killed themselves
@@ -190,12 +190,11 @@
     return [FBSimulator simulatorStateFromStateString:device.stateString] == simulatorState;
   }];
   if (!didChangeState) {
-    NSString *description = [NSString stringWithFormat:
+    return [[FBSimulatorError describeFormat:
       @"Simulator was not in expected %@ state, got %@",
       [FBSimulator stateStringFromSimulatorState:simulatorState],
       device.stateString
-    ];
-    return [FBSimulatorControl failBoolWithErrorMessage:description errorOut:error];
+    ] failBool:error];
   }
 
   return YES;
@@ -205,8 +204,7 @@
 {
   NSError *innerError = nil;
   if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-    NSString *description = [NSString stringWithFormat:@"Failed to Erase Contents and Settings %@", simulator];
-    return [FBSimulatorControl failBoolWithError:innerError description:description errorOut:error];
+    return [[[[FBSimulatorError describeFormat:@"Failed to Erase Contents and Settings %@", simulator] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
   return YES;
 }
@@ -215,8 +213,7 @@
 {
   NSError *innerError = nil;
   if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
-    NSString *description = [NSString stringWithFormat:@"Failed to Delete simulator %@", simulator];
-    return [FBSimulatorControl failBoolWithError:innerError description:description errorOut:error];
+    return [[[[FBSimulatorError describeFormat:@"Failed to Delete simulator %@", simulator] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
   return YES;
 }
@@ -226,7 +223,7 @@
   NSError *innerError = nil;
   for (SimDevice *device in devices) {
     if (![self safeShutdown:device withError:&innerError]) {
-      return [FBSimulatorControl failWithError:innerError errorOut:error];
+      return [FBSimulatorError failWithError:innerError errorOut:error];
     }
   }
   return devices;
@@ -236,13 +233,13 @@
 {
   NSError *innerError = nil;
   if (![self killSimulators:simulators withError:&innerError]) {
-    return [FBSimulatorControl failWithError:innerError description:@"Failed to kill device before deleting it" errorOut:error];
+    return [FBSimulatorError failWithError:innerError description:@"Failed to kill simulator before deleting it" errorOut:error];
   }
 
   NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
     if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
-      return [FBSimulatorControl failWithError:innerError description:@"Failed to delete device" errorOut:error];
+      return [FBSimulatorError failWithError:innerError description:@"Failed to delete simulator" errorOut:error];
     }
     [deletedSimulatorNames addObject:simulator.name];
   }
@@ -267,7 +264,7 @@
   // That means that they contain device UDIDs that we own.
   NSError *innerError = nil;
   if (![self blanketKillSimulatorAppsWithPidFilter:grepComponents error:&innerError]) {
-    return [FBSimulatorControl failWithError:innerError errorOut:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   NSArray *devices = [simulators valueForKey:@"device"];
@@ -279,13 +276,13 @@
   NSError *innerError = nil;
   // Kill all the simulators first
   if (![self killSimulators:simulators withError:&innerError]) {
-    return [FBSimulatorControl failWithError:innerError errorOut:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   // Then erase.
   for (FBSimulator *simulator in simulators) {
     if (![self eraseSimulator:simulator withError:&innerError]) {
-      return [FBSimulatorControl failWithError:innerError errorOut:error];
+      return [FBSimulatorError failWithError:innerError errorOut:error];
     }
   }
   return simulators;
@@ -302,7 +299,7 @@
   // We can safely ignore this and then confirm that the simulator is shutdown
   NSError *innerError = nil;
   if (![device shutdownWithError:&innerError] && innerError.code != 159 && innerError.code != 146) {
-    return [FBSimulatorControl failBoolWithError:innerError description:@"Simulator could not be shutdown" errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError description:@"Simulator could not be shutdown" errorOut:error];
   }
 
   // We rely on the catch-all-non-manged kill command to do the dirty work.
@@ -310,95 +307,94 @@
   return [self waitForDevice:device toChangeToState:FBSimulatorStateShutdown withError:error];
 }
 
-- (FBSimulator *)findOrCreateDeviceWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
-  SimDeviceType *targetType = configuration.deviceType;
-  if (!targetType) {
-    NSString *message = [NSString stringWithFormat:@"SimDeviceType for %@ does not exist", configuration];
-    return [FBSimulatorControl failWithErrorMessage:message errorOut:error];
-  }
-  SimRuntime *targetRuntime = configuration.runtime;
-  if (!targetRuntime) {
-    NSString *message = [NSString stringWithFormat:@"SimRuntime for %@ does not exist", configuration];
-    return [FBSimulatorControl failWithErrorMessage:message errorOut:error];
-  }
+  return [self findSimulatorWithConfiguration:configuration]
+      ?: [self createSimulatorWithConfiguration:configuration error:error];
+}
 
-  NSString *targetName = [NSString stringWithFormat:
-    @"E2E_%ld_%ld_%@_%@",
-    self.configuration.bucketID,
-    [self nextAvailableOffsetForDeviceType:targetType runtime:targetRuntime],
-    targetType.name,
-    targetRuntime.versionString
-  ];
+- (FBSimulator *)findSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
+{
+  NSString *deviceName = [self targetNameForConfiguration:configuration];
   for (FBSimulator *simulator in self.unallocatedSimulators) {
-    if (![simulator.name isEqualToString:targetName]) {
-      continue;
+    if ([simulator.name isEqualToString:deviceName]) {
+      return simulator;
     }
-    return simulator;
   }
+  return nil;
+}
+
+- (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+{
+  NSString *targetName = [self targetNameForConfiguration:configuration];
+  SimDeviceType *targetType = configuration.deviceType;
+  SimRuntime *targetRuntime = configuration.runtime;
 
   NSError *innerError = nil;
   SimDevice *device = [self.deviceSet createDeviceWithType:targetType runtime:targetRuntime name:targetName error:&innerError];
   if (!device) {
-    NSString *description = [NSString stringWithFormat:@"Failed to create a device with the name %@", targetName];
-    return [FBSimulatorControl failWithError:innerError description:description errorOut:error];
+    return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@", targetName] causedBy:innerError] fail:error];
   }
   FBSimulator *simulator = [self inflateSimulatorFromSimDevice:device mustBeSelfManaged:YES];
   NSAssert(simulator, @"Expected simulator with name %@ to be inflatable", targetName);
-
-  // Xcode 7 has a 'Creating' step that will potentially mess up steps further down the line
-  // This additional step will confirim that everything is ok before we proceed.
-  if (![self waitForDevice:device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
-    // In Xcode 7 we can get stuck in the 'Creating' step as well, its possible that we can recover from this by erasing
-    if (![self eraseSimulator:simulator withError:&innerError]) {
-      NSString *description = [NSString stringWithFormat:@"Failed trying to create device, then erase it safely for %@", simulator];
-      return [FBSimulatorControl failWithError:innerError description:description errorOut:error];
-    }
-
-    if (![self waitForDevice:device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
-      NSString *description = [NSString stringWithFormat:@"Failed trying to erase a created device, then wait for it to be shutdown: %@", simulator];
-      return [FBSimulatorControl failWithError:innerError description:description errorOut:error];
-    }
-  }
-
   return simulator;
 }
 
-- (BOOL)prepareDeviceForUsage:(FBSimulator *)simulator configuration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (BOOL)prepareSimulatorForUsage:(FBSimulator *)simulator configuration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
+  NSError *innerError = nil;
+
   // If the device is in a strange state, we should bail now
   if (simulator.state == FBSimulatorStateUnknown) {
-    return [FBSimulatorControl failBoolWithErrorMessage:@"Could not prepare device in an Unknown state" errorOut:error];
+    return [FBSimulatorError failBoolWithErrorMessage:@"Failed to prepare simulator for usage as it is in an unknown state" errorOut:error];
   }
-  // If the device is being created, it doesn't need to be reset
+  // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
   if (simulator.state == FBSimulatorStateCreating) {
-    return YES;
+    // Once the device is 'Shutdown'
+    if ([self waitForDevice:simulator.device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+      return YES;
+    }
+
+    // In Xcode 7 we can get stuck in the 'Creating' step as well, its possible that we can recover from this by erasing
+    if (![self eraseSimulator:simulator withError:&innerError]) {
+      return [[[[FBSimulatorError describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"] causedBy:innerError] inSimulator:simulator] failBool:error];
+    }
+
+    // If a device has been erased, we should wait for it to actually be shutdown.
+    if ([self waitForDevice:simulator.device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+      return YES;
+    }
+
+    // This simulator can't be fixed: fail
+    return [[[[FBSimulatorError describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
 
-  // If the device is booted, we need to shut it down first.
-  NSError *innerError = nil;
-  if (simulator.state == FBSimulatorStateBooted) {
-    if (![simulator.device shutdownWithError:&innerError]) {
-      return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to shutdown device" errorOut:error];
+  // If the device is not shutdown, kill it.
+  if (simulator.state != FBSimulatorStateShutdown) {
+    if (![self killSimulators:@[simulator] withError:error]) {
+      return [[[[FBSimulatorError describe:@"Failed to prepare simulator for usage when shutting it down"] causedBy:innerError] inSimulator:simulator] failBool:error];
     }
   }
 
-  // Now we have a device that is shutdown, we should erase it
-  if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-    return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to erase device" errorOut:error];
+  // Wait for it to be truly shutdown.
+  if (![self waitForDevice:simulator.device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+    return [[[[FBSimulatorError describe:@"Failed to wait for simulator preparation to shutdown device"] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
 
-  // Do the other Simulator setup steps.
+  // Now we have a device that is shutdown, we should erase it.
+  if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
+    return [[[[FBSimulatorError describe:@"Failed to prepare simulator for usage when erasing it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+  }
+
+  // Do the other, non-session based setup steps.
   if (![[simulator.interact configureWith:configuration] performInteractionWithError:&innerError]) {
-    return [FBSimulatorControl failBoolWithError:innerError errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
   return YES;
 }
 
 #pragma mark - Helpers
-
-#pragma mark Identifiers
 
 - (BOOL)blanketKillSimulatorsFromDifferentXcodeVersion:(NSError **)error
 {
@@ -412,7 +408,7 @@
 
   NSError *innerError = nil;
   if (![self blanketKillSimulatorAppsPidProducingCommand:command error:&innerError]) {
-    return [FBSimulatorControl failBoolWithError:innerError description:@"Could not kill non-current xcode simulators" errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError description:@"Could not kill non-current xcode simulators" errorOut:error];
   }
   return YES;
 }
@@ -428,8 +424,7 @@
 
   NSError *innerError = nil;
   if (![self blanketKillSimulatorAppsPidProducingCommand:command error:&innerError]) {
-    NSString *description = [NSString stringWithFormat:@"Could not kill simulators with pid filter %@", pidFilter];
-    return [FBSimulatorControl failBoolWithError:innerError description:description errorOut:error];
+    return [[[FBSimulatorError describeFormat:@"Could not kill simulators with pid filter %@", pidFilter] causedBy:innerError] failBool:error];
   }
   return YES;
 }
@@ -443,9 +438,23 @@
   ];
   NSError *innerError = nil;
   if (![executor executeShellCommand:command returningError:&innerError]) {
-    return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to Kill Simulator Process" errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Kill Simulator Process" errorOut:error];
   }
   return YES;
+}
+
+- (NSString *)targetNameForConfiguration:(FBSimulatorConfiguration *)configuration
+{
+  SimDeviceType *targetType = configuration.deviceType;
+  SimRuntime *targetRuntime = configuration.runtime;
+  NSString *targetName = [NSString stringWithFormat:
+    @"E2E_%ld_%ld_%@_%@",
+    self.configuration.bucketID,
+    [self nextAvailableOffsetForDeviceType:targetType runtime:targetRuntime],
+    targetType.name,
+    targetRuntime.versionString
+  ];
+  return targetName;
 }
 
 - (NSInteger)nextAvailableOffsetForDeviceType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime

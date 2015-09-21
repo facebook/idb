@@ -10,7 +10,7 @@
 #import "FBSimulatorSessionInteraction+Diagnostics.h"
 
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControl+Private.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionInteraction+Private.h"
@@ -66,7 +66,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, NSInteger
     }];
 
     if (task.error) {
-      return [FBSimulatorControl failBoolWithError:task.error errorOut:error];
+      return [FBSimulatorError failBoolWithError:task.error errorOut:error];
     }
     return YES;
   }];
@@ -84,7 +84,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, NSInteger
 
     [task startSynchronouslyWithTimeout:FBSimulatorInteractionDefaultTimeout];
     if (task.error) {
-      return [FBSimulatorControl failBoolWithError:task.error errorOut:error];
+      return [FBSimulatorError failBoolWithError:task.error errorOut:error];
     }
     [lifecycle application:application didGainDiagnosticInformationWithName:name data:task.stdOut];
     return YES;

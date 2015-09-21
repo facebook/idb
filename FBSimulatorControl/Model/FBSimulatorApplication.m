@@ -9,8 +9,8 @@
 
 #import "FBSimulatorApplication.h"
 
-#import "FBSimulatorControl+Private.h"
 #import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorError.h"
 #import "FBTaskExecutor.h"
 
 @interface FBSimulatorBinary ()
@@ -166,7 +166,7 @@
   FBSimulatorApplication *application = [self applicationWithPath:appPath error:&innerError];
   if (!application) {
     NSString *message = [NSString stringWithFormat:@"Could not locate Simulator Application at %@", appPath];
-    return [FBSimulatorControl failWithError:innerError description:message errorOut:error];
+    return [FBSimulatorError failWithError:innerError description:message errorOut:error];
   }
   return application;
 }

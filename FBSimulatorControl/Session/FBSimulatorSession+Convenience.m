@@ -10,7 +10,7 @@
 #import "FBSimulatorSession+Convenience.h"
 
 #import "FBProcessLaunchConfiguration.h"
-#import "FBSimulatorControl+Private.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorSessionInteraction+Diagnostics.h"
 #import "FBSimulatorSessionInteraction.h"
 #import "FBSimulatorSessionState+Queries.h"
@@ -20,7 +20,7 @@
 - (BOOL)startWithAppLaunch:(FBApplicationLaunchConfiguration *)appLaunch agentLaunch:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
   if (self.state.lifecycle == FBSimulatorSessionLifecycleStateEnded) {
-    return [FBSimulatorControl failBoolWithErrorMessage:@"Cannot Launch App & Agent for an Ended Session" errorOut:error];
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Launch App & Agent for an Ended Session" errorOut:error];
   }
   return [[[self interact]
     startWithAppLaunch:appLaunch agentLaunch:agentLaunch]
@@ -30,12 +30,12 @@
 - (BOOL)relaunchAppWithError:(NSError **)error
 {
   if (self.state.lifecycle == FBSimulatorSessionLifecycleStateEnded) {
-    return [FBSimulatorControl failBoolWithErrorMessage:@"Cannot Re-Launch App for an Ended Session" errorOut:error];
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Re-Launch App for an Ended Session" errorOut:error];
   }
 
   FBApplicationLaunchConfiguration *launchConfig = self.state.lastLaunchedApplication;
   if (!launchConfig) {
-    return [FBSimulatorControl failBoolWithErrorMessage:@"Cannot Re-Launch until there is a last launched app" errorOut:error];
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Re-Launch until there is a last launched app" errorOut:error];
   }
 
   return [[[self interact]
@@ -46,12 +46,12 @@
 - (BOOL)terminateAppWithError:(NSError **)error
 {
   if (self.state.lifecycle == FBSimulatorSessionLifecycleStateEnded) {
-    return [FBSimulatorControl failBoolWithErrorMessage:@"Cannot Terminate App for an Ended Session" errorOut:error];
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Terminate App for an Ended Session" errorOut:error];
   }
 
   FBApplicationLaunchConfiguration *launchConfig = self.state.lastLaunchedApplication;
   if (!launchConfig) {
-    return [FBSimulatorControl failBoolWithErrorMessage:@"Cannot terminate until there is a last launched app" errorOut:error];
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot terminate until there is a last launched app" errorOut:error];
   }
 
   return [[[self interact]

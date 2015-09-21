@@ -13,9 +13,9 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControl+Private.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorSessionInteraction.h"
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulatorSessionState.h"
@@ -48,7 +48,7 @@
 - (BOOL)terminateWithError:(NSError **)error
 {
   if (self.state.lifecycle == FBSimulatorSessionLifecycleStateEnded) {
-    return [FBSimulatorControl failBoolWithErrorMessage:@"Cannot Terminate an already Ended session" errorOut:error];
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Terminate an already Ended session" errorOut:error];
   }
   [self.lifecycle didEndSession];
   return [self.simulator freeFromPoolWithError:error];

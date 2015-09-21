@@ -13,23 +13,22 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Convenience.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState.h"
-
-#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorApplicationSpecifier.h>
-#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSession.h>
-#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSessionConfig.h>
-
-#import <DVTFoundation/DVTPlatform.h>
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
-NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";
+#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorApplicationSpecifier.h>
+#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSession.h>
+#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSessionConfig.h>
+
+#import <DVTFoundation/DVTPlatform.h>
 
 @implementation FBSimulatorControl
 
@@ -70,7 +69,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 
   NSError *innerError = nil;
   if (![self firstRunPreconditionsWithError:&innerError]) {
-    return [FBSimulatorControl failWithError:innerError description:@"Failed to meet first run preconditions" errorOut:error];
+    return [FBSimulatorError failWithError:innerError description:@"Failed to meet first run preconditions" errorOut:error];
   }
 
   FBSimulator *simulator = [self.simulatorPool
@@ -78,7 +77,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
     error:&innerError];
 
   if (!simulator) {
-    return [FBSimulatorControl failWithError:innerError description:@"Failed to allocate simulator" errorOut:error];
+    return [FBSimulatorError failWithError:innerError description:@"Failed to allocate simulator" errorOut:error];
   }
   return [FBSimulatorSession sessionWithSimulator:simulator];
 }
@@ -93,7 +92,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 
   NSError *innerError = nil;
   if (![DVTPlatform loadAllPlatformsReturningError:&innerError]) {
-    return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to load DVTPlatform" errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to load DVTPlatform" errorOut:error];
   }
 
   BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart) == FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart;
@@ -102,92 +101,18 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
     : [self.simulatorPool killManagedSimulatorsWithError:&innerError];
 
   if (!result) {
-    return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to teardown previous simulators" errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to teardown previous simulators" errorOut:error];
   }
 
   BOOL killUnmanaged = (self.configuration.options & FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart;
   if (killUnmanaged) {
     if (![self.simulatorPool killUnmanagedSimulatorsWithError:&innerError]) {
-      return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to kill unmanaged simulators" errorOut:error];
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to kill unmanaged simulators" errorOut:error];
     }
   }
 
   self.hasRunOnce = YES;
   return YES;
-}
-
-#pragma mark Errors
-
-+ (NSError *)errorForDescription:(NSString *)description
-{
-  NSParameterAssert(description);
-  return [NSError
-    errorWithDomain:FBSimulatorControlErrorDomain
-    code:0
-    userInfo:@{NSLocalizedDescriptionKey : description}];
-}
-
-+ (id)failWithErrorMessage:(NSString *)errorMessage errorOut:(NSError **)errorOut
-{
-  NSParameterAssert(errorMessage);
-  if (errorOut) {
-    *errorOut = [NSError
-      errorWithDomain:FBSimulatorControlErrorDomain
-      code:0
-      userInfo:@{ NSLocalizedDescriptionKey : errorMessage}];
-  }
-  return nil;
-}
-
-+ (id)failWithError:(NSError *)failureCause errorOut:(NSError **)errorOut
-{
-  NSParameterAssert(failureCause);
-  if (errorOut) {
-    *errorOut = failureCause;
-  }
-  return nil;
-}
-
-+ (id)failWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut
-{
-  NSParameterAssert(failureCause);
-  NSParameterAssert(description);
-  if (!errorOut) {
-    return nil;
-  }
-  *errorOut = [NSError
-    errorWithDomain:FBSimulatorControlErrorDomain
-    code:0
-    userInfo:@{ NSUnderlyingErrorKey : failureCause, NSLocalizedDescriptionKey : description }];
-  return nil;
-}
-
-+ (BOOL)failBoolWithErrorMessage:(NSString *)errorMessage errorOut:(NSError **)errorOut
-{
-  return [self failBoolWithError:[self errorForDescription:errorMessage] errorOut:errorOut];
-}
-
-+ (BOOL)failBoolWithError:(NSError *)failureCause errorOut:(NSError **)errorOut
-{
-  NSParameterAssert(failureCause);
-  if (errorOut) {
-    *errorOut = failureCause;
-  }
-  return NO;
-}
-
-+ (BOOL)failBoolWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut
-{
-  NSParameterAssert(failureCause);
-  NSParameterAssert(description);
-  if (!errorOut) {
-    return NO;
-  }
-  *errorOut = [NSError
-    errorWithDomain:FBSimulatorControlErrorDomain
-    code:0
-    userInfo:@{ NSUnderlyingErrorKey : failureCause, NSLocalizedDescriptionKey : description }];
-  return NO;
 }
 
 @end

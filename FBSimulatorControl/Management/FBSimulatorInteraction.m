@@ -13,7 +13,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration.h"
-#import "FBSimulatorControl+Private.h"
+#import "FBSimulatorError.h"
 
 #import <CoreSimulator/SimDevice.h>
 
@@ -42,7 +42,7 @@
     NSString *simulatorRoot = simulator.device.dataPath;
     NSString *path = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences/.GlobalPreferences.plist"];
     if (![preferencesDict writeToFile:path atomically:YES]) {
-      return [FBSimulatorControl failBoolWithError:nil description:@"Failed to write .GlobalPreferences.plist" errorOut:error];
+      return [FBSimulatorError failBoolWithError:nil description:@"Failed to write .GlobalPreferences.plist" errorOut:error];
     }
 
     return YES;
@@ -60,7 +60,7 @@
     NSString *locationClientsDirectory = [simulatorRoot stringByAppendingPathComponent:@"Library/Caches/locationd"];
     NSError *innerError = nil;
     if (![NSFileManager.defaultManager createDirectoryAtPath:locationClientsDirectory withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to create locationd" errorOut:error];
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to create locationd" errorOut:error];
     }
 
     NSString *locationClientsPath = [locationClientsDirectory stringByAppendingPathComponent:@"clients.plist"];
@@ -76,7 +76,7 @@
     };
 
     if (![locationClients writeToFile:locationClientsPath atomically:YES]) {
-      return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to write clients.plist" errorOut:error];
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write clients.plist" errorOut:error];
     }
     return YES;
   }];
@@ -96,7 +96,7 @@
     preferences[@"KeyboardAutocapitalization"] = @NO;
     preferences[@"KeyboardAutocorrection"] = @NO;
     if (![preferences writeToFile:preferencesPath atomically:YES]) {
-      return [FBSimulatorControl failBoolWithError:innerError description:@"Failed to write com.apple.Preferences.plist" errorOut:error];
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write com.apple.Preferences.plist" errorOut:error];
     }
     return YES;
   }];
@@ -110,7 +110,7 @@
     for (id<FBSimulatorInteraction> interaction in interactions) {
       NSError *innerError = nil;
       if (![interaction performInteractionWithError:&innerError]) {
-        return [FBSimulatorControl failBoolWithError:innerError errorOut:error];
+        return [FBSimulatorError failBoolWithError:innerError errorOut:error];
       }
     }
     return YES;

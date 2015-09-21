@@ -15,8 +15,6 @@
 @class FBSimulatorPool;
 @class FBSimulatorSession;
 
-extern NSString *const FBSimulatorControlErrorDomain;
-
 /**
  An Abstraction over the mechanics of creating, launching and cleaning-up Simulators.
  Currently only manages one Simulator.
