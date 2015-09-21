@@ -221,12 +221,12 @@
   // Deleting the device from the set can still leave it around for a few seconds.
   // in order to prevent racing with methods that may reallocate the newly-deleted device, we should wait for the device to no longer be present in the set.
   BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:30 untilTrue:^ BOOL {
-    NSSet *udidSet = [self.allPooledSimulators valueForKey:@"udid"];
+    NSOrderedSet *udidSet = [self.allPooledSimulators valueForKey:@"udid"];
     return ![udidSet containsObject:udid];
   }];
 
   if (!wasRemovedFromDeviceSet) {
-    return [[[FBSimulatorError describe:@"Simulator should have been removed from set but wasn't "] inSimulator:simulator] failBool:error];
+    return [[[FBSimulatorError describeFormat:@"Simulator with UDID %@ should have been removed from set but wasn't.", udid] inSimulator:simulator] failBool:error];
   }
 
   return YES;
