@@ -11,13 +11,13 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorPool+Private.h"
-#import "FBSimulatorPool.h"
-#import "SimDevice.h"
-#import "SimDeviceSet.h"
+#import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorApplication.h>
+#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorPool+Private.h>
+#import <FBSimulatorControl/FBSimulatorPool.h>
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
 
 @interface FBSimulatorPoolTests : XCTestCase
 
@@ -48,11 +48,13 @@
     NSString *name = deviceSpec[@"name"];
     NSUUID *uuid = deviceSpec[@"uuid"] ?: [NSUUID UUID];
     NSString *stateString = deviceSpec[@"state"] ?: @"Shutdown";
+    FBSimulatorState state = [FBSimulator simulatorStateFromStateString:stateString];
 
     OCMockObject *device = [OCMockObject mockForClass:SimDevice.class];
     [[[device stub] andReturn:name] name];
     [[[device stub] andReturn:uuid] UDID];
     [[[device stub] andReturn:stateString] stateString];
+    [[[device stub] andReturnValue:OCMOCK_VALUE((unsigned long long)state)] state];
 
     [devices addObject:device];
   }
@@ -60,11 +62,11 @@
   OCMockObject *deviceSet = [OCMockObject mockForClass:SimDeviceSet.class];
   [[[deviceSet stub] andReturn:devices] availableDevices];
 
-  FBSimulatorControlConfiguration *config = [FBSimulatorControlConfiguration
+  FBSimulatorControlConfiguration *poolConfig = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
     bucket:1
     options:0];
-  self.pool = [FBSimulatorPool poolWithConfiguration:config deviceSet:(id)deviceSet];
+  self.pool = [FBSimulatorPool poolWithConfiguration:poolConfig deviceSet:(id)deviceSet];
 }
 
 - (void)mockAllocationOfNamedDevices:(NSArray *)deviceNames
@@ -86,8 +88,8 @@
     @{@"name" : @"iPad 3"},
     @{@"name" : @"iPhone 6S"},
     @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @"Booted"},
-    @{@"name" : @"E2E_2_0_iPhone 5_9.0"},
-    @{@"name" : @"E2E_2_0_iPad 1_9.0"}
+    @{@"name" : @"E2E_2_0_iPhone 5_9.0", @"state" : @"Shutdown"},
+    @{@"name" : @"E2E_2_0_iPad 1_9.0", @"state" : @"Booted"}
   ]];
 
   NSOrderedSet *devices = self.pool.allSimulatorsInPool;
@@ -97,21 +99,78 @@
   XCTAssertEqual([devices[0] state], FBSimulatorStateBooted);
   XCTAssertEqual([devices[0] bucketID], 1);
   XCTAssertEqual([devices[0] offset], 0);
+  XCTAssertEqual([devices[0] pool], self.pool);
 
   XCTAssertEqualObjects([devices[1] name], @"E2E_1_0_iPhone 5_9.0");
   XCTAssertEqual([devices[1] state], FBSimulatorStateCreating);
   XCTAssertEqual([devices[1] bucketID], 1);
   XCTAssertEqual([devices[1] offset], 0);
+  XCTAssertEqual([devices[1] pool], self.pool);
 
   XCTAssertEqualObjects([devices[2] name], @"E2E_1_1_iPhone 5_9.0");
   XCTAssertEqual([devices[2] state], FBSimulatorStateShutdown);
   XCTAssertEqual([devices[2] bucketID], 1);
   XCTAssertEqual([devices[2] offset], 1);
+  XCTAssertEqual([devices[2] pool], self.pool);
 
   XCTAssertEqualObjects([devices[3] name], @"E2E_1_2_iPhone 5_9.0");
   XCTAssertEqual([devices[3] state], FBSimulatorStateBooted);
   XCTAssertEqual([devices[3] bucketID], 1);
   XCTAssertEqual([devices[3] offset], 2);
+  XCTAssertEqual([devices[3] pool], self.pool);
+}
+
+- (void)testInflatesDevicesAcrossPools
+{
+  [self createPoolWithExistingDeviceSpecs:@[
+    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @"Booted"},
+    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @"Creating"},
+    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @"Shutdown"},
+    @{@"name" : @"iPad 3"},
+    @{@"name" : @"iPhone 6S"},
+    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @"Booted"},
+    @{@"name" : @"E2E_2_0_iPhone 5_9.0", @"state" : @"Shutdown"},
+    @{@"name" : @"E2E_2_0_iPad 1_9.0", @"state" : @"Booted"}
+  ]];
+
+  NSOrderedSet *devices = self.pool.allPooledSimulators;
+  XCTAssertEqual(devices.count, 6);
+
+  XCTAssertEqualObjects([devices[0] name], @"E2E_1_0_iPad 2_9.0");
+  XCTAssertEqual([devices[0] state], FBSimulatorStateBooted);
+  XCTAssertEqual([devices[0] bucketID], 1);
+  XCTAssertEqual([devices[0] offset], 0);
+  XCTAssertEqual([devices[0] pool], self.pool);
+
+  XCTAssertEqualObjects([devices[1] name], @"E2E_1_0_iPhone 5_9.0");
+  XCTAssertEqual([devices[1] state], FBSimulatorStateCreating);
+  XCTAssertEqual([devices[1] bucketID], 1);
+  XCTAssertEqual([devices[1] offset], 0);
+  XCTAssertEqual([devices[1] pool], self.pool);
+
+  XCTAssertEqualObjects([devices[2] name], @"E2E_1_1_iPhone 5_9.0");
+  XCTAssertEqual([devices[2] state], FBSimulatorStateShutdown);
+  XCTAssertEqual([devices[2] bucketID], 1);
+  XCTAssertEqual([devices[2] offset], 1);
+  XCTAssertEqual([devices[2] pool], self.pool);
+
+  XCTAssertEqualObjects([devices[3] name], @"E2E_1_2_iPhone 5_9.0");
+  XCTAssertEqual([devices[3] state], FBSimulatorStateBooted);
+  XCTAssertEqual([devices[3] bucketID], 1);
+  XCTAssertEqual([devices[3] offset], 2);
+  XCTAssertEqual([devices[3] pool], self.pool);
+
+  XCTAssertEqualObjects([devices[4] name], @"E2E_2_0_iPad 1_9.0");
+  XCTAssertEqual([devices[4] state], FBSimulatorStateBooted);
+  XCTAssertEqual([devices[4] bucketID], 2);
+  XCTAssertEqual([devices[4] offset], 0);
+  XCTAssertNil([devices[4] pool]);
+
+  XCTAssertEqualObjects([devices[5] name], @"E2E_2_0_iPhone 5_9.0");
+  XCTAssertEqual([devices[5] state], FBSimulatorStateShutdown);
+  XCTAssertEqual([devices[5] bucketID], 2);
+  XCTAssertEqual([devices[5] offset], 0);
+  XCTAssertNil([devices[5] pool]);
 }
 
 - (void)testExposesUnmanagedSimulators

@@ -11,20 +11,21 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorConfiguration.h"
-#import "FBSimulatorControl+Private.h"
-#import "FBSimulatorControl.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorPool.h"
-#import "FBSimulatorSession.h"
-#import "FBSimulatorSessionInteraction.h"
-#import "FBSimulatorSessionLifecycle.h"
-#import "FBSimulatorSessionState+Queries.h"
-#import "FBSimulatorSessionState.h"
-#import "SimDevice.h"
-#import "SimDeviceSet.h"
+#import <FBSimulatorControl/FBSimulator+Queries.h>
+#import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorApplication.h>
+#import <FBSimulatorControl/FBSimulatorConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorControl+Private.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
+#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorPool.h>
+#import <FBSimulatorControl/FBSimulatorSession.h>
+#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
+#import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
+#import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
+#import <FBSimulatorControl/FBSimulatorSessionState.h>
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulatorControlNotificationAssertion.h"
 
@@ -85,6 +86,8 @@
   XCTAssertEqual(session.state.runningAgents.count, 0);
   XCTAssertEqual(session.state.runningApplications.count, 0);
   XCTAssertNotEqual(session.simulator.processIdentifier, -1);
+  XCTAssertNotNil(session.simulator.launchdBootstrapPath);
+  XCTAssertNotNil(session.simulator.launchedProcesses);
 
   XCTAssertTrue([session terminateWithError:&error]);
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateEnded);

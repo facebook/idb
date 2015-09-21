@@ -4,8 +4,8 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2013 by Steve Nygard.
 //
 
-#import "DTiPhoneSimulatorSessionDelegate-Protocol.h"
-#import "DVTInvalidation-Protocol.h"
+#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSessionDelegate-Protocol.h>
+#import <DVTiPhoneSimulatorRemoteClient/DVTInvalidation-Protocol.h>
 
 @class DTiPhoneSimulatorSessionConfig, DVTStackBacktrace, DVTiPhoneSimulatorMessenger, NSString, NSTimer;
 

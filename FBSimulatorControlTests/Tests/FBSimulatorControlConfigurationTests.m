@@ -11,13 +11,13 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBProcessLaunchConfiguration.h"
-#import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorPool.h"
-#import "SimDevice.h"
-#import "SimDeviceSet.h"
+#import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
+#import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorApplication.h>
+#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorPool.h>
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
 
 @interface FBSimulatorControlConfigurationTests : XCTestCase
 

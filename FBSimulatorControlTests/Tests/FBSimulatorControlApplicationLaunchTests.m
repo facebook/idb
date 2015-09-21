@@ -11,21 +11,21 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBProcessLaunchConfiguration.h"
-#import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorConfiguration.h"
-#import "FBSimulatorControl+Private.h"
-#import "FBSimulatorControl.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorPool.h"
-#import "FBSimulatorSession.h"
-#import "FBSimulatorSessionInteraction.h"
-#import "FBSimulatorSessionLifecycle.h"
-#import "FBSimulatorSessionState+Queries.h"
-#import "FBSimulatorSessionState.h"
-#import "SimDevice.h"
-#import "SimDeviceSet.h"
+#import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
+#import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorApplication.h>
+#import <FBSimulatorControl/FBSimulatorConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorControl+Private.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
+#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorPool.h>
+#import <FBSimulatorControl/FBSimulatorSession.h>
+#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
+#import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
+#import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
+#import <FBSimulatorControl/FBSimulatorSessionState.h>
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulatorControlNotificationAssertion.h"
 

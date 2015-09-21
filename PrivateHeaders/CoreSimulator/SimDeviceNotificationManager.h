@@ -4,11 +4,9 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2013 by Steve Nygard.
 //
 
-#import "NSObject.h"
+#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 
-#import "SimDeviceNotifier.h"
-
-@class NSMutableDictionary, NSObject<OS_dispatch_queue>;
+@class NSMutableDictionary, NSObject;
 
 @interface SimDeviceNotificationManager : NSObject <SimDeviceNotifier>
 {
@@ -22,11 +20,10 @@
 @property unsigned long long next_regID; // @synthesize next_regID=_next_regID;
 @property(retain) NSMutableDictionary *handlers; // @synthesize handlers=_handlers;
 @property(retain) NSObject<OS_dispatch_queue> *handlersQueue; // @synthesize handlersQueue=_handlersQueue;
-- (void).cxx_destruct;
 - (void)sendNotification:(id)arg1;
 - (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
-- (unsigned long long)registerNotificationHandlerOnQueue:(id)arg1 handler:(CDUnknownBlockType)arg2;
-- (unsigned long long)registerNotificationHandler:(CDUnknownBlockType)arg1;
+- (unsigned long long)registerNotificationHandlerOnQueue:(id)arg1 handler:(id)arg2;
+- (unsigned long long)registerNotificationHandler:(id)arg1;
 - (void)dealloc;
 - (id)init;
 
