@@ -247,15 +247,16 @@
 {
   NSError *innerError = nil;
   if (![self killSimulators:simulators withError:&innerError]) {
-    return [FBSimulatorError failWithError:innerError description:@"Failed to kill simulator before deleting it" errorOut:error];
+    return [FBSimulatorError failWithError:innerError description:@"Failed to kill simulators before deletion." errorOut:error];
   }
 
   NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
-    if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
-      return [FBSimulatorError failWithError:innerError description:@"Failed to delete simulator" errorOut:error];
+    NSString *simulatorName = simulator.name;
+    if (![self deleteSimulator:simulator withError:&innerError]) {
+      return [FBSimulatorError failWithError:innerError errorOut:error];
     }
-    [deletedSimulatorNames addObject:simulator.name];
+    [deletedSimulatorNames addObject:simulatorName];
   }
   return [deletedSimulatorNames copy];
 }
