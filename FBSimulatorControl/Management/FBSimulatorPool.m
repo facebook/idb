@@ -29,6 +29,8 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
+static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
+
 @implementation FBSimulatorPool
 
 #pragma mark - Initializers
@@ -186,7 +188,7 @@
 
 - (BOOL)waitForDevice:(SimDevice *)device toChangeToState:(FBSimulatorState)simulatorState withError:(NSError **)error
 {
-  BOOL didChangeState = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:30 untilTrue:^ BOOL {
+  BOOL didChangeState = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorPoolDefaultWait untilTrue:^ BOOL {
     return [FBSimulator simulatorStateFromStateString:device.stateString] == simulatorState;
   }];
   if (!didChangeState) {
@@ -220,7 +222,7 @@
 
   // Deleting the device from the set can still leave it around for a few seconds.
   // in order to prevent racing with methods that may reallocate the newly-deleted device, we should wait for the device to no longer be present in the set.
-  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:30 untilTrue:^ BOOL {
+  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorPoolDefaultWait untilTrue:^ BOOL {
     NSOrderedSet *udidSet = [self.allPooledSimulators valueForKey:@"udid"];
     return ![udidSet containsObject:udid];
   }];

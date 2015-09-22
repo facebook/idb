@@ -15,10 +15,10 @@
 @interface NSRunLoop (SimulatorControlAdditions)
 
 /**
- Spins the Run Loop until `untilTrue` returns YES or a timeout is reached
+ Spins the Run Loop until `untilTrue` returns YES or a timeout is reached.
 
- @oaram timeout the Timeout in Seconds
- @param untilTrue the condition to meet
+ @oaram timeout the Timeout in Seconds.
+ @param untilTrue the condition to meet.
  @returns YES if the condition was met, NO if the timeout was reached first.
  */
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue;
