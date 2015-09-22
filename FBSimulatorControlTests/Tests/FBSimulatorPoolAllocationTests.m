@@ -12,6 +12,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControl+Private.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
+#import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulator.h>
@@ -110,6 +111,37 @@
 
   NSOrderedSet *uuidSet = [control.simulatorPool.allPooledSimulators valueForKey:@"udid"];
   XCTAssertFalse([uuidSet containsObject:simulatorUUID]);
+}
+
+- (void)testRemovesMultipleAllocatedDevicesFromSet
+{
+  FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
+    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    namePrefix:nil
+    bucket:0
+    options:FBSimulatorManagementOptionsDeleteOnFree];
+
+  FBSimulatorControl *control = [[FBSimulatorControl alloc] initWithConfiguration:controlConfiguration];
+
+  NSError *error = nil;
+  FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
+  NSMutableArray *simulators = [NSMutableArray array];
+  NSMutableSet *simulatorUUIDs = [NSMutableSet set];
+
+  for (NSInteger index = 0; index < 4; index++) {
+    FBSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
+    XCTAssertNotNil(simulator);
+    XCTAssertNil(error);
+    [simulators addObject:simulator];
+    [simulatorUUIDs addObject:simulator.udid];
+  }
+
+  XCTAssertTrue([control.simulatorPool deleteManagedSimulatorsWithError:&error]);
+  XCTAssertNil(error);
+
+  NSOrderedSet *uuidSet = [control.simulatorPool.allPooledSimulators valueForKey:@"udid"];
+  [simulatorUUIDs intersectSet:uuidSet.set];
+  XCTAssertEqual(simulatorUUIDs.count, 0);
 }
 
 #pragma mark Helpers
