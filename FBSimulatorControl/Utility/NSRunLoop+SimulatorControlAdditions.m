@@ -19,8 +19,8 @@
       if ([date timeIntervalSinceNow] < 0) {
         return NO;
       }
-      // Wait for 1s
-      [self runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+      // Wait for 100ms
+      [self runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     }
   }
   return YES;
