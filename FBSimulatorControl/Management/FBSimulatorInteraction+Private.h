@@ -12,16 +12,5 @@
 @interface FBSimulatorInteraction ()
 
 @property (nonatomic, strong) FBSimulator *simulator;
-@property (nonatomic, strong) NSMutableArray *interactions;
-
-+ (id<FBSimulatorInteraction>)chainInteractions:(NSArray *)interactions;
-
-@end
-
-@interface FBSimulatorInteraction_Block : NSObject<FBSimulatorInteraction>
-
-@property (nonatomic, copy) BOOL (^block)(NSError **error);
-
-+ (id<FBSimulatorInteraction>)interactionWithBlock:( BOOL(^)(NSError **error) )block;
 
 @end

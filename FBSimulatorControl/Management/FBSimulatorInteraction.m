@@ -9,6 +9,7 @@
 
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBInteraction+Private.h"
 
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
@@ -23,7 +24,6 @@
 {
   FBSimulatorInteraction *interaction = [self new];
   interaction.simulator = simulator;
-  interaction.interactions = [NSMutableArray array];
   return interaction;
 }
 
@@ -102,43 +102,6 @@
   }];
 }
 
-#pragma mark Private
-
-+ (id<FBSimulatorInteraction>)chainInteractions:(NSArray *)interactions
-{
-  return [FBSimulatorInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
-    for (id<FBSimulatorInteraction> interaction in interactions) {
-      NSError *innerError = nil;
-      if (![interaction performInteractionWithError:&innerError]) {
-        return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-      }
-    }
-    return YES;
-  }];
-}
-
-- (instancetype)interact:(BOOL (^)(NSError **error))block
-{
-  NSParameterAssert(block);
-  return [self addInteraction:[FBSimulatorInteraction_Block interactionWithBlock:block]];
-}
-
-- (instancetype)addInteraction:(id<FBSimulatorInteraction>)interaction
-{
-  [self.interactions addObject:interaction];
-  return self;
-}
-
-- (id<FBSimulatorInteraction>)build
-{
-  return [self.class chainInteractions:[self.interactions copy]];
-}
-
-- (BOOL)performInteractionWithError:(NSError **)error
-{
-  return [[self build] performInteractionWithError:error];
-}
-
 @end
 
 @implementation FBSimulatorInteraction (Convenience)
@@ -149,27 +112,6 @@
     [self setLocale:configuration.locale];
   }
   return [self setupKeyboard];
-}
-
-@end
-
-@implementation FBSimulatorInteraction_Block
-
-+ (id<FBSimulatorInteraction>)interactionWithBlock:( BOOL(^)(NSError **error) )block
-{
-  FBSimulatorInteraction_Block *interaction = [self new];
-  interaction.block = block;
-  return interaction;
-}
-
-- (BOOL)performInteractionWithError:(NSError **)error
-{
-  NSError *innerError = nil;
-  BOOL success = self.block(&innerError);
-  if (!success && error) {
-    *error = innerError;
-  }
-  return success;
 }
 
 @end

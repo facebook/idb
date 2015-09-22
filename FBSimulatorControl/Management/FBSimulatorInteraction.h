@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBInteraction.h>
 #import <FBSimulatorControl/FBSimulator.h>
 
 @class FBSimulator;
@@ -16,24 +17,9 @@
 @class FBSimulatorConfiguration;
 
 /**
- Represents a failable transaction involving a Simulator.
- */
-@protocol FBSimulatorInteraction<NSObject>
-
-/**
- Perform the given interaction.
-
- @param error an errorOut if any ocurred.
- @returns YES if the interaction succeeded, NO otherwise.
- */
-- (BOOL)performInteractionWithError:(NSError **)error;
-
-@end
-
-/**
  Pre-session interactions used pre-launch of a Simulator
  */
-@interface FBSimulatorInteraction : NSObject <FBSimulatorInteraction>
+@interface FBSimulatorInteraction : FBInteraction
 
 /**
  Returns a new Interaction for the provided Simulator.
