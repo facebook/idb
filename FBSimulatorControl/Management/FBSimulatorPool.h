@@ -39,48 +39,12 @@
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 
 /**
- An Ordered Set of the Simulators that this Pool is responsible for.
- This includes allocated and un-allocated simulators.
+ An Ordered Set of the Simulators for the DeviceSet.
+ This includes allocated and un-allocated simulators, as well as managed and unmanaged simulators.
  Ordering is based on name descending.
- Is an NSOrderedSet<FBManagedSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *allSimulatorsInPool;
-
-/**
- An Ordered Set of the Simulators that any posible Pool is responsible for.
- This includes allocated and un-allocated simulators.
- Ordering is based on name descending.
- Is an NSOrderedSet<FBManagedSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *allPooledSimulators;
-
-/**
- An Ordered Set of the Simulators that this Pool has allocated.
- This includes only allocated simulators.
- Ordering is based on the most recently allocated simulator descending.
- Is an NSOrderedSet<FBManagedSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *allocatedSimulators;
-
-/**
- An Ordered Set of the Simulators that this Pool has allocated.
- This includes only allocated simulators.
- Ordering is based on name descending.
- Is an NSOrderedSet<FBManagedSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *unallocatedSimulators;
-
-/**
- An Ordered Set of all the Simulators for the Device Set.
  Is an NSOrderedSet<FBSimulator>
  */
 @property (nonatomic, copy, readonly) NSOrderedSet *allSimulators;
-
-/**
- An Ordered Set of the Simulators that no Pool is responsible for.
- Is an NSOrderedSet<FBSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *unmanagedSimulators;
 
 /**
  Returns a device matching the UDID, if one exists.
@@ -160,9 +124,9 @@
 @end
 
 /**
- Some Fetchers for bridging the Old Way with the New
+ Fetchers for Specific and Groups of Simulators
  */
-@interface FBSimulatorPool (Fetching)
+@interface FBSimulatorPool (Fetchers)
 
 /**
  Finds the Device UDID for the given device name and SDK version combination.
@@ -182,6 +146,55 @@
  @return The Allocated device created by FBSimulatorPool.
  */
 - (FBManagedSimulator *)allocatedSimulatorWithDeviceType:(NSString *)deviceType;
+
+/**
+ An Ordered Set of the Simulators that this Pool is responsible for.
+ This includes allocated and un-allocated simulators.
+ Ordering is based on name descending.
+ Is an NSOrderedSet<FBManagedSimulator>
+ */
+@property (nonatomic, copy, readonly) NSOrderedSet *allSimulatorsInPool;
+
+/**
+ An Ordered Set of the Simulators that any posible Pool is responsible for.
+ This includes allocated and un-allocated simulators.
+ Ordering is based on name descending.
+ Is an NSOrderedSet<FBManagedSimulator>
+ */
+@property (nonatomic, copy, readonly) NSOrderedSet *allPooledSimulators;
+
+/**
+ An Ordered Set of the Simulators that this Pool has allocated.
+ This includes only allocated simulators.
+ Is an NSOrderedSet<FBManagedSimulator>
+ */
+@property (nonatomic, copy, readonly) NSOrderedSet *allocatedSimulators;
+
+/**
+ An Ordered Set of the Simulators that this Pool has allocated.
+ This includes only allocated simulators.
+ Ordering is based on name descending.
+ Is an NSOrderedSet<FBManagedSimulator>
+ */
+@property (nonatomic, copy, readonly) NSOrderedSet *unallocatedSimulators;
+
+/**
+ An Ordered Set of all the Simulators for the Device Set.
+ Is an NSOrderedSet<FBSimulator>
+ */
+@property (nonatomic, copy, readonly) NSOrderedSet *allSimulators;
+
+/**
+ An Ordered Set of the Simulators that no Pool is responsible for.
+ Is an NSOrderedSet<FBSimulator>
+ */
+@property (nonatomic, copy, readonly) NSOrderedSet *unmanagedSimulators;
+
+/**
+ An Ordered Set of the Simulators that have been launched by any pool, or not by FBSimulatorControl at all.
+ Is an NSOrderedSet<FBSimulator>
+ */
+@property (nonatomic, copy, readonly) NSOrderedSet *launchedSimulators;
 
 @end
 

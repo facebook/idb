@@ -20,6 +20,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLogger.h"
+#import "FBSimulatorPredicates.h"
 #import "FBTaskExecutor+Convenience.h"
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
@@ -57,48 +58,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }];
 
   return [simulators copy];
-}
-
-- (NSOrderedSet *)allSimulatorsInPool
-{
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBManagedSimulator *simulator, NSDictionary* _) {
-    return simulator.bucketID == self.configuration.bucketID;
-  }];
-
-  NSOrderedSet *set = [self.allPooledSimulators filteredOrderedSetUsingPredicate:predicate];
-  [set.array makeObjectsPerformSelector:@selector(setPool:) withObject:self];
-  return set;
-}
-
-- (NSOrderedSet *)allPooledSimulators
-{
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary* _) {
-    return [simulator isKindOfClass:FBManagedSimulator.class];
-  }];
-  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
-}
-
-- (NSOrderedSet *)allocatedSimulators
-{
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary* _) {
-    return [self.allocatedUDIDs containsObject:simulator.udid];
-  }];
-  // Allocated simulators are inserted at the end with O(1), we need the reverse here.
-  return [[[self.allPooledSimulators copy] filteredOrderedSetUsingPredicate:predicate] reversedOrderedSet];
-}
-
-- (NSOrderedSet *)unallocatedSimulators
-{
-  NSMutableOrderedSet *simulators = [self.allSimulatorsInPool mutableCopy];
-  [simulators minusSet:self.allocatedSimulators.set];
-  return [simulators copy];
-}
-
-- (NSOrderedSet *)unmanagedSimulators
-{
-  NSMutableOrderedSet *simulators = [self.allSimulators mutableCopy];
-  [simulators minusSet:self.allPooledSimulators.set];
-  return simulators;
 }
 
 #pragma mark - Public Methods
@@ -522,7 +481,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 @end
 
-@implementation FBSimulatorPool (Fetching)
+@implementation FBSimulatorPool (Fetchers)
 
 - (NSString *)deviceUDIDWithName:(NSString *)deviceName simulatorSDK:(NSString *)simulatorSDK
 {
@@ -548,6 +507,41 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     }
   }
   return nil;
+}
+
+- (NSOrderedSet *)allSimulatorsInPool
+{
+  NSPredicate *predicate = [FBSimulatorPredicates managedByPool:self];
+  NSOrderedSet *set = [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
+  [set.array makeObjectsPerformSelector:@selector(setPool:) withObject:self];
+  return set;
+}
+
+- (NSOrderedSet *)allPooledSimulators
+{
+  return [self.allSimulators filteredOrderedSetUsingPredicate:FBSimulatorPredicates.managed];
+}
+
+- (NSOrderedSet *)allocatedSimulators
+{
+  NSPredicate *predicate = [FBSimulatorPredicates allocatedByPool:self];
+  return [[[self.allSimulators copy] filteredOrderedSetUsingPredicate:predicate] reversedOrderedSet];
+}
+
+- (NSOrderedSet *)unallocatedSimulators
+{
+  NSPredicate *predicate = [FBSimulatorPredicates unallocatedByPool:self];
+  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
+}
+
+- (NSOrderedSet *)unmanagedSimulators
+{
+  return [self.allSimulators filteredOrderedSetUsingPredicate:FBSimulatorPredicates.unmanaged];
+}
+
+- (NSOrderedSet *)launchedSimulators
+{
+  return [self.allSimulators filteredOrderedSetUsingPredicate:FBSimulatorPredicates.launched];
 }
 
 @end
