@@ -50,7 +50,7 @@
 
 - (NSString *)lastScaleCommandLineSwitch
 {
-  return [NSString stringWithFormat:@"-\"%@\"", self.lastScaleKey];
+  return [NSString stringWithFormat:@"-%@", self.lastScaleKey];
 }
 
 - (instancetype)withRuntime:(SimRuntime *)runtime
