@@ -62,7 +62,8 @@ To launch Safari on an iPhone 5, you can use the following:
 
 For a high level overview:
 - ```FBSimulatorPool``` is a responsible for booting and allocating simulators.
-- ```FBSimulator``` is a wrapper around ```SimDevice``` that provides additional allocation semantics.
+- ```FBSimulator``` is a wrapper around ```SimDevice``` that provides convenience methods and properties than `SimDevice` does not have.
+- `FBManagedSimulator` is an extension of `FBSimulator` that has additional semantics around Simulator Management. Simulators are launched in a 'Managed' context to avoid interference with existing Simulators on the machine.
 - ```FBSimulatorSession``` represents a transaction with a device. Sessions are started from ```FBSimulatorPool``` and terminated with the ```terminateWithError:``` method.
 - ```FBSimulatorSessionInteraction``` contains a chainable interface for building interactions with the simulator. Calling ```performWithError:``` will synchronously perform the chained interactions.
 - There are Configuration objects for bending many of these classes to your will.
