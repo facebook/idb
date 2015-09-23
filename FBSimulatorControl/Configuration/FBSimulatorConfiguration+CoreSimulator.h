@@ -13,9 +13,9 @@
 @class SimRuntime;
 
 /**
- Adapting FBSimulatorConfiguration to DTMobile
+ Adapting FBSimulatorConfiguration to CoreSimulator.
  */
-@interface FBSimulatorConfiguration (DTMobile)
+@interface FBSimulatorConfiguration (CoreSimulator)
 
 /**
  The SimRuntime for the current configuration.
@@ -28,6 +28,28 @@
  Will return nil, if the runtime is unavailable
  */
 @property (nonatomic, strong, readonly) SimDeviceType *deviceType;
+
+/**
+ The Defaults override for the Device-Specific scale key in NSUserDefaults.
+ See 'defaults read com.apple.iphonesimulator'
+ */
+@property (nonatomic, copy, readonly) NSString *lastScaleKey;
+
+/**
+ The Command Line switch to override the Device-Specific scale of a directly-launched the Simulator.
+ See 'defaults read com.apple.iphonesimulator'
+ */
+@property (nonatomic, copy, readonly) NSString *lastScaleCommandLineSwitch;
+
+/**
+ Returns a new Configuration, for the specific SimRuntime.
+ */
+- (instancetype)withRuntime:(SimRuntime *)runtime;
+
+/**
+ Returns a new Configuration, for the specific DeviceType.
+ */
+- (instancetype)withDeviceType:(SimDeviceType *)deviceType;
 
 /**
  Returns an NSDictionary<FBSimulatorConfiguration, SimRuntime> for the available runtimes.

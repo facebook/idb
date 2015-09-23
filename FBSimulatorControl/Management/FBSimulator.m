@@ -11,6 +11,8 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorPool+Private.h"
 
+#import "FBSimulatorConfiguration.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorPool.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
@@ -169,6 +171,8 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 @implementation FBManagedSimulator
 
+@synthesize configuration = _configuration;
+
 + (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration
 {
   NSRegularExpression *regex = [FBManagedSimulator managedSimulatorPoolOffsetRegex:configuration];
@@ -187,6 +191,8 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return simulator;
 }
 
+#pragma mark Accessors
+
 - (BOOL)isAllocated
 {
   if (!self.pool) {
@@ -195,12 +201,26 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return [self.pool.allocatedSimulators containsObject:self];
 }
 
+- (void)setConfiguration:(FBSimulatorConfiguration *)configuration
+{
+  _configuration = configuration;
+}
+
+- (FBSimulatorConfiguration *)configuration
+{
+  return _configuration ?: [self inferredSimulatorConfiguration];
+}
+
+#pragma mark Interactions
+
 - (BOOL)freeFromPoolWithError:(NSError **)error
 {
   NSParameterAssert(self.pool);
   NSParameterAssert(self.isAllocated);
   return [self.pool freeSimulator:self error:error];
 }
+
+#pragma mark NSObject
 
 - (BOOL)isEqual:(FBManagedSimulator *)simulator
 {
@@ -225,6 +245,11 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 }
 
 #pragma mark Private
+
+- (FBSimulatorConfiguration *)inferredSimulatorConfiguration
+{
+  return [[FBSimulatorConfiguration.defaultConfiguration withDeviceType:self.device.deviceType] withRuntime:self.device.runtime];
+}
 
 + (NSRegularExpression *)managedSimulatorPoolOffsetRegex:(FBSimulatorControlConfiguration *)configuration
 {

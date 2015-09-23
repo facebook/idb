@@ -7,14 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorConfiguration+DTMobile.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 
 #import "FBSimulatorConfiguration+Private.h"
 
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
-@implementation FBSimulatorConfiguration (DTMobile)
+@implementation FBSimulatorConfiguration (CoreSimulator)
 
 - (SimRuntime *)runtime
 {
@@ -38,6 +38,29 @@
     }
   }
   return nil;
+}
+
+- (NSString *)lastScaleKey
+{
+  return [NSString stringWithFormat:
+    @"SimulatorWindowLastScale-%@",
+    self.deviceType.identifier
+  ];
+}
+
+- (NSString *)lastScaleCommandLineSwitch
+{
+  return [NSString stringWithFormat:@"-\"%@\"", self.lastScaleKey];
+}
+
+- (instancetype)withRuntime:(SimRuntime *)runtime
+{
+  return [self iOS:runtime.versionString];
+}
+
+- (instancetype)withDeviceType:(SimDeviceType *)deviceType
+{
+  return [self named:deviceType.name];
 }
 
 + (NSDictionary *)configurationsToAvailableRuntimes

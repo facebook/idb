@@ -22,6 +22,8 @@
  */
 @interface FBSimulatorConfiguration : NSObject<NSCopying>
 
+#pragma mark Properties
+
 /**
  The Name of the Device to Simulate. Must not be nil.
  */
@@ -38,10 +40,17 @@
 @property (nonatomic, strong, readonly) NSLocale *locale;
 
 /**
+ A String representing the Scale at which to launch the Simulator.
+ */
+@property (nonatomic, copy, readonly) NSString *scaleString;
+
+/**
  Returns the Default Configuration.
  The OS Version is derived from the SDK Version.
  */
 + (instancetype)defaultConfiguration;
+
+#pragma mark Devices
 
 /**
  An iPhone 4s.
@@ -104,6 +113,8 @@
 + (instancetype)named:(NSString *)deviceType;
 - (instancetype)named:(NSString *)deviceType;
 
+#pragma mark OS Versions
+
 /**
  iOS 7.1
  */
@@ -146,10 +157,34 @@
 + (instancetype)iOS:(NSString *)version;
 
 /**
-  iOS Device with the given OS version.
-  Will return nil, if no OS with the given name could be found.
+ iOS Device with the given OS version.
+ Will return nil, if no OS with the given name could be found.
  */
 - (instancetype)iOS:(NSString *)version;
+
+#pragma mark Device Scale
+
+/**
+ Launch at 25% Scale.
+ */
+- (instancetype)scale25Percent;
+
+/**
+ Launch at 50% Scale.
+ */
+- (instancetype)scale50Percent;
+
+/**
+ Launch at 75% Scale.
+ */
+- (instancetype)scale75Percent;
+
+/**
+ Launch at 100% Scale.
+ */
+- (instancetype)scale100Percent;
+
+#pragma mark Locale
 
 /**
  A new configuration with the provided locale

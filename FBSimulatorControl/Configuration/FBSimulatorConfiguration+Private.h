@@ -69,10 +69,29 @@
 @interface FBSimulatorConfigurationOSVersion_9_0 : NSObject<FBSimulatorConfigurationOSVersion>
 @end
 
+@protocol FBSimulatorConfigurationScale <NSObject>
+
+- (NSString *)scaleString;
+
+@end
+
+@interface FBSimulatorConfigurationScale_25 : NSObject<FBSimulatorConfigurationScale>
+@end
+
+@interface FBSimulatorConfigurationScale_50 : NSObject<FBSimulatorConfigurationScale>
+@end
+
+@interface FBSimulatorConfigurationScale_75 : NSObject<FBSimulatorConfigurationScale>
+@end
+
+@interface FBSimulatorConfigurationScale_100 : NSObject<FBSimulatorConfigurationScale>
+@end
+
 @interface FBSimulatorConfiguration ()
 
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationNamedDevice> namedDevice;
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationOSVersion> osVersion;
+@property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationScale> scale;
 @property (nonatomic, strong, readwrite) NSLocale *locale;
 
 @end

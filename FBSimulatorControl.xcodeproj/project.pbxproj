@@ -15,8 +15,8 @@
 		AA4877161BAC74B9007F7D23 /* FBProcessLaunchConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4876C81BAC74B9007F7D23 /* FBProcessLaunchConfiguration.m */; settings = {ASSET_TAGS = (); }; };
 		AA4877171BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876C91BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA4877181BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4876CA1BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.m */; settings = {ASSET_TAGS = (); }; };
-		AA4877191BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876CB1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA48771A1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4876CC1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.m */; settings = {ASSET_TAGS = (); }; };
+		AA4877191BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876CB1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA48771A1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4876CC1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.m */; settings = {ASSET_TAGS = (); }; };
 		AA48771B1BAC74B9007F7D23 /* FBSimulatorConfiguration+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876CD1BAC74B9007F7D23 /* FBSimulatorConfiguration+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA48771C1BAC74B9007F7D23 /* FBSimulatorConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876CE1BAC74B9007F7D23 /* FBSimulatorConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA48771D1BAC74B9007F7D23 /* FBSimulatorConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4876CF1BAC74B9007F7D23 /* FBSimulatorConfiguration.m */; settings = {ASSET_TAGS = (); }; };
@@ -153,8 +153,8 @@
 		AA4876C81BAC74B9007F7D23 /* FBProcessLaunchConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessLaunchConfiguration.m; sourceTree = "<group>"; };
 		AA4876C91BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorConfiguration+Convenience.h"; sourceTree = "<group>"; };
 		AA4876CA1BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBSimulatorConfiguration+Convenience.m"; sourceTree = "<group>"; };
-		AA4876CB1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorConfiguration+DTMobile.h"; sourceTree = "<group>"; };
-		AA4876CC1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBSimulatorConfiguration+DTMobile.m"; sourceTree = "<group>"; };
+		AA4876CB1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorConfiguration+CoreSimulator.h"; sourceTree = "<group>"; };
+		AA4876CC1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBSimulatorConfiguration+CoreSimulator.m"; sourceTree = "<group>"; };
 		AA4876CD1BAC74B9007F7D23 /* FBSimulatorConfiguration+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorConfiguration+Private.h"; sourceTree = "<group>"; };
 		AA4876CE1BAC74B9007F7D23 /* FBSimulatorConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorConfiguration.h; sourceTree = "<group>"; };
 		AA4876CF1BAC74B9007F7D23 /* FBSimulatorConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorConfiguration.m; sourceTree = "<group>"; };
@@ -860,8 +860,8 @@
 				AA4876C81BAC74B9007F7D23 /* FBProcessLaunchConfiguration.m */,
 				AA4876C91BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.h */,
 				AA4876CA1BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.m */,
-				AA4876CB1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.h */,
-				AA4876CC1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.m */,
+				AA4876CB1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.h */,
+				AA4876CC1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.m */,
 				AA4876CD1BAC74B9007F7D23 /* FBSimulatorConfiguration+Private.h */,
 				AA4876CE1BAC74B9007F7D23 /* FBSimulatorConfiguration.h */,
 				AA4876CF1BAC74B9007F7D23 /* FBSimulatorConfiguration.m */,
@@ -1700,7 +1700,7 @@
 				AA4877521BAC74B9007F7D23 /* FBTaskExecutor.h in Headers */,
 				AA4877561BAC74B9007F7D23 /* FBSimulatorLogger.h in Headers */,
 				AA4877351BAC74B9007F7D23 /* FBCoreSimulatorNotifier.h in Headers */,
-				AA4877191BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.h in Headers */,
+				AA4877191BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.h in Headers */,
 				AA48773B1BAC74B9007F7D23 /* FBSimulatorSession+Private.h in Headers */,
 				AA48771C1BAC74B9007F7D23 /* FBSimulatorConfiguration.h in Headers */,
 				AA4877141BAC74B9007F7D23 /* FBProcessLaunchConfiguration+Private.h in Headers */,
@@ -1848,7 +1848,7 @@
 				AA4877441BAC74B9007F7D23 /* FBSimulatorSessionLifecycle.m in Sources */,
 				AA8DF8CA1BB18B3700CC0411 /* FBInteraction.m in Sources */,
 				AA4877181BAC74B9007F7D23 /* FBSimulatorConfiguration+Convenience.m in Sources */,
-				AA48771A1BAC74B9007F7D23 /* FBSimulatorConfiguration+DTMobile.m in Sources */,
+				AA48771A1BAC74B9007F7D23 /* FBSimulatorConfiguration+CoreSimulator.m in Sources */,
 				AA4877131BAC74B9007F7D23 /* FBProcessLaunchConfiguration+Helpers.m in Sources */,
 				AA4877421BAC74B9007F7D23 /* FBSimulatorSessionInteraction.m in Sources */,
 				AA4877471BAC74B9007F7D23 /* FBSimulatorSessionState+Queries.m in Sources */,
