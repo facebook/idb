@@ -88,7 +88,7 @@
 		AA51E49E1BA1CA3C0053141E /* FBSimulatorStateTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA51E4951BA1CA3C0053141E /* FBSimulatorStateTests.m */; settings = {ASSET_TAGS = (); }; };
 		AA5696381B9FB7B500A2918F /* DVTFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA5696371B9FB7B500A2918F /* DVTFoundation.framework */; };
 		AA56963A1B9FB7C800A2918F /* DVTiPhoneSimulatorRemoteClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA5696391B9FB7C800A2918F /* DVTiPhoneSimulatorRemoteClient.framework */; };
-		AA74B9991BB014A200C1E59C /* FBSimulatorError.h in Headers */ = {isa = PBXBuildFile; fileRef = AA74B9971BB014A200C1E59C /* FBSimulatorError.h */; settings = {ASSET_TAGS = (); }; };
+		AA74B9991BB014A200C1E59C /* FBSimulatorError.h in Headers */ = {isa = PBXBuildFile; fileRef = AA74B9971BB014A200C1E59C /* FBSimulatorError.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA74B99A1BB014A200C1E59C /* FBSimulatorError.m in Sources */ = {isa = PBXBuildFile; fileRef = AA74B9981BB014A200C1E59C /* FBSimulatorError.m */; settings = {ASSET_TAGS = (); }; };
 		AA74B99C1BB02CD600C1E59C /* FBSimulatorPoolAllocationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA74B99B1BB02CD600C1E59C /* FBSimulatorPoolAllocationTests.m */; settings = {ASSET_TAGS = (); }; };
 		AA74B99E1BB04A4300C1E59C /* FBProcessLaunchConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA74B99D1BB04A4300C1E59C /* FBProcessLaunchConfigurationTests.m */; settings = {ASSET_TAGS = (); }; };
