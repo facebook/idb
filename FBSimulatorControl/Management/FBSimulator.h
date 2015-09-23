@@ -79,6 +79,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 @property (nonatomic, copy, readonly) NSString *launchdBootstrapPath;
 
 /**
+ The Process Identifier of the Simulator's launchd_sim. -1 if it is not running
+ */
+@property (nonatomic, assign, readonly) NSInteger launchdSimProcessIdentifier;
+
+/**
  The Application that the Simulator should be launched with.
  */
 @property (nonatomic, copy, readonly) FBSimulatorApplication *simulatorApplication;

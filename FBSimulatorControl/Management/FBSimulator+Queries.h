@@ -18,12 +18,6 @@
 - (BOOL)hasActiveLaunchdSim;
 
 /**
- Returns the Process Identifier of the running launchd_sim for this Simulator>
- nil if there is no running launchd_sim
- */
-- (NSNumber *)launchdSimProcessIdentifier;
-
-/**
  Returns an NSArray<id<FBSimulatorProcess>> of the subprocesses of launchd_sim.
  */
 - (NSArray *)launchedProcesses;
