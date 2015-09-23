@@ -10,6 +10,7 @@
 #import <FBSimulatorControl/FBSimulator.h>
 
 @class FBSimulatorControlConfiguration;
+@class FBSimulatorConfiguration;
 
 @interface FBSimulator ()
 
@@ -25,5 +26,6 @@
 
 @property (nonatomic, assign, readwrite) NSInteger bucketID;
 @property (nonatomic, assign, readwrite) NSInteger offset;
+@property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
 
 @end

@@ -15,6 +15,8 @@
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControl.h"
+#import "FBSimulatorConfiguration.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
@@ -40,13 +42,19 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
 - (instancetype)bootSimulator
 {
-  FBSimulator *simulator = self.session.simulator;
+  FBManagedSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
   return [self interact:^ BOOL (NSError **error) {
+    NSArray *arguments = @[@"--args",
+      @"-CurrentDeviceUDID", simulator.udid,
+      @"-ConnectHardwareKeyboard", @"0",
+      simulator.configuration.lastScaleCommandLineSwitch, simulator.configuration.scaleString
+    ];
+
     id<FBTask> task = [FBTaskExecutor.sharedInstance
       taskWithLaunchPath:simulator.simulatorApplication.binary.path
-      arguments:@[@"--args", @"-CurrentDeviceUDID", simulator.udid, @"-ConnectHardwareKeyboard", @"0"]];
+      arguments:arguments];
 
     [lifecycle simulatorWillStart:simulator];
     [task startAsynchronously];

@@ -13,7 +13,7 @@
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorConfiguration+DTMobile.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -114,9 +114,9 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return nil;
 }
 
-- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBManagedSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
-  FBSimulator *simulator = [self findOrCreateSimulatorWithConfiguration:configuration error:error];
+  FBManagedSimulator *simulator = [self findOrCreateSimulatorWithConfiguration:configuration error:error];
   if (!simulator) {
     return nil;
   }
@@ -339,16 +339,16 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return [self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:error];
 }
 
-- (FBSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBManagedSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
   return [self findSimulatorWithConfiguration:configuration]
       ?: [self createSimulatorWithConfiguration:configuration error:error];
 }
 
-- (FBSimulator *)findSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
+- (FBManagedSimulator *)findSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
   NSString *deviceName = [self targetNameForConfiguration:configuration];
-  for (FBSimulator *simulator in self.unallocatedSimulators) {
+  for (FBManagedSimulator *simulator in self.unallocatedSimulators) {
     if ([simulator.name isEqualToString:deviceName]) {
       return simulator;
     }
@@ -356,7 +356,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return nil;
 }
 
-- (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBManagedSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
   NSString *targetName = [self targetNameForConfiguration:configuration];
   SimDeviceType *targetType = configuration.deviceType;
@@ -367,7 +367,8 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   if (!device) {
     return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@", targetName] causedBy:innerError] fail:error];
   }
-  FBSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulatorsInPool][device.UDID.UUIDString];
+  FBManagedSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulatorsInPool][device.UDID.UUIDString];
+  simulator.configuration = configuration;
   NSAssert(simulator, @"Expected simulator with name %@ to be inflated into pool", targetName);
   return simulator;
 }

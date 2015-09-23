@@ -156,6 +156,42 @@
 
 @end
 
+@implementation FBSimulatorConfigurationScale_25
+
+- (NSString *)scaleString
+{
+  return @"0.25";
+}
+
+@end
+
+@implementation FBSimulatorConfigurationScale_50
+
+- (NSString *)scaleString
+{
+  return @"0.50";
+}
+
+@end
+
+@implementation FBSimulatorConfigurationScale_75
+
+- (NSString *)scaleString
+{
+  return @"0.75";
+}
+
+@end
+
+@implementation FBSimulatorConfigurationScale_100
+
+- (NSString *)scaleString
+{
+  return @"1.00";
+}
+
+@end
+
 @implementation FBSimulatorConfiguration
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -164,6 +200,7 @@
   configuration.namedDevice = self.namedDevice;
   configuration.osVersion = self.osVersion;
   configuration.locale = self.locale;
+  configuration.scale = self.scale;
   return configuration;
 }
 
@@ -177,6 +214,7 @@
     configuration = [FBSimulatorConfiguration new];
     configuration.namedDevice = [FBSimulatorConfigurationNamedDevice_iPhone5 new];
     configuration.osVersion = self.class.nameToOSVersion[sdkVersion];
+    configuration.scale = [FBSimulatorConfigurationScale_50 new];
     NSCAssert(configuration.osVersion, @"Could not get a simulator OS for SDK %@", sdkVersion);
   });
   return configuration;
@@ -194,11 +232,16 @@
   return self.osVersion.osVersion;
 }
 
+- (NSString *)scaleString
+{
+  return self.scale.scaleString;
+}
+
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return self.deviceName.hash | self.osVersionString.hash | self.locale.hash;
+  return self.deviceName.hash | self.osVersionString.hash | self.locale.hash | self.scaleString.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorConfiguration *)object
@@ -207,18 +250,20 @@
     return NO;
   }
 
-  return [self.deviceName isEqual:object.deviceName] &&
-         [self.osVersionString isEqual:object.osVersionString] &&
+  return [self.deviceName isEqualToString:object.deviceName] &&
+         [self.osVersionString isEqualToString:object.osVersionString] &&
+         [self.scaleString isEqualToString:object.scaleString] &&
          ((self.locale == nil && object.locale == nil) || [self.locale isEqual:object.locale]);
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Simulator '%@' | OS Version '%@' | Locale '%@'",
+    @"Simulator '%@' | OS Version '%@' | Locale '%@' | Scale '%@'",
     self.deviceName,
     self.osVersionString,
-    self.locale
+    self.locale,
+    self.scaleString
   ];
 }
 
@@ -369,6 +414,28 @@
   return [self updateOSVersion:self.class.nameToOSVersion[version]];
 }
 
+#pragma mark Scale
+
+- (instancetype)scale25Percent
+{
+  return [self updateScale:[FBSimulatorConfigurationScale_25 new]];
+}
+
+- (instancetype)scale50Percent
+{
+  return [self updateScale:[FBSimulatorConfigurationScale_50 new]];
+}
+
+- (instancetype)scale75Percent
+{
+  return [self updateScale:[FBSimulatorConfigurationScale_75 new]];
+}
+
+- (instancetype)scale100Percent
+{
+  return [self updateScale:[FBSimulatorConfigurationScale_100 new]];
+}
+
 - (instancetype)withLocale:(NSLocale *)locale
 {
   FBSimulatorConfiguration *configuration = [self copy];
@@ -460,6 +527,16 @@
   }
   FBSimulatorConfiguration *configuration = [self copy];
   configuration.osVersion = osVersion;
+  return configuration;
+}
+
+- (instancetype)updateScale:(id<FBSimulatorConfigurationScale>)scale
+{
+  if (!scale) {
+    return nil;
+  }
+  FBSimulatorConfiguration *configuration = [self copy];
+  configuration.scale = scale;
   return configuration;
 }
 

@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulatorApplication;
+@class FBSimulatorConfiguration;
 @class FBSimulatorPool;
 @class SimDevice;
 
@@ -132,6 +133,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The Offset represents the position in the pool of this device. Multiple devices of the same type can be allocated in the same pool.
  */
 @property (nonatomic, assign, readonly) NSInteger offset;
+
+/**
+ The Configuration that this Simulator was created and will be launched with.
+ */
+@property (nonatomic, copy, readonly) FBSimulatorConfiguration *configuration;
 
 /**
  Calls `freeSimulator:error:` on this device's pool, with the reciever as the first argument
