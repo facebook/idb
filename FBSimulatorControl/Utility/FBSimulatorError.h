@@ -39,6 +39,7 @@ extern NSString *const FBSimulatorControlErrorDomain;
  For returning early from failing conditions.
  */
 - (BOOL)failBool:(NSError **)error;
+- (CGRect)failRect:(NSError **)error;
 - (id)fail:(NSError **)error;
 
 /**

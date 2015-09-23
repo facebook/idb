@@ -37,6 +37,11 @@
 - (instancetype)bootSimulator;
 
 /**
+ Tiles the Simulator in the first available position on the Display.
+ */
+- (instancetype)tileSimulator;
+
+/**
  Installs the given Application.
  */
 - (instancetype)installApplication:(FBSimulatorApplication *)application;
