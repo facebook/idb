@@ -22,6 +22,8 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 @implementation FBSimulator
 
+#pragma mark Initializers
+
 - (instancetype)init
 {
   self = [super init];
@@ -32,6 +34,22 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   _processIdentifier = -1;
   return self;
 }
+
++ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration
+{
+  // Attempt to make a Managed Simulator, otherwise this must be an unmanaged one.
+  FBSimulator *simulator = [FBManagedSimulator inflateFromSimDevice:device configuration:configuration];
+  if (simulator) {
+    return simulator;
+  }
+
+  // Create and return an unmanaged one.
+  simulator = [FBSimulator new];
+  simulator.device = device;
+  return simulator;
+}
+
+#pragma mark Properties
 
 - (NSString *)name
 {
@@ -68,12 +86,6 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
     return nil;
   }
   return expectedPath;
-}
-
-- (BOOL)isAllocated
-{
-  NSParameterAssert(self.pool);
-  return [self.pool.allocatedSimulators containsObject:self];
 }
 
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
@@ -118,13 +130,6 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   }
 }
 
-- (BOOL)freeFromPoolWithError:(NSError **)error
-{
-  NSParameterAssert(self.pool);
-  NSParameterAssert(self.isAllocated);
-  return [self.pool freeSimulator:self error:error];
-}
-
 - (BOOL)waitOnState:(FBSimulatorState)state
 {
   return [self waitOnState:state timeout:FBSimulatorDefaultTimeout];
@@ -137,33 +142,107 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   }];
 }
 
-#pragma mark NSObject
-
-- (BOOL)isEqual:(FBSimulator *)device
-{
-  if (![device isKindOfClass:self.class]) {
-    return NO;
-  }
-  return [self.device isEqual:device.device] &&
-         self.bucketID == device.bucketID &&
-         self.offset == device.offset;
-}
-
 - (NSUInteger)hash
 {
-  return self.device.hash | self.bucketID >> 1 | self.offset >> 2;
+  return self.device.hash;
+}
+
+- (BOOL)isEqual:(FBSimulator *)simulator
+{
+  if (![simulator isKindOfClass:self.class]) {
+    return NO;
+  }
+  return [self.device isEqual:simulator.device];
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Name %@ | UUID %@ | State %@ | Bucket %ld | Offset %ld",
+    @"Name %@ | UUID %@ | State %@",
     self.name,
     self.udid,
-    self.device.stateString,
+    self.device.stateString
+  ];
+}
+
+@end
+
+@implementation FBManagedSimulator
+
++ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration
+{
+  NSRegularExpression *regex = [FBManagedSimulator managedSimulatorPoolOffsetRegex:configuration];
+  NSTextCheckingResult *result = [regex firstMatchInString:device.name options:0 range:NSMakeRange(0, device.name.length)];
+  if (result.range.length == 0) {
+    return nil;
+  }
+
+  NSInteger bucketID = [[device.name substringWithRange:[result rangeAtIndex:1]] integerValue];
+  NSInteger offset = [[device.name substringWithRange:[result rangeAtIndex:2]] integerValue];
+
+  FBManagedSimulator *simulator = [FBManagedSimulator new];
+  simulator.device = device;
+  simulator.bucketID = bucketID;
+  simulator.offset = offset;
+  return simulator;
+}
+
+- (BOOL)isAllocated
+{
+  if (!self.pool) {
+    return NO;
+  }
+  return [self.pool.allocatedSimulators containsObject:self];
+}
+
+- (BOOL)freeFromPoolWithError:(NSError **)error
+{
+  NSParameterAssert(self.pool);
+  NSParameterAssert(self.isAllocated);
+  return [self.pool freeSimulator:self error:error];
+}
+
+- (BOOL)isEqual:(FBManagedSimulator *)simulator
+{
+  return [super isEqual:simulator] &&
+         self.bucketID == simulator.bucketID &&
+         self.offset == simulator.offset;
+}
+
+- (NSUInteger)hash
+{
+  return [super hash] | self.bucketID >> 1 | self.offset >> 2;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"%@ | Bucket %ld | Offset %ld",
+    [super description],
     self.bucketID,
     self.offset
   ];
+}
+
+#pragma mark Private
+
++ (NSRegularExpression *)managedSimulatorPoolOffsetRegex:(FBSimulatorControlConfiguration *)configuration
+{
+  static dispatch_once_t onceToken;
+  static NSMutableDictionary *regexDictionary;
+  dispatch_once(&onceToken, ^{
+    regexDictionary = [NSMutableDictionary dictionary];
+  });
+
+  if (!regexDictionary[configuration]) {
+    NSString *regexString = [NSString stringWithFormat:@"%@_(\\d+)_(\\d+)", configuration.namePrefix];
+    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:regexString options:0 error:nil];
+    NSAssert(regex, @"Regex '%@' for '%@' should compile", regexString, NSStringFromSelector(_cmd));
+    regexDictionary[configuration] = regex;
+    return regex;
+  }
+
+  return regexDictionary[configuration];
 }
 
 @end

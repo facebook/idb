@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBSimulator;
+@class FBManagedSimulator;
 @class FBSimulatorSessionInteraction;
 @class FBSimulatorSessionState;
 
@@ -25,12 +25,12 @@
  @param simulator the Simulator to manage the session for.
  @returns a new `FBSimulatorSession`.
  */
-+ (instancetype)sessionWithSimulator:(FBSimulator *)simulator;
++ (instancetype)sessionWithSimulator:(FBManagedSimulator *)simulator;
 
 /**
  The Simulator for this session
  */
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBManagedSimulator *simulator;
 
 /**
  Returns the Session Information for the reciever.

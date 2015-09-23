@@ -14,7 +14,7 @@
 @property (nonatomic, copy, readwrite) FBSimulatorControlConfiguration *configuration;
 
 @property (nonatomic, strong, readwrite) SimDeviceSet *deviceSet;
-@property (nonatomic, strong, readwrite) NSMutableOrderedSet *allocatedWorkingSet;
+@property (nonatomic, strong, readwrite) NSMutableOrderedSet *allocatedUDIDs;
 @property (nonatomic, strong, readwrite) NSRegularExpression *managedSimulatorPoolOffsetRegex;
 
 @end

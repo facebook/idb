@@ -72,7 +72,7 @@
     return [FBSimulatorError failWithError:innerError description:@"Failed to meet first run preconditions" errorOut:error];
   }
 
-  FBSimulator *simulator = [self.simulatorPool
+  FBManagedSimulator *simulator = [self.simulatorPool
     allocateSimulatorWithConfiguration:simulatorConfiguration
     error:&innerError];
 

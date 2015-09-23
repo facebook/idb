@@ -24,14 +24,14 @@
 
 #pragma mark - Initializers
 
-+ (instancetype)sessionWithSimulator:(FBSimulator *)simulator
++ (instancetype)sessionWithSimulator:(FBManagedSimulator *)simulator
 {
   NSParameterAssert(simulator);
 
   return [[FBSimulatorSession alloc] initWithSimulator:simulator];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator
+- (instancetype)initWithSimulator:(FBManagedSimulator *)simulator
 {
   self = [super init];
   if (!self) {
