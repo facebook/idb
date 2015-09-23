@@ -10,8 +10,8 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 - Boots Simulators across iOS 7, 8 & 9.
 - Launching and switching between multiple Apps.
 - Framework has no external dependencies.
-- Launch Applications and Agents with [Command Line Arguments](FBSimulatorControl/FBProcessLaunchConfiguration.h#L24) and [Environment Variables](FBSimulatorControl/FBProcessLaunchConfiguration.h#L29).
-- APIs for [launching diagnostic utilities](FBSimulatorControl/FBSimulatorSessionInteraction%2BDiagnostics.h) and attaching output to a Simulator session.
+- Launch Applications and Agents with [Command Line Arguments](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L24) and [Environment Variables](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L29).
+- APIs for [launching diagnostic utilities](FBSimulatorControl/Session/FBSimulatorSessionInteraction%2BDiagnostics.h) and attaching output to a Simulator session.
 - BFFs with [`WebDriverAgent`](https://github.com/facebook/webdriveragent).
 
 ## About
