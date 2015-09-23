@@ -38,7 +38,7 @@
 
   NSError *error = nil;
   FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  FBSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
+  FBManagedSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
   XCTAssertNotNil(simulator);
   XCTAssertNil(error);
 
@@ -70,7 +70,7 @@
 
   NSError *error = nil;
   FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  FBSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
+  FBManagedSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
   XCTAssertNotNil(simulator);
   XCTAssertNil(error);
 
@@ -100,7 +100,7 @@
 
   NSError *error = nil;
   FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  FBSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
+  FBManagedSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
   XCTAssertNotNil(simulator);
   XCTAssertNil(error);
 

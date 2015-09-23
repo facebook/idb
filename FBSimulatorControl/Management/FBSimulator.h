@@ -14,7 +14,7 @@
 @class SimDevice;
 
 /**
- The Default timeout for waits
+ The Default timeout for waits.
  */
 extern NSTimeInterval const FBSimulatorDefaultTimeout;
 
@@ -32,14 +32,9 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 };
 
 /**
- Wraps SimDevice, with additional information about the device.
+ Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
 @interface FBSimulator : NSObject
-
-/**
- Whether the Simulator is Allocated.
- */
-@property (nonatomic, assign, readonly, getter=isAllocated) BOOL allocated;
 
 /**
  The Underlying SimDevice.
@@ -50,17 +45,6 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The Pool to which the Simulator Belongs.
  */
 @property (nonatomic, weak, readonly) FBSimulatorPool *pool;
-
-/**
- The Bucket ID of the allocated device. Bucket IDs are used to segregate a range of devices, so that multiple
- processes can use Simulators, without colliding
- */
-@property (nonatomic, assign, readonly) NSInteger bucketID;
-
-/**
- The Offset represents the position in the pool of this device. Multiple devices of the same type can be allocated in the same pool.
- */
-@property (nonatomic, assign, readonly) NSInteger offset;
 
 /**
  The Name of the allocated device.
@@ -76,11 +60,6 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The State of the allocated device.
  */
 @property (nonatomic, assign, readonly) FBSimulatorState state;
-
-/**
- The Application that the Simulator should be launched with.
- */
-@property (nonatomic, copy, readonly) FBSimulatorApplication *simulatorApplication;
 
 /**
  The Process Identifier of the Simulator. -1 if it is not running
@@ -99,12 +78,9 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 @property (nonatomic, copy, readonly) NSString *launchdBootstrapPath;
 
 /**
- Calls `freeSimulator:error:` on this device's pool, with the reciever as the first argument
-
- @param error an error out for any error that occured.
- @returns YES if the freeing of the device was successful, NO otherwise.
+ The Application that the Simulator should be launched with.
  */
-- (BOOL)freeFromPoolWithError:(NSError **)error;
+@property (nonatomic, copy, readonly) FBSimulatorApplication *simulatorApplication;
 
 /**
  Synchronously waits on the provided state.
@@ -132,5 +108,37 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  Convenience method for obtaining SimulatorState from a String.
  */
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString;
+
+@end
+
+/**
+ Defines the Additional Properties and Methods that exist on a 'Managed' Simulator.
+ A Managed Simulator is one that has Allocation and Freeing semantics.
+ */
+@interface FBManagedSimulator : FBSimulator
+
+/**
+ Whether the Simulator is Allocated.
+ */
+@property (nonatomic, assign, readonly, getter=isAllocated) BOOL allocated;
+
+/**
+ The Bucket ID of the allocated device. Bucket IDs are used to segregate a range of devices, so that multiple
+ processes can use Simulators, without colliding
+ */
+@property (nonatomic, assign, readonly) NSInteger bucketID;
+
+/**
+ The Offset represents the position in the pool of this device. Multiple devices of the same type can be allocated in the same pool.
+ */
+@property (nonatomic, assign, readonly) NSInteger offset;
+
+/**
+ Calls `freeSimulator:error:` on this device's pool, with the reciever as the first argument
+
+ @param error an error out for any error that occured.
+ @returns YES if the freeing of the device was successful, NO otherwise.
+ */
+- (BOOL)freeFromPoolWithError:(NSError **)error;
 
 @end

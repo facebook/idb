@@ -15,7 +15,7 @@
 
 @interface FBSimulatorSession ()
 
-@property (nonatomic, strong, readwrite) FBSimulator *simulator;
+@property (nonatomic, strong, readwrite) FBManagedSimulator *simulator;
 @property (nonatomic, strong, readwrite) FBSimulatorSessionLifecycle *lifecycle;
 
 @end

@@ -40,58 +40,75 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   FBSimulatorPool *pool = [self new];
   pool.deviceSet = deviceSet;
   pool.configuration = configuration;
-  pool.allocatedWorkingSet = [NSMutableOrderedSet new];
+  pool.allocatedUDIDs = [NSMutableOrderedSet new];
   return pool;
 }
 
 #pragma mark - Public Accessors
 
+- (NSOrderedSet *)allSimulators
+{
+  NSMutableOrderedSet *simulators = [NSMutableOrderedSet orderedSet];
+  for (SimDevice *device in self.deviceSet.availableDevices) {
+    [simulators addObject:[FBSimulator inflateFromSimDevice:device configuration:self.configuration]];
+  }
+  [simulators sortUsingComparator:^NSComparisonResult(FBSimulator *left, FBSimulator *right) {
+    return [left.name compare:right.name];
+  }];
+
+  return [simulators copy];
+}
+
 - (NSOrderedSet *)allSimulatorsInPool
 {
-  return [self inflatePooledSimulatorsMustBeManaged:YES];
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBManagedSimulator *simulator, NSDictionary* _) {
+    return simulator.bucketID == self.configuration.bucketID;
+  }];
+
+  NSOrderedSet *set = [self.allPooledSimulators filteredOrderedSetUsingPredicate:predicate];
+  [set.array makeObjectsPerformSelector:@selector(setPool:) withObject:self];
+  return set;
 }
 
 - (NSOrderedSet *)allPooledSimulators
 {
-  return [self inflatePooledSimulatorsMustBeManaged:NO];
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary* _) {
+    return [simulator isKindOfClass:FBManagedSimulator.class];
+  }];
+  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
 }
 
 - (NSOrderedSet *)allocatedSimulators
 {
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary* _) {
+    return [self.allocatedUDIDs containsObject:simulator.udid];
+  }];
   // Allocated simulators are inserted at the end with O(1), we need the reverse here.
-  return [[self.allocatedWorkingSet copy] reversedOrderedSet];
+  return [[[self.allPooledSimulators copy] filteredOrderedSetUsingPredicate:predicate] reversedOrderedSet];
 }
 
 - (NSOrderedSet *)unallocatedSimulators
 {
   NSMutableOrderedSet *simulators = [self.allSimulatorsInPool mutableCopy];
-  [simulators minusSet:self.allocatedWorkingSet.set];
+  [simulators minusSet:self.allocatedSimulators.set];
   return [simulators copy];
 }
 
-- (NSArray *)unmanagedSimulators
+- (NSOrderedSet *)unmanagedSimulators
 {
-  // TODO(7849941): Figure out the equality semantics of SimDevice to see if we can use Sets to do this instead.
-  NSRegularExpression *regex = [self managedSimulatorPoolOffsetRegex];
-
-  NSMutableArray *unmanagedSimulators = [NSMutableArray array];
-  for (SimDevice *device in self.deviceSet.availableDevices) {
-    if ([regex numberOfMatchesInString:device.name options:0 range:NSMakeRange(0, device.name.length)] == 0) {
-      [unmanagedSimulators addObject:device];
-    }
-  }
-
-  return unmanagedSimulators;
+  NSMutableOrderedSet *simulators = [self.allSimulators mutableCopy];
+  [simulators minusSet:self.allPooledSimulators.set];
+  return simulators;
 }
 
 #pragma mark - Public Methods
 
-- (SimDevice *)deviceWithUDID:(NSString *)udidString
+- (FBSimulator *)simulatorWithUDID:(NSString *)udidString
 {
   NSParameterAssert(udidString);
-  for (SimDevice *device in self.deviceSet.availableDevices) {
-    if ([device.UDID.UUIDString isEqualToString:udidString]) {
-      return device;
+  for (FBSimulator *simulator in self.deviceSet.availableDevices) {
+    if ([simulator.udid isEqualToString:udidString]) {
+      return simulator;
     }
   }
   return nil;
@@ -107,13 +124,13 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     return nil;
   }
 
-  [self.allocatedWorkingSet addObject:simulator];
+  [self.allocatedUDIDs addObject:simulator.udid];
   return simulator;
 }
 
 - (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  [self.allocatedWorkingSet removeObject:simulator];
+  [self.allocatedUDIDs removeObject:simulator.udid];
 
   NSError *innerError = nil;
   if (![self killSimulators:@[simulator] withError:&innerError]) {
@@ -166,7 +183,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   // This will make sure that the devices are killed themselves
-  return [self shutdownDevices:self.unmanagedSimulators withError:error];
+  return [self shutdownSimulators:[self.unmanagedSimulators.array copy] withError:error];
 }
 
 - (NSArray *)eraseManagedSimulatorsWithError:(NSError **)error
@@ -186,16 +203,14 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 #pragma mark - Private
 
-- (BOOL)waitForDevice:(SimDevice *)device toChangeToState:(FBSimulatorState)simulatorState withError:(NSError **)error
+- (BOOL)waitForSimulator:(FBSimulator *)simulator toChangeToState:(FBSimulatorState)simulatorState withError:(NSError **)error
 {
-  BOOL didChangeState = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorPoolDefaultWait untilTrue:^ BOOL {
-    return [FBSimulator simulatorStateFromStateString:device.stateString] == simulatorState;
-  }];
+  BOOL didChangeState = [simulator waitOnState:simulatorState];
   if (!didChangeState) {
     return [[FBSimulatorError describeFormat:
       @"Simulator was not in expected %@ state, got %@",
       [FBSimulator stateStringFromSimulatorState:simulatorState],
-      device.stateString
+      [FBSimulator stateStringFromSimulatorState:simulator.state]
     ] failBool:error];
   }
 
@@ -234,15 +249,15 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return YES;
 }
 
-- (NSArray *)shutdownDevices:(NSArray *)devices withError:(NSError **)error
+- (NSArray *)shutdownSimulators:(NSArray *)simulators withError:(NSError **)error
 {
   NSError *innerError = nil;
-  for (SimDevice *device in devices) {
-    if (![self safeShutdown:device withError:&innerError]) {
+  for (FBSimulator *simulator in simulators) {
+    if (![self safeShutdown:simulator withError:&innerError]) {
       return [FBSimulatorError failWithError:innerError errorOut:error];
     }
   }
-  return devices;
+  return simulators;
 }
 
 - (NSArray *)deleteSimulators:(NSArray *)simulators withError:(NSError **)error
@@ -285,7 +300,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   NSArray *devices = [simulators valueForKey:@"device"];
-  return [self shutdownDevices:devices withError:error];
+  return [self shutdownSimulators:simulators withError:error];
 }
 
 - (NSArray *)eraseSimulators:(NSArray *)simulators withError:(NSError **)error
@@ -305,23 +320,23 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return simulators;
 }
 
-- (BOOL)safeShutdown:(SimDevice *)device withError:(NSError **)error
+- (BOOL)safeShutdown:(FBSimulator *)simulator withError:(NSError **)error
 {
   // Calling shutdown when already shutdown should be avoided (if detected).
-  if ([FBSimulator simulatorStateFromStateString:device.stateString] == FBSimulatorStateShutdown) {
+  if (simulator.state == FBSimulatorStateShutdown) {
     return YES;
   }
 
   // Code 159 (Xcode 7) or 146 (Xcode 6) is 'Unable to shutdown device in current state: Shutdown'
   // We can safely ignore this and then confirm that the simulator is shutdown
   NSError *innerError = nil;
-  if (![device shutdownWithError:&innerError] && innerError.code != 159 && innerError.code != 146) {
+  if (![simulator.device shutdownWithError:&innerError] && innerError.code != 159 && innerError.code != 146) {
     return [FBSimulatorError failBoolWithError:innerError description:@"Simulator could not be shutdown" errorOut:error];
   }
 
   // We rely on the catch-all-non-manged kill command to do the dirty work.
   // This will confirm that all these simulators are shutdown.
-  return [self waitForDevice:device toChangeToState:FBSimulatorStateShutdown withError:error];
+  return [self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:error];
 }
 
 - (FBSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
@@ -352,8 +367,8 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   if (!device) {
     return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@", targetName] causedBy:innerError] fail:error];
   }
-  FBSimulator *simulator = [self inflateSimulatorFromSimDevice:device mustBeSelfManaged:YES];
-  NSAssert(simulator, @"Expected simulator with name %@ to be inflatable", targetName);
+  FBSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulatorsInPool][device.UDID.UUIDString];
+  NSAssert(simulator, @"Expected simulator with name %@ to be inflated into pool", targetName);
   return simulator;
 }
 
@@ -368,7 +383,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
   if (simulator.state == FBSimulatorStateCreating) {
     // Once the device is 'Shutdown'
-    if ([self waitForDevice:simulator.device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+    if ([self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
       return YES;
     }
 
@@ -378,7 +393,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     }
 
     // If a device has been erased, we should wait for it to actually be shutdown.
-    if ([self waitForDevice:simulator.device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+    if ([self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
       return YES;
     }
 
@@ -394,7 +409,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   // Wait for it to be truly shutdown.
-  if (![self waitForDevice:simulator.device toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+  if (![self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
     return [[[[FBSimulatorError describe:@"Failed to wait for simulator preparation to shutdown device"] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
 
@@ -478,14 +493,14 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 - (NSInteger)nextAvailableOffsetForDeviceType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime
 {
   NSMutableIndexSet *indeces = [NSMutableIndexSet indexSet];
-  for (FBSimulator *allocatedDevice in self.allocatedSimulators) {
-    if (![allocatedDevice.device.deviceType isEqual:deviceType]) {
+  for (FBManagedSimulator *simulator in self.allocatedSimulators) {
+    if (![simulator.device.deviceType isEqual:deviceType]) {
       continue;
     }
-    if (![allocatedDevice.device.runtime isEqual:runtime]) {
+    if (![simulator.device.runtime isEqual:runtime]) {
       continue;
     }
-    [indeces addIndex:allocatedDevice.offset];
+    [indeces addIndex:simulator.offset];
   }
   for (NSInteger index = 0; index < INT_MAX; index++) {
     if (![indeces containsIndex:index]) {
@@ -495,65 +510,13 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return -1;
 }
 
-- (NSMutableOrderedSet *)inflatePooledSimulatorsMustBeManaged:(BOOL)mustBeOwnedByPool
++ (NSDictionary *)keySimulatorsByUDID:(NSOrderedSet *)simulators
 {
-  NSMutableOrderedSet *set = [NSMutableOrderedSet new];
-  for (SimDevice *device in self.deviceSet.availableDevices) {
-    FBSimulator *simulator = [self inflateSimulatorFromSimDevice:device mustBeSelfManaged:mustBeOwnedByPool];
-    if (!simulator) {
-      continue;
-    }
-    [set addObject:simulator];
+  NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+  for (FBSimulator *simulator in simulators) {
+    dictionary[simulator.udid] = simulator;
   }
-  [set sortUsingComparator:^NSComparisonResult(FBSimulator *left, FBSimulator *right) {
-    return [left.name compare:right.name];
-  }];
-
-  return [set copy];
-}
-
-- (FBSimulator *)inflateSimulatorFromSimDevice:(SimDevice *)device mustBeSelfManaged:(BOOL)mustBeManaged
-{
-  FBSimulator *simulator = [self inflateSimulatorFromSimDevice:device];
-  if (!simulator) {
-    return nil;
-  }
-  if (simulator.bucketID == self.configuration.bucketID) {
-    simulator.pool = self;
-  }
-  if (mustBeManaged && simulator.pool == nil) {
-    return nil;
-  }
-  return simulator;
-}
-
-- (FBSimulator *)inflateSimulatorFromSimDevice:(SimDevice *)device
-{
-  NSRegularExpression *regex = [self managedSimulatorPoolOffsetRegex];
-  NSTextCheckingResult *result = [regex firstMatchInString:device.name options:0 range:NSMakeRange(0, device.name.length)];
-  if (result.range.length == 0) {
-    return nil;
-  }
-
-  NSInteger bucketID = [[device.name substringWithRange:[result rangeAtIndex:1]] integerValue];
-  NSInteger offset = [[device.name substringWithRange:[result rangeAtIndex:2]] integerValue];
-
-  FBSimulator *simulator = [FBSimulator new];
-  simulator.device = device;
-  simulator.bucketID = bucketID;
-  simulator.offset = offset;
-  return simulator;
-}
-
-- (NSRegularExpression *)managedSimulatorPoolOffsetRegex
-{
-  if (!_managedSimulatorPoolOffsetRegex) {
-    NSString *regexString = [NSString stringWithFormat:@"%@_(\\d+)_(\\d+)", self.configuration.namePrefix];
-    _managedSimulatorPoolOffsetRegex = [NSRegularExpression regularExpressionWithPattern:regexString options:0 error:nil];
-    NSCAssert(_managedSimulatorPoolOffsetRegex, @"Regex '%@' for '%@' should compile", regexString, NSStringFromSelector(_cmd));
-  }
-
-  return _managedSimulatorPoolOffsetRegex;
+  return [dictionary copy];
 }
 
 @end
@@ -562,15 +525,15 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (NSString *)deviceUDIDWithName:(NSString *)deviceName simulatorSDK:(NSString *)simulatorSDK
 {
-  for (SimDevice *device in self.deviceSet.availableDevices) {
-    if (![device.name isEqualToString:deviceName]) {
+  for (FBSimulator *simulator in self.allSimulators) {
+    if (![simulator.name isEqualToString:deviceName]) {
       continue;
     }
     if (!simulatorSDK) {
-      return device.UDID.UUIDString;
+      return simulator.udid;
     }
-    if ([device.runtime.versionString isEqualToString:simulatorSDK]) {
-      return device.UDID.UUIDString;
+    if ([simulator.device.runtime.versionString isEqualToString:simulatorSDK]) {
+      return simulator.udid;
     }
   }
   return nil;
