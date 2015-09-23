@@ -60,4 +60,11 @@
   }];
 }
 
++ (NSPredicate *)only:(FBSimulator *)simulator
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary* _) {
+    return simulator.udid && [candidate.udid isEqual:simulator.udid];
+  }];
+}
+
 @end

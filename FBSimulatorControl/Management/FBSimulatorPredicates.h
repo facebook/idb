@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulatorPool;
+@class FBSimulator;
 
 /**
  Predicates for filtering the sets of available Simulators.
@@ -46,5 +47,10 @@
  Predicate for Simulators that are launched.
  */
 + (NSPredicate *)launched;
+
+/**
+ Predicate for only the provided Simulator.
+ */
++ (NSPredicate *)only:(FBSimulator *)simulator;
 
 @end
