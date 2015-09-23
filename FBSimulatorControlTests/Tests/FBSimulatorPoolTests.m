@@ -76,7 +76,7 @@
   for (NSString *deviceName in deviceNames) {
     FBSimulator *simulator = lookup[deviceName];
     XCTAssertNotNil(simulator, @"Expected there is a existing device named %@", deviceName);
-    [self.pool.allocatedWorkingSet addObject:simulator];
+    [self.pool.allocatedUDIDs addObject:simulator.udid];
   }
 }
 
@@ -141,25 +141,25 @@
   XCTAssertEqual([devices[0] state], FBSimulatorStateBooted);
   XCTAssertEqual([devices[0] bucketID], 1);
   XCTAssertEqual([devices[0] offset], 0);
-  XCTAssertEqual([devices[0] pool], self.pool);
+  XCTAssertNil([devices[0] pool]);
 
   XCTAssertEqualObjects([devices[1] name], @"E2E_1_0_iPhone 5_9.0");
   XCTAssertEqual([devices[1] state], FBSimulatorStateCreating);
   XCTAssertEqual([devices[1] bucketID], 1);
   XCTAssertEqual([devices[1] offset], 0);
-  XCTAssertEqual([devices[1] pool], self.pool);
+  XCTAssertNil([devices[1] pool]);
 
   XCTAssertEqualObjects([devices[2] name], @"E2E_1_1_iPhone 5_9.0");
   XCTAssertEqual([devices[2] state], FBSimulatorStateShutdown);
   XCTAssertEqual([devices[2] bucketID], 1);
   XCTAssertEqual([devices[2] offset], 1);
-  XCTAssertEqual([devices[2] pool], self.pool);
+  XCTAssertNil([devices[2] pool]);
 
   XCTAssertEqualObjects([devices[3] name], @"E2E_1_2_iPhone 5_9.0");
   XCTAssertEqual([devices[3] state], FBSimulatorStateBooted);
   XCTAssertEqual([devices[3] bucketID], 1);
   XCTAssertEqual([devices[3] offset], 2);
-  XCTAssertEqual([devices[3] pool], self.pool);
+  XCTAssertNil([devices[3] pool],);
 
   XCTAssertEqualObjects([devices[4] name], @"E2E_2_0_iPad 1_9.0");
   XCTAssertEqual([devices[4] state], FBSimulatorStateBooted);
@@ -187,7 +187,7 @@
     @{@"name" : @"E2E_2_0_iPad 1_9.0"}
   ]];
 
-  NSArray *devices = self.pool.unmanagedSimulators;
+  NSOrderedSet *devices = self.pool.unmanagedSimulators;
   XCTAssertEqual(devices.count, 2);
   XCTAssertEqualObjects([devices[0] name], @"iPad 3");
   XCTAssertEqualObjects([devices[1] name], @"iPhone 6S");

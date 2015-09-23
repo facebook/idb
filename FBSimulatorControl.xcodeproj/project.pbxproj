@@ -1912,6 +1912,7 @@
 					"$(DEVELOPER_DIR/../Frameworks",
 					"$(SDKROOT)/System/Library/PrivateFrameworks",
 				);
+				GCC_OPTIMIZATION_LEVEL = 0;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/PrivateHeaders",
@@ -1963,6 +1964,7 @@
 					"$(DEVELOPER_DIR/../Frameworks",
 					"$(SDKROOT)/System/Library/PrivateFrameworks",
 				);
+				GCC_OPTIMIZATION_LEVEL = s;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/PrivateHeaders",
@@ -2014,6 +2016,7 @@
 					"$(DEVELOPER_DIR/../Frameworks",
 					"$(SDKROOT)/System/Library/PrivateFrameworks",
 				);
+				GCC_OPTIMIZATION_LEVEL = s;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/PrivateHeaders",
