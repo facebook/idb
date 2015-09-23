@@ -15,13 +15,7 @@ extern NSTimeInterval const FBSimulatorInteractionDefaultTimeout;
 
 @interface FBSimulatorSessionInteraction ()
 
-@property (nonatomic, strong) NSMutableArray *interactions;
 @property (nonatomic, strong) FBSimulatorSession *session;
-
-/**
- Chains an interaction using the provided block
- */
-- (instancetype)interact:(BOOL (^)(NSError **))block;
 
 /**
  Chains an interaction on an application process, for the given application.

@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBSimulatorInteraction.h>
+#import <FBSimulatorControl/FBInteraction.h>
 
 @class FBAgentLaunchConfiguration;
 @class FBApplicationLaunchConfiguration;
@@ -24,7 +24,7 @@
  Successive applications of interactions will occur in the order that they are sequenced.
  Interactions have no effect until `performInteractionWithError:` is called.
  */
-@interface FBSimulatorSessionInteraction : NSObject <FBSimulatorInteraction>
+@interface FBSimulatorSessionInteraction : FBInteraction
 
 /**
  Creates a new instance of the Interaction Builder.
@@ -65,11 +65,6 @@
  Launches the provided Agent.
  */
 - (instancetype)killAgent:(FBSimulatorBinary *)agent;
-
-/**
- Retries the last chained interaction by `retries`, if it fails.
- */
-- (instancetype)retry:(NSUInteger)retries;
 
 /**
  Opens the provided URL on the Device

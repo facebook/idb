@@ -10,12 +10,12 @@
 #import "FBSimulatorSessionInteraction.h"
 #import "FBSimulatorSessionInteraction+Private.h"
 
+#import "FBInteraction+Private.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorSessionLifecycle.h"
@@ -35,7 +35,6 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 {
   FBSimulatorSessionInteraction *interaction = [self new];
   interaction.session = session;
-  interaction.interactions = [NSMutableArray array];
   return interaction;
 }
 
@@ -196,16 +195,6 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   }];
 }
 
-- (id<FBSimulatorInteraction>)build
-{
-  return [FBSimulatorInteraction chainInteractions:[self.interactions copy]];
-}
-
-- (BOOL)performInteractionWithError:(NSError **)error
-{
-  return [[self build] performInteractionWithError:error];
-}
-
 #pragma mark Private
 
 + (BOOL)createHandlesForLaunchConfiguration:(FBProcessLaunchConfiguration *)launchConfiguration stdOut:(NSFileHandle **)stdOut stdErr:(NSFileHandle **)stdErr error:(NSError **)error
@@ -266,12 +255,6 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   return [options copy];
 }
 
-- (instancetype)interact:(BOOL (^)(NSError **error))block
-{
-  NSParameterAssert(block);
-  return [self addInteraction:[FBSimulatorInteraction_Block interactionWithBlock:block]];
-}
-
 - (instancetype)application:(FBSimulatorApplication *)application interact:(BOOL (^)(NSInteger processIdentifier, NSError **error))block
 {
   FBSimulatorSession *session = self.session;
@@ -284,34 +267,6 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
     }
     return block(processState.processIdentifier, error);
   }];
-}
-
-- (instancetype)addInteraction:(id<FBSimulatorInteraction>)interaction
-{
-  [self.interactions addObject:interaction];
-  return self;
-}
-
-- (instancetype)retry:(NSUInteger)retries
-{
-  NSParameterAssert(self.interactions.count > 0);
-  NSParameterAssert(retries > 1);
-
-  NSUInteger interactionIndex = self.interactions.count - 1;
-  id<FBSimulatorInteraction> interaction = self.interactions[interactionIndex];
-
-  id<FBSimulatorInteraction> retryInteraction = [FBSimulatorInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
-    NSError *innerError = nil;
-    for (NSUInteger index = 0; index < retries; index++) {
-      if ([interaction performInteractionWithError:&innerError]) {
-        return YES;
-      }
-    }
-    return [[[FBSimulatorError describeFormat:@"Failed interaction after %ld retries", retries] causedBy:innerError] failBool:error];
-  }];
-
-  [self.interactions replaceObjectAtIndex:interactionIndex withObject:retryInteraction];
-  return self;
 }
 
 @end
