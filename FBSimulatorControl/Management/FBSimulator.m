@@ -14,6 +14,7 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBTaskExecutor.h"
 #import "FBSimulatorPool.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
@@ -23,6 +24,8 @@
 NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 @implementation FBSimulator
+
+@synthesize processIdentifier = _processIdentifier;
 
 #pragma mark Initializers
 
@@ -90,6 +93,37 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return expectedPath;
 }
 
+- (NSInteger)launchdSimProcessIdentifier
+{
+  NSString *bootstrapPath = self.launchdBootstrapPath;
+  if (!bootstrapPath) {
+    return -1;
+  }
+
+  NSInteger processIdentifier = [[[[FBTaskExecutor.sharedInstance
+    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", bootstrapPath]]
+    startSynchronouslyWithTimeout:5]
+    stdOut]
+    integerValue];
+
+  if (processIdentifier < 2) {
+    return -1;
+  }
+  return processIdentifier;
+}
+
+- (NSInteger)processIdentifier
+{
+  return _processIdentifier > 1 ? _processIdentifier : [self inferredProcessIdentifier];
+}
+
+- (void)setProcessIdentifier:(NSInteger)processIdentifier
+{
+  _processIdentifier = processIdentifier;
+}
+
+#pragma mark Helpers
+
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
 {
   stateString = [stateString lowercaseString];
@@ -144,6 +178,8 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   }];
 }
 
+#pragma mark NSObject
+
 - (NSUInteger)hash
 {
   return self.device.hash;
@@ -165,6 +201,26 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
     self.udid,
     self.device.stateString
   ];
+}
+
+#pragma mark Private
+
+- (NSInteger)inferredProcessIdentifier
+{
+  // It's possible to find Simulators that have been launched with 'CurrentDeviceUDID' but not otherwise.
+  // Simulators launched via Xcode have some sort of token with an argument such as '-psn_0_2466394'.
+  // Finding these Simulators is currently unimplemented.
+  NSString *expectedArgument = [NSString stringWithFormat:@"CurrentDeviceUDID %@", self.udid];
+  NSInteger processIdentifier = [[[[FBTaskExecutor.sharedInstance
+    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", expectedArgument]]
+    startSynchronouslyWithTimeout:5]
+    stdOut]
+    integerValue];
+
+  if (processIdentifier < 1) {
+    return -1;
+  }
+  return processIdentifier;
 }
 
 @end

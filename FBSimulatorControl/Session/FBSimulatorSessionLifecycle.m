@@ -80,7 +80,6 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
 {
   NSParameterAssert(terminationHandle);
   NSParameterAssert(self.simulatorTerminationHandle == nil);
-  NSParameterAssert(simulator.processIdentifier == -1);
   NSParameterAssert(simulator == self.session.simulator);
 
   if (self.currentState.lifecycle == FBSimulatorSessionLifecycleStateNotStarted) {
@@ -111,7 +110,6 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
 
 - (void)clearSimulatorState:(FBSimulator *)simulator
 {
-  NSParameterAssert(simulator.processIdentifier != -1);
   NSParameterAssert(simulator == self.session.simulator);
   NSParameterAssert(self.currentState.lifecycle == FBSimulatorSessionLifecycleStateStarted);
 

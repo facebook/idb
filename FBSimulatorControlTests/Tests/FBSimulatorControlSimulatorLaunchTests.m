@@ -29,12 +29,6 @@
 
 #import "FBSimulatorControlNotificationAssertion.h"
 
-/**
- A suite of tests that confirm that it's possible to boot emulators.
- Doesn't test the booting of Agents/Applications (yet).
- We could probably get this to boot Safari on the Simulator as well.
- sysctl(3) can confirm the process ids of the Simulators are correct.
- */
 @interface FBSimulatorControlSimulatorLaunchTests : XCTestCase
 
 @property (nonatomic, strong) FBSimulatorControl *control;

@@ -16,37 +16,18 @@
 
 - (BOOL)hasActiveLaunchdSim
 {
-  return self.launchdSimProcessIdentifier != nil;
-}
-
-- (NSNumber *)launchdSimProcessIdentifier
-{
-  NSString *bootstrapPath = self.launchdBootstrapPath;
-  if (!bootstrapPath) {
-    return NO;
-  }
-
-  NSInteger processIdentifier = [[[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", bootstrapPath]]
-    startSynchronouslyWithTimeout:5]
-    stdOut]
-    integerValue];
-
-  if (processIdentifier < 2) {
-    return nil;
-  }
-  return @(processIdentifier);
+  return self.launchdSimProcessIdentifier > 1;
 }
 
 - (NSArray *)launchedProcesses
 {
-  NSNumber *launchdSimProcessIdentifier = self.launchdSimProcessIdentifier;
-  if (!launchdSimProcessIdentifier) {
+  NSInteger launchdSimProcessIdentifier = self.launchdSimProcessIdentifier;
+  if (launchdSimProcessIdentifier < 1) {
     return @[];
   }
 
   NSString *allProcesses = [[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-lfP", [launchdSimProcessIdentifier stringValue]]]
+    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-lfP", [@(launchdSimProcessIdentifier) stringValue]]]
     startSynchronouslyWithTimeout:10]
     stdOut];
 
