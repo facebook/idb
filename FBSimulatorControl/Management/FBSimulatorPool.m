@@ -10,6 +10,11 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPool+Private.h"
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
+#import <CoreSimulator/SimDeviceType.h>
+#import <CoreSimulator/SimRuntime.h>
+
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
@@ -24,11 +29,6 @@
 #import "FBTaskExecutor+Convenience.h"
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
-
-#import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
-#import <CoreSimulator/SimDeviceType.h>
-#import <CoreSimulator/SimRuntime.h>
 
 static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
@@ -264,7 +264,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
-  NSArray *devices = [simulators valueForKey:@"device"];
   return [self shutdownSimulators:simulators withError:error];
 }
 

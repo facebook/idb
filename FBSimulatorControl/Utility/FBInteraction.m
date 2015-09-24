@@ -8,8 +8,8 @@
  */
 
 #import "FBInteraction.h"
-
 #import "FBInteraction+Private.h"
+
 #import "FBSimulatorError.h"
 
 @implementation FBInteraction

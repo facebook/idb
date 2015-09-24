@@ -10,8 +10,8 @@
 #import <XCTest/XCTest.h>
 
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
-#import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
+#import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControl+Private.h>

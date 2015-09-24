@@ -11,15 +11,15 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorPool+Private.h"
 
-#import "FBSimulatorConfiguration.h"
-#import "FBSimulatorConfiguration+CoreSimulator.h"
-#import "FBSimulatorControlConfiguration.h"
-#import "FBTaskExecutor.h"
-#import "FBSimulatorPool.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
-
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
+
+#import "FBSimulatorConfiguration+CoreSimulator.h"
+#import "FBSimulatorConfiguration.h"
+#import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorPool.h"
+#import "FBTaskExecutor.h"
+#import "NSRunLoop+SimulatorControlAdditions.h"
 
 NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
