@@ -49,6 +49,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (NSOrderedSet *)allSimulators
 {
+  // All Simulator Properties are derived from `allSimulators`. In future this means instances can be cached in one place.
   NSMutableOrderedSet *simulators = [NSMutableOrderedSet orderedSet];
   for (SimDevice *device in self.deviceSet.availableDevices) {
     [simulators addObject:[FBSimulator inflateFromSimDevice:device configuration:self.configuration]];
@@ -56,6 +57,11 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   [simulators sortUsingComparator:^NSComparisonResult(FBSimulator *left, FBSimulator *right) {
     return [left.name compare:right.name];
   }];
+
+  // Set the Pool for Inflated Simulators owned by this Pool.
+  for (FBSimulator *simulator in [simulators filteredOrderedSetUsingPredicate:[FBSimulatorPredicates managedByPool:self]]) {
+    simulator.pool = self;
+  }
 
   return [simulators copy];
 }
@@ -512,9 +518,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 - (NSOrderedSet *)allSimulatorsInPool
 {
   NSPredicate *predicate = [FBSimulatorPredicates managedByPool:self];
-  NSOrderedSet *set = [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
-  [set.array makeObjectsPerformSelector:@selector(setPool:) withObject:self];
-  return set;
+  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
 }
 
 - (NSOrderedSet *)allPooledSimulators
