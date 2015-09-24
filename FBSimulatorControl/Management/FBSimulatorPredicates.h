@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBSimulatorPool;
 @class FBSimulator;
+@class FBSimulatorPool;
 
 /**
  Predicates for filtering the sets of available Simulators.

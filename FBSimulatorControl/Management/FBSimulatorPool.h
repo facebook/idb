@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBManagedSimulator;
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorPool;
-@class FBManagedSimulator;
 @class SimDevice;
 @class SimDeviceSet;
 

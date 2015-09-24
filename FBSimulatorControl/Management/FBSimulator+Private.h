@@ -9,8 +9,8 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
-@class FBSimulatorControlConfiguration;
 @class FBSimulatorConfiguration;
+@class FBSimulatorControlConfiguration;
 
 @interface FBSimulator ()
 

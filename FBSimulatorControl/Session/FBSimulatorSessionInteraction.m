@@ -10,13 +10,15 @@
 #import "FBSimulatorSessionInteraction.h"
 #import "FBSimulatorSessionInteraction+Private.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import "FBInteraction+Private.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControl.h"
-#import "FBSimulatorConfiguration.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
+#import "FBSimulatorConfiguration.h"
+#import "FBSimulatorControl.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
@@ -24,8 +26,6 @@
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBSimulatorSessionState.h"
 #import "FBTaskExecutor.h"
-
-#import <CoreSimulator/SimDevice.h>
 
 NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 

@@ -9,10 +9,10 @@
 
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 
-#import "FBSimulatorConfiguration+Private.h"
-
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
+
+#import "FBSimulatorConfiguration+Private.h"
 
 @implementation FBSimulatorConfiguration (CoreSimulator)
 
