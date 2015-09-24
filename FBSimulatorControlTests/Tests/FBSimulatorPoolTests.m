@@ -141,25 +141,25 @@
   XCTAssertEqual([devices[0] state], FBSimulatorStateBooted);
   XCTAssertEqual([devices[0] bucketID], 1);
   XCTAssertEqual([devices[0] offset], 0);
-  XCTAssertNil([devices[0] pool]);
+  XCTAssertEqual([devices[0] pool], self.pool);
 
   XCTAssertEqualObjects([devices[1] name], @"E2E_1_0_iPhone 5_9.0");
   XCTAssertEqual([devices[1] state], FBSimulatorStateCreating);
   XCTAssertEqual([devices[1] bucketID], 1);
   XCTAssertEqual([devices[1] offset], 0);
-  XCTAssertNil([devices[1] pool]);
+  XCTAssertEqual([devices[1] pool], self.pool);
 
   XCTAssertEqualObjects([devices[2] name], @"E2E_1_1_iPhone 5_9.0");
   XCTAssertEqual([devices[2] state], FBSimulatorStateShutdown);
   XCTAssertEqual([devices[2] bucketID], 1);
   XCTAssertEqual([devices[2] offset], 1);
-  XCTAssertNil([devices[2] pool]);
+  XCTAssertEqual([devices[2] pool], self.pool);
 
   XCTAssertEqualObjects([devices[3] name], @"E2E_1_2_iPhone 5_9.0");
   XCTAssertEqual([devices[3] state], FBSimulatorStateBooted);
   XCTAssertEqual([devices[3] bucketID], 1);
   XCTAssertEqual([devices[3] offset], 2);
-  XCTAssertNil([devices[3] pool],);
+  XCTAssertEqual([devices[3] pool], self.pool);
 
   XCTAssertEqualObjects([devices[4] name], @"E2E_2_0_iPad 1_9.0");
   XCTAssertEqual([devices[4] state], FBSimulatorStateBooted);
