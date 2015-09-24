@@ -61,6 +61,7 @@
   XCTAssertNil(error);
 
   NSInteger expected = session.simulator.processIdentifier;
+  XCTAssertTrue(expected > 1);
   session.simulator.processIdentifier = -1;
   NSInteger actual = session.simulator.processIdentifier;
   XCTAssertEqual(expected, actual);
