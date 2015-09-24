@@ -80,6 +80,20 @@
   XCTAssertEqualObjects(secondAppLaunch, lastLaunchedApp);
 }
 
+- (void)testAppendsDiagnosticInformationToState
+{
+  FBApplicationLaunchConfiguration *appLaunch = [self appLaunch1];
+
+  FBSimulatorSessionState *state = [[[[self.generator
+    updateLifecycle:FBSimulatorSessionLifecycleStateStarted]
+    updateWithDiagnosticNamed:@"GOOD TIMES" data:@"YEP"]
+    update:appLaunch withProcessIdentifier:12]
+    currentState];
+
+  XCTAssertEqual(state.diagnostics.count, 1);
+  XCTAssertEqualObjects(@"YEP", state.diagnostics[@"GOOD TIMES"]);
+}
+
 - (void)testAppendsDiagnosticInformationToRunningProcess
 {
   FBApplicationLaunchConfiguration *appLaunch = [self appLaunch1];
@@ -92,8 +106,8 @@
     currentState];
 
   XCTAssertEqualObjects(diagnostic, [state diagnosticNamed:@"SECRIT" forApplication:appLaunch.application]);
-  XCTAssertEqual(state.allDiagnostics.count, 1);
-  XCTAssertEqualObjects(diagnostic, state.allDiagnostics[@"SECRIT"]);
+  XCTAssertEqual(state.allProcessDiagnostics.count, 1);
+  XCTAssertEqualObjects(diagnostic, state.allProcessDiagnostics[@"SECRIT"]);
 }
 
 - (void)testAppendsDiagnosticInformationToKilledProcess
@@ -109,8 +123,8 @@
     currentState];
 
   XCTAssertEqualObjects(diagnostic, [state diagnosticNamed:@"SECRIT" forApplication:appLaunch.application]);
-  XCTAssertEqual(state.allDiagnostics.count, 1);
-  XCTAssertEqualObjects(diagnostic, state.allDiagnostics[@"SECRIT"]);
+  XCTAssertEqual(state.allProcessDiagnostics.count, 1);
+  XCTAssertEqualObjects(diagnostic, state.allProcessDiagnostics[@"SECRIT"]);
 }
 
 - (void)testChangesToSimulatorState

@@ -65,7 +65,7 @@
 /**
  Reaches into previous states in order to find Diagnostics for Applications.
  */
-- (NSDictionary *)allDiagnostics;
+- (NSDictionary *)allProcessDiagnostics;
 
 /**
  Describes the `simulatorState` changes.

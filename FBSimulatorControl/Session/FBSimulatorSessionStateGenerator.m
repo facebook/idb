@@ -27,10 +27,6 @@
 {
   FBSimulatorSessionState *state = [FBSimulatorSessionState new];
   state.session = session;
-  state.lifecycle = FBSimulatorSessionLifecycleStateNotStarted;
-  state.runningProcessesSet = [NSMutableOrderedSet new];
-  state.previousState = nil;
-  state.timestamp = [NSDate date];
   state.simulatorState = state.simulator.state;
 
   FBSimulatorSessionStateGenerator *generator = [self new];
@@ -99,6 +95,14 @@
   }];
 }
 
+- (instancetype)updateWithDiagnosticNamed:(NSString *)diagnostic data:(id)data
+{
+  return [self updateCurrentState:^FBSimulatorSessionState *(FBSimulatorSessionState *state) {
+    state.mutableDiagnostics[diagnostic] = data;
+    return state;
+  }];
+}
+
 - (instancetype)remove:(FBSimulatorBinary *)binary;
 {
   return [self updateCurrentState:^ FBSimulatorSessionState * (FBSimulatorSessionState *sessionState) {
@@ -120,12 +124,21 @@
 
 #pragma mark Private
 
+/*
+ Updates the current state of the generator.
+ Returning nil from the block will cancel any update.
+ */
 - (instancetype)updateCurrentState:( FBSimulatorSessionState *(^)(FBSimulatorSessionState *state) )block
 {
   self.state = [self.class updateState:self.currentState addNewLink:YES withBlock:block];
   return self;
 }
 
+/*
+ Amends prior state in the generator.
+ Amending prior state will update all the links in the linked-list up-to and including the current state.
+ Returning nil from the block will cancel any update.
+ */
 - (instancetype)amendPriorState:(NSPredicate *)predicate update:( FBSimulatorSessionState *(^)(FBSimulatorSessionState *sessionState) )block
 {
   self.state = [self.class updateState:self.currentState addNewLink:NO withBlock:^ FBSimulatorSessionState * (FBSimulatorSessionState *sessionState) {
