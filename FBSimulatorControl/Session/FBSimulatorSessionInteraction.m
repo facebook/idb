@@ -84,7 +84,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
     FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:simulator];
     NSError *innerError = nil;
     if (CGRectIsNull([tiler placeInForegroundWithError:&innerError])) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
     return YES;
   }];

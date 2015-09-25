@@ -10,8 +10,8 @@
 #import "FBSimulatorWindowHelpers.h"
 
 #import "FBSimulator.h"
-#import "FBSimulatorPredicates.h"
 #import "FBSimulatorPool.h"
+#import "FBSimulatorPredicates.h"
 
 // See https://github.com/appium/screen_recording/pull/6
 extern void CGSInitialize(void);
@@ -87,7 +87,6 @@ static void EnsureCGIsInitialized(void)
 
   CGDirectDisplayID displayID = 0;
   CGGetDisplaysWithRect(windowBounds, 1, &displayID, NULL);
-  CGRect displayBounds = CGDisplayBounds(displayID);
 
   if (cropRect) {
     CGRect displayBounds = CGDisplayBounds(displayID);
