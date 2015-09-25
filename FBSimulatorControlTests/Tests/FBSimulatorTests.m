@@ -48,7 +48,7 @@
   self.control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
 }
 
-- (void)testCanInferProcessIdentiferAppropriately
+- (void)flaky_testCanInferProcessIdentiferAppropriately
 {
   NSError *error = nil;
   FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
