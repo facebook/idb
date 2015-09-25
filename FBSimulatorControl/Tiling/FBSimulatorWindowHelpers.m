@@ -86,7 +86,11 @@ static void EnsureCGIsInitialized(void)
   }
 
   CGDirectDisplayID displayID = 0;
-  CGGetDisplaysWithRect(windowBounds, 1, &displayID, NULL);
+  uint32_t matchingDisplayCount = 0;
+  CGGetDisplaysWithRect(windowBounds, 1, &displayID, &matchingDisplayCount);
+  if (!matchingDisplayCount) {
+    return 0;
+  }
 
   if (cropRect) {
     CGRect displayBounds = CGDisplayBounds(displayID);
@@ -98,7 +102,7 @@ static void EnsureCGIsInitialized(void)
     );
   }
   if (screenSize) {
-    *screenSize = CGDisplayScreenSize(displayID);
+    *screenSize = CGDisplayBounds(displayID).size;
   }
 
   return displayID;

@@ -18,6 +18,7 @@
 @class FBSimulatorBinary;
 @class FBSimulatorSession;
 @class FBSimulatorSessionLifecycle;
+@protocol FBSimulatorWindowTilingStrategy;
 
 /**
  The Concrete Interactions for a Simulator Session.
@@ -37,7 +38,12 @@
 - (instancetype)bootSimulator;
 
 /**
- Tiles the Simulator in the first available position on the Display.
+ Tiles the Simulator according to the 'tilingStrategy'.
+ */
+- (instancetype)tileSimulator:(id<FBSimulatorWindowTilingStrategy>)tilingStrategy;
+
+/**
+ Tiles the Simulator according to the occlusion other Simulators.
  */
 - (instancetype)tileSimulator;
 
