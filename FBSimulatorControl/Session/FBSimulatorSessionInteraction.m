@@ -25,6 +25,7 @@
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBSimulatorSessionState.h"
+#import "FBSimulatorWindowTiler.h"
 #import "FBTaskExecutor.h"
 
 NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
@@ -71,6 +72,20 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
     [lifecycle simulator:simulator didStartWithProcessIdentifier:task.processIdentifier terminationHandle:task];
 
+    return YES;
+  }];
+}
+
+- (instancetype)tileSimulator
+{
+  FBSimulator *simulator = self.session.simulator;
+
+  return [self interact:^ BOOL (NSError **error) {
+    FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:simulator];
+    NSError *innerError = nil;
+    if (CGRectIsNull([tiler placeInForegroundWithError:&innerError])) {
+      return [FBSimulatorError failWithError:innerError errorOut:error];
+    }
     return YES;
   }];
 }

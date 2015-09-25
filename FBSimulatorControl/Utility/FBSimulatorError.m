@@ -83,6 +83,14 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
   return NO;
 }
 
+- (CGRect)failRect:(NSError **)error
+{
+  if (error) {
+    *error = [self build];
+  }
+  return CGRectNull;
+}
+
 - (id)fail:(NSError **)error
 {
   if (error) {
