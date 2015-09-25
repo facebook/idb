@@ -42,6 +42,11 @@
 - (instancetype)tileSimulator;
 
 /**
+ Records Video of the Simulator, until the Session is terminated.
+ */
+- (instancetype)recordVideo;
+
+/**
  Installs the given Application.
  */
 - (instancetype)installApplication:(FBSimulatorApplication *)application;

@@ -26,6 +26,7 @@
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBSimulatorSessionState.h"
 #import "FBSimulatorWindowTiler.h"
+#import "FBSimulatorVideoRecorder.h"
 #import "FBTaskExecutor.h"
 
 NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
@@ -86,6 +87,26 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
     if (CGRectIsNull([tiler placeInForegroundWithError:&innerError])) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
+    return YES;
+  }];
+}
+
+- (instancetype)recordVideo
+{
+  FBSimulator *simulator = self.session.simulator;
+  FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
+
+  return [self interact:^ BOOL (NSError **error) {
+    FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:simulator logger:nil];
+    NSString *path = [lifecycle pathForStorage:@"video" ofExtension:@"mp4"];
+
+    NSError *innerError = nil;
+    if (![recorder startRecordingToFilePath:path error:&innerError]) {
+      return [[[FBSimulatorError describe:@"Failed to start recording video"] inSimulator:simulator] failBool:error];
+    }
+
+    [lifecycle associateEndOfSessionCleanup:recorder];
+    [lifecycle sessionDidGainDiagnosticInformationWithName:@"video" data:path];
     return YES;
   }];
 }
