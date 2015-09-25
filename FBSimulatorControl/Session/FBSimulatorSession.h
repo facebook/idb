@@ -43,7 +43,7 @@
 - (FBSimulatorSessionInteraction *)interact;
 
 /**
- Terminates the Session, freeing any allocated resources
+ Terminates the Session, freeing any allocated resources.
  */
 - (BOOL)terminateWithError:(NSError **)error;
 

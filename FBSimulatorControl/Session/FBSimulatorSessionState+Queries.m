@@ -112,10 +112,10 @@
   return [self processForApplication:application recursive:YES].diagnostics[name];
 }
 
-- (NSDictionary *)allDiagnostics;
+- (NSDictionary *)allProcessDiagnostics;
 {
   NSMutableDictionary *diagnostics = [NSMutableDictionary dictionary];
-  [diagnostics addEntriesFromDictionary:self.previousState.allDiagnostics ?: @{}];
+  [diagnostics addEntriesFromDictionary:self.previousState.allProcessDiagnostics ?: @{}];
   for (FBUserLaunchedProcess *processState in self.runningProcesses) {
     [diagnostics addEntriesFromDictionary:processState.diagnostics];
   }

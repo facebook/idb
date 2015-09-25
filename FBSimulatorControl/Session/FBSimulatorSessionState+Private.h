@@ -20,5 +20,6 @@
 @property (nonatomic, assign, readwrite) FBSimulatorSessionLifecycleState lifecycle;
 @property (nonatomic, assign, readwrite) FBSimulatorState simulatorState;
 @property (nonatomic, strong, readwrite) NSMutableOrderedSet *runningProcessesSet;
+@property (nonatomic, strong, readwrite) NSMutableDictionary *mutableDiagnostics;
 
 @end

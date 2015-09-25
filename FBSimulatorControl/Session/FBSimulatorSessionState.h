@@ -23,7 +23,8 @@ typedef NS_ENUM(NSInteger, FBSimulatorSessionLifecycleState) {
 };
 
 /**
- An Object representing the current state of the Simulator Session.
+ An Immutable value representing the current state of the Simulator Session.
+ Can be used to interrogate the changes to the operation of the Simulator over time.
  */
 @interface FBSimulatorSessionState : NSObject<NSCopying>
 
@@ -57,11 +58,17 @@ This does not behave like a value within the Session State, so it's contents may
 /**
  The Running processes on the Simulator.
  Ordering is determined by time of launch; the most recently launched process is first.
+ Is an NSArray<FBUserLaunchedProcess>
  */
 @property (nonatomic, copy, readonly) NSArray *runningProcesses;
 
 /**
- The last state, may be nil.
+ Per-Session Diagnostic Information.
+ */
+@property (nonatomic, copy, readonly) NSDictionary *diagnostics;
+
+/**
+ The last state, may be nil if this is the first instance.
  */
 @property (nonatomic, copy, readonly) FBSimulatorSessionState *previousState;
 

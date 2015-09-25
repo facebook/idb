@@ -36,6 +36,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
 
 @property (nonatomic, weak, readwrite) FBSimulatorSession *session;
 @property (nonatomic, strong, readwrite) FBSimulatorSessionStateGenerator *generator;
+@property (nonatomic, strong, readwrite) NSString *uuid;
 
 @property (nonatomic, strong, readwrite) id<FBTerminationHandle> simulatorTerminationHandle;
 @property (nonatomic, strong, readwrite) NSMutableDictionary *notifiers;
@@ -61,6 +62,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   }
 
   _session = session;
+  _uuid = NSUUID.UUID.UUIDString;
   _generator = [FBSimulatorSessionStateGenerator generatorWithSession:session];
   _notifiers = [NSMutableDictionary dictionary];
   _terminationHandlers = [NSMutableArray array];
@@ -199,6 +201,14 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   [self.generator remove:application.binary];
 }
 
+- (void)sessionDidGainDiagnosticInformationWithName:(NSString *)diagnosticName data:(id)data
+{
+  NSParameterAssert(diagnosticName);
+  NSParameterAssert(data);
+
+  [self.generator updateWithDiagnosticNamed:diagnosticName data:data];
+}
+
 - (void)application:(FBSimulatorApplication *)application didGainDiagnosticInformationWithName:(NSString *)diagnosticName data:(id)data
 {
   NSParameterAssert(diagnosticName);
@@ -254,6 +264,19 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
 - (FBSimulatorSessionState *)currentState
 {
   return self.generator.currentState;
+}
+
+#pragma mark Persistence
+
+- (NSString *)pathForStorage:(NSString *)key ofExtension:(NSString *)extension
+{
+  NSString *filename = [NSString stringWithFormat:@"%@_%@", self.uuid, key ?: NSUUID.UUID.UUIDString];
+  NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
+  path = extension ? [path stringByAppendingPathExtension:extension] : path;
+
+  BOOL success = [NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil];
+  NSAssert(success, @"Cannot create a path for storage at %@", path);
+  return path;
 }
 
 #pragma mark - Private
@@ -361,9 +384,9 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   mergedInfo[FBSimulatorSessionStateKey] = self.currentState;
 
   [NSNotificationCenter.defaultCenter
-   postNotificationName:notificationName
-   object:self.session
-   userInfo:[mergedInfo copy]];
+    postNotificationName:notificationName
+    object:self.session
+    userInfo:[mergedInfo copy]];
 }
 
 @end

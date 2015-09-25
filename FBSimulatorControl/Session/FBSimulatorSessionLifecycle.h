@@ -140,6 +140,11 @@ extern NSString *const FBSimulatorSessionExpectedKey;
 - (void)applicationWillTerminate:(FBSimulatorApplication *)application;
 
 /**
+ Called there's new Diagnostic information for the Session.
+ */
+- (void)sessionDidGainDiagnosticInformationWithName:(NSString *)diagnosticName data:(id)data;
+
+/**
  Called there's new Diagnostic information for an Application.
  */
 - (void)application:(FBSimulatorApplication *)application didGainDiagnosticInformationWithName:(NSString *)diagnosticName data:(id)data;
@@ -153,5 +158,16 @@ extern NSString *const FBSimulatorSessionExpectedKey;
  The Session State.
  */
 @property (nonatomic, strong, readonly) FBSimulatorSessionState *currentState;
+
+#pragma mark - Persistence
+
+/**
+ Returns a Path for storing information to a file associated with a Session.
+ Can be used to store large amounts of data for aggregation later.
+ 
+ @param key a key to uniquely identify the file for this Session. If nil, files are guaranteed to be unique for the Session.
+ @param extension the file extension of the returned file.
+ */
+- (NSString *)pathForStorage:(NSString *)key ofExtension:(NSString *)extension;
 
 @end

@@ -48,6 +48,11 @@
 - (instancetype)update:(FBSimulatorApplication *)application withDiagnosticNamed:(NSString *)diagnosticName data:(id)data;
 
 /**
+ Updates Diagnsotic Data.
+ */
+- (instancetype)updateWithDiagnosticNamed:(NSString *)diagnostic data:(id)data;
+
+/**
  Removes the Process State for the given binary.
  */
 - (instancetype)remove:(FBSimulatorBinary *)binary;

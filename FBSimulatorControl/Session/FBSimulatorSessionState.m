@@ -16,6 +16,20 @@
 
 @implementation FBSimulatorSessionState
 
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _lifecycle = FBSimulatorSessionLifecycleStateNotStarted;
+  _timestamp = [NSDate date];
+  _runningProcessesSet = [NSMutableOrderedSet orderedSet];
+  _mutableDiagnostics = [NSMutableDictionary dictionary];
+  return self;
+}
+
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   FBSimulatorSessionState *state = [self.class new];
@@ -25,6 +39,7 @@
   state.simulatorState = self.simulatorState;
   state.previousState = self.previousState;
   state.runningProcessesSet = [self.runningProcessesSet mutableCopy];
+  state.mutableDiagnostics = [self.mutableDiagnostics mutableCopy];
   return state;
 }
 
@@ -38,6 +53,11 @@
   return self.runningProcessesSet.array;
 }
 
+- (NSDictionary *)diagnostics
+{
+  return [self.mutableDiagnostics copy];
+}
+
 - (NSUInteger)hash
 {
   // Session has reference based equality so it is sufficient for hashing.
@@ -45,7 +65,8 @@
          self.runningProcesses.hash |
          self.timestamp.hash |
          self.simulatorState |
-         self.lifecycle;
+         self.lifecycle |
+         self.mutableDiagnostics.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorSessionState *)object
@@ -58,7 +79,8 @@
          [self.timestamp isEqual:object.timestamp] &&
          self.lifecycle == object.lifecycle &&
          self.simulatorState == object.simulatorState &&
-         [self.runningProcesses isEqual:object.runningProcesses];
+         [self.runningProcesses isEqual:object.runningProcesses] &&
+         [self.mutableDiagnostics isEqualToDictionary:object.mutableDiagnostics];
 }
 
 - (NSString *)description
@@ -124,8 +146,11 @@
       [FBSimulator stateStringFromSimulatorState:first.simulatorState]
     ];
   }
-  if (![first.runningProcesses isEqual:second.runningProcesses]) {
-    [string appendFormat:@"Running Processes from %@ to %@ | ", second.runningProcesses, first.runningProcesses];
+  if (![first.runningProcessesSet isEqual:second.runningProcessesSet]) {
+    [string appendFormat:@"Running Processes from %@ to %@ | ", second.runningProcessesSet, first.runningProcessesSet];
+  }
+  if (![first.mutableDiagnostics isEqualToDictionary:second.mutableDiagnostics]) {
+    [string appendFormat:@"Diagnostics from %@ to %@ | ", second.mutableDiagnostics, first.mutableDiagnostics];
   }
   if (string.length == 0) {
     return @"No Changes";
