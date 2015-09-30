@@ -24,6 +24,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/FBSimulatorSessionState.h>
 #import <FBSimulatorControl/FBSimulatorWindowTiler.h>
+#import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>
 
 @interface FBSimulatorWindowTilingTests : XCTestCase
 
@@ -68,7 +69,9 @@
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
-  FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:session.simulator];
+  FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler
+    withSimulator:session.simulator
+    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:session.simulator]];
   CGRect position = [tiler placeInForegroundWithError:&error];
   XCTAssertNil(error);
   XCTAssertEqual(CGRectGetMinX(position), 0);
@@ -97,7 +100,9 @@
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
-  FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:firstSession.simulator];
+  FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler
+    withSimulator:firstSession.simulator
+    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:firstSession.simulator]];
   CGRect position = [tiler placeInForegroundWithError:&error];
   XCTAssertNil(error);
   XCTAssertEqual(CGRectGetMinX(position), 0);
@@ -113,7 +118,9 @@
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
-  tiler = [FBSimulatorWindowTiler withSimulator:secondSession.simulator];
+  tiler = [FBSimulatorWindowTiler
+    withSimulator:secondSession.simulator
+    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:secondSession.simulator]];
   position = [tiler placeInForegroundWithError:&error];
   XCTAssertNil(error);
   XCTAssertEqual(CGRectGetMinX(position), 320 / scaleFactor);
@@ -129,7 +136,9 @@
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
-  tiler = [FBSimulatorWindowTiler withSimulator:thirdSession.simulator];
+  tiler = [FBSimulatorWindowTiler
+    withSimulator:thirdSession.simulator
+    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:thirdSession.simulator]];
   position = [tiler placeInForegroundWithError:&error];
   XCTAssertNil(error);
   XCTAssertEqual(CGRectGetMinX(position), 640 / scaleFactor);

@@ -14,62 +14,22 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorWindowHelpers.h"
-
-static inline NSRange FBHorizontalOcclusionRange(CGRect rect)
-{
-  rect = CGRectIntegral(rect);
-  return NSMakeRange(
-    (NSUInteger) CGRectGetMinX(rect),
-    (NSUInteger) (CGRectGetMaxX(rect) - CGRectGetMinX(rect))
-  );
-}
-
-@interface FBWindowOcclusionArea : NSObject
-
-@property (nonatomic, assign, readwrite) CGSize size;
-@property (nonatomic, strong, readwrite) NSArray *contents;
-
-@end
-
-@implementation FBWindowOcclusionArea
-
-+ (instancetype)ofSize:(CGSize)size contents:(NSArray *)contents
-{
-  FBWindowOcclusionArea *area = [FBWindowOcclusionArea new];
-  area.size = size;
-  area.contents = contents;
-  return area;
-}
-
-- (CGRect)bestFittingRectangleOfSize:(CGSize)size
-{
-  // Only checks the X-Axis
-  NSMutableIndexSet *xOccluded = [NSMutableIndexSet indexSet];
-  for (NSValue *contentRectValue in self.contents) {
-    [xOccluded addIndexesInRange:FBHorizontalOcclusionRange(contentRectValue.rectValue)];
-  }
-
-  CGRect rect = { CGPointZero, size };
-  while ([xOccluded containsIndexesInRange:FBHorizontalOcclusionRange(rect)]) {
-    rect.origin.x += CGRectGetWidth(rect);
-  }
-  return rect;
-}
-
-@end
+#import "FBSimulatorWindowTilingStrategy.h"
 
 @interface FBSimulatorWindowTiler ()
 
 @property (nonatomic, strong, readwrite) FBSimulator *simulator;
+@property (nonatomic, strong, readwrite) id<FBSimulatorWindowTilingStrategy> strategy;
 
 @end
 
 @implementation FBSimulatorWindowTiler
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)withSimulator:(FBSimulator *)simulator strategy:(id<FBSimulatorWindowTilingStrategy>)strategy
 {
   FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler new];
   tiler.simulator = simulator;
+  tiler.strategy = strategy;
   return tiler;
 }
 
@@ -105,7 +65,7 @@ static inline NSRange FBHorizontalOcclusionRange(CGRect rect)
 
   // Position at the appropriate position.
   NSError *innerError = nil;
-  CGRect frame = [self bestFittingRectangeOfSize:size withError:&innerError];
+  CGRect frame = [self bestFittingWindowOfSize:size withError:&innerError];
   if (CGRectIsNull(frame)) {
     return [[[[FBSimulatorError describe:@"Could not find the best fit for the tiled window"] inSimulator:self.simulator] causedBy:innerError] failRect:error];
   }
@@ -124,16 +84,13 @@ static inline NSRange FBHorizontalOcclusionRange(CGRect rect)
   return frame;
 }
 
-- (CGRect)bestFittingRectangeOfSize:(CGSize)size withError:(NSError **)error
+- (CGRect)bestFittingWindowOfSize:(CGSize)size withError:(NSError **)error
 {
   CGSize displaySize = CGSizeZero;
   if (![FBSimulatorWindowHelpers displayIDForSimulator:self.simulator cropRect:NULL screenSize:&displaySize]) {
     return [[FBSimulatorError describe:@"Could not get the Screen Bounds"] failRect:error];
   }
-
-  NSArray *otherWindowsBounds = [FBSimulatorWindowHelpers obtainBoundsOfOtherSimulators:self.simulator];
-  FBWindowOcclusionArea *area = [FBWindowOcclusionArea ofSize:displaySize contents:otherWindowsBounds];
-  return [area bestFittingRectangleOfSize:size];
+  return [self.strategy targetPositionOfWindowWithSize:size inScreenSize:displaySize withError:error];
 }
 
 @end

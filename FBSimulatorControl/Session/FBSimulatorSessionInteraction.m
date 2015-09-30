@@ -26,6 +26,7 @@
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBSimulatorSessionState.h"
 #import "FBSimulatorWindowTiler.h"
+#import "FBSimulatorWindowTilingStrategy.h"
 #import "FBSimulatorVideoRecorder.h"
 #import "FBTaskExecutor.h"
 
@@ -77,18 +78,23 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   }];
 }
 
-- (instancetype)tileSimulator
+- (instancetype)tileSimulator:(id<FBSimulatorWindowTilingStrategy>)tilingStrategy;
 {
   FBSimulator *simulator = self.session.simulator;
 
   return [self interact:^ BOOL (NSError **error) {
-    FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:simulator];
+    FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:simulator strategy:tilingStrategy];
     NSError *innerError = nil;
     if (CGRectIsNull([tiler placeInForegroundWithError:&innerError])) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
     return YES;
   }];
+}
+
+- (instancetype)tileSimulator
+{
+  return [self tileSimulator:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:self.session.simulator]];
 }
 
 - (instancetype)recordVideo
