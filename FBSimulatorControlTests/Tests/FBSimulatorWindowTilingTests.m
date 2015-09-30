@@ -26,29 +26,13 @@
 #import <FBSimulatorControl/FBSimulatorWindowTiler.h>
 #import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>
 
-@interface FBSimulatorWindowTilingTests : XCTestCase
+#import "FBSimulatorControlTestCase.h"
 
-@property (nonatomic, strong) FBSimulatorControl *control;
+@interface FBSimulatorWindowTilingTests : FBSimulatorControlTestCase
 
 @end
 
 @implementation FBSimulatorWindowTilingTests
-
-- (void)setUp
-{
-  FBSimulatorManagementOptions options =
-  FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
-  FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
-  FBSimulatorManagementOptionsDeleteOnFree;
-
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    namePrefix:nil
-    bucket:0
-    options:options];
-
-  self.control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
-}
 
 - (void)testTilesSingleiPhoneSimulatorInTopLeft
 {

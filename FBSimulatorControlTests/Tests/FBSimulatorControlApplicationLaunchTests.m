@@ -9,8 +9,6 @@
 
 #import <XCTest/XCTest.h>
 
-#import <OCMock/OCMock.h>
-
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
@@ -22,44 +20,15 @@
 #import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 #import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
-#import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
-#import <FBSimulatorControl/FBSimulatorSessionState.h>
-#import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulatorControlNotificationAssertion.h"
+#import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorControlApplicationLaunchTests : XCTestCase
-
-@property (nonatomic, strong) FBSimulatorControl *control;
-@property (nonatomic, strong) FBSimulatorControlNotificationAssertion *notificationAssertion;
+@interface FBSimulatorControlApplicationLaunchTests : FBSimulatorControlTestCase
 
 @end
 
 @implementation FBSimulatorControlApplicationLaunchTests
-
-- (void)setUp
-{
-  FBSimulatorManagementOptions options =
-    FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
-    FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
-    FBSimulatorManagementOptionsDeleteOnFree;
-
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    namePrefix:nil
-    bucket:0
-    options:options];
-
-  self.control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
-  self.notificationAssertion = [FBSimulatorControlNotificationAssertion new];
-}
-
-- (void)tearDown
-{
-  [self.control.simulatorPool killManagedSimulatorsWithError:nil];
-  self.control = nil;
-}
 
 - (void)testLaunchesSafariApplication
 {

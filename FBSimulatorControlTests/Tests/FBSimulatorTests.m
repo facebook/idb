@@ -24,29 +24,13 @@
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/FBSimulatorSessionState.h>
 
-@interface FBSimulatorTests : XCTestCase
+#import "FBSimulatorControlTestCase.h"
 
-@property (nonatomic, strong) FBSimulatorControl *control;
+@interface FBSimulatorTests : FBSimulatorControlTestCase
 
 @end
 
 @implementation FBSimulatorTests
-
-- (void)setUp
-{
-  FBSimulatorManagementOptions options =
-    FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
-    FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
-    FBSimulatorManagementOptionsDeleteOnFree;
-
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    namePrefix:nil
-    bucket:0
-    options:options];
-
-  self.control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
-}
 
 - (void)flaky_testCanInferProcessIdentiferAppropriately
 {
