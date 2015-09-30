@@ -25,7 +25,9 @@
 #import <FBSimulatorControl/FBSimulatorVideoRecorder.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
-@interface FBSimulatorVideoRecorderTests : XCTestCase
+#import "FBSimulatorControlTestCase.h"
+
+@interface FBSimulatorVideoRecorderTests : FBSimulatorControlTestCase
 
 @end
 
@@ -33,16 +35,8 @@
 
 - (void)disabled_testRecordsVideo
 {
-  FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    namePrefix:nil
-    bucket:0
-    options:FBSimulatorManagementOptionsDeleteOnFree];
-
-  FBSimulatorControl *control = [[FBSimulatorControl alloc] initWithConfiguration:controlConfiguration];
-
   NSError *error = nil;
-  FBSimulatorSession *session = [control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
   XCTAssertNotNil(session);
   XCTAssertNil(error);
 
@@ -81,21 +75,13 @@
     return;
   }
 
-  FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
-   configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-   namePrefix:nil
-   bucket:0
-   options:FBSimulatorManagementOptionsDeleteOnFree];
-
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
    configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
    arguments:@[]
    environment:@{}];
 
-  FBSimulatorControl *control = [[FBSimulatorControl alloc] initWithConfiguration:controlConfiguration];
-
   NSError *error = nil;
-  FBSimulatorSession *firstSession = [control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *firstSession = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
   XCTAssertNotNil(firstSession);
   XCTAssertNil(error);
   XCTAssertTrue([[[[[firstSession.interact
@@ -107,7 +93,7 @@
   );
   XCTAssertNil(error);
 
-  FBSimulatorSession *secondSession = [control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *secondSession = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
   XCTAssertNotNil(secondSession);
   XCTAssertNil(error);
   XCTAssertTrue([[[[[secondSession.interact

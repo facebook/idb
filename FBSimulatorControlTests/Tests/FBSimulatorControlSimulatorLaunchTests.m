@@ -24,42 +24,15 @@
 #import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/FBSimulatorSessionState.h>
-#import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulatorControlNotificationAssertion.h"
+#import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorControlSimulatorLaunchTests : XCTestCase
-
-@property (nonatomic, strong) FBSimulatorControl *control;
-@property (nonatomic, strong) FBSimulatorControlNotificationAssertion *notificationAssertion;
+@interface FBSimulatorControlSimulatorLaunchTests : FBSimulatorControlTestCase
 
 @end
 
 @implementation FBSimulatorControlSimulatorLaunchTests
-
-- (void)setUp
-{
-  FBSimulatorManagementOptions options =
-    FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
-    FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
-    FBSimulatorManagementOptionsDeleteOnFree;
-
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    namePrefix:nil
-    bucket:0
-    options:options];
-
-  self.control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
-  self.notificationAssertion = [FBSimulatorControlNotificationAssertion new];
-}
-
-- (void)tearDown
-{
-  [self.control.simulatorPool killManagedSimulatorsWithError:nil];
-  self.control = nil;
-}
 
 - (void)testLaunchesSingleSimulator
 {

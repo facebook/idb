@@ -24,29 +24,13 @@
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
-@interface FBSimulatorSessionLifecycleTests : XCTestCase
+#import "FBSimulatorControlTestCase.h"
 
-@property (nonatomic, strong) FBSimulatorControl *control;
+@interface FBSimulatorSessionLifecycleTests : FBSimulatorControlTestCase
 
 @end
 
 @implementation FBSimulatorSessionLifecycleTests
-
-- (void)setUp
-{
-  FBSimulatorManagementOptions options =
-  FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
-  FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
-  FBSimulatorManagementOptionsDeleteOnFree;
-
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    namePrefix:nil
-    bucket:0
-    options:options];
-
-  self.control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
-}
 
 - (void)testNotifiedByUnexpectedApplicationTermination
 {
