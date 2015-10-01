@@ -345,25 +345,21 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   if (simulator.state == FBSimulatorStateUnknown) {
     return [FBSimulatorError failBoolWithErrorMessage:@"Failed to prepare simulator for usage as it is in an unknown state" errorOut:error];
   }
+
   // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
   if (simulator.state == FBSimulatorStateCreating) {
-    // Once the device is 'Shutdown'
-    if ([self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
-      return YES;
-    }
+    // Usually, the Simulator will be Shutdown after it transitions from 'Creating'. Extra cleanup if not.
+    if (![self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+      // In Xcode 7 we can get stuck in the 'Creating' step as well, its possible that we can recover from this by erasing
+      if (![self eraseSimulator:simulator withError:&innerError]) {
+        return [[[[FBSimulatorError describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"] causedBy:innerError] inSimulator:simulator] failBool:error];
+      }
 
-    // In Xcode 7 we can get stuck in the 'Creating' step as well, its possible that we can recover from this by erasing
-    if (![self eraseSimulator:simulator withError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"] causedBy:innerError] inSimulator:simulator] failBool:error];
+      // If a device has been erased, we should wait for it to actually be shutdown. Ff it can't be, fail
+      if (![self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
+        return [[[[FBSimulatorError describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"] causedBy:innerError] inSimulator:simulator] failBool:error];;
+      }
     }
-
-    // If a device has been erased, we should wait for it to actually be shutdown.
-    if ([self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:&innerError]) {
-      return YES;
-    }
-
-    // This simulator can't be fixed: fail
-    return [[[[FBSimulatorError describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
 
   // If the device is not shutdown, kill it.
