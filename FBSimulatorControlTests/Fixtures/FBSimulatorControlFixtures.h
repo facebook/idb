@@ -39,4 +39,9 @@
  */
 + (NSString *)photo1Path;
 
+/**
+ A File Path to the first video.
+ */
++ (NSString *)video0Path;
+
 @end

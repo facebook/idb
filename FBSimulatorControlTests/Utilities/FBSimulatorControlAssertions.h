@@ -25,5 +25,6 @@
 #pragma mark Interactions
 
 - (void)interactionSuccessful:(id<FBInteraction>)interaction;
+- (void)interactionFailed:(id<FBInteraction>)interaction;
 
 @end

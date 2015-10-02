@@ -14,8 +14,9 @@
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
+#import <FBSimulatorControl/FBSimulatorApplication.h>
 
-#import "FBSImulatorControlAssertions.h"
+#import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
@@ -29,6 +30,18 @@
 {
   FBSimulatorSession *session = [self createBootedSession];
   [self.assert interactionSuccessful:[session.interact uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path]]];
+}
+
+- (void)testVideoUploadSuccess
+{
+  FBSimulatorSession *session = [self createBootedSession];
+  [self.assert interactionSuccessful:[session.interact uploadVideos:@[FBSimulatorControlFixtures.video0Path]]];
+}
+
+- (void)testVideoUploadFailure
+{
+  FBSimulatorSession *session = [self createBootedSession];
+  [self.assert interactionFailed:[session.interact uploadVideos:@[FBSimulatorControlFixtures.photo0Path]]];
 }
 
 @end
