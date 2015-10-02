@@ -12,9 +12,8 @@ set -eu
 MODE=$1
 
 function ci() {
-  pod install
   xctool \
-      -workspace $1.xcworkspace \
+      -project $1.xcodeproj \
       -scheme $1 \
       -sdk macosx \
       $2

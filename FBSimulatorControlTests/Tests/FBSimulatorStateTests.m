@@ -9,17 +9,18 @@
 
 #import <XCTest/XCTest.h>
 
-#import <OCMock/OCMock.h>
-
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
 #import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorSession.h>
+#import <FBSimulatorControl/FBSimulatorSession+Private.h>
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/FBSimulatorSessionStateGenerator.h>
 
+#import "CoreSimulatorDoubles.h"
 #import "FBSimulatorSessionStateAssertion.h"
 
 @interface FBSimulatorStateTests : XCTestCase
@@ -32,11 +33,16 @@
 
 - (void)setUp
 {
-  OCMockObject *session = [OCMockObject mockForClass:FBSimulatorSession.class];
-  OCMockObject *simulator = [OCMockObject mockForClass:FBSimulator.class];
-  [[[session stub] andReturn:simulator] simulator];
-  [(FBSimulator *)[[simulator stub] andReturnValue:OCMOCK_VALUE(FBSimulatorStateCreating)] state];
+  FBSimulatorControlTests_SimDevice_Double *device = [FBSimulatorControlTests_SimDevice_Double new];
+  device.state = FBSimulatorStateCreating;
+  device.UDID = [NSUUID UUID];
+  device.name = @"iPhoneMega";
 
+  FBManagedSimulator *simulator = [FBManagedSimulator new];
+  simulator.device = (id)device;
+
+  FBSimulatorSession *session = [FBSimulatorSession new];
+  session.simulator = simulator;
   self.generator = [FBSimulatorSessionStateGenerator generatorWithSession:(id)session];
 }
 

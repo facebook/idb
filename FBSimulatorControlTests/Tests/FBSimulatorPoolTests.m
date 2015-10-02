@@ -9,15 +9,13 @@
 
 #import <XCTest/XCTest.h>
 
-#import <OCMock/OCMock.h>
-
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
-#import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
+
+#import "CoreSimulatorDoubles.h"
 
 @interface FBSimulatorPoolTests : XCTestCase
 
@@ -47,20 +45,18 @@
   for (NSDictionary *deviceSpec in deviceSpecs) {
     NSString *name = deviceSpec[@"name"];
     NSUUID *uuid = deviceSpec[@"uuid"] ?: [NSUUID UUID];
-    NSString *stateString = deviceSpec[@"state"] ?: @"Shutdown";
-    FBSimulatorState state = [FBSimulator simulatorStateFromStateString:stateString];
+    FBSimulatorState state = [(deviceSpec[@"state"] ?: @(FBSimulatorStateShutdown)) integerValue];
 
-    OCMockObject *device = [OCMockObject mockForClass:SimDevice.class];
-    [[[device stub] andReturn:name] name];
-    [[[device stub] andReturn:uuid] UDID];
-    [[[device stub] andReturn:stateString] stateString];
-    [[[device stub] andReturnValue:OCMOCK_VALUE((unsigned long long)state)] state];
+    FBSimulatorControlTests_SimDevice_Double *device = [FBSimulatorControlTests_SimDevice_Double new];
+    device.name = name;
+    device.UDID = uuid;
+    device.state = state;
 
     [devices addObject:device];
   }
 
-  OCMockObject *deviceSet = [OCMockObject mockForClass:SimDeviceSet.class];
-  [[[deviceSet stub] andReturn:devices] availableDevices];
+  FBSimulatorControlTests_SimDeviceSet_Double *deviceSet = [FBSimulatorControlTests_SimDeviceSet_Double new];
+  deviceSet.availableDevices = [devices copy];
 
   FBSimulatorControlConfiguration *poolConfig = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
@@ -83,14 +79,14 @@
 - (void)testInflatesDevicesFromTheSamePool
 {
   [self createPoolWithExistingDeviceSpecs:@[
-    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @"Booted"},
-    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @"Creating"},
-    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @"Shutdown"},
+    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @(FBSimulatorStateCreating)},
+    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @(FBSimulatorStateShutdown)},
     @{@"name" : @"iPad 3"},
     @{@"name" : @"iPhone 6S"},
-    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @"Booted"},
-    @{@"name" : @"E2E_2_0_iPhone 5_9.0", @"state" : @"Shutdown"},
-    @{@"name" : @"E2E_2_0_iPad 1_9.0", @"state" : @"Booted"}
+    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"E2E_2_0_iPhone 5_9.0", @"state" : @(FBSimulatorStateShutdown)},
+    @{@"name" : @"E2E_2_0_iPad 1_9.0", @"state" : @(FBSimulatorStateBooted)}
   ]];
 
   NSOrderedSet *devices = self.pool.allSimulatorsInPool;
@@ -124,14 +120,14 @@
 - (void)testInflatesDevicesAcrossPools
 {
   [self createPoolWithExistingDeviceSpecs:@[
-    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @"Booted"},
-    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @"Creating"},
-    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @"Shutdown"},
+    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @(FBSimulatorStateCreating)},
+    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @(FBSimulatorStateShutdown)},
     @{@"name" : @"iPad 3"},
     @{@"name" : @"iPhone 6S"},
-    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @"Booted"},
-    @{@"name" : @"E2E_2_0_iPhone 5_9.0", @"state" : @"Shutdown"},
-    @{@"name" : @"E2E_2_0_iPad 1_9.0", @"state" : @"Booted"}
+    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"E2E_2_0_iPhone 5_9.0", @"state" : @(FBSimulatorStateShutdown)},
+    @{@"name" : @"E2E_2_0_iPad 1_9.0", @"state" : @(FBSimulatorStateBooted)}
   ]];
 
   NSOrderedSet *devices = self.pool.allPooledSimulators;
@@ -177,12 +173,12 @@
 - (void)testExposesUnmanagedSimulators
 {
   [self createPoolWithExistingDeviceSpecs:@[
-    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @"Booted"},
-    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @"Creating"},
-    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @"Shutdown"},
+    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @(FBSimulatorStateCreating)},
+    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @(FBSimulatorStateShutdown)},
     @{@"name" : @"iPad 3"},
     @{@"name" : @"iPhone 6S"},
-    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @"Booted"},
+    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @(FBSimulatorStateBooted)},
     @{@"name" : @"E2E_2_0_iPhone 5_9.0"},
     @{@"name" : @"E2E_2_0_iPad 1_9.0"}
   ]];
@@ -196,12 +192,12 @@
 - (void)testDividesAllocatedAndUnAllocated
 {
   [self createPoolWithExistingDeviceSpecs:@[
-    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @"Booted"},
-    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @"Creating"},
-    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @"Shutdown"},
+    @{@"name" : @"E2E_1_0_iPad 2_9.0", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"E2E_1_0_iPhone 5_9.0", @"state" : @(FBSimulatorStateCreating)},
+    @{@"name" : @"E2E_1_1_iPhone 5_9.0", @"state" : @(FBSimulatorStateShutdown)},
     @{@"name" : @"iPad 3"},
     @{@"name" : @"iPhone 6S"},
-    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @"Booted"},
+    @{@"name" : @"E2E_1_2_iPhone 5_9.0", @"state" : @(FBSimulatorStateBooted)},
     @{@"name" : @"E2E_2_0_iPhone 5_9.0"},
     @{@"name" : @"E2E_2_0_iPad 1_9.0"}
   ]];

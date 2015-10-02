@@ -9,7 +9,7 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 - `NSNotification`s for the lifecycle of the Simulator and the user-launched processes.
 - Boots Simulators across iOS 7, 8 & 9.
 - Launching and switching between multiple Apps.
-- Framework has no external dependencies.
+- Project has no external dependencies.
 - Launch Applications and Agents with [Command Line Arguments](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L24) and [Environment Variables](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L29).
 - APIs for [launching diagnostic utilities](FBSimulatorControl/Session/FBSimulatorSessionInteraction%2BDiagnostics.h) and attaching output to a Simulator session.
 - BFFs with [`WebDriverAgent`](https://github.com/facebook/webdriveragent).
@@ -20,7 +20,7 @@ The original use-case for `FBSimulatorControl` was to boot Simulators to run End
 `FBSimulatorControl` works by linking with the private `DVTFoundation`, `CoreSimulator` and `DVTiPhoneSimulatorRemoteClient` frameworks that are present inside the Xcode bundle. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` do. This, combined with launching the Simulator binaries directly, means that multiple Simulators can be launched simultaneously. Test targets can be made that don't depend on any Application targets, or that launch multiple Application targets. This enables running against pre-built and archived Application binaries, rather than a binary that is built by a Test Target.
 
 ## Installation
-`FBSimulatorControl` only requires `OCMock` for running the tests. To prepare the workspace, run `pod install`.
+The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControLTests.xctest` bundles as-is. The Project is checked-in to the repo.
 
 Once you build the `FBSimulatorControl.framework`, it can be linked into your target like any other 3rd party framework. It does however need some additional linker flags (since it relies on Private Frameworks):
 

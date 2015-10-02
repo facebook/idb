@@ -1,9 +1,5 @@
 language: objective-c
 
-before_install:
-  - gem install activesupport
-  - gem install cocoapods
-
 script: ./build.sh ci
 
 branches:
