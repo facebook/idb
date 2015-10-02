@@ -35,31 +35,3 @@
 }
 
 @end
-
-@implementation FBAgentLaunchConfiguration (Helpers)
-
-+ (instancetype)defaultWebDriverAgentConfigurationForSimulator:(FBSimulator *)simulator
-{
-  NSParameterAssert(simulator);
-
-  NSBundle *bundle = [NSBundle bundleForClass:[self class]];
-  NSString *webDriverPath = [bundle pathForResource:@"WebDriverAgent" ofType:@""];
-  NSAssert(webDriverPath, @"WebDriverAgent should exist in bundle %@", bundle);
-
-  NSDictionary *containingEnvironment = NSProcessInfo.processInfo.environment;
-  NSMutableDictionary *agentEnvironment = [NSMutableDictionary dictionary];
-
-  if ([containingEnvironment[@"RUN_FRESH_WEB_DRIVER_AGENT"] boolValue]) {
-    webDriverPath = [[@(__FILE__) stringByDeletingLastPathComponent] stringByAppendingPathComponent:@"WebDriverAgent"];
-  }
-  if (containingEnvironment[@"BUCKET_ID"]) {
-    agentEnvironment[@"PORT_OFFSET"] = containingEnvironment[@"BUCKET_ID"];
-  }
-
-  NSString *stdErrPath = [simulator.dataDirectory stringByAppendingPathComponent:@"WebDriverAgent.log"];
-
-  FBSimulatorBinary *binary = [FBSimulatorBinary binaryWithPath:webDriverPath error:nil];
-  return [self configurationWithBinary:binary arguments:@[] environment:[agentEnvironment copy] stdOutPath:nil stdErrPath:stdErrPath];
-}
-
-@end

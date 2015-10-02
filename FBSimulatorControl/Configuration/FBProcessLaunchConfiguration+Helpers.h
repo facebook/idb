@@ -19,15 +19,3 @@
 - (instancetype)withDiagnosticEnvironment;
 
 @end
-
-@interface FBAgentLaunchConfiguration (Helpers)
-
-/**
- Creates and returns a new Configuration for launching WebDriverAgent.
-
- @param simulator the Simulator to create the configuration for.
- @returna new Agent Launch Configuration for the provided Simulator.
- */
-+ (instancetype)defaultWebDriverAgentConfigurationForSimulator:(FBSimulator *)simulator;
-
-@end
