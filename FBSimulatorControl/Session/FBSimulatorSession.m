@@ -16,6 +16,7 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorLogs.h"
 #import "FBSimulatorSessionInteraction.h"
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulatorSessionState.h"
@@ -57,6 +58,11 @@
 - (FBSimulatorSessionState *)state
 {
   return self.lifecycle.currentState;
+}
+
+- (FBSimulatorSessionLogs *)logs
+{
+  return [FBSimulatorSessionLogs withSession:self];
 }
 
 - (FBSimulatorSessionInteraction *)interact;

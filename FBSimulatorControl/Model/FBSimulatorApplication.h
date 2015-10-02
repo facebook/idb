@@ -9,8 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBDevice;
-
 /**
  Concrete value wrapper around a binary artifact.
  */

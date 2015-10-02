@@ -14,8 +14,29 @@
 @interface FBProcessLaunchConfiguration (Helpers)
 
 /**
- Adds Diagnostic Environment information to the reciever's environment configuration
+ Adds Environment to the Launch Configuration
+
+ @param environmentAdditions the Environment to Add. Must be an NSDictionary<NSString *, NSString*>>
+ */
+- (instancetype)withEnvironmentAdditions:(NSDictionary *)environmentAdditions;
+
+/**
+ Adds Diagnostic Environment information to the reciever's environment configuration.
+
+ @return a new Process Launch Configuration with the diagnostic environment applied.
  */
 - (instancetype)withDiagnosticEnvironment;
+
+/**
+ Uses DYLD_INSERT_LIBRARIES to inject a dylib into the launched application's process.
+
+ @param dylibPath the File Path to the Dynamic Library. Must not be nil.
+ */
+- (instancetype)injectingLibrary:(NSString *)filePath;
+
+/**
+ Injects the Shimulator Dylib into the launched process;
+ */
+- (instancetype)injectingShimulator;
 
 @end

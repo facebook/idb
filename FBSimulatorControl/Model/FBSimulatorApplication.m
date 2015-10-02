@@ -9,6 +9,7 @@
 
 #import "FBSimulatorApplication.h"
 
+#import "FBConcurrentCollectionOperations.h"
 #import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBTaskExecutor.h"
@@ -139,21 +140,11 @@
 
 + (NSArray *)simulatorApplicationsFromPaths:(NSArray *)paths
 {
-  NSMutableArray *applications = [NSMutableArray array];
-  for (NSInteger index = 0; index < paths.count; index++) {
-    [applications addObject:NSNull.null];
-  }
-
-  dispatch_apply(paths.count, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^ (size_t iteration) {
-    NSString *path = paths[iteration];
-    FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:path error:nil];
-    if (application) {
-      @synchronized(applications) {
-        applications[iteration] = application;
-      }
-    }
-  });
-  return [applications copy];
+  return [FBConcurrentCollectionOperations
+    generate:paths.count
+    withBlock:^ FBSimulatorApplication * (NSUInteger index) {
+      return [FBSimulatorApplication applicationWithPath:paths[index] error:nil];
+    }];
 }
 
 + (instancetype)simulatorApplicationWithError:(NSError **)error

@@ -18,6 +18,7 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorLogs.h"
 #import "FBSimulatorPool.h"
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
@@ -137,6 +138,11 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
     return NO;
   }
   return [self.pool.allocatedSimulators containsObject:self];
+}
+
+- (FBSimulatorLogs *)logs
+{
+  return [FBSimulatorLogs withSimulator:self];
 }
 
 #pragma mark Helpers

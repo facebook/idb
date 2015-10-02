@@ -72,4 +72,9 @@
  */
 - (NSArray *)changesToSimulatorState;
 
+/**
+ The date of the first session state.
+ */
+- (NSDate *)sessionStartDate;
+
 @end

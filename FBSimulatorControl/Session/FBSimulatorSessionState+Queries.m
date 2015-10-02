@@ -127,6 +127,11 @@
   return [self changesToKeyPath:@"simulatorState"];
 }
 
+- (NSDate *)sessionStartDate
+{
+  return self.firstSessionState.timestamp;
+}
+
 #pragma mark - Private
 
 - (NSArray *)changesToKeyPath:(NSString *)keyPath
@@ -156,6 +161,14 @@
     }
   }
   return recursive ? [self.previousState processForApplication:application recursive:recursive] : nil;
+}
+
+- (instancetype)firstSessionState
+{
+  if (self.previousState == nil) {
+    return self;
+  }
+  return self.previousState.firstSessionState;
 }
 
 @end

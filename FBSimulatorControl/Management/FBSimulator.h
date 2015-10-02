@@ -11,6 +11,7 @@
 
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
+@class FBSimulatorLogs;
 @class FBSimulatorPool;
 @class SimDevice;
 
@@ -97,6 +98,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The FBSimulatorConfiguration representing this Simulator.
  */
 @property (nonatomic, copy, readonly) FBSimulatorConfiguration *configuration;
+
+/**
+ The FBSimulatorLogs instance for fetching logs for the Simulator
+ */
+@property (nonatomic, strong, readonly) FBSimulatorLogs *logs;
 
 /**
  Synchronously waits on the provided state.

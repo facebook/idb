@@ -11,6 +11,7 @@
 
 @class FBSimulator;
 @class FBSimulatorSessionInteraction;
+@class FBSimulatorSessionLogs;
 @class FBSimulatorSessionState;
 
 /**
@@ -36,6 +37,11 @@
  Returns the Session Information for the reciever.
  */
 @property (nonatomic, strong, readonly) FBSimulatorSessionState *state;
+
+/**
+ Returns the Logs associated with this Session.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorSessionLogs *logs;
 
 /**
  Returns an Interaction for Interacting with the Sessions.
