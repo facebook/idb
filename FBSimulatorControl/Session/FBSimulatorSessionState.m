@@ -74,8 +74,8 @@
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
-  return self.session == object.session &&
-         ((self.session == nil && object.session == nil) || [self.previousState isEqual:object.previousState]) &&
+  return ((self.previousState == nil && object.previousState == nil) || [self.previousState isEqual:object.previousState]) &&
+         self.session == object.session &&
          [self.timestamp isEqual:object.timestamp] &&
          self.lifecycle == object.lifecycle &&
          self.simulatorState == object.simulatorState &&

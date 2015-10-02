@@ -9,8 +9,6 @@
 
 #import <XCTest/XCTest.h>
 
-#import <OCMock/OCMock.h>
-
 #import <FBSimulatorControl/FBTaskExecutor.h>
 
 @interface FBTaskExecutorTests : XCTestCase
@@ -18,6 +16,12 @@
 @end
 
 @implementation FBTaskExecutorTests
+
+- (void)assertSubstring:(NSString *)needle inString:(NSString *)haystack
+{
+  XCTAssertNotNil(haystack);
+  XCTAssertNotEqual([haystack rangeOfString:needle].location, NSNotFound);
+}
 
 - (void)testInMemory
 {
@@ -29,8 +33,7 @@
     startSynchronouslyWithTimeout:20]
     stdOut];
 
-  XCTAssertNotNil(stdOut);
-  XCTAssertTrue([stdOut containsString:@"determine file type"]);
+  [self assertSubstring:@"determine file type" inString:stdOut];
 }
 
 - (void)testBackedByFile
@@ -46,11 +49,8 @@
     startSynchronouslyWithTimeout:20];
 
   NSString *stdOutFileContents = [NSString stringWithContentsOfFile:stdOutPath usedEncoding:nil error:nil];
-  XCTAssertNotNil(stdOutFileContents);
-  XCTAssertTrue([stdOutFileContents containsString:@"determine file type"]);
-
-  XCTAssertNotNil(task.stdOut);
-  XCTAssertTrue([task.stdOut containsString:@"determine file type"]);
+  [self assertSubstring:@"determine file type" inString:stdOutFileContents];
+  [self assertSubstring:@"determine file type" inString:task.stdOut];
 }
 
 - (void)testEnvironmentAdditions
@@ -64,7 +64,8 @@
     startSynchronouslyWithTimeout:20]
     stdOut];
 
-  XCTAssertTrue([stdOut containsString:@"FOO=BAR"]);
+
+  [self assertSubstring:@"FOO=BAR" inString:stdOut];
 }
 
 @end
