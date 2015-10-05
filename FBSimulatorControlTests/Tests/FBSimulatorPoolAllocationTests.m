@@ -35,6 +35,7 @@
 {
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    deviceSetPath:nil
     namePrefix:nil
     bucket:0
     options:FBSimulatorManagementOptionsEraseOnFree];
