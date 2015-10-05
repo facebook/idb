@@ -17,6 +17,7 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
@@ -26,6 +27,8 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 @implementation FBSimulator
 
 @synthesize processIdentifier = _processIdentifier;
+@synthesize configuration = _configuration;
+
 
 #pragma mark Initializers
 
@@ -40,17 +43,13 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return self;
 }
 
-+ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration
++ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool
 {
-  // Attempt to make a Managed Simulator, otherwise this must be an unmanaged one.
-  FBSimulator *simulator = [FBManagedSimulator inflateFromSimDevice:device configuration:configuration];
-  if (simulator) {
-    return simulator;
-  }
-
   // Create and return an unmanaged one.
-  simulator = [FBSimulator new];
+  FBSimulator *simulator = [FBSimulator new];
   simulator.device = device;
+  simulator.pool = pool;
+  simulator.configuration = configuration;
   return simulator;
 }
 
@@ -122,6 +121,24 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   _processIdentifier = processIdentifier;
 }
 
+- (FBSimulatorConfiguration *)configuration
+{
+  return _configuration ?: [self inferredSimulatorConfiguration];
+}
+
+- (void)setConfiguration:(FBSimulatorConfiguration *)configuration
+{
+  _configuration = configuration;
+}
+
+- (BOOL)isAllocated
+{
+  if (!self.pool) {
+    return NO;
+  }
+  return [self.pool.allocatedSimulators containsObject:self];
+}
+
 #pragma mark Helpers
 
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
@@ -178,6 +195,17 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   }];
 }
 
+- (BOOL)freeFromPoolWithError:(NSError **)error
+{
+  if (!self.pool) {
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as there is no pool associated" errorOut:error];
+  }
+  if (!self.isAllocated) {
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as this Simulator has not been allocated" errorOut:error];
+  }
+  return [self.pool freeSimulator:self error:error];
+}
+
 #pragma mark NSObject
 
 - (NSUInteger)hash
@@ -223,107 +251,9 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return processIdentifier;
 }
 
-@end
-
-@implementation FBManagedSimulator
-
-@synthesize configuration = _configuration;
-
-+ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration
-{
-  NSRegularExpression *regex = [FBManagedSimulator managedSimulatorPoolOffsetRegex:configuration];
-  NSTextCheckingResult *result = [regex firstMatchInString:device.name options:0 range:NSMakeRange(0, device.name.length)];
-  if (result.range.length == 0) {
-    return nil;
-  }
-
-  NSInteger bucketID = [[device.name substringWithRange:[result rangeAtIndex:1]] integerValue];
-  NSInteger offset = [[device.name substringWithRange:[result rangeAtIndex:2]] integerValue];
-
-  FBManagedSimulator *simulator = [FBManagedSimulator new];
-  simulator.device = device;
-  simulator.bucketID = bucketID;
-  simulator.offset = offset;
-  return simulator;
-}
-
-#pragma mark Accessors
-
-- (BOOL)isAllocated
-{
-  if (!self.pool) {
-    return NO;
-  }
-  return [self.pool.allocatedSimulators containsObject:self];
-}
-
-- (void)setConfiguration:(FBSimulatorConfiguration *)configuration
-{
-  _configuration = configuration;
-}
-
-- (FBSimulatorConfiguration *)configuration
-{
-  return _configuration ?: [self inferredSimulatorConfiguration];
-}
-
-#pragma mark Interactions
-
-- (BOOL)freeFromPoolWithError:(NSError **)error
-{
-  NSParameterAssert(self.pool);
-  NSParameterAssert(self.isAllocated);
-  return [self.pool freeSimulator:self error:error];
-}
-
-#pragma mark NSObject
-
-- (BOOL)isEqual:(FBManagedSimulator *)simulator
-{
-  return [super isEqual:simulator] &&
-         self.bucketID == simulator.bucketID &&
-         self.offset == simulator.offset;
-}
-
-- (NSUInteger)hash
-{
-  return [super hash] | self.bucketID >> 1 | self.offset >> 2;
-}
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"%@ | Bucket %ld | Offset %ld",
-    [super description],
-    self.bucketID,
-    self.offset
-  ];
-}
-
-#pragma mark Private
-
 - (FBSimulatorConfiguration *)inferredSimulatorConfiguration
 {
   return [[FBSimulatorConfiguration.defaultConfiguration withDeviceType:self.device.deviceType] withRuntime:self.device.runtime];
-}
-
-+ (NSRegularExpression *)managedSimulatorPoolOffsetRegex:(FBSimulatorControlConfiguration *)configuration
-{
-  static dispatch_once_t onceToken;
-  static NSMutableDictionary *regexDictionary;
-  dispatch_once(&onceToken, ^{
-    regexDictionary = [NSMutableDictionary dictionary];
-  });
-
-  if (!regexDictionary[configuration]) {
-    NSString *regexString = [NSString stringWithFormat:@"%@_(\\d+)_(\\d+)", configuration.namePrefix];
-    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:regexString options:0 error:nil];
-    NSAssert(regex, @"Regex '%@' for '%@' should compile", regexString, NSStringFromSelector(_cmd));
-    regexDictionary[configuration] = regex;
-    return regex;
-  }
-
-  return regexDictionary[configuration];
 }
 
 @end

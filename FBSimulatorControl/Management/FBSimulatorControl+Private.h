@@ -20,5 +20,6 @@
 @property (nonatomic, assign, readwrite) BOOL hasRunOnce;
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration;
+- (BOOL)firstRunPreconditionsWithError:(NSError **)error;
 
 @end

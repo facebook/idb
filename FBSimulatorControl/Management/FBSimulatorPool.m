@@ -52,17 +52,8 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   // All Simulator Properties are derived from `allSimulators`. In future this means instances can be cached in one place.
   NSMutableOrderedSet *simulators = [NSMutableOrderedSet orderedSet];
   for (SimDevice *device in self.deviceSet.availableDevices) {
-    [simulators addObject:[FBSimulator inflateFromSimDevice:device configuration:self.configuration]];
+    [simulators addObject:[FBSimulator inflateFromSimDevice:device configuration:nil pool:self]];
   }
-  [simulators sortUsingComparator:^NSComparisonResult(FBSimulator *left, FBSimulator *right) {
-    return [left.name compare:right.name];
-  }];
-
-  // Set the Pool for Inflated Simulators owned by this Pool.
-  for (FBSimulator *simulator in [simulators filteredOrderedSetUsingPredicate:[FBSimulatorPredicates managedByPool:self]]) {
-    simulator.pool = self;
-  }
-
   return [simulators copy];
 }
 
@@ -79,9 +70,9 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return nil;
 }
 
-- (FBManagedSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
-  FBManagedSimulator *simulator = [self findOrCreateSimulatorWithConfiguration:configuration error:error];
+  FBSimulator *simulator = [self findOrCreateSimulatorWithConfiguration:configuration error:error];
   if (!simulator) {
     return nil;
   }
@@ -122,48 +113,36 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return YES;
 }
 
-- (NSArray *)killManagedSimulatorsWithError:(NSError **)error
+- (NSArray *)killAllWithError:(NSError **)error
 {
-  return [self killSimulators:[self.allSimulatorsInPool.array copy] withError:error];
+  return [self killSimulators:[self.allSimulators.array copy] withError:error];
 }
 
-- (NSArray *)killPooledSimulatorsWithError:(NSError **)error
-{
-  return [self killSimulators:[self.allPooledSimulators.array copy] withError:error];
-}
-
-- (NSArray *)killUnmanagedSimulatorsWithError:(NSError **)error
+- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
   // We should also kill Simulators that are in totally the wrong Simulator binary.
   // Overlapping Xcode instances can't run on the same machine
   NSError *innerError = nil;
   if (![self blanketKillSimulatorsFromDifferentXcodeVersion:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
   // We want to blanket kill all the Simulator Applications that belong to the current Xcode version
   // but aren't launched in the automated CurretnDeviceUDID way.
   if (![self blanketKillSimulatorAppsWithPidFilter:@"grep -v CurrentDeviceUDID |" error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
-
-  // This will make sure that the devices are killed themselves
-  return [self shutdownSimulators:[self.unmanagedSimulators.array copy] withError:error];
+  return YES;
 }
 
-- (NSArray *)eraseManagedSimulatorsWithError:(NSError **)error
+- (NSArray *)eraseAllWithError:(NSError **)error
 {
-  return [self eraseSimulators:[self.allPooledSimulators.array copy] withError:error];
+  return [self eraseSimulators:[self.allSimulators.array copy] withError:error];
 }
 
-- (NSArray *)deleteManagedSimulatorsWithError:(NSError **)error
+- (NSArray *)deleteAllWithError:(NSError **)error
 {
-  return [self deleteSimulators:[self.allSimulatorsInPool.array copy] withError:error];
-}
-
-- (NSArray *)deletePooledSimulatorsWithError:(NSError **)error
-{
-  return [self deleteSimulators:[self.allPooledSimulators.array copy] withError:error];
+  return [self deleteSimulators:[self.allSimulators.array copy] withError:error];
 }
 
 #pragma mark - Private
@@ -201,9 +180,10 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   // Deleting the device from the set can still leave it around for a few seconds.
-  // in order to prevent racing with methods that may reallocate the newly-deleted device, we should wait for the device to no longer be present in the set.
+  // This could race with methods that may reallocate the newly-deleted device
+  // So we should wait for the device to no longer be present in the underlying set.
   BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorPoolDefaultWait untilTrue:^ BOOL {
-    NSOrderedSet *udidSet = [self.allPooledSimulators valueForKey:@"udid"];
+    NSOrderedSet *udidSet = [self.allSimulators valueForKey:@"udid"];
     return ![udidSet containsObject:udid];
   }];
 
@@ -303,26 +283,24 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return [self waitForSimulator:simulator toChangeToState:FBSimulatorStateShutdown withError:error];
 }
 
-- (FBManagedSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
-  return [self findSimulatorWithConfiguration:configuration]
+  return [self findUnallocatedSimulatorWithConfiguration:configuration]
       ?: [self createSimulatorWithConfiguration:configuration error:error];
 }
 
-- (FBManagedSimulator *)findSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
+- (FBSimulator *)findUnallocatedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
-  NSString *deviceName = [self targetNameForConfiguration:configuration];
-  for (FBManagedSimulator *simulator in self.unallocatedSimulators) {
-    if ([simulator.name isEqualToString:deviceName]) {
-      return simulator;
-    }
-  }
-  return nil;
+  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    [FBSimulatorPredicates unallocatedByPool:self],
+    [FBSimulatorPredicates matchingConfiguration:configuration]
+  ]];
+  return [[self.allSimulators filteredOrderedSetUsingPredicate:predicate] firstObject];
 }
 
-- (FBManagedSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
-  NSString *targetName = [self targetNameForConfiguration:configuration];
+  NSString *targetName = configuration.deviceName;
   SimDeviceType *targetType = configuration.deviceType;
   SimRuntime *targetRuntime = configuration.runtime;
 
@@ -331,7 +309,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   if (!device) {
     return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@", targetName] causedBy:innerError] fail:error];
   }
-  FBManagedSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulatorsInPool][device.UDID.UUIDString];
+  FBSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
   simulator.configuration = configuration;
   NSAssert(simulator, @"Expected simulator with name %@ to be inflated into pool", targetName);
   return simulator;
@@ -436,41 +414,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return YES;
 }
 
-- (NSString *)targetNameForConfiguration:(FBSimulatorConfiguration *)configuration
-{
-  SimDeviceType *targetType = configuration.deviceType;
-  SimRuntime *targetRuntime = configuration.runtime;
-  NSString *targetName = [NSString stringWithFormat:
-    @"%@_%ld_%ld_%@_%@",
-    self.configuration.namePrefix,
-    self.configuration.bucketID,
-    [self nextAvailableOffsetForDeviceType:targetType runtime:targetRuntime],
-    targetType.name,
-    targetRuntime.versionString
-  ];
-  return targetName;
-}
-
-- (NSInteger)nextAvailableOffsetForDeviceType:(SimDeviceType *)deviceType runtime:(SimRuntime *)runtime
-{
-  NSMutableIndexSet *indeces = [NSMutableIndexSet indexSet];
-  for (FBManagedSimulator *simulator in self.allocatedSimulators) {
-    if (![simulator.device.deviceType isEqual:deviceType]) {
-      continue;
-    }
-    if (![simulator.device.runtime isEqual:runtime]) {
-      continue;
-    }
-    [indeces addIndex:simulator.offset];
-  }
-  for (NSInteger index = 0; index < INT_MAX; index++) {
-    if (![indeces containsIndex:index]) {
-      return index;
-    }
-  }
-  return -1;
-}
-
 + (NSDictionary *)keySimulatorsByUDID:(NSOrderedSet *)simulators
 {
   NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
@@ -502,7 +445,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (FBSimulator *)allocatedSimulatorWithDeviceType:(NSString *)deviceType
 {
-  for (FBSimulator *simulator in self.allSimulatorsInPool) {
+  for (FBSimulator *simulator in self.allocatedSimulators) {
     if ([simulator.device.deviceType.name isEqualToString:deviceType]) {
       return simulator;
     }
@@ -510,32 +453,16 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return nil;
 }
 
-- (NSOrderedSet *)allSimulatorsInPool
-{
-  NSPredicate *predicate = [FBSimulatorPredicates managedByPool:self];
-  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
-}
-
-- (NSOrderedSet *)allPooledSimulators
-{
-  return [self.allSimulators filteredOrderedSetUsingPredicate:FBSimulatorPredicates.managed];
-}
-
 - (NSOrderedSet *)allocatedSimulators
 {
   NSPredicate *predicate = [FBSimulatorPredicates allocatedByPool:self];
-  return [[[self.allSimulators copy] filteredOrderedSetUsingPredicate:predicate] reversedOrderedSet];
+  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
 }
 
 - (NSOrderedSet *)unallocatedSimulators
 {
   NSPredicate *predicate = [FBSimulatorPredicates unallocatedByPool:self];
   return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
-}
-
-- (NSOrderedSet *)unmanagedSimulators
-{
-  return [self.allSimulators filteredOrderedSetUsingPredicate:FBSimulatorPredicates.unmanaged];
 }
 
 - (NSOrderedSet *)launchedSimulators
@@ -551,9 +478,8 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 {
   NSMutableString *description = [NSMutableString string];
   [description appendFormat:@"SimDevices: %@", [self.deviceSet.availableDevices description]];
-  [description appendFormat:@"\nAllocated Devices: %@", [self.allocatedSimulators description]];
-  [description appendFormat:@"\nAll Self Managed Devices: %@", [self.allSimulatorsInPool description]];
-  [description appendFormat:@"\nAll Pooled Devices: %@ \n\n", [self.allPooledSimulators description]];
+  [description appendFormat:@"\nAll Simulators: %@", [self.allSimulators description]];
+  [description appendFormat:@"\nAllocated Simulators: %@ \n\n", [self.allocatedSimulators description]];
   [description appendFormat:@"\nSimulator Processes: %@ \n\n", [self activeSimulatorProcessesWithError:nil]];
   return description;
 }

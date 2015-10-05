@@ -72,7 +72,7 @@
     return [FBSimulatorError failWithError:innerError description:@"Failed to meet first run preconditions" errorOut:error];
   }
 
-  FBManagedSimulator *simulator = [self.simulatorPool
+  FBSimulator *simulator = [self.simulatorPool
     allocateSimulatorWithConfiguration:simulatorConfiguration
     error:&innerError];
 
@@ -101,19 +101,19 @@
     }
   }
 
-  BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart) == FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart;
+  BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
   NSArray *result = deleteOnStart
-    ? [self.simulatorPool deleteManagedSimulatorsWithError:&innerError]
-    : [self.simulatorPool killManagedSimulatorsWithError:&innerError];
+    ? [self.simulatorPool deleteAllWithError:&innerError]
+    : [self.simulatorPool killAllWithError:&innerError];
 
   if (!result) {
     return [FBSimulatorError failBoolWithError:innerError description:@"Failed to teardown previous simulators" errorOut:error];
   }
 
-  BOOL killUnmanaged = (self.configuration.options & FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart;
+  BOOL killUnmanaged = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
   if (killUnmanaged) {
-    if (![self.simulatorPool killUnmanagedSimulatorsWithError:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to kill unmanaged simulators" errorOut:error];
+    if (![self.simulatorPool killSpuriousSimulatorsWithError:&innerError]) {
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to kill spurious simulators" errorOut:error];
     }
   }
 

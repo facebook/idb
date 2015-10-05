@@ -38,7 +38,7 @@
   device.UDID = [NSUUID UUID];
   device.name = @"iPhoneMega";
 
-  FBManagedSimulator *simulator = [FBManagedSimulator new];
+  FBSimulator *simulator = [FBSimulator new];
   simulator.device = (id)device;
 
   FBSimulatorSession *session = [FBSimulatorSession new];

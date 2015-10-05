@@ -9,29 +9,17 @@
 
 #import "FBSimulatorPredicates.h"
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceType.h>
+#import <CoreSimulator/SimRuntime.h>
+
 #import "FBSimulator.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorPool+Private.h"
 #import "FBSimulatorPool.h"
 
 @implementation FBSimulatorPredicates
-
-+ (NSPredicate *)managed
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
-    return [simulator isKindOfClass:FBManagedSimulator.class];
-  }];
-}
-
-+ (NSPredicate *)managedByPool:(FBSimulatorPool *)pool
-{
-  return [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    self.managed,
-    [NSPredicate predicateWithBlock:^ BOOL (FBManagedSimulator *simulator, NSDictionary *_) {
-      return pool.configuration.bucketID == simulator.bucketID;
-    }]
-  ]];
-}
 
 + (NSPredicate *)allocatedByPool:(FBSimulatorPool *)pool
 {
@@ -43,14 +31,8 @@
 + (NSPredicate *)unallocatedByPool:(FBSimulatorPool *)pool
 {
   return [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    [self managedByPool:pool],
     [NSCompoundPredicate notPredicateWithSubpredicate:[self allocatedByPool:pool]],
   ]];
-}
-
-+ (NSPredicate *)unmanaged
-{
-  return [NSCompoundPredicate notPredicateWithSubpredicate:self.managed];
 }
 
 + (NSPredicate *)launched
@@ -64,6 +46,14 @@
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
     return simulator.udid && [candidate.udid isEqual:simulator.udid];
+  }];
+}
+
++ (NSPredicate *)matchingConfiguration:(FBSimulatorConfiguration *)configuration
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
+    return [candidate.device.deviceType.name isEqual:configuration.deviceType.name] &&
+           [candidate.device.runtime.name isEqual:configuration.runtime.name];
   }];
 }
 

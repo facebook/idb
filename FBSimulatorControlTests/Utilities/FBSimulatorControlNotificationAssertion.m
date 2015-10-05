@@ -72,6 +72,7 @@
 {
   if (self.notificationsRecieved.count == 0) {
     XCTFail(@"There was no notification to recieve for %@", notificationName);
+    return;
   }
   XCTAssertEqualObjects(notificationName, [self.notificationsRecieved[0] name]);
   [self.notificationsRecieved removeObjectAtIndex:0];
