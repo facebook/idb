@@ -52,7 +52,7 @@
   }
 
   _configuration = configuration;
-  _simulatorPool = [FBSimulatorPool poolWithConfiguration:configuration deviceSet:SimDeviceSet.defaultSet];
+  _simulatorPool = [FBSimulatorControl poolForConfiguration:configuration];
   return self;
 }
 
@@ -95,6 +95,12 @@
     return [FBSimulatorError failBoolWithError:innerError description:@"Failed to load DVTPlatform" errorOut:error];
   }
 
+  if (self.configuration.deviceSetPath != nil) {
+    if (![NSFileManager.defaultManager createDirectoryAtPath:self.configuration.deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+      return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", self.configuration.deviceSetPath] causedBy:innerError] failBool:error];
+    }
+  }
+
   BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart) == FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart;
   NSArray *result = deleteOnStart
     ? [self.simulatorPool deleteManagedSimulatorsWithError:&innerError]
@@ -113,6 +119,18 @@
 
   self.hasRunOnce = YES;
   return YES;
+}
+
++ (FBSimulatorPool *)poolForConfiguration:(FBSimulatorControlConfiguration *)configuration
+{
+  return [FBSimulatorPool poolWithConfiguration:configuration deviceSet:[self deviceSetForConfiguration:configuration]];
+}
+
++ (SimDeviceSet *)deviceSetForConfiguration:(FBSimulatorControlConfiguration *)configuration
+{
+  return configuration.deviceSetPath
+    ? [SimDeviceSet setForSetPath:configuration.deviceSetPath]
+    : SimDeviceSet.defaultSet;
 }
 
 @end

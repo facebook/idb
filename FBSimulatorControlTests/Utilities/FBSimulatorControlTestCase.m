@@ -40,6 +40,7 @@
 {
   FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    deviceSetPath:self.deviceSetPath
     namePrefix:nil
     bucket:0
     options:[self managementOptions]];
@@ -52,6 +53,11 @@
 {
   [self.control.simulatorPool killManagedSimulatorsWithError:nil];
   self.control = nil;
+}
+
+- (NSString *)deviceSetPath
+{
+  return nil;
 }
 
 @end

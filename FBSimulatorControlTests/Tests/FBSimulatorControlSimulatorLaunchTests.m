@@ -16,6 +16,7 @@
 #import <FBSimulatorControl/FBSimulatorControl+Private.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorControlStaticConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
@@ -30,9 +31,17 @@
 
 @end
 
+@interface FBSimulatorControlSimulatorLaunchTests_DefaultSet : FBSimulatorControlSimulatorLaunchTests
+
+@end
+
+@interface FBSimulatorControlSimulatorLaunchTests_CustomSet : FBSimulatorControlSimulatorLaunchTests
+
+@end
+
 @implementation FBSimulatorControlSimulatorLaunchTests
 
-- (void)testLaunchesSingleSimulator
+- (void)doTestLaunchesSingleSimulator
 {
   NSError *error = nil;
   FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
@@ -49,6 +58,7 @@
   [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
   [self.notificationAssertion noNotificationsToConsume];
 
+  XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
   XCTAssertEqual(session.state.runningAgents.count, 0);
   XCTAssertEqual(session.state.runningApplications.count, 0);
   XCTAssertNotEqual(session.simulator.processIdentifier, -1);
@@ -63,7 +73,7 @@
   [self.notificationAssertion noNotificationsToConsume];
 }
 
-- (void)testLaunchesMultipleSimulatorsConcurrently
+- (void)doTestLaunchesMultipleSimulatorsConcurrently
 {
   // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
   // Create the sessions in sequence, then boot them in paralell.
@@ -134,6 +144,52 @@
 
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0);
   XCTAssertEqual(simulatorPIDs.count, 3);
+}
+
+@end
+
+@implementation FBSimulatorControlSimulatorLaunchTests_DefaultSet
+
+- (NSString *)deviceSetPath
+{
+  return nil;
+}
+
+- (void)testLaunchesSingleSimulator
+{
+  [self doTestLaunchesSingleSimulator];
+}
+
+- (void)testLaunchesMultipleSimulatorsConcurrently
+{
+  [self doTestLaunchesMultipleSimulatorsConcurrently];
+}
+
+@end
+
+@implementation FBSimulatorControlSimulatorLaunchTests_CustomSet
+
+- (NSString *)deviceSetPath
+{
+  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorControlSimulatorLaunchTests_CustomSet"];
+}
+
+- (void)testLaunchesSingleSimulator
+{
+  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+  [self doTestLaunchesSingleSimulator];
+}
+
+- (void)testLaunchesMultipleSimulatorsConcurrently
+{
+  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+  [self doTestLaunchesMultipleSimulatorsConcurrently];
 }
 
 @end

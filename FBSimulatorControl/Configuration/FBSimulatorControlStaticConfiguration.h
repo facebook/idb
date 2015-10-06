@@ -34,4 +34,9 @@
  */
 + (NSString *)sdkVersion;
 
+/**
+ YES if passing a custom SimDeviceSet to the Simulator App is Supported.
+ */
++ (BOOL)supportsCustomDeviceSets;
+
 @end

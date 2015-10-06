@@ -24,6 +24,7 @@
 
   FBSimulatorControlConfiguration *config = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:application
+    deviceSetPath:nil
     namePrefix:@"TestEnv"
     bucket:1
     options:FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart];

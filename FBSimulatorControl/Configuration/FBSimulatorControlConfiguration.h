@@ -37,12 +37,21 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
  @param options the options for Simulator Management.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication namePrefix:(NSString *)namePrefix bucket:(NSInteger)bucketID options:(FBSimulatorManagementOptions)options;
++ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication
+                                        deviceSetPath:(NSString *)deviceSetPath
+                                           namePrefix:(NSString *)namePrefix
+                                               bucket:(NSInteger)bucketID
+                                              options:(FBSimulatorManagementOptions)options;
 
 /**
  The FBSimulatorApplication for the Simulator.app.
  */
 @property (nonatomic, copy, readonly) FBSimulatorApplication *simulatorApplication;
+
+/**
+ The Location of the SimDeviceSet. If no path is provided, the default device set will be used.
+ */
+@property (nonatomic, copy, readonly) NSString *deviceSetPath;
 
 /**
  The String to prefix all `FBSimulatorControl` Simulators with.

@@ -25,6 +25,11 @@
  */
 - (FBSimulatorManagementOptions)managementOptions;
 
+/*
+ The Per-Test-Case Device Set Path.
+ */
+- (NSString *)deviceSetPath;
+
 @property (nonatomic, strong, readonly) FBSimulatorControl *control;
 @property (nonatomic, strong, readonly) FBSimulatorControlNotificationAssertion *notificationAssertion;
 

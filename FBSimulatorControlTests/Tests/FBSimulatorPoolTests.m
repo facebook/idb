@@ -60,6 +60,7 @@
 
   FBSimulatorControlConfiguration *poolConfig = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+    deviceSetPath:nil
     namePrefix:nil
     bucket:1
     options:0];
