@@ -99,11 +99,20 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
   return nil;
 }
 
+- (instancetype)extraInfo:(NSString *)key value:(id)value
+{
+  if (!key || !value) {
+    return self;
+  }
+  self.additionalInfo[key] = value;
+  return self;
+}
+
 - (instancetype)inSimulator:(FBSimulator *)simulator
 {
-  self.additionalInfo[@"launchd_is_running"] = @(simulator.hasActiveLaunchdSim);
-  self.additionalInfo[@"launchd_subprocesses"] = [simulator launchedProcesses];
-  return self;
+  return [[self
+    extraInfo:@"launchd_is_running" value:@(simulator.hasActiveLaunchdSim)]
+    extraInfo:@"launchd_subprocesses" value:[simulator launchedProcesses]];
 }
 
 - (NSError *)build

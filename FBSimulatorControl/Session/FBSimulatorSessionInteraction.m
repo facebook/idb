@@ -141,11 +141,25 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
 - (instancetype)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch
 {
+  NSParameterAssert(appLaunch);
+
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
   return [self interact:^ BOOL (NSError **error) {
     NSError *innerError = nil;
+    NSDictionary *installedApps = [simulator.device installedAppsWithError:&innerError];
+    if (!installedApps) {
+      return [[[FBSimulatorError describe:@"Failed to get installed apps"] inSimulator:simulator] failBool:error];
+    }
+    if (!installedApps[appLaunch.application.bundleID]) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Couldn't App %@ can't be launched as it isn't installed", appLaunch.application.bundleID]
+        extraInfo:@"installed_apps" value:installedApps]
+        inSimulator:simulator]
+        failBool:error];
+    }
+
     NSFileHandle *stdOut = nil;
     NSFileHandle *stdErr = nil;
     if (![FBSimulatorSessionInteraction createHandlesForLaunchConfiguration:appLaunch stdOut:&stdOut stdErr:&stdErr error:&innerError]) {
@@ -174,6 +188,8 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
 - (instancetype)signal:(int)signo application:(FBSimulatorApplication *)application
 {
+  NSParameterAssert(application);
+
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
   FBSimulator *simulator = self.session.simulator;
 
@@ -189,6 +205,8 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
 - (instancetype)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch
 {
+  NSParameterAssert(agentLaunch);
+
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
@@ -222,6 +240,8 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
 - (instancetype)killAgent:(FBSimulatorBinary *)agent
 {
+  NSParameterAssert(agent);
+
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
@@ -241,6 +261,8 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
 - (instancetype)openURL:(NSURL *)url
 {
+  NSParameterAssert(url);
+
   FBSimulator *simulator = self.session.simulator;
 
   return [self interact:^ BOOL (NSError **error) {
