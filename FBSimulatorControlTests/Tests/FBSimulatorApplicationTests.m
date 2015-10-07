@@ -11,6 +11,8 @@
 
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 
+#import "FBSimulatorControlFixtures.h"
+
 @interface FBSimulatorApplicationTests : XCTestCase
 
 @end
@@ -25,6 +27,16 @@
   XCTAssertTrue([names containsObject:@"MobileSafari"]);
   XCTAssertTrue([names containsObject:@"Camera"]);
   XCTAssertTrue([names containsObject:@"Maps"]);
+}
+
+- (void)testCreatesSampleApplication
+{
+  NSError *error = nil;
+  FBSimulatorApplication *application = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(application);
+  XCTAssertEqualObjects(application.bundleID, @"com.example.apple-samplecode.TableSearch");
+  XCTAssertEqualObjects(application.binary.architectures, [NSSet setWithArray:@[@"i386"]]);
 }
 
 @end

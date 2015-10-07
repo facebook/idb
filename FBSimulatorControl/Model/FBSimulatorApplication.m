@@ -126,6 +126,10 @@
 
 + (instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
 {
+  if (!path) {
+    return [[FBSimulatorError describe:@"Path is nil for Application"] fail:error];
+  }
+
   return [FBSimulatorApplication
     withName:[self appNameForPath:path]
     path:path

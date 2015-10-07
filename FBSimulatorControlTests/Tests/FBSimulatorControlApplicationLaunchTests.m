@@ -21,6 +21,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 #import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
 
+#import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlNotificationAssertion.h"
 #import "FBSimulatorControlTestCase.h"
 
@@ -52,5 +53,30 @@
   [self.notificationAssertion consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
   [self.notificationAssertion noNotificationsToConsume];
 }
+
+- (void)testLaunchesSampleApplication
+{
+  NSError *error = nil;
+  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+
+  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
+    configurationWithApplication:[FBSimulatorControlFixtures tableSearchApplicationWithError:nil]
+    arguments:@[]
+    environment:@{}];
+
+  BOOL success = [[[[session.interact
+    bootSimulator]
+    installApplication:appLaunch.application]
+    launchApplication:appLaunch]
+    performInteractionWithError:&error];
+
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+  [self.notificationAssertion consumeNotification:FBSimulatorSessionDidStartNotification];
+  [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.notificationAssertion consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
+  [self.notificationAssertion noNotificationsToConsume];
+}
+
 
 @end

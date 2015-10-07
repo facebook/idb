@@ -103,6 +103,8 @@
 		AA8DF8CB1BB18B3700CC0411 /* FBInteraction+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8DF8C81BB18B3700CC0411 /* FBInteraction+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA8DFB101BAC76B60076A6C2 /* FBSimulatorControlNotificationAssertion.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8DFB0D1BAC76B60076A6C2 /* FBSimulatorControlNotificationAssertion.m */; settings = {ASSET_TAGS = (); }; };
 		AA8DFB111BAC76B60076A6C2 /* FBSimulatorSessionStateAssertion.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8DFB0F1BAC76B60076A6C2 /* FBSimulatorSessionStateAssertion.m */; settings = {ASSET_TAGS = (); }; };
+		AAAA67C61BC4FED200075197 /* FBSimulatorControlFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */; settings = {ASSET_TAGS = (); }; };
+		AAAA67C91BC501BB00075197 /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = AAAA67C71BC5018500075197 /* TableSearch.app */; };
 		AAB4AC191BB586640046F6A1 /* FBSimulatorVideoRecorder.h in Headers */ = {isa = PBXBuildFile; fileRef = AAB4AC171BB586640046F6A1 /* FBSimulatorVideoRecorder.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAB4AC1A1BB586640046F6A1 /* FBSimulatorVideoRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB4AC181BB586640046F6A1 /* FBSimulatorVideoRecorder.m */; settings = {ASSET_TAGS = (); }; };
 		AAB4AC1C1BB586860046F6A1 /* FBSimulatorVideoRecorderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB4AC1B1BB586860046F6A1 /* FBSimulatorVideoRecorderTests.m */; settings = {ASSET_TAGS = (); }; };
@@ -828,6 +830,9 @@
 		AA8DFB0D1BAC76B60076A6C2 /* FBSimulatorControlNotificationAssertion.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlNotificationAssertion.m; sourceTree = "<group>"; };
 		AA8DFB0E1BAC76B60076A6C2 /* FBSimulatorSessionStateAssertion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorSessionStateAssertion.h; sourceTree = "<group>"; };
 		AA8DFB0F1BAC76B60076A6C2 /* FBSimulatorSessionStateAssertion.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorSessionStateAssertion.m; sourceTree = "<group>"; };
+		AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFixtures.h; sourceTree = "<group>"; };
+		AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFixtures.m; sourceTree = "<group>"; };
+		AAAA67C71BC5018500075197 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = TableSearch.app; sourceTree = "<group>"; };
 		AAB4AC171BB586640046F6A1 /* FBSimulatorVideoRecorder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorVideoRecorder.h; sourceTree = "<group>"; };
 		AAB4AC181BB586640046F6A1 /* FBSimulatorVideoRecorder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorVideoRecorder.m; sourceTree = "<group>"; };
 		AAB4AC1B1BB586860046F6A1 /* FBSimulatorVideoRecorderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorVideoRecorderTests.m; sourceTree = "<group>"; };
@@ -1628,6 +1633,7 @@
 			isa = PBXGroup;
 			children = (
 				AA819E0B1B9FB427002F58CA /* FBSimulatorControlTests-Info.plist */,
+				AAAA67C31BC4FEBA00075197 /* Fixtures */,
 				AA51E48F1BA1CA3C0053141E /* Tests */,
 				AA8DFB0B1BAC76B60076A6C2 /* Utilities */,
 			);
@@ -1664,6 +1670,16 @@
 				AA8DFB0F1BAC76B60076A6C2 /* FBSimulatorSessionStateAssertion.m */,
 			);
 			path = Utilities;
+			sourceTree = "<group>";
+		};
+		AAAA67C31BC4FEBA00075197 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */,
+				AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */,
+				AAAA67C71BC5018500075197 /* TableSearch.app */,
+			);
+			path = Fixtures;
 			sourceTree = "<group>";
 		};
 		AAB4AC161BB586640046F6A1 /* Video */ = {
@@ -1798,6 +1814,7 @@
 			buildPhases = (
 				AA819DAE1B9FB40D002F58CA /* Sources */,
 				AA819DAF1B9FB40D002F58CA /* Frameworks */,
+				AAAA67C81BC501AE00075197 /* Resources */,
 				AAC083771B9FBA6000451648 /* CopyFiles */,
 			);
 			buildRules = (
@@ -1857,6 +1874,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		AAAA67C81BC501AE00075197 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAAA67C91BC501BB00075197 /* TableSearch.app in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		1870857F0000000000000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -1914,6 +1942,7 @@
 				AA8DFB111BAC76B60076A6C2 /* FBSimulatorSessionStateAssertion.m in Sources */,
 				AAB4AC1C1BB586860046F6A1 /* FBSimulatorVideoRecorderTests.m in Sources */,
 				AA74B99E1BB04A4300C1E59C /* FBProcessLaunchConfigurationTests.m in Sources */,
+				AAAA67C61BC4FED200075197 /* FBSimulatorControlFixtures.m in Sources */,
 				AA111CC21BBE662E0054AFDD /* FBTaskExecutorTests.m in Sources */,
 				AAC241281BB311970054570C /* FBSimulatorWindowTilingTests.m in Sources */,
 				AA8DFB101BAC76B60076A6C2 /* FBSimulatorControlNotificationAssertion.m in Sources */,
