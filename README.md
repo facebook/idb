@@ -34,6 +34,7 @@ Once you build the `FBSimulatorControl.framework`, it can be linked into your ta
 
 To launch Safari on an iPhone 5, you can use the following:
 
+```objc
     FBSimulatorManagementOptions options =
       FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart |
       FBSimulatorManagementOptionsKillUnmanagedSimulatorsOnFirstStart |
@@ -60,6 +61,7 @@ To launch Safari on an iPhone 5, you can use the following:
       bootSimulator]
       launchApplication:appLaunch]
       performInteractionWithError:&error];
+```
 
 For a high level overview:
 - `FBSimulatorPool` is a responsible for booting and allocating simulators.
