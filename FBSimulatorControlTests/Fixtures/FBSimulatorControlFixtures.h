@@ -44,4 +44,9 @@
  */
 + (NSString *)video0Path;
 
+/**
+ A XCTest Bundle that was build for the 'Table Search' Sample Application.
+ */
++ (NSString *)tableSearchXCTestPath;
+
 @end

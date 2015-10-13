@@ -44,4 +44,9 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"video0" ofType:@"mp4"];
 }
 
++ (NSString *)tableSearchXCTestPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"TableSearchTests" ofType:@"xctest"];
+}
+
 @end

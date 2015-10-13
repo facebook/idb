@@ -10,6 +10,7 @@
 #import <XCTest/XCTest.h>
 
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
+#import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
@@ -68,5 +69,29 @@
   [self.assert noNotificationsToConsume];
 }
 
+- (void)testLaunchesSampleApplicationWithTestInjection
+{
+  NSError *error = nil;
+  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+
+  FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration
+    configurationWithApplication:[FBSimulatorControlFixtures tableSearchApplicationWithError:nil]
+    arguments:@[]
+    environment:@{}]
+    withXCTestBundle:[FBSimulatorControlFixtures tableSearchXCTestPath] error:nil];
+
+  BOOL success = [[[[session.interact
+    bootSimulator]
+    installApplication:appLaunch.application]
+    launchApplication:appLaunch]
+    performInteractionWithError:&error];
+
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
+  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
+}
 
 @end

@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		877123F01BDA78AA00530B1E /* FBSimulatorVideoUploader.h in Headers */ = {isa = PBXBuildFile; fileRef = 877123EE1BDA78AA00530B1E /* FBSimulatorVideoUploader.h */; settings = {ASSET_TAGS = (); }; };
-		877123F11BDA78AA00530B1E /* FBSimulatorVideoUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = 877123EF1BDA78AA00530B1E /* FBSimulatorVideoUploader.m */; settings = {ASSET_TAGS = (); }; };
-		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; settings = {ASSET_TAGS = (); }; };
+		877123F01BDA78AA00530B1E /* FBSimulatorVideoUploader.h in Headers */ = {isa = PBXBuildFile; fileRef = 877123EE1BDA78AA00530B1E /* FBSimulatorVideoUploader.h */; };
+		877123F11BDA78AA00530B1E /* FBSimulatorVideoUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = 877123EF1BDA78AA00530B1E /* FBSimulatorVideoUploader.m */; };
+		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA017F271BD7770300F45E9D /* FBSimulatorLogsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F251BD7770300F45E9D /* FBSimulatorLogsTests.m */; };
 		AA017F281BD7770300F45E9D /* FBWritableLogTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F261BD7770300F45E9D /* FBWritableLogTests.m */; };
 		AA017F2F1BD7771300F45E9D /* FBSimulatorLogs.h in Headers */ = {isa = PBXBuildFile; fileRef = AA017F2A1BD7771300F45E9D /* FBSimulatorLogs.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -20,6 +20,7 @@
 		AA017F361BD7772D00F45E9D /* FBConcurrentCollectionOperations.h in Headers */ = {isa = PBXBuildFile; fileRef = AA017F341BD7772D00F45E9D /* FBConcurrentCollectionOperations.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA017F371BD7772D00F45E9D /* FBConcurrentCollectionOperations.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F351BD7772D00F45E9D /* FBConcurrentCollectionOperations.m */; };
 		AA017F581BD7787300F45E9D /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
+		AA01F46A1BFDCBDF000B5939 /* TableSearchTests.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AA01F4691BFDCBDF000B5939 /* TableSearchTests.xctest */; };
 		AA111CC21BBE662E0054AFDD /* FBTaskExecutorTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA111CC11BBE662E0054AFDD /* FBTaskExecutorTests.m */; };
 		AA111CCE1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m in Sources */ = {isa = PBXBuildFile; fileRef = AA111CCD1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m */; };
 		AA3230CB1BDA387700C5BA01 /* FBSimulatorControlAssertions.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */; };
@@ -192,6 +193,7 @@
 		AA017F341BD7772D00F45E9D /* FBConcurrentCollectionOperations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBConcurrentCollectionOperations.h; sourceTree = "<group>"; };
 		AA017F351BD7772D00F45E9D /* FBConcurrentCollectionOperations.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBConcurrentCollectionOperations.m; sourceTree = "<group>"; };
 		AA017F4C1BD7784700F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libShimulator.dylib; sourceTree = "<group>"; };
+		AA01F4691BFDCBDF000B5939 /* TableSearchTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = TableSearchTests.xctest; sourceTree = "<group>"; };
 		AA111CC11BBE662E0054AFDD /* FBTaskExecutorTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTaskExecutorTests.m; sourceTree = "<group>"; };
 		AA111CCC1BBE7C5A0054AFDD /* CoreSimulatorDoubles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreSimulatorDoubles.h; sourceTree = "<group>"; };
 		AA111CCD1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CoreSimulatorDoubles.m; sourceTree = "<group>"; };
@@ -1744,6 +1746,7 @@
 				AAD3051D1BD4D5B10047376E /* photo0.png */,
 				AAD3051E1BD4D5B10047376E /* photo1.png */,
 				AAAA67C71BC5018500075197 /* TableSearch.app */,
+				AA01F4691BFDCBDF000B5939 /* TableSearchTests.xctest */,
 				877123F21BDA797800530B1E /* video0.mp4 */,
 			);
 			path = Fixtures;
@@ -1968,6 +1971,7 @@
 				AAD305201BD4D5B10047376E /* photo1.png in Resources */,
 				AAAA67C91BC501BB00075197 /* TableSearch.app in Resources */,
 				AAD3051F1BD4D5B10047376E /* photo0.png in Resources */,
+				AA01F46A1BFDCBDF000B5939 /* TableSearchTests.xctest in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
