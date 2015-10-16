@@ -43,7 +43,12 @@ extern NSString *const FBSimulatorControlErrorDomain;
 - (id)fail:(NSError **)error;
 
 /**
- Attach additional diagnostic information from the Simulator.
+ Attach additional diagnostic information.
+ */
+- (instancetype)extraInfo:(NSString *)key value:(id)value;
+
+/**
+ Automatically attach Simulator diagnostic info.
  */
 - (instancetype)inSimulator:(FBSimulator *)simulator;
 
