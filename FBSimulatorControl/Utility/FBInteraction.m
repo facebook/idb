@@ -44,6 +44,23 @@
   return [self addInteraction:[FBInteraction_Block interactionWithBlock:block]];
 }
 
+- (instancetype)failWith:(NSError *)error
+{
+  NSParameterAssert(error);
+  return [self interact:^ BOOL (NSError **errorPtr) {
+    NSCParameterAssert(errorPtr);
+    *errorPtr = error;
+    return NO;
+  }];
+}
+
+- (instancetype)succeed
+{
+  return [self interact:^ BOOL (NSError **_) {
+    return YES;
+  }];
+}
+
 - (instancetype)addInteraction:(id<FBInteraction>)interaction
 {
   [self.interactions addObject:interaction];

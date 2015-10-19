@@ -19,4 +19,14 @@
   return [FBSimulatorApplication applicationWithPath:path error:error];
 }
 
++ (NSString *)photo0Path
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"photo0" ofType:@"png"];
+}
+
++ (NSString *)photo1Path
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"photo1" ofType:@"png"];
+}
+
 @end

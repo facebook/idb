@@ -53,6 +53,13 @@
 - (instancetype)recordVideo;
 
 /**
+ Uploads photos to the Camera Roll of the Simulator
+
+ @param param photoPaths an NSArray<NSString *> of File Paths for the Photos to Upload.
+ */
+- (instancetype)uploadPhotos:(NSArray *)photoPaths;
+
+/**
  Installs the given Application.
  */
 - (instancetype)installApplication:(FBSimulatorApplication *)application;

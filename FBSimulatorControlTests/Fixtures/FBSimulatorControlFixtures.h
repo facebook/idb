@@ -22,4 +22,14 @@
  */
 + (FBSimulatorApplication *)tableSearchApplicationWithError:(NSError **)error;
 
+/**
+ A File Path to the first photo.
+ */
++ (NSString *)photo0Path;
+
+/**
+ A File Path to the second photo.
+ */
++ (NSString *)photo1Path;
+
 @end

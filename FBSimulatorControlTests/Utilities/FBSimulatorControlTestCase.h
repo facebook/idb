@@ -11,8 +11,12 @@
 
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 
+@class FBInteractionAssertion;
+@class FBSimulator;
+@class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlNotificationAssertion;
+@class FBSimulatorSession;
 
 /**
  A Test Case that boostraps a FBSimulatorControl instance.
@@ -20,17 +24,38 @@
  */
 @interface FBSimulatorControlTestCase : XCTestCase
 
-/*
+/**
  The Per-Test-Case Management Options.
  */
 - (FBSimulatorManagementOptions)managementOptions;
 
-/*
+/**
+ A default Simulator Configuration.
+ */
+- (FBSimulatorConfiguration *)simulatorConfiguration;
+
+/**
  The Per-Test-Case Device Set Path.
  */
 - (NSString *)deviceSetPath;
 
+/**
+ Allocates a Simulator with a default configuration.
+ */
+- (FBSimulator *)allocateSimulator;
+
+/**
+ Creates a Session with the default configuration.
+ */
+- (FBSimulatorSession *)createSession;
+
+/**
+ Create a Session with a booted Simulator of the default configuration.
+ */
+- (FBSimulatorSession *)createBootedSession;
+
 @property (nonatomic, strong, readonly) FBSimulatorControl *control;
 @property (nonatomic, strong, readonly) FBSimulatorControlNotificationAssertion *notificationAssertion;
+@property (nonatomic, strong, readonly) FBInteractionAssertion *interactionAssertion;
 
 @end

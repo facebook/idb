@@ -27,9 +27,9 @@
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBSimulatorSessionState.h"
+#import "FBSimulatorVideoRecorder.h"
 #import "FBSimulatorWindowTiler.h"
 #import "FBSimulatorWindowTilingStrategy.h"
-#import "FBSimulatorVideoRecorder.h"
 #import "FBTaskExecutor.h"
 
 NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
@@ -121,6 +121,31 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
     [lifecycle associateEndOfSessionCleanup:recorder];
     [lifecycle sessionDidGainDiagnosticInformationWithName:@"video" data:path];
+    return YES;
+  }];
+}
+
+- (instancetype)uploadPhotos:(NSArray *)photoPaths
+{
+  if (!photoPaths.count) {
+    return [self succeed];
+  }
+
+  FBSimulator *simulator = self.session.simulator;
+
+  return [self interact:^ BOOL (NSError **error) {
+    if (simulator.state != FBSimulatorStateBooted) {
+      return [[FBSimulatorError describeFormat:@"Simulator must be booted to upload photos, is %@", simulator.device.stateString] failBool:error];
+    }
+
+    for (NSString *path in photoPaths) {
+      NSURL *url = [NSURL fileURLWithPath:path];
+
+      NSError *innerError = nil;
+      if (![simulator.device addPhoto:url error:&innerError]) {
+        return [[[FBSimulatorError describeFormat:@"Failed to upload photo at path %@", path] causedBy:innerError] failBool:error];
+      }
+    }
     return YES;
   }];
 }
