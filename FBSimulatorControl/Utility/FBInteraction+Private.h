@@ -18,11 +18,28 @@
 
 /**
  Chains an interaction using the provided block
+
+ @param block the block to perform the interaction, returning error information in the failure case.
  */
 - (instancetype)interact:(BOOL (^)(NSError **))block;
 
 /**
+ Fails the Interaction with the provided error.
+
+ @param error the error to fail the interaction with.
+ */
+- (instancetype)failWith:(NSError *)error;
+
+/**
+ Passes the interaction.
+ */
+- (instancetype)succeed;
+
+/**
  Takes an NSArray<id<FBInteraction>> and returns an id<FBInteracton>.
+ Any failing interaction will terminate the chain.
+
+ @param interactions the interactions to chain together.
  */
 + (id<FBInteraction>)chainInteractions:(NSArray *)interactions;
 
