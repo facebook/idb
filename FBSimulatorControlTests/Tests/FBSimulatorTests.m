@@ -34,15 +34,7 @@
 
 - (void)flaky_testCanInferProcessIdentiferAppropriately
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
-
-  BOOL success = [[session.interact
-    bootSimulator]
-    performInteractionWithError:&error];
-
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
+  FBSimulatorSession *session = [self createBootedSession];
 
   NSInteger expected = session.simulator.processIdentifier;
   XCTAssertTrue(expected > 1);

@@ -24,6 +24,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/FBSimulatorSessionState.h>
 
+#import "FBInteractionAssertion.h"
 #import "FBSimulatorControlNotificationAssertion.h"
 #import "FBSimulatorControlTestCase.h"
 
@@ -43,17 +44,13 @@
 
 - (void)doTestLaunchesSingleSimulator
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session = [self createSession];
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateNotStarted);
-  XCTAssertNotNil(session);
-  XCTAssertNil(error);
   [self.notificationAssertion noNotificationsToConsume];
 
-  BOOL success = [[session.interact bootSimulator] performInteractionWithError:&error];
-  XCTAssertTrue(success);
+  NSError *error = nil;
+  [self.interactionAssertion assertPerformSuccess:session.interact.bootSimulator];
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateStarted);
-  XCTAssertNil(error);
   [self.notificationAssertion consumeNotification:FBSimulatorSessionDidStartNotification];
   [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
   [self.notificationAssertion noNotificationsToConsume];
@@ -96,35 +93,21 @@
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3);
   XCTAssertEqual(([[NSSet setWithArray:@[session1.simulator.udid, session2.simulator.udid, session3.simulator.udid]] count]), 3);
 
-  __block NSError *error1 = nil;
-  __block BOOL launchSuccess1 = NO;
-  __block NSError *error2 = nil;
-  __block BOOL launchSuccess2 = NO;
-  __block NSError *error3 = nil;
-  __block BOOL launchSuccess3 = NO;
-
   // These should fire on multiple threads at the same time. Since they don't access each other's state & DTMobile seems ok with it
   // these can be concurrent with each other. Terminating simulators returns devices to the pool, so should be sequenced.
   dispatch_group_t group = dispatch_group_create();
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
 
   dispatch_group_async(group, queue, ^{
-    launchSuccess1 = [[session1.interact bootSimulator] performInteractionWithError:&error1];
+    [self.interactionAssertion assertPerformSuccess:session1.interact.bootSimulator];
   });
   dispatch_group_async(group, queue, ^{
-    launchSuccess2 = [[session2.interact bootSimulator] performInteractionWithError:&error2];
+    [self.interactionAssertion assertPerformSuccess:session2.interact.bootSimulator];
   });
   dispatch_group_async(group, queue, ^{
-    launchSuccess3 = [[session3.interact bootSimulator] performInteractionWithError:&error3];
+    [self.interactionAssertion assertPerformSuccess:session3.interact.bootSimulator];
   });
   dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-
-  XCTAssertTrue(launchSuccess1);
-  XCTAssertTrue(launchSuccess2);
-  XCTAssertTrue(launchSuccess3);
-  XCTAssertNil(error1);
-  XCTAssertNil(error2);
-  XCTAssertNil(error3);
 
   NSMutableSet *simulatorPIDs = [NSMutableSet set];
   for (FBSimulatorSession *session in @[session1, session2, session3]) {

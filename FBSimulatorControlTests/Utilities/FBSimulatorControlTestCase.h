@@ -12,9 +12,9 @@
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 
 @class FBInteractionAssertion;
-@class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
+@class FBManagedSimulator;
 @class FBSimulatorControlNotificationAssertion;
 @class FBSimulatorSession;
 
@@ -42,7 +42,7 @@
 /**
  Allocates a Simulator with a default configuration.
  */
-- (FBSimulator *)allocateSimulator;
+- (FBManagedSimulator *)allocateSimulator;
 
 /**
  Creates a Session with the default configuration.
