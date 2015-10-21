@@ -54,10 +54,10 @@
 
 #pragma mark Helper Actions
 
-- (FBSimulator *)allocateSimulator
+- (FBManagedSimulator *)allocateSimulator
 {
   NSError *error = nil;
-  FBSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:self.simulatorConfiguration error:&error];
+  FBManagedSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:self.simulatorConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(simulator);
   return simulator;
@@ -75,7 +75,7 @@
 - (FBSimulatorSession *)createBootedSession
 {
   FBSimulatorSession *session = [self createSession];
-  [self.interactionAssertion assertPerformSuccess:[session.interact bootSimulator]];
+  [self.interactionAssertion assertPerformSuccess:session.interact.bootSimulator];
   return session;
 }
 

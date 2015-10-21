@@ -25,6 +25,7 @@
 #import <FBSimulatorControl/FBSimulatorVideoRecorder.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
+#import "FBInteractionAssertion.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorVideoRecorderTests : FBSimulatorControlTestCase
@@ -35,23 +36,19 @@
 
 - (void)disabled_testRecordsVideo
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
-  XCTAssertNotNil(session);
-  XCTAssertNil(error);
+  FBSimulatorSession *session = [self createBootedSession];
 
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
     arguments:@[]
     environment:@{}];
 
-  XCTAssertTrue([[[session.interact
-    bootSimulator]
-    launchApplication:appLaunch]
-    performInteractionWithError:&error]
-  );
+
+  [self.interactionAssertion assertPerformSuccess:[session.interact launchApplication:appLaunch]];
 
   FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:session.simulator logger:nil];
+
+  NSError *error = nil;
   NSString *filePath = [[NSTemporaryDirectory() stringByAppendingString:NSUUID.UUID.UUIDString] stringByAppendingPathComponent:@"mp4"];
   XCTAssertTrue([recorder startRecordingToFilePath:filePath error:&error]);
   XCTAssertNil(error);
@@ -80,30 +77,11 @@
    arguments:@[]
    environment:@{}];
 
-  NSError *error = nil;
-  FBSimulatorSession *firstSession = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
-  XCTAssertNotNil(firstSession);
-  XCTAssertNil(error);
-  XCTAssertTrue([[[[[firstSession.interact
-    bootSimulator]
-    tileSimulator]
-    recordVideo]
-    launchApplication:appLaunch]
-    performInteractionWithError:&error]
-  );
-  XCTAssertNil(error);
+  FBSimulatorSession *firstSession = [self createSession];
+  [self.interactionAssertion assertPerformSuccess:[firstSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
 
-  FBSimulatorSession *secondSession = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
-  XCTAssertNotNil(secondSession);
-  XCTAssertNil(error);
-  XCTAssertTrue([[[[[secondSession.interact
-    bootSimulator]
-    tileSimulator]
-    recordVideo]
-    launchApplication:appLaunch]
-    performInteractionWithError:&error]
-  );
-  XCTAssertNil(error);
+  FBSimulatorSession *secondSession = [self createSession];
+  [self.interactionAssertion assertPerformSuccess:[secondSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
 
   // Spin the run loop a bit.
   [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:10 untilTrue:^ BOOL {

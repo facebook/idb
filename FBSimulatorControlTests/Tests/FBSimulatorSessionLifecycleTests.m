@@ -24,6 +24,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
+#import "FBInteractionAssertion.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorSessionLifecycleTests : FBSimulatorControlTestCase
@@ -34,21 +35,14 @@
 
 - (void)testNotifiedByUnexpectedApplicationTermination
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session = [self createSession];
 
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
     arguments:@[]
     environment:@{}];
 
-  BOOL success = [[[session.interact
-    bootSimulator]
-    launchApplication:appLaunch]
-    performInteractionWithError:&error];
-
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
+  [self.interactionAssertion assertPerformSuccess:[session.interact.bootSimulator launchApplication:appLaunch]];
 
   FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
   XCTAssertNotNil(process);
@@ -84,21 +78,14 @@
 
 - (void)testNotifiedByExpectedApplicationTermination
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session = [self createSession];
 
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
     arguments:@[]
     environment:@{}];
 
-  BOOL success = [[[session.interact
-    bootSimulator]
-    launchApplication:appLaunch]
-    performInteractionWithError:&error];
-
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
+  [self.interactionAssertion assertPerformSuccess:[session.interact.bootSimulator launchApplication:appLaunch]];
 
   FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
   XCTAssertNotNil(process);
@@ -119,8 +106,7 @@
       wasExpected = [notification.userInfo[FBSimulatorSessionExpectedKey] boolValue];
     }];
 
-  XCTAssertTrue([[session.interact killApplication:appLaunch.application] performInteractionWithError:&error]);
-  XCTAssertNil(error);
+  [self.interactionAssertion assertPerformSuccess:[session.interact killApplication:appLaunch.application]];
 
   BOOL didMeetConditionBeforeTimeout = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:10 untilTrue:^ BOOL {
     return notificationRecieved == YES;

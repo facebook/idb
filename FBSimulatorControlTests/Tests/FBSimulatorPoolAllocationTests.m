@@ -43,10 +43,9 @@
   FBSimulatorControl *control = [[FBSimulatorControl alloc] initWithConfiguration:controlConfiguration];
 
   NSError *error = nil;
-  FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  FBManagedSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
-  XCTAssertNotNil(simulator);
+  FBManagedSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:self.simulatorConfiguration error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(simulator);
 
   NSString *simulatorUUID = simulator.udid;
   [self addTemporaryFileToSimulator:simulator];
@@ -54,9 +53,9 @@
   XCTAssertTrue([control.simulatorPool freeSimulator:simulator error:nil]);
   XCTAssertNil(error);
 
-  simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
-  XCTAssertNotNil(simulator);
+  simulator = [control.simulatorPool allocateSimulatorWithConfiguration:self.simulatorConfiguration error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(simulator);
   XCTAssertEqualObjects(simulatorUUID, simulator.udid);
   [self assertTemporaryFileForSimulator:simulator exists:NO];
 
@@ -66,20 +65,14 @@
 
 - (void)testDoesNotReallocateDeletedDevice
 {
-  NSError *error = nil;
-  FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  FBManagedSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
-  XCTAssertNotNil(simulator);
-  XCTAssertNil(error);
-
+  FBManagedSimulator *simulator = [self allocateSimulator];
   NSString *simulatorUUID = simulator.udid;
 
+  NSError *error = nil;
   XCTAssertTrue([self.control.simulatorPool freeSimulator:simulator error:nil]);
   XCTAssertNil(error);
 
-  simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
-  XCTAssertNotNil(simulator);
-  XCTAssertNil(error);
+  simulator = [self allocateSimulator];
   XCTAssertNotEqualObjects(simulatorUUID, simulator.udid);
 
   XCTAssertTrue([self.control.simulatorPool freeSimulator:simulator error:nil]);
@@ -88,14 +81,10 @@
 
 - (void)testRemovesDeletedDeviceFromSet
 {
-  NSError *error = nil;
-  FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  FBManagedSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
-  XCTAssertNotNil(simulator);
-  XCTAssertNil(error);
-
+  FBManagedSimulator *simulator = [self allocateSimulator];
   NSString *simulatorUUID = simulator.udid;
 
+  NSError *error = nil;
   XCTAssertTrue([self.control.simulatorPool freeSimulator:simulator error:nil]);
   XCTAssertNil(error);
 
@@ -105,19 +94,16 @@
 
 - (void)testRemovesMultipleAllocatedDevicesFromSet
 {
-  NSError *error = nil;
-  FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
   NSMutableArray *simulators = [NSMutableArray array];
   NSMutableSet *simulatorUUIDs = [NSMutableSet set];
 
   for (NSInteger index = 0; index < 4; index++) {
-    FBSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&error];
-    XCTAssertNotNil(simulator);
-    XCTAssertNil(error);
+    FBSimulator *simulator = [self allocateSimulator];
     [simulators addObject:simulator];
     [simulatorUUIDs addObject:simulator.udid];
   }
 
+  NSError *error = nil;
   XCTAssertTrue([self.control.simulatorPool deleteManagedSimulatorsWithError:&error]);
   XCTAssertNil(error);
 

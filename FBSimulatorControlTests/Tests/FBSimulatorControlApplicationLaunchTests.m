@@ -21,6 +21,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 #import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
 
+#import "FBInteractionAssertion.h"
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlNotificationAssertion.h"
 #import "FBSimulatorControlTestCase.h"
@@ -33,21 +34,15 @@
 
 - (void)testLaunchesSafariApplication
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session = [self createSession];
 
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
     arguments:@[]
     environment:@{}];
 
-  BOOL success = [[[session.interact
-    bootSimulator]
-    launchApplication:appLaunch]
-    performInteractionWithError:&error];
+  [self.interactionAssertion assertPerformSuccess:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
   [self.notificationAssertion consumeNotification:FBSimulatorSessionDidStartNotification];
   [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
   [self.notificationAssertion consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
@@ -56,22 +51,18 @@
 
 - (void)testLaunchesSampleApplication
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session = [self createSession];
 
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
     configurationWithApplication:[FBSimulatorControlFixtures tableSearchApplicationWithError:nil]
     arguments:@[]
     environment:@{}];
 
-  BOOL success = [[[[session.interact
+  [self.interactionAssertion assertPerformSuccess:[[[session.interact
     bootSimulator]
     installApplication:appLaunch.application]
-    launchApplication:appLaunch]
-    performInteractionWithError:&error];
+    launchApplication:appLaunch]];
 
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
   [self.notificationAssertion consumeNotification:FBSimulatorSessionDidStartNotification];
   [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
   [self.notificationAssertion consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];

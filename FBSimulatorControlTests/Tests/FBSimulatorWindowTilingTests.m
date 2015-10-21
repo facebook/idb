@@ -26,6 +26,7 @@
 #import <FBSimulatorControl/FBSimulatorWindowTiler.h>
 #import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>
 
+#import "FBInteractionAssertion.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorWindowTilingTests : FBSimulatorControlTestCase
@@ -33,6 +34,11 @@
 @end
 
 @implementation FBSimulatorWindowTilingTests
+
+- (FBSimulatorConfiguration *)simulatorConfiguration
+{
+  return FBSimulatorConfiguration.iPhone5.scale50Percent;
+}
 
 - (void)testTilesSingleiPhoneSimulatorInTopLeft
 {
@@ -42,20 +48,12 @@
     return;
   }
 
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
-  XCTAssertNotNil(session);
-  XCTAssertNil(error);
-
-  BOOL success = [[session.interact
-    bootSimulator]
-    performInteractionWithError:&error];
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
-
+  FBSimulatorSession *session = [self createBootedSession];
   FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler
     withSimulator:session.simulator
     strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:session.simulator]];
+
+  NSError *error = nil;
   CGRect position = [tiler placeInForegroundWithError:&error];
   XCTAssertNil(error);
   XCTAssertEqual(CGRectGetMinX(position), 0);
@@ -69,39 +67,19 @@
     NSLog(@"%@ can't run as the host process isn't trusted", NSStringFromSelector(_cmd));
     return;
   }
-
-  FBSimulatorConfiguration *configuration = FBSimulatorConfiguration.iPhone5.scale50Percent;
   CGFloat scaleFactor = NSScreen.mainScreen.backingScaleFactor;
 
-  NSError *error = nil;
-  FBSimulatorSession *firstSession = [self.control createSessionForSimulatorConfiguration:configuration error:&error];
-  XCTAssertNotNil(firstSession);
-  XCTAssertNil(error);
-
-  BOOL success = [[firstSession.interact
-    bootSimulator]
-    performInteractionWithError:&error];
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
-
+  FBSimulatorSession *firstSession = [self createBootedSession];
   FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler
     withSimulator:firstSession.simulator
     strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:firstSession.simulator]];
+  NSError *error = nil;
   CGRect position = [tiler placeInForegroundWithError:&error];
   XCTAssertNil(error);
   XCTAssertEqual(CGRectGetMinX(position), 0);
   XCTAssertEqual(CGRectGetMinY(position), 0);
 
-  FBSimulatorSession *secondSession = [self.control createSessionForSimulatorConfiguration:configuration error:&error];
-  XCTAssertNotNil(secondSession);
-  XCTAssertNil(error);
-
-  success = [[secondSession.interact
-    bootSimulator]
-    performInteractionWithError:&error];
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
-
+  FBSimulatorSession *secondSession = [self createBootedSession];
   tiler = [FBSimulatorWindowTiler
     withSimulator:secondSession.simulator
     strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:secondSession.simulator]];
@@ -110,16 +88,9 @@
   XCTAssertEqual(CGRectGetMinX(position), 320 / scaleFactor);
   XCTAssertEqual(CGRectGetMinY(position), 0);
 
-  FBSimulatorSession *thirdSession = [self.control createSessionForSimulatorConfiguration:configuration error:&error];
+  FBSimulatorSession *thirdSession = [self createBootedSession];
   XCTAssertNotNil(thirdSession);
   XCTAssertNil(error);
-
-  success = [[thirdSession.interact
-    bootSimulator]
-    performInteractionWithError:&error];
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
-
   tiler = [FBSimulatorWindowTiler
     withSimulator:thirdSession.simulator
     strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:thirdSession.simulator]];
