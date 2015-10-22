@@ -30,6 +30,12 @@
 @interface FBSimulatorConfigurationNamedDevice_iPhone6Plus : NSObject<FBSimulatorConfigurationNamedDevice>
 @end
 
+@interface FBSimulatorConfigurationNamedDevice_iPhone6S : NSObject<FBSimulatorConfigurationNamedDevice>
+@end
+
+@interface FBSimulatorConfigurationNamedDevice_iPhone6SPlus : NSObject<FBSimulatorConfigurationNamedDevice>
+@end
+
 @interface FBSimulatorConfigurationNamedDevice_iPad2 : NSObject<FBSimulatorConfigurationNamedDevice>
 @end
 
@@ -40,6 +46,9 @@
 @end
 
 @interface FBSimulatorConfigurationNamedDevice_iPadAir2 : NSObject<FBSimulatorConfigurationNamedDevice>
+@end
+
+@interface FBSimulatorConfigurationNamedDevice_iPadPro : NSObject<FBSimulatorConfigurationNamedDevice>
 @end
 
 @protocol FBSimulatorConfigurationOSVersion <NSObject>
@@ -67,6 +76,9 @@
 @end
 
 @interface FBSimulatorConfigurationOSVersion_9_0 : NSObject<FBSimulatorConfigurationOSVersion>
+@end
+
+@interface FBSimulatorConfigurationOSVersion_9_1 : NSObject<FBSimulatorConfigurationOSVersion>
 @end
 
 @protocol FBSimulatorConfigurationScale <NSObject>

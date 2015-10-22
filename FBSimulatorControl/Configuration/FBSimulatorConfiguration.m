@@ -57,6 +57,24 @@
 
 @end
 
+@implementation FBSimulatorConfigurationNamedDevice_iPhone6S
+
+- (NSString *)deviceName
+{
+  return @"iPhone 6s";
+}
+
+@end
+
+@implementation FBSimulatorConfigurationNamedDevice_iPhone6SPlus
+
+- (NSString *)deviceName
+{
+  return @"iPhone 6s Plus";
+}
+
+@end
+
 @implementation FBSimulatorConfigurationNamedDevice_iPad2
 
 - (NSString *)deviceName
@@ -89,6 +107,15 @@
 - (NSString *)deviceName
 {
   return @"iPad Air 2";
+}
+
+@end
+
+@implementation FBSimulatorConfigurationNamedDevice_iPadPro
+
+- (NSString *)deviceName
+{
+  return @"iPad Pro";
 }
 
 @end
@@ -156,6 +183,15 @@
 
 @end
 
+@implementation FBSimulatorConfigurationOSVersion_9_1
+
+- (NSString *)osVersion
+{
+  return @"9.1";
+}
+
+@end
+
 @implementation FBSimulatorConfigurationScale_25
 
 - (NSString *)scaleString
@@ -209,13 +245,10 @@
   static dispatch_once_t onceToken;
   static FBSimulatorConfiguration *configuration;
   dispatch_once(&onceToken, ^{
-    NSString *sdkVersion = FBSimulatorControlStaticConfiguration.sdkVersion;
-
     configuration = [FBSimulatorConfiguration new];
     configuration.namedDevice = [FBSimulatorConfigurationNamedDevice_iPhone5 new];
-    configuration.osVersion = self.class.nameToOSVersion[sdkVersion];
+    configuration.osVersion = [FBSimulatorConfiguration defaultOSVersion];
     configuration.scale = [FBSimulatorConfigurationScale_50 new];
-    NSCAssert(configuration.osVersion, @"Could not get a simulator OS for SDK %@", sdkVersion);
   });
   return configuration;
 }
@@ -461,6 +494,8 @@
      FBSimulatorConfigurationNamedDevice_iPhone5s.new,
      FBSimulatorConfigurationNamedDevice_iPhone6.new,
      FBSimulatorConfigurationNamedDevice_iPhone6Plus.new,
+     FBSimulatorConfigurationNamedDevice_iPhone6S.new,
+     FBSimulatorConfigurationNamedDevice_iPhone6SPlus.new,
      FBSimulatorConfigurationNamedDevice_iPad2.new,
      FBSimulatorConfigurationNamedDevice_iPadRetina.new,
      FBSimulatorConfigurationNamedDevice_iPadAir.new,
@@ -488,7 +523,8 @@
       FBSimulatorConfigurationOSVersion_8_2.new,
       FBSimulatorConfigurationOSVersion_8_3.new,
       FBSimulatorConfigurationOSVersion_8_4.new,
-      FBSimulatorConfigurationOSVersion_9_0.new
+      FBSimulatorConfigurationOSVersion_9_0.new,
+      FBSimulatorConfigurationOSVersion_9_1.new
     ];
 
     NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
@@ -498,6 +534,22 @@
     mapping = [dictionary copy];
   });
   return mapping;
+}
+
++ (id<FBSimulatorConfigurationOSVersion>)defaultOSVersion
+{
+  static dispatch_once_t onceToken;
+  static id<FBSimulatorConfigurationOSVersion> osVersion;
+  dispatch_once(&onceToken, ^{
+    NSString *sdkVersion = FBSimulatorControlStaticConfiguration.sdkVersion;
+    osVersion = self.class.nameToOSVersion[sdkVersion];
+    if (osVersion) {
+      return;
+    }
+    NSString *latestName = [[self.class.nameToOSVersion.allKeys sortedArrayUsingSelector:@selector(compare:)] lastObject];
+    osVersion = self.class.nameToOSVersion[latestName];
+  });
+  return osVersion;
 }
 
 - (instancetype)updateNamedDeviceClass:(Class)class
