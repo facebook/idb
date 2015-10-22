@@ -53,6 +53,11 @@ extern NSString *const FBSimulatorControlErrorDomain;
 - (instancetype)inSimulator:(FBSimulator *)simulator;
 
 /**
+ Prints a recursive description in the error.
+ */
+- (instancetype)recursiveDescription;
+
+/**
  Builds the Error with the applied arguments.
  */
 - (NSError *)build;
@@ -95,5 +100,15 @@ extern NSString *const FBSimulatorControlErrorDomain;
  Return nil, wrapping `failureCause` in the FBSimulatorControl domain with an additional description.
  */
 + (id)failWithError:(NSError *)failureCause description:(NSString *)description errorOut:(NSError **)errorOut;
+
+@end
+
+/**
+ When printing NSError, you'll only get one level of NSUnderlyingDescription, which doesn't encourage verbose errors
+ This fixes that by printing more than just the first level's error.
+ */
+@interface NSError (RecursiveDescription)
+
+- (NSString *)recursiveUnderlyingDescription;
 
 @end

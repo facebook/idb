@@ -20,35 +20,33 @@
 #import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 
-#import "FBInteractionAssertion.h"
-#import "FBSimulatorControlNotificationAssertion.h"
-
-@interface FBSimulatorControlTestCase ()
-
-@property (nonatomic, strong, readwrite) FBSimulatorControl *control;
-@property (nonatomic, strong, readwrite) FBSimulatorControlNotificationAssertion *notificationAssertion;
-@property (nonatomic, strong, readwrite) FBInteractionAssertion *interactionAssertion;
-
-@end
+#import "FBSimulatorControlAssertions.h"
 
 @implementation FBSimulatorControlTestCase
 
+@synthesize assert = _assert;
+
 #pragma mark Overrideable Defaults
 
-- (FBSimulatorManagementOptions)managementOptions
+- (FBSimulatorControl *)control
 {
-  return FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart |
-         FBSimulatorManagementOptionsDeleteOnFree;
+  if (!_control) {
+    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
+      configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
+      deviceSetPath:self.deviceSetPath
+      options:self.managementOptions];
+
+    _control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
+  }
+  return _control;
 }
 
-- (FBSimulatorConfiguration *)simulatorConfiguration
+- (FBSimulatorControlAssertions *)assert
 {
-  return FBSimulatorConfiguration.iPhone5;
-}
-
-- (NSString *)deviceSetPath
-{
-  return nil;
+  if (!_assert) {
+    _assert = [FBSimulatorControlAssertions withTestCase:self];
+  }
+  return _assert;
 }
 
 #pragma mark Helper Actions
@@ -74,7 +72,7 @@
 - (FBSimulatorSession *)createBootedSession
 {
   FBSimulatorSession *session = [self createSession];
-  [self.interactionAssertion assertPerformSuccess:session.interact.bootSimulator];
+  [self.assert interactionSuccessful:session.interact.bootSimulator];
   return session;
 }
 
@@ -82,14 +80,9 @@
 
 - (void)setUp
 {
-  FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    deviceSetPath:self.deviceSetPath
-    options:[self managementOptions]];
-
-  self.control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
-  self.notificationAssertion = [FBSimulatorControlNotificationAssertion new];
-  self.interactionAssertion = [FBInteractionAssertion withTestCase:self];
+  self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsDeleteOnFree;
+  self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
+  self.deviceSetPath = nil;
 }
 
 - (void)tearDown

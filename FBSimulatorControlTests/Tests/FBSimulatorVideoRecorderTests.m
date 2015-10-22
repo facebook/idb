@@ -25,7 +25,7 @@
 #import <FBSimulatorControl/FBSimulatorVideoRecorder.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
-#import "FBInteractionAssertion.h"
+#import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorVideoRecorderTests : FBSimulatorControlTestCase
@@ -44,7 +44,7 @@
     environment:@{}];
 
 
-  [self.interactionAssertion assertPerformSuccess:[session.interact launchApplication:appLaunch]];
+  [self.assert interactionSuccessful:[session.interact launchApplication:appLaunch]];
 
   FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:session.simulator logger:nil];
 
@@ -78,10 +78,10 @@
    environment:@{}];
 
   FBSimulatorSession *firstSession = [self createSession];
-  [self.interactionAssertion assertPerformSuccess:[firstSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
+  [self.assert interactionSuccessful:[firstSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
 
   FBSimulatorSession *secondSession = [self createSession];
-  [self.interactionAssertion assertPerformSuccess:[secondSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
+  [self.assert interactionSuccessful:[secondSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
 
   // Spin the run loop a bit.
   [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:10 untilTrue:^ BOOL {

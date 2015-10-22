@@ -24,8 +24,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/FBSimulatorSessionState.h>
 
-#import "FBInteractionAssertion.h"
-#import "FBSimulatorControlNotificationAssertion.h"
+#import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorControlSimulatorLaunchTests : FBSimulatorControlTestCase
@@ -46,14 +45,14 @@
 {
   FBSimulatorSession *session = [self createSession];
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateNotStarted);
-  [self.notificationAssertion noNotificationsToConsume];
+  [self.assert noNotificationsToConsume];
 
   NSError *error = nil;
-  [self.interactionAssertion assertPerformSuccess:session.interact.bootSimulator];
+  [self.assert interactionSuccessful:session.interact.bootSimulator];
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateStarted);
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionDidStartNotification];
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
-  [self.notificationAssertion noNotificationsToConsume];
+  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
+  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
 
   XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
   XCTAssertEqual(session.state.runningAgents.count, 0);
@@ -65,9 +64,9 @@
   XCTAssertTrue([session terminateWithError:&error]);
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateEnded);
   XCTAssertEqual(session.simulator.processIdentifier, -1);
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidTerminateNotification];
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionDidEndNotification];
-  [self.notificationAssertion noNotificationsToConsume];
+  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidTerminateNotification];
+  [self.assert consumeNotification:FBSimulatorSessionDidEndNotification];
+  [self.assert noNotificationsToConsume];
 }
 
 - (void)doTestLaunchesMultipleSimulatorsConcurrently
@@ -93,21 +92,9 @@
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3);
   XCTAssertEqual(([[NSSet setWithArray:@[session1.simulator.udid, session2.simulator.udid, session3.simulator.udid]] count]), 3);
 
-  // These should fire on multiple threads at the same time. Since they don't access each other's state & DTMobile seems ok with it
-  // these can be concurrent with each other. Terminating simulators returns devices to the pool, so should be sequenced.
-  dispatch_group_t group = dispatch_group_create();
-  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
-
-  dispatch_group_async(group, queue, ^{
-    [self.interactionAssertion assertPerformSuccess:session1.interact.bootSimulator];
-  });
-  dispatch_group_async(group, queue, ^{
-    [self.interactionAssertion assertPerformSuccess:session2.interact.bootSimulator];
-  });
-  dispatch_group_async(group, queue, ^{
-    [self.interactionAssertion assertPerformSuccess:session3.interact.bootSimulator];
-  });
-  dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+  [self.assert interactionSuccessful:session1.interact.bootSimulator];
+  [self.assert interactionSuccessful:session2.interact.bootSimulator];
+  [self.assert interactionSuccessful:session3.interact.bootSimulator];
 
   NSMutableSet *simulatorPIDs = [NSMutableSet set];
   for (FBSimulatorSession *session in @[session1, session2, session3]) {

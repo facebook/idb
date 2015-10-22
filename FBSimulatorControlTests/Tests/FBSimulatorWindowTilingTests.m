@@ -26,7 +26,6 @@
 #import <FBSimulatorControl/FBSimulatorWindowTiler.h>
 #import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>
 
-#import "FBInteractionAssertion.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorWindowTilingTests : FBSimulatorControlTestCase

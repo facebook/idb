@@ -19,6 +19,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 @property (nonatomic, copy, readwrite) NSString *describedAs;
 @property (nonatomic, copy, readwrite) NSError *cause;
 @property (nonatomic, strong, readwrite) NSMutableDictionary *additionalInfo;
+@property (nonatomic, assign, readwrite) BOOL describeRecursively;
 
 @end
 
@@ -32,6 +33,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
   }
 
   _additionalInfo = [NSMutableDictionary dictionary];
+  _describeRecursively = NO;
   return self;
 }
 
@@ -115,6 +117,12 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
     extraInfo:@"launchd_subprocesses" value:[simulator launchedProcesses]];
 }
 
+- (instancetype)recursiveDescription
+{
+  self.describeRecursively = YES;
+  return self;
+}
+
 - (NSError *)build
 {
   // If there's just a cause, there's no error to build
@@ -127,10 +135,34 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
     userInfo[NSLocalizedDescriptionKey] = self.describedAs;
   }
   if (self.cause) {
-    userInfo[NSUnderlyingErrorKey] = self.cause;
+    userInfo[NSUnderlyingErrorKey] = self.underlyingError;
   }
   [userInfo addEntriesFromDictionary:self.additionalInfo];
   return [NSError errorWithDomain:FBSimulatorControlErrorDomain code:0 userInfo:[userInfo copy]];
+}
+
+#pragma mark Private
+
+- (NSError *)underlyingError
+{
+  NSError *error = self.cause;
+  if (!self.describeRecursively) {
+    return error;
+  }
+  NSError *cause = self.cause;
+  if (!cause) {
+    return error;
+  }
+
+  NSMutableString *description = [NSMutableString stringWithFormat:@"%@", error.localizedDescription];
+  while (error.userInfo[NSUnderlyingErrorKey]) {
+    error = error.userInfo[NSUnderlyingErrorKey];
+    [description appendFormat:@"\nCaused By: %@", error.localizedDescription];
+  }
+
+  NSMutableDictionary *userInfo = [cause.userInfo mutableCopy];
+  userInfo[NSLocalizedDescriptionKey] = description;
+  return [NSError errorWithDomain:cause.domain code:cause.copy userInfo:[userInfo copy]];
 }
 
 @end

@@ -107,13 +107,13 @@
     : [self.simulatorPool killAllWithError:&innerError];
 
   if (!result) {
-    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to teardown previous simulators" errorOut:error];
+    return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
   }
 
   BOOL killUnmanaged = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
   if (killUnmanaged) {
     if (![self.simulatorPool killSpuriousSimulatorsWithError:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to kill spurious simulators" errorOut:error];
+      return [[[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] recursiveDescription] failBool:error];
     }
   }
 

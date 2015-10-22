@@ -7,17 +7,27 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorControlNotificationAssertion.h"
+#import "FBSimulatorControlAssertions.h"
 
+#import <FBSimulatorControl/FBInteraction.h>
+#import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
 
-@interface FBSimulatorControlNotificationAssertion ()
+@interface FBSimulatorControlAssertions ()
 
 @property (nonatomic, strong) NSMutableArray *notificationsRecieved;
+@property (nonatomic, weak) XCTestCase *testCase;
 
 @end
 
-@implementation FBSimulatorControlNotificationAssertion
+@implementation FBSimulatorControlAssertions
+
++ (instancetype)withTestCase:(XCTestCase *)testCase
+{
+  FBSimulatorControlAssertions *assertions = [self new];
+  assertions.testCase = testCase;
+  return assertions;
+}
 
 - (instancetype)init
 {
@@ -61,7 +71,7 @@
   [self tearDown];
 }
 
-#pragma mark Public
+#pragma mark Notifications
 
 - (void)notificationRecieved:(NSNotification *)notification
 {
@@ -71,16 +81,27 @@
 - (void)consumeNotification:(NSString *)notificationName
 {
   if (self.notificationsRecieved.count == 0) {
-    XCTFail(@"There was no notification to recieve for %@", notificationName);
+    _XCTPrimitiveFail(self.testCase, @"There was no notification to recieve for %@", notificationName);
     return;
   }
-  XCTAssertEqualObjects(notificationName, [self.notificationsRecieved[0] name]);
+  _XCTPrimitiveAssertEqualObjects(self.testCase, notificationName, "notificationName", [self.notificationsRecieved[0] name], "[self.notificationsRecieved[0] name]");
   [self.notificationsRecieved removeObjectAtIndex:0];
 }
 
 - (void)noNotificationsToConsume
 {
-  XCTAssertEqual(self.notificationsRecieved.count, 0, @"Expected to have no notifications to consume but there was %@", self.notificationsRecieved);
+  _XCTPrimitiveAssertEqual(self.testCase, self.notificationsRecieved.count, "self.notificationsRecieved.count",  0, "0", @"Expected to have no notifications to consume but there was %@", self.notificationsRecieved);
+}
+
+#pragma mark Interactions
+
+- (void)interactionSuccessful:(id<FBInteraction>)interaction
+{
+  NSError *error = nil;
+  BOOL success = [interaction performInteractionWithError:&error];
+
+  _XCTPrimitiveAssertTrue(self.testCase, success, "assertPerformSuccess:");
+  _XCTPrimitiveAssertNil(self.testCase, error, "error");
 }
 
 @end

@@ -10,11 +10,20 @@
 #import <XCTest/XCTest.h>
 
 @class FBSimulatorControl;
+@protocol FBInteraction;
 
-@interface FBSimulatorControlNotificationAssertion : XCTestCase
+@interface FBSimulatorControlAssertions : NSObject
+
++ (instancetype)withTestCase:(XCTestCase *)testCase;
+
+#pragma mark Notifications
 
 - (void)notificationRecieved:(NSNotification *)notification;
 - (void)consumeNotification:(NSString *)notificationName;
 - (void)noNotificationsToConsume;
+
+#pragma mark Interactions
+
+- (void)interactionSuccessful:(id<FBInteraction>)interaction;
 
 @end
