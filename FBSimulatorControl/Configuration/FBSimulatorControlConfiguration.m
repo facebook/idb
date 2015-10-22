@@ -17,8 +17,6 @@ NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
 
 @property (nonatomic, copy, readwrite) FBSimulatorApplication *simulatorApplication;
 @property (nonatomic, copy, readwrite) NSString *deviceSetPath;
-@property (nonatomic, copy, readwrite) NSString *namePrefix;
-@property (nonatomic, assign, readwrite) NSInteger bucketID;
 @property (nonatomic, assign, readwrite) FBSimulatorManagementOptions options;
 
 @end
@@ -27,18 +25,13 @@ NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
 
 + (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication
                                         deviceSetPath:(NSString *)deviceSetPath
-                                           namePrefix:(NSString *)namePrefix
-                                               bucket:(NSInteger)bucketID
                                               options:(FBSimulatorManagementOptions)options
 {
   NSParameterAssert(simulatorApplication);
-  NSParameterAssert(bucketID >= 0);
 
   FBSimulatorControlConfiguration *configuration = [self new];
   configuration.simulatorApplication = simulatorApplication;
   configuration.deviceSetPath = deviceSetPath;
-  configuration.namePrefix = namePrefix.length > 0 ? namePrefix : FBSimulatorControlConfigurationDefaultNamePrefix;
-  configuration.bucketID = bucketID;
   configuration.options = options;
   return configuration;
 }
@@ -48,14 +41,12 @@ NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
   return [self.class
     configurationWithSimulatorApplication:self.simulatorApplication
     deviceSetPath:self.deviceSetPath
-    namePrefix:self.namePrefix
-    bucket:self.bucketID
     options:self.options];
 }
 
 - (NSUInteger)hash
 {
-  return self.simulatorApplication.hash | self.deviceSetPath.hash | self.namePrefix.hash | self.bucketID | self.options;
+  return self.simulatorApplication.hash | self.deviceSetPath.hash | self.options;
 }
 
 - (BOOL)isEqual:(FBSimulatorControlConfiguration *)object
@@ -65,19 +56,15 @@ NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
   }
   return [self.simulatorApplication isEqual:object.simulatorApplication] &&
          ((self.deviceSetPath == nil && object.deviceSetPath == nil) || [self.deviceSetPath isEqual:object.deviceSetPath]) &&
-         [self.namePrefix isEqualToString:object.namePrefix] &&
-         self.bucketID == object.bucketID &&
          self.options == object.options;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Pool Config | Set Path %@ | Sim App %@ | Prefix %@ | Bucket Id %ld | Options %ld",
+    @"Pool Config | Set Path %@ | Sim App %@ | Options %ld",
     self.deviceSetPath,
     self.simulatorApplication,
-    self.namePrefix,
-    self.bucketID,
     self.options
   ];
 }

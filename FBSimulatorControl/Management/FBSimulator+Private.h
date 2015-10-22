@@ -17,15 +17,8 @@
 @property (nonatomic, strong, readwrite) SimDevice *device;
 @property (nonatomic, weak, readwrite) FBSimulatorPool *pool;
 @property (nonatomic, assign, readwrite) NSInteger processIdentifier;
-
-+ (instancetype)inflateFromSimDevice:(SimDevice *)simDevice configuration:(FBSimulatorControlConfiguration *)configuration;
-
-@end
-
-@interface FBManagedSimulator ()
-
-@property (nonatomic, assign, readwrite) NSInteger bucketID;
-@property (nonatomic, assign, readwrite) NSInteger offset;
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
+
++ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool;
 
 @end

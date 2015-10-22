@@ -25,14 +25,10 @@
   FBSimulatorControlConfiguration *config = [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:application
     deviceSetPath:nil
-    namePrefix:@"TestEnv"
-    bucket:1
-    options:FBSimulatorManagementOptionsDeleteManagedSimulatorsOnFirstStart];
+    options:FBSimulatorManagementOptionsEraseOnFree];
   FBSimulatorControlConfiguration *configCopy = [config copy];
 
   XCTAssertEqualObjects(config.simulatorApplication, configCopy.simulatorApplication);
-  XCTAssertEqualObjects(config.namePrefix, configCopy.namePrefix);
-  XCTAssertEqual(config.bucketID, configCopy.bucketID);
   XCTAssertEqual(config.options, configCopy.options);
   XCTAssertEqualObjects(config, configCopy);
 }

@@ -74,7 +74,11 @@ For a high level overview:
 - `FBSimulatorApplication` is a wrapper around Applications, you can create them for your own Apps or use `+[FBSimulatorApplication systemApplicationNamed:]` to launch System Apps.
 - `FBApplicationLaunchConfiguration` describes the launch of an Application, it's arguments and environment.
 - `FBSimulatorSessionState` provides a the current state and history of the known state of the Simulator, including the Unix Process IDs of the running Applications and Agents. You can further automate by using command line tools like [`sample(1)`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/sample.1.html), [`lldb(1)`](https://developer.apple.com/library/prerelease/mac/documentation/Darwin/Reference/ManPages/man1/lldb.1.html), [`heap(1)`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/heap.1.html) and [`instruments(1)`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/instruments.1.html).
-- The "Bucket ID" that a pool manages allows multiple processes to manage a subset of simulators, without interfering with the simulators created by other processes. By creating and starting Sessions in separate processes with their own buckets, allows Simulators to be run in parallel. This can be particularly beneficial for running Automated Tests in parallel, since much of the time a Simulator is idling the Host's CPU. Buckets can be re-used 
+
+## Multisim
+`FBSimulatorControl` launches Xcode's Simulator Applications directly, allowing specific Simulators to be targeted by UDID. `Simulator.app` uses a default set of Simulators located at `~/Library/Developer/CoreSimulator/Devices`. By passing arguments to the `Simulator.app` binary, a different Device Set can be used, allowing multiple pools of Simulators to be booted, without interference.
+
+This is only supported on Xcode 7.
 
 ## Contributing
 See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to work on the issues!

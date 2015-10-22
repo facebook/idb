@@ -9,7 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBManagedSimulator;
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
@@ -40,8 +39,8 @@
 
 /**
  An Ordered Set of the Simulators for the DeviceSet.
- This includes allocated and un-allocated simulators, as well as managed and unmanaged simulators.
- Ordering is based on name descending.
+ This includes allocated and un-allocated Simulators.
+ Ordering is based on the ordering of SimDeviceSet.
  Is an NSOrderedSet<FBSimulator>
  */
 @property (nonatomic, copy, readonly) NSOrderedSet *allSimulators;
@@ -60,7 +59,7 @@
  @param error an error out for any error that occured.
  @returns a device if one could be found or created, nil if an error occured.
  */
-- (FBManagedSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
+- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
 
 /**
  Marks a device that was previously returned from `allocateDeviceWithName:sdkVersion:error:` as free.
@@ -70,31 +69,23 @@
  @param error an error out for any error that occured.
  @returns YES if the freeing of the device was successful, NO otherwise.
  */
-- (BOOL)freeSimulator:(FBManagedSimulator *)simulator error:(NSError **)error;
+- (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
 /**
- Kills all of the Simulators that this Pool is responsible for.
+ Kills all of the Simulators the reciever's Device Set.
 
  @param error an error out if any error occured.
  @returns an array of the Simulators that this were killed if successful, nil otherwise.
  */
-- (NSArray *)killManagedSimulatorsWithError:(NSError **)error;
+- (NSArray *)killAllWithError:(NSError **)error;
 
 /**
- Kills all of the Simulators that this, or any other Pool is responsible for.
+ Kills all of the Simulators that are not launched by `FBSimulatorControl`. These can be Simulators launched via Xcode or Instruments.
 
  @param error an error out if any error occured.
- @returns an array of the Simulators that this were killed if successful, nil otherwise.
+ @returns an YES if successful, nil otherwise.
  */
-- (NSArray *)killPooledSimulatorsWithError:(NSError **)error;
-
-/**
- Kills all of the Simulators that this are not managed by this pool, or any other.
-
- @param error an error out if any error occured.
- @returns an array of the Simulators that this were killed if successful, nil otherwise.
- */
-- (NSArray *)killUnmanagedSimulatorsWithError:(NSError **)error;
+- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
 
 /**
  Erases the Simulators that this Pool is responsible for.
@@ -103,7 +94,7 @@
  @param error an error out if any error occured.
  @returns an array of the Simulators that this Pool is responsible if successful, nil otherwise.
  */
-- (NSArray *)eraseManagedSimulatorsWithError:(NSError **)error;
+- (NSArray *)eraseAllWithError:(NSError **)error;
 
 /**
  Delete all of the Simulators Managed by this Pool, killing them first.
@@ -111,15 +102,7 @@
  @param error an error out if any error occured.
  @returns an Array of the names of the Simulators that were deleted if successful, nil otherwise.
  */
-- (NSArray *)deleteManagedSimulatorsWithError:(NSError **)error;
-
-/**
- Delete all of the Simulators that this Pool, or any other pool is responsiblef for, killing them first.
-
- @param error an error out if any error occured.
- @returns an Array of the names of the Simulators that were deleted if successful, nil otherwise.
- */
-- (NSArray *)deletePooledSimulatorsWithError:(NSError **)error;
+- (NSArray *)deleteAllWithError:(NSError **)error;
 
 @end
 
@@ -145,50 +128,22 @@
  @param deviceType the Device Type of the Device to search for. Must not be nil.
  @return The Allocated device created by FBSimulatorPool.
  */
-- (FBManagedSimulator *)allocatedSimulatorWithDeviceType:(NSString *)deviceType;
-
-/**
- An Ordered Set of the Simulators that this Pool is responsible for.
- This includes allocated and un-allocated simulators.
- Ordering is based on name descending.
- Is an NSOrderedSet<FBManagedSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *allSimulatorsInPool;
-
-/**
- An Ordered Set of the Simulators that any posible Pool is responsible for.
- This includes allocated and un-allocated simulators.
- Ordering is based on name descending.
- Is an NSOrderedSet<FBManagedSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *allPooledSimulators;
+- (FBSimulator *)allocatedSimulatorWithDeviceType:(NSString *)deviceType;
 
 /**
  An Ordered Set of the Simulators that this Pool has allocated.
  This includes only allocated simulators.
- Is an NSOrderedSet<FBManagedSimulator>
+ Is an NSOrderedSet<FBSimulator>
  */
 @property (nonatomic, copy, readonly) NSOrderedSet *allocatedSimulators;
 
 /**
  An Ordered Set of the Simulators that this Pool has allocated.
  This includes only allocated simulators.
- Ordering is based on name descending.
- Is an NSOrderedSet<FBManagedSimulator>
+ Ordering is based on the recency of the allocation: the most recent allocated Simulator is at the end of the Set.
+ Is an NSOrderedSet<FBSimulator>
  */
 @property (nonatomic, copy, readonly) NSOrderedSet *unallocatedSimulators;
-
-/**
- An Ordered Set of all the Simulators for the Device Set.
- Is an NSOrderedSet<FBSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *allSimulators;
-
-/**
- An Ordered Set of the Simulators that no Pool is responsible for.
- Is an NSOrderedSet<FBSimulator>
- */
-@property (nonatomic, copy, readonly) NSOrderedSet *unmanagedSimulators;
 
 /**
  An Ordered Set of the Simulators that have been launched by any pool, or not by FBSimulatorControl at all.

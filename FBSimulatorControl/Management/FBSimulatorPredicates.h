@@ -11,22 +11,13 @@
 
 @class FBSimulator;
 @class FBSimulatorPool;
+@class FBSimulatorConfiguration;
 
 /**
- Predicates for filtering the sets of available Simulators.
+ Predicates for filtering collections of available Simulators.
  NSCompoundPredicate can be used to compose Predicates.
  */
 @interface FBSimulatorPredicates : NSObject
-
-/**
- Predicate for Simulators that are managed by any Pool.
- */
-+ (NSPredicate *)managed;
-
-/**
- Predicate for Simulators that are managed by a specific Pool.
- */
-+ (NSPredicate *)managedByPool:(FBSimulatorPool *)pool;
 
 /**
  Predicate for Simulators that are allocated in a specific Pool.
@@ -39,11 +30,6 @@
 + (NSPredicate *)unallocatedByPool:(FBSimulatorPool *)pool;
 
 /**
- Predicate for Simulators that are not managed by any Pool.
- */
-+ (NSPredicate *)unmanaged;
-
-/**
  Predicate for Simulators that are launched.
  */
 + (NSPredicate *)launched;
@@ -52,5 +38,10 @@
  Predicate for only the provided Simulator.
  */
 + (NSPredicate *)only:(FBSimulator *)simulator;
+
+/**
+ Predicate for matching SimDevices against a Configuration.
+ */
++ (NSPredicate *)matchingConfiguration:(FBSimulatorConfiguration *)configuration;
 
 @end
