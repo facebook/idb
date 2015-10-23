@@ -39,4 +39,9 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"photo1" ofType:@"png"];
 }
 
++ (NSString *)video0Path
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"video0" ofType:@"mp4"];
+}
+
 @end

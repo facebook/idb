@@ -28,6 +28,7 @@
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBSimulatorSessionState.h"
 #import "FBSimulatorVideoRecorder.h"
+#import "FBSimulatorVideoUploader.h"
 #import "FBSimulatorWindowTiler.h"
 #import "FBSimulatorWindowTilingStrategy.h"
 #import "FBTaskExecutor.h"
@@ -146,6 +147,23 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
         return [[[FBSimulatorError describeFormat:@"Failed to upload photo at path %@", path] causedBy:innerError] failBool:error];
       }
     }
+    return YES;
+  }];
+}
+
+- (instancetype)uploadVideos:(NSArray *)videoPaths
+{
+  FBSimulatorSession *session = self.session;
+  FBSimulatorVideoUploader *uploader = [FBSimulatorVideoUploader forSession:session];
+  return [self interact:^BOOL(NSError **error) {
+    NSError *innerError = nil;
+    const BOOL success = [uploader uploadVideos:videoPaths error:&innerError];
+    if (!success) {
+      return [[[FBSimulatorError describeFormat:@"Failed to upload videos at paths %@", videoPaths]
+        causedBy:innerError]
+        failBool:error];
+    }
+    
     return YES;
   }];
 }
