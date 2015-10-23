@@ -34,7 +34,7 @@
 - (FBWritableLog *)systemLog
 {
   return [[[[[FBWritableLogBuilder builder]
-    updatePath:self.simulator.device.logPath]
+    updatePath:self.systemLogPath]
     updateShortName:@"system_log"]
     updateHumanReadableName:@"System Log"]
     build];
@@ -52,6 +52,11 @@
 }
 
 #pragma mark Private
+
+- (NSString *)systemLogPath
+{
+  return [self.simulator.device.logPath stringByAppendingPathComponent:@"system.log"];
+}
 
 - (NSString *)diagnosticReportsPath
 {
