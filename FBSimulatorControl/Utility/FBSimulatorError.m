@@ -162,7 +162,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 
   NSMutableDictionary *userInfo = [cause.userInfo mutableCopy];
   userInfo[NSLocalizedDescriptionKey] = description;
-  return [NSError errorWithDomain:cause.domain code:cause.copy userInfo:[userInfo copy]];
+  return [NSError errorWithDomain:cause.domain code:cause.code userInfo:[userInfo copy]];
 }
 
 @end

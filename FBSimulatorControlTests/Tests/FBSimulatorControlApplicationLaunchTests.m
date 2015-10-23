@@ -23,7 +23,6 @@
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlFixtures.h"
-#import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorControlApplicationLaunchTests : FBSimulatorControlTestCase

@@ -9,6 +9,8 @@
 
 #import "FBSimulatorControlFixtures.h"
 
+#import <FBSImulatorControl/FBProcessLaunchConfiguration.h>
+
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 
 @implementation FBSimulatorControlFixtures
@@ -17,6 +19,14 @@
 {
   NSString *path = [[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"];
   return [FBSimulatorApplication applicationWithPath:path error:error];
+}
+
++ (FBApplicationLaunchConfiguration *)tableSearchAppLaunch
+{
+  return [FBApplicationLaunchConfiguration
+    configurationWithApplication:[self tableSearchApplicationWithError:nil]
+    arguments:@[]
+    environment:@{}];
 }
 
 + (NSString *)photo0Path

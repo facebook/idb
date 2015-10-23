@@ -15,23 +15,41 @@
 
 @implementation FBProcessLaunchConfiguration (Helpers)
 
+- (instancetype)withEnvironmentAdditions:(NSDictionary *)environmentAdditions
+{
+  NSMutableDictionary *environment = [[self environment] mutableCopy];
+  [environment addEntriesFromDictionary:environmentAdditions];
+
+  FBProcessLaunchConfiguration *configuration = [self copy];
+  configuration.environment = [environment copy];
+  return configuration;
+}
+
 - (instancetype)withDiagnosticEnvironment
 {
-  FBProcessLaunchConfiguration *configuration = [self copy];
-
   // It looks like DYLD_PRINT is not currently working as per TN2239.
-  NSDictionary *diagnosticEnvironment = @{
+  return [self withEnvironmentAdditions:@{
     @"OBJC_PRINT_LOAD_METHODS" : @"YES",
     @"OBJC_PRINT_IMAGES" : @"YES",
     @"OBJC_PRINT_IMAGE_TIMES" : @"YES",
     @"DYLD_PRINT_STATISTICS" : @"1",
     @"DYLD_PRINT_ENV" : @"1",
     @"DYLD_PRINT_LIBRARIES" : @"1"
-  };
-  NSMutableDictionary *environment = [[self environment] mutableCopy];
-  [environment addEntriesFromDictionary:diagnosticEnvironment];
-  configuration.environment = [environment copy];
-  return configuration;
+  }];
+}
+
+- (instancetype)injectingLibrary:(NSString *)filePath
+{
+  NSParameterAssert(filePath);
+
+  return [self withEnvironmentAdditions:@{
+    @"DYLD_INSERT_LIBRARIES" : filePath
+  }];
+}
+
+- (instancetype)injectingShimulator
+{
+  return [self injectingLibrary:[[NSBundle bundleForClass:self.class] pathForResource:@"libShimulator" ofType:@"dylib"]];
 }
 
 @end
