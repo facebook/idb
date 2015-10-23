@@ -14,8 +14,9 @@
 @property (nonatomic, strong, readwrite) NSTask *task;
 @property (nonatomic, copy, readwrite) NSSet *acceptableStatusCodes;
 
-@property (nonatomic, assign, readwrite) BOOL hasTerminated;
 @property (nonatomic, copy, readwrite) void (^terminationHandler)(id<FBTask>);
+
+@property (atomic, assign, readwrite) BOOL hasTerminated;
 @property (atomic, strong, readwrite) NSError *runningError;
 
 + (instancetype)taskWithNSTask:(NSTask *)nsTask acceptableStatusCodes:(NSSet *)acceptableStatusCodes stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;

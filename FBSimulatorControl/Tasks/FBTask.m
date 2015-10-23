@@ -24,7 +24,7 @@ NSTimeInterval const FBTaskDefaultTimeout = 30;
 
 + (instancetype)taskWithNSTask:(NSTask *)nsTask acceptableStatusCodes:(NSSet *)acceptableStatusCodes stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
-  FBTask *task = stdOutPath
+  FBTask *task = stdOutPath || stdErrPath
     ? [[FBTask_FileBacked alloc] initWithTask:nsTask acceptableStatusCodes:acceptableStatusCodes stdOutPath:stdOutPath stdErrPath:stdErrPath]
     : [[FBTask_InMemory alloc] initWithTask:nsTask acceptableStatusCodes:acceptableStatusCodes];
   [task decorateTask:nsTask];
@@ -107,11 +107,6 @@ NSTimeInterval const FBTaskDefaultTimeout = 30;
   return self.task.processIdentifier;
 }
 
-- (NSError *)error
-{
-  return self.runningError;
-}
-
 - (NSString *)stdOut
 {
   [self doesNotRecognizeSelector:_cmd];
@@ -122,6 +117,19 @@ NSTimeInterval const FBTaskDefaultTimeout = 30;
 {
   [self doesNotRecognizeSelector:_cmd];
   return nil;
+}
+
+- (NSError *)error
+{
+  return self.runningError;
+}
+
+- (BOOL)wasSuccessful
+{
+  @synchronized(self)
+  {
+    return self.hasTerminated && self.runningError == nil;
+  }
 }
 
 #pragma mark Private
@@ -174,9 +182,13 @@ NSTimeInterval const FBTaskDefaultTimeout = 30;
   NSParameterAssert(description);
   NSMutableDictionary *userInfo = [@{
     NSLocalizedDescriptionKey : description,
-    @"stdout" : self.stdOut,
-    @"stderr" : self.stdErr,
   } mutableCopy];
+  if (self.stdOut) {
+    userInfo[@"stdout"] = self.stdOut;
+  }
+  if (self.stdErr) {
+    userInfo[@"stderr"] = self.stdErr;
+  }
 
   if (self.task.isRunning) {
     userInfo[@"exitcode"] = @(self.task.terminationStatus);
@@ -291,18 +303,18 @@ NSTimeInterval const FBTaskDefaultTimeout = 30;
 
 - (NSTask *)decorateTask:(NSTask *)task
 {
-  if (![NSFileManager.defaultManager createFileAtPath:self.stdOutPath contents:nil attributes:nil]) {
+  if (self.stdOutPath && ![NSFileManager.defaultManager createFileAtPath:self.stdOutPath contents:nil attributes:nil]) {
     self.runningError = [self errorForDescription:[NSString stringWithFormat:@"Could not create stdout file at %@", self.stdOutPath]];
     return task;
   }
-  if (![NSFileManager.defaultManager createFileAtPath:self.stdErrPath contents:nil attributes:nil]) {
+  if (self.stdErrPath && ![NSFileManager.defaultManager createFileAtPath:self.stdErrPath contents:nil attributes:nil]) {
     self.runningError = [self errorForDescription:[NSString stringWithFormat:@"Could not create stdErr file at %@", self.stdErrPath]];
     return task;
   }
 
-  self.stdOutFileHandle = [NSFileHandle fileHandleForWritingAtPath:self.stdOutPath];
+  self.stdOutFileHandle = self.stdOutPath ? [NSFileHandle fileHandleForWritingAtPath:self.stdOutPath] : NSFileHandle.fileHandleWithNullDevice;
   task.standardOutput = self.stdOutFileHandle;
-  self.stdErrFileHandle = [NSFileHandle fileHandleForWritingAtPath:self.stdErrPath];
+  self.stdErrFileHandle = self.stdErrPath ? [NSFileHandle fileHandleForWritingAtPath:self.stdErrPath] : NSFileHandle.fileHandleWithNullDevice;
   task.standardError = self.stdErrFileHandle;
 
   return [super decorateTask:task];

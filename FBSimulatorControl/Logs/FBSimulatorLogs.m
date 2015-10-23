@@ -16,6 +16,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState+Queries.h"
+#import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
 
 @implementation FBSimulatorLogs
@@ -124,6 +125,36 @@
 - (NSArray *)subprocessCrashes
 {
   return [self subprocessCrashesAfterDate:self.session.state.sessionStartDate];
+}
+
+- (NSDictionary *)launchedApplicationLogs
+{
+  NSArray *launchedApplications = [self.session.state allLaunchedApplications];
+
+  // TODO: Use asl(3) or syslog(1) instead of grep.
+  NSMutableDictionary *logs = [NSMutableDictionary dictionary];
+  for (FBUserLaunchedProcess *launchedProcess in launchedApplications) {
+    logs[launchedProcess] = [[[[[FBWritableLogBuilder builder]
+      updateShortName:[NSString stringWithFormat:@"log_%ld", launchedProcess.processIdentifier]]
+      updateFileType:@"log"]
+      updatePathFromBlock:^ BOOL (NSString *path) {
+        NSString *shellCommand = [NSString stringWithFormat:
+          @"cat %@ | grep %ld",
+          [FBTaskExecutor escapePathForShell:self.systemLogPath],
+          launchedProcess.processIdentifier
+        ];
+
+        return [[[[[FBTaskExecutor.sharedInstance
+         withShellTaskCommand:shellCommand]
+         withStdOutPath:path stdErrPath:nil]
+         build]
+         startSynchronouslyWithTimeout:10]
+         wasSuccessful];
+      }]
+      build];
+  }
+
+  return [logs copy];
 }
 
 @end

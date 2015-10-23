@@ -54,7 +54,7 @@
 {
   return [self updateCurrentState:^ FBSimulatorSessionState * (FBSimulatorSessionState *state) {
     NSCParameterAssert(state.lifecycle != FBSimulatorSessionLifecycleStateNotStarted);
-    NSCParameterAssert([state processForLaunchConfiguration:launchConfig] == nil);
+    NSCParameterAssert([state runningProcessForLaunchConfiguration:launchConfig] == nil);
 
     FBUserLaunchedProcess *processState = [FBUserLaunchedProcess new];
     processState.processIdentifier = processIdentifier;
@@ -72,11 +72,11 @@
 - (instancetype)update:(FBSimulatorApplication *)application withDiagnosticNamed:(NSString *)diagnosticName data:(id)data
 {
   NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulatorSessionState *sessionState, NSDictionary *bindings) {
-    return [sessionState processForApplication:application] != nil;
+    return [sessionState runningProcessForApplication:application] != nil;
   }];
 
   return [self amendPriorState:predicate update:^ FBSimulatorSessionState * (FBSimulatorSessionState *sessionState) {
-    FBUserLaunchedProcess *currentProcessState = [sessionState processForApplication:application];
+    FBUserLaunchedProcess *currentProcessState = [sessionState runningProcessForApplication:application];
     NSCAssert(currentProcessState, @"Can't get current process state");
 
     FBUserLaunchedProcess *nextProcessState = [self.class
@@ -107,7 +107,7 @@
 {
   return [self updateCurrentState:^ FBSimulatorSessionState * (FBSimulatorSessionState *sessionState) {
     NSCParameterAssert(sessionState.lifecycle != FBSimulatorSessionLifecycleStateNotStarted);
-    FBUserLaunchedProcess *processState = [sessionState processForBinary:binary];
+    FBUserLaunchedProcess *processState = [sessionState runningProcessForBinary:binary];
     NSCParameterAssert(processState);
 
     NSMutableOrderedSet *runningProcessesSet = sessionState.runningProcessesSet;
