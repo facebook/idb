@@ -36,74 +36,52 @@
   [super setUp];
 }
 
-- (FBSimulatorManagementOptions)managementOptions
-{
-  return FBSimulatorManagementOptionsDeleteOnFree | FBSimulatorManagementOptionsDeleteAllOnFirstStart;
-}
-
 - (NSString *)deviceSetPath
 {
   return [NSTemporaryDirectory()
     stringByAppendingPathComponent:[NSString stringWithFormat:@"%@", NSStringFromClass(self.class)]];
 }
 
+- (void)assertFreesSimulator:(FBSimulator *)simulator
+{
+  NSError *error = nil;
+  BOOL success = [self.control.simulatorPool freeSimulator:simulator error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+}
+
 - (void)testReallocatesAndErasesFreedDevice
 {
-  FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    deviceSetPath:self.deviceSetPath
-    options:FBSimulatorManagementOptionsEraseOnFree | FBSimulatorManagementOptionsDeleteAllOnFirstStart];
+  FBSimulatorManagementOptions options = FBSimulatorManagementOptionsEraseOnFree | FBSimulatorManagementOptionsDeleteAllOnFirstStart;
+  self.managementOptions = options;
 
-  FBSimulatorControl *control = [[FBSimulatorControl alloc] initWithConfiguration:controlConfiguration];
-
-  NSError *error = nil;
-  FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  FBSimulator *simulator = [control createSessionForSimulatorConfiguration:simulatorConfiguration error:&error].simulator;
-  XCTAssertNotNil(simulator);
-  XCTAssertNil(error);
-
+  FBSimulator *simulator = [self createSession].simulator;
   NSString *simulatorUUID = simulator.udid;
   [self addTemporaryFileToSimulator:simulator];
+  [self assertFreesSimulator:simulator];
 
-  XCTAssertTrue([control.simulatorPool freeSimulator:simulator error:nil]);
-  XCTAssertNil(error);
-
-  simulator = [control createSessionForSimulatorConfiguration:simulatorConfiguration error:&error].simulator;
-  XCTAssertNotNil(simulator);
-  XCTAssertNil(error);
+  simulator = [self createSession].simulator;
   XCTAssertEqualObjects(simulatorUUID, simulator.udid);
   [self assertTemporaryFileForSimulator:simulator exists:NO];
-
-  XCTAssertTrue([control.simulatorPool freeSimulator:simulator error:nil]);
-  XCTAssertNil(error);
+  [self assertFreesSimulator:simulator];
 }
 
 - (void)testDoesNotReallocateDeletedDevice
 {
   FBSimulator *simulator = [self createSession].simulator;
   NSString *simulatorUUID = simulator.udid;
-
-  NSError *error = nil;
-  XCTAssertTrue([simulator freeFromPoolWithError:&error]);
-  XCTAssertNil(error);
+  [self assertFreesSimulator:simulator];
 
   simulator = [self createSession].simulator;
-  XCTAssertNotNil(simulator);
-  XCTAssertNil(error);
   XCTAssertNotEqualObjects(simulatorUUID, simulator.udid);
-
-  XCTAssertTrue([self.control.simulatorPool freeSimulator:simulator error:nil]);
-  XCTAssertNil(error);
+  [self assertFreesSimulator:simulator];
 }
 
 - (void)testRemovesDeletedDeviceFromSet
 {
   FBSimulator *simulator = [self createSession].simulator;
   NSString *simulatorUUID = simulator.udid;
-
-  NSError *error = nil;
-  XCTAssertTrue([simulator freeFromPoolWithError:&error]);
-  XCTAssertNil(error);
+  [self assertFreesSimulator:simulator];
 
   NSOrderedSet *uuidSet = [self.control.simulatorPool.allSimulators valueForKey:@"udid"];
   XCTAssertFalse([uuidSet containsObject:simulatorUUID]);

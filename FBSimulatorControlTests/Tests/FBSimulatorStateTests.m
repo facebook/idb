@@ -21,7 +21,6 @@
 #import <FBSimulatorControl/FBSimulatorSessionStateGenerator.h>
 
 #import "CoreSimulatorDoubles.h"
-#import "FBSimulatorSessionStateAssertion.h"
 
 @interface FBSimulatorStateTests : XCTestCase
 
@@ -65,6 +64,12 @@
     configurationWithApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
     arguments:@[@"LAUNCH2"]
     environment:@{@"BING" : @"BONG"}];
+}
+
+- (void)assertState:(FBSimulatorSessionState *)state changes:(NSArray *)changes
+{
+  NSArray *actualStates = [state.changesToSimulatorState.reverseObjectEnumerator.allObjects valueForKey:@"simulatorState"];
+  XCTAssertEqualObjects(actualStates, changes);
 }
 
 - (void)testLastAppLaunch
@@ -144,7 +149,7 @@
     updateSimulatorState:FBSimulatorStateShutdown]
     currentState];
 
-  [[FBSimulatorSessionStateAssertion forState:state] assertChangesToSimulatorState:@[
+  [self assertState:state changes:@[
     @(FBSimulatorStateCreating),
     @(FBSimulatorStateBooting),
     @(FBSimulatorStateBooted),

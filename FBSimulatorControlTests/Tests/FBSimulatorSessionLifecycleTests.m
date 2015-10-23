@@ -24,7 +24,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
-#import "FBInteractionAssertion.h"
+#import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorSessionLifecycleTests : FBSimulatorControlTestCase
@@ -42,7 +42,7 @@
     arguments:@[]
     environment:@{}];
 
-  [self.interactionAssertion assertPerformSuccess:[session.interact.bootSimulator launchApplication:appLaunch]];
+  [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
   FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
   XCTAssertNotNil(process);
@@ -85,7 +85,7 @@
     arguments:@[]
     environment:@{}];
 
-  [self.interactionAssertion assertPerformSuccess:[session.interact.bootSimulator launchApplication:appLaunch]];
+  [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
   FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
   XCTAssertNotNil(process);
@@ -106,7 +106,7 @@
       wasExpected = [notification.userInfo[FBSimulatorSessionExpectedKey] boolValue];
     }];
 
-  [self.interactionAssertion assertPerformSuccess:[session.interact killApplication:appLaunch.application]];
+  [self.assert interactionSuccessful:[session.interact killApplication:appLaunch.application]];
 
   BOOL didMeetConditionBeforeTimeout = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:10 untilTrue:^ BOOL {
     return notificationRecieved == YES;

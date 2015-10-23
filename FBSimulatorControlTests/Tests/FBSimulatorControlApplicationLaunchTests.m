@@ -21,9 +21,9 @@
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 #import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
 
-#import "FBInteractionAssertion.h"
+#import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlFixtures.h"
-#import "FBSimulatorControlNotificationAssertion.h"
+#import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorControlApplicationLaunchTests : FBSimulatorControlTestCase
@@ -41,12 +41,12 @@
     arguments:@[]
     environment:@{}];
 
-  [self.interactionAssertion assertPerformSuccess:[session.interact.bootSimulator launchApplication:appLaunch]];
+  [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionDidStartNotification];
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
-  [self.notificationAssertion noNotificationsToConsume];
+  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
+  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
 }
 
 - (void)testLaunchesSampleApplication
@@ -58,15 +58,15 @@
     arguments:@[]
     environment:@{}];
 
-  [self.interactionAssertion assertPerformSuccess:[[[session.interact
+  [self.assert interactionSuccessful:[[[session.interact
     bootSimulator]
     installApplication:appLaunch.application]
     launchApplication:appLaunch]];
 
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionDidStartNotification];
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
-  [self.notificationAssertion consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
-  [self.notificationAssertion noNotificationsToConsume];
+  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
+  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
 }
 
 

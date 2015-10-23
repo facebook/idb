@@ -11,11 +11,10 @@
 
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 
-@class FBInteractionAssertion;
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
-@class FBSimulatorControlNotificationAssertion;
+@class FBSimulatorControlAssertions;
 @class FBSimulatorSession;
 
 /**
@@ -24,20 +23,6 @@
  */
 @interface FBSimulatorControlTestCase : XCTestCase
 
-/**
- The Per-Test-Case Management Options.
- */
-- (FBSimulatorManagementOptions)managementOptions;
-
-/**
- A default Simulator Configuration.
- */
-- (FBSimulatorConfiguration *)simulatorConfiguration;
-
-/**
- The Per-Test-Case Device Set Path.
- */
-- (NSString *)deviceSetPath;
 
 /**
  Allocates a Simulator with a default configuration.
@@ -54,8 +39,29 @@
  */
 - (FBSimulatorSession *)createBootedSession;
 
-@property (nonatomic, strong, readonly) FBSimulatorControl *control;
-@property (nonatomic, strong, readonly) FBSimulatorControlNotificationAssertion *notificationAssertion;
-@property (nonatomic, strong, readonly) FBInteractionAssertion *interactionAssertion;
+/**
+ The Per-Test-Case Management Options.
+ */
+@property (nonatomic, assign, readwrite) FBSimulatorManagementOptions managementOptions;
+
+/**
+ A default Simulator Configuration.
+ */
+@property (nonatomic, strong, readwrite) FBSimulatorConfiguration *simulatorConfiguration;
+
+/**
+ The Per-Test-Case Device Set Path.
+ */
+@property (nonatomic, copy, readwrite) NSString *deviceSetPath;
+
+/**
+ The Simulator Control instance that is lazily created from the defaults
+ */
+@property (nonatomic, strong, readwrite) FBSimulatorControl *control;
+
+/**
+ The FBSimulatorControlAssertions instance
+ */
+@property (nonatomic, strong, readonly) FBSimulatorControlAssertions *assert;
 
 @end

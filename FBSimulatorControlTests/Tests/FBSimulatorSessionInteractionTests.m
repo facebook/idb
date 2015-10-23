@@ -15,7 +15,7 @@
 #import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 
-#import "FBInteractionAssertion.h"
+#import "FBSImulatorControlAssertions.h"
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
@@ -28,7 +28,7 @@
 - (void)testPhotoUpload
 {
   FBSimulatorSession *session = [self createBootedSession];
-  [self.interactionAssertion assertPerformSuccess:[session.interact uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path]]];
+  [self.assert interactionSuccessful:[session.interact uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path]]];
 }
 
 @end
