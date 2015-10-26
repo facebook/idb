@@ -9,8 +9,8 @@
 
 #import "FBSimulatorVideoUploader.h"
 
-#import "FBProcessLaunchConfiguration.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
+#import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
@@ -38,7 +38,7 @@
   if (!videoPaths.count) {
     return YES;
   }
-  
+
   FBSimulatorSession *session = self.session;
   FBSimulator *simulator = session.simulator;
   NSString *dcimPath = [simulator.dataDirectory stringByAppendingPathComponent:@"Media/DCIM/100APPLE"];
@@ -53,17 +53,17 @@
     }
     [subpaths filteredArrayUsingPredicate:[self.class predicateForVideoFiles]];
   });
-  
+
   NSString *joinedPaths = [videoPaths componentsJoinedByString:@":"];
-  
+
   FBSimulatorApplication *photosApp = [FBSimulatorApplication systemApplicationNamed:@"MobileSlideShow"];
-  
+
   FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration
     configurationWithApplication:photosApp
     arguments:@[]
     environment:@{@"SHIMULATOR_UPLOAD_VIDEO" : joinedPaths}]
     injectingShimulator];
-  
+
   {
     NSError *innerError = nil;
     if (![[session.interact launchApplication:appLaunch] performInteractionWithError:&innerError]) {
@@ -72,12 +72,12 @@
         failBool:error];
     }
   }
-  
+
   const BOOL success = [self.class waitUntilFileCount:videoPaths.count
                                      addedToDirectory:dcimPath
                                         previousCount:dcimPaths.count
                                                 error:error];
-  
+
   {
     NSError *innerError = nil;
     if (![[self.session.interact killApplication:photosApp] performInteractionWithError:nil]) {
@@ -86,7 +86,7 @@
         failBool:error];
     }
   }
-  
+
   return success;
 }
 
@@ -98,7 +98,7 @@
                      error:(NSError **)error
 {
   static NSTimeInterval const UploadVideoDefaultWait = 15.0;
-  
+
   NSFileManager *fileManager = [NSFileManager defaultManager];
   __block NSError *innerError = nil;
   const BOOL success = [NSRunLoop.currentRunLoop
@@ -108,11 +108,11 @@
                           paths = [paths filteredArrayUsingPredicate:[self.class predicateForVideoFiles]];
                           return paths.count == fileCount + previousCount;
                         }];
-  
+
   if (!success) {
     return [[[FBSimulatorError describeFormat:@"Failed to upload videos"] causedBy:innerError] failBool:error];
   }
-  
+
   return YES;
 }
 

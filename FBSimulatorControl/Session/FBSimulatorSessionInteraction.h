@@ -61,7 +61,7 @@
 
 /**
  Uploads videos to the Camera Roll of the Simulator
- 
+
  @param videoPaths an NSArray<NSString *> of File Paths for the Videos to Upload.
  */
 - (instancetype)uploadVideos:(NSArray *)videoPaths;

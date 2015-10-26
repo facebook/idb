@@ -10,11 +10,11 @@
 #import <XCTest/XCTest.h>
 
 #import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
-#import <FBSimulatorControl/FBSimulatorApplication.h>
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlFixtures.h"

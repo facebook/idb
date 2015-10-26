@@ -163,7 +163,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
         causedBy:innerError]
         failBool:error];
     }
-    
+
     return YES;
   }];
 }

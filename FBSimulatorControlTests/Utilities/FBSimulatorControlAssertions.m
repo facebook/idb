@@ -108,7 +108,7 @@
 {
   NSError *error = nil;
   BOOL success = [interaction performInteractionWithError:&error];
-  
+
   _XCTPrimitiveAssertFalse(self.testCase, success, "interactionFailed:");
 }
 
