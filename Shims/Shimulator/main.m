@@ -8,7 +8,6 @@
  */
 
 #import <Foundation/Foundation.h>
-
 #import <UIKit/UIKit.h>
 
 static NSString *const ShimulatorCrashAfter = @"SHIMULATOR_CRASH_AFTER";
@@ -34,12 +33,12 @@ static VideoSaveDelegate *delegate;
   if (!NSProcessInfo.processInfo.environment[ShimulatorUploadVideo]) {
     return;
   }
-  
+
   NSString *joinedFilePaths = NSProcessInfo.processInfo.environment[ShimulatorUploadVideo];
   NSArray *filePaths = [joinedFilePaths componentsSeparatedByString:@":"];
 
   NSLog(@"Adding videos at paths %@.", filePaths);
-  
+
   [filePaths enumerateObjectsUsingBlock:^(NSString *filePath, NSUInteger _, BOOL *stop) {
     const BOOL success = [self addVideoAtPath:filePath];
     if (!success) {
@@ -47,7 +46,7 @@ static VideoSaveDelegate *delegate;
       NSLog(@"Failed to add video at path %@. Bailing out.", filePath);
     }
   }];
-  
+
   NSLog(@"Finished adding videos");
 }
 
@@ -57,17 +56,17 @@ static VideoSaveDelegate *delegate;
     NSLog(@"Couldn't access video at path %@", path);
     return NO;
   }
-  
+
   NSLog(@"Checking whether video at path %@ is compatible with the simulator", path);
   if (!UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(path)) {
     NSLog(@"Video not compatible at path %@", path);
     return NO;
   }
-  
+
   delegate = [VideoSaveDelegate new];
   NSLog(@"Attempting to save video to photo album at path %@", path);
   UISaveVideoAtPathToSavedPhotosAlbum(path, delegate, @selector(video:didFinishSavingWithError:contextInfo:), nil);
-  
+
   return YES;
 }
 
