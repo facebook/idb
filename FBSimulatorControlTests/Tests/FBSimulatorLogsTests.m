@@ -28,31 +28,43 @@
 
 @implementation FBSimulatorLogsTests
 
+- (void)assertFindsNeedle:(NSString *)needle fromHaystackBlock:( NSString *(^)(void) )block
+{
+  __block NSString *haystack = nil;
+  BOOL foundLog = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:30 untilTrue:^ BOOL {
+    haystack = block();
+    return haystack != nil;
+  }];
+  if (!foundLog) {
+    XCTFail(@"Failed to find haystack log");
+    return;
+  }
+
+  XCTAssertNotEqual([haystack rangeOfString:needle].location, NSNotFound);
+}
+
 - (void)flakyOnTravis_testAppCrashLogIsFetched
 {
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = [[FBSimulatorControlFixtures.tableSearchAppLaunch
     injectingShimulator]
     withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
-
   [self.assert interactionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
 
   // Shimulator sends an unrecognized selector to NSFileManager to cause a crash.
   // The CrashReporter service is a background service as it will symbolicate in a separate process.
-  NSString *needle = @"-[NSFileManager stringWithFormat:]";
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulatorSessionLogs *sessionLogs, NSDictionary *_) {
-    NSArray *crashLogs = [sessionLogs subprocessCrashes];
-    if (crashLogs.count != 1) {
-      return NO;
-    }
-    FBWritableLog *log = crashLogs[0];
-    return [log.asString rangeOfString:needle].location != NSNotFound;
+  [self assertFindsNeedle:@"-[NSFileManager stringWithFormat:]" fromHaystackBlock:^ NSString * {
+    return [[session.logs.subprocessCrashes firstObject] asString];
   }];
+}
 
-  BOOL metCondition = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:60 untilTrue:^ BOOL {
-    return [predicate evaluateWithObject:session.logs];
+- (void)testSystemLog
+{
+  FBSimulatorSession *session = [self createBootedSession];
+
+  [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
+    return session.logs.systemLog.asString;
   }];
-  XCTAssertTrue(metCondition, @"Expected to find crash logs, but none were found. Contents of directory are %@", session.logs.diagnosticReportsContents);
 }
 
 @end
