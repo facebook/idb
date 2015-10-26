@@ -27,7 +27,7 @@
 @end
 
 /**
- Pre-session interactions used pre-launch of a Simulator
+ Overridable class for providing an interaction-based API.
  */
 @interface FBInteraction : NSObject <FBInteraction>
 
@@ -35,5 +35,10 @@
  Retries the last chained interaction by `retries`, if it fails.
  */
 - (instancetype)retry:(NSUInteger)retries;
+
+/**
+ Ignores any failure that occurs in the last interaction if any occured.
+ */
+- (instancetype)ignoreFailure;
 
 @end

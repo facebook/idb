@@ -69,24 +69,30 @@
 
 - (instancetype)retry:(NSUInteger)retries
 {
-  NSParameterAssert(self.interactions.count > 0);
   NSParameterAssert(retries > 1);
 
-  NSUInteger interactionIndex = self.interactions.count - 1;
-  id<FBInteraction> interaction = self.interactions[interactionIndex];
-
-  id<FBInteraction> retryInteraction = [FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
-    NSError *innerError = nil;
-    for (NSUInteger index = 0; index < retries; index++) {
-      if ([interaction performInteractionWithError:&innerError]) {
-        return YES;
+  return [self replaceLastInteraction:^ id<FBInteraction> (id<FBInteraction> interaction) {
+    return [FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
+      NSError *innerError = nil;
+      for (NSUInteger index = 0; index < retries; index++) {
+        if ([interaction performInteractionWithError:&innerError]) {
+          return YES;
+        }
       }
-    }
-    return [[[FBSimulatorError describeFormat:@"Failed interaction after %ld retries", retries] causedBy:innerError] failBool:error];
+      return [[[FBSimulatorError describeFormat:@"Failed interaction after %ld retries", retries] causedBy:innerError] failBool:error];
+    }];
   }];
+}
 
-  [self.interactions replaceObjectAtIndex:interactionIndex withObject:retryInteraction];
-  return self;
+- (instancetype)ignoreFailure
+{
+  return [self replaceLastInteraction:^ id<FBInteraction> (id<FBInteraction> interaction) {
+    return [FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
+      NSError *innerError = nil;
+      [interaction performInteractionWithError:&innerError];
+      return YES;
+    }];
+  }];
 }
 
 - (id<FBInteraction>)build
@@ -97,6 +103,20 @@
 - (BOOL)performInteractionWithError:(NSError **)error
 {
   return [[self build] performInteractionWithError:error];
+}
+
+#pragma mark Private
+
+- (instancetype)replaceLastInteraction:( id<FBInteraction>(^)(id<FBInteraction> interaction) )block
+{
+  NSParameterAssert(self.interactions.count > 0);
+
+  NSUInteger interactionIndex = self.interactions.count - 1;
+  id<FBInteraction> interaction = self.interactions[interactionIndex];
+  id<FBInteraction> nextInteraction = block(interaction);
+
+  [self.interactions replaceObjectAtIndex:interactionIndex withObject:nextInteraction];
+  return self;
 }
 
 @end
