@@ -48,6 +48,11 @@
     stringByAppendingPathExtension:self.fileType ?: @"unknown_log"];
 }
 
+- (BOOL)hasLogContent
+{
+  return NO;
+}
+
 @end
 
 @implementation FBWritableLog_Data
@@ -74,6 +79,11 @@
     }
   }
   return self.logPath;
+}
+
+- (BOOL)hasLogContent
+{
+  return self.logData.length >= 1;
 }
 
 @end
@@ -104,6 +114,11 @@
   return self.logPath;
 }
 
+- (BOOL)hasLogContent
+{
+  return self.logString.length >= 1;
+}
+
 @end
 
 @implementation FBWritableLog_Path
@@ -127,6 +142,12 @@
 - (NSString *)asPath
 {
   return self.logPath;
+}
+
+- (BOOL)hasLogContent
+{
+  NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.logPath error:nil];
+  return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
 }
 
 @end

@@ -52,6 +52,11 @@
  */
 @property (nonatomic, readonly, copy) NSString *asPath;
 
+/**
+ Whether the log has content or is missing/empty.
+ */
+@property (nonatomic, readonly, assign) BOOL hasLogContent;
+
 @end
 
 /**
