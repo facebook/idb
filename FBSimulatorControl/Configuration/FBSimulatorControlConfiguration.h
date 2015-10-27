@@ -19,8 +19,9 @@ extern NSString *const FBSimulatorControlConfigurationDefaultNamePrefix;
 typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
   FBSimulatorManagementOptionsDeleteAllOnFirstStart = 1 << 0,
   FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart = 1 << 1,
-  FBSimulatorManagementOptionsDeleteOnFree = 1 << 2,
-  FBSimulatorManagementOptionsEraseOnFree = 1 << 3,
+  FBSimulatorManagementOptionsIgnoreSpuriousKillFail = 1 << 2,
+  FBSimulatorManagementOptionsDeleteOnFree = 1 << 3,
+  FBSimulatorManagementOptionsEraseOnFree = 1 << 4,
 };
 
 /**
