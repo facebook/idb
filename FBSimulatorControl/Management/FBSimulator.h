@@ -69,6 +69,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 @property (nonatomic, assign, readonly) FBSimulatorState state;
 
 /**
+ A string representation of the Simulator State.
+ */
+@property (nonatomic, copy, readonly) NSString *stateString;
+
+/**
  The Process Identifier of the Simulator. -1 if it is not running
  */
 @property (nonatomic, assign, readonly) NSInteger processIdentifier;

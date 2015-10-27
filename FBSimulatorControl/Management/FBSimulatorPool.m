@@ -88,6 +88,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 {
   [self.allocatedUDIDs removeObject:simulator.udid];
 
+  // Killing is a pre-requesite for deleting/erasing
   NSError *innerError = nil;
   if (![self killSimulators:@[simulator] withError:&innerError]) {
     return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Killing Device" errorOut:error];
@@ -115,7 +116,18 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (NSArray *)killAllWithError:(NSError **)error
 {
-  return [self killSimulators:[self.allSimulators.array copy] withError:error];
+  NSString *grepComponents = self.configuration.deviceSetPath
+   // If the path of the DeviceSet exists we can kill Simulator.app processes that contain it in their launch.
+   ? [NSString stringWithFormat:@"grep %@ |", self.configuration.deviceSetPath]
+   // If there isn't a custom set path, we have to kill all simulators that contain a CurrentDeviceUDID launch
+   : [NSString stringWithFormat:@"grep CurrentDeviceUDID | "];
+
+  NSError *innerError = nil;
+  if (![self blanketKillSimulatorAppsWithPidFilter:grepComponents error:&innerError]) {
+    return [[[FBSimulatorError describe:@"Failed to kill all with DeviceSetPath"] causedBy:innerError] fail:error];
+  }
+
+  return [self shutdownSimulators:[self.allSimulators copy] withError:error];
 }
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
@@ -142,6 +154,12 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (NSArray *)deleteAllWithError:(NSError **)error
 {
+  // Attempt to kill any and all simulators belonging to this pool before deleting.
+  NSError *innerError = nil;
+  if (![self killAllWithError:&innerError]) {
+    return [[[FBSimulatorError describe:@"Failed to kill all simulators prior to delete all"] causedBy:innerError] fail:error];
+  }
+
   return [self deleteSimulators:[self.allSimulators.array copy] withError:error];
 }
 
@@ -149,15 +167,12 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (BOOL)waitForSimulator:(FBSimulator *)simulator toChangeToState:(FBSimulatorState)simulatorState withError:(NSError **)error
 {
-  BOOL didChangeState = [simulator waitOnState:simulatorState];
-  if (!didChangeState) {
-    return [[FBSimulatorError describeFormat:
-      @"Simulator was not in expected %@ state, got %@",
-      [FBSimulator stateStringFromSimulatorState:simulatorState],
-      [FBSimulator stateStringFromSimulatorState:simulator.state]
-    ] failBool:error];
+  if (![simulator waitOnState:simulatorState]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator was not in expected %@ state, got %@", [FBSimulator stateStringFromSimulatorState:simulatorState], simulator.stateString]
+      inSimulator:simulator]
+      failBool:error];
   }
-
   return YES;
 }
 
@@ -208,10 +223,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 - (NSArray *)deleteSimulators:(NSArray *)simulators withError:(NSError **)error
 {
   NSError *innerError = nil;
-  if (![self killSimulators:simulators withError:&innerError]) {
-    return [FBSimulatorError failWithError:innerError description:@"Failed to kill simulators before deletion." errorOut:error];
-  }
-
   NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
   for (FBSimulator *simulator in simulators) {
     NSString *simulatorName = simulator.name;
@@ -237,8 +248,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
   [grepComponents appendString:@" | "];
 
-  // We want to blanket kill all the Managed Simulators that are launched by us
-  // That means that they contain device UDIDs that we own.
   NSError *innerError = nil;
   if (![self blanketKillSimulatorAppsWithPidFilter:grepComponents error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
@@ -373,7 +382,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   // This command kills all Simulator.app binaries that *don't* match the current Simulator Binary Path.
   NSString *simulatorBinaryPath = self.configuration.simulatorApplication.binary.path;
   NSString *command = [NSString stringWithFormat:
-    @"pgrep -lf Simulator.app | grep -v %@ | awk '{print $1}' | xargs kill",
+    @"pgrep -lf Simulator.app | grep -v %@ | awk '{print $1}'",
    [FBTaskExecutor escapePathForShell:simulatorBinaryPath]
   ];
 

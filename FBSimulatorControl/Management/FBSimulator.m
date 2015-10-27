@@ -71,6 +71,11 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return self.device.state;
 }
 
+- (NSString *)stateString
+{
+  return [FBSimulator stateStringFromSimulatorState:self.state];
+}
+
 - (FBSimulatorApplication *)simulatorApplication
 {
   return self.pool.configuration.simulatorApplication;
