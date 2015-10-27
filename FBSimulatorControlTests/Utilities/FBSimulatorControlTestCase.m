@@ -80,7 +80,7 @@
 
 - (void)setUp
 {
-  self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsDeleteOnFree;
+  self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail | FBSimulatorManagementOptionsDeleteOnFree;
   self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
   self.deviceSetPath = nil;
 }
