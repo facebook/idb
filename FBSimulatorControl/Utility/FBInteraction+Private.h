@@ -19,9 +19,9 @@
 /**
  Chains an interaction using the provided block
 
- @param block the block to perform the interaction, returning error information in the failure case.
+ @param block the block to perform the interaction with. Passes an NSError to return error information and the interaction for further chaining.
  */
-- (instancetype)interact:(BOOL (^)(NSError **))block;
+- (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block;
 
 /**
  Fails the Interaction with the provided error.

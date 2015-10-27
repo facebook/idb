@@ -51,7 +51,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[@"--args",
       @"-CurrentDeviceUDID", simulator.udid,
       @"-ConnectHardwareKeyboard", @"0",
@@ -91,7 +91,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 {
   FBSimulator *simulator = self.session.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:simulator strategy:tilingStrategy];
     NSError *innerError = nil;
     if (CGRectIsNull([tiler placeInForegroundWithError:&innerError])) {
@@ -111,7 +111,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:simulator logger:nil];
     NSString *path = [lifecycle pathForStorage:@"video" ofExtension:@"mp4"];
 
@@ -134,7 +134,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
   FBSimulator *simulator = self.session.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     if (simulator.state != FBSimulatorStateBooted) {
       return [[FBSimulatorError describeFormat:@"Simulator must be booted to upload photos, is %@", simulator.device.stateString] failBool:error];
     }
@@ -155,7 +155,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 {
   FBSimulatorSession *session = self.session;
   FBSimulatorVideoUploader *uploader = [FBSimulatorVideoUploader forSession:session];
-  return [self interact:^BOOL(NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
     const BOOL success = [uploader uploadVideos:videoPaths error:&innerError];
     if (!success) {
@@ -172,7 +172,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 {
   FBSimulator *simulator = self.session.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
     if (![simulator.device installApplication:[NSURL URLWithString:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
       return [[[FBSimulatorError describe:@"Failed to install Application"] causedBy:innerError] failBool:error];
@@ -189,7 +189,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
     NSDictionary *installedApps = [simulator.device installedAppsWithError:&innerError];
     if (!installedApps) {
@@ -253,7 +253,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
     NSFileHandle *stdOut = nil;
     NSFileHandle *stdErr = nil;
@@ -288,7 +288,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulator *simulator = self.session.simulator;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     FBUserLaunchedProcess *state = [lifecycle.currentState processForBinary:agent];
     if (!state) {
       return [[[FBSimulatorError describeFormat:@"Could not kill agent %@ as it is not running", agent] inSimulator:simulator] failBool:error];
@@ -308,7 +308,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
   FBSimulator *simulator = self.session.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
     if (![simulator.device openURL:url error:&innerError]) {
       NSString *description = [NSString stringWithFormat:@"Failed to open URL %@ on simulato %@", url, simulator];
@@ -383,7 +383,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulatorSession *session = self.session;
   FBSimulator *simulator = self.session.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     FBUserLaunchedProcess *processState = [session.state processForBinary:application.binary];
     if (!processState) {
       return [[[FBSimulatorError describeFormat:@"Could not find an active process for %@", application] inSimulator:simulator] failBool:error];

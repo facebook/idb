@@ -38,16 +38,21 @@
   }];
 }
 
-- (instancetype)interact:(BOOL (^)(NSError **error))block
+- (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block
 {
   NSParameterAssert(block);
-  return [self addInteraction:[FBInteraction_Block interactionWithBlock:block]];
+
+  __weak id weakInteraction = self;
+  return [self addInteraction:[FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
+    __strong id interaction = weakInteraction;
+    return block(error, interaction);
+  }]];
 }
 
 - (instancetype)failWith:(NSError *)error
 {
   NSParameterAssert(error);
-  return [self interact:^ BOOL (NSError **errorPtr) {
+  return [self interact:^ BOOL (NSError **errorPtr, id _) {
     NSCParameterAssert(errorPtr);
     *errorPtr = error;
     return NO;
@@ -56,7 +61,7 @@
 
 - (instancetype)succeed
 {
-  return [self interact:^ BOOL (NSError **_) {
+  return [self interact:^ BOOL (NSError **_, id __) {
     return YES;
   }];
 }
