@@ -31,7 +31,7 @@
 {
   FBSimulator *simulator = self.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSString *localeIdentifier = [locale localeIdentifier];
     NSString *languageIdentifier = [NSLocale canonicalLanguageIdentifierFromString:localeIdentifier];
     NSDictionary *preferencesDict = @{
@@ -53,7 +53,7 @@
 {
   FBSimulator *simulator = self.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSString *simulatorRoot = simulator.device.dataPath;
     NSString *bundleID = application.bundleID;
 
@@ -87,7 +87,7 @@
 {
   FBSimulator *simulator = self.simulator;
 
-  return [self interact:^ BOOL (NSError **error) {
+  return [self interact:^ BOOL (NSError **error, id _) {
     NSString *simulatorRoot = simulator.device.dataPath;
     NSString *preferencesPath = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences/com.apple.Preferences.plist"];
     NSError *innerError = nil;
