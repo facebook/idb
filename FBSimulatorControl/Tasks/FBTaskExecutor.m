@@ -103,6 +103,15 @@ static NSString *const FBTaskShellExecutablePath = @"/bin/sh";
   return executor;
 }
 
+- (instancetype)withShellTaskCommandFmt:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+  return [self withShellTaskCommand:string];
+}
+
 - (instancetype)withStdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   FBTaskExecutor *executor = [self copy];

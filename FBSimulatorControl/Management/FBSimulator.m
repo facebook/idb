@@ -86,37 +86,6 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return self.device.dataPath;
 }
 
-- (NSString *)launchdBootstrapPath
-{
-  NSString *expectedPath = [[self.pool.deviceSet.setPath
-    stringByAppendingPathComponent:self.udid]
-    stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
-
-  if (![NSFileManager.defaultManager fileExistsAtPath:expectedPath]) {
-    return nil;
-  }
-  return expectedPath;
-}
-
-- (NSInteger)launchdSimProcessIdentifier
-{
-  NSString *bootstrapPath = self.launchdBootstrapPath;
-  if (!bootstrapPath) {
-    return -1;
-  }
-
-  NSInteger processIdentifier = [[[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", bootstrapPath]]
-    startSynchronouslyWithTimeout:5]
-    stdOut]
-    integerValue];
-
-  if (processIdentifier < 2) {
-    return -1;
-  }
-  return processIdentifier;
-}
-
 - (NSInteger)processIdentifier
 {
   return _processIdentifier > 1 ? _processIdentifier : [self inferredProcessIdentifier];

@@ -40,6 +40,11 @@
 - (FBSimulatorSession *)createBootedSession;
 
 /**
+ Create a Session with a booted Simulator with a booted TableSearch app, of the default configuration.
+ */
+- (FBSimulatorSession *)createBootedSessionWithUserApplication;
+
+/**
  The Per-Test-Case Management Options.
  */
 @property (nonatomic, assign, readwrite) FBSimulatorManagementOptions managementOptions;

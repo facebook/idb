@@ -9,10 +9,44 @@
 
 #import "FBSimulator+Queries.h"
 
+#import <CoreSimulator/SimDeviceSet.h>
+
+#import "FBSimulatorPool+Private.h"
 #import "FBSimulatorProcess.h"
 #import "FBTaskExecutor.h"
 
 @implementation FBSimulator (Queries)
+
+- (NSString *)launchdBootstrapPath
+{
+  NSString *expectedPath = [[self.pool.deviceSet.setPath
+    stringByAppendingPathComponent:self.udid]
+    stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
+
+  if (![NSFileManager.defaultManager fileExistsAtPath:expectedPath]) {
+    return nil;
+  }
+  return expectedPath;
+}
+
+- (NSInteger)launchdSimProcessIdentifier
+{
+  NSString *bootstrapPath = self.launchdBootstrapPath;
+  if (!bootstrapPath) {
+    return -1;
+  }
+
+  NSInteger processIdentifier = [[[[FBTaskExecutor.sharedInstance
+    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", bootstrapPath]]
+    startSynchronouslyWithTimeout:5]
+    stdOut]
+    integerValue];
+
+  if (processIdentifier < 2) {
+    return -1;
+  }
+  return processIdentifier;
+}
 
 - (BOOL)hasActiveLaunchdSim
 {
@@ -43,6 +77,19 @@
   }
   return [processes copy];
 }
+
+- (NSString *)pathToApplicationHome:(FBUserLaunchedProcess *)process
+{
+  NSParameterAssert(process);
+  id<FBTask> task = [[[FBTaskExecutor.sharedInstance
+    withShellTaskCommandFmt:@"xcrun simctl spawn booted launchctl procinfo %ld | grep HOME | grep Containers | head -n 1 | awk '{print $3}'", process.processIdentifier]
+    build]
+    startSynchronouslyWithTimeout:5];
+
+  return task.stdOut;
+}
+
+#pragma mark Private
 
 + (NSRegularExpression *)longFormPgrepRegex
 {
