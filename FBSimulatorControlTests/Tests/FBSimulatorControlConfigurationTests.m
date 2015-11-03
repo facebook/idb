@@ -9,8 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBSimulatorApplication.h>
-#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 @interface FBSimulatorControlConfigurationTests : XCTestCase
 

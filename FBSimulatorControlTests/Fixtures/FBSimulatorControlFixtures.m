@@ -9,9 +9,7 @@
 
 #import "FBSimulatorControlFixtures.h"
 
-#import <FBSImulatorControl/FBProcessLaunchConfiguration.h>
-
-#import <FBSimulatorControl/FBSimulatorApplication.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 @implementation FBSimulatorControlFixtures
 
