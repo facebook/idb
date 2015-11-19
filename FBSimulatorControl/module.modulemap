@@ -1,0 +1,6 @@
+framework module FBSimulatorControl {
+	umbrella header "Umbrella-Headers.h"
+	
+	export *
+	module * { export * }
+}
