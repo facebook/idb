@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		877123F01BDA78AA00530B1E /* FBSimulatorVideoUploader.h in Headers */ = {isa = PBXBuildFile; fileRef = 877123EE1BDA78AA00530B1E /* FBSimulatorVideoUploader.h */; settings = {ASSET_TAGS = (); }; };
-		877123F11BDA78AA00530B1E /* FBSimulatorVideoUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = 877123EF1BDA78AA00530B1E /* FBSimulatorVideoUploader.m */; settings = {ASSET_TAGS = (); }; };
-		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; settings = {ASSET_TAGS = (); }; };
+		877123F01BDA78AA00530B1E /* FBSimulatorVideoUploader.h in Headers */ = {isa = PBXBuildFile; fileRef = 877123EE1BDA78AA00530B1E /* FBSimulatorVideoUploader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		877123F11BDA78AA00530B1E /* FBSimulatorVideoUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = 877123EF1BDA78AA00530B1E /* FBSimulatorVideoUploader.m */; };
+		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA017F271BD7770300F45E9D /* FBSimulatorLogsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F251BD7770300F45E9D /* FBSimulatorLogsTests.m */; };
 		AA017F281BD7770300F45E9D /* FBWritableLogTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F261BD7770300F45E9D /* FBWritableLogTests.m */; };
 		AA017F2F1BD7771300F45E9D /* FBSimulatorLogs.h in Headers */ = {isa = PBXBuildFile; fileRef = AA017F2A1BD7771300F45E9D /* FBSimulatorLogs.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1865,7 +1865,6 @@
 				AAB4AC211BB59B790046F6A1 /* FBSimulatorWindowTilingStrategy.h in Headers */,
 				AAC2411C1BB30CB30054570C /* FBSimulatorPredicates.h in Headers */,
 				AA4877371BAC74B9007F7D23 /* FBDispatchSourceNotifier.h in Headers */,
-				877123F01BDA78AA00530B1E /* FBSimulatorVideoUploader.h in Headers */,
 				AA4877281BAC74B9007F7D23 /* FBSimulatorControl.h in Headers */,
 				AA017F361BD7772D00F45E9D /* FBConcurrentCollectionOperations.h in Headers */,
 				AA377CF81BB3EC9C0058E26E /* FBSimulatorWindowHelpers.h in Headers */,
@@ -1877,6 +1876,7 @@
 				AA8DF8CB1BB18B3700CC0411 /* FBInteraction+Private.h in Headers */,
 				AA4877121BAC74B9007F7D23 /* FBProcessLaunchConfiguration+Helpers.h in Headers */,
 				AA4877251BAC74B9007F7D23 /* FBSimulator.h in Headers */,
+				877123F01BDA78AA00530B1E /* FBSimulatorVideoUploader.h in Headers */,
 				AA4877451BAC74B9007F7D23 /* FBSimulatorSessionState+Private.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
