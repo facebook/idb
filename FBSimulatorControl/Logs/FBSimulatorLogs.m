@@ -14,6 +14,7 @@
 
 #import "FBConcurrentCollectionOperations.h"
 #import "FBSimulator.h"
+#import "FBSimulator+Queries.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"

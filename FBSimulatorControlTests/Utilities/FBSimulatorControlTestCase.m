@@ -9,6 +9,7 @@
 
 #import "FBSimulatorControlTestCase.h"
 
+#import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
@@ -21,6 +22,7 @@
 #import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 
 #import "FBSimulatorControlAssertions.h"
+#import "FBSimulatorControlFixtures.h"
 
 @implementation FBSimulatorControlTestCase
 
@@ -73,6 +75,18 @@
 {
   FBSimulatorSession *session = [self createSession];
   [self.assert interactionSuccessful:session.interact.bootSimulator];
+  return session;
+}
+
+- (FBSimulatorSession *)createBootedSessionWithUserApplication
+{
+  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
+    configurationWithApplication:[FBSimulatorControlFixtures tableSearchApplicationWithError:nil]
+    arguments:@[]
+    environment:@{}];
+
+  FBSimulatorSession *session = [self createSession];
+  [self.assert interactionSuccessful:[[session.interact.bootSimulator installApplication:appLaunch.application] launchApplication:appLaunch]];
   return session;
 }
 

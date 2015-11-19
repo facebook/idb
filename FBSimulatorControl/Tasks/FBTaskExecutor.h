@@ -62,6 +62,14 @@ extern NSString *const FBTaskExecutorErrorDomain;
 - (instancetype)withShellTaskCommand:(NSString *)shellCommand;
 
 /**
+  The Shell Command to execute as a format string. Will override any launch path or arguments set with `withArguments` or `withLaunchPath`.
+
+  @param format the Shell Command to execute.
+  @return a builder, with the arguments applied.
+  */
+- (instancetype)withShellTaskCommandFmt:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+
+/**
  Assigns a path for StdOut and StdErr for the built task.
 
  @param stdOutPath the path to write stdout to. Must not be nil.

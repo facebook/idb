@@ -11,6 +11,7 @@
 
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
+#import <FBSimulatorControl/FBSimulator+Queries.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
@@ -26,11 +27,11 @@
 
 #import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorTests : FBSimulatorControlTestCase
+@interface FBSimulatorQueriesTests : FBSimulatorControlTestCase
 
 @end
 
-@implementation FBSimulatorTests
+@implementation FBSimulatorQueriesTests
 
 - (void)flaky_testCanInferProcessIdentiferAppropriately
 {
@@ -41,6 +42,16 @@
   session.simulator.processIdentifier = -1;
   NSInteger actual = session.simulator.processIdentifier;
   XCTAssertEqual(expected, actual);
+}
+
+- (void)testCanFindApplicationHome
+{
+  FBSimulatorSession *session = [self createBootedSessionWithUserApplication];
+  FBUserLaunchedProcess *process = session.state.runningApplications.firstObject;
+  XCTAssertNotNil(process);
+
+  NSString *path = [session.simulator pathToApplicationHome:process];
+  XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:path]);
 }
 
 @end
