@@ -67,4 +67,15 @@
   }];
 }
 
+- (void)flakyOnTravis_testLaunchedApplicationLogs
+{
+  FBSimulatorSession *session = [self createBootedSession];
+  FBApplicationLaunchConfiguration *appLaunch = FBSimulatorControlFixtures.tableSearchAppLaunch.injectingShimulator;
+  [self.assert interactionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
+
+  [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
+    return [[session.logs.launchedApplicationLogs.allValues firstObject] asString];
+  }];
+}
+
 @end

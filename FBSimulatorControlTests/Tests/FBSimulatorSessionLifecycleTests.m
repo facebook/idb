@@ -44,7 +44,7 @@
 
   [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
+  FBUserLaunchedProcess *process = [session.state runningProcessForApplication:appLaunch.application];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -73,7 +73,7 @@
   XCTAssertTrue(wasUnexpected);
   [NSNotificationCenter.defaultCenter removeObserver:token];
 
-  XCTAssertFalse([session.state processForApplication:appLaunch.application]);
+  XCTAssertFalse([session.state runningProcessForApplication:appLaunch.application]);
 }
 
 - (void)testNotifiedByExpectedApplicationTermination
@@ -87,7 +87,7 @@
 
   [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
+  FBUserLaunchedProcess *process = [session.state runningProcessForApplication:appLaunch.application];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -116,7 +116,7 @@
   XCTAssertTrue(wasExpected);
   [NSNotificationCenter.defaultCenter removeObserver:token];
 
-  XCTAssertFalse([session.state processForApplication:appLaunch.application]);
+  XCTAssertFalse([session.state runningProcessForApplication:appLaunch.application]);
 }
 
 

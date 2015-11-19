@@ -289,7 +289,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
   return [self interact:^ BOOL (NSError **error, id _) {
-    FBUserLaunchedProcess *state = [lifecycle.currentState processForBinary:agent];
+    FBUserLaunchedProcess *state = [lifecycle.currentState runningProcessForBinary:agent];
     if (!state) {
       return [[[FBSimulatorError describeFormat:@"Could not kill agent %@ as it is not running", agent] inSimulator:simulator] failBool:error];
     }
@@ -384,7 +384,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulator *simulator = self.session.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
-    FBUserLaunchedProcess *processState = [session.state processForBinary:application.binary];
+    FBUserLaunchedProcess *processState = [session.state runningProcessForBinary:application.binary];
     if (!processState) {
       return [[[FBSimulatorError describeFormat:@"Could not find an active process for %@", application] inSimulator:simulator] failBool:error];
     }

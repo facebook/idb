@@ -41,7 +41,7 @@
 
 - (NSString *)temporaryFilePath
 {
-  NSString *localUniqueID = self.shortName ?: [NSString stringWithFormat:@"%@_%@", NSUUID.UUID.UUIDString, @"unkown_log"];
+  NSString *localUniqueID = self.shortName ?: [NSString stringWithFormat:@"%@_%@", NSUUID.UUID.UUIDString, @"unknown_log"];
 
   return [[NSTemporaryDirectory()
     stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@", NSProcessInfo.processInfo.globallyUniqueString, localUniqueID]]
