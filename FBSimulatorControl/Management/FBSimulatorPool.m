@@ -209,6 +209,11 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (FBSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
+  BOOL alwaysCreate = (self.configuration.options & FBSimulatorManagementOptionsAlwaysCreateWhenAllocating) == FBSimulatorManagementOptionsAlwaysCreateWhenAllocating;
+  if (alwaysCreate) {
+    return [self createSimulatorWithConfiguration:configuration error:error];
+  }
+
   return [self findUnallocatedSimulatorWithConfiguration:configuration]
       ?: [self createSimulatorWithConfiguration:configuration error:error];
 }
