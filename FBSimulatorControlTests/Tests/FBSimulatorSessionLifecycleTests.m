@@ -9,20 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
-#import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorApplication.h>
-#import <FBSimulatorControl/FBSimulatorConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorControl+Private.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
-#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorProcess.h>
-#import <FBSimulatorControl/FBSimulatorSession.h>
-#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
-#import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
-#import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
-#import <FBSimulatorControl/FBSimulatorSessionState.h>
-#import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"

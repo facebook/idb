@@ -9,7 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 @interface FBSimulatorTilingStrategyTests : XCTestCase
 
