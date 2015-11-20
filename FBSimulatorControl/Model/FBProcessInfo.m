@@ -7,8 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorProcess.h"
-#import "FBSimulatorProcess+Private.h"
+#import "FBProcessInfo.h"
+#import "FBProcessInfo+Private.h"
 
 #import "FBProcessLaunchConfiguration.h"
 
@@ -29,6 +29,16 @@
   state.launchDate = self.launchDate;
   state.diagnostics = self.diagnostics;
   return state;
+}
+
+- (NSArray *)arguments
+{
+  return self.launchConfiguration.arguments;
+}
+
+- (NSDictionary *)environment
+{
+  return self.launchConfiguration.environment;
 }
 
 - (NSUInteger)hash
@@ -78,23 +88,22 @@
 
 @synthesize launchPath = _launchPath;
 @synthesize processIdentifier = _processIdentifier;
-
-+ (instancetype)withProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath
-{
-  FBFoundProcess *process = [self new];
-  process.processIdentifier = processIdentifier;
-  process.launchPath = launchPath;
-  return process;
-}
+@synthesize arguments = _arguments;
+@synthesize environment = _environment;
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [FBFoundProcess withProcessIdentifier:self.processIdentifier launchPath:self.launchPath];
+  FBFoundProcess *process = [self.class new];
+  process.processIdentifier = self.processIdentifier;
+  process.launchPath = self.launchPath;
+  process.arguments = self.arguments;
+  process.environment = self.environment;
+  return process;
 }
 
 - (NSUInteger)hash
 {
-  return self.processIdentifier | self.launchPath.hash;
+  return self.processIdentifier | self.launchPath.hash | self.arguments.hash | self.environment.hash;
 }
 
 - (BOOL)isEqual:(FBUserLaunchedProcess *)object
@@ -103,15 +112,19 @@
     return NO;
   }
   return self.processIdentifier == object.processIdentifier &&
-         [self.launchPath isEqual:object.launchPath];
+         [self.launchPath isEqualToString:object.launchPath] &&
+         [self.arguments isEqualToArray:object.arguments] &&
+         [self.environment isEqualToDictionary:object.environment];
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Process %@ | PID %ld",
+    @"Process %@ | PID %ld | Arguments %@ | Environment %@",
     self.launchPath,
-    self.processIdentifier
+    self.processIdentifier,
+    self.arguments,
+    self.environment
   ];
 }
 

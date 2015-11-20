@@ -14,6 +14,7 @@
 
 #import "FBConcurrentCollectionOperations.h"
 #import "FBSimulator.h"
+#import "FBSimulator+Queries.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
@@ -38,6 +39,19 @@
     updatePath:self.systemLogPath]
     updateShortName:@"system_log"]
     updateHumanReadableName:@"System Log"]
+    build];
+}
+
+- (FBWritableLog *)simulatorBootstrap
+{
+  NSString *expectedPath = [[self.simulator.device.setPath
+    stringByAppendingPathComponent:self.simulator.udid]
+    stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
+
+  return [[[[[FBWritableLogBuilder builder]
+    updatePath:expectedPath]
+    updateShortName:@"launchd_bootstrap"]
+    updateHumanReadableName:@"Launchd Bootstrap"]
     build];
 }
 

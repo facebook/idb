@@ -11,7 +11,7 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorProcess+Private.h"
+#import "FBProcessInfo+Private.h"
 #import "FBSimulatorSessionState+Private.h"
 #import "FBSimulatorSessionState+Queries.h"
 

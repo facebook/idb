@@ -32,6 +32,11 @@
 - (FBWritableLog *)systemLog;
 
 /**
+ The Bootstrap of the Simulator's launchd_sim.
+ */
+- (FBWritableLog *)simulatorBootstrap;
+
+/**
  Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.
 
  @param date the earliest to search for crash reports. If nil will find reports regardless of date.

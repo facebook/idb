@@ -14,6 +14,7 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
+#import "FBProcessQuery.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -84,37 +85,6 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 - (NSString *)dataDirectory
 {
   return self.device.dataPath;
-}
-
-- (NSString *)launchdBootstrapPath
-{
-  NSString *expectedPath = [[self.pool.deviceSet.setPath
-    stringByAppendingPathComponent:self.udid]
-    stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
-
-  if (![NSFileManager.defaultManager fileExistsAtPath:expectedPath]) {
-    return nil;
-  }
-  return expectedPath;
-}
-
-- (pid_t)launchdSimProcessIdentifier
-{
-  NSString *bootstrapPath = self.launchdBootstrapPath;
-  if (!bootstrapPath) {
-    return -1;
-  }
-
-  pid_t processIdentifier = [[[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", bootstrapPath]]
-    startSynchronouslyWithTimeout:5]
-    stdOut]
-    integerValue];
-
-  if (processIdentifier < 2) {
-    return -1;
-  }
-  return processIdentifier;
 }
 
 - (pid_t)processIdentifier

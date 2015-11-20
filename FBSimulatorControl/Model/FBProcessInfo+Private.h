@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBSimulatorControl/FBSimulatorProcess.h>
+#import <FBSimulatorControl/FBProcessInfo.h>
 
 @interface FBUserLaunchedProcess ()
 
@@ -22,5 +22,7 @@
 
 @property (nonatomic, assign, readwrite) pid_t processIdentifier;
 @property (nonatomic, copy, readwrite) NSString *launchPath;
+@property (nonatomic, copy, readwrite) NSArray *arguments;
+@property (nonatomic, copy, readwrite) NSDictionary *environment;
 
 @end
