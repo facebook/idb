@@ -9,7 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import "FBWritableLog.h"
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 @interface FBWritableLogTests : XCTestCase
 

@@ -9,20 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
-#import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorApplication.h>
-#import <FBSimulatorControl/FBSimulatorConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorControl+Private.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
-#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorProcess.h>
-#import <FBSimulatorControl/FBSimulatorSession.h>
-#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
-#import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
-#import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
-#import <FBSimulatorControl/FBSimulatorSessionState.h>
-#import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
@@ -44,7 +31,7 @@
 
   [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
+  FBUserLaunchedProcess *process = [session.state runningProcessForApplication:appLaunch.application];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -73,7 +60,7 @@
   XCTAssertTrue(wasUnexpected);
   [NSNotificationCenter.defaultCenter removeObserver:token];
 
-  XCTAssertFalse([session.state processForApplication:appLaunch.application]);
+  XCTAssertFalse([session.state runningProcessForApplication:appLaunch.application]);
 }
 
 - (void)testNotifiedByExpectedApplicationTermination
@@ -87,7 +74,7 @@
 
   [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  FBUserLaunchedProcess *process = [session.state processForApplication:appLaunch.application];
+  FBUserLaunchedProcess *process = [session.state runningProcessForApplication:appLaunch.application];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -116,7 +103,7 @@
   XCTAssertTrue(wasExpected);
   [NSNotificationCenter.defaultCenter removeObserver:token];
 
-  XCTAssertFalse([session.state processForApplication:appLaunch.application]);
+  XCTAssertFalse([session.state runningProcessForApplication:appLaunch.application]);
 }
 
 

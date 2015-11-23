@@ -206,6 +206,17 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   }];
 }
 
+- (BOOL)waitOnState:(FBSimulatorState)state withError:(NSError **)error
+{
+  if (![self waitOnState:state]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator was not in expected %@ state, got %@", [FBSimulator stateStringFromSimulatorState:state], self.stateString]
+      inSimulator:self]
+      failBool:error];
+  }
+  return YES;
+}
+
 - (BOOL)freeFromPoolWithError:(NSError **)error
 {
   if (!self.pool) {

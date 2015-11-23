@@ -127,6 +127,15 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 - (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout;
 
 /**
+ A Synchronous wait, with a default timeout, producing a meaningful error message.
+ 
+ @param state the state to wait on
+ @param error an error out for a timeout error if one occurred
+ @returns YES if the Simulator transitioned to the given state with the timeout, NO otherwise
+ */
+- (BOOL)waitOnState:(FBSimulatorState)state withError:(NSError **)error;
+
+/**
  Convenience method for obtaining a description of Simulator State
  */
 + (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state;

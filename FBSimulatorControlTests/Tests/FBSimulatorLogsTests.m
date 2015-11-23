@@ -9,14 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
-#import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorLogs+Private.h>
-#import <FBSimulatorControl/FBSimulatorLogs.h>
-#import <FBSimulatorControl/FBSimulatorSession.h>
-#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
-#import <FBSimulatorControl/FBWritableLog.h>
-#import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlFixtures.h"
@@ -64,6 +57,17 @@
 
   [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
     return session.logs.systemLog.asString;
+  }];
+}
+
+- (void)flakyOnTravis_testLaunchedApplicationLogs
+{
+  FBSimulatorSession *session = [self createBootedSession];
+  FBApplicationLaunchConfiguration *appLaunch = FBSimulatorControlFixtures.tableSearchAppLaunch.injectingShimulator;
+  [self.assert interactionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
+
+  [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
+    return [[session.logs.launchedApplicationLogs.allValues firstObject] asString];
   }];
 }
 

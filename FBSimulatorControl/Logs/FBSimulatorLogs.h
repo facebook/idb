@@ -56,7 +56,16 @@
 
 /**
  Crashes that occured in the Simulator after the start of the Session.
+
+ @return an NSArray<FBWritableLog *> of crashes that occured for user processes since the start of the session.
  */
 - (NSArray *)subprocessCrashes;
+
+/**
+ The System Log, filtered and bucketed by Applications that were launched during the Session. Returned as an NSDictionary<NSString *, FBWritableLog *>
+
+ @return an NSDictionary<FBUserLaunchedProcess *, FBWritableLog> of the logs, filtered by launched process.
+ */
+- (NSDictionary *)launchedApplicationLogs;
 
 @end

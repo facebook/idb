@@ -20,8 +20,9 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
   FBSimulatorManagementOptionsDeleteAllOnFirstStart = 1 << 0,
   FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart = 1 << 1,
   FBSimulatorManagementOptionsIgnoreSpuriousKillFail = 1 << 2,
-  FBSimulatorManagementOptionsDeleteOnFree = 1 << 3,
-  FBSimulatorManagementOptionsEraseOnFree = 1 << 4,
+  FBSimulatorManagementOptionsAlwaysCreateWhenAllocating = 1 << 3,
+  FBSimulatorManagementOptionsDeleteOnFree = 1 << 4,
+  FBSimulatorManagementOptionsEraseOnFree = 1 << 5,
 };
 
 /**

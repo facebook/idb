@@ -60,8 +60,18 @@ extern NSTimeInterval const FBTaskDefaultTimeout;
 - (NSString *)stdErr;
 
 /**
- Returns the Error associated with the shell command (if any). May be called from any thread.
+ Returns the Error associated with the task (if any). May be called from any thread.
  */
 - (NSError *)error;
+
+/**
+ Returns YES if the task has terminated, NO otherwise.
+ */
+- (BOOL)hasTerminated;
+
+/**
+ Returns YES if the task terminated without an error, NO otherwise
+ */
+- (BOOL)wasSuccessful;
 
 @end
