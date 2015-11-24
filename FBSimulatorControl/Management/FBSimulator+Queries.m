@@ -21,7 +21,7 @@
 
 - (NSArray *)launchedProcesses
 {
-  NSInteger launchdSimProcessIdentifier = self.launchdSimProcessIdentifier;
+  pid_t launchdSimProcessIdentifier = self.launchdSimProcessIdentifier;
   if (launchdSimProcessIdentifier < 1) {
     return @[];
   }
@@ -34,7 +34,7 @@
   NSArray *checkingResults = [self.class.longFormPgrepRegex matchesInString:allProcesses options:0 range:NSMakeRange(0, allProcesses.length)];
   NSMutableArray *processes = [NSMutableArray array];
   for (NSTextCheckingResult *result in checkingResults) {
-    NSInteger processIdentifier = [[allProcesses substringWithRange:[result rangeAtIndex:1]] integerValue];
+    pid_t processIdentifier = [[allProcesses substringWithRange:[result rangeAtIndex:1]] integerValue];
     if (processIdentifier < 1) {
       continue;
     }

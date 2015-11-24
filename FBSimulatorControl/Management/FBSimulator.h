@@ -76,7 +76,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 /**
  The Process Identifier of the Simulator. -1 if it is not running
  */
-@property (nonatomic, assign, readonly) NSInteger processIdentifier;
+@property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
  The Directory that Contains the Simulator's Data
@@ -92,7 +92,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 /**
  The Process Identifier of the Simulator's launchd_sim. -1 if it is not running
  */
-@property (nonatomic, assign, readonly) NSInteger launchdSimProcessIdentifier;
+@property (nonatomic, assign, readonly) pid_t launchdSimProcessIdentifier;
 
 /**
  The Application that the Simulator should be launched with.

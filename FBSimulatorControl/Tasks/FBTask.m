@@ -102,7 +102,7 @@ NSTimeInterval const FBTaskDefaultTimeout = 30;
 
 #pragma mark Accessors
 
-- (NSInteger)processIdentifier
+- (pid_t)processIdentifier
 {
   return self.task.processIdentifier;
 }

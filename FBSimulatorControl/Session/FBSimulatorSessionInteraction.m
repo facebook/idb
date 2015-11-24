@@ -214,7 +214,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    NSInteger processIdentifier = [simulator.device launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
+    pid_t processIdentifier = [simulator.device launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
     if (processIdentifier <= 0) {
       return [[[[FBSimulatorError describe:@"Failed to launch application"] causedBy:innerError] inSimulator:simulator] failBool:error];
     }
@@ -236,7 +236,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
   FBSimulator *simulator = self.session.simulator;
 
-  return [self application:application interact:^ BOOL (NSInteger processIdentifier, NSError **error) {
+  return [self application:application interact:^ BOOL (pid_t processIdentifier, NSError **error) {
     [lifecycle applicationWillTerminate:application];
     int returnCode = kill(processIdentifier, signo);
     if (returnCode != 0) {
@@ -266,7 +266,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    NSInteger processIdentifier = [simulator.device
+    pid_t processIdentifier = [simulator.device
       spawnWithPath:agentLaunch.agentBinary.path
       options:options
       terminationHandler:NULL
@@ -378,7 +378,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   return [options copy];
 }
 
-- (instancetype)application:(FBSimulatorApplication *)application interact:(BOOL (^)(NSInteger processIdentifier, NSError **error))block
+- (instancetype)application:(FBSimulatorApplication *)application interact:(BOOL (^)(pid_t processIdentifier, NSError **error))block
 {
   FBSimulatorSession *session = self.session;
   FBSimulator *simulator = self.session.simulator;

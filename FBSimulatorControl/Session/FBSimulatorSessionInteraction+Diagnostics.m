@@ -18,13 +18,13 @@
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
 
-typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, NSInteger processIdentifier);
+typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t processIdentifier);
 
 @implementation FBSimulatorSessionInteraction (Diagnostics)
 
 - (instancetype)sampleApplication:(FBSimulatorApplication *)application withDuration:(NSInteger)durationInSeconds frequency:(NSInteger)frequencyInMilliseconds
 {
-  return [self asyncDiagnosticOnApplication:application name:@"stack_sample" taskFactory:^ id<FBTask> (FBTaskExecutor *executor, NSInteger processIdentifier) {
+  return [self asyncDiagnosticOnApplication:application name:@"stack_sample" taskFactory:^ id<FBTask> (FBTaskExecutor *executor, pid_t processIdentifier) {
     return [executor
       taskWithLaunchPath:@"/usr/bin/sample"
       arguments:@[@(processIdentifier).stringValue, @(durationInSeconds).stringValue, @(frequencyInMilliseconds).stringValue]];
@@ -35,7 +35,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, NSInteger
 {
   NSParameterAssert(command);
 
-  return [self syncDiagnosticOnApplication:application name:@"lldb_command" taskFactory:^id<FBTask>(FBTaskExecutor *executor, NSInteger processIdentifier) {
+  return [self syncDiagnosticOnApplication:application name:@"lldb_command" taskFactory:^id<FBTask>(FBTaskExecutor *executor, pid_t processIdentifier) {
     return [[[[executor
       withLaunchPath:@"/usr/bin/lldb"]
       withArguments:@[@"-p", @(processIdentifier).stringValue, @"-o", command, @"-o", @"script import os; os._exit(1)"]]
@@ -52,7 +52,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, NSInteger
   NSParameterAssert(name);
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
-  return [self application:application interact:^ BOOL (NSInteger processIdentifier, NSError **error) {
+  return [self application:application interact:^ BOOL (pid_t processIdentifier, NSError **error) {
     id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 
@@ -78,7 +78,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, NSInteger
   NSParameterAssert(name);
   FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
 
-  return [self application:application interact:^ BOOL (NSInteger processIdentifier, NSError **error) {
+  return [self application:application interact:^ BOOL (pid_t processIdentifier, NSError **error) {
     id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 

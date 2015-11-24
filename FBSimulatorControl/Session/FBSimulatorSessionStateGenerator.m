@@ -50,7 +50,7 @@
   }];
 }
 
-- (instancetype)update:(FBProcessLaunchConfiguration *)launchConfig withProcessIdentifier:(NSInteger)processIdentifier
+- (instancetype)update:(FBProcessLaunchConfiguration *)launchConfig withProcessIdentifier:(pid_t)processIdentifier
 {
   return [self updateCurrentState:^ FBSimulatorSessionState * (FBSimulatorSessionState *state) {
     NSCParameterAssert(state.lifecycle != FBSimulatorSessionLifecycleStateNotStarted);

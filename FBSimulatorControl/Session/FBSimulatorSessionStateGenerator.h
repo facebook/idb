@@ -40,7 +40,7 @@
 /**
  Creates Process State for the given launch config.
  */
-- (instancetype)update:(FBProcessLaunchConfiguration *)launchConfig withProcessIdentifier:(NSInteger)processIdentifier;
+- (instancetype)update:(FBProcessLaunchConfiguration *)launchConfig withProcessIdentifier:(pid_t)processIdentifier;
 
 /**
  Updates the diagnostic information about for a given launched process.

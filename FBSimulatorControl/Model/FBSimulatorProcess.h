@@ -16,7 +16,7 @@
 /**
  The Process Identifier for the running process
  */
-@property (nonatomic, assign, readonly) NSInteger processIdentifier;
+@property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
  The Launch Path of the running process
@@ -54,6 +54,6 @@
  */
 @interface FBFoundProcess : NSObject <FBSimulatorProcess, NSCopying>
 
-+ (instancetype)withProcessIdentifier:(NSInteger)processIdentifier launchPath:(NSString *)launchPath;
++ (instancetype)withProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath;
 
 @end

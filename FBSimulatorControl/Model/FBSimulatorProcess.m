@@ -79,7 +79,7 @@
 @synthesize launchPath = _launchPath;
 @synthesize processIdentifier = _processIdentifier;
 
-+ (instancetype)withProcessIdentifier:(NSInteger)processIdentifier launchPath:(NSString *)launchPath
++ (instancetype)withProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath
 {
   FBFoundProcess *process = [self new];
   process.processIdentifier = processIdentifier;

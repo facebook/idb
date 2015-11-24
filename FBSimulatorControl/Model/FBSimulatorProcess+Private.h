@@ -11,7 +11,7 @@
 
 @interface FBUserLaunchedProcess ()
 
-@property (nonatomic, assign, readwrite) NSInteger processIdentifier;
+@property (nonatomic, assign, readwrite) pid_t processIdentifier;
 @property (nonatomic, copy, readwrite) NSDate *launchDate;
 @property (nonatomic, copy, readwrite) FBProcessLaunchConfiguration *launchConfiguration;
 @property (nonatomic, copy, readwrite) NSDictionary *diagnostics;
@@ -20,7 +20,7 @@
 
 @interface FBFoundProcess ()
 
-@property (nonatomic, assign, readwrite) NSInteger processIdentifier;
+@property (nonatomic, assign, readwrite) pid_t processIdentifier;
 @property (nonatomic, copy, readwrite) NSString *launchPath;
 
 @end

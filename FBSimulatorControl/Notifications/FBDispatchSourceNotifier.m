@@ -17,7 +17,7 @@
 
 @implementation FBDispatchSourceNotifier
 
-+ (instancetype)processTerminationNotifierForProcessIdentifier:(NSInteger)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler
++ (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler
 {
   dispatch_source_t dispatchSource = dispatch_source_create(
     DISPATCH_SOURCE_TYPE_PROC,
