@@ -1,0 +1,320 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA93B7C71BE835B100CF6A56 /* Relay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7C41BE835B100CF6A56 /* Relay.swift */; };
+		AA93B7C81BE835B100CF6A56 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7C51BE835B100CF6A56 /* main.swift */; };
+		AA93B7CA1BE8361800CF6A56 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
+		AA93B7CC1BE8380B00CF6A56 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7C31BE835B100CF6A56 /* Command.swift */; };
+		AA93B7CE1BE9543000CF6A56 /* Parsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7CD1BE9543000CF6A56 /* Parsers.swift */; };
+		AA93B7D01BE9544000CF6A56 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7CF1BE9544000CF6A56 /* Runners.swift */; };
+		AA93B7D21BEA679600CF6A56 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7D11BEA679600CF6A56 /* Help.swift */; };
+		AA93B7D41BEA7ED800CF6A56 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7D31BEA7ED800CF6A56 /* Arguments.swift */; };
+		AA93B7D61BEA97A700CF6A56 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7D51BEA97A700CF6A56 /* Bridging.swift */; };
+		AAEAC9BB1BF23BAE00B5F957 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AAEAC9BD1BF3CD7B00B5F957 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9BC1BF3CD7B00B5F957 /* SignalHandler.swift */; };
+		AAEAC9BF1BF3EA8200B5F957 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9BE1BF3EA8200B5F957 /* SocketRelay.swift */; };
+		AAEAC9C11BF3EA9200B5F957 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9C01BF3EA9200B5F957 /* StdIORelay.swift */; };
+		AAF4A3311BF4E2B900978B3A /* LineBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF4A3301BF4E2B900978B3A /* LineBuffer.swift */; };
+		AAF4A3381BF5152700978B3A /* Constants.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF4A3371BF5152700978B3A /* Constants.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AAEAC9BA1BF23B1700B5F957 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Frameworks;
+			dstSubfolderSpec = 10;
+			files = (
+				AAEAC9BB1BF23BAE00B5F957 /* FBSimulatorControl.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA93B7C31BE835B100CF6A56 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
+		AA93B7C41BE835B100CF6A56 /* Relay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Relay.swift; sourceTree = "<group>"; };
+		AA93B7C51BE835B100CF6A56 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = "../../../Library/Developer/Xcode/DerivedData/fbsimctl-civpmgwytzrrawekdzefxighgiyo/Build/Products/Debug/FBSimulatorControl.framework"; sourceTree = "<group>"; };
+		AA93B7CD1BE9543000CF6A56 /* Parsers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parsers.swift; sourceTree = "<group>"; };
+		AA93B7CF1BE9544000CF6A56 /* Runners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Runners.swift; sourceTree = "<group>"; };
+		AA93B7D11BEA679600CF6A56 /* Help.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
+		AA93B7D31BEA7ED800CF6A56 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
+		AA93B7D51BEA97A700CF6A56 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
+		AAEAC9BC1BF3CD7B00B5F957 /* SignalHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignalHandler.swift; sourceTree = "<group>"; };
+		AAEAC9BE1BF3EA8200B5F957 /* SocketRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketRelay.swift; sourceTree = "<group>"; };
+		AAEAC9C01BF3EA9200B5F957 /* StdIORelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StdIORelay.swift; sourceTree = "<group>"; };
+		AAF4A3301BF4E2B900978B3A /* LineBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineBuffer.swift; sourceTree = "<group>"; };
+		AAF4A3351BF5152700978B3A /* fbsimctl-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "fbsimctl-Bridging-Header.h"; sourceTree = "<group>"; };
+		AAF4A3361BF5152700978B3A /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
+		AAF4A3371BF5152700978B3A /* Constants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Constants.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA93B7AD1BE8351000CF6A56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA93B7CA1BE8361800CF6A56 /* FBSimulatorControl.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA93B7A71BE8351000CF6A56 = {
+			isa = PBXGroup;
+			children = (
+				AA93B7C21BE835B100CF6A56 /* Sources */,
+				AA93B7CB1BE8361F00CF6A56 /* Frameworks */,
+				AA93B7B11BE8351000CF6A56 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA93B7B11BE8351000CF6A56 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA93B7B01BE8351000CF6A56 /* fbsimctl */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA93B7C21BE835B100CF6A56 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				AA93B7D31BEA7ED800CF6A56 /* Arguments.swift */,
+				AA93B7D51BEA97A700CF6A56 /* Bridging.swift */,
+				AA93B7C31BE835B100CF6A56 /* Command.swift */,
+				AAF4A3361BF5152700978B3A /* Constants.h */,
+				AAF4A3371BF5152700978B3A /* Constants.m */,
+				AAF4A3351BF5152700978B3A /* fbsimctl-Bridging-Header.h */,
+				AA93B7D11BEA679600CF6A56 /* Help.swift */,
+				AAF4A3301BF4E2B900978B3A /* LineBuffer.swift */,
+				AA93B7C51BE835B100CF6A56 /* main.swift */,
+				AA93B7CD1BE9543000CF6A56 /* Parsers.swift */,
+				AA93B7C41BE835B100CF6A56 /* Relay.swift */,
+				AA93B7CF1BE9544000CF6A56 /* Runners.swift */,
+				AAEAC9BC1BF3CD7B00B5F957 /* SignalHandler.swift */,
+				AAEAC9BE1BF3EA8200B5F957 /* SocketRelay.swift */,
+				AAEAC9C01BF3EA9200B5F957 /* StdIORelay.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		AA93B7CB1BE8361F00CF6A56 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA93B7AF1BE8351000CF6A56 /* fbsimctl */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA93B7B71BE8351000CF6A56 /* Build configuration list for PBXNativeTarget "fbsimctl" */;
+			buildPhases = (
+				AA93B7AC1BE8351000CF6A56 /* Sources */,
+				AA93B7AD1BE8351000CF6A56 /* Frameworks */,
+				AAEAC9BA1BF23B1700B5F957 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = fbsimctl;
+			productName = fbsimctl;
+			productReference = AA93B7B01BE8351000CF6A56 /* fbsimctl */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA93B7A81BE8351000CF6A56 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0710;
+				LastUpgradeCheck = 0710;
+				ORGANIZATIONNAME = Facebook;
+				TargetAttributes = {
+					AA93B7AF1BE8351000CF6A56 = {
+						CreatedOnToolsVersion = 7.1;
+					};
+				};
+			};
+			buildConfigurationList = AA93B7AB1BE8351000CF6A56 /* Build configuration list for PBXProject "fbsimctl" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = AA93B7A71BE8351000CF6A56;
+			productRefGroup = AA93B7B11BE8351000CF6A56 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA93B7AF1BE8351000CF6A56 /* fbsimctl */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA93B7AC1BE8351000CF6A56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA93B7D01BE9544000CF6A56 /* Runners.swift in Sources */,
+				AA93B7CE1BE9543000CF6A56 /* Parsers.swift in Sources */,
+				AA93B7D21BEA679600CF6A56 /* Help.swift in Sources */,
+				AA93B7D41BEA7ED800CF6A56 /* Arguments.swift in Sources */,
+				AAEAC9BF1BF3EA8200B5F957 /* SocketRelay.swift in Sources */,
+				AAF4A3381BF5152700978B3A /* Constants.m in Sources */,
+				AAF4A3311BF4E2B900978B3A /* LineBuffer.swift in Sources */,
+				AAEAC9BD1BF3CD7B00B5F957 /* SignalHandler.swift in Sources */,
+				AA93B7CC1BE8380B00CF6A56 /* Command.swift in Sources */,
+				AA93B7C71BE835B100CF6A56 /* Relay.swift in Sources */,
+				AA93B7C81BE835B100CF6A56 /* main.swift in Sources */,
+				AA93B7D61BEA97A700CF6A56 /* Bridging.swift in Sources */,
+				AAEAC9C11BF3EA9200B5F957 /* StdIORelay.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA93B7B51BE8351000CF6A56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = $SRCROOT/Headers/BridgingHeader.h;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA93B7B61BE8351000CF6A56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = $SRCROOT/Headers/BridgingHeader.h;
+			};
+			name = Release;
+		};
+		AA93B7B81BE8351000CF6A56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/fbsimctl-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA93B7B91BE8351000CF6A56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/fbsimctl-Bridging-Header.h";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA93B7AB1BE8351000CF6A56 /* Build configuration list for PBXProject "fbsimctl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA93B7B51BE8351000CF6A56 /* Debug */,
+				AA93B7B61BE8351000CF6A56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA93B7B71BE8351000CF6A56 /* Build configuration list for PBXNativeTarget "fbsimctl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA93B7B81BE8351000CF6A56 /* Debug */,
+				AA93B7B91BE8351000CF6A56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AA93B7A81BE8351000CF6A56 /* Project object */;
+}

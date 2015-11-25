@@ -44,8 +44,20 @@
 
 + (NSPredicate *)only:(FBSimulator *)simulator
 {
+  return [self onlyUDID:simulator.udid];
+}
+
++ (NSPredicate *)onlyUDID:(NSString *)udid
+{
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return simulator.udid && [candidate.udid isEqual:simulator.udid];
+    return udid && [candidate.udid isEqual:udid];
+  }];
+}
+
++ (NSPredicate *)withState:(FBSimulatorState)state
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
+    return candidate.state == state;
   }];
 }
 
