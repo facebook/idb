@@ -240,7 +240,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
     [lifecycle applicationWillTerminate:application];
     int returnCode = kill(processIdentifier, signo);
     if (returnCode != 0) {
-      return [[[FBSimulatorError describeFormat:@"SIGKILL of Application %@ of PID %ld failed", application, processIdentifier] inSimulator:simulator] failBool:error];
+      return [[[FBSimulatorError describeFormat:@"SIGKILL of Application %@ of PID %d failed", application, processIdentifier] inSimulator:simulator] failBool:error];
     }
     return YES;
   }];
@@ -296,7 +296,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
     [lifecycle agentWillTerminate:agent];
     if (!kill(state.processIdentifier, SIGKILL)) {
-      return [[[FBSimulatorError describeFormat:@"SIGKILL of Agent %@ of PID %ld failed", agent, state.processIdentifier] inSimulator:simulator] failBool:error];
+      return [[[FBSimulatorError describeFormat:@"SIGKILL of Agent %@ of PID %d failed", agent, state.processIdentifier] inSimulator:simulator] failBool:error];
     }
     return YES;
   }];

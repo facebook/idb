@@ -9,9 +9,9 @@
 
 #import "FBSimulatorSessionStateGenerator.h"
 
+#import "FBProcessInfo+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
-#import "FBProcessInfo+Private.h"
 #import "FBSimulatorSessionState+Private.h"
 #import "FBSimulatorSessionState+Queries.h"
 

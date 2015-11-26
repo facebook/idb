@@ -15,6 +15,7 @@
 #import <CoreSimulator/SimRuntime.h>
 
 #import "FBCoreSimulatorNotifier.h"
+#import "FBProcessQuery.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
@@ -25,7 +26,6 @@
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPredicates.h"
-#import "FBProcessQuery.h"
 #import "FBTaskExecutor+Convenience.h"
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"

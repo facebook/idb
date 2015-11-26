@@ -65,7 +65,7 @@
 - (NSString *)longDescription
 {
   return [NSString stringWithFormat:
-    @"Launch %@ | PID %ld | Launched %@ | Diagnostics %@",
+    @"Launch %@ | PID %d | Launched %@ | Diagnostics %@",
     self.launchConfiguration,
     self.processIdentifier,
     self.launchDate,
@@ -76,7 +76,7 @@
 - (NSString *)shortDescription
 {
   return [NSString stringWithFormat:
-    @"Process %@ | PID %ld",
+    @"Process %@ | PID %d",
     self.launchConfiguration.shortDescription,
     self.processIdentifier
   ];
@@ -120,7 +120,7 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Process %@ | PID %ld | Arguments %@ | Environment %@",
+    @"Process %@ | PID %d | Arguments %@ | Environment %@",
     self.launchPath,
     self.processIdentifier,
     self.arguments,

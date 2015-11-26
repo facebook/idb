@@ -13,8 +13,8 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBConcurrentCollectionOperations.h"
-#import "FBSimulator.h"
 #import "FBSimulator+Queries.h"
+#import "FBSimulator.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
@@ -149,11 +149,11 @@
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
   for (FBUserLaunchedProcess *launchedProcess in launchedApplications) {
     logs[launchedProcess] = [[[[[FBWritableLogBuilder builder]
-      updateShortName:[NSString stringWithFormat:@"log_%ld", launchedProcess.processIdentifier]]
+      updateShortName:[NSString stringWithFormat:@"log_%d", launchedProcess.processIdentifier]]
       updateFileType:@"log"]
       updatePathFromBlock:^ BOOL (NSString *path) {
         NSString *shellCommand = [NSString stringWithFormat:
-          @"cat %@ | grep %ld",
+          @"cat %@ | grep %d",
           [FBTaskExecutor escapePathForShell:self.systemLogPath],
           launchedProcess.processIdentifier
         ];

@@ -9,23 +9,23 @@
 
 #import "FBProcessQuery.h"
 
-#import "FBProcessInfo.h"
-#import "FBProcessInfo+Private.h"
-
-#include <sys/sysctl.h>
 #include <libproc.h>
 #include <limits.h>
+#include <sys/sysctl.h>
+
+#import "FBProcessInfo+Private.h"
+#import "FBProcessInfo.h"
 
 #define PID_MAX 99999
 
 #pragma mark Calling libproc
 
 typedef BOOL(^ProcessIterator)(pid_t pid);
-typedef size_t(^LibProcCaller)(size_t pidBufferSize, pid_t *pidBuffer);
+typedef size_t(^LibProcCaller)(void);
 
 static void IterateWith(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator iterator, LibProcCaller caller)
 {
-  size_t actualSize = caller(pidBufferSize, pidBuffer);
+  size_t actualSize = caller();
   if (actualSize < 1) {
     return;
   }
@@ -40,21 +40,21 @@ static void IterateWith(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator 
 
 static void IterateAllProcesses(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator iterator)
 {
-  IterateWith(pidBuffer, pidBufferSize, iterator, ^size_t(size_t pidBufferSize, pid_t *pidBuffer) {
+  IterateWith(pidBuffer, pidBufferSize, iterator, ^ size_t () {
     return proc_listallpids(pidBuffer, pidBufferSize);
   });
 }
 
 static void IterateSubprocessesOf(pid_t *pidBuffer, size_t pidBufferSize, pid_t parent, ProcessIterator iterator)
 {
-  IterateWith(pidBuffer, pidBufferSize, iterator, ^size_t(size_t pidBufferSize, pid_t *pidBuffer) {
+  IterateWith(pidBuffer, pidBufferSize, iterator, ^ size_t () {
     return proc_listchildpids(parent, pidBuffer, pidBufferSize);
   });
 }
 
 static void IterateOpenFiles(pid_t *pidBuffer, size_t pidBufferSize, const char *path, ProcessIterator iterator)
 {
-  IterateWith(pidBuffer, pidBufferSize, iterator, ^size_t(size_t pidBufferSize, pid_t *pidBuffer) {
+  IterateWith(pidBuffer, pidBufferSize,iterator, ^ size_t () {
     return proc_listpidspath(
       PROC_LISTPIDSPATH_PATH_IS_VOLUME,
       PROC_ALL_PIDS,
@@ -64,16 +64,6 @@ static void IterateOpenFiles(pid_t *pidBuffer, size_t pidBufferSize, const char 
       pidBufferSize
     );
   });
-}
-
-static inline NSString *ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
-{
-  size_t actualSize = proc_name(processIdentifier, buffer, bufferSize);
-  if (actualSize == -1) {
-    return nil;
-  }
-  NSString *string = [[NSString alloc] initWithCString:buffer encoding:NSASCIIStringEncoding];
-  return string;
 }
 
 static inline FBFoundProcess *ProcessInfoForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
@@ -231,6 +221,8 @@ static inline BOOL ProcInfoForProcessIdentifier(pid_t processIdentifier, struct 
     }
     return YES;
   });
+
+  return [subprocesses copy];
 }
 
 - (pid_t)subprocessOf:(pid_t)parent withName:(NSString *)needleString

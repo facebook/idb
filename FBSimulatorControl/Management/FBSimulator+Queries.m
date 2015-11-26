@@ -11,11 +11,11 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBWritableLog.h"
-#import "FBSimulatorLogs.h"
 #import "FBProcessInfo.h"
-#import "FBTaskExecutor.h"
 #import "FBProcessQuery.h"
+#import "FBSimulatorLogs.h"
+#import "FBTaskExecutor.h"
+#import "FBWritableLog.h"
 
 @implementation FBSimulator (Queries)
 
