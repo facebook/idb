@@ -12,17 +12,20 @@
 @class FBSimulatorControlConfiguration;
 
 /**
- Strategies for Terminating Simulators
+ A class for terminating Simulators.
  */
 @interface FBSimulatorTerminationStrategy : NSObject
 
 /**
- A Strategy that uses Pgrep/Pkill.
+ A Strategy that uses FBProcessQuery & kill(2).
+
+ @param configuration the Configuration of FBSimulatorControl.
+ @param allSimulators the Simulators that are permitted to be terminated.
  */
 + (instancetype)usingKillOnConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators;
 
 /**
- Kills all of the Simulators the reciever's Device Set.
+ Kills all of the Simulators associated with the reciever.
 
  @param error an error out if any error occured.
  @returns an array of the Simulators that this were killed if successful, nil otherwise.

@@ -26,126 +26,18 @@
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPredicates.h"
+#import "FBProcessInfo.h"
+#import "FBProcessQuery.h"
 #import "FBTaskExecutor+Convenience.h"
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBSimulatorTerminationStrategy ()
 
-- (NSArray *)safeShutdownSimulators:(NSArray *)simulators withError:(NSError **)error;
+@property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
+@property (nonatomic, copy, readonly) NSArray *allSimulators;
 
-@property (nonatomic, copy, readwrite) FBSimulatorControlConfiguration *configuration;
-@property (nonatomic, copy, readwrite) NSArray *allSimulators;
-
-@end
-
-@interface FBSimulatorTerminationStrategy_PKill : FBSimulatorTerminationStrategy
-
-@end
-
-@implementation FBSimulatorTerminationStrategy_PKill
-
-- (NSArray *)killAllWithError:(NSError **)error
-{
-  NSString *grepComponents = self.configuration.deviceSetPath
-    // If the path of the DeviceSet exists we can kill Simulator.app processes that contain it in their launch.
-    ? [NSString stringWithFormat:@"grep %@ |", self.configuration.deviceSetPath]
-    // If there isn't a custom set path, we have to kill all simulators that contain a CurrentDeviceUDID launch
-    : [NSString stringWithFormat:@"grep CurrentDeviceUDID | "];
-
-  NSError *innerError = nil;
-  if (![self blanketKillSimulatorAppsWithPidFilter:grepComponents error:&innerError]) {
-    return [[[FBSimulatorError describe:@"Failed to kill all with DeviceSetPath"] causedBy:innerError] fail:error];
-  }
-
-  return [self safeShutdownSimulators:[self.allSimulators copy] withError:error];
-}
-
-- (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error
-{
-  // Return early if there isn't anything to kill
-  if (simulators.count < 1) {
-    return simulators;
-  }
-
-  NSMutableString *grepComponents = [NSMutableString string];
-  [grepComponents appendFormat:@"grep CurrentDeviceUDID | grep"];
-  for (FBSimulator *simulator in simulators) {
-    [grepComponents appendFormat:@" -e %@ ", simulator.udid];
-  }
-  [grepComponents appendString:@" | "];
-
-  NSError *innerError = nil;
-  if (![self blanketKillSimulatorAppsWithPidFilter:grepComponents error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-
-  return [self safeShutdownSimulators:simulators withError:error];
-}
-
-- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
-{
-  // We should also kill Simulators that are in totally the wrong Simulator binary.
-  // Overlapping Xcode instances can't run on the same machine
-  NSError *innerError = nil;
-  if (![self blanketKillSimulatorsFromDifferentXcodeVersion:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-
-  // We want to blanket kill all the Simulator Applications that belong to the current Xcode version
-  // but aren't launched in the automated CurretnDeviceUDID way.
-  if (![self blanketKillSimulatorAppsWithPidFilter:@"grep -v CurrentDeviceUDID |" error:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-  return YES;
-}
-
-- (BOOL)blanketKillSimulatorsFromDifferentXcodeVersion:(NSError **)error
-{
-  // All Simulator Versions from Xcode 5-7, end in Simulator.app
-  // This command kills all Simulator.app binaries that *don't* match the current Simulator Binary Path.
-  NSString *simulatorBinaryPath = self.configuration.simulatorApplication.binary.path;
-  NSString *command = [NSString stringWithFormat:
-    @"pgrep -lf Simulator.app | grep -v %@ | awk '{print $1}'",
-    [FBTaskExecutor escapePathForShell:simulatorBinaryPath]
-  ];
-
-  NSError *innerError = nil;
-  if (![self blanketKillSimulatorAppsPidProducingCommand:command error:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError description:@"Could not kill non-current xcode simulators" errorOut:error];
-  }
-  return YES;
-}
-
-- (BOOL)blanketKillSimulatorAppsWithPidFilter:(NSString *)pidFilter error:(NSError **)error
-{
-  NSString *simulatorBinaryPath = self.configuration.simulatorApplication.binary.path;
-  NSString *command = [NSString stringWithFormat:
-    @"pgrep -lf %@ | %@ awk '{print $1}'",
-    [FBTaskExecutor escapePathForShell:simulatorBinaryPath],
-    pidFilter
-  ];
-
-  NSError *innerError = nil;
-  if (![self blanketKillSimulatorAppsPidProducingCommand:command error:&innerError]) {
-    return [[[FBSimulatorError describeFormat:@"Could not kill simulators with pid filter %@", pidFilter] causedBy:innerError] failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)blanketKillSimulatorAppsPidProducingCommand:(NSString *)commandForPids error:(NSError **)error
-{
-  FBTaskExecutor *executor = FBTaskExecutor.sharedInstance;
-  NSString *command = [NSString stringWithFormat:
-    @"%@ | xargs kill",
-    commandForPids
-  ];
-  NSError *innerError = nil;
-  if (![executor executeShellCommand:command returningError:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Kill Simulator Process" errorOut:error];
-  }
-  return YES;
-}
+@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
 @end
 
@@ -153,7 +45,7 @@
 
 + (instancetype)usingKillOnConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators
 {
-  return [[FBSimulatorTerminationStrategy_PKill alloc] initWithConfiguration:configuration allSimulators:allSimulators];
+  return [[FBSimulatorTerminationStrategy alloc] initWithConfiguration:configuration allSimulators:allSimulators];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators
@@ -165,28 +57,96 @@
 
   _configuration = configuration;
   _allSimulators = allSimulators;
+  _processQuery = [FBProcessQuery new];
+
   return self;
 }
 
 - (NSArray *)killAllWithError:(NSError **)error
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return [self killSimulators:self.allSimulators withError:error];
 }
 
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  NSSet *udids = [NSSet setWithArray:[simulators valueForKey:@"udid"]];
+  NSPredicate *predicate = [self simulatorWithOneOf:udids];
+
+  NSError *innerError = nil;
+  if (![self killSimulatorProcessesMatchingPredicate:predicate error:&innerError]) {
+    return [[[FBSimulatorError describe:@"Could not kill simulators before shutting them down"] causedBy:innerError] fail:error];
+  }
+  if (![self safeShutdownSimulators:simulators withError:&innerError]) {
+    return [[[FBSimulatorError describe:@"Could not shut down simulators after killing them"] causedBy:innerError] fail:error];
+  }
+
+  return simulators;
 }
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
+  NSPredicate *predicate = [NSCompoundPredicate orPredicateWithSubpredicates:@[
+    self.simulatorsFromDifferentXcodeVersionPredicate,
+    self.simulatorsNotLaunchedBySimulatorControl
+  ]];
+
+  NSError *innerError = nil;
+  if (![self killSimulatorProcessesMatchingPredicate:predicate error:&innerError]) {
+    return [[[FBSimulatorError describe:@"Could not kill non-current spurious simulators"] causedBy:innerError] failBool:error];
+  }
+  return YES;
 }
 
 #pragma mark Private
+
+- (NSPredicate *)simulatorsFromDifferentXcodeVersionPredicate
+{
+  // If it's from a different Xcode version, the binary path will be different.
+  NSString *simulatorBinaryPath = self.configuration.simulatorApplication.binary.path;
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
+    return ![process.launchPath isEqualToString:simulatorBinaryPath];
+  }];
+}
+
+- (NSPredicate *)simulatorsNotLaunchedBySimulatorControl
+{
+  // All Simulators launched by FBSimulatorControl have a magic string in their environment
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
+    NSSet *argumentSet = [NSSet setWithArray:process.environment.allKeys];
+    return ![argumentSet containsObject:FBSimulatorControlSimulatorLaunchEnvironmentMagic];
+  }];
+}
+
+- (NSPredicate *)simulatorWithOneOf:(NSSet *)udids
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
+    NSSet *argumentSet = [NSSet setWithArray:process.arguments];
+    return [udids intersectsSet:argumentSet];
+  }];
+}
+
+- (NSArray *)simulatorProcesses
+{
+  // All Simulator Versions from Xcode 5-7, have Simulator.app in their path.
+  return [self.processQuery processesWithLaunchPathSubstring:@"Simulator.app"];
+}
+
+- (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
+{
+  NSArray *processes = [self.simulatorProcesses filteredArrayUsingPredicate:predicate];
+  return [self killProcesses:processes error:error];
+}
+
+- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+{
+  for (id<FBProcessInfo> process in processes) {
+    NSParameterAssert(process.processIdentifier > 1);
+    if (kill(process.processIdentifier, SIGTERM) < 0) {
+      return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
+    }
+  }
+  return YES;
+}
 
 - (NSArray *)safeShutdownSimulators:(NSArray *)simulators withError:(NSError **)error
 {

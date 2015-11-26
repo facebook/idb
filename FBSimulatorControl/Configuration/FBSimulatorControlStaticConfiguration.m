@@ -14,6 +14,8 @@
 #import "FBSimulatorControl+Private.h"
 #import "FBTaskExecutor.h"
 
+NSString *const FBSimulatorControlSimulatorLaunchEnvironmentMagic = @"__IS_THIS_TRULY_MAGIC__";
+
 @implementation FBSimulatorControlStaticConfiguration
 
 + (NSString *)developerDirectory

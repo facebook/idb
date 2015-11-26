@@ -216,9 +216,13 @@ static inline BOOL ProcInfoForProcessIdentifier(pid_t processIdentifier, struct 
 
   IterateAllProcesses(self.pidBuffer, self.pidBufferSize, ^ BOOL (pid_t pid) {
     id<FBProcessInfo> info = [self processInfoFor:pid];
-    if ([info.launchPath containsString:substring]) {
-      [subprocesses addObject:info];
+    if (!info) {
+      return YES;
     }
+    if ([info.launchPath rangeOfString:substring].location == NSNotFound) {
+      return YES;
+    }
+    [subprocesses addObject:info];
     return YES;
   });
 
