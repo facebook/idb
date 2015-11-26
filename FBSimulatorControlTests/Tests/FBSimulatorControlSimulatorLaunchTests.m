@@ -45,7 +45,6 @@
   XCTAssertEqual(session.state.runningAgents.count, 0);
   XCTAssertEqual(session.state.runningApplications.count, 0);
   XCTAssertNotEqual(session.simulator.processIdentifier, -1);
-  XCTAssertNotNil(session.simulator.launchdBootstrapPath);
   XCTAssertNotNil(session.simulator.launchedProcesses);
 
   XCTAssertTrue([session terminateWithError:&error]);

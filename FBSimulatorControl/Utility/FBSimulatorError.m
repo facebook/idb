@@ -113,7 +113,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 - (instancetype)inSimulator:(FBSimulator *)simulator
 {
   return [[self
-    extraInfo:@"launchd_is_running" value:@(simulator.hasActiveLaunchdSim)]
+    extraInfo:@"launchd_is_running" value:@(simulator.launchdSimProcessIdentifier > 1)]
     extraInfo:@"launchd_subprocesses" value:[simulator launchedProcesses]];
 }
 

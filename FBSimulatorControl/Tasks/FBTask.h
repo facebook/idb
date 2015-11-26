@@ -47,7 +47,7 @@ extern NSTimeInterval const FBTaskDefaultTimeout;
 /**
  Returns the Process Identifier of the Launched Process.
  */
-- (NSInteger)processIdentifier;
+- (pid_t)processIdentifier;
 
 /**
  Returns a copy of the current state of stdout. May be called from any thread.

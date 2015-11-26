@@ -20,6 +20,6 @@ extern NSTimeInterval const FBSimulatorInteractionDefaultTimeout;
 /**
  Chains an interaction on an application process, for the given application.
  */
-- (instancetype)application:(FBSimulatorApplication *)application interact:(BOOL (^)(NSInteger processIdentifier, NSError **error))block;
+- (instancetype)application:(FBSimulatorApplication *)application interact:(BOOL (^)(pid_t processIdentifier, NSError **error))block;
 
 @end

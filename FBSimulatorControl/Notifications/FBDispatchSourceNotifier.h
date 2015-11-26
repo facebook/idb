@@ -22,6 +22,6 @@
  @param processIdentifier the Process Identifier of the Process to Monitor
  @param handler the handler to call when the process exits
  */
-+ (instancetype)processTerminationNotifierForProcessIdentifier:(NSInteger)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler;
++ (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler;
 
 @end

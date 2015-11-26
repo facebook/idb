@@ -14,6 +14,7 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
+#import "FBProcessQuery.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -86,43 +87,12 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return self.device.dataPath;
 }
 
-- (NSString *)launchdBootstrapPath
-{
-  NSString *expectedPath = [[self.pool.deviceSet.setPath
-    stringByAppendingPathComponent:self.udid]
-    stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
-
-  if (![NSFileManager.defaultManager fileExistsAtPath:expectedPath]) {
-    return nil;
-  }
-  return expectedPath;
-}
-
-- (NSInteger)launchdSimProcessIdentifier
-{
-  NSString *bootstrapPath = self.launchdBootstrapPath;
-  if (!bootstrapPath) {
-    return -1;
-  }
-
-  NSInteger processIdentifier = [[[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", bootstrapPath]]
-    startSynchronouslyWithTimeout:5]
-    stdOut]
-    integerValue];
-
-  if (processIdentifier < 2) {
-    return -1;
-  }
-  return processIdentifier;
-}
-
-- (NSInteger)processIdentifier
+- (pid_t)processIdentifier
 {
   return _processIdentifier > 1 ? _processIdentifier : [self inferredProcessIdentifier];
 }
 
-- (void)setProcessIdentifier:(NSInteger)processIdentifier
+- (void)setProcessIdentifier:(pid_t)processIdentifier
 {
   _processIdentifier = processIdentifier;
 }
@@ -255,13 +225,13 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 #pragma mark Private
 
-- (NSInteger)inferredProcessIdentifier
+- (pid_t)inferredProcessIdentifier
 {
   // It's possible to find Simulators that have been launched with 'CurrentDeviceUDID' but not otherwise.
   // Simulators launched via Xcode have some sort of token with an argument such as '-psn_0_2466394'.
   // Finding these Simulators is currently unimplemented.
   NSString *expectedArgument = [NSString stringWithFormat:@"CurrentDeviceUDID %@", self.udid];
-  NSInteger processIdentifier = [[[[FBTaskExecutor.sharedInstance
+  pid_t processIdentifier = [[[[FBTaskExecutor.sharedInstance
     taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", expectedArgument]]
     startSynchronouslyWithTimeout:5]
     stdOut]

@@ -16,7 +16,7 @@
 
 @property (nonatomic, strong, readwrite) SimDevice *device;
 @property (nonatomic, weak, readwrite) FBSimulatorPool *pool;
-@property (nonatomic, assign, readwrite) NSInteger processIdentifier;
+@property (nonatomic, assign, readwrite) pid_t processIdentifier;
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
 
 + (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool;

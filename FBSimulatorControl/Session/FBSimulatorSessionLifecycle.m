@@ -78,7 +78,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   [self registerSimDeviceNotifier:simulator];
 }
 
-- (void)simulator:(FBSimulator *)simulator didStartWithProcessIdentifier:(NSInteger)processIdentifier terminationHandle:(id<FBTerminationHandle>)terminationHandle
+- (void)simulator:(FBSimulator *)simulator didStartWithProcessIdentifier:(pid_t)processIdentifier terminationHandle:(id<FBTerminationHandle>)terminationHandle
 {
   NSParameterAssert(terminationHandle);
   NSParameterAssert(self.simulatorTerminationHandle == nil);
@@ -123,7 +123,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
 
 #pragma mark Agent
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(NSInteger)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(pid_t)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
   NSParameterAssert(launchConfig);
   NSParameterAssert(processIdentifier > 0);
@@ -163,7 +163,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
 
 #pragma mark Application
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(NSInteger)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(pid_t)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
   NSParameterAssert(launchConfig);
   NSParameterAssert(processIdentifier > 0);
@@ -283,7 +283,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
 
 #pragma mark Notifiers
 
-- (void)createNotifierForBinary:(FBSimulatorBinary *)binary onProcessIdentifier:(NSInteger)processIdentifier withHandler:( void(^)(FBSimulatorSessionLifecycle *) )handler
+- (void)createNotifierForBinary:(FBSimulatorBinary *)binary onProcessIdentifier:(pid_t)processIdentifier withHandler:( void(^)(FBSimulatorSessionLifecycle *) )handler
 {
   NSParameterAssert(self.notifiers[binary] == nil);
 

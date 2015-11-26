@@ -43,8 +43,8 @@
 
 // Model
 #import <FBSimulatorControl/FBSimulatorApplication.h>
-#import <FBSimulatorControl/FBSimulatorProcess+Private.h>
-#import <FBSimulatorControl/FBSimulatorProcess.h>
+#import <FBSimulatorControl/FBProcessInfo+Private.h>
+#import <FBSimulatorControl/FBProcessInfo.h>
 
 
 // Notifications
@@ -83,8 +83,9 @@
 
 // Utility
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
-#import <FBSimulatorControl/FBInteraction.h>
 #import <FBSimulatorControl/FBInteraction+Private.h>
+#import <FBSimulatorControl/FBInteraction.h>
+#import <FBSimulatorCOntrol/FBProcessQuery.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
 #import <FBSimulatorControl/FBSimulatorLogger.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>

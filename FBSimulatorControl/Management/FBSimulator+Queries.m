@@ -9,50 +9,63 @@
 
 #import "FBSimulator+Queries.h"
 
-#import "FBSimulatorProcess.h"
+#import <CoreSimulator/SimDevice.h>
+
+#import "FBWritableLog.h"
+#import "FBSimulatorLogs.h"
+#import "FBProcessInfo.h"
 #import "FBTaskExecutor.h"
+#import "FBProcessQuery.h"
 
 @implementation FBSimulator (Queries)
 
-- (BOOL)hasActiveLaunchdSim
+- (pid_t)launchdSimProcessIdentifier
 {
-  return self.launchdSimProcessIdentifier > 1;
+  FBProcessQuery *query = [FBProcessQuery new];
+  pid_t process = [FBSimulator launchdSimProcessIdentifierForSimulatorLogs:self.logs query:query];
+  return process;
 }
 
 - (NSArray *)launchedProcesses
 {
-  NSInteger launchdSimProcessIdentifier = self.launchdSimProcessIdentifier;
+  FBProcessQuery *query = [FBProcessQuery new];
+  pid_t launchdSimProcessIdentifier = [FBSimulator launchdSimProcessIdentifierForSimulatorLogs:self.logs query:query];
   if (launchdSimProcessIdentifier < 1) {
     return @[];
   }
 
-  NSString *allProcesses = [[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-lfP", [@(launchdSimProcessIdentifier) stringValue]]]
-    startSynchronouslyWithTimeout:10]
-    stdOut];
-
-  NSArray *checkingResults = [self.class.longFormPgrepRegex matchesInString:allProcesses options:0 range:NSMakeRange(0, allProcesses.length)];
-  NSMutableArray *processes = [NSMutableArray array];
-  for (NSTextCheckingResult *result in checkingResults) {
-    NSInteger processIdentifier = [[allProcesses substringWithRange:[result rangeAtIndex:1]] integerValue];
-    if (processIdentifier < 1) {
-      continue;
-    }
-    NSString *launchPath = [allProcesses substringWithRange:[result rangeAtIndex:2]];
-    [processes addObject:[FBFoundProcess withProcessIdentifier:processIdentifier launchPath:launchPath]];
-  }
-  return [processes copy];
+  return [query subprocessesOf:launchdSimProcessIdentifier];
 }
 
-+ (NSRegularExpression *)longFormPgrepRegex
+#pragma mark Helpers
+
++ (pid_t)launchdSimProcessIdentifierForSimulatorLogs:(FBSimulatorLogs *)logs query:(FBProcessQuery *)query
 {
-  static dispatch_once_t onceToken;
-  static NSRegularExpression *regex;
-  dispatch_once(&onceToken, ^{
-    regex = [NSRegularExpression regularExpressionWithPattern:@"(\\d+) (.+)" options:0 error:nil];
-    NSCAssert(regex, @"Regex should compile");
-  });
-  return regex;
+  NSString *path = logs.simulatorBootstrap.asPath;
+  if (!path) {
+    return [self launchdSimProcessIdentifierForSystemLog:logs query:query];
+  }
+
+  pid_t pid = [query processWithOpenFileTo:path.UTF8String];
+  if (pid < 1) {
+    return [self launchdSimProcessIdentifierForSystemLog:logs query:query];
+  }
+  return pid;
+}
+
++ (pid_t)launchdSimProcessIdentifierForSystemLog:(FBSimulatorLogs *)logs query:(FBProcessQuery *)query
+{
+  NSString *path = logs.systemLog.asPath;
+  if (!path) {
+    return -1;
+  }
+
+  pid_t syslogdPid = [query processWithOpenFileTo:path.UTF8String];
+  if (syslogdPid < 1) {
+    return -1;
+  }
+
+  return [query parentOf:syslogdPid];
 }
 
 @end

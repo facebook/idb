@@ -12,14 +12,13 @@
 @interface FBSimulator (Queries)
 
 /**
- Returns YES if the reciever has an active launchd_sim process.
- The Simulator.app is mostly a shell, with launchd_sim launching all the Simulator services.
+ The Process Identifier of the Simulator's launchd_sim. -1 if it is not running
  */
-- (BOOL)hasActiveLaunchdSim;
+@property (nonatomic, assign, readonly) pid_t launchdSimProcessIdentifier;
 
 /**
- Returns an NSArray<id<FBSimulatorProcess>> of the subprocesses of launchd_sim.
+ Returns an NSArray<id<FBProcessInfo>> of the subprocesses of launchd_sim.
  */
-- (NSArray *)launchedProcesses;
+@property (nonatomic, copy, readonly) NSArray *launchedProcesses;
 
 @end

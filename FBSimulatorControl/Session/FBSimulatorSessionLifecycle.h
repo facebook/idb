@@ -112,7 +112,7 @@ extern NSString *const FBSimulatorSessionExpectedKey;
 /**
  Called when the Simulator starts.
  */
-- (void)simulator:(FBSimulator *)simulator didStartWithProcessIdentifier:(NSInteger)processIdentifier terminationHandle:(id<FBTerminationHandle>)terminationHandle;
+- (void)simulator:(FBSimulator *)simulator didStartWithProcessIdentifier:(pid_t)processIdentifier terminationHandle:(id<FBTerminationHandle>)terminationHandle;
 
 /**
  Called just before the Simulator is manually terminated.
@@ -122,7 +122,7 @@ extern NSString *const FBSimulatorSessionExpectedKey;
 /**
  Called when an agent has starts.
  */
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(NSInteger)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
+- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(pid_t)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
 
 /**
  Called just before the agent is manually terminated.
@@ -132,7 +132,7 @@ extern NSString *const FBSimulatorSessionExpectedKey;
 /**
  Called when an Application starts.
  */
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(NSInteger)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStartWithProcessIdentifier:(pid_t)processIdentifier stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
 
 /**
  Called just before an Application is manually terminated.

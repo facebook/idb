@@ -11,7 +11,7 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorProcess+Private.h"
+#import "FBProcessInfo+Private.h"
 #import "FBSimulatorSessionState+Private.h"
 #import "FBSimulatorSessionState+Queries.h"
 
@@ -50,7 +50,7 @@
   }];
 }
 
-- (instancetype)update:(FBProcessLaunchConfiguration *)launchConfig withProcessIdentifier:(NSInteger)processIdentifier
+- (instancetype)update:(FBProcessLaunchConfiguration *)launchConfig withProcessIdentifier:(pid_t)processIdentifier
 {
   return [self updateCurrentState:^ FBSimulatorSessionState * (FBSimulatorSessionState *state) {
     NSCParameterAssert(state.lifecycle != FBSimulatorSessionLifecycleStateNotStarted);
