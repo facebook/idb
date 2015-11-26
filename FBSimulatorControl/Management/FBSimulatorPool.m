@@ -10,6 +10,7 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPool+Private.h"
 
+#import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
@@ -387,3 +388,9 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 }
 
 @end
+
+void FBSetSimulatorLoggingEnabled(BOOL enabled)
+{
+  NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
+  [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
+}
