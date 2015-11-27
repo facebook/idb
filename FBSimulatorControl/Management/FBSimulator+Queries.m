@@ -22,14 +22,14 @@
 - (pid_t)launchdSimProcessIdentifier
 {
   FBProcessQuery *query = [FBProcessQuery new];
-  pid_t process = [FBSimulator launchdSimProcessIdentifierForSimulatorLogs:self.logs query:query];
+  pid_t process = [FBSimulator launchdSimProcessIdentifierForUDID:self.udid query:query];
   return process;
 }
 
 - (NSArray *)launchedProcesses
 {
   FBProcessQuery *query = [FBProcessQuery new];
-  pid_t launchdSimProcessIdentifier = [FBSimulator launchdSimProcessIdentifierForSimulatorLogs:self.logs query:query];
+  pid_t launchdSimProcessIdentifier = [FBSimulator launchdSimProcessIdentifierForUDID:self.udid query:query];
   if (launchdSimProcessIdentifier < 1) {
     return @[];
   }
@@ -39,33 +39,15 @@
 
 #pragma mark Helpers
 
-+ (pid_t)launchdSimProcessIdentifierForSimulatorLogs:(FBSimulatorLogs *)logs query:(FBProcessQuery *)query
++ (pid_t)launchdSimProcessIdentifierForUDID:(NSString *)udid query:(FBProcessQuery *)query
 {
-  NSString *path = logs.simulatorBootstrap.asPath;
-  if (!path) {
-    return [self launchdSimProcessIdentifierForSystemLog:logs query:query];
+  for (id<FBProcessInfo> info in [query processesWithLaunchPathSubstring:@"sbin/launchd_sim"]) {
+    NSString *udidContainingString = info.environment[@"XPC_SIMULATOR_LAUNCHD_NAME"];
+    if ([udidContainingString rangeOfString:udid].location != NSNotFound) {
+      return info.processIdentifier;
+    }
   }
-
-  pid_t pid = [query processWithOpenFileTo:path.UTF8String];
-  if (pid < 1) {
-    return [self launchdSimProcessIdentifierForSystemLog:logs query:query];
-  }
-  return pid;
-}
-
-+ (pid_t)launchdSimProcessIdentifierForSystemLog:(FBSimulatorLogs *)logs query:(FBProcessQuery *)query
-{
-  NSString *path = logs.systemLog.asPath;
-  if (!path) {
-    return -1;
-  }
-
-  pid_t syslogdPid = [query processWithOpenFileTo:path.UTF8String];
-  if (syslogdPid < 1) {
-    return -1;
-  }
-
-  return [query parentOf:syslogdPid];
+  return -1;
 }
 
 @end
