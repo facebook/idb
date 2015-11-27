@@ -11,15 +11,26 @@ set -eu
 
 MODE=$1
 
-function ci() {
+function framework() {
+  NAME='FBSimulatorControl'
   xctool \
-      -project $1.xcodeproj \
-      -scheme $1 \
+      -project $NAME.xcodeproj \
+      -scheme $NAME \
       -sdk macosx \
-      $2
+      $1
+}
+
+function cli() {
+  NAME='fbsimctl'
+  xctool \
+      -workspace $NAME/$NAME.xcworkspace \
+      -scheme $NAME \
+      -sdk macosx \
+      $1
 }
 
 if [ "$MODE" = "ci" ]; then
-  ci FBSimulatorControl test
+  framework test
+  cli build
 fi
 

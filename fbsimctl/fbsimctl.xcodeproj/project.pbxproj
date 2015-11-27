@@ -3,39 +3,25 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 47;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		AA302DD71C1F3C1800E77B51 /* CommandParsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA302DD61C1F3C1800E77B51 /* CommandParsers.swift */; };
 		AA93B7C71BE835B100CF6A56 /* Relay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7C41BE835B100CF6A56 /* Relay.swift */; };
 		AA93B7C81BE835B100CF6A56 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7C51BE835B100CF6A56 /* main.swift */; };
-		AA93B7CA1BE8361800CF6A56 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA93B7CC1BE8380B00CF6A56 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7C31BE835B100CF6A56 /* Command.swift */; };
 		AA93B7CE1BE9543000CF6A56 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7CD1BE9543000CF6A56 /* Parser.swift */; };
 		AA93B7D01BE9544000CF6A56 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7CF1BE9544000CF6A56 /* Runners.swift */; };
 		AA93B7D21BEA679600CF6A56 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7D11BEA679600CF6A56 /* Help.swift */; };
 		AA93B7D61BEA97A700CF6A56 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7D51BEA97A700CF6A56 /* Bridging.swift */; };
-		AAEAC9BB1BF23BAE00B5F957 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AAE35A591C2860980073CC70 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AAEAC9BD1BF3CD7B00B5F957 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9BC1BF3CD7B00B5F957 /* SignalHandler.swift */; };
 		AAEAC9BF1BF3EA8200B5F957 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9BE1BF3EA8200B5F957 /* SocketRelay.swift */; };
 		AAEAC9C11BF3EA9200B5F957 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9C01BF3EA9200B5F957 /* StdIORelay.swift */; };
 		AAF4A3311BF4E2B900978B3A /* LineBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF4A3301BF4E2B900978B3A /* LineBuffer.swift */; };
 		AAF4A3381BF5152700978B3A /* Constants.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF4A3371BF5152700978B3A /* Constants.m */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		AAEAC9BA1BF23B1700B5F957 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = Frameworks;
-			dstSubfolderSpec = 10;
-			files = (
-				AAEAC9BB1BF23BAE00B5F957 /* FBSimulatorControl.framework in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		AA302DD41C1F39FC00E77B51 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
@@ -44,7 +30,7 @@
 		AA93B7C31BE835B100CF6A56 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
 		AA93B7C41BE835B100CF6A56 /* Relay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Relay.swift; sourceTree = "<group>"; };
 		AA93B7C51BE835B100CF6A56 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = "../../../Library/Developer/Xcode/DerivedData/fbsimctl-civpmgwytzrrawekdzefxighgiyo/Build/Products/Debug/FBSimulatorControl.framework"; sourceTree = "<group>"; };
+		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7CD1BE9543000CF6A56 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
 		AA93B7CF1BE9544000CF6A56 /* Runners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Runners.swift; sourceTree = "<group>"; };
 		AA93B7D11BEA679600CF6A56 /* Help.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
@@ -59,11 +45,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		AA93B7AD1BE8351000CF6A56 /* Frameworks */ = {
+		AAE35A521C285F150073CC70 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA93B7CA1BE8361800CF6A56 /* FBSimulatorControl.framework in Frameworks */,
+				AAE35A591C2860980073CC70 /* FBSimulatorControl.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -126,8 +112,7 @@
 			buildConfigurationList = AA93B7B71BE8351000CF6A56 /* Build configuration list for PBXNativeTarget "fbsimctl" */;
 			buildPhases = (
 				AA93B7AC1BE8351000CF6A56 /* Sources */,
-				AA93B7AD1BE8351000CF6A56 /* Frameworks */,
-				AAEAC9BA1BF23B1700B5F957 /* CopyFiles */,
+				AAE35A521C285F150073CC70 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -144,6 +129,7 @@
 		AA93B7A81BE8351000CF6A56 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				CLASSPREFIX = FB;
 				LastSwiftUpdateCheck = 0710;
 				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = Facebook;
@@ -154,7 +140,7 @@
 				};
 			};
 			buildConfigurationList = AA93B7AB1BE8351000CF6A56 /* Build configuration list for PBXProject "fbsimctl" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 6.3";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (

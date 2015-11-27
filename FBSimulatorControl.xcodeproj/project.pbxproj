@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 47;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -2055,7 +2055,9 @@
 		96C84793390C419500000000 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				CLASSPREFIX = FB;
 				LastUpgradeCheck = 0710;
+				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
 					AA819DB11B9FB40D002F58CA = {
 						CreatedOnToolsVersion = 7.0;
@@ -2063,7 +2065,7 @@
 				};
 			};
 			buildConfigurationList = 218C37090000000000000002 /* Build configuration list for PBXProject "FBSimulatorControl" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 6.3";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
