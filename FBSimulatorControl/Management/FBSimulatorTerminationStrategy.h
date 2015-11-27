@@ -17,12 +17,12 @@
 @interface FBSimulatorTerminationStrategy : NSObject
 
 /**
- A Strategy that uses FBProcessQuery & kill(2).
+ Creates a FBSimulatorTerminationStrategy using the provided configuration.
 
  @param configuration the Configuration of FBSimulatorControl.
  @param allSimulators the Simulators that are permitted to be terminated.
  */
-+ (instancetype)usingKillOnConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators;
 
 /**
  Kills all of the Simulators associated with the reciever.
@@ -48,6 +48,5 @@
  @returns an YES if successful, nil otherwise.
  */
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
-
 
 @end
