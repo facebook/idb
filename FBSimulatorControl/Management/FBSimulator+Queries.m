@@ -41,7 +41,7 @@
 
 + (pid_t)launchdSimProcessIdentifierForUDID:(NSString *)udid query:(FBProcessQuery *)query
 {
-  for (id<FBProcessInfo> info in [query processesWithLaunchPathSubstring:@"sbin/launchd_sim"]) {
+  for (id<FBProcessInfo> info in [query processesWithProcessName:@"launchd_sim"]) {
     NSString *udidContainingString = info.environment[@"XPC_SIMULATOR_LAUNCHD_NAME"];
     if ([udidContainingString rangeOfString:udid].location != NSNotFound) {
       return info.processIdentifier;

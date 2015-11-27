@@ -36,6 +36,14 @@
 - (NSArray *)processesWithLaunchPathSubstring:(NSString *)substring;
 
 /**
+ A Query for returning the processes with a given name.
+
+ Note that this is more optimal than `processesWithLaunchPathSubstring:`
+ since only the process name is fetched in the syscall.
+ */
+- (NSArray *)processesWithProcessName:(NSString *)processName;
+
+/**
  A Query for returning the first named child process of the provided parent.
  */
 - (pid_t)subprocessOf:(pid_t)parent withName:(NSString *)name;
