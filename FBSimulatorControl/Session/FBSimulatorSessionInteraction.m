@@ -64,9 +64,11 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
       [arguments addObjectsFromArray:@[@"-DeviceSetPath", simulator.pool.configuration.deviceSetPath]];
     }
 
-    id<FBTask> task = [FBTaskExecutor.sharedInstance
-      taskWithLaunchPath:simulator.simulatorApplication.binary.path
-      arguments:[arguments copy]];
+    id<FBTask> task = [[[[FBTaskExecutor.sharedInstance
+      withLaunchPath:simulator.simulatorApplication.binary.path]
+      withArguments:[arguments copy]]
+      withEnvironmentAdditions:@{FBSimulatorControlSimulatorLaunchEnvironmentMagic : @"YES"}]
+      build];
 
     [lifecycle simulatorWillStart:simulator];
     [task startAsynchronously];
