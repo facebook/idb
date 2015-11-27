@@ -176,7 +176,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
   return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
-    if (![simulator.device installApplication:[NSURL URLWithString:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
+    if (![simulator.device installApplication:[NSURL fileURLWithPath:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
       return [[[FBSimulatorError describe:@"Failed to install Application"] causedBy:innerError] failBool:error];
     }
 
