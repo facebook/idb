@@ -11,6 +11,7 @@
 
 #include <libproc.h>
 #include <limits.h>
+#include <string.h>
 #include <sys/sysctl.h>
 
 #import "FBProcessInfo+Private.h"
@@ -147,6 +148,11 @@ static inline BOOL ProcInfoForProcessIdentifier(pid_t processIdentifier, struct 
   return YES;
 }
 
+static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
+{
+  return proc_name(processIdentifier, buffer, bufferSize) > 1;
+}
+
 @interface FBProcessQuery ()
 
 @property (nonatomic, assign, readonly) size_t argumentBufferSize;
@@ -154,7 +160,6 @@ static inline BOOL ProcInfoForProcessIdentifier(pid_t processIdentifier, struct 
 
 @property (nonatomic, assign, readonly) size_t pidBufferSize;
 @property (nonatomic, assign, readonly) pid_t *pidBuffer;
-
 
 @end
 
@@ -220,6 +225,31 @@ static inline BOOL ProcInfoForProcessIdentifier(pid_t processIdentifier, struct 
       return YES;
     }
     if ([info.launchPath rangeOfString:substring].location == NSNotFound) {
+      return YES;
+    }
+    [subprocesses addObject:info];
+    return YES;
+  });
+
+  return [subprocesses copy];
+}
+
+- (NSArray *)processesWithProcessName:(NSString *)processName;
+{
+  NSMutableArray *subprocesses = [NSMutableArray array];
+  size_t bufferSize = self.argumentBufferSize;
+  char *buffer = self.argumentBuffer;
+  const char *needle = processName.UTF8String;
+
+  IterateAllProcesses(self.pidBuffer, self.pidBufferSize, ^ BOOL (pid_t pid) {
+    if (!ProcessNameForProcessIdentifier(pid, buffer, bufferSize)) {
+      return YES;
+    }
+    if (strcmp(needle, buffer) != 0) {
+      return YES;
+    }
+    id<FBProcessInfo> info = [self processInfoFor:pid];
+    if (!info) {
       return YES;
     }
     [subprocesses addObject:info];
