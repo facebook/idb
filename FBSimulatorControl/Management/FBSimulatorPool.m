@@ -297,7 +297,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (FBSimulatorTerminationStrategy *)terminationStrategy
 {
-  return [FBSimulatorTerminationStrategy usingKillOnConfiguration:self.configuration allSimulators:[self.allSimulators.array copy]];
+  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration allSimulators:[self.allSimulators.array copy]];
 }
 
 #pragma mark - Helpers

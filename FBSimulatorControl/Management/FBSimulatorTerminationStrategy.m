@@ -39,13 +39,60 @@
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
+- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error;
+
+@end
+
+@interface FBSimulatorTerminationStrategy_Kill : FBSimulatorTerminationStrategy
+
+@end
+
+@implementation FBSimulatorTerminationStrategy_Kill
+
+- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+{
+  for (id<FBProcessInfo> process in processes) {
+    NSParameterAssert(process.processIdentifier > 1);
+    if (kill(process.processIdentifier, SIGTERM) < 0) {
+      return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
+    }
+  }
+  return YES;
+}
+
+@end
+
+@interface FBSimulatorTerminationStrategy_WorkspaceQuit : FBSimulatorTerminationStrategy
+
+@end
+
+@implementation FBSimulatorTerminationStrategy_WorkspaceQuit
+
+- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+{
+  NSDictionary *processToApplication = [self.processQuery runningApplicationsForProcesses:processes];
+  for (id<FBProcessInfo> process in processToApplication) {
+    NSRunningApplication *application = processToApplication[process];
+    if ([application isKindOfClass:NSNull.class]) {
+      return [[FBSimulatorError describeFormat:@"Could not obtain application handle for %@", process] failBool:error];
+    }
+    if (![application terminate]) {
+      return [[FBSimulatorError describeFormat:@"Could not termination Application %@", application] failBool:error];
+    }
+  }
+  return YES;
+}
+
 @end
 
 @implementation FBSimulatorTerminationStrategy
 
-+ (instancetype)usingKillOnConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators;
 {
-  return [[FBSimulatorTerminationStrategy alloc] initWithConfiguration:configuration allSimulators:allSimulators];
+  BOOL useKill = (configuration.options & FBSimulatorManagementOptionsUseProcessKilling) == FBSimulatorManagementOptionsUseProcessKilling;
+  return useKill
+    ? [[FBSimulatorTerminationStrategy_Kill alloc] initWithConfiguration:configuration allSimulators:allSimulators]
+    : [[FBSimulatorTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration allSimulators:allSimulators];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators
@@ -139,13 +186,8 @@
 
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
 {
-  for (id<FBProcessInfo> process in processes) {
-    NSParameterAssert(process.processIdentifier > 1);
-    if (kill(process.processIdentifier, SIGTERM) < 0) {
-      return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
-    }
-  }
-  return YES;
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return nil;
 }
 
 - (NSArray *)safeShutdownSimulators:(NSArray *)simulators withError:(NSError **)error

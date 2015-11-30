@@ -9,6 +9,8 @@
 
 #import "FBProcessQuery.h"
 
+#import <AppKit/AppKit.h>
+
 #include <libproc.h>
 #include <limits.h>
 #include <string.h>
@@ -298,6 +300,21 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
     return -1;
   }
   return proc.kp_eproc.e_ppid;
+}
+
+- (NSDictionary *)runningApplicationsForProcesses:(NSArray *)processes
+{
+  NSArray *applications = [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
+  return [NSDictionary dictionaryWithObjects:applications forKeys:processes];
+}
+
+#pragma mark Private
+
+- (NSDictionary *)processIdentifiersToApplications
+{
+  NSArray *applications = NSWorkspace.sharedWorkspace.runningApplications;
+  NSArray *processIdentifiers = [applications valueForKey:@"processIdentifier"];
+  return [NSDictionary dictionaryWithObjects:applications forKeys:processIdentifiers];
 }
 
 @end
