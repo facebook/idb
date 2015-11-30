@@ -12,6 +12,9 @@
 
 @class FBSimulator;
 
+/**
+ Helpers for obtaining information about Application Windows.
+ */
 @interface FBSimulatorWindowHelpers : NSObject
 
 /**
@@ -40,5 +43,11 @@
  @return the Display ID of the Simulator or 0 if it could not be found.
  */
 + (CGDirectDisplayID)displayIDForSimulator:(FBSimulator *)simulator cropRect:(CGRect *)cropRect screenSize:(CGSize *)screenSize;
+
+/**
+ Returns a String representing the known information about Simulator Windows as well as the Diplays.
+ This can be helpful when you wish to know about the working environment of a CI machine.
+ */
++ (NSString *)debugDescription;
 
 @end
