@@ -89,8 +89,10 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   }];
 }
 
-- (instancetype)tileSimulator:(id<FBSimulatorWindowTilingStrategy>)tilingStrategy;
+- (instancetype)tileSimulator:(id<FBSimulatorWindowTilingStrategy>)tilingStrategy
 {
+  NSParameterAssert(tilingStrategy);
+
   FBSimulator *simulator = self.session.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
@@ -172,6 +174,8 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
 - (instancetype)installApplication:(FBSimulatorApplication *)application
 {
+  NSParameterAssert(application);
+
   FBSimulator *simulator = self.session.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {

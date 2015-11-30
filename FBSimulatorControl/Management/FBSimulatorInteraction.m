@@ -29,6 +29,8 @@
 
 - (instancetype)setLocale:(NSLocale *)locale
 {
+  NSParameterAssert(locale);
+
   FBSimulator *simulator = self.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
@@ -51,6 +53,8 @@
 
 - (instancetype)authorizeLocationSettingsForApplication:(FBSimulatorApplication *)application
 {
+  NSParameterAssert(application);
+
   FBSimulator *simulator = self.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
