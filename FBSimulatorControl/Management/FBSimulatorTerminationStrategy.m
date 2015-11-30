@@ -16,6 +16,7 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBProcessQuery.h"
+#import "FBProcessQuery+Simulators.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
@@ -70,9 +71,10 @@
 
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
 {
-  NSDictionary *processToApplication = [self.processQuery runningApplicationsForProcesses:processes];
-  for (id<FBProcessInfo> process in processToApplication) {
-    NSRunningApplication *application = processToApplication[process];
+  NSArray *processToApplication = [self.processQuery runningApplicationsForProcesses:processes];
+  for (NSUInteger index = 0; index < processes.count; index++) {
+    NSRunningApplication *application = processToApplication[index];
+    id<FBProcessInfo> process = processes[index];
     if ([application isKindOfClass:NSNull.class]) {
       return [[FBSimulatorError describeFormat:@"Could not obtain application handle for %@", process] failBool:error];
     }
@@ -116,8 +118,7 @@
 
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error
 {
-  NSSet *udids = [NSSet setWithArray:[simulators valueForKey:@"udid"]];
-  NSPredicate *predicate = [self simulatorWithOneOf:udids];
+  NSPredicate *predicate = [FBProcessQuery simulatorProcessesMatchingSimulators:simulators];
 
   NSError *innerError = nil;
   if (![self killSimulatorProcessesMatchingPredicate:predicate error:&innerError]) {
@@ -132,9 +133,9 @@
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
-  NSPredicate *predicate = [NSCompoundPredicate orPredicateWithSubpredicates:@[
-    self.simulatorsFromDifferentXcodeVersionPredicate,
-    self.simulatorsNotLaunchedBySimulatorControl
+  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    [FBProcessQuery simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
+    [FBProcessQuery simulatorProcessesLaunchedBySimulatorControl]
   ]];
 
   NSError *innerError = nil;
@@ -146,41 +147,9 @@
 
 #pragma mark Private
 
-- (NSPredicate *)simulatorsFromDifferentXcodeVersionPredicate
-{
-  // If it's from a different Xcode version, the binary path will be different.
-  NSString *simulatorBinaryPath = self.configuration.simulatorApplication.binary.path;
-  return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
-    return ![process.launchPath isEqualToString:simulatorBinaryPath];
-  }];
-}
-
-- (NSPredicate *)simulatorsNotLaunchedBySimulatorControl
-{
-  // All Simulators launched by FBSimulatorControl have a magic string in their environment
-  return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
-    NSSet *argumentSet = [NSSet setWithArray:process.environment.allKeys];
-    return ![argumentSet containsObject:FBSimulatorControlSimulatorLaunchEnvironmentMagic];
-  }];
-}
-
-- (NSPredicate *)simulatorWithOneOf:(NSSet *)udids
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
-    NSSet *argumentSet = [NSSet setWithArray:process.arguments];
-    return [udids intersectsSet:argumentSet];
-  }];
-}
-
-- (NSArray *)simulatorProcesses
-{
-  // All Simulator Versions from Xcode 5-7, have Simulator.app in their path.
-  return [self.processQuery processesWithLaunchPathSubstring:@"Simulator.app"];
-}
-
 - (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
 {
-  NSArray *processes = [self.simulatorProcesses filteredArrayUsingPredicate:predicate];
+  NSArray *processes = [self.processQuery.simulatorProcesses filteredArrayUsingPredicate:predicate];
   return [self killProcesses:processes error:error];
 }
 

@@ -9,16 +9,18 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
-@class FBSimulatorConfiguration;
-@class FBSimulatorControlConfiguration;
+@class FBProcessQuery;
 
 @interface FBSimulator ()
 
+@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 @property (nonatomic, strong, readwrite) SimDevice *device;
-@property (nonatomic, weak, readwrite) FBSimulatorPool *pool;
-@property (nonatomic, assign, readwrite) pid_t processIdentifier;
+@property (nonatomic, strong, readwrite) FBSimulatorLaunchInfo *launchInfo;
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
 
-+ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool;
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query;
+
+- (void)wasLaunchedWithProcessIdentifier:(pid_t)processIdentifier;
+- (void)wasTerminated;
 
 @end

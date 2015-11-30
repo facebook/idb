@@ -53,8 +53,9 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 {
   // All Simulator Properties are derived from `allSimulators`. In future this means instances can be cached in one place.
   NSMutableOrderedSet *simulators = [NSMutableOrderedSet orderedSet];
+  FBProcessQuery *query = [FBProcessQuery new];
   for (SimDevice *device in self.deviceSet.availableDevices) {
-    [simulators addObject:[FBSimulator inflateFromSimDevice:device configuration:nil pool:self]];
+    [simulators addObject:[FBSimulator fromSimDevice:device configuration:nil pool:self query:query]];
   }
   return [simulators copy];
 }
