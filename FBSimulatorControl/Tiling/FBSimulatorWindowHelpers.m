@@ -14,6 +14,8 @@
 #import "FBSimulatorPredicates.h"
 
 // See https://github.com/appium/screen_recording/pull/6
+// This is needed since XCTest processes won't go through the standared
+// NSApplication startup path.
 extern void CGSInitialize(void);
 static void EnsureCGIsInitialized(void)
 {
@@ -106,6 +108,45 @@ static void EnsureCGIsInitialized(void)
   }
 
   return displayID;
+}
+
++ (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:@"%@\nWindows: %@", [self onlineDisplaysDescription], [self allWindows]];
+}
+
+#pragma mark Private
+
++ (NSString *)onlineDisplaysDescription
+{
+  uint32_t maximumDisplays = 100;
+  uint32_t actualDisplays;
+  CGDirectDisplayID *displays = malloc(sizeof(uint32_t) * maximumDisplays);
+
+  NSMutableString *description = [NSMutableString stringWithString:@"Online Displays\n=====\n"];
+  CGGetOnlineDisplayList(maximumDisplays, displays, &actualDisplays);
+  if (!actualDisplays) {
+    free(displays);
+    return @"Could not obtain displays";
+  }
+
+  for (int index = 0; index < actualDisplays; index++) {
+    CGDirectDisplayID display = *(displays + index);
+    [description appendFormat:
+      @"ID %d | Bounds %@ | Main %d \n",
+     display,
+     NSStringFromRect(CGDisplayBounds(display)),
+     CGDisplayIsMain(display)
+    ];
+  }
+
+  free(displays);
+  return description;
+}
+
++ (NSArray *)allWindows
+{
+  return CFBridgingRelease(CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID));
 }
 
 @end
