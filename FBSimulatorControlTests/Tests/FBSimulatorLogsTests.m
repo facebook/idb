@@ -33,7 +33,7 @@
     return;
   }
 
-  XCTAssertNotEqual([haystack rangeOfString:needle].location, NSNotFound);
+  [self.assert needle:needle inHaystack:haystack];
 }
 
 - (void)flakyOnTravis_testAppCrashLogIsFetched

@@ -11,17 +11,14 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-@interface FBTaskExecutorTests : XCTestCase
+#import "FBSimulatorControlAssertions.h"
+#import "FBSimulatorControlTestCase.h"
+
+@interface FBTaskExecutorTests : FBSimulatorControlTestCase
 
 @end
 
 @implementation FBTaskExecutorTests
-
-- (void)assertSubstring:(NSString *)needle inString:(NSString *)haystack
-{
-  XCTAssertNotNil(haystack);
-  XCTAssertNotEqual([haystack rangeOfString:needle].location, NSNotFound);
-}
 
 - (void)testInMemory
 {
@@ -33,7 +30,7 @@
     startSynchronouslyWithTimeout:20]
     stdOut];
 
-  [self assertSubstring:@"determine file type" inString:stdOut];
+  [self.assert needle:@"determine file type" inHaystack:stdOut];
 }
 
 - (void)testBackedByFile
@@ -49,8 +46,8 @@
     startSynchronouslyWithTimeout:20];
 
   NSString *stdOutFileContents = [NSString stringWithContentsOfFile:stdOutPath usedEncoding:nil error:nil];
-  [self assertSubstring:@"determine file type" inString:stdOutFileContents];
-  [self assertSubstring:@"determine file type" inString:task.stdOut];
+  [self.assert needle:@"determine file type" inHaystack:stdOutFileContents];
+  [self.assert needle:@"determine file type" inHaystack:task.stdOut];
 }
 
 - (void)testEnvironmentAdditions
@@ -64,8 +61,7 @@
     startSynchronouslyWithTimeout:20]
     stdOut];
 
-
-  [self assertSubstring:@"FOO=BAR" inString:stdOut];
+  [self.assert needle:@"FOO=BAR" inHaystack:stdOut];
 }
 
 @end

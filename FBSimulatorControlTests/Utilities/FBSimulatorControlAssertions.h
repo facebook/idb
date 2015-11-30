@@ -12,6 +12,9 @@
 @class FBSimulatorControl;
 @protocol FBInteraction;
 
+/**
+ Higher-level Assertions.
+ */
 @interface FBSimulatorControlAssertions : NSObject
 
 + (instancetype)withTestCase:(XCTestCase *)testCase;
@@ -26,5 +29,9 @@
 
 - (void)interactionSuccessful:(id<FBInteraction>)interaction;
 - (void)interactionFailed:(id<FBInteraction>)interaction;
+
+#pragma mark Strings
+
+- (void)needle:(NSString *)needle inHaystack:(NSString *)haystack;
 
 @end

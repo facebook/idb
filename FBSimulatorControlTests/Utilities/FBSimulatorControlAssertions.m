@@ -112,5 +112,16 @@
   _XCTPrimitiveAssertFalse(self.testCase, success, "interactionFailed:");
 }
 
+#pragma mark Strings
+
+- (void)needle:(NSString *)needle inHaystack:(NSString *)haystack
+{
+  _XCTPrimitiveAssertNotNil(self.testCase, haystack, "expected needle to exist");
+  _XCTPrimitiveAssertNotNil(self.testCase, haystack, "expected haystack exist");
+  if ([haystack rangeOfString:needle].location != NSNotFound) {
+    return;
+  }
+  [self.testCase recordFailureWithDescription:[NSString stringWithFormat:@"needle '%@' to be contained in haystack '%@'", needle, haystack] inFile:@(__FILE__) atLine:__LINE__ expected:NO];
+}
 
 @end
