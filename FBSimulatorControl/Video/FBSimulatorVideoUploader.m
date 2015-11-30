@@ -92,9 +92,9 @@
 
 #pragma mark - Private
 
-+ (BOOL)waitUntilFileCount:(NSInteger)fileCount
++ (BOOL)waitUntilFileCount:(NSUInteger)fileCount
           addedToDirectory:(NSString *)directory
-             previousCount:(NSInteger)previousCount
+             previousCount:(NSUInteger)previousCount
                      error:(NSError **)error
 {
   static NSTimeInterval const UploadVideoDefaultWait = 15.0;

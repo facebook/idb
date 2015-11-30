@@ -265,7 +265,7 @@
 
   NSArray *matches = [self.fileArchRegex
     matchesInString:fileOutput
-    options:0
+    options:(NSMatchingOptions)0
     range:NSMakeRange(0, fileOutput.length)];
 
   NSMutableArray *architectures = [NSMutableArray array];

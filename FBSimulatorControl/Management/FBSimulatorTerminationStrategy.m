@@ -187,7 +187,7 @@
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return nil;
+  return NO;
 }
 
 - (NSArray *)safeShutdownSimulators:(NSArray *)simulators withError:(NSError **)error

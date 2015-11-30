@@ -43,7 +43,7 @@
 
 - (NSUInteger)hash
 {
-  return self.processIdentifier | self.launchConfiguration.hash | self.launchConfiguration.hash | self.diagnostics.hash;
+  return ((unsigned long) self.processIdentifier) | self.launchConfiguration.hash | self.launchConfiguration.hash | self.diagnostics.hash;
 }
 
 - (BOOL)isEqual:(FBUserLaunchedProcess *)object
@@ -103,7 +103,7 @@
 
 - (NSUInteger)hash
 {
-  return self.processIdentifier | self.launchPath.hash | self.arguments.hash | self.environment.hash;
+  return ((unsigned long) self.processIdentifier) | self.launchPath.hash | self.arguments.hash | self.environment.hash;
 }
 
 - (BOOL)isEqual:(FBUserLaunchedProcess *)object

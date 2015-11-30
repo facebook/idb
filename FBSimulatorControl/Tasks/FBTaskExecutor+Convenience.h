@@ -33,7 +33,7 @@
  If a non-zero exit code is returned, the method will exit.
 
  @param command the Command String to run.
- @param the Error Outparam for any error that occures
+ @param error Error Outparam for any error that occures
  @param block the predicate to verify stdOut against
  @return YES if the untilTrue block returns YES before the timeout, NO otherwise.
  */

@@ -77,7 +77,7 @@
  @param arguments an NSArray<NSString *> of arguments to the process.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process.
  @param stdOutPath the file path where the stderr of the launched process should be written. May be nil.
- @param stdErrPat The file path where the stderr of the launched process should be written. May be nil.
+ @param stdErrPath The file path where the stderr of the launched process should be written. May be nil.
  @returns a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;
@@ -111,7 +111,7 @@
  @param arguments an array-of-strings of arguments to the process
  @param environment a Dictionary, mapping Strings to Strings of the Environment to set in the launched Application process
  @param stdOutPath the file path where the stderr of the launched process should be written. May be nil.
- @param stdErrPat The file path where the stderr of the launched process should be written. May be nil.
+ @param stdErrPath The file path where the stderr of the launched process should be written. May be nil.
  @returns a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;

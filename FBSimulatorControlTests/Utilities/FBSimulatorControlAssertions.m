@@ -90,7 +90,7 @@
 
 - (void)noNotificationsToConsume
 {
-  _XCTPrimitiveAssertEqual(self.testCase, self.notificationsRecieved.count, "self.notificationsRecieved.count",  0, "0", @"Expected to have no notifications to consume but there was %@", self.notificationsRecieved);
+  _XCTPrimitiveAssertEqual(self.testCase, self.notificationsRecieved.count, "self.notificationsRecieved.count", 0u, "0", @"Expected to have no notifications to consume but there was %@", self.notificationsRecieved);
 }
 
 #pragma mark Interactions

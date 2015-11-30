@@ -19,7 +19,7 @@
 /**
  Returns the best position for a window.
 
- @param size the Size of the Window to place.
+ @param windowSize the Size of the Window to place.
  @param error an Error out for any error that occurred.
  @return the target position of the rectangle, or CGRectNull if there is no possible placement for the Window.s
  */

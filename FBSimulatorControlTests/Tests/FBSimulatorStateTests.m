@@ -92,7 +92,7 @@
     update:appLaunch withProcessIdentifier:12]
     currentState];
 
-  XCTAssertEqual(state.diagnostics.count, 1);
+  XCTAssertEqual(state.diagnostics.count, 1u);
   XCTAssertEqualObjects(@"YEP", state.diagnostics[@"GOOD TIMES"]);
 }
 
@@ -108,7 +108,7 @@
     currentState];
 
   XCTAssertEqualObjects(diagnostic, [state diagnosticNamed:@"SECRIT" forApplication:appLaunch.application]);
-  XCTAssertEqual(state.allProcessDiagnostics.count, 1);
+  XCTAssertEqual(state.allProcessDiagnostics.count, 1u);
   XCTAssertEqualObjects(diagnostic, state.allProcessDiagnostics[@"SECRIT"]);
 }
 
@@ -125,7 +125,7 @@
     currentState];
 
   XCTAssertEqualObjects(diagnostic, [state diagnosticNamed:@"SECRIT" forApplication:appLaunch.application]);
-  XCTAssertEqual(state.allProcessDiagnostics.count, 1);
+  XCTAssertEqual(state.allProcessDiagnostics.count, 1u);
   XCTAssertEqualObjects(diagnostic, state.allProcessDiagnostics[@"SECRIT"]);
 }
 

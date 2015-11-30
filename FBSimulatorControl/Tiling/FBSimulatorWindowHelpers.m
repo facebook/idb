@@ -130,7 +130,7 @@ static void EnsureCGIsInitialized(void)
     return @"Could not obtain displays";
   }
 
-  for (int index = 0; index < actualDisplays; index++) {
+  for (uint32_t index = 0; index < actualDisplays; index++) {
     CGDirectDisplayID display = *(displays + index);
     [description appendFormat:
       @"ID %d | Bounds %@ | Main %d \n",

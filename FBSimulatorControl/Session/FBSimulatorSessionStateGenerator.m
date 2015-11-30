@@ -88,7 +88,7 @@
         return processState;
     }];
 
-    NSInteger indexOfState = [sessionState.runningProcessesSet indexOfObject:currentProcessState];
+    NSUInteger indexOfState = [sessionState.runningProcessesSet indexOfObject:currentProcessState];
     NSCAssert(indexOfState != NSNotFound, @"Whar did this come from then");
     [sessionState.runningProcessesSet replaceObjectAtIndex:indexOfState withObject:nextProcessState];
     return sessionState;

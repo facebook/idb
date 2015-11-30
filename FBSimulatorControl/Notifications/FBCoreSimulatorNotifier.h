@@ -24,16 +24,16 @@
 
  @param simulator the FBSimulator to relay events from.
  @param block the block to call when events are sent from the SimDevice.
- @param an instance of FBSimDeviceNotifier for later termination.
+ @return an instance of FBSimDeviceNotifier for later termination.
  */
 + (instancetype)notifierForSimulator:(FBSimulator *)simulator block:(void (^)(NSDictionary *info))block;
 
 /**
  Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDeviceSet broadcasts for the provided Pool.
 
- @param simulator the FBSimulator to relay events from.
+ @param pool the FBSimulator to relay events from.
  @param block the block to call when events are sent from the SimDevice.
- @param an instance of FBSimDeviceNotifier for later termination.
+ @return an instance of FBSimDeviceNotifier for later termination.
  */
 + (instancetype)notifierForPool:(FBSimulatorPool *)pool block:(void (^)(NSDictionary *info))block;
 

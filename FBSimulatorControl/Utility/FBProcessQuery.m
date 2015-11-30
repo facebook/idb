@@ -24,16 +24,16 @@
 #pragma mark Calling libproc
 
 typedef BOOL(^ProcessIterator)(pid_t pid);
-typedef size_t(^LibProcCaller)(void);
+typedef int(^LibProcCaller)(void);
 
 static void IterateWith(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator iterator, LibProcCaller caller)
 {
-  size_t actualSize = caller();
+  int actualSize = caller();
   if (actualSize < 1) {
     return;
   }
 
-  for (pid_t index = 0; index < actualSize; index++) {
+  for (int index = 0; index < actualSize; index++) {
     pid_t processIdentifier = *(pidBuffer + index);
     if (!iterator(processIdentifier)) {
       break;
@@ -43,28 +43,28 @@ static void IterateWith(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator 
 
 static void IterateAllProcesses(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator iterator)
 {
-  IterateWith(pidBuffer, pidBufferSize, iterator, ^ size_t () {
-    return proc_listallpids(pidBuffer, pidBufferSize);
+  IterateWith(pidBuffer, pidBufferSize, iterator, ^ int () {
+    return proc_listallpids(pidBuffer, (int) pidBufferSize);
   });
 }
 
 static void IterateSubprocessesOf(pid_t *pidBuffer, size_t pidBufferSize, pid_t parent, ProcessIterator iterator)
 {
-  IterateWith(pidBuffer, pidBufferSize, iterator, ^ size_t () {
-    return proc_listchildpids(parent, pidBuffer, pidBufferSize);
+  IterateWith(pidBuffer, pidBufferSize, iterator, ^ int () {
+    return proc_listchildpids(parent, pidBuffer, (int) pidBufferSize);
   });
 }
 
 static void IterateOpenFiles(pid_t *pidBuffer, size_t pidBufferSize, const char *path, ProcessIterator iterator)
 {
-  IterateWith(pidBuffer, pidBufferSize,iterator, ^ size_t () {
+  IterateWith(pidBuffer, pidBufferSize,iterator, ^ int () {
     return proc_listpidspath(
       PROC_LISTPIDSPATH_PATH_IS_VOLUME,
       PROC_ALL_PIDS,
       path,
       0,
       pidBuffer,
-      pidBufferSize
+      (int) pidBufferSize
     );
   });
 }
@@ -152,7 +152,7 @@ static inline BOOL ProcInfoForProcessIdentifier(pid_t processIdentifier, struct 
 
 static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
 {
-  return proc_name(processIdentifier, buffer, bufferSize) > 1;
+  return proc_name(processIdentifier, buffer, (uint32_t) bufferSize) > 1;
 }
 
 @interface FBProcessQuery ()
@@ -269,7 +269,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   const char *needle = needleString.UTF8String;
 
   IterateSubprocessesOf(self.pidBuffer, self.pidBufferSize, parent, ^ BOOL (pid_t pid) {
-    if (proc_name(pid, argumentBuffer, argumentBufferSize) == -1) {
+    if (proc_name(pid, argumentBuffer, (uint32_t) argumentBufferSize) == -1) {
       return YES;
     }
     if (strstr(argumentBuffer, needle) == NULL) {

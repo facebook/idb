@@ -96,7 +96,7 @@
 
   NSOrderedSet *uuidSet = [self.control.simulatorPool.allSimulators valueForKey:@"udid"];
   [simulatorUUIDs intersectSet:uuidSet.set];
-  XCTAssertEqual(simulatorUUIDs.count, 0);
+  XCTAssertEqual(simulatorUUIDs.count, 0u);
 }
 
 #pragma mark Helpers

@@ -20,7 +20,7 @@
  @param count the number of generations to execute
  @param block the block to generate objects from.
  */
-+ (NSArray *)generate:(NSInteger)count withBlock:( id(^)(NSUInteger index) )block;
++ (NSArray *)generate:(NSUInteger)count withBlock:( id(^)(NSUInteger index) )block;
 
 /**
  Map an array of objects concurrently.

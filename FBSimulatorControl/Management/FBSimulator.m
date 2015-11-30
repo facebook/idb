@@ -69,7 +69,7 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 - (FBSimulatorState)state
 {
-  return self.device.state;
+  return (NSInteger) self.device.state;
 }
 
 - (NSString *)stateString
@@ -235,7 +235,7 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
     taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", expectedArgument]]
     startSynchronouslyWithTimeout:5]
     stdOut]
-    integerValue];
+    intValue];
 
   if (processIdentifier < 1) {
     return -1;

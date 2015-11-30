@@ -13,6 +13,7 @@
 #import "FBSimulatorPool+Private.h"
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 #import <CoreSimulator/SimDeviceNotificationManager.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
@@ -37,7 +38,7 @@
   return [[self alloc] initWithNotifier:notifier block:block];
 }
 
-- (instancetype)initWithNotifier:(id)notifier block:(void (^)(NSDictionary *info))block
+- (instancetype)initWithNotifier:(id<SimDeviceNotifier>)notifier block:(void (^)(NSDictionary *info))block
 {
   self = [super init];
   if (!self) {

@@ -64,7 +64,7 @@
   return self.session.hash |
          self.runningProcesses.hash |
          self.timestamp.hash |
-         self.simulatorState |
+         (unsigned long) self.simulatorState |
          self.lifecycle |
          self.mutableDiagnostics.hash;
 }

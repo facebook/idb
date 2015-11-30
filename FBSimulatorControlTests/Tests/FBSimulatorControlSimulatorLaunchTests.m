@@ -42,8 +42,8 @@
   [self.assert noNotificationsToConsume];
 
   XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
-  XCTAssertEqual(session.state.runningAgents.count, 0);
-  XCTAssertEqual(session.state.runningApplications.count, 0);
+  XCTAssertEqual(session.state.runningAgents.count, 0u);
+  XCTAssertEqual(session.state.runningApplications.count, 0u);
   XCTAssertNotEqual(session.simulator.processIdentifier, -1);
   XCTAssertNotNil(session.simulator.launchedProcesses);
 
@@ -75,8 +75,8 @@
   XCTAssertNotNil(session3);
   XCTAssertNil(error);
 
-  XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3);
-  XCTAssertEqual(([[NSSet setWithArray:@[session1.simulator.udid, session2.simulator.udid, session3.simulator.udid]] count]), 3);
+  XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3u);
+  XCTAssertEqual(([[NSSet setWithArray:@[session1.simulator.udid, session2.simulator.udid, session3.simulator.udid]] count]), 3u);
 
   [self.assert interactionSuccessful:session1.interact.bootSimulator];
   [self.assert interactionSuccessful:session2.interact.bootSimulator];
@@ -86,8 +86,8 @@
   for (FBSimulatorSession *session in @[session1, session2, session3]) {
     XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
     XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateStarted);
-    XCTAssertEqual(session.state.runningApplications.count, 0);
-    XCTAssertEqual(session.state.runningAgents.count, 0);
+    XCTAssertEqual(session.state.runningApplications.count, 0u);
+    XCTAssertEqual(session.state.runningAgents.count, 0u);
     XCTAssertNotEqual(session.simulator.processIdentifier, -1);
 
     [simulatorPIDs addObject:@(session.simulator.processIdentifier)];
@@ -98,8 +98,8 @@
     XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateEnded);
   }
 
-  XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0);
-  XCTAssertEqual(simulatorPIDs.count, 3);
+  XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0u);
+  XCTAssertEqual(simulatorPIDs.count, 3u);
 }
 
 @end
