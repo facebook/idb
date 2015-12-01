@@ -237,7 +237,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   NSError *innerError = nil;
   SimDevice *device = [self.deviceSet createDeviceWithType:targetType runtime:targetRuntime name:targetName error:&innerError];
   if (!device) {
-    return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@", targetName] causedBy:innerError] fail:error];
+    return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", targetName, targetRuntime, targetType] causedBy:innerError] fail:error];
   }
   FBSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
   simulator.configuration = configuration;
