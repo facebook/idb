@@ -9,13 +9,13 @@
 
 #import "FBCoreSimulatorNotifier.h"
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceNotificationManager.h>
+#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
+#import <CoreSimulator/SimDeviceSet.h>
+
 #import "FBSimulator.h"
 #import "FBSimulatorPool+Private.h"
-
-#import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
-#import <CoreSimulator/SimDeviceNotificationManager.h>
-#import <CoreSimulator/SimDeviceSet.h>
 
 @interface FBCoreSimulatorNotifier ()
 

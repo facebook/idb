@@ -9,12 +9,12 @@
 
 #import "FBProcessQuery.h"
 
-#import <AppKit/AppKit.h>
-
 #include <libproc.h>
 #include <limits.h>
 #include <string.h>
 #include <sys/sysctl.h>
+
+#import <AppKit/AppKit.h>
 
 #import "FBProcessInfo+Private.h"
 #import "FBProcessInfo.h"
