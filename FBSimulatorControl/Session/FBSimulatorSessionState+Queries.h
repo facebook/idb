@@ -102,7 +102,7 @@
  Finds the first diagnostic for the provided name, matching the application.
  Reaches into previous states in order to find Diagnostics for Applications that have been terminated.
 
- @param the Name of the Diagnostic to search for.
+ @param name the Name of the Diagnostic to search for.
  @param application the Application's diagnostic to search for.
  @return the diagnostic data associated with the query, nil if none could be found.
  */

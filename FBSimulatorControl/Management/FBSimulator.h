@@ -110,7 +110,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  Synchronously waits on the provided state.
 
  @param state the state to wait on
- @param the timeout
+ @param timeout timeout
  @returns YES if the Simulator transitioned to the given state with the timeout, NO otherwise
  */
 - (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout;

@@ -65,7 +65,7 @@
  Marks a device that was previously returned from `allocateDeviceWithName:sdkVersion:error:` as free.
  Call this when multiple test runs, or simulators are to be re-used in a process.
 
- @param device the Device to Free.
+ @param simulator the Device to Free.
  @param error an error out for any error that occured.
  @returns YES if the freeing of the device was successful, NO otherwise.
  */

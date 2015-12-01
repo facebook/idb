@@ -869,6 +869,7 @@
 		AA8DF8C61BB18B3700CC0411 /* FBInteraction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBInteraction.h; sourceTree = "<group>"; };
 		AA8DF8C71BB18B3700CC0411 /* FBInteraction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBInteraction.m; sourceTree = "<group>"; };
 		AA8DF8C81BB18B3700CC0411 /* FBInteraction+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBInteraction+Private.h"; sourceTree = "<group>"; };
+		AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControl.xcconfig; sourceTree = "<group>"; };
 		AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFixtures.h; sourceTree = "<group>"; };
 		AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFixtures.m; sourceTree = "<group>"; };
 		AAAA67C71BC5018500075197 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = TableSearch.app; sourceTree = "<group>"; };
@@ -1727,8 +1728,9 @@
 			children = (
 				AA5639541C05FFF5009BAFAA /* FBSimulatorControl.h */,
 				AA4876491BAC7399007F7D23 /* FBSimulatorControl-Info.plist */,
-				AA017F291BD7771300F45E9D /* Logs */,
+				AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */,
 				AA4876C31BAC74B9007F7D23 /* Configuration */,
+				AA017F291BD7771300F45E9D /* Logs */,
 				AA4876D41BAC74B9007F7D23 /* Management */,
 				AA4876E31BAC74B9007F7D23 /* Model */,
 				AA4876E91BAC74B9007F7D23 /* Notifications */,
@@ -2102,6 +2104,7 @@
 		};
 		4952437303EDA63300000002 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				ENABLE_TESTABILITY = YES;

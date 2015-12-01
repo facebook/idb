@@ -33,14 +33,14 @@
 
 #pragma mark Public
 
-+ (NSArray *)generate:(NSInteger)count withBlock:( id(^)(NSUInteger index) )block
++ (NSArray *)generate:(NSUInteger)count withBlock:( id(^)(NSUInteger index) )block
 {
   NSMutableArray *array = [NSMutableArray array];
-  for (NSInteger index = 0; index < count; index++) {
+  for (NSUInteger index = 0; index < count; index++) {
     [array addObject:NSNull.null];
   }
 
-  dispatch_apply(count, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^ (size_t iteration) {
+  dispatch_apply((size_t) count, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^ (size_t iteration) {
     id object = block(iteration);
     if (object) {
       @synchronized(array) {
@@ -63,7 +63,7 @@
 + (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block
 {
   NSMutableArray *output = [NSMutableArray array];
-  for (NSInteger index = 0; index < array.count; index++) {
+  for (NSUInteger index = 0; index < array.count; index++) {
     [output addObject:NSNull.null];
   }
 

@@ -20,7 +20,7 @@
 /**
  Creates and returns an NSArray<CGRect> of the bounds of all Simulators except the provided Simulator.
 
- @param the simulator to exclude from the bounds fetch
+ @param simulator simulator to exclude from the bounds fetch
  @return an NSArray<CGRect> of these bounds.
  */
 + (NSArray *)obtainBoundsOfOtherSimulators:(FBSimulator *)simulator;
@@ -29,7 +29,7 @@
  Creates and returns an NSArray<NSDictionary> of Simulator.app Windows that belong to the Ordered Set of Simulator.
  The Dictionary contains Windows in format from 'Quartz Window Services'
 
- @param simulator the Simulators to find Windows For.
+ @param simulators the Simulators to find Windows For.
  @return array an Array of the windows that could be found for the provided Simulators.
  */
 + (NSArray *)windowsForSimulators:(NSOrderedSet *)simulators;

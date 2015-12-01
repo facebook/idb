@@ -92,8 +92,15 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentMagic = @"__IS_THIS_
       stdOut];
 
     NSString *pattern = @"iphonesimulator(.*)";
-    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:nil];
-    NSArray *matches = [regex matchesInString:showSdks options:0 range:NSMakeRange(0, showSdks.length)];
+    NSRegularExpression *regex = [NSRegularExpression
+      regularExpressionWithPattern:pattern
+      options:(NSRegularExpressionOptions) 0
+      error:nil];
+
+    NSArray *matches = [regex
+      matchesInString:showSdks
+      options:(NSMatchingOptions) 0
+      range:NSMakeRange(0, showSdks.length)];
 
     // If xcode license is not accepted, no sdk is shown.
     NSCAssert(matches.count >= 1, @"Could not find a match for the SDK version");

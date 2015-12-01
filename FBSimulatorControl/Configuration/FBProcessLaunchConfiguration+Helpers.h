@@ -30,7 +30,7 @@
 /**
  Uses DYLD_INSERT_LIBRARIES to inject a dylib into the launched application's process.
 
- @param dylibPath the File Path to the Dynamic Library. Must not be nil.
+ @param filePath the File Path to the Dynamic Library. Must not be nil.
  */
 - (instancetype)injectingLibrary:(NSString *)filePath;
 

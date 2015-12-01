@@ -21,7 +21,7 @@
 {
   dispatch_source_t dispatchSource = dispatch_source_create(
     DISPATCH_SOURCE_TYPE_PROC,
-    (pid_t) processIdentifier,
+    (unsigned long) processIdentifier,
     DISPATCH_PROC_EXIT,
     DISPATCH_TARGET_QUEUE_DEFAULT
   );

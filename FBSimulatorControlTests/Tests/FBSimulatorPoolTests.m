@@ -50,7 +50,7 @@
     FBSimulatorControlTests_SimDevice_Double *device = [FBSimulatorControlTests_SimDevice_Double new];
     device.name = name;
     device.UDID = uuid;
-    device.state = state;
+    device.state = (unsigned long long) state;
 
     [simulators addObject:device];
   }
@@ -88,7 +88,7 @@
   ]];
 
   NSOrderedSet *simulators = self.pool.allSimulators;
-  XCTAssertEqual(simulators.count, 8);
+  XCTAssertEqual(simulators.count, 8u);
 
   XCTAssertEqualObjects([simulators[0] name], @"iPad 2");
   XCTAssertEqual([simulators[0] state], FBSimulatorStateBooted);
@@ -142,7 +142,7 @@
   ]];
 
   NSOrderedSet *simulators = self.pool.allocatedSimulators;
-  XCTAssertEqual(simulators.count, 2);
+  XCTAssertEqual(simulators.count, 2u);
 
   XCTAssertEqualObjects([simulators[0] name], @"iPad 2");
   XCTAssertEqual([simulators[0] state], FBSimulatorStateBooted);
@@ -153,7 +153,7 @@
   XCTAssertEqual([simulators[1] pool], self.pool);
 
   simulators = self.pool.unallocatedSimulators;
-  XCTAssertEqual(simulators.count, 6);
+  XCTAssertEqual(simulators.count, 6u);
 
   XCTAssertEqualObjects([simulators[0] name], @"iPhone 5");
   XCTAssertEqual([simulators[0] state], FBSimulatorStateCreating);

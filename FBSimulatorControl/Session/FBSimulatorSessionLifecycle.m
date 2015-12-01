@@ -350,7 +350,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   FBSimulatorSessionStateGenerator *generator = self.generator;
   FBCoreSimulatorNotifier *notifier = [FBCoreSimulatorNotifier notifierForSimulator:simulator block:^(NSDictionary *info) {
     if ([info[@"notification"] isEqualToString:@"device_state"] && [info[@"newState"] respondsToSelector:@selector(unsignedIntegerValue)]) {
-      FBSimulatorState state = [info[@"new_state"] unsignedIntegerValue];
+      FBSimulatorState state = [info[@"new_state"] integerValue];
       [generator updateSimulatorState:state];
     }
   }];

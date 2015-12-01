@@ -32,7 +32,7 @@
 /**
  Creates and returns a new FBSimulatorSession instance. Does not launch the Simulator or any Applications.
 
- @param configuration the Configuration of the Simulator to Launch.
+ @param simulatorConfiguration the Configuration of the Simulator to Launch.
  @param error an outparam for describing any error that occured during the creation of the Session.
  @returns A new `FBSimulatorSession` instance, or nil if an error occured.
  */
