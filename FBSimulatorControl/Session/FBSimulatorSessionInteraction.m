@@ -21,6 +21,7 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimDeviceWrapper.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
@@ -180,7 +181,8 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
   return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
-    if (![simulator.device installApplication:[NSURL fileURLWithPath:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
+    FBSimDeviceWrapper *wrapper = [[FBSimDeviceWrapper alloc] initWithSimDevice:simulator.device];
+    if (![wrapper installApplication:[NSURL fileURLWithPath:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
       return [[[FBSimulatorError describeFormat:@"Failed to install Application %@", application] causedBy:innerError] failBool:error];
     }
 
@@ -220,7 +222,8 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    pid_t processIdentifier = [simulator.device launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
+    FBSimDeviceWrapper *wrapper = [[FBSimDeviceWrapper alloc] initWithSimDevice:simulator.device];
+    pid_t processIdentifier = [wrapper launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
     if (processIdentifier <= 0) {
       return [[[[FBSimulatorError describeFormat:@"Failed to launch application %@", appLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
     }
