@@ -81,6 +81,9 @@
 @interface FBSimulatorConfigurationOSVersion_9_1 : NSObject<FBSimulatorConfigurationOSVersion>
 @end
 
+@interface FBSimulatorConfigurationOSVersion_9_2 : NSObject<FBSimulatorConfigurationOSVersion>
+@end
+
 @protocol FBSimulatorConfigurationScale <NSObject>
 
 - (NSString *)scaleString;

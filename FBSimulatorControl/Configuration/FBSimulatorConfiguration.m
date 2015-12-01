@@ -192,6 +192,15 @@
 
 @end
 
+@implementation FBSimulatorConfigurationOSVersion_9_2
+
+- (NSString *)osVersion
+{
+  return @"9.2";
+}
+
+@end
+
 @implementation FBSimulatorConfigurationScale_25
 
 - (NSString *)scaleString
@@ -524,7 +533,8 @@
       FBSimulatorConfigurationOSVersion_8_3.new,
       FBSimulatorConfigurationOSVersion_8_4.new,
       FBSimulatorConfigurationOSVersion_9_0.new,
-      FBSimulatorConfigurationOSVersion_9_1.new
+      FBSimulatorConfigurationOSVersion_9_1.new,
+      FBSimulatorConfigurationOSVersion_9_2.new,
     ];
 
     NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
