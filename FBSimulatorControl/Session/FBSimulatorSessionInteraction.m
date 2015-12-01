@@ -181,7 +181,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
     if (![simulator.device installApplication:[NSURL fileURLWithPath:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
-      return [[[FBSimulatorError describe:@"Failed to install Application"] causedBy:innerError] failBool:error];
+      return [[[FBSimulatorError describeFormat:@"Failed to install Application %@", application] causedBy:innerError] failBool:error];
     }
 
     return YES;
@@ -203,7 +203,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
     }
     if (!installedApps[appLaunch.application.bundleID]) {
       return [[[[FBSimulatorError
-        describeFormat:@"Couldn't App %@ can't be launched as it isn't installed", appLaunch.application.bundleID]
+        describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.application.bundleID]
         extraInfo:@"installed_apps" value:installedApps]
         inSimulator:simulator]
         failBool:error];
@@ -222,7 +222,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
 
     pid_t processIdentifier = [simulator.device launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
     if (processIdentifier <= 0) {
-      return [[[[FBSimulatorError describe:@"Failed to launch application"] causedBy:innerError] inSimulator:simulator] failBool:error];
+      return [[[[FBSimulatorError describeFormat:@"Failed to launch application %@", appLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
     }
     [lifecycle applicationDidLaunch:appLaunch didStartWithProcessIdentifier:processIdentifier stdOut:stdOut stdErr:stdErr];
     return YES;
@@ -279,7 +279,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
       error:&innerError];
 
     if (processIdentifier <= 0) {
-      return [[[[FBSimulatorError describe:@"Failed to start Agent"] causedBy:innerError] inSimulator:simulator] failBool:error];
+      return [[[[FBSimulatorError describeFormat:@"Failed to start Agent %@", agentLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
     }
 
     [lifecycle agentDidLaunch:agentLaunch didStartWithProcessIdentifier:processIdentifier stdOut:stdOut stdErr:stdErr];
@@ -317,7 +317,7 @@ NSTimeInterval const FBSimulatorInteractionDefaultTimeout = 30;
   return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
     if (![simulator.device openURL:url error:&innerError]) {
-      NSString *description = [NSString stringWithFormat:@"Failed to open URL %@ on simulato %@", url, simulator];
+      NSString *description = [NSString stringWithFormat:@"Failed to open URL %@ on simulator %@", url, simulator];
       return [FBSimulatorError failBoolWithError:innerError description:description errorOut:error];
     }
     return YES;
