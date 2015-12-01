@@ -56,6 +56,7 @@ extern NSString *const FBSimulatorControlErrorDomain;
  Prints a recursive description in the error.
  */
 - (instancetype)recursiveDescription;
+- (instancetype)noRecursiveDescription;
 
 /**
  Builds the Error with the applied arguments.

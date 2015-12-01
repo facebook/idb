@@ -33,7 +33,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
   }
 
   _additionalInfo = [NSMutableDictionary dictionary];
-  _describeRecursively = NO;
+  _describeRecursively = YES;
   return self;
 }
 
@@ -120,6 +120,12 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 - (instancetype)recursiveDescription
 {
   self.describeRecursively = YES;
+  return self;
+}
+
+- (instancetype)noRecursiveDescription
+{
+  self.describeRecursively = NO;
   return self;
 }
 
