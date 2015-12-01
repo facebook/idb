@@ -11,21 +11,12 @@
 
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorSessionInteraction+Diagnostics.h"
-#import "FBSimulatorSessionInteraction.h"
+#import "FBSimulatorInteraction+Diagnostics.h"
 #import "FBSimulatorSessionState+Queries.h"
+#import "FBSimulatorInteraction+Applications.h"
+#import "FBSimulatorInteraction+Agents.h"
 
 @implementation FBSimulatorSession (Convenience)
-
-- (BOOL)startWithAppLaunch:(FBApplicationLaunchConfiguration *)appLaunch agentLaunch:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
-{
-  if (self.state.lifecycle == FBSimulatorSessionLifecycleStateEnded) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Launch App & Agent for an Ended Session" errorOut:error];
-  }
-  return [[[self interact]
-    startWithAppLaunch:appLaunch agentLaunch:agentLaunch]
-    performInteractionWithError:error];
-}
 
 - (BOOL)relaunchAppWithError:(NSError **)error
 {
@@ -57,20 +48,6 @@
   return [[[self interact]
     killApplication:launchConfig.application]
     performInteractionWithError:error];
-}
-
-@end
-
-@implementation FBSimulatorSessionInteraction (Convenience)
-
-- (instancetype)startWithAppLaunch:(FBApplicationLaunchConfiguration *)appLaunch agentLaunch:(FBAgentLaunchConfiguration *)agentLaunch
-{
-  return [[[[[[self
-    bootSimulator]
-    installApplication:appLaunch.application]
-    launchAgent:agentLaunch]
-    launchApplication:appLaunch] retry:3]
-    sampleApplication:appLaunch.application withDuration:20 frequency:5];
 }
 
 @end

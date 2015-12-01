@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBProcessQuery;
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
 @class FBSimulatorLaunchInfo;
@@ -95,7 +96,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 @property (nonatomic, strong, readonly) FBSimulatorLaunchInfo *launchInfo;
 
 /**
- The FBSimulatorLogs instance for fetching logs for the Simulator
+ The FBSimulatorLogs instance for fetching logs for the Simulator.
  */
 @property (nonatomic, strong, readonly) FBSimulatorLogs *logs;
 

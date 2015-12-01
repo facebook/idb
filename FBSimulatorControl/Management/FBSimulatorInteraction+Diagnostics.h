@@ -7,11 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/Foundation.h>
+#import <FBSimulatorControl/FBSimulatorInteraction.h>
 
-#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
+@class FBSimulatorApplication;
 
-@interface FBSimulatorSessionInteraction (Diagnostics)
+@interface FBSimulatorInteraction (Diagnostics)
 
 /**
  Uses sample(1) see what is going on in the Application. This is done asynchronously.

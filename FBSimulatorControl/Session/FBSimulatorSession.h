@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulator;
-@class FBSimulatorSessionInteraction;
+@class FBSimulatorInteraction;
 @class FBSimulatorSessionLogs;
 @class FBSimulatorSessionState;
 
@@ -46,7 +46,7 @@
 /**
  Returns an Interaction for Interacting with the Sessions.
  */
-- (FBSimulatorSessionInteraction *)interact;
+- (FBSimulatorInteraction *)interact;
 
 /**
  Terminates the Session, freeing any allocated resources.
