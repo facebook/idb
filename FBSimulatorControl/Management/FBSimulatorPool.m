@@ -60,6 +60,12 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return [simulators copy];
 }
 
+- (FBSimulatorTerminationStrategy *)terminationStrategy
+{
+  // `self.allSimulators` is not a constant for the lifetime of self, so should be fetched on all usages.
+  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration allSimulators:[self.allSimulators.array copy]];
+}
+
 #pragma mark - Public Methods
 
 - (FBSimulator *)simulatorWithUDID:(NSString *)udidString
@@ -294,11 +300,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   return YES;
-}
-
-- (FBSimulatorTerminationStrategy *)terminationStrategy
-{
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration allSimulators:[self.allSimulators.array copy]];
 }
 
 #pragma mark - Helpers
