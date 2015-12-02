@@ -17,7 +17,7 @@ const long kFBSimDeviceCommandTimeout = 30;
 
 @interface FBSimDeviceWrapper ()
 
-@property SimDevice *device;
+@property (atomic, assign) SimDevice *device;
 
 @end
 

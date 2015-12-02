@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -21,7 +23,7 @@
 
 /**
  Creates a FBSimulatorLaunchInfo object from the provided SimDevice.
- 
+
  @param simDevice the Simulator Device to create the launch info from.
  @param query the Process Query object to obtain Process/Application info from.
  @return a FBSimulatorLaunchInfo instance if process information could be obtained, nil otherwise.

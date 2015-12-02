@@ -9,6 +9,7 @@
 
 #import "FBSimulatorWindowTiler.h"
 
+#import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchInfo.h"
@@ -16,7 +17,6 @@
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorWindowHelpers.h"
 #import "FBSimulatorWindowTilingStrategy.h"
-#import "FBProcessInfo.h"
 
 @interface FBSimulatorWindowTiler ()
 

@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -15,8 +17,8 @@
 #import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBProcessInfo.h"
-#import "FBProcessQuery.h"
 #import "FBProcessQuery+Simulators.h"
+#import "FBProcessQuery.h"
 #import "FBSimulatorError.h"
 #import "FBTaskExecutor.h"
 

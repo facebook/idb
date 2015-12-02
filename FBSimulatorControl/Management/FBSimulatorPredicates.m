@@ -13,11 +13,11 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
+#import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
-#import "FBProcessInfo.h"
 #import "FBSimulatorPool+Private.h"
 #import "FBSimulatorPool.h"
 

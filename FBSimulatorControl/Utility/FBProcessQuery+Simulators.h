@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -30,7 +32,7 @@
 
 /**
  Returns a Predicate that matches simulator processes only from the Xcode version in the provided configuration.
- 
+
  @param configuration the configuration to match against.
  @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
  */
@@ -38,14 +40,14 @@
 
 /**
  Returns a Predicate that matches simulator processes launched by FBSimulatorControl
- 
+
  @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
  */
 + (NSPredicate *)simulatorProcessesLaunchedBySimulatorControl;
 
 /**
  Constructs a Predicate that matches processes with any of the Simulators in an collection of FBSimulators.
- 
+
  @param simulators an NSArray<FBSimulator *> of the Simulators to match.
  @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
  */

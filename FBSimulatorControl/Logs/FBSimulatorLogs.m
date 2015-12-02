@@ -13,13 +13,13 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBConcurrentCollectionOperations.h"
+#import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
-#import "FBProcessInfo.h"
 
 @implementation FBSimulatorLogs
 

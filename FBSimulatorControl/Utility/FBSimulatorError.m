@@ -9,9 +9,9 @@
 
 #import "FBSimulatorError.h"
 
+#import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorLaunchInfo.h"
-#import "FBProcessInfo.h"
 
 NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";
 
