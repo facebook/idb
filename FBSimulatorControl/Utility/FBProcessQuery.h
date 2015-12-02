@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+@class NSRunningApplication;
 @protocol FBProcessInfo;
 
 /**
@@ -59,9 +60,15 @@
 - (pid_t)processWithOpenFileTo:(const char *)filename;
 
 /**
- Returns an an Array of NSRunningApplications for the provided array of FBProcessInfo.
+ Returns an Array of NSRunningApplications for the provided array of FBProcessInfo.
  Any Applications that could not be found will be replaced with NSNull.null.
  */
 - (NSArray *)runningApplicationsForProcesses:(NSArray *)processes;
+
+/**
+ Returns the NSRunningApplication for the provided id<FBProcessInfo>.
+ Any Applications that could not be found will be replaced with NSNull.null.
+ */
+- (NSRunningApplication *)runningApplicationForProcess:(id<FBProcessInfo>)process;
 
 @end

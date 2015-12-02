@@ -39,8 +39,9 @@
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
-- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error;
+- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error;
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error;
+- (BOOL)killProcess:(id<FBProcessInfo>)process error:(NSError **)error;
 
 @end
 
@@ -50,9 +51,9 @@
 
 @implementation FBSimulatorTerminationStrategy_Kill
 
-- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error
+- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error
 {
-  return [self killProcesses:processes error:error];
+  return [self killProcess:process error:error];
 }
 
 @end
@@ -63,18 +64,14 @@
 
 @implementation FBSimulatorTerminationStrategy_WorkspaceQuit
 
-- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error
+- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error
 {
-  NSArray *processToApplication = [self.processQuery runningApplicationsForProcesses:processes];
-  for (NSUInteger index = 0; index < processes.count; index++) {
-    NSRunningApplication *application = processToApplication[index];
-    id<FBProcessInfo> process = processes[index];
-    if ([application isKindOfClass:NSNull.class]) {
-      return [[FBSimulatorError describeFormat:@"Could not obtain application handle for %@", process] failBool:error];
-    }
-    if (![application terminate]) {
-      return [[FBSimulatorError describeFormat:@"Could not termination Application %@", application] failBool:error];
-    }
+  NSRunningApplication *application = [self.processQuery runningApplicationForProcess:process];
+  if ([application isKindOfClass:NSNull.class]) {
+    return [[FBSimulatorError describeFormat:@"Could not obtain application handle for %@", process] failBool:error];
+  }
+  if (![application terminate]) {
+    return [[FBSimulatorError describeFormat:@"Could not termination Application %@", application] failBool:error];
   }
   return YES;
 }
@@ -82,6 +79,8 @@
 @end
 
 @implementation FBSimulatorTerminationStrategy
+
+#pragma mark Initialization
 
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators;
 {
@@ -105,6 +104,8 @@
   return self;
 }
 
+#pragma mark Public Methods
+
 - (NSArray *)killAllWithError:(NSError **)error
 {
   return [self killSimulators:self.allSimulators withError:error];
@@ -112,16 +113,32 @@
 
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error
 {
-  NSPredicate *predicate = [FBProcessQuery simulatorProcessesMatchingSimulators:simulators];
+  // It looks like there is a bug with El Capitan, where terminating mutliple Applications quickly
+  // can result in the dock getting into an inconsistent state displaying icons for terminated Applications.
+  // This happens regardless of how the Application was terminated.
+  // The process backing the terminated Application is definitely gone, but the Icon isn't.
+  // The Application appears in the Force Quit menu, but cannot ever be quit by conventional means.
+  // Attempting to shutdown the Mac will result in hanging (probably because it can't terminate the App).
+  //
+  // The only remedy is to quit 'launchservicesd' followed by 'Dock.app'.
+  // This will clear up the stale state that must exist in the Dock/launchservicesd.
+  // Waiting after killing of processes by a short period of time is sufficient to mitigate this issue.
+  // Since `safeShutdown:withError:` will spin the run loop until CoreSimulator confirms that the device is shutdown,
+  // this will give a sufficient amount of time between killing Applications.
 
-  NSError *innerError = nil;
-  if (![self killSimulatorProcessesMatchingPredicate:predicate error:&innerError]) {
-    return [[[FBSimulatorError describe:@"Could not kill simulators before shutting them down"] causedBy:innerError] fail:error];
+  for (FBSimulator *simulator in simulators) {
+    id<FBProcessInfo> simulatorProcess = simulator.launchInfo.simulatorProcess ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
+    if (!simulatorProcess) {
+      continue;
+    }
+    NSError *innerError = nil;
+    if (![self killSimulatorProcess:simulatorProcess error:&innerError]) {
+      return [[[[FBSimulatorError describeFormat:@"Could not kill simulator process %@", simulatorProcess] inSimulator:simulator] causedBy:innerError] fail:error];
+    }
+    if (![self safeShutdown:simulator withError:&innerError]) {
+      return [[[[FBSimulatorError describe:@"Could not shut down simulator after termination"] inSimulator:simulator] causedBy:innerError] fail:error];
+    }
   }
-  if (![self safeShutdownSimulators:simulators withError:&innerError]) {
-    return [[[FBSimulatorError describe:@"Could not shut down simulators after killing them"] causedBy:innerError] fail:error];
-  }
-
   return simulators;
 }
 
@@ -153,38 +170,44 @@
 
 #pragma mark Private
 
+- (BOOL)killProcess:(id<FBProcessInfo>)process error:(NSError **)error
+{
+  if (kill(process.processIdentifier, SIGTERM) < 0) {
+    return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
+  }
+  return YES;
+}
+
+
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
 {
   for (id<FBProcessInfo> process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
-    if (kill(process.processIdentifier, SIGTERM) < 0) {
-      return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
+    if (![self killProcess:process error:error]) {
+      return NO;
     }
   }
   return YES;
 }
 
-- (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
-{
-  NSArray *processes = [self.processQuery.simulatorProcesses filteredArrayUsingPredicate:predicate];
-  return [self killProcesses:processes error:error];
-}
-
-- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error
+- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
   return NO;
 }
 
-- (NSArray *)safeShutdownSimulators:(NSArray *)simulators withError:(NSError **)error
+- (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
 {
-  NSError *innerError = nil;
-  for (FBSimulator *simulator in simulators) {
-    if (![self safeShutdown:simulator withError:&innerError]) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
+  NSArray *processes = [self.processQuery.simulatorProcesses filteredArrayUsingPredicate:predicate];
+  for (id<FBProcessInfo> process in processes) {
+    NSParameterAssert(process.processIdentifier > 1);
+    if (![self killProcess:process error:error]) {
+      return NO;
     }
+    // See comment in `killSimulators:withError:`
+    sleep(1);
   }
-  return simulators;
+  return YES;
 }
 
 - (BOOL)safeShutdown:(FBSimulator *)simulator withError:(NSError **)error

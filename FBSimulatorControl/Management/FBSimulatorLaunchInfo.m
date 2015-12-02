@@ -38,15 +38,15 @@
 
 + (instancetype)fromSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query
 {
-  id<FBProcessInfo> launchdSimProcess = [self launchdSimProcessForUDID:simDevice.UDID.UUIDString query:query];
+  id<FBProcessInfo> launchdSimProcess = [query launchdSimProcessForSimDevice:simDevice];
   if (!launchdSimProcess) {
     return nil;
   }
-  id<FBProcessInfo> simulatorProcess = [self simulatorProcessWithUDID:simDevice.UDID.UUIDString query:query];
+  id<FBProcessInfo> simulatorProcess = [query simulatorApplicationProcessForSimDevice:simDevice];
   if (!simulatorProcess) {
     return nil;
   }
-  NSRunningApplication *runningApplication = [self runningApplicationForSimulatorProcess:simulatorProcess query:query];
+  NSRunningApplication *runningApplication = [query runningApplicationForProcess:simulatorProcess];
   if (!runningApplication) {
     return nil;
   }
@@ -85,37 +85,20 @@
   ];
 }
 
-#pragma mark Private
-
-+ (id<FBProcessInfo>)simulatorProcessWithUDID:(NSString *)udid query:(FBProcessQuery *)query
+- (NSUInteger)hash
 {
-  return [[[query simulatorProcesses]
-    filteredArrayUsingPredicate:[FBProcessQuery simulatorProcessesMatchingUDIDs:@[udid]]]
-    firstObject];
+  return self.simulatorApplication.hash ^ self.simulatorProcess.hash | self.launchdProcess.hash;
 }
 
-+ (id<FBProcessInfo>)launchdSimProcessForUDID:(NSString *)udid query:(FBProcessQuery *)query
+- (BOOL)isEqual:(FBSimulatorLaunchInfo *)info
 {
-  for (id<FBProcessInfo> info in [query processesWithProcessName:@"launchd_sim"]) {
-    NSString *udidContainingString = info.environment[@"XPC_SIMULATOR_LAUNCHD_NAME"];
-    if ([udidContainingString rangeOfString:udid].location != NSNotFound) {
-      return info;
-    }
-  }
-  return nil;
-}
-
-+ (NSRunningApplication *)runningApplicationForSimulatorProcess:(id<FBProcessInfo>)process query:(FBProcessQuery *)query
-{
-  NSRunningApplication *application = [[query
-    runningApplicationsForProcesses:@[process]]
-    firstObject];
-
-  if (![application isKindOfClass:NSRunningApplication.class]) {
-    return nil;
+  if (![info isKindOfClass:FBSimulatorLaunchInfo.class]) {
+    return NO;
   }
 
-  return application;
+  return [self.simulatorApplication isEqual:info.simulatorApplication] &&
+         [self.simulatorProcess isEqual:info.simulatorProcess] &&
+         [self.launchdProcess isEqual:info.launchdProcess];
 }
 
 @end

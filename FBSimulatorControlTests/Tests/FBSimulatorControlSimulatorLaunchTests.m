@@ -81,16 +81,20 @@
   [self.assert interactionSuccessful:session2.interact.bootSimulator];
   [self.assert interactionSuccessful:session3.interact.bootSimulator];
 
-  NSMutableSet *simulatorPIDs = [NSMutableSet set];
-  for (FBSimulatorSession *session in @[session1, session2, session3]) {
+  NSArray *sessions = @[session1, session2, session3];
+  for (FBSimulatorSession *session in sessions) {
     XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
     XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateStarted);
     XCTAssertEqual(session.state.runningApplications.count, 0u);
     XCTAssertEqual(session.state.runningAgents.count, 0u);
     XCTAssertNotNil(session.simulator.launchInfo);
+  }
 
-    [simulatorPIDs addObject:@(session.simulator.launchInfo.simulatorProcess.processIdentifier)];
+  XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.simulatorProcess.processIdentifier"]].count, 3u);
+  XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.launchdProcess.processIdentifier"]].count, 3u);
+  XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.simulatorApplication"]].count, 3u);
 
+  for (FBSimulatorSession *session in sessions) {
     XCTAssertTrue([session terminateWithError:&error]);
     XCTAssertNil(error);
     XCTAssertNil(session.simulator.launchInfo);
@@ -98,7 +102,6 @@
   }
 
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0u);
-  XCTAssertEqual(simulatorPIDs.count, 3u);
 }
 
 @end

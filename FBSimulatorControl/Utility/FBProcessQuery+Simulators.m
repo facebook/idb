@@ -11,12 +11,17 @@
 
 #import "FBProcessQuery+Simulators.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import "FBProcessInfo.h"
+#import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlStaticConfiguration.h"
 
 @implementation FBProcessQuery (Simulators)
+
+#pragma mark Process Fetching
 
 - (NSArray *)simulatorProcesses
 {
@@ -30,6 +35,27 @@
 {
   return [self processesWithLaunchPathSubstring:@"Contents/MacOS/com.apple.CoreSimulator.CoreSimulatorService"];
 }
+
+- (NSArray *)launchdSimProcesses
+{
+  return [self processesWithProcessName:@"launchd_sim"];
+}
+
+- (id<FBProcessInfo>)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice
+{
+  return [[[self simulatorProcesses]
+    filteredArrayUsingPredicate:[FBProcessQuery simulatorProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
+    firstObject];
+}
+
+- (id<FBProcessInfo>)launchdSimProcessForSimDevice:(SimDevice *)simDevice
+{
+  return [[[self launchdSimProcesses]
+    filteredArrayUsingPredicate:[FBProcessQuery launchdSimProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
+    firstObject];
+}
+
+#pragma mark Predicates
 
 + (NSPredicate *)simulatorsProcessesLaunchedUnderConfiguration:(FBSimulatorControlConfiguration *)configuration
 {
@@ -51,11 +77,6 @@
   }];
 }
 
-+ (NSPredicate *)simulatorProcessesMatchingSimulators:(NSArray *)simulators
-{
-  return [self simulatorProcessesMatchingUDIDs:[simulators valueForKey:@"udid"]];
-}
-
 + (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray *)udids
 {
   NSSet *udidSet = [NSSet setWithArray:udids];
@@ -64,6 +85,27 @@
     NSSet *argumentSet = [NSSet setWithArray:process.arguments];
     return [udidSet intersectsSet:argumentSet];
   }];
+}
+
++ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray *)udids
+{
+  NSPredicate *processNamePredicate = [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
+    return [process.launchPath rangeOfString:@"launchd_sim"].location != NSNotFound;
+  }];
+
+  NSMutableArray *udidPredicates = [NSMutableArray array];
+  for (NSString *udid in udids) {
+    NSPredicate *udidPredicate = [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
+      NSString *udidContainingString = process.environment[@"XPC_SIMULATOR_LAUNCHD_NAME"];
+      return [udidContainingString rangeOfString:udid].location != NSNotFound;
+    }];
+    [udidPredicates addObject:udidPredicate];
+  }
+
+  return [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    processNamePredicate,
+    [NSCompoundPredicate orPredicateWithSubpredicates:udidPredicates]
+  ]];
 }
 
 + (NSPredicate *)coreSimulatorProcessesForCurrentXcode
