@@ -49,4 +49,13 @@
  */
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
 
+/**
+ Kills all of the 'com.apple.CoreSimulatorService' processes that are not used by the current `FBSimulatorControl` configuration.
+ Running multiple versions of the Service on the same machine can lead to instability such as Simulator statuses not updating.
+
+ @param error an error out if any error occured.
+ @returns an YES if successful, nil otherwise.
+ */
+- (BOOL)killSpuriousCoreSimulatorServicesWithError:(NSError **)error;
+
 @end

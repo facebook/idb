@@ -40,6 +40,7 @@
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
+- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error;
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error;
 
 @end
@@ -50,15 +51,9 @@
 
 @implementation FBSimulatorTerminationStrategy_Kill
 
-- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error
 {
-  for (id<FBProcessInfo> process in processes) {
-    NSParameterAssert(process.processIdentifier > 1);
-    if (kill(process.processIdentifier, SIGTERM) < 0) {
-      return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
-    }
-  }
-  return YES;
+  return [self killProcesses:processes error:error];
 }
 
 @end
@@ -69,7 +64,7 @@
 
 @implementation FBSimulatorTerminationStrategy_WorkspaceQuit
 
-- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error
 {
   NSArray *processToApplication = [self.processQuery runningApplicationsForProcesses:processes];
   for (NSUInteger index = 0; index < processes.count; index++) {
@@ -145,7 +140,28 @@
   return YES;
 }
 
+- (BOOL)killSpuriousCoreSimulatorServicesWithError:(NSError **)error
+{
+  NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
+    [FBProcessQuery coreSimulatorProcessesForCurrentXcode]
+  ];
+  NSArray *processes = [[self.processQuery coreSimulatorServiceProcesses] filteredArrayUsingPredicate:predicate];
+
+  return [self killProcesses:processes error:error];
+}
+
 #pragma mark Private
+
+- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+{
+  for (id<FBProcessInfo> process in processes) {
+    NSParameterAssert(process.processIdentifier > 1);
+    if (kill(process.processIdentifier, SIGTERM) < 0) {
+      return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
+    }
+  }
+  return YES;
+}
 
 - (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
 {
@@ -153,7 +169,7 @@
   return [self killProcesses:processes error:error];
 }
 
-- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+- (BOOL)killSimulatorProcesses:(NSArray *)processes error:(NSError **)error
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
   return NO;

@@ -95,6 +95,13 @@
     return [FBSimulatorError failBoolWithError:innerError description:@"Failed to load DVTPlatform" errorOut:error];
   }
 
+  BOOL killSpuriousCoreSimulatorServices = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
+  if (killSpuriousCoreSimulatorServices) {
+    if (![self.simulatorPool.terminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
+      return [[[FBSimulatorError describe:@"Failed to kill spurious CoreSimulatorServices"] causedBy:innerError] failBool:error];
+    }
+  }
+
   if (self.configuration.deviceSetPath != nil) {
     if (![NSFileManager.defaultManager createDirectoryAtPath:self.configuration.deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
       return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", self.configuration.deviceSetPath] causedBy:innerError] failBool:error];
@@ -110,10 +117,10 @@
     return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
   }
 
-  BOOL killSpurious = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
-  if (killSpurious) {
+  BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
+  if (killSpuriousSimulators) {
     BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-    if (![self.simulatorPool killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
+    if (![self.simulatorPool.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
       return [[[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] recursiveDescription] failBool:error];
     }
   }

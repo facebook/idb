@@ -24,6 +24,11 @@
   return [self processesWithLaunchPathSubstring:@"Simulator.app"];
 }
 
+- (NSArray *)coreSimulatorServiceProcesses
+{
+  return [self processesWithLaunchPathSubstring:@"Contents/MacOS/com.apple.CoreSimulator.CoreSimulatorService"];
+}
+
 + (NSPredicate *)simulatorsProcessesLaunchedUnderConfiguration:(FBSimulatorControlConfiguration *)configuration
 {
   // If it's from a different Xcode version, the binary path will be different.
@@ -56,6 +61,13 @@
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
     NSSet *argumentSet = [NSSet setWithArray:process.arguments];
     return [udidSet intersectsSet:argumentSet];
+  }];
+}
+
++ (NSPredicate *)coreSimulatorProcessesForCurrentXcode
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> processInfo, NSDictionary *_) {
+    return [processInfo.launchPath rangeOfString:FBSimulatorControlStaticConfiguration.developerDirectory].location != NSNotFound;
   }];
 }
 

@@ -13,6 +13,7 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorPool;
+@class FBSimulatorTerminationStrategy;
 @class SimDevice;
 @class SimDeviceSet;
 
@@ -44,6 +45,11 @@
  Is an NSOrderedSet<FBSimulator>
  */
 @property (nonatomic, copy, readonly) NSOrderedSet *allSimulators;
+
+/**
+ Returns the Simulator Termination Strategy associated with the reciever.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorTerminationStrategy *terminationStrategy;
 
 /**
  Returns a device matching the UDID, if one exists.
@@ -78,14 +84,6 @@
  @returns an array of the Simulators that this were killed if successful, nil otherwise.
  */
 - (NSArray *)killAllWithError:(NSError **)error;
-
-/**
- Kills all of the Simulators that are not launched by `FBSimulatorControl`. These can be Simulators launched via Xcode or Instruments.
-
- @param error an error out if any error occured.
- @returns an YES if successful, nil otherwise.
- */
-- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
 
 /**
  Erases the Simulators that this Pool is responsible for.
