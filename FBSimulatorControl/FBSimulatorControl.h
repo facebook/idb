@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
@@ -17,7 +18,7 @@
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Private.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
-#import <FBSimulatorCOntrol/FBProcessQuery.h>
+#import <FBSimulatorControl/FBProcessQuery.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>

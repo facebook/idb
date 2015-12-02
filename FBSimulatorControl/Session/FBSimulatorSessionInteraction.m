@@ -22,7 +22,6 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlStaticConfiguration.h"
-#import "FBSimDeviceWrapper.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"

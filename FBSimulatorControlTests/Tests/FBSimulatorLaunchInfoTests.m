@@ -7,8 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <AppKit/AppKit.h>
 #import <XCTest/XCTest.h>
+
+#import <AppKit/AppKit.h>
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
