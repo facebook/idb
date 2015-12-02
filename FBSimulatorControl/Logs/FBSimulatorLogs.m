@@ -13,12 +13,13 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBConcurrentCollectionOperations.h"
-#import "FBSimulator+Queries.h"
 #import "FBSimulator.h"
+#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
+#import "FBProcessInfo.h"
 
 @implementation FBSimulatorLogs
 
@@ -101,9 +102,9 @@
   }
 
   NSPredicate *simulatorPredicate = [NSPredicate predicateWithValue:NO];
-  NSInteger launchdSimProcessIdentifier = self.simulator.launchdSimProcessIdentifier;
-  if (launchdSimProcessIdentifier) {
-    NSString *needle = [NSString stringWithFormat:@"launchd_sim [%ld]", launchdSimProcessIdentifier];
+  id<FBProcessInfo> launchdProcess = self.simulator.launchInfo.launchdProcess;
+  if (!launchdProcess) {
+    NSString *needle = [NSString stringWithFormat:@"launchd_sim [%d]", launchdProcess.processIdentifier];
     simulatorPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *path, NSDictionary *_) {
       NSString *fileContents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
       return [fileContents rangeOfString:needle].location != NSNotFound;

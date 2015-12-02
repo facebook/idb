@@ -11,10 +11,12 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorWindowHelpers.h"
 #import "FBSimulatorWindowTilingStrategy.h"
+#import "FBProcessInfo.h"
 
 @interface FBSimulatorWindowTiler ()
 
@@ -38,11 +40,12 @@
   if (!AXIsProcessTrusted()) {
     return [[FBSimulatorError describe:@"Current process is untrusted"] failRect:error];
   }
-  if (self.simulator.processIdentifier < 1) {
+  id<FBProcessInfo> processInfo = self.simulator.launchInfo.simulatorProcess;
+  if (!processInfo) {
     return [[[FBSimulatorError describe:@"Cannot find Window ID"] inSimulator:self.simulator] failRect:error];
   }
 
-  AXUIElementRef applicationElement = AXUIElementCreateApplication(self.simulator.processIdentifier);
+  AXUIElementRef applicationElement = AXUIElementCreateApplication(processInfo.processIdentifier);
   if (!applicationElement) {
     return [[[FBSimulatorError describe:@"Could not get an Application Element for process"] inSimulator:self.simulator] failRect:error];
   }

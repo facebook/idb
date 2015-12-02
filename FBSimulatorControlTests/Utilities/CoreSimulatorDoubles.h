@@ -12,11 +12,25 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
+@interface FBSimulatorControlTests_SimDeviceType_Double : NSObject
+
+@property (nonatomic, readwrite, copy) NSString *name;
+
+@end
+
+@interface FBSimulatorControlTests_SimDeviceRuntime_Double : NSObject
+
+@property (nonatomic, readwrite, copy) NSString *versionString;
+
+@end
+
 @interface FBSimulatorControlTests_SimDevice_Double : NSObject
 
 @property (nonatomic, readwrite, copy) NSString *name;
 @property (nonatomic, readwrite, copy) NSUUID *UDID;
 @property (nonatomic, readwrite, assign) unsigned long long state;
+@property (nonatomic, readwrite, strong) FBSimulatorControlTests_SimDeviceType_Double *deviceType;
+@property (nonatomic, readwrite, strong) FBSimulatorControlTests_SimDeviceRuntime_Double *runtime;
 
 @end
 

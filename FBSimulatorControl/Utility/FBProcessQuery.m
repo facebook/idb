@@ -302,10 +302,9 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   return proc.kp_eproc.e_ppid;
 }
 
-- (NSDictionary *)runningApplicationsForProcesses:(NSArray *)processes
+- (NSArray *)runningApplicationsForProcesses:(NSArray *)processes
 {
-  NSArray *applications = [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
-  return [NSDictionary dictionaryWithObjects:applications forKeys:processes];
+  return [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
 }
 
 #pragma mark Private

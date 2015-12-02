@@ -88,7 +88,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
     [self didStartSession];
   }
 
-  simulator.processIdentifier = processIdentifier;
+  [simulator wasLaunchedWithProcessIdentifier:processIdentifier];
   self.simulatorTerminationHandle = terminationHandle;
   [self createNotifierForBinary:simulator.simulatorApplication.binary onProcessIdentifier:processIdentifier withHandler:^(FBSimulatorSessionLifecycle *lifecycle) {
     [lifecycle simulatorDidUnexpectedlyTerminate:simulator];
@@ -116,7 +116,7 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   NSParameterAssert(self.currentState.lifecycle == FBSimulatorSessionLifecycleStateStarted);
 
   self.simulatorTerminationHandle = nil;
-  simulator.processIdentifier = -1;
+  [simulator wasTerminated];
   [self unregisterNotifierForBinary:simulator.simulatorApplication.binary];
   [self materializeNotification:FBSimulatorSessionSimulatorProcessDidTerminateNotification withSubject:simulator];
 }

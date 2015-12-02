@@ -51,7 +51,7 @@
       block(info);
     });
   }];
-;
+
   return self;
 }
 

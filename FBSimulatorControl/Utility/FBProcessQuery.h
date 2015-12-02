@@ -59,9 +59,9 @@
 - (pid_t)processWithOpenFileTo:(const char *)filename;
 
 /**
- Creates a mapping of NSDictionary<id<FBProcessInfo>, NSRunningApplication>> from id<FBProcessInfo>.
+ Returns an an Array of NSRunningApplications for the provided array of FBProcessInfo.
  Any Applications that could not be found will be replaced with NSNull.null.
  */
-- (NSDictionary *)runningApplicationsForProcesses:(NSArray *)processes;
+- (NSArray *)runningApplicationsForProcesses:(NSArray *)processes;
 
 @end

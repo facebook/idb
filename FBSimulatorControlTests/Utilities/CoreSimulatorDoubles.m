@@ -9,6 +9,12 @@
 
 #import "CoreSimulatorDoubles.h"
 
+@implementation FBSimulatorControlTests_SimDeviceType_Double
+@end
+
+@implementation FBSimulatorControlTests_SimDeviceRuntime_Double
+@end
+
 @implementation FBSimulatorControlTests_SimDevice_Double
 
 - (BOOL)isEqual:(FBSimulatorControlTests_SimDevice_Double *)object

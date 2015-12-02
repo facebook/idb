@@ -29,12 +29,12 @@
 // Management
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
-#import <FBSimulatorControl/FBSimulator+Queries.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControl+Class.h>
 #import <FBSimulatorControl/FBSimulatorControl+Private.h>
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Private.h>
+#import <FBSimulatorControl/FBSimulatorLaunchInfo.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>

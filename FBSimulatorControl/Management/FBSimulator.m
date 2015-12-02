@@ -11,14 +11,18 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorPool+Private.h"
 
+#import <AppKit/AppKit.h>
+
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBProcessQuery.h"
+#import "FBProcessInfo.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorLogs.h"
 #import "FBSimulatorPool.h"
 #import "FBTaskExecutor.h"
@@ -28,31 +32,43 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 @implementation FBSimulator
 
-@synthesize processIdentifier = _processIdentifier;
-@synthesize configuration = _configuration;
+#pragma mark Lifecycle
 
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query
+{
+  return [[FBSimulator alloc]
+    initWithDevice:device
+    configuration:configuration ?: [self inferSimulatorConfigurationFromDevice:device]
+    pool:pool
+    query:query];
+}
 
-#pragma mark Initializers
++ (FBSimulatorConfiguration *)inferSimulatorConfigurationFromDevice:(SimDevice *)device
+{
+  return [[FBSimulatorConfiguration.defaultConfiguration withDeviceType:device.deviceType] withRuntime:device.runtime];
+}
 
-- (instancetype)init
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _processIdentifier = -1;
+  _device = device;
+  _configuration = configuration;
+  _pool = pool;
+  _launchInfo = [FBSimulatorLaunchInfo fromSimDevice:device query:query];
+  _processQuery = query;
+
+  [self registerSimulatorLifecycleHandlers];
+
   return self;
 }
 
-+ (instancetype)inflateFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool
+- (void)dealloc
 {
-  // Create and return an unmanaged one.
-  FBSimulator *simulator = [FBSimulator new];
-  simulator.device = device;
-  simulator.pool = pool;
-  simulator.configuration = configuration;
-  return simulator;
+  [self deregisterSimulatorLifecycleHandlers];
 }
 
 #pragma mark Properties
@@ -85,26 +101,6 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 - (NSString *)dataDirectory
 {
   return self.device.dataPath;
-}
-
-- (pid_t)processIdentifier
-{
-  return _processIdentifier > 1 ? _processIdentifier : [self inferredProcessIdentifier];
-}
-
-- (void)setProcessIdentifier:(pid_t)processIdentifier
-{
-  _processIdentifier = processIdentifier;
-}
-
-- (FBSimulatorConfiguration *)configuration
-{
-  return _configuration ?: [self inferredSimulatorConfiguration];
-}
-
-- (void)setConfiguration:(FBSimulatorConfiguration *)configuration
-{
-  _configuration = configuration;
 }
 
 - (BOOL)isAllocated
@@ -216,36 +212,67 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Name %@ | UUID %@ | State %@",
+    @"Name %@ | UUID %@ | State %@ | %@",
     self.name,
     self.udid,
-    self.device.stateString
+    self.device.stateString,
+    self.launchInfo
   ];
 }
 
 #pragma mark Private
 
-- (pid_t)inferredProcessIdentifier
+- (void)registerSimulatorLifecycleHandlers
 {
-  // It's possible to find Simulators that have been launched with 'CurrentDeviceUDID' but not otherwise.
-  // Simulators launched via Xcode have some sort of token with an argument such as '-psn_0_2466394'.
-  // Finding these Simulators is currently unimplemented.
-  NSString *expectedArgument = [NSString stringWithFormat:@"CurrentDeviceUDID %@", self.udid];
-  pid_t processIdentifier = [[[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-f", expectedArgument]]
-    startSynchronouslyWithTimeout:5]
-    stdOut]
-    intValue];
-
-  if (processIdentifier < 1) {
-    return -1;
-  }
-  return processIdentifier;
+  [NSWorkspace.sharedWorkspace.notificationCenter addObserver:self selector:@selector(applicationDidTerminate:) name:NSWorkspaceDidTerminateApplicationNotification object:nil];
+  [NSWorkspace.sharedWorkspace.notificationCenter addObserver:self selector:@selector(applicationDidLaunch:) name:NSWorkspaceDidLaunchApplicationNotification object:nil];
 }
 
-- (FBSimulatorConfiguration *)inferredSimulatorConfiguration
+- (void)deregisterSimulatorLifecycleHandlers
 {
-  return [[FBSimulatorConfiguration.defaultConfiguration withDeviceType:self.device.deviceType] withRuntime:self.device.runtime];
+  [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self name:NSWorkspaceDidTerminateApplicationNotification object:nil];
+  [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self name:NSWorkspaceDidLaunchApplicationNotification object:nil];
+}
+
+- (void)applicationDidTerminate:(NSNotification *)notification
+{
+  if (!self.launchInfo) {
+    return;
+  }
+
+  NSRunningApplication *terminatedApplication = notification.userInfo[NSWorkspaceApplicationKey];
+  if (![terminatedApplication isEqual:self.launchInfo.simulatorApplication]) {
+    return;
+  }
+  [self wasTerminated];
+}
+
+- (void)applicationDidLaunch:(NSNotification *)notification
+{
+  if (self.launchInfo) {
+    return;
+  }
+
+  NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
+  [self wasLaunchedWithProcessIdentifier:launchedApplication.processIdentifier];
+}
+
+- (void)wasLaunchedWithProcessIdentifier:(pid_t)processIdentifier
+{
+  if (self.launchInfo) {
+    return;
+  }
+  id<FBProcessInfo> processInfo = [self.processQuery processInfoFor:processIdentifier];
+  NSSet *arguments = [NSSet setWithArray:processInfo.arguments];
+  if (![arguments containsObject:self.udid]) {
+    return;
+  }
+  self.launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.device query:self.processQuery];
+}
+
+- (void)wasTerminated
+{
+  self.launchInfo = nil;
 }
 
 @end

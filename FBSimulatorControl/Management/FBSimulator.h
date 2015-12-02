@@ -11,6 +11,7 @@
 
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
+@class FBSimulatorLaunchInfo;
 @class FBSimulatorLogs;
 @class FBSimulatorPool;
 @class SimDevice;
@@ -74,11 +75,6 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 @property (nonatomic, copy, readonly) NSString *stateString;
 
 /**
- The Process Identifier of the Simulator. -1 if it is not running
- */
-@property (nonatomic, assign, readonly) pid_t processIdentifier;
-
-/**
  The Directory that Contains the Simulator's Data
  */
 @property (nonatomic, copy, readonly) NSString *dataDirectory;
@@ -92,6 +88,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The FBSimulatorConfiguration representing this Simulator.
  */
 @property (nonatomic, copy, readonly) FBSimulatorConfiguration *configuration;
+
+/**
+ The FBSimulatorLaunchInfo object for the Simulator.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorLaunchInfo *launchInfo;
 
 /**
  The FBSimulatorLogs instance for fetching logs for the Simulator

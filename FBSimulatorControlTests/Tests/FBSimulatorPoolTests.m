@@ -47,10 +47,18 @@
     NSUUID *uuid = simulatorspec[@"uuid"] ?: [NSUUID UUID];
     FBSimulatorState state = [(simulatorspec[@"state"] ?: @(FBSimulatorStateShutdown)) integerValue];
 
+    FBSimulatorControlTests_SimDeviceType_Double *deviceType = [FBSimulatorControlTests_SimDeviceType_Double new];
+    deviceType.name = name;
+
+    FBSimulatorControlTests_SimDeviceRuntime_Double *runtime = [FBSimulatorControlTests_SimDeviceRuntime_Double new];
+    runtime.versionString = @"9.0";
+
     FBSimulatorControlTests_SimDevice_Double *device = [FBSimulatorControlTests_SimDevice_Double new];
     device.name = name;
     device.UDID = uuid;
     device.state = (unsigned long long) state;
+    device.deviceType = deviceType;
+    device.runtime = runtime;
 
     [simulators addObject:device];
   }

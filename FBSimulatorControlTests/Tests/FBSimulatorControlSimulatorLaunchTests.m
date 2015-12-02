@@ -44,12 +44,11 @@
   XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
   XCTAssertEqual(session.state.runningAgents.count, 0u);
   XCTAssertEqual(session.state.runningApplications.count, 0u);
-  XCTAssertNotEqual(session.simulator.processIdentifier, -1);
-  XCTAssertNotNil(session.simulator.launchedProcesses);
+  XCTAssertNotNil(session.simulator.launchInfo);
 
   XCTAssertTrue([session terminateWithError:&error]);
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateEnded);
-  XCTAssertEqual(session.simulator.processIdentifier, -1);
+  XCTAssertNil(session.simulator.launchInfo);
   [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidTerminateNotification];
   [self.assert consumeNotification:FBSimulatorSessionDidEndNotification];
   [self.assert noNotificationsToConsume];
@@ -88,13 +87,13 @@
     XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateStarted);
     XCTAssertEqual(session.state.runningApplications.count, 0u);
     XCTAssertEqual(session.state.runningAgents.count, 0u);
-    XCTAssertNotEqual(session.simulator.processIdentifier, -1);
+    XCTAssertNotNil(session.simulator.launchInfo);
 
-    [simulatorPIDs addObject:@(session.simulator.processIdentifier)];
+    [simulatorPIDs addObject:@(session.simulator.launchInfo.simulatorProcess.processIdentifier)];
 
     XCTAssertTrue([session terminateWithError:&error]);
     XCTAssertNil(error);
-    XCTAssertEqual(session.simulator.processIdentifier, -1);
+    XCTAssertNil(session.simulator.launchInfo);
     XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateEnded);
   }
 
