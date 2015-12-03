@@ -15,12 +15,23 @@
 @class FBSimulatorLaunchInfo;
 @class FBSimulatorLogs;
 @class FBSimulatorPool;
+@class FBSimulatorSession;
 @class SimDevice;
 
 /**
  The Default timeout for waits.
  */
 extern NSTimeInterval const FBSimulatorDefaultTimeout;
+
+/**
+ Notification that is fired when a Simulator Process Starts.
+ */
+extern NSString *const FBSimulatorDidLaunchNotification;
+
+/**
+ Notification that is fired when a Simulator Process Terminates.
+ */
+extern NSString *const FBSimulatorDidTerminateNotification;
 
 /**
  Uses the known values of SimDevice State, to construct an enumeration.
@@ -51,9 +62,14 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 @property (nonatomic, assign, readonly, getter=isAllocated) BOOL allocated;
 
 /**
- The Pool to which the Simulator Belongs.
+ The Pool to which the Simulator belongs.
  */
 @property (nonatomic, weak, readonly) FBSimulatorPool *pool;
+
+/**
+ The Session to which the Simulator belongs, if any.
+ */
+@property (nonatomic, weak, readonly) FBSimulatorSession *session;
 
 /**
  The Name of the allocated Simulator.

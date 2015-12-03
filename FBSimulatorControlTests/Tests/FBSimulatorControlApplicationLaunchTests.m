@@ -33,7 +33,7 @@
   [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
   [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
-  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
   [self.assert consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
 }
@@ -53,10 +53,9 @@
     launchApplication:appLaunch]];
 
   [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
-  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
   [self.assert consumeNotification:FBSimulatorSessionApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
 }
-
 
 @end

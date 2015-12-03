@@ -21,6 +21,7 @@
 #import "FBProcessQuery.h"
 #import "FBSimulatorError.h"
 #import "FBTaskExecutor.h"
+#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBSimulatorLaunchInfo ()
 
@@ -51,6 +52,16 @@
     return nil;
   }
   return [[FBSimulatorLaunchInfo alloc] initWithDevice:simDevice query:query simulatorProcess:simulatorProcess launchdProcess:launchdSimProcess simulatorApplication:runningApplication];
+}
+
++ (instancetype)fromSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query timeout:(NSTimeInterval)timeout
+{
+  __block FBSimulatorLaunchInfo *launchInfo = nil;
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+    launchInfo = [FBSimulatorLaunchInfo fromSimDevice:simDevice query:query];
+    return launchInfo != nil;
+  }];
+  return launchInfo;
 }
 
 - (instancetype)initWithDevice:(SimDevice *)device query:(FBProcessQuery *)query simulatorProcess:(id<FBProcessInfo>)simulatorProcess launchdProcess:(id<FBProcessInfo>)launchdProcess simulatorApplication:(NSRunningApplication *)simulatorApplication

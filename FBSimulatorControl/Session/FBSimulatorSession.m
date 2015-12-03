@@ -12,6 +12,7 @@
 #import "FBSimulatorSessionState+Private.h"
 
 #import "FBSimulator.h"
+#import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -29,7 +30,9 @@
 {
   NSParameterAssert(simulator);
 
-  return [[FBSimulatorSession alloc] initWithSimulator:simulator];
+  FBSimulatorSession *session = [[FBSimulatorSession alloc] initWithSimulator:simulator];
+  simulator.session = session;
+  return session;
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator

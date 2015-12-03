@@ -30,6 +30,9 @@
 
 NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
+NSString *const FBSimulatorDidLaunchNotification = @"FBSimulatorDidLaunchNotification";
+NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateNotification";
+
 @implementation FBSimulator
 
 #pragma mark Lifecycle
@@ -249,11 +252,20 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 - (void)applicationDidLaunch:(NSNotification *)notification
 {
-  if (self.launchInfo) {
+  // Don't update the state from a notification if either
+  // 1) There is existing launch informatin
+  // 2) The Simulator is managed by a session, as the session will update the state by calling `wasLaunchedWithProcessIdentifier`
+  if (self.launchInfo || self.session) {
     return;
   }
 
   NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
+  id<FBProcessInfo> processInfo = [self.processQuery processInfoFor:launchedApplication.processIdentifier];
+  NSSet *arguments = [NSSet setWithArray:processInfo.arguments];
+  if (![arguments containsObject:self.udid]) {
+    return;
+  }
+
   [self wasLaunchedWithProcessIdentifier:launchedApplication.processIdentifier];
 }
 
@@ -262,17 +274,21 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   if (self.launchInfo) {
     return;
   }
-  id<FBProcessInfo> processInfo = [self.processQuery processInfoFor:processIdentifier];
-  NSSet *arguments = [NSSet setWithArray:processInfo.arguments];
-  if (![arguments containsObject:self.udid]) {
+
+  self.launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.device query:self.processQuery timeout:3];
+  if (!self.launchInfo) {
     return;
   }
-  self.launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.device query:self.processQuery];
+  [[NSNotificationCenter defaultCenter] postNotificationName:FBSimulatorDidLaunchNotification object:self];
 }
 
 - (void)wasTerminated
 {
+  if (!self.launchInfo) {
+    return;
+  }
   self.launchInfo = nil;
+  [[NSNotificationCenter defaultCenter] postNotificationName:FBSimulatorDidTerminateNotification object:self];
 }
 
 @end

@@ -12,7 +12,7 @@
 #import <FBSimulatorControl/FBTerminationHandle.h>
 
 /**
- A class for wrapping `dispatch_source` with some conveniences
+ A class for wrapping `dispatch_source` with some conveniences.
  */
 @interface FBDispatchSourceNotifier : NSObject<FBTerminationHandle>
 

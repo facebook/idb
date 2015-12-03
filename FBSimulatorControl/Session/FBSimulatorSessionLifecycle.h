@@ -30,16 +30,6 @@ extern NSString *const FBSimulatorSessionDidStartNotification;
 extern NSString *const FBSimulatorSessionDidEndNotification;
 
 /**
- Notification that is fired when a Simulator Process Starts.
- */
-extern NSString *const FBSimulatorSessionSimulatorProcessDidLaunchNotification;
-
-/**
- Notification that is fired when a Simulator Process Terminates.
- */
-extern NSString *const FBSimulatorSessionSimulatorProcessDidTerminateNotification;
-
-/**
  Notification that is fired when a Application Process Launches.
  */
 extern NSString *const FBSimulatorSessionApplicationProcessDidLaunchNotification;
