@@ -8,7 +8,6 @@
  */
 
 #import <FBSimulatorControl/FBSimulatorSession.h>
-#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 
 @class FBAgentLaunchConfiguration;
 @class FBApplicationLaunchConfiguration;
@@ -19,18 +18,6 @@
 @interface FBSimulatorSession (Convenience)
 
 /**
- Starts the Simulator Session with the configuration object.
- 1) Launches the Simulator
- 2) Installs the Application
- 3) Launches the Application
- 4) Launches the Agent
-
- @param error an Error Out for any error that occured.
- @returns YES if the interaction was successful, NO otherwise.
- */
-- (BOOL)startWithAppLaunch:(FBApplicationLaunchConfiguration *)appLaunch agentLaunch:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
-
-/**
  Re-launches the last terminated application.
  */
 - (BOOL)relaunchAppWithError:(NSError **)error;
@@ -39,11 +26,5 @@
  Terminates the last launched application.
  */
 - (BOOL)terminateAppWithError:(NSError **)error;
-
-@end
-
-@interface FBSimulatorSessionInteraction (Convenience)
-
-- (instancetype)startWithAppLaunch:(FBApplicationLaunchConfiguration *)appLaunch agentLaunch:(FBAgentLaunchConfiguration *)agentLaunch;
 
 @end

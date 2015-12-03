@@ -9,17 +9,19 @@
 
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
+@class FBAgentLaunchConfiguration;
 @class FBSimulatorBinary;
-@protocol FBProcessInfo;
 
-@interface FBSimulatorInteraction ()
-
-@property (nonatomic, strong) FBSimulator *simulator;
-@property (nonatomic, strong) FBSimulatorSessionLifecycle *lifecycle;
+@interface FBSimulatorInteraction (Agents)
 
 /**
- Chains an interaction on an process, for the given application.
+ Launches the provided Agent with the given Configuration.
  */
-- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(id<FBProcessInfo> process, NSError **error))block;
+- (instancetype)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch;
+
+/**
+ Launches the provided Agent.
+ */
+- (instancetype)killAgent:(FBSimulatorBinary *)agent;
 
 @end

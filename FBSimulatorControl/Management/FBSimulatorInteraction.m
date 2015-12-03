@@ -13,118 +13,113 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBInteraction+Private.h"
+#import "FBInteraction+Private.h"
+#import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
+#import "FBSimulatorControl.h"
+#import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorError.h"
+#import "FBSimulatorPool.h"
+#import "FBProcessQuery+Simulators.h"
+#import "FBSimulatorSession+Private.h"
+#import "FBSimulatorSessionLifecycle.h"
+#import "FBTaskExecutor.h"
 
 @implementation FBSimulatorInteraction
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)withSimulator:(FBSimulator *)simulator lifecycle:(FBSimulatorSessionLifecycle *)lifecycle;
 {
   FBSimulatorInteraction *interaction = [self new];
   interaction.simulator = simulator;
+  interaction.lifecycle = lifecycle;
   return interaction;
 }
 
-- (instancetype)setLocale:(NSLocale *)locale
+- (instancetype)bootSimulator
 {
-  NSParameterAssert(locale);
-
   FBSimulator *simulator = self.simulator;
+  FBSimulatorSessionLifecycle *lifecycle = self.lifecycle;
 
   return [self interact:^ BOOL (NSError **error, id _) {
-    NSString *localeIdentifier = [locale localeIdentifier];
-    NSString *languageIdentifier = [NSLocale canonicalLanguageIdentifierFromString:localeIdentifier];
-    NSDictionary *preferencesDict = @{
-      @"AppleLocale": localeIdentifier,
-      @"AppleLanguages": @[ languageIdentifier ],
-    };
-
-    NSString *simulatorRoot = simulator.device.dataPath;
-    NSString *path = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences/.GlobalPreferences.plist"];
-    if (![preferencesDict writeToFile:path atomically:YES]) {
-      return [FBSimulatorError failBoolWithError:nil description:@"Failed to write .GlobalPreferences.plist" errorOut:error];
+    NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[@"--args",
+      @"-CurrentDeviceUDID", simulator.udid,
+      @"-ConnectHardwareKeyboard", @"0",
+      simulator.configuration.lastScaleCommandLineSwitch, simulator.configuration.scaleString,
+    ]];
+    if (simulator.pool.configuration.deviceSetPath) {
+      if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+        return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] failBool:error];
+      }
+      [arguments addObjectsFromArray:@[@"-DeviceSetPath", simulator.pool.configuration.deviceSetPath]];
     }
+
+    id<FBTask> task = [[[[FBTaskExecutor.sharedInstance
+      withLaunchPath:simulator.simulatorApplication.binary.path]
+      withArguments:[arguments copy]]
+      withEnvironmentAdditions:@{FBSimulatorControlSimulatorLaunchEnvironmentMagic : @"YES"}]
+      build];
+
+    [lifecycle simulatorWillStart:simulator];
+    [task startAsynchronously];
+
+    // Failed to launch the process
+    if (task.error) {
+      return [[[[FBSimulatorError describe:@"Failed to Launch Simulator Process"] causedBy:task.error] inSimulator:simulator] failBool:error];
+    }
+
+    BOOL didBoot = [simulator waitOnState:FBSimulatorStateBooted];
+    if (!didBoot) {
+      return [[[FBSimulatorError describeFormat:@"Timed out waiting for device to be Booted, got %@", simulator.device.stateString] inSimulator:simulator] failBool:error];
+    }
+
+    [lifecycle simulator:simulator didStartWithProcessIdentifier:task.processIdentifier terminationHandle:task];
 
     return YES;
   }];
 }
 
-- (instancetype)authorizeLocationSettingsForApplication:(FBSimulatorApplication *)application
+- (instancetype)openURL:(NSURL *)url
 {
-  NSParameterAssert(application);
+  NSParameterAssert(url);
 
   FBSimulator *simulator = self.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
-    NSString *simulatorRoot = simulator.device.dataPath;
-    NSString *bundleID = application.bundleID;
-
-    NSString *locationClientsDirectory = [simulatorRoot stringByAppendingPathComponent:@"Library/Caches/locationd"];
     NSError *innerError = nil;
-    if (![NSFileManager.defaultManager createDirectoryAtPath:locationClientsDirectory withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to create locationd" errorOut:error];
-    }
-
-    NSString *locationClientsPath = [locationClientsDirectory stringByAppendingPathComponent:@"clients.plist"];
-    NSMutableDictionary *locationClients = [NSMutableDictionary dictionaryWithContentsOfFile:locationClientsPath] ?: [NSMutableDictionary dictionary];
-    locationClients[bundleID] = @{
-      @"Whitelisted": @NO,
-      @"BundleId": bundleID,
-      @"SupportedAuthorizationMask" : @3,
-      @"Authorization" : @2,
-      @"Authorized": @YES,
-      @"Executable": @"",
-      @"Registered": @"",
-    };
-
-    if (![locationClients writeToFile:locationClientsPath atomically:YES]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write clients.plist" errorOut:error];
+    if (![simulator.device openURL:url error:&innerError]) {
+      NSString *description = [NSString stringWithFormat:@"Failed to open URL %@ on simulator %@", url, simulator];
+      return [FBSimulatorError failBoolWithError:innerError description:description errorOut:error];
     }
     return YES;
   }];
 }
 
+#pragma mark Private
 
-- (instancetype)setupKeyboard
+- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(id<FBProcessInfo> process, NSError **error))block
 {
+  NSParameterAssert(binary);
+  NSParameterAssert(block);
+
   FBSimulator *simulator = self.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
-    NSString *simulatorRoot = simulator.device.dataPath;
-    NSString *preferencesPath = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences/com.apple.Preferences.plist"];
-    NSError *innerError = nil;
-    NSMutableDictionary *preferences = [NSMutableDictionary dictionaryWithContentsOfFile:preferencesPath] ?: [NSMutableDictionary dictionary];
-    preferences[@"KeyboardCapsLock"] = @NO;
-    preferences[@"KeyboardAutocapitalization"] = @NO;
-    preferences[@"KeyboardAutocorrection"] = @NO;
-    if (![preferences writeToFile:preferencesPath atomically:YES]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write com.apple.Preferences.plist" errorOut:error];
+    id<FBProcessInfo> processInfo = [[[[simulator
+      launchInfo]
+      launchedProcesses]
+      filteredArrayUsingPredicate:[FBProcessQuery processesWithLaunchPath:binary.path]]
+      firstObject];
+
+    if (!processInfo) {
+      return [[[FBSimulatorError describeFormat:@"Could not find an active process for %@", binary] inSimulator:simulator] failBool:error];
     }
-    return YES;
+    return block(processInfo, error);
   }];
-}
-
-@end
-
-@implementation FBSimulatorInteraction (Convenience)
-
-- (instancetype)configureWith:(FBSimulatorConfiguration *)configuration
-{
-  if (configuration.locale) {
-    [self setLocale:configuration.locale];
-  }
-  return [self setupKeyboard];
-}
-
-@end
-
-@implementation FBSimulator (FBSimulatorInteraction)
-
-- (FBSimulatorInteraction *)interact
-{
-  return [FBSimulatorInteraction withSimulator:self];
 }
 
 @end

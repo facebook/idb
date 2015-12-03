@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
@@ -32,7 +31,14 @@
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlStaticConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
+#import <FBSimulatorControl/FBSimulatorInteraction+Agents.h>
+#import <FBSimulatorControl/FBSimulatorInteraction+Applications.h>
+#import <FBSimulatorControl/FBSimulatorInteraction+Convenience.h>
+#import <FBSimulatorControl/FBSimulatorInteraction+Diagnostics.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Private.h>
+#import <FBSimulatorControl/FBSimulatorInteraction+Setup.h>
+#import <FBSimulatorControl/FBSimulatorInteraction+Upload.h>
+#import <FBSimulatorControl/FBSimulatorInteraction+Video.h>
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 #import <FBSimulatorControl/FBSimulatorLaunchInfo.h>
 #import <FBSimulatorControl/FBSimulatorLogger.h>
@@ -44,9 +50,6 @@
 #import <FBSimulatorControl/FBSimulatorSession+Convenience.h>
 #import <FBSimulatorControl/FBSimulatorSession+Private.h>
 #import <FBSimulatorControl/FBSimulatorSession.h>
-#import <FBSimulatorControl/FBSimulatorSessionInteraction+Diagnostics.h>
-#import <FBSimulatorControl/FBSimulatorSessionInteraction+Private.h>
-#import <FBSimulatorControl/FBSimulatorSessionInteraction.h>
 #import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
 #import <FBSimulatorControl/FBSimulatorSessionState+Private.h>
 #import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
@@ -54,7 +57,6 @@
 #import <FBSimulatorControl/FBSimulatorSessionStateGenerator.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecorder.h>
-#import <FBSimulatorControl/FBSimulatorVideoUploader.h>
 #import <FBSimulatorControl/FBSimulatorWindowHelpers.h>
 #import <FBSimulatorControl/FBSimulatorWindowTiler.h>
 #import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>

@@ -7,20 +7,21 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorSessionInteraction+Diagnostics.h"
+#import "FBSimulatorInteraction+Diagnostics.h"
 
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorSession.h"
-#import "FBSimulatorSessionInteraction+Private.h"
+#import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorInteraction+Diagnostics.h"
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
 
 typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t processIdentifier);
 
-@implementation FBSimulatorSessionInteraction (Diagnostics)
+@implementation FBSimulatorInteraction (Diagnostics)
 
 - (instancetype)sampleApplication:(FBSimulatorApplication *)application withDuration:(NSInteger)durationInSeconds frequency:(NSInteger)frequencyInMilliseconds
 {
@@ -50,10 +51,10 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
 {
   NSParameterAssert(application);
   NSParameterAssert(name);
-  FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
+  FBSimulatorSessionLifecycle *lifecycle = self.lifecycle;
 
-  return [self application:application interact:^ BOOL (pid_t processIdentifier, NSError **error) {
-    id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, processIdentifier);
+  return [self binary:application.binary interact:^ BOOL (id<FBProcessInfo> process, NSError **error) {
+    id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, process.processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 
     [lifecycle associateEndOfSessionCleanup:task];
@@ -76,13 +77,13 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
 {
   NSParameterAssert(application);
   NSParameterAssert(name);
-  FBSimulatorSessionLifecycle *lifecycle = self.session.lifecycle;
+  FBSimulatorSessionLifecycle *lifecycle = self.lifecycle;
 
-  return [self application:application interact:^ BOOL (pid_t processIdentifier, NSError **error) {
-    id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, processIdentifier);
+  return [self binary:application.binary interact:^ BOOL (id<FBProcessInfo> process, NSError **error) {
+    id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, process.processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 
-    [task startSynchronouslyWithTimeout:FBSimulatorInteractionDefaultTimeout];
+    [task startSynchronouslyWithTimeout:FBSimulatorDefaultTimeout];
     if (task.error) {
       return [FBSimulatorError failBoolWithError:task.error errorOut:error];
     }

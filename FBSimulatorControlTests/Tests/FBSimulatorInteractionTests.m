@@ -15,11 +15,11 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorSessionInteractionTests : FBSimulatorControlTestCase
+@interface FBSimulatorInteractionTests : FBSimulatorControlTestCase
 
 @end
 
-@implementation FBSimulatorSessionInteractionTests
+@implementation FBSimulatorInteractionTests
 
 - (void)testPhotoUpload
 {
