@@ -46,8 +46,8 @@ public indirect enum Format {
 public indirect enum Query {
   case UDID(String)
   case State(FBSimulatorState)
-  case Compound([Query])
   case Configured(FBSimulatorConfiguration)
+  case Compound([Query])
 }
 
 /**

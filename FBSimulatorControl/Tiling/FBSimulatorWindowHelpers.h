@@ -29,10 +29,10 @@
  Creates and returns an NSArray<NSDictionary> of Simulator.app Windows that belong to the Ordered Set of Simulator.
  The Dictionary contains Windows in format from 'Quartz Window Services'
 
- @param simulators the Simulators to find Windows For.
+ @param simulators the array of Simulators to find Windows For.
  @return array an Array of the windows that could be found for the provided Simulators.
  */
-+ (NSArray *)windowsForSimulators:(NSOrderedSet *)simulators;
++ (NSArray *)windowsForSimulators:(NSArray *)simulators;
 
 /**
  Returns the CGDirectDisplayID for the provided Simulator.
