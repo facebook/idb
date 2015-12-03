@@ -127,9 +127,11 @@
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
-  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    [FBProcessQuery simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
-    [FBProcessQuery simulatorProcessesLaunchedBySimulatorControl]
+  NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
+    [NSCompoundPredicate andPredicateWithSubpredicates:@[
+      [FBProcessQuery simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
+      [FBProcessQuery simulatorProcessesLaunchedBySimulatorControl]
+    ]
   ]];
 
   NSError *innerError = nil;
