@@ -16,23 +16,25 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
+#import "FBCompositeSimulatorEventSink.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
+#import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorEventRelay.h"
+#import "FBSimulatorEventSink.h"
+#import "FBSimulatorHistoryGenerator.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorLogs.h"
+#import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
 #import "FBTaskExecutor.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 NSTimeInterval const FBSimulatorDefaultTimeout = 20;
-
-NSString *const FBSimulatorDidLaunchNotification = @"FBSimulatorDidLaunchNotification";
-NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateNotification";
 
 @implementation FBSimulator
 
@@ -62,17 +64,17 @@ NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateN
   _device = device;
   _configuration = configuration;
   _pool = pool;
-  _launchInfo = [FBSimulatorLaunchInfo fromSimDevice:device query:query];
   _processQuery = query;
 
-  [self registerSimulatorLifecycleHandlers];
+  FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator withSimulator:self];
+  FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink]];
+  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:device processQuery:query sink:compositeSink];
+
+  _historyGenerator = historyGenerator;
+  _eventRelay = relay;
 
   return self;
-}
-
-- (void)dealloc
-{
-  [self deregisterSimulatorLifecycleHandlers];
 }
 
 #pragma mark Properties
@@ -120,82 +122,19 @@ NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateN
   return [FBSimulatorLogs withSimulator:self];
 }
 
-#pragma mark Helpers
-
-+ (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
+- (FBSimulatorLaunchInfo *)launchInfo
 {
-  stateString = [stateString lowercaseString];
-  if ([stateString isEqualToString:@"creating"]) {
-    return FBSimulatorStateCreating;
-  }
-  if ([stateString isEqualToString:@"shutdown"]) {
-    return FBSimulatorStateShutdown;
-  }
-  if ([stateString isEqualToString:@"booting"]) {
-    return FBSimulatorStateBooting;
-  }
-  if ([stateString isEqualToString:@"booted"]) {
-    return FBSimulatorStateBooted;
-  }
-  if ([stateString isEqualToString:@"creating"]) {
-    return FBSimulatorStateCreating;
-  }
-  if ([stateString isEqualToString:@"shutting down"]) {
-    return FBSimulatorStateCreating;
-  }
-  return FBSimulatorStateUnknown;
+  return self.eventRelay.launchInfo;
 }
 
-+ (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state
+- (FBSimulatorHistory *)history
 {
-  switch (state) {
-    case FBSimulatorStateCreating:
-      return @"Creating";
-    case FBSimulatorStateShutdown:
-      return @"Shutdown";
-    case FBSimulatorStateBooting:
-      return @"Booting";
-    case FBSimulatorStateBooted:
-      return @"Booted";
-    case FBSimulatorStateShuttingDown:
-      return @"Shutting Down";
-    default:
-      return @"Unknown";
-  }
+  return self.historyGenerator.history;
 }
 
-- (BOOL)waitOnState:(FBSimulatorState)state
+- (id<FBSimulatorEventSink>)eventSink
 {
-  return [self waitOnState:state timeout:FBSimulatorDefaultTimeout];
-}
-
-- (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout
-{
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
-    return self.state == state;
-  }];
-}
-
-- (BOOL)waitOnState:(FBSimulatorState)state withError:(NSError **)error
-{
-  if (![self waitOnState:state]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator was not in expected %@ state, got %@", [FBSimulator stateStringFromSimulatorState:state], self.stateString]
-      inSimulator:self]
-      failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)freeFromPoolWithError:(NSError **)error
-{
-  if (!self.pool) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as there is no pool associated" errorOut:error];
-  }
-  if (!self.isAllocated) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as this Simulator has not been allocated" errorOut:error];
-  }
-  return [self.pool freeSimulator:self error:error];
+  return self.eventRelay;
 }
 
 #pragma mark NSObject
@@ -222,75 +161,6 @@ NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateN
     self.device.stateString,
     self.launchInfo
   ];
-}
-
-#pragma mark Private
-
-- (void)registerSimulatorLifecycleHandlers
-{
-  [NSWorkspace.sharedWorkspace.notificationCenter addObserver:self selector:@selector(applicationDidTerminate:) name:NSWorkspaceDidTerminateApplicationNotification object:nil];
-  [NSWorkspace.sharedWorkspace.notificationCenter addObserver:self selector:@selector(applicationDidLaunch:) name:NSWorkspaceDidLaunchApplicationNotification object:nil];
-}
-
-- (void)deregisterSimulatorLifecycleHandlers
-{
-  [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self name:NSWorkspaceDidTerminateApplicationNotification object:nil];
-  [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self name:NSWorkspaceDidLaunchApplicationNotification object:nil];
-}
-
-- (void)applicationDidTerminate:(NSNotification *)notification
-{
-  if (!self.launchInfo) {
-    return;
-  }
-
-  NSRunningApplication *terminatedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  if (![terminatedApplication isEqual:self.launchInfo.simulatorApplication]) {
-    return;
-  }
-  [self wasTerminated];
-}
-
-- (void)applicationDidLaunch:(NSNotification *)notification
-{
-  // Don't update the state from a notification if either
-  // 1) There is existing launch informatin
-  // 2) The Simulator is managed by a session, as the session will update the state by calling `wasLaunchedWithProcessIdentifier`
-  if (self.launchInfo || self.session) {
-    return;
-  }
-
-  NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  id<FBProcessInfo> processInfo = [self.processQuery processInfoFor:launchedApplication.processIdentifier];  
-  NSString *UDID = processInfo.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
-  const BOOL isSimulatorPreparedWithSimCtl = (UDID && [self.udid isEqualToString:UDID]);
-  if (!isSimulatorPreparedWithSimCtl) {
-    return;
-  }
-
-  [self wasLaunchedWithProcessIdentifier:launchedApplication.processIdentifier];
-}
-
-- (void)wasLaunchedWithProcessIdentifier:(pid_t)processIdentifier
-{
-  if (self.launchInfo) {
-    return;
-  }
-
-  self.launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.device query:self.processQuery timeout:3];
-  if (!self.launchInfo) {
-    return;
-  }
-  [[NSNotificationCenter defaultCenter] postNotificationName:FBSimulatorDidLaunchNotification object:self];
-}
-
-- (void)wasTerminated
-{
-  if (!self.launchInfo) {
-    return;
-  }
-  self.launchInfo = nil;
-  [[NSNotificationCenter defaultCenter] postNotificationName:FBSimulatorDidTerminateNotification object:self];
 }
 
 @end

@@ -18,6 +18,7 @@
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
+#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
@@ -39,9 +40,9 @@
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
-- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error;
+- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error;
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error;
-- (BOOL)killProcess:(id<FBProcessInfo>)process error:(NSError **)error;
+- (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error;
 
 @end
 
@@ -51,7 +52,7 @@
 
 @implementation FBSimulatorTerminationStrategy_Kill
 
-- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error
+- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error
 {
   return [self killProcess:process error:error];
 }
@@ -64,7 +65,7 @@
 
 @implementation FBSimulatorTerminationStrategy_WorkspaceQuit
 
-- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error
+- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error
 {
   NSRunningApplication *application = [self.processQuery runningApplicationForProcess:process];
   if ([application isKindOfClass:NSNull.class]) {
@@ -128,7 +129,7 @@
   // this will give a sufficient amount of time between killing Applications.
 
   for (FBSimulator *simulator in simulators) {
-    id<FBProcessInfo> simulatorProcess = simulator.launchInfo.simulatorProcess ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
+    FBProcessInfo *simulatorProcess = simulator.launchInfo.simulatorProcess ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
     if (!simulatorProcess) {
       continue;
     }
@@ -171,7 +172,7 @@
 
 #pragma mark Private
 
-- (BOOL)killProcess:(id<FBProcessInfo>)process error:(NSError **)error
+- (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error
 {
   if (kill(process.processIdentifier, SIGTERM) < 0) {
     return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
@@ -182,7 +183,7 @@
 
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
 {
-  for (id<FBProcessInfo> process in processes) {
+  for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
     if (![self killProcess:process error:error]) {
       return NO;
@@ -191,7 +192,7 @@
   return YES;
 }
 
-- (BOOL)killSimulatorProcess:(id<FBProcessInfo>)process error:(NSError **)error
+- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
   return NO;
@@ -200,7 +201,7 @@
 - (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
 {
   NSArray *processes = [self.processQuery.simulatorProcesses filteredArrayUsingPredicate:predicate];
-  for (id<FBProcessInfo> process in processes) {
+  for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
     if (![self killProcess:process error:error]) {
       return NO;

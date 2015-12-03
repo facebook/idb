@@ -44,12 +44,12 @@
   NSArray *notificationNames = @[
     FBSimulatorDidLaunchNotification,
     FBSimulatorDidTerminateNotification,
+    FBSimulatorApplicationProcessDidLaunchNotification,
+    FBSimulatorApplicationProcessDidTerminateNotification,
+    FBSimulatorAgentProcessDidLaunchNotification,
+    FBSimulatorAgentProcessDidTerminateNotification,
     FBSimulatorSessionDidStartNotification,
-    FBSimulatorSessionDidEndNotification,
-    FBSimulatorSessionApplicationProcessDidLaunchNotification,
-    FBSimulatorSessionApplicationProcessDidTerminateNotification,
-    FBSimulatorSessionAgentProcessDidLaunchNotification,
-    FBSimulatorSessionAgentProcessDidTerminateNotification
+    FBSimulatorSessionDidEndNotification
   ];
 
   self.notificationsRecieved = [NSMutableArray array];
@@ -76,14 +76,44 @@
   [self.notificationsRecieved addObject:notification];
 }
 
-- (void)consumeNotification:(NSString *)notificationName
+- (NSNotification *)consumeNotification:(NSString *)notificationName
 {
   if (self.notificationsRecieved.count == 0) {
     _XCTPrimitiveFail(self.testCase, @"There was no notification to recieve for %@", notificationName);
-    return;
+    return nil;
   }
-  _XCTPrimitiveAssertEqualObjects(self.testCase, notificationName, "notificationName", [self.notificationsRecieved[0] name], "[self.notificationsRecieved[0] name]");
+  NSNotification *actual = self.notificationsRecieved.firstObject;
+  _XCTPrimitiveAssertEqualObjects(self.testCase, notificationName, "notificationName", actual.name, "[self.notificationsRecieved[0] name]");
   [self.notificationsRecieved removeObjectAtIndex:0];
+  return actual;
+}
+
+- (NSNotification *)consumeNotification:(NSString *)notificationName timeout:(NSTimeInterval)timeout
+{
+  NSNotification *actual = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^ NSString * {
+    if (self.notificationsRecieved == 0) {
+      return nil;
+    }
+    return self.notificationsRecieved.firstObject;
+  }];
+
+  if (!actual) {
+    _XCTPrimitiveFail(self.testCase, @"There were notifications recieved before timing out");
+    return nil;
+  }
+
+  _XCTPrimitiveAssertEqualObjects(self.testCase, notificationName, "notificationName", actual.name, "[self.notificationsRecieved[0] name]");
+  [self.notificationsRecieved removeObjectAtIndex:0];
+  return actual;
+}
+
+- (void)consumeAllNotifications
+{
+  // Spin run loop to filter out any pending notifications.
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:2 untilTrue:^BOOL{
+    return NO;
+  }];
+  [self.notificationsRecieved removeAllObjects];
 }
 
 - (void)noNotificationsToConsume
@@ -108,6 +138,19 @@
   BOOL success = [interaction performInteractionWithError:&error];
 
   _XCTPrimitiveAssertFalse(self.testCase, success, "interactionFailed:");
+}
+
+#pragma mark Sessions
+
+- (void)shutdownSimulatorAndTerminateSession:(FBSimulatorSession *)session
+{
+  [self interactionSuccessful:session.interact.shutdownSimulator];
+
+  NSError *error = nil;
+  BOOL success = [session terminateWithError:&error];
+
+  _XCTPrimitiveAssertNil(self.testCase, error, "terminationFailed:");
+  _XCTPrimitiveAssertTrue(self.testCase, success, "terminationFailed:");
 }
 
 #pragma mark Strings

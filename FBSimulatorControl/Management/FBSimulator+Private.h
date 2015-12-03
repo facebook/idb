@@ -8,21 +8,22 @@
  */
 
 #import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorEventSink.h>
 
 @class FBProcessQuery;
+@class FBSimulatorEventRelay;
+@class FBSimulatorHistoryGenerator;
 
 @interface FBSimulator ()
 
-@property (nonatomic, strong, readwrite) FBSimulatorLaunchInfo *launchInfo;
-@property (nonatomic, strong, readwrite) SimDevice *device;
-@property (nonatomic, weak, readwrite) FBSimulatorSession *session;
-@property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
-
+@property (nonatomic, strong, readonly) FBSimulatorEventRelay *eventRelay;
+@property (nonatomic, strong, readonly) FBSimulatorHistoryGenerator *historyGenerator;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query;
+@property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
+@property (nonatomic, weak, readwrite) FBSimulatorSession *session;
 
-- (void)wasLaunchedWithProcessIdentifier:(pid_t)processIdentifier;
-- (void)wasTerminated;
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query;
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query;
 
 @end

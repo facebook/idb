@@ -33,7 +33,7 @@
   FBSimulatorSession *session = [self createBootedSession];
   FBSimulator *simulator = session.simulator;
 
-  id<FBProcessInfo> process = simulator.launchInfo.simulatorProcess;
+  FBProcessInfo *process = simulator.launchInfo.simulatorProcess;
   XCTAssertNotNil(simulator.launchInfo.simulatorProcess);
 
   NSSet *arguments = [NSSet setWithArray:process.arguments];

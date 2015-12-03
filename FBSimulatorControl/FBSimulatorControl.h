@@ -7,17 +7,22 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBSimulatorControl/FBBinaryParser.h>
+#import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
 #import <FBSimulatorControl/FBInteraction+Private.h>
 #import <FBSimulatorControl/FBInteraction.h>
-#import <FBSimulatorControl/FBProcessInfo+Private.h>
+#import <FBSimulatorControl/FBProcessInfo+Helpers.h>
 #import <FBSimulatorControl/FBProcessInfo.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Private.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
+#import <FBSimulatorControl/FBProcessQuery+Simulators.h>
 #import <FBSimulatorControl/FBProcessQuery.h>
+#import <FBSimulatorControl/FBSimDeviceWrapper.h>
+#import <FBSimulatorControl/FBSimulator+Helpers.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
@@ -30,6 +35,12 @@
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlStaticConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
+#import <FBSimulatorControl/FBSimulatorEventRelay.h>
+#import <FBSimulatorControl/FBSimulatorEventSink.h>
+#import <FBSimulatorControl/FBSimulatorHistory+Private.h>
+#import <FBSimulatorControl/FBSimulatorHistory+Queries.h>
+#import <FBSimulatorControl/FBSimulatorHistory.h>
+#import <FBSimulatorControl/FBSimulatorHistoryGenerator.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Agents.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Applications.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Convenience.h>
@@ -43,17 +54,14 @@
 #import <FBSimulatorControl/FBSimulatorLogger.h>
 #import <FBSimulatorControl/FBSimulatorLogs+Private.h>
 #import <FBSimulatorControl/FBSimulatorLogs.h>
+#import <FBSimulatorControl/FBSimulatorNotificationEventSink.h>
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
+#import <FBSimulatorControl/FBSimulatorResourceManager.h>
 #import <FBSimulatorControl/FBSimulatorSession+Convenience.h>
 #import <FBSimulatorControl/FBSimulatorSession+Private.h>
 #import <FBSimulatorControl/FBSimulatorSession.h>
-#import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
-#import <FBSimulatorControl/FBSimulatorSessionState+Private.h>
-#import <FBSimulatorControl/FBSimulatorSessionState+Queries.h>
-#import <FBSimulatorControl/FBSimulatorSessionState.h>
-#import <FBSimulatorControl/FBSimulatorSessionStateGenerator.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecorder.h>
 #import <FBSimulatorControl/FBSimulatorWindowHelpers.h>

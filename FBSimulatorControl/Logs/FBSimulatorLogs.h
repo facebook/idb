@@ -69,7 +69,7 @@
 /**
  The System Log, filtered and bucketed by Applications that were launched during the Session. Returned as an NSDictionary<NSString *, FBWritableLog *>
 
- @return an NSDictionary<FBUserLaunchedProcess *, FBWritableLog> of the logs, filtered by launched process.
+ @return an NSDictionary<FBProcessInfo *, FBWritableLog> of the logs, filtered by launched process.
  */
 - (NSDictionary *)launchedApplicationLogs;
 

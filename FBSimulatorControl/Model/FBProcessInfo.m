@@ -8,113 +8,46 @@
  */
 
 #import "FBProcessInfo.h"
-#import "FBProcessInfo+Private.h"
 
 #import "FBProcessLaunchConfiguration.h"
 
-@implementation FBUserLaunchedProcess
-
-@synthesize processIdentifier = _processIdentifier;
-
-- (NSString *)launchPath
-{
-  return self.launchConfiguration.launchPath;
-}
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  FBUserLaunchedProcess *state = [self.class new];
-  state.processIdentifier = self.processIdentifier;
-  state.launchConfiguration = self.launchConfiguration;
-  state.launchDate = self.launchDate;
-  state.diagnostics = self.diagnostics;
-  return state;
-}
-
-- (NSArray *)arguments
-{
-  return self.launchConfiguration.arguments;
-}
-
-- (NSDictionary *)environment
-{
-  return self.launchConfiguration.environment;
-}
-
-- (NSUInteger)hash
-{
-  return ((unsigned long) self.processIdentifier) | self.launchConfiguration.hash | self.launchConfiguration.hash | self.diagnostics.hash;
-}
-
-- (BOOL)isEqual:(FBUserLaunchedProcess *)object
-{
-  if (![object isKindOfClass:self.class]) {
-    return NO;
-  }
-  return self.processIdentifier == object.processIdentifier &&
-        [self.launchConfiguration isEqual:object.launchConfiguration] &&
-        [self.launchDate isEqual:object.launchDate] &&
-        [self.diagnostics isEqual:object.diagnostics];
-}
-
-- (NSString *)description
-{
-  return [self shortDescription];
-}
-
-- (NSString *)longDescription
-{
-  return [NSString stringWithFormat:
-    @"Launch %@ | PID %d | Launched %@ | Diagnostics %@",
-    self.launchConfiguration,
-    self.processIdentifier,
-    self.launchDate,
-    self.diagnostics
-  ];
-}
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Process %@ | PID %d",
-    self.launchConfiguration.shortDescription,
-    self.processIdentifier
-  ];
-}
-
-@end
-
-@implementation FBFoundProcess
+@implementation FBProcessInfo
 
 @synthesize launchPath = _launchPath;
 @synthesize processIdentifier = _processIdentifier;
 @synthesize arguments = _arguments;
 @synthesize environment = _environment;
 
-- (instancetype)copyWithZone:(NSZone *)zone
+#pragma mark NSObject
+
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath arguments:(NSArray *)arguments environment:(NSDictionary *)environment
 {
-  FBFoundProcess *process = [self.class new];
-  process.processIdentifier = self.processIdentifier;
-  process.launchPath = self.launchPath;
-  process.arguments = self.arguments;
-  process.environment = self.environment;
-  return process;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _processIdentifier = processIdentifier;
+  _launchPath = launchPath;
+  _arguments = arguments;
+  _environment = environment;
+  return self;
 }
 
 - (NSUInteger)hash
 {
-  return ((unsigned long) self.processIdentifier) | self.launchPath.hash | self.arguments.hash | self.environment.hash;
+  return ((unsigned long) self.processIdentifier) | self.launchPath.hash ^ self.arguments.hash | self.environment.hash;
 }
 
-- (BOOL)isEqual:(FBUserLaunchedProcess *)object
+- (BOOL)isEqual:(FBProcessInfo *)object
 {
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
   return self.processIdentifier == object.processIdentifier &&
-         [self.launchPath isEqualToString:object.launchPath] &&
-         [self.arguments isEqualToArray:object.arguments] &&
-         [self.environment isEqualToDictionary:object.environment];
+        [self.launchPath isEqual:object.launchPath] &&
+        [self.arguments isEqual:object.arguments] &&
+        [self.environment isEqual:object.environment];
 }
 
 - (NSString *)description
@@ -126,6 +59,38 @@
     self.arguments,
     self.environment
   ];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return [[self.class alloc] initWithProcessIdentifier:self.processIdentifier launchPath:self.launchPath arguments:self.arguments environment:self.environment];
+}
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _processIdentifier = [coder decodeInt32ForKey:NSStringFromSelector(@selector(processIdentifier))];
+  _launchPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(launchPath))];
+  _arguments = [coder decodeObjectForKey:NSStringFromSelector(@selector(arguments))];
+  _environment = [coder decodeObjectForKey:NSStringFromSelector(@selector(environment))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeInt32:self.processIdentifier forKey:NSStringFromSelector(@selector(processIdentifier))];
+  [coder encodeObject:self.launchPath forKey:NSStringFromSelector(@selector(launchPath))];
+  [coder encodeObject:self.arguments forKey:NSStringFromSelector(@selector(arguments))];
+  [coder encodeObject:self.environment forKey:NSStringFromSelector(@selector(environment))];
 }
 
 @end

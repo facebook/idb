@@ -11,7 +11,20 @@
 
 @class FBProcessLaunchConfiguration;
 
-@protocol FBProcessInfo <NSObject>
+/**
+ Concrete Value of Process Information.
+ */
+@interface FBProcessInfo : NSObject <NSCopying, NSCoding>
+
+/**
+ The Designated Initializer.
+
+ @param processIdentifier the process identifer.
+ @param launchPath the path of the binary that the process was launched with.
+ @param arguments the arguments that the process was launched with.
+ @param environment the environment that the
+ */
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath arguments:(NSArray *)arguments environment:(NSDictionary *)environment;
 
 /**
  The Process Identifier for the running process
@@ -32,35 +45,5 @@
  An NSDictionary<NSString *, NSString *> of the environment of the process.
  */
 @property (nonatomic, copy, readonly) NSDictionary *environment;
-
-@end
-
-/**
- An Object representing the current state of a process launched via FBSimulatorControl
- Implements equality to uniquely identify a launched process.
- */
-@interface FBUserLaunchedProcess : NSObject <FBProcessInfo, NSCopying>
-
-/**
- The Date the Process was launched
- */
-@property (nonatomic, copy, readonly) NSDate *launchDate;
-
-/**
-  */
-@property (nonatomic, copy, readonly) FBProcessLaunchConfiguration *launchConfiguration;
-
-/**
- A key-value store of arbitrary diagnostic information for the process
- */
-@property (nonatomic, copy, readonly) NSDictionary *diagnostics;
-
-@end
-
-/**
- An Object representing the current state of a process launched automatically by the Simulator.
- Implements equality to uniquely identify a launched process.
- */
-@interface FBFoundProcess : NSObject <FBProcessInfo, NSCopying>
 
 @end

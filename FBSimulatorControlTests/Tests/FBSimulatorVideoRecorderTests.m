@@ -66,10 +66,10 @@
     return NO;
   }];
 
-  NSString *filePath = firstSession.state.diagnostics[@"video"];
+  NSString *filePath = firstSession.history.simulatorDiagnostics[@"video"];
   XCTAssertNotNil(filePath);
   XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:filePath]);
-  filePath = secondSession.state.diagnostics[@"video"];
+  filePath = secondSession.history.simulatorDiagnostics[@"video"];
   XCTAssertNotNil(filePath);
   XCTAssertTrue([NSFileManager.defaultManager fileExistsAtPath:filePath]);
 }

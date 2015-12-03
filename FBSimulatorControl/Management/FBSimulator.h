@@ -9,9 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+@protocol FBSimulatorEventSink;
 @class FBProcessQuery;
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
+@class FBSimulatorHistory;
 @class FBSimulatorLaunchInfo;
 @class FBSimulatorLogs;
 @class FBSimulatorPool;
@@ -22,16 +24,6 @@
  The Default timeout for waits.
  */
 extern NSTimeInterval const FBSimulatorDefaultTimeout;
-
-/**
- Notification that is fired when a Simulator Process Starts.
- */
-extern NSString *const FBSimulatorDidLaunchNotification;
-
-/**
- Notification that is fired when a Simulator Process Terminates.
- */
-extern NSString *const FBSimulatorDidTerminateNotification;
 
 /**
  Uses the known values of SimDevice State, to construct an enumeration.
@@ -65,6 +57,16 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The Pool to which the Simulator belongs.
  */
 @property (nonatomic, weak, readonly) FBSimulatorPool *pool;
+
+/**
+ Where the events for the Simulator should be sent.
+ */
+@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+
+/**
+ History of the Simulator.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorHistory *history;
 
 /**
  The Session to which the Simulator belongs, if any.
@@ -115,49 +117,5 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The FBSimulatorLogs instance for fetching logs for the Simulator.
  */
 @property (nonatomic, strong, readonly) FBSimulatorLogs *logs;
-
-/**
- Synchronously waits on the provided state.
-
- @param state the state to wait on
- @returns YES if the Simulator transitioned to the given state with the default timeout, NO otherwise
- */
-- (BOOL)waitOnState:(FBSimulatorState)state;
-
-/**
- Synchronously waits on the provided state.
-
- @param state the state to wait on
- @param timeout timeout
- @returns YES if the Simulator transitioned to the given state with the timeout, NO otherwise
- */
-- (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout;
-
-/**
- A Synchronous wait, with a default timeout, producing a meaningful error message.
-
- @param state the state to wait on
- @param error an error out for a timeout error if one occurred
- @returns YES if the Simulator transitioned to the given state with the timeout, NO otherwise
- */
-- (BOOL)waitOnState:(FBSimulatorState)state withError:(NSError **)error;
-
-/**
- Convenience method for obtaining a description of Simulator State
- */
-+ (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state;
-
-/**
- Convenience method for obtaining SimulatorState from a String.
- */
-+ (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString;
-
-/**
- Calls `freeSimulator:error:` on this device's pool, with the reciever as the first argument.
-
- @param error an error out for any error that occured.
- @returns YES if the freeing of the device was successful, NO otherwise.
- */
-- (BOOL)freeFromPoolWithError:(NSError **)error;
 
 @end
