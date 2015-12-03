@@ -307,6 +307,19 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   return [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
 }
 
+- (NSRunningApplication *)runningApplicationForProcess:(id<FBProcessInfo>)process
+{
+  NSRunningApplication *application = [[self
+    runningApplicationsForProcesses:@[process]]
+    firstObject];
+
+  if (![application isKindOfClass:NSRunningApplication.class]) {
+    return nil;
+  }
+
+  return application;
+}
+
 #pragma mark Private
 
 - (NSDictionary *)processIdentifiersToApplications

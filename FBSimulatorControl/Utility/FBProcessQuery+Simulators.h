@@ -14,11 +14,14 @@
 #import <FBSimulatorControl/FBProcessQuery.h>
 
 @class FBSimulatorControlConfiguration;
+@class SimDevice;
 
 /**
- FBProcessQuery to NSPredicate.
+ Extension for obtaining Simulator Process information.
  */
 @interface FBProcessQuery (Simulators)
+
+#pragma mark Process Fetching
 
 /**
  Fetches an NSArray<id<FBProcessInfo>> of all Simulator Application Processes.
@@ -29,6 +32,29 @@
  Fetches an NSArray<id<FBProcessInfo>> of all com.apple.CoreSimulator.CoreSimulatorService.
  */
 - (NSArray *)coreSimulatorServiceProcesses;
+
+/**
+ Fetches an NSArray<id<FBProcessInfo>> of all launchd_sim processes.
+ */
+- (NSArray *)launchdSimProcesses;
+
+/**
+ Fetches the Process Info for a given Simulator.
+ 
+ @param simDevice the Simulator to fetch Process Info for.
+ @return Process Info if any could be obtained, nil otherwise.
+ */
+- (id<FBProcessInfo>)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice;
+
+/**
+ Fetches the Process Info for a given Simulator's launchd_sim.
+
+ @param simDevice the Simulator to fetch Process Info for.
+ @return Process Info if any could be obtained, nil otherwise.
+ */
+- (id<FBProcessInfo>)launchdSimProcessForSimDevice:(SimDevice *)simDevice;
+
+#pragma mark Predicates
 
 /**
  Returns a Predicate that matches simulator processes only from the Xcode version in the provided configuration.
@@ -46,20 +72,20 @@
 + (NSPredicate *)simulatorProcessesLaunchedBySimulatorControl;
 
 /**
- Constructs a Predicate that matches processes with any of the Simulators in an collection of FBSimulators.
+ Constructs a Predicate that matches Process Info for Simulator Applications for the given UDIDs.
 
- @param simulators an NSArray<FBSimulator *> of the Simulators to match.
+ @param udids an NSArray<NSString *> of the Simulator UDIDs to match.
  @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
  */
-+ (NSPredicate *)simulatorProcessesMatchingSimulators:(NSArray *)simulators;
++ (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray *)udids;
 
 /**
- Constructs a Predicate that matches processes with any of the Simulators in an collection String UDIDS.
+ Constructs a Predicate that matches Process Info for launchd_sim process for the given UDIDs.
 
- @param simulators an NSArray<NSString *> of the Simulator UDIDs to match.
+ @param udids an NSArray<NSString *> of the Simulator UDIDs to match.
  @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
  */
-+ (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray *)simulators;
++ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray *)udids;
 
 /**
  Constructs a Predicate that matches CoreSimulatorService Processes for the current xcode versions
