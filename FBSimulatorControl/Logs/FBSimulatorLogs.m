@@ -91,23 +91,23 @@
  */
 - (NSArray *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
 {
-  NSFileManager *fileManager = NSFileManager.defaultManager;
+  id<FBProcessInfo> launchdProcess = self.simulator.launchInfo.launchdProcess;
+  if (!launchdProcess) {
+    return @[];
+  }
 
+  NSString *needle = [NSString stringWithFormat:@"launchd_sim [%d]", launchdProcess.processIdentifier];
+  NSPredicate *simulatorPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *path, NSDictionary *_) {
+    NSString *fileContents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
+    return [fileContents rangeOfString:needle].location != NSNotFound;
+  }];
+
+  NSFileManager *fileManager = NSFileManager.defaultManager;
   NSPredicate *datePredicate = [NSPredicate predicateWithValue:YES];
   if (date) {
     datePredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *path, NSDictionary *_) {
       NSDictionary *attributes = [fileManager attributesOfItemAtPath:path error:nil];
       return [attributes.fileModificationDate isGreaterThanOrEqualTo:date];
-    }];
-  }
-
-  NSPredicate *simulatorPredicate = [NSPredicate predicateWithValue:NO];
-  id<FBProcessInfo> launchdProcess = self.simulator.launchInfo.launchdProcess;
-  if (!launchdProcess) {
-    NSString *needle = [NSString stringWithFormat:@"launchd_sim [%d]", launchdProcess.processIdentifier];
-    simulatorPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *path, NSDictionary *_) {
-      NSString *fileContents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
-      return [fileContents rangeOfString:needle].location != NSNotFound;
     }];
   }
 

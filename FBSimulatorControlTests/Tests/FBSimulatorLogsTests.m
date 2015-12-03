@@ -36,7 +36,7 @@
   [self.assert needle:needle inHaystack:haystack];
 }
 
-- (void)flakyOnTravis_testAppCrashLogIsFetched
+- (void)testAppCrashLogIsFetched
 {
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = [[FBSimulatorControlFixtures.tableSearchAppLaunch
