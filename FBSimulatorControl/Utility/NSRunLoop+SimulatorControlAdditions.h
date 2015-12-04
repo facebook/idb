@@ -23,4 +23,13 @@
  */
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue;
 
+/**
+ Spins the Run Loop until `untilTrue` returns a value, or a timeout is reached.
+
+ @oaram timeout the Timeout in Seconds.
+ @param untilExists the mapping to a value.
+ @returns the return value of untilTrue, or nil if a timeout was reached.
+ */
+- (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists;
+
 @end

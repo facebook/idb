@@ -26,4 +26,17 @@
   return YES;
 }
 
+- (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists
+{
+  __block id value = nil;
+  BOOL success = [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
+    value = untilExists();
+    return value != nil;
+  }];
+  if (!success) {
+    return nil;
+  }
+  return value;
+}
+
 @end

@@ -19,6 +19,8 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulator.h"
+#import "FBSimulator+Private.h"
+#import "FBSimDeviceWrapper.h"
 #import "FBProcessInfo.h"
 #import "FBSimulatorError.h"
 
@@ -44,17 +46,17 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    pid_t processIdentifier = [simulator.device
+    id<FBProcessInfo> process = [[FBSimDeviceWrapper withSimDevice:simulator.device processQuery:simulator.processQuery]
       spawnWithPath:agentLaunch.agentBinary.path
       options:options
       terminationHandler:NULL
       error:&innerError];
 
-    if (processIdentifier <= 0) {
+    if (!process) {
       return [[[[FBSimulatorError describeFormat:@"Failed to start Agent %@", agentLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
     }
 
-    [lifecycle agentDidLaunch:agentLaunch didStartWithProcessIdentifier:processIdentifier stdOut:stdOut stdErr:stdErr];
+    [lifecycle agentDidLaunch:agentLaunch didStartWithProcessIdentifier:process.processIdentifier stdOut:stdOut stdErr:stdErr];
     return YES;
   }];
 }
