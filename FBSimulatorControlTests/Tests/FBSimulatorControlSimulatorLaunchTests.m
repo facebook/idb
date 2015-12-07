@@ -38,7 +38,7 @@
   [self.assert interactionSuccessful:session.interact.bootSimulator];
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateStarted);
   [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
-  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
   [self.assert noNotificationsToConsume];
 
   XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
@@ -49,7 +49,7 @@
   XCTAssertTrue([session terminateWithError:&error]);
   XCTAssertEqual(session.state.lifecycle, FBSimulatorSessionLifecycleStateEnded);
   XCTAssertNil(session.simulator.launchInfo);
-  [self.assert consumeNotification:FBSimulatorSessionSimulatorProcessDidTerminateNotification];
+  [self.assert consumeNotification:FBSimulatorDidTerminateNotification];
   [self.assert consumeNotification:FBSimulatorSessionDidEndNotification];
   [self.assert noNotificationsToConsume];
 }

@@ -15,6 +15,7 @@
 
 @property (nonatomic, strong, readwrite) FBSimulatorLaunchInfo *launchInfo;
 @property (nonatomic, strong, readwrite) SimDevice *device;
+@property (nonatomic, weak, readwrite) FBSimulatorSession *session;
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;

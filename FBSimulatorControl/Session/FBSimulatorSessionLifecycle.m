@@ -22,8 +22,6 @@
 
 NSString *const FBSimulatorSessionDidStartNotification = @"FBSimulatorSessionDidStartNotification";
 NSString *const FBSimulatorSessionDidEndNotification = @"FBSimulatorSessionDidEndNotification";
-NSString *const FBSimulatorSessionSimulatorProcessDidLaunchNotification = @"FBSimulatorSessionSimulatorProcessDidLaunchNotification";
-NSString *const FBSimulatorSessionSimulatorProcessDidTerminateNotification = @"FBSimulatorSessionSimulatorProcessDidTerminateNotification";
 NSString *const FBSimulatorSessionApplicationProcessDidLaunchNotification = @"FBSimulatorSessionApplicationProcessDidLaunchNotification";
 NSString *const FBSimulatorSessionApplicationProcessDidTerminateNotification = @"FBSimulatorSessionApplicationProcessDidTerminateNotification";
 NSString *const FBSimulatorSessionAgentProcessDidLaunchNotification = @"FBSimulatorSessionAgentProcessDidLaunchNotification";
@@ -93,8 +91,6 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   [self createNotifierForBinary:simulator.simulatorApplication.binary onProcessIdentifier:processIdentifier withHandler:^(FBSimulatorSessionLifecycle *lifecycle) {
     [lifecycle simulatorDidUnexpectedlyTerminate:simulator];
   }];
-
-  [self materializeNotification:FBSimulatorSessionSimulatorProcessDidLaunchNotification withSubject:simulator];
 }
 
 - (void)simulatorWillTerminate:(FBSimulator *)simulator
@@ -118,7 +114,6 @@ NSString *const FBSimulatorSessionExpectedKey = @"expected";
   self.simulatorTerminationHandle = nil;
   [simulator wasTerminated];
   [self unregisterNotifierForBinary:simulator.simulatorApplication.binary];
-  [self materializeNotification:FBSimulatorSessionSimulatorProcessDidTerminateNotification withSubject:simulator];
 }
 
 #pragma mark Agent

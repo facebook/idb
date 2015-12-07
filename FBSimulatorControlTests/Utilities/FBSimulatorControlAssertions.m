@@ -9,9 +9,7 @@
 
 #import "FBSimulatorControlAssertions.h"
 
-#import <FBSimulatorControl/FBInteraction.h>
-#import <FBSimulatorControl/FBSimulatorSession.h>
-#import <FBSimulatorControl/FBSimulatorSessionLifecycle.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 @interface FBSimulatorControlAssertions ()
 
@@ -44,10 +42,10 @@
 - (void)installNotificationObservers
 {
   NSArray *notificationNames = @[
+    FBSimulatorDidLaunchNotification,
+    FBSimulatorDidTerminateNotification,
     FBSimulatorSessionDidStartNotification,
     FBSimulatorSessionDidEndNotification,
-    FBSimulatorSessionSimulatorProcessDidLaunchNotification,
-    FBSimulatorSessionSimulatorProcessDidTerminateNotification,
     FBSimulatorSessionApplicationProcessDidLaunchNotification,
     FBSimulatorSessionApplicationProcessDidTerminateNotification,
     FBSimulatorSessionAgentProcessDidLaunchNotification,
