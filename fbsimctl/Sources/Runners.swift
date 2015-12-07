@@ -63,15 +63,15 @@ private struct SubcommandRunner : Runner {
       let simulators = Query.perform(control.simulatorPool, query: query)
       return .Success(Format.formatAll(format)(simulators: simulators))
     case .Boot(let query):
-      return self.runSessionWithQuery(query) { session in
-        try session.interact().bootSimulator().performInteraction()
-        return "Booted \(session.simulator.udid)"
+      return self.runSimulatorWithQuery(query) { simulator in
+        try simulator.interact().bootSimulator().performInteraction()
+        return "Booted \(simulator.udid)"
       }
     case .Shutdown:
       return .Failure("unimplemented")
     case .Diagnose(let query):
-      return self.runSessionWithQuery(query) { session in
-        if let sysLog = session.simulator.logs.systemLog() {
+      return self.runSimulatorWithQuery(query) { simulator in
+        if let sysLog = simulator.logs.systemLog() {
           return "\(sysLog.shortName) \(sysLog.asPath)"
         }
         return ""
@@ -81,13 +81,12 @@ private struct SubcommandRunner : Runner {
     }
   }
 
-  private func runSessionWithQuery(query: Query, with: FBSimulatorSession throws -> String) -> Output {
+  private func runSimulatorWithQuery(query: Query, with: FBSimulator throws -> String) -> Output {
     do {
       var buffer = ""
       let simulators = Query.perform(self.control.simulatorPool, query: query)
       for simulator in simulators {
-        let session = FBSimulatorSession(simulator: simulator)
-        let result = try with(session)
+        let result = try with(simulator)
         buffer.appendContentsOf(result)
         buffer.append("\n" as Character)
       }
@@ -133,7 +132,8 @@ private class InteractionRunner : Runner, RelayTransformer {
 
 private extension Query {
   static func perform(pool: FBSimulatorPool, query: Query) -> [FBSimulator] {
-    return pool.allSimulators.filteredOrderedSetUsingPredicate(query.get(pool)).array as! [FBSimulator]
+    let array: NSArray = pool.allSimulators
+    return array.filteredArrayUsingPredicate(query.get(pool)) as! [FBSimulator]
   }
 
   func get(pool: FBSimulatorPool) -> NSPredicate {

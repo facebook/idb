@@ -82,15 +82,16 @@
 
 #pragma mark Initialization
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators processQuery:(FBProcessQuery *)processQuery
 {
   BOOL useKill = (configuration.options & FBSimulatorManagementOptionsUseProcessKilling) == FBSimulatorManagementOptionsUseProcessKilling;
+  processQuery = processQuery ?: [FBProcessQuery new];
   return useKill
-    ? [[FBSimulatorTerminationStrategy_Kill alloc] initWithConfiguration:configuration allSimulators:allSimulators]
-    : [[FBSimulatorTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration allSimulators:allSimulators];
+    ? [[FBSimulatorTerminationStrategy_Kill alloc] initWithConfiguration:configuration allSimulators:allSimulators processQuery:processQuery]
+    : [[FBSimulatorTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration allSimulators:allSimulators processQuery:processQuery];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators processQuery:(FBProcessQuery *)processQuery
 {
   self = [super init];
   if (!self) {
@@ -99,7 +100,7 @@
 
   _configuration = configuration;
   _allSimulators = allSimulators;
-  _processQuery = [FBProcessQuery new];
+  _processQuery = processQuery;
 
   return self;
 }

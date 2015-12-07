@@ -95,7 +95,7 @@
     @{@"name" : @"iPad", @"state" : @(FBSimulatorStateBooted)}
   ]];
 
-  NSOrderedSet *simulators = self.pool.allSimulators;
+  NSArray *simulators = self.pool.allSimulators;
   XCTAssertEqual(simulators.count, 8u);
 
   XCTAssertEqualObjects([simulators[0] name], @"iPad 2");
@@ -149,7 +149,7 @@
     [mockedSimulators[3] UDID]
   ]];
 
-  NSOrderedSet *simulators = self.pool.allocatedSimulators;
+  NSArray *simulators = self.pool.allocatedSimulators;
   XCTAssertEqual(simulators.count, 2u);
 
   XCTAssertEqualObjects([simulators[0] name], @"iPad 2");
@@ -186,6 +186,29 @@
   XCTAssertEqualObjects([simulators[5] name], @"iPad");
   XCTAssertEqual([simulators[5] state], FBSimulatorStateBooted);
   XCTAssertEqual([simulators[5] pool], self.pool);
+}
+
+- (void)testReferencesForSimulatorsAreTheSame
+{
+  [self createPoolWithExistingSimDeviceSpecs:@[
+    @{@"name" : @"iPad 2", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateCreating)},
+    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown)},
+    @{@"name" : @"iPad 3", @"state" : @(FBSimulatorStateCreating)},
+    @{@"name" : @"iPhone 6S", @"state" : @(FBSimulatorStateShuttingDown) },
+    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown)},
+    @{@"name" : @"iPad", @"state" : @(FBSimulatorStateBooted)}
+  ]];
+
+  NSArray *firstFetch = self.pool.allSimulators;
+  NSArray *secondFetch = self.pool.allSimulators;
+  XCTAssertEqualObjects(firstFetch, secondFetch);
+
+  // Reference equality.
+  for (NSUInteger index = 0; index < firstFetch.count; index++) {
+    XCTAssertEqual(firstFetch[index], secondFetch[index]);
+  }
 }
 
 @end

@@ -94,8 +94,8 @@
   XCTAssertTrue([self.control.simulatorPool deleteAllWithError:&error]);
   XCTAssertNil(error);
 
-  NSOrderedSet *uuidSet = [self.control.simulatorPool.allSimulators valueForKey:@"udid"];
-  [simulatorUUIDs intersectSet:uuidSet.set];
+  NSSet *uuidSet = [NSSet setWithArray:[self.control.simulatorPool.allSimulators valueForKey:@"udid"]];
+  [simulatorUUIDs intersectSet:uuidSet];
   XCTAssertEqual(simulatorUUIDs.count, 0u);
 }
 

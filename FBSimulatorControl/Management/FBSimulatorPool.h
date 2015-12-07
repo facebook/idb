@@ -20,7 +20,7 @@
 @protocol FBSimulatorLogger;
 
 /**
- A wrapper around the DeviceSet, to support meaningful queries.
+ A container for a collection of Simulators.
  */
 @interface FBSimulatorPool : NSObject
 
@@ -44,7 +44,7 @@
  Ordering is based on the ordering of SimDeviceSet.
  Is an NSOrderedSet<FBSimulator>
  */
-@property (nonatomic, copy, readonly) NSOrderedSet *allSimulators;
+@property (nonatomic, copy, readonly) NSArray *allSimulators;
 
 /**
  Returns the Simulator Termination Strategy associated with the reciever.
@@ -110,30 +110,11 @@
 @interface FBSimulatorPool (Fetchers)
 
 /**
- Finds the Device UDID for the given device name and SDK version combination.
- If a simulatorSDK is not provided, the first device matching the given deviceName will be returned.
- This will search for all devices in the set, whether the Pool will manage them or not.
-
- @param deviceName the Device Name to search for. Must not be nil.
- @param simulatorSDK the SDK Runtime of the Simulator. May be nil.
- @returns The Device UDID that matches the parameters, nil if no match could be found.
- */
-- (NSString *)deviceUDIDWithName:(NSString *)deviceName simulatorSDK:(NSString *)simulatorSDK;
-
-/**
- Returns the first Simulator allocated by FBSimulatorPool, based on the device type alone.
-
- @param deviceType the Device Type of the Device to search for. Must not be nil.
- @return The Allocated device created by FBSimulatorPool.
- */
-- (FBSimulator *)allocatedSimulatorWithDeviceType:(NSString *)deviceType;
-
-/**
  An Ordered Set of the Simulators that this Pool has allocated.
  This includes only allocated simulators.
  Is an NSOrderedSet<FBSimulator>
  */
-@property (nonatomic, copy, readonly) NSOrderedSet *allocatedSimulators;
+@property (nonatomic, copy, readonly) NSArray *allocatedSimulators;
 
 /**
  An Ordered Set of the Simulators that this Pool has allocated.
@@ -141,13 +122,13 @@
  Ordering is based on the recency of the allocation: the most recent allocated Simulator is at the end of the Set.
  Is an NSOrderedSet<FBSimulator>
  */
-@property (nonatomic, copy, readonly) NSOrderedSet *unallocatedSimulators;
+@property (nonatomic, copy, readonly) NSArray *unallocatedSimulators;
 
 /**
  An Ordered Set of the Simulators that have been launched by any pool, or not by FBSimulatorControl at all.
  Is an NSOrderedSet<FBSimulator>
  */
-@property (nonatomic, copy, readonly) NSOrderedSet *launchedSimulators;
+@property (nonatomic, copy, readonly) NSArray *launchedSimulators;
 
 @end
 

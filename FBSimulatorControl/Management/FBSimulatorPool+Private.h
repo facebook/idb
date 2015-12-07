@@ -9,12 +9,14 @@
 
 #import <FBSimulatorControl/FBSimulatorPool.h>
 
+@class FBProcessQuery;
+
 @interface FBSimulatorPool ()
 
-@property (nonatomic, copy, readwrite) FBSimulatorControlConfiguration *configuration;
+@property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
+@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
-@property (nonatomic, strong, readwrite) SimDeviceSet *deviceSet;
-@property (nonatomic, strong, readwrite) NSMutableOrderedSet *allocatedUDIDs;
-@property (nonatomic, strong, readwrite) NSRegularExpression *managedSimulatorPoolOffsetRegex;
+@property (nonatomic, strong, readonly) NSMutableOrderedSet *allocatedUDIDs;
+@property (nonatomic, strong, readonly) NSMutableDictionary *inflatedSimulators;
 
 @end

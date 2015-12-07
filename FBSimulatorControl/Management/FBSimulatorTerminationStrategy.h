@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulatorControlConfiguration;
+@class FBProcessQuery;
 
 /**
  A class for terminating Simulators.
@@ -21,8 +22,11 @@
 
  @param configuration the Configuration of FBSimulatorControl.
  @param allSimulators the Simulators that are permitted to be terminated.
+ @param processQuery the process query object to use. If nil, one will be created
+
+ @return a configured FBSimulatorTerminationStrategy instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators processQuery:(FBProcessQuery *)processQuery;
 
 /**
  Kills all of the Simulators associated with the reciever.

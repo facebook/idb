@@ -40,30 +40,53 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 + (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet
 {
-  FBSimulatorPool *pool = [self new];
-  pool.deviceSet = deviceSet;
-  pool.configuration = configuration;
-  pool.allocatedUDIDs = [NSMutableOrderedSet new];
-  return pool;
+  return [[self alloc] initWithConfiguration:configuration deviceSet:deviceSet];
+}
+
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _configuration = configuration;
+  _deviceSet = deviceSet;
+  _allocatedUDIDs = [NSMutableOrderedSet new];
+  _inflatedSimulators = [NSMutableDictionary dictionary];
+  _processQuery = [FBProcessQuery new];
+
+  return self;
 }
 
 #pragma mark - Public Accessors
 
-- (NSOrderedSet *)allSimulators
+- (NSArray *)allSimulators
 {
-  // All Simulator Properties are derived from `allSimulators`. In future this means instances can be cached in one place.
-  NSMutableOrderedSet *simulators = [NSMutableOrderedSet orderedSet];
-  FBProcessQuery *query = [FBProcessQuery new];
-  for (SimDevice *device in self.deviceSet.availableDevices) {
-    [simulators addObject:[FBSimulator fromSimDevice:device configuration:nil pool:self query:query]];
+  // Inflate new simulators that have come along since last time.
+  NSArray *simDevices = self.deviceSet.availableDevices;
+  for (SimDevice *device in simDevices) {
+    NSString *udid = device.UDID.UUIDString;
+    if (self.inflatedSimulators[udid]) {
+      continue;
+    }
+    FBSimulator *simulator = [FBSimulator fromSimDevice:device configuration:nil pool:self query:self.processQuery];
+    self.inflatedSimulators[udid] = simulator;
   }
-  return [simulators copy];
+
+  // Cull Simulators that should have gone away.
+  NSArray *currentSimulatorUDIDs = [simDevices valueForKeyPath:@"UDID.UUIDString"];
+  NSMutableSet *cullSet = [NSMutableSet setWithArray:self.inflatedSimulators.allKeys];
+  [cullSet minusSet:[NSSet setWithArray:currentSimulatorUDIDs]];
+  [self.inflatedSimulators removeObjectsForKeys:cullSet.allObjects];
+
+  return [self.inflatedSimulators objectsForKeys:currentSimulatorUDIDs notFoundMarker:NSNull.null];
 }
 
 - (FBSimulatorTerminationStrategy *)terminationStrategy
 {
   // `self.allSimulators` is not a constant for the lifetime of self, so should be fetched on all usages.
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration allSimulators:[self.allSimulators.array copy]];
+  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration allSimulators:self.allSimulators processQuery:self.processQuery];
 }
 
 #pragma mark - Public Methods
@@ -135,7 +158,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (NSArray *)eraseAllWithError:(NSError **)error
 {
-  return [self eraseSimulators:[self.allSimulators.array copy] withError:error];
+  return [self eraseSimulators:self.allSimulators withError:error];
 }
 
 - (NSArray *)deleteAllWithError:(NSError **)error
@@ -146,7 +169,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     return [[[FBSimulatorError describe:@"Failed to kill all simulators prior to delete all"] causedBy:innerError] fail:error];
   }
 
-  return [self deleteSimulators:[self.allSimulators.array copy] withError:error];
+  return [self deleteSimulators:self.allSimulators withError:error];
 }
 
 #pragma mark - Private
@@ -232,7 +255,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     [FBSimulatorPredicates unallocatedByPool:self],
     [FBSimulatorPredicates matchingConfiguration:configuration]
   ]];
-  return [[self.allSimulators filteredOrderedSetUsingPredicate:predicate] firstObject];
+  return [[self.allSimulators filteredArrayUsingPredicate:predicate] firstObject];
 }
 
 - (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
@@ -304,7 +327,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 #pragma mark - Helpers
 
-+ (NSDictionary *)keySimulatorsByUDID:(NSOrderedSet *)simulators
++ (NSDictionary *)keySimulatorsByUDID:(NSArray *)simulators
 {
   NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
   for (FBSimulator *simulator in simulators) {
@@ -317,47 +340,19 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 @implementation FBSimulatorPool (Fetchers)
 
-- (NSString *)deviceUDIDWithName:(NSString *)deviceName simulatorSDK:(NSString *)simulatorSDK
+- (NSArray *)allocatedSimulators
 {
-  for (FBSimulator *simulator in self.allSimulators) {
-    if (![simulator.name isEqualToString:deviceName]) {
-      continue;
-    }
-    if (!simulatorSDK) {
-      return simulator.udid;
-    }
-    if ([simulator.device.runtime.versionString isEqualToString:simulatorSDK]) {
-      return simulator.udid;
-    }
-  }
-  return nil;
+  return [self.allSimulators filteredArrayUsingPredicate:[FBSimulatorPredicates allocatedByPool:self]];
 }
 
-- (FBSimulator *)allocatedSimulatorWithDeviceType:(NSString *)deviceType
+- (NSArray *)unallocatedSimulators
 {
-  for (FBSimulator *simulator in self.allocatedSimulators) {
-    if ([simulator.device.deviceType.name isEqualToString:deviceType]) {
-      return simulator;
-    }
-  }
-  return nil;
+  return [self.allSimulators filteredArrayUsingPredicate:[FBSimulatorPredicates unallocatedByPool:self]];
 }
 
-- (NSOrderedSet *)allocatedSimulators
+- (NSArray *)launchedSimulators
 {
-  NSPredicate *predicate = [FBSimulatorPredicates allocatedByPool:self];
-  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
-}
-
-- (NSOrderedSet *)unallocatedSimulators
-{
-  NSPredicate *predicate = [FBSimulatorPredicates unallocatedByPool:self];
-  return [self.allSimulators filteredOrderedSetUsingPredicate:predicate];
-}
-
-- (NSOrderedSet *)launchedSimulators
-{
-  return [self.allSimulators filteredOrderedSetUsingPredicate:FBSimulatorPredicates.launched];
+  return [self.allSimulators filteredArrayUsingPredicate:FBSimulatorPredicates.launched];
 }
 
 @end

@@ -33,7 +33,7 @@ static void EnsureCGIsInitialized(void)
     [FBSimulatorPredicates launched],
     [NSCompoundPredicate notPredicateWithSubpredicate:[FBSimulatorPredicates only:simulator]],
   ]];
-  NSOrderedSet *simulators = [simulator.pool.allSimulators filteredOrderedSetUsingPredicate:predicate];
+  NSArray *simulators = [simulator.pool.allSimulators filteredArrayUsingPredicate:predicate];
   NSArray *windows = [self windowsForSimulators:simulators];
 
   NSMutableArray *boundsValues = [NSMutableArray array];
@@ -48,7 +48,7 @@ static void EnsureCGIsInitialized(void)
   return [boundsValues copy];
 }
 
-+ (NSArray *)windowsForSimulators:(NSOrderedSet *)simulators
++ (NSArray *)windowsForSimulators:(NSArray *)simulators
 {
   NSArray *windows = CFBridgingRelease(CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID));
 
@@ -76,7 +76,7 @@ static void EnsureCGIsInitialized(void)
 {
   EnsureCGIsInitialized();
 
-  NSDictionary *window = [[self windowsForSimulators:[NSOrderedSet orderedSetWithObject:simulator]] firstObject];
+  NSDictionary *window = [[self windowsForSimulators:@[simulator]] firstObject];
   if (!window) {
     return 0;
   }
