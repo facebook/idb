@@ -14,33 +14,68 @@
 #import "FBSimulatorError.h"
 #import "FBTaskExecutor.h"
 
-@interface FBSimulatorBinary ()
-
-@property (nonatomic, readwrite, copy) NSString *name;
-@property (nonatomic, readwrite, copy) NSString *path;
-@property (nonatomic, readwrite, copy) NSSet *architectures;
-
-@end
-
 @implementation FBSimulatorBinary
+
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures
+{
+  NSParameterAssert(name);
+  NSParameterAssert(path);
+  NSParameterAssert(architectures);
+
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _name = name;
+  _path = path;
+  _architectures = architectures;
+
+  return self;
+}
 
 + (instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures
 {
-  FBSimulatorBinary *binary = [self new];
-  binary.name = name;
-  binary.path = path;
-  binary.architectures = architectures;
-  return binary;
+  if (!name || !path || !architectures) {
+    return nil;
+  }
+  return [[self alloc] initWithName:name path:path architectures:architectures];
 }
+
+#pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBSimulatorBinary *binary = [self.class new];
-  binary.name = self.name;
-  binary.path = self.path;
-  binary.architectures = self.architectures;
-  return binary;
+  return [[FBSimulatorBinary alloc]
+    initWithName:self.name
+    path:self.path
+    architectures:self.architectures];
 }
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _name = [coder decodeObjectForKey:NSStringFromSelector(@selector(name))];
+  _path = [coder decodeObjectForKey:NSStringFromSelector(@selector(path))];
+  _architectures = [coder decodeObjectForKey:NSStringFromSelector(@selector(architectures))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeObject:self.name forKey:NSStringFromSelector(@selector(name))];
+  [coder encodeObject:self.path forKey:NSStringFromSelector(@selector(path))];
+  [coder encodeObject:self.architectures forKey:NSStringFromSelector(@selector(architectures))];
+}
+
+#pragma mark NSObject
 
 - (BOOL)isEqual:(FBSimulatorBinary *)object
 {
@@ -64,41 +99,72 @@
 
 @end
 
-@interface FBSimulatorApplication ()
-
-@property (nonatomic, readwrite, copy) NSString *name;
-@property (nonatomic, readwrite, copy) NSString *path;
-@property (nonatomic, readwrite, copy) NSString *bundleID;
-@property (nonatomic, readwrite, copy) FBSimulatorBinary *binary;
-
-@end
-
 @implementation FBSimulatorApplication
 
-+ (instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary
 {
   NSParameterAssert(name);
   NSParameterAssert(path);
   NSParameterAssert(bundleID);
   NSParameterAssert(binary);
 
-  FBSimulatorApplication *application = [FBSimulatorApplication new];
-  application.name = name;
-  application.path = path;
-  application.bundleID = bundleID;
-  application.binary = binary;
-  return application;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _name = name;
+  _path = path;
+  _bundleID = bundleID;
+  _binary = binary;
+
+  return self;
 }
+
++ (instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary
+{
+  if (!name || !path || !bundleID || !binary) {
+    return nil;
+  }
+  return [[self alloc] initWithName:name path:path bundleID:bundleID binary:binary];
+}
+
+#pragma mark NSCopying
 
 - (FBSimulatorApplication *)copyWithZone:(NSZone *)zone
 {
-  FBSimulatorApplication *application = [self.class new];
-  application.name = self.name;
-  application.path = self.path;
-  application.bundleID = self.bundleID;
-  application.binary = self.binary;
-  return application;
+  return [[FBSimulatorApplication alloc]
+    initWithName:self.name
+    path:self.path
+    bundleID:self.bundleID
+    binary:self.binary];
 }
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  NSString *name = [coder decodeObjectForKey:NSStringFromSelector(@selector(name))];
+  NSString *path = [coder decodeObjectForKey:NSStringFromSelector(@selector(path))];
+  NSString *bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
+  FBSimulatorBinary *binary = [coder decodeObjectForKey:NSStringFromSelector(@selector(binary))];
+
+  return [[FBSimulatorApplication alloc]
+    initWithName:name
+    path:path
+    bundleID:bundleID
+    binary:binary];
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeObject:self.name forKey:NSStringFromSelector(@selector(name))];
+  [coder encodeObject:self.path forKey:NSStringFromSelector(@selector(path))];
+  [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
+  [coder encodeObject:self.binary forKey:NSStringFromSelector(@selector(binary))];
+}
+
+#pragma mark NSObject
 
 - (BOOL)isEqual:(FBSimulatorApplication *)object
 {
@@ -131,8 +197,8 @@
     return [[FBSimulatorError describe:@"Path is nil for Application"] fail:error];
   }
 
-  return [FBSimulatorApplication
-    withName:[self appNameForPath:path]
+  return [[FBSimulatorApplication alloc]
+    initWithName:[self appNameForPath:path]
     path:path
     bundleID:[self bundleIDForAppAtPath:path]
     binary:[self binaryForApplicationPath:path]];
@@ -250,10 +316,18 @@
 
 + (instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
-  return [FBSimulatorBinary
-    withName:[binaryPath lastPathComponent]
+  if (!binaryPath) {
+    return nil;
+  }
+  NSSet *archs = [self binaryArchitecturesForBinaryPath:binaryPath];
+  if (!archs) {
+    return nil;
+  }
+
+  return [[FBSimulatorBinary alloc]
+    initWithName:[binaryPath lastPathComponent]
     path:binaryPath
-    architectures:[self binaryArchitecturesForBinaryPath:binaryPath]];
+    architectures:archs];
 }
 
 + (NSSet *)binaryArchitecturesForBinaryPath:(NSString *)binaryPath

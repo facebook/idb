@@ -17,31 +17,65 @@
 
 @implementation FBProcessLaunchConfigurationTests
 
-- (void)testEqualityOfCopy
+- (FBSimulatorApplication *)application
 {
-  FBSimulatorApplication *application = [[FBSimulatorApplication simulatorSystemApplications] firstObject];
+  return [[FBSimulatorApplication simulatorSystemApplications] firstObject];
+}
 
-  FBApplicationLaunchConfiguration *appLaunchConfig = [FBApplicationLaunchConfiguration
-    configurationWithApplication:application
+- (FBApplicationLaunchConfiguration *)applicationLaunchConfiguration1
+{
+  return [FBApplicationLaunchConfiguration
+    configurationWithApplication:self.application
     arguments:@[@"FOOBAR"]
     environment:@{@"BING" : @"BAZ"}];
-  FBApplicationLaunchConfiguration *appLaunchConfigCopy = [appLaunchConfig copy];
+}
 
-  XCTAssertEqualObjects(appLaunchConfig.application, appLaunchConfigCopy.application);
-  XCTAssertEqualObjects(appLaunchConfig.arguments, appLaunchConfigCopy.arguments);
-  XCTAssertEqualObjects(appLaunchConfig.environment, appLaunchConfigCopy.environment);
-  XCTAssertEqualObjects(appLaunchConfig, appLaunchConfigCopy);
+- (FBAgentLaunchConfiguration *)agentLaunchConfiguration1
+{
+  return [FBAgentLaunchConfiguration
+   configurationWithBinary:self.application.binary
+   arguments:@[@"BINGBONG"]
+   environment:@{@"FIB" : @"BLE"}];
+}
 
-  FBAgentLaunchConfiguration *agentLaunchConfig = [FBAgentLaunchConfiguration
-    configurationWithBinary:application.binary
-    arguments:@[@"BINGBONG"]
-    environment:@{@"FIB" : @"BLE"}];
-  FBAgentLaunchConfiguration *agentLaunchConfigCopy = [agentLaunchConfig copy];
+- (void)testEqualityOfCopy
+{
+  FBApplicationLaunchConfiguration *appLaunch = [self.applicationLaunchConfiguration1 copy];
+  FBApplicationLaunchConfiguration *appLaunchCopy = [appLaunch copy];
 
-  XCTAssertEqualObjects(agentLaunchConfig.agentBinary, agentLaunchConfigCopy.agentBinary);
-  XCTAssertEqualObjects(agentLaunchConfig.arguments, agentLaunchConfigCopy.arguments);
-  XCTAssertEqualObjects(agentLaunchConfig.environment, agentLaunchConfigCopy.environment);
-  XCTAssertEqualObjects(agentLaunchConfig, agentLaunchConfigCopy);
+  XCTAssertEqualObjects(appLaunch.application, appLaunchCopy.application);
+  XCTAssertEqualObjects(appLaunch.arguments, appLaunchCopy.arguments);
+  XCTAssertEqualObjects(appLaunch.environment, appLaunchCopy.environment);
+  XCTAssertEqualObjects(appLaunch, appLaunchCopy);
+
+  FBAgentLaunchConfiguration *agentLaunch = self.agentLaunchConfiguration1;
+  FBAgentLaunchConfiguration *agentLaunchCopy = [agentLaunch copy];
+
+  XCTAssertEqualObjects(agentLaunch.agentBinary, agentLaunchCopy.agentBinary);
+  XCTAssertEqualObjects(agentLaunch.arguments, agentLaunchCopy.arguments);
+  XCTAssertEqualObjects(agentLaunch.environment, agentLaunchCopy.environment);
+  XCTAssertEqualObjects(agentLaunch, agentLaunchCopy);
+}
+
+- (void)testArchiving
+{
+  FBApplicationLaunchConfiguration *appLaunch = [self.applicationLaunchConfiguration1 copy];
+  NSData *appLaunchData = [NSKeyedArchiver archivedDataWithRootObject:appLaunch];
+  FBApplicationLaunchConfiguration *appLaunchUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:appLaunchData];
+
+  XCTAssertEqualObjects(appLaunch.application, appLaunchUnarchived.application);
+  XCTAssertEqualObjects(appLaunch.arguments, appLaunchUnarchived.arguments);
+  XCTAssertEqualObjects(appLaunch.environment, appLaunchUnarchived.environment);
+  XCTAssertEqualObjects(appLaunch, appLaunchUnarchived);
+
+  FBAgentLaunchConfiguration *agentLaunch = [self.agentLaunchConfiguration1 copy];
+  NSData *agentLaunchData = [NSKeyedArchiver archivedDataWithRootObject:agentLaunch];
+  FBAgentLaunchConfiguration *agentLaunchUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:agentLaunchData];
+
+  XCTAssertEqualObjects(agentLaunch.agentBinary, agentLaunchUnarchived.agentBinary);
+  XCTAssertEqualObjects(agentLaunch.arguments, agentLaunchUnarchived.arguments);
+  XCTAssertEqualObjects(agentLaunch.environment, agentLaunchUnarchived.environment);
+  XCTAssertEqualObjects(agentLaunch, agentLaunchUnarchived);
 }
 
 @end

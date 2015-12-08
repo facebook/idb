@@ -12,69 +12,89 @@
 /**
  Concrete value wrapper around a binary artifact.
  */
-@interface FBSimulatorBinary : NSObject<NSCopying>
+@interface FBSimulatorBinary : NSObject <NSCopying, NSCoding>
 
 /**
- Makes a Binary with the given parameters.
+ The Designated Initializer.
 
- @param name The name of the executable
- @param path The path to the executable.
- @param architectures The supported architectures of the executable.
+ @param name The name of the executable. Must not be nil.
+ @param path The path to the executable. Must not be nil.
+ @param architectures The supported architectures of the executable. Must not be nil.
  @returns a new FBSimulatorBinary instance.
+ */
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures;
+
+/**
+ An initializer for FBSimulatorBinary that checks the nullability of the arguments
+
+ @param name The name of the executable. May be nil.
+ @param path The path to the executable. May be nil.
+ @param architectures The supported architectures of the executable. May be nil.
+ @returns a new FBSimulatorBinary instance, if all arguments are non-nil.
  */
 + (instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures;
 
 /**
  The name of the executable.
  */
-@property (nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, copy, readonly) NSString *name;
 
 /**
  The path to the executable.
  */
-@property (nonatomic, readonly, copy) NSString *path;
+@property (nonatomic, copy, readonly) NSString *path;
 
 /**
  The supported architectures of the executable.
  */
-@property (nonatomic, readonly, copy) NSSet *architectures;
+@property (nonatomic, copy, readonly) NSSet *architectures;
 
 @end
 
 /**
  Concrete value wrapper around a Application artifact.
  */
-@interface FBSimulatorApplication : NSObject<NSCopying>
+@interface FBSimulatorApplication : NSObject <NSCopying, NSCoding>
 
 /**
- Make an Application with the given parameters.
+ The Designated Initializer.
 
- @param path The Path to the Application Bundle.
- @param bundleID the Bundle ID of the Application.
- @param binary the Path to the binary inside the Application.
+ @param path The Path to the Application Bundle. Must not be nil.
+ @param bundleID the Bundle ID of the Application. Must not be nil.
+ @param binary the Path to the binary inside the Application. Must not be nil.
  @returns a new FBSimulatorApplication instance.
+ */
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary;
+
+/**
+ An initializer for FBSimulatorApplication that checks the nullability of the arguments
+
+ @param path The Path to the Application Bundle. May be nil.
+ @param bundleID the Bundle ID of the Application. May be nil.
+ @param binary the Path to the binary inside the Application. May be nil.
+ @returns a new FBSimulatorApplication instance, if all arguments are non-nil.
  */
 + (instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary;
 
 /**
  The name of the Application.
  */
-@property (nonatomic, readonly, copy) NSString *name;
+@property (nonatomic, copy, readonly) NSString *name;
 
 /**
  The path to the Application.
  */
-@property (nonatomic, readonly, copy) NSString *path;
+@property (nonatomic, copy, readonly) NSString *path;
 
 /**
  The Bundle Identifier of the app, i.e. com.Facebook for Wilde.
  */
-@property (nonatomic, readonly, copy) NSString *bundleID;
+@property (nonatomic, copy, readonly) NSString *bundleID;
 
 /**
  The Binary contained within the Application
  */
-@property (nonatomic, readonly, copy) FBSimulatorBinary *binary;
+@property (nonatomic, copy, readonly) FBSimulatorBinary *binary;
 
 @end
 

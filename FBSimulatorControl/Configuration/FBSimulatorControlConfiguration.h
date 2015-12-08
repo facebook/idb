@@ -30,7 +30,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
 /**
  A Value object with the information required to create a Simulator Pool.
  */
-@interface FBSimulatorControlConfiguration : NSObject<NSCopying>
+@interface FBSimulatorControlConfiguration : NSObject <NSCopying, NSCoding>
 
 /**
  Creates and returns a new Configuration with the provided parameters.
@@ -39,9 +39,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
  @param options the options for Simulator Management.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication
-                                        deviceSetPath:(NSString *)deviceSetPath
-                                              options:(FBSimulatorManagementOptions)options;
++ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication deviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options;
 
 /**
  The FBSimulatorApplication for the Simulator.app.

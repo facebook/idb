@@ -16,7 +16,7 @@
 /**
  An abstract value object for launching both agents and applications
  */
-@interface FBProcessLaunchConfiguration : NSObject<NSCopying>
+@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding>
 
 /**
  An NSArray<NSString *> of arguments to the process.
