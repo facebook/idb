@@ -12,6 +12,24 @@
 
 #import "FBSimulatorControlStaticConfiguration.h"
 
+@implementation FBSimulatorConfigurationVariant_Base
+
+- (instancetype)initWithCoder:(NSCoder *)aDecoder
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)aCoder
+{
+  
+}
+
+@end
+
 @implementation FBSimulatorConfigurationNamedDevice_iPhone4s
 
 - (NSString *)deviceName
@@ -239,14 +257,25 @@
 
 @implementation FBSimulatorConfiguration
 
-- (instancetype)copyWithZone:(NSZone *)zone
+#pragma mark Initializers
+
+- (instancetype)initWithNamedDevice:(id<FBSimulatorConfigurationNamedDevice>)namedDevice osVersion:(id<FBSimulatorConfigurationOSVersion>)osVersion locale:(NSLocale *)locale scale:(id<FBSimulatorConfigurationScale>)scale
 {
-  FBSimulatorConfiguration *configuration = [self.class new];
-  configuration.namedDevice = self.namedDevice;
-  configuration.osVersion = self.osVersion;
-  configuration.locale = self.locale;
-  configuration.scale = self.scale;
-  return configuration;
+  NSParameterAssert(namedDevice);
+  NSParameterAssert(osVersion);
+  NSParameterAssert(scale);
+
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _namedDevice = namedDevice;
+  _osVersion = osVersion;
+  _locale = locale;
+  _scale = scale;
+
+  return self;
 }
 
 + (instancetype)defaultConfiguration
@@ -260,6 +289,42 @@
     configuration.scale = [FBSimulatorConfigurationScale_50 new];
   });
   return configuration;
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return [[self.class alloc]
+    initWithNamedDevice:self.namedDevice
+    osVersion:self.osVersion
+    locale:self.locale
+    scale:self.scale];
+}
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _namedDevice = [coder decodeObjectForKey:NSStringFromSelector(@selector(namedDevice))];
+  _osVersion = [coder decodeObjectForKey:NSStringFromSelector(@selector(osVersion))];
+  _locale = [coder decodeObjectForKey:NSStringFromSelector(@selector(locale))];
+  _scale = [coder decodeObjectForKey:NSStringFromSelector(@selector(scale))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeObject:self.namedDevice forKey:NSStringFromSelector(@selector(namedDevice))];
+  [coder encodeObject:self.osVersion forKey:NSStringFromSelector(@selector(osVersion))];
+  [coder encodeObject:self.locale forKey:NSStringFromSelector(@selector(locale))];
+  [coder encodeObject:self.scale forKey:NSStringFromSelector(@selector(scale))];
 }
 
 #pragma mark Accessors

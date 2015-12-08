@@ -15,40 +15,44 @@
 
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone4s : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationVariant_Base : NSObject <NSCoding>
+
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone5 : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPhone4s : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone5s : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPhone5 : FBSimulatorConfigurationVariant_Base<FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6 : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPhone5s : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6Plus : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPhone6 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6S : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPhone6Plus : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6SPlus : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPhone6S : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPad2 : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPhone6SPlus : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadRetina : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPad2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadAir : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPadRetina : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadAir2 : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPadAir : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadPro : NSObject<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfigurationNamedDevice_iPadAir2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@end
+
+@interface FBSimulatorConfigurationNamedDevice_iPadPro : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
 @end
 
 @protocol FBSimulatorConfigurationOSVersion <NSObject>
@@ -57,31 +61,31 @@
 
 @end
 
-@interface FBSimulatorConfigurationOSVersion_7_1 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_7_1 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_0 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_8_0 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_1 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_8_1 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_2 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_8_2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_3 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_8_3 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_4 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_8_4 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_9_0 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_9_0 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_9_1 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_9_1 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_9_2 : NSObject<FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfigurationOSVersion_9_2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
 @end
 
 @protocol FBSimulatorConfigurationScale <NSObject>
@@ -90,16 +94,16 @@
 
 @end
 
-@interface FBSimulatorConfigurationScale_25 : NSObject<FBSimulatorConfigurationScale>
+@interface FBSimulatorConfigurationScale_25 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
 @end
 
-@interface FBSimulatorConfigurationScale_50 : NSObject<FBSimulatorConfigurationScale>
+@interface FBSimulatorConfigurationScale_50 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
 @end
 
-@interface FBSimulatorConfigurationScale_75 : NSObject<FBSimulatorConfigurationScale>
+@interface FBSimulatorConfigurationScale_75 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
 @end
 
-@interface FBSimulatorConfigurationScale_100 : NSObject<FBSimulatorConfigurationScale>
+@interface FBSimulatorConfigurationScale_100 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
 @end
 
 @interface FBSimulatorConfiguration ()

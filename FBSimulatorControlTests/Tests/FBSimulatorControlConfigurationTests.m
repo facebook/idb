@@ -17,19 +17,35 @@
 
 @implementation FBSimulatorControlConfigurationTests
 
-- (void)testEqualityOfCopy
+- (FBSimulatorControlConfiguration *)configuration
 {
   FBSimulatorApplication *application = [FBSimulatorApplication simulatorApplicationWithError:nil];
 
-  FBSimulatorControlConfiguration *config = [FBSimulatorControlConfiguration
+  return [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:application
     deviceSetPath:nil
     options:FBSimulatorManagementOptionsEraseOnFree];
+}
+
+- (void)testEqualityOfCopy
+{
+  FBSimulatorControlConfiguration *config = self.configuration;
   FBSimulatorControlConfiguration *configCopy = [config copy];
 
   XCTAssertEqualObjects(config.simulatorApplication, configCopy.simulatorApplication);
   XCTAssertEqual(config.options, configCopy.options);
   XCTAssertEqualObjects(config, configCopy);
+}
+
+- (void)testUnarchiving
+{
+  FBSimulatorControlConfiguration *config = self.configuration;
+  NSData *configData = [NSKeyedArchiver archivedDataWithRootObject:config];
+  FBSimulatorControlConfiguration *configUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:configData];
+
+  XCTAssertEqualObjects(config.simulatorApplication, configUnarchived.simulatorApplication);
+  XCTAssertEqual(config.options, configUnarchived.options);
+  XCTAssertEqualObjects(config, configUnarchived);
 }
 
 @end

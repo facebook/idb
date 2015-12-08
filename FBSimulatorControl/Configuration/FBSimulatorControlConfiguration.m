@@ -23,18 +23,33 @@ NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
 
 @implementation FBSimulatorControlConfiguration
 
-+ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication
-                                        deviceSetPath:(NSString *)deviceSetPath
-                                              options:(FBSimulatorManagementOptions)options
+#pragma mark Initializers
+
++ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication deviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options
+{
+  if (!simulatorApplication) {
+    return nil;
+  }
+  return [[self alloc] initWithSimulatorApplication:simulatorApplication deviceSetPath:deviceSetPath options:options];
+}
+
+- (instancetype)initWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication deviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options
 {
   NSParameterAssert(simulatorApplication);
 
-  FBSimulatorControlConfiguration *configuration = [self new];
-  configuration.simulatorApplication = simulatorApplication;
-  configuration.deviceSetPath = deviceSetPath;
-  configuration.options = options;
-  return configuration;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _simulatorApplication = simulatorApplication;
+  _deviceSetPath = deviceSetPath;
+  _options = options;
+
+  return self;
 }
+
+#pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
@@ -43,6 +58,31 @@ NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
     deviceSetPath:self.deviceSetPath
     options:self.options];
 }
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _simulatorApplication = [coder decodeObjectForKey:NSStringFromSelector(@selector(simulatorApplication))];
+  _deviceSetPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(deviceSetPath))];
+  _options = [[coder decodeObjectForKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeObject:self.simulatorApplication forKey:NSStringFromSelector(@selector(simulatorApplication))];
+  [coder encodeObject:self.deviceSetPath forKey:NSStringFromSelector(@selector(deviceSetPath))];
+  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
+}
+
+#pragma mark NSObject
 
 - (NSUInteger)hash
 {
