@@ -70,7 +70,7 @@
     configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
     deviceSetPath:nil
     options:0];
-  self.pool = [FBSimulatorPool poolWithConfiguration:poolConfig deviceSet:(id)deviceSet];
+  self.pool = [[FBSimulatorPool alloc] initWithConfiguration:poolConfig deviceSet:(id)deviceSet];
 
   return deviceSet.availableDevices;
 }

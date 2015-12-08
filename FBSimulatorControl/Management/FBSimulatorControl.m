@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorControl+Private.h"
+#import "FBSimulatorControl+Class.h"
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
@@ -34,14 +34,10 @@
 
 #pragma mark - Initializers
 
-+ (instancetype)sharedInstanceWithConfiguration:(FBSimulatorControlConfiguration *)configuration
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration
 {
-  static dispatch_once_t onceToken;
-  static FBSimulatorControl *simulatorControl;
-  dispatch_once(&onceToken, ^{
-    simulatorControl = [[self alloc] initWithConfiguration:configuration];
-  });
-  return simulatorControl;
+  [FBSimulatorControl doGlobalPreconditions];
+  return [[FBSimulatorControl alloc] initWithConfiguration:configuration];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration
@@ -52,13 +48,8 @@
   }
 
   _configuration = configuration;
-  _simulatorPool = [FBSimulatorControl poolForConfiguration:configuration];
+  _simulatorPool = [FBSimulatorPool poolWithConfiguration:configuration];
   return self;
-}
-
-- (void)dealloc
-{
-  [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 #pragma mark - Public Methods
@@ -68,10 +59,6 @@
   NSParameterAssert(simulatorConfiguration);
 
   NSError *innerError = nil;
-  if (![self firstRunPreconditionsWithError:&innerError]) {
-    return [FBSimulatorError failWithError:innerError description:@"Failed to meet first run preconditions" errorOut:error];
-  }
-
   FBSimulator *simulator = [self.simulatorPool
     allocateSimulatorWithConfiguration:simulatorConfiguration
     error:&innerError];
@@ -84,61 +71,15 @@
 
 #pragma mark - Private Methods
 
-- (BOOL)firstRunPreconditionsWithError:(NSError **)error
++ (void)doGlobalPreconditions
 {
-  if (self.hasRunOnce) {
-    return YES;
+  static BOOL hasRunOnce = NO;
+  if (!hasRunOnce) {
+    return;
   }
 
   NSError *innerError = nil;
-  if (![DVTPlatform loadAllPlatformsReturningError:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to load DVTPlatform" errorOut:error];
-  }
-
-  BOOL killSpuriousCoreSimulatorServices = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
-  if (killSpuriousCoreSimulatorServices) {
-    if (![self.simulatorPool.terminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
-      return [[[FBSimulatorError describe:@"Failed to kill spurious CoreSimulatorServices"] causedBy:innerError] failBool:error];
-    }
-  }
-
-  if (self.configuration.deviceSetPath != nil) {
-    if (![NSFileManager.defaultManager createDirectoryAtPath:self.configuration.deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", self.configuration.deviceSetPath] causedBy:innerError] failBool:error];
-    }
-  }
-
-  BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
-  NSArray *result = deleteOnStart
-    ? [self.simulatorPool deleteAllWithError:&innerError]
-    : [self.simulatorPool killAllWithError:&innerError];
-
-  if (!result) {
-    return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
-  }
-
-  BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
-  if (killSpuriousSimulators) {
-    BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-    if (![self.simulatorPool.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
-      return [[[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] recursiveDescription] failBool:error];
-    }
-  }
-
-  self.hasRunOnce = YES;
-  return YES;
-}
-
-+ (FBSimulatorPool *)poolForConfiguration:(FBSimulatorControlConfiguration *)configuration
-{
-  return [FBSimulatorPool poolWithConfiguration:configuration deviceSet:[self deviceSetForConfiguration:configuration]];
-}
-
-+ (SimDeviceSet *)deviceSetForConfiguration:(FBSimulatorControlConfiguration *)configuration
-{
-  return configuration.deviceSetPath
-    ? [SimDeviceSet setForSetPath:configuration.deviceSetPath]
-    : SimDeviceSet.defaultSet;
+  NSAssert([DVTPlatform loadAllPlatformsReturningError:&innerError], @"Failed to load platforms will error %@", innerError);
 }
 
 @end
