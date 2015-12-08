@@ -25,6 +25,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
   FBSimulatorManagementOptionsEraseOnFree = 1 << 5,
   FBSimulatorManagementOptionsUseProcessKilling = 1 << 6,
   FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices = 1 << 7,
+  FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance = 1 << 8,
 };
 
 /**

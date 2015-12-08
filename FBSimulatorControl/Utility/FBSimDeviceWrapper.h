@@ -11,10 +11,11 @@
 
 @protocol FBProcessInfo;
 @class SimDevice;
+@class FBSimulatorControlConfiguration;
 @class FBProcessQuery;
 
 /**
- Augments SimDevice.
+ Augments SimDevice with Process Info and the ability for a custom timeout.
  */
 @interface FBSimDeviceWrapper : NSObject
 
@@ -22,10 +23,11 @@
  Creates a SimDevice Wrapper.
 
  @param device the device to wrap
+ @param configuration the Simulator Control Configuration.
  @param processQuery the Process Query to obtain process information.
  @return a new SimDevice wrapper.
  */
-+ (instancetype)withSimDevice:(SimDevice *)device processQuery:(FBProcessQuery *)processQuery;
++ (instancetype)withSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery;
 
 /**
  Boots an Application, timing out if CoreSimulator gets stuck in a semaphore.

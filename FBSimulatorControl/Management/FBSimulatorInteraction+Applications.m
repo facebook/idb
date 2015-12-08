@@ -21,6 +21,7 @@
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator.h"
+#import "FBSimulatorPool.h"
 #import "FBProcessInfo.h"
 
 @implementation FBSimulatorInteraction (Applications)
@@ -33,7 +34,7 @@
 
   return [self interact:^ BOOL (NSError **error, id _) {
     NSError *innerError = nil;
-    FBSimDeviceWrapper *wrapper = [FBSimDeviceWrapper withSimDevice:simulator.device processQuery:simulator.processQuery];
+    FBSimDeviceWrapper *wrapper = [FBSimDeviceWrapper withSimDevice:simulator.device configuration:simulator.pool.configuration processQuery:simulator.processQuery];
     if (![wrapper installApplication:[NSURL fileURLWithPath:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
       return [[[FBSimulatorError describeFormat:@"Failed to install Application %@", application] causedBy:innerError] failBool:error];
     }
@@ -74,7 +75,7 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    FBSimDeviceWrapper *wrapper = [FBSimDeviceWrapper withSimDevice:simulator.device processQuery:simulator.processQuery];
+    FBSimDeviceWrapper *wrapper = [FBSimDeviceWrapper withSimDevice:simulator.device configuration:simulator.pool.configuration processQuery:simulator.processQuery];
     id<FBProcessInfo> process = [wrapper launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
     if (!process) {
       return [[[[FBSimulatorError describeFormat:@"Failed to launch application %@", appLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];

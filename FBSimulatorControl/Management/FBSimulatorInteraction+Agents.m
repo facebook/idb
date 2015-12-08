@@ -20,6 +20,7 @@
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
+#import "FBSimulatorPool.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBProcessInfo.h"
 #import "FBSimulatorError.h"
@@ -46,7 +47,7 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    id<FBProcessInfo> process = [[FBSimDeviceWrapper withSimDevice:simulator.device processQuery:simulator.processQuery]
+    id<FBProcessInfo> process = [[FBSimDeviceWrapper withSimDevice:simulator.device configuration:simulator.pool.configuration processQuery:simulator.processQuery]
       spawnWithPath:agentLaunch.agentBinary.path
       options:options
       terminationHandler:NULL
