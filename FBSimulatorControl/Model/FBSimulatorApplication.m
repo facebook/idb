@@ -206,17 +206,23 @@
   return [[appPath lastPathComponent] stringByDeletingPathExtension];
 }
 
++ (NSString *)binaryNameForAppAtPath:(NSString *)appPath
+{
+  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:[self infoPlistPathForAppAtPath:appPath]];
+  return infoPlist[@"CFBundleExecutable"];
+}
+
 + (NSString *)binaryPathForAppAtPath:(NSString *)appPath
 {
-  NSString *appName = [self appNameForPath:appPath];
-  NSString *binaryPathIOS = [appPath stringByAppendingPathComponent:appName];
+  NSString *binaryName = [self binaryNameForAppAtPath:appPath];
+  NSString *binaryPathIOS = [appPath stringByAppendingPathComponent:binaryName];
   if ([NSFileManager.defaultManager fileExistsAtPath:binaryPathIOS]) {
     return binaryPathIOS;
   }
 
   NSString *binaryPathMacOS = [[appPath
     stringByAppendingPathComponent:@"Contents/MacOS"]
-    stringByAppendingPathComponent:appName];
+    stringByAppendingPathComponent:binaryName];
   if ([NSFileManager.defaultManager fileExistsAtPath:binaryPathMacOS]) {
     return binaryPathMacOS;
   }
