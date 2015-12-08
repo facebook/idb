@@ -14,35 +14,26 @@
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorControlConfiguration.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
-const long kFBSimDeviceCommandTimeout = 30;
+const long SimDeviceDefaultTimeout = 60;
+const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 
 @interface FBSimDeviceWrapper ()
 
 @property (nonatomic, strong, readonly) SimDevice *device;
 @property (nonatomic, strong, readonly) FBProcessQuery *query;
 
+- (id<FBProcessInfo>)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error;
+
 @end
 
-@implementation FBSimDeviceWrapper
+@interface FBSimDeviceWrapper_TimeoutResiliance : FBSimDeviceWrapper
 
-+ (instancetype)withSimDevice:(SimDevice *)device processQuery:(FBProcessQuery *)processQuery
-{
-  return [[self alloc] initWithSimDevice:device processQuery:processQuery];
-}
+@end
 
-- (instancetype)initWithSimDevice:(SimDevice *)device processQuery:(FBProcessQuery *)query
-{
-  if (!(self = [self init])) {
-    return nil;
-  }
-
-  _device = device;
-  _query = query;
-
-  return self;
-}
+@implementation FBSimDeviceWrapper_TimeoutResiliance
 
 - (BOOL)runInvocationInBackgroundUntilTimeout:(NSInvocation *)invocation
 {
@@ -55,7 +46,7 @@ const long kFBSimDeviceCommandTimeout = 30;
   [newInvocation setArgument:&semaphore atIndex:3];
   [NSThread detachNewThreadSelector:@selector(invoke) toTarget:newInvocation withObject:nil];
 
-  return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, kFBSimDeviceCommandTimeout * NSEC_PER_SEC)) == 0;
+  return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, SimDeviceDefaultTimeout * NSEC_PER_SEC)) == 0;
 }
 
 - (void)runInvocation:(NSInvocation *)invocation withSemaphore:(dispatch_semaphore_t)semaphore
@@ -106,10 +97,47 @@ const long kFBSimDeviceCommandTimeout = 30;
   return rv;
 }
 
+@end
+
+@implementation FBSimDeviceWrapper
+
+#pragma mark Initializers
+
++ (instancetype)withSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery
+{
+  BOOL timeoutResiliance = (configuration.options & FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance) == FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance;
+  return timeoutResiliance
+    ? [[FBSimDeviceWrapper_TimeoutResiliance alloc] initWithSimDevice:device processQuery:processQuery]
+    : [[FBSimDeviceWrapper alloc] initWithSimDevice:device processQuery:processQuery];
+}
+
+- (instancetype)initWithSimDevice:(SimDevice *)device processQuery:(FBProcessQuery *)query
+{
+  if (!(self = [self init])) {
+    return nil;
+  }
+
+  _device = device;
+  _query = query;
+
+  return self;
+}
+
+#pragma mark Public
+
+- (id<FBProcessInfo>)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
+{
+  return [self processInfoForProcessIdentifier:[self.device launchApplicationWithID:appID options:options error:error] error:error];
+}
+
+- (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error
+{
+  return [self.device installApplication:appURL withOptions:options error:error];
+}
+
 - (id<FBProcessInfo>)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error
 {
-  pid_t processIdentifier = [self.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error];
-  return [self processInfoForProcessIdentifier:processIdentifier error:error];
+  return [self processInfoForProcessIdentifier:[self.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
 }
 
 #pragma mark Private
@@ -120,7 +148,7 @@ const long kFBSimDeviceCommandTimeout = 30;
     return nil;
   }
 
-  id<FBProcessInfo> processInfo = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:5 untilExists:^ id<FBProcessInfo> {
+  id<FBProcessInfo> processInfo = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:ProcessInfoAvailabilityTimeout untilExists:^ id<FBProcessInfo> {
     return [self.query processInfoFor:processIdentifier];
   }];
   if (!processInfo) {
