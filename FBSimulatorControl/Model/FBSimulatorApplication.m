@@ -340,9 +340,10 @@
 
 + (instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
-  NSSet *archs = [self binaryArchitecturesForBinaryPath:binaryPath];
+  NSError *innerError = nil;
+  NSSet *archs = [self binaryArchitecturesForBinaryPath:binaryPath error:&innerError];
   if (archs.count < 1) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain archs for binary %@", binaryPath] fail:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   return [[FBSimulatorBinary alloc]
@@ -356,21 +357,26 @@
   return binaryPath.lastPathComponent;
 }
 
-+ (NSSet *)binaryArchitecturesForBinaryPath:(NSString *)binaryPath
++ (NSSet *)binaryArchitecturesForBinaryPath:(NSString *)binaryPath error:(NSError **)error
 {
-  NSString *fileOutput = [[[FBTaskExecutor.sharedInstance
+  // It would be better to use lipo(1) or read the Mach-O header.
+  id<FBTask> task = [[FBTaskExecutor.sharedInstance
     taskWithLaunchPath:@"/usr/bin/file" arguments:@[binaryPath]]
-    startSynchronouslyWithTimeout:30]
-    stdOut];
+    startSynchronouslyWithTimeout:30];
 
-  NSArray *matches = [self.fileArchRegex
-    matchesInString:fileOutput
-    options:(NSMatchingOptions)0
-    range:NSMakeRange(0, fileOutput.length)];
+  if (task.error) {
+    return [[[FBSimulatorError describeFormat:@"Could not obtain archs for binary %@", binaryPath] causedBy:task.error] fail:error];
+  }
+
+  NSString *fileOutput = task.stdOut;
+  NSArray *matches = [self.fileArchRegex matchesInString:fileOutput options:(NSMatchingOptions)0 range:NSMakeRange(0, fileOutput.length)];
 
   NSMutableArray *architectures = [NSMutableArray array];
   for (NSTextCheckingResult *result in matches) {
     [architectures addObject:[fileOutput substringWithRange:[result rangeAtIndex:1]]];
+  }
+  if (architectures.count < 1) {
+    return [[[FBSimulatorError describeFormat:@"Arch output does not contain archs %@", fileOutput] causedBy:task.error] fail:error];
   }
 
   return [NSSet setWithArray:architectures];
