@@ -15,7 +15,6 @@
 @class FBSimulator;
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
-@class FBSimulatorSessionLifecycle;
 
 /**
  Interactions for FBSimulator Instances.

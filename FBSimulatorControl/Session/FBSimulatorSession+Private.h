@@ -12,8 +12,6 @@
 #import <FBSimulatorControl/FBSimulatorHistoryGenerator.h>
 #import <FBSimulatorControl/FBSimulatorSession.h>
 
-@class FBSimulatorSessionLifecycle;
-
 @interface FBSimulatorSession ()
 
 @property (nonatomic, strong, readwrite) FBSimulator *simulator;
