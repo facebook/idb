@@ -25,13 +25,13 @@
 @interface FBSimulatorPool : NSObject
 
 /**
- Creates and returns an FBSimulatorPool with the provided deviceSet.
+ Creates and returns an FBSimulatorPool.
 
  @param configuration the configuration to use.
- @param deviceSet the SimDeviceSet to Manage.
+ @param error any error that occurred during the creation of the pool.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet;
++ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 
 /**
  Returns the configuration for the reciever.
@@ -50,11 +50,6 @@
  Returns the Simulator Termination Strategy associated with the reciever.
  */
 @property (nonatomic, strong, readonly) FBSimulatorTerminationStrategy *terminationStrategy;
-
-/**
- Returns a device matching the UDID, if one exists.
- */
-- (FBSimulator *)simulatorWithUDID:(NSString *)udidString;
 
 /**
  Returns a Device for the given parameters. Will create devices where necessary.
@@ -76,31 +71,6 @@
  @returns YES if the freeing of the device was successful, NO otherwise.
  */
 - (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error;
-
-/**
- Kills all of the Simulators the reciever's Device Set.
-
- @param error an error out if any error occured.
- @returns an array of the Simulators that this were killed if successful, nil otherwise.
- */
-- (NSArray *)killAllWithError:(NSError **)error;
-
-/**
- Erases the Simulators that this Pool is responsible for.
- Kills them first to ensure they are in a steady state.
-
- @param error an error out if any error occured.
- @returns an array of the Simulators that this Pool is responsible if successful, nil otherwise.
- */
-- (NSArray *)eraseAllWithError:(NSError **)error;
-
-/**
- Delete all of the Simulators Managed by this Pool, killing them first.
-
- @param error an error out if any error occured.
- @returns an Array of the names of the Simulators that were deleted if successful, nil otherwise.
- */
-- (NSArray *)deleteAllWithError:(NSError **)error;
 
 @end
 

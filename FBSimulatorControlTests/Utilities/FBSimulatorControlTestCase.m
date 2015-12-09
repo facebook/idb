@@ -12,7 +12,6 @@
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorControl+Private.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
@@ -36,7 +35,9 @@
       deviceSetPath:self.deviceSetPath
       options:self.managementOptions];
 
-    _control = [[FBSimulatorControl alloc] initWithConfiguration:configuration];
+    NSError *error;
+    _control = [FBSimulatorControl withConfiguration:configuration error:&error];
+    XCTAssertNotNil(_control, @"Failed to create create control with error %@", error);
   }
   return _control;
 }

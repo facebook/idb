@@ -38,9 +38,19 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 #pragma mark - Initializers
 
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet
++ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
-  return [[self alloc] initWithConfiguration:configuration deviceSet:deviceSet];
+  NSError *innerError = nil;
+  SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration error:&innerError];
+  if (!deviceSet) {
+    return [[[FBSimulatorError describe:@"Failed to create device set"] causedBy:innerError] fail:error];
+  }
+
+  FBSimulatorPool *pool = [[FBSimulatorPool alloc] initWithConfiguration:configuration deviceSet:deviceSet];
+  if (![pool performPoolPreconditionsWithError:&innerError]) {
+    return [[[FBSimulatorError describe:@"Failed meet pool preconditions"] causedBy:innerError] fail:error];
+  }
+  return pool;
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet
@@ -51,12 +61,59 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   _configuration = configuration;
-  _deviceSet = deviceSet;
   _allocatedUDIDs = [NSMutableOrderedSet new];
   _inflatedSimulators = [NSMutableDictionary dictionary];
   _processQuery = [FBProcessQuery new];
+  _deviceSet = deviceSet;
 
   return self;
+}
+
+
++ (SimDeviceSet *)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
+{
+  NSString *deviceSetPath = configuration.deviceSetPath;
+  NSError *innerError = nil;
+  if (deviceSetPath != nil) {
+    if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+      return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath] causedBy:innerError] fail:error];
+    }
+  }
+
+  return deviceSetPath
+    ? [SimDeviceSet setForSetPath:configuration.deviceSetPath]
+    : [SimDeviceSet defaultSet];
+}
+
+- (BOOL)performPoolPreconditionsWithError:(NSError **)error
+{
+  NSError *innerError = nil;
+  BOOL killSpuriousCoreSimulatorServices = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
+  if (killSpuriousCoreSimulatorServices) {
+    if (![self.terminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
+      return [[[FBSimulatorError describe:@"Failed to kill spurious CoreSimulatorServices"] causedBy:innerError] failBool:error];
+    }
+  }
+
+
+  BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
+  NSArray *result = deleteOnStart
+    ? [self deleteAllWithError:&innerError]
+    : [self killAllWithError:&innerError];
+
+  if (!result) {
+    return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+  }
+
+  BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
+  if (killSpuriousSimulators) {
+    BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
+    if (![self.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
+      return [[[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+    }
+  }
+
+  return YES;
 }
 
 #pragma mark - Public Accessors
@@ -90,17 +147,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 }
 
 #pragma mark - Public Methods
-
-- (FBSimulator *)simulatorWithUDID:(NSString *)udidString
-{
-  NSParameterAssert(udidString);
-  for (FBSimulator *simulator in self.deviceSet.availableDevices) {
-    if ([simulator.udid isEqualToString:udidString]) {
-      return simulator;
-    }
-  }
-  return nil;
-}
 
 - (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
@@ -154,11 +200,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
   return [self.terminationStrategy killSpuriousSimulatorsWithError:error];
-}
-
-- (NSArray *)eraseAllWithError:(NSError **)error
-{
-  return [self eraseSimulators:self.allSimulators withError:error];
 }
 
 - (NSArray *)deleteAllWithError:(NSError **)error

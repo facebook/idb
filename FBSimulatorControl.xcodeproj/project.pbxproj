@@ -50,7 +50,6 @@
 		AA4877221BAC74B9007F7D23 /* FBSimulator+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876D51BAC74B9007F7D23 /* FBSimulator+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA4877251BAC74B9007F7D23 /* FBSimulator.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876D81BAC74B9007F7D23 /* FBSimulator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA4877261BAC74B9007F7D23 /* FBSimulator.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4876D91BAC74B9007F7D23 /* FBSimulator.m */; };
-		AA4877271BAC74B9007F7D23 /* FBSimulatorControl+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876DA1BAC74B9007F7D23 /* FBSimulatorControl+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA4877291BAC74B9007F7D23 /* FBSimulatorControl.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4876DC1BAC74B9007F7D23 /* FBSimulatorControl.m */; };
 		AA48772D1BAC74B9007F7D23 /* FBSimulatorPool+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876E01BAC74B9007F7D23 /* FBSimulatorPool+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA48772E1BAC74B9007F7D23 /* FBSimulatorPool.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4876E11BAC74B9007F7D23 /* FBSimulatorPool.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -242,7 +241,6 @@
 		AA4876D51BAC74B9007F7D23 /* FBSimulator+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulator+Private.h"; sourceTree = "<group>"; };
 		AA4876D81BAC74B9007F7D23 /* FBSimulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulator.h; sourceTree = "<group>"; };
 		AA4876D91BAC74B9007F7D23 /* FBSimulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulator.m; sourceTree = "<group>"; };
-		AA4876DA1BAC74B9007F7D23 /* FBSimulatorControl+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorControl+Private.h"; sourceTree = "<group>"; };
 		AA4876DC1BAC74B9007F7D23 /* FBSimulatorControl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControl.m; sourceTree = "<group>"; };
 		AA4876E01BAC74B9007F7D23 /* FBSimulatorPool+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorPool+Private.h"; sourceTree = "<group>"; };
 		AA4876E11BAC74B9007F7D23 /* FBSimulatorPool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorPool.h; sourceTree = "<group>"; };
@@ -1009,7 +1007,6 @@
 				AA4876D51BAC74B9007F7D23 /* FBSimulator+Private.h */,
 				AA4876DC1BAC74B9007F7D23 /* FBSimulatorControl.m */,
 				AADF65901BFF39E2000E3CDE /* FBSimulatorControl+Class.h */,
-				AA4876DA1BAC74B9007F7D23 /* FBSimulatorControl+Private.h */,
 				AAFA3E761C0F692A00489A83 /* FBSimulatorInteraction.h */,
 				AAFA3E771C0F692A00489A83 /* FBSimulatorInteraction.m */,
 				AAFA3E781C0F692A00489A83 /* FBSimulatorInteraction+Agents.h */,
@@ -1876,7 +1873,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAE415411C08D15500D40B31 /* FBSimulatorLaunchInfo.h in Headers */,
-				AA4877271BAC74B9007F7D23 /* FBSimulatorControl+Private.h in Headers */,
 				AA7B7BB51BDA4B9100CD028C /* FBSimulatorLogs+Private.h in Headers */,
 				AA48771E1BAC74B9007F7D23 /* FBSimulatorControlConfiguration.h in Headers */,
 				AA48774C1BAC74B9007F7D23 /* FBTask+Private.h in Headers */,

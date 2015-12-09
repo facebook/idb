@@ -19,4 +19,24 @@
 @property (nonatomic, strong, readonly) NSMutableOrderedSet *allocatedUDIDs;
 @property (nonatomic, strong, readonly) NSMutableDictionary *inflatedSimulators;
 
+@property (nonatomic, copy, readwrite) NSError *firstRunError;
+
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet;
+
+/**
+ Kills all of the Simulators the reciever's Device Set.
+
+ @param error an error out if any error occured.
+ @returns an array of the Simulators that this were killed if successful, nil otherwise.
+ */
+- (NSArray *)killAllWithError:(NSError **)error;
+
+/**
+ Delete all of the Simulators Managed by this Pool, killing them first.
+
+ @param error an error out if any error occured.
+ @returns an Array of the names of the Simulators that were deleted if successful, nil otherwise.
+ */
+- (NSArray *)deleteAllWithError:(NSError **)error;
+
 @end

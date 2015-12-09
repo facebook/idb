@@ -16,18 +16,18 @@
 @class FBSimulatorSession;
 
 /**
- An Abstraction over the mechanics of creating, launching and cleaning-up Simulators.
- Currently only manages one Simulator.
+ The Root Class for the FBSimulatorControl Framework.
  */
 @interface FBSimulatorControl : NSObject
 
 /**
- Returns the Singleton `FBSimulatorControl` instance. Takes a Mandatory bucket id in setup.
+ Returns a new `FBSimulatorControl` instance.
 
  @param configuration the Configuration to setup the instance with.
- @returns a shared instance with the first configuration.
+ @param error any error that occurred during instantiation.
+ @returns a new FBSimulatorControl instance.
  */
-+ (instancetype)sharedInstanceWithConfiguration:(FBSimulatorControlConfiguration *)configuration;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 
 /**
  Creates and returns a new FBSimulatorSession instance. Does not launch the Simulator or any Applications.
@@ -38,6 +38,14 @@
  */
 - (FBSimulatorSession *)createSessionForSimulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration error:(NSError **)error;
 
-@property (nonatomic, readonly) FBSimulatorPool *simulatorPool;
+/**
+ The Pool that the FBSimulatorControl instance uses.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorPool *simulatorPool;
+
+/**
+ The Configuration that FBSimulatorControl uses.
+ */
+@property (nonatomic, copy, readwrite) FBSimulatorControlConfiguration *configuration;
 
 @end
