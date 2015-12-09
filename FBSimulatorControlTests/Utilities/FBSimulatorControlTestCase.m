@@ -35,7 +35,9 @@
       deviceSetPath:self.deviceSetPath
       options:self.managementOptions];
 
-    _control = [FBSimulatorControl withConfiguration:configuration];
+    NSError *error;
+    _control = [FBSimulatorControl withConfiguration:configuration error:&error];
+    XCTAssertNotNil(_control, @"Failed to create create control with error %@", error);
   }
   return _control;
 }

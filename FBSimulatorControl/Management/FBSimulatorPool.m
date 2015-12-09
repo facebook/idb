@@ -16,8 +16,6 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import <objc/runtime.h>
-
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
@@ -36,21 +34,23 @@
 
 static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
-@interface FBSimulatorPool_Invalid : FBSimulatorPool
-
-@end
-
-@interface FBSimulatorPool_Unprepared : FBSimulatorPool
-
-@end
-
 @implementation FBSimulatorPool
 
 #pragma mark - Initializers
 
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration
++ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
-  return [[FBSimulatorPool_Unprepared alloc] initWithConfiguration:configuration deviceSet:nil];
+  NSError *innerError = nil;
+  SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration error:&innerError];
+  if (!deviceSet) {
+    return [[[FBSimulatorError describe:@"Failed to create device set"] causedBy:innerError] fail:error];
+  }
+
+  FBSimulatorPool *pool = [[FBSimulatorPool alloc] initWithConfiguration:configuration deviceSet:deviceSet];
+  if (![pool performPoolPreconditionsWithError:&innerError]) {
+    return [[[FBSimulatorError describe:@"Failed meet pool preconditions"] causedBy:innerError] fail:error];
+  }
+  return pool;
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet
@@ -67,6 +67,53 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   _deviceSet = deviceSet;
 
   return self;
+}
+
+
++ (SimDeviceSet *)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
+{
+  NSString *deviceSetPath = configuration.deviceSetPath;
+  NSError *innerError = nil;
+  if (deviceSetPath != nil) {
+    if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+      return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath] causedBy:innerError] fail:error];
+    }
+  }
+
+  return deviceSetPath
+    ? [SimDeviceSet setForSetPath:configuration.deviceSetPath]
+    : [SimDeviceSet defaultSet];
+}
+
+- (BOOL)performPoolPreconditionsWithError:(NSError **)error
+{
+  NSError *innerError = nil;
+  BOOL killSpuriousCoreSimulatorServices = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
+  if (killSpuriousCoreSimulatorServices) {
+    if (![self.terminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
+      return [[[FBSimulatorError describe:@"Failed to kill spurious CoreSimulatorServices"] causedBy:innerError] failBool:error];
+    }
+  }
+
+
+  BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
+  NSArray *result = deleteOnStart
+    ? [self deleteAllWithError:&innerError]
+    : [self killAllWithError:&innerError];
+
+  if (!result) {
+    return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+  }
+
+  BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
+  if (killSpuriousSimulators) {
+    BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
+    if (![self.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
+      return [[[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+    }
+  }
+
+  return YES;
 }
 
 #pragma mark - Public Accessors
@@ -376,93 +423,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-lf", @"Simulator"]]
     startSynchronouslyWithTimeout:8]
     stdOut];
-}
-
-@end
-
-@implementation FBSimulatorPool_Invalid
-
-- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
-{
-  return [[[FBSimulatorError describe:@"Failed to meet pool preconditions"] causedBy:nil] fail:error];
-}
-
-- (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error
-{
-  return [[[FBSimulatorError describe:@"Failed to meet pool preconditions"] causedBy:nil] failBool:error];
-}
-
-@end
-
-@implementation FBSimulatorPool_Unprepared
-
-- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
-{
-  if (![self doPoolPreconditionsWithError:error]) {
-    return nil;
-  }
-  return [self allocateSimulatorWithConfiguration:configuration error:error];
-}
-
-- (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error
-{
-  if (![self poolPreconditionsWithError:error]) {
-    return NO;
-  }
-  return [self freeSimulator:simulator error:error];
-}
-
-- (BOOL)doPoolPreconditionsWithError:(NSError **)error
-{
-  NSError *innerError = nil;
-  if (![self poolPreconditionsWithError:&innerError]) {
-    self.firstRunError = innerError;
-    object_setClass(self, FBSimulatorPool_Invalid.class);
-    return [[[FBSimulatorError describe:@"Failed to meet pool preconditions"] causedBy:innerError] failBool:error];
-  }
-
-  object_setClass(self, FBSimulatorPool.class);
-  return YES;
-}
-
-- (BOOL)poolPreconditionsWithError:(NSError **)error
-{
-  NSError *innerError = nil;
-
-  BOOL killSpuriousCoreSimulatorServices = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
-  if (killSpuriousCoreSimulatorServices) {
-    if (![self.terminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
-      return [[[FBSimulatorError describe:@"Failed to kill spurious CoreSimulatorServices"] causedBy:innerError] failBool:error];
-    }
-  }
-
-  if (self.configuration.deviceSetPath != nil) {
-    if (![NSFileManager.defaultManager createDirectoryAtPath:self.configuration.deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", self.configuration.deviceSetPath] causedBy:innerError] failBool:error];
-    }
-    self.deviceSet = [SimDeviceSet setForSetPath:self.configuration.deviceSetPath];
-  } else {
-    self.deviceSet = [SimDeviceSet defaultSet];
-  }
-
-  BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
-  NSArray *result = deleteOnStart
-  ? [self deleteAllWithError:&innerError]
-  : [self killAllWithError:&innerError];
-
-  if (!result) {
-    return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
-  }
-
-  BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
-  if (killSpuriousSimulators) {
-    BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-    if (![self.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
-      return [[[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] recursiveDescription] failBool:error];
-    }
-  }
-
-  return YES;
 }
 
 @end

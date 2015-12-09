@@ -34,13 +34,15 @@
 
 #pragma mark - Initializers
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
-  [FBSimulatorControl doGlobalPreconditions];
-  return [[FBSimulatorControl alloc] initWithConfiguration:configuration];
+  if (![FBSimulatorControl doGlobalPreconditionsWithError:error]) {
+    return nil;
+  }
+  return [[FBSimulatorControl alloc] initWithConfiguration:configuration error:error];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
   self = [super init];
   if (!self) {
@@ -48,7 +50,7 @@
   }
 
   _configuration = configuration;
-  _simulatorPool = [FBSimulatorPool poolWithConfiguration:configuration];
+  _simulatorPool = [FBSimulatorPool poolWithConfiguration:configuration error:error];
   return self;
 }
 
@@ -71,15 +73,18 @@
 
 #pragma mark - Private Methods
 
-+ (void)doGlobalPreconditions
++ (BOOL)doGlobalPreconditionsWithError:(NSError **)error
 {
   static BOOL hasRunOnce = NO;
   if (!hasRunOnce) {
-    return;
+    return YES;
   }
 
   NSError *innerError = nil;
-  NSAssert([DVTPlatform loadAllPlatformsReturningError:&innerError], @"Failed to load platforms will error %@", innerError);
+  if (![DVTPlatform loadAllPlatformsReturningError:&innerError]) {
+    return [[[FBSimulatorError describe:@"Failed to Load all platforms"] causedBy:innerError] failBool:error];
+  }
+  return YES;
 }
 
 @end

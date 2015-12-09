@@ -25,12 +25,13 @@
 @interface FBSimulatorPool : NSObject
 
 /**
- Creates and returns an FBSimulatorPool with the provided deviceSet.
+ Creates and returns an FBSimulatorPool.
 
  @param configuration the configuration to use.
+ @param error any error that occurred during the creation of the pool.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration;
++ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 
 /**
  Returns the configuration for the reciever.

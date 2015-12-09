@@ -13,7 +13,7 @@
 
 @interface FBSimulatorPool ()
 
-@property (nonatomic, strong, readwrite) SimDeviceSet *deviceSet;
+@property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
 @property (nonatomic, strong, readonly) NSMutableOrderedSet *allocatedUDIDs;

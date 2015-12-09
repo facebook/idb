@@ -24,9 +24,10 @@
  Returns a new `FBSimulatorControl` instance.
 
  @param configuration the Configuration to setup the instance with.
+ @param error any error that occurred during instantiation.
  @returns a new FBSimulatorControl instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 
 /**
  Creates and returns a new FBSimulatorSession instance. Does not launch the Simulator or any Applications.
