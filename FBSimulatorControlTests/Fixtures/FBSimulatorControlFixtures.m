@@ -49,7 +49,9 @@
 
 - (FBSimulatorApplication *)safariApplication
 {
-  FBSimulatorApplication *application = [FBSimulatorApplication systemApplicationNamed:@"MobileSafari"];
+  NSError *error = nil;
+  FBSimulatorApplication *application = [FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:&error];
+  XCTAssertNil(error);
   XCTAssertNotNil(application, @"Could not fetch MobileSafari");
   return application;
 }

@@ -86,15 +86,19 @@ static NSTimeInterval const UploadVideoDefaultWait = 15.0;
     NSArray *subpaths = [fileManager subpathsOfDirectoryAtPath:dcimPath error:&innerError];
     if (!subpaths) {
       return [[[FBSimulatorError describeFormat:@"Couldn't read DCIM directory at path %@", dcimPath]
-               causedBy:innerError]
-              failBool:error];
+        causedBy:innerError]
+        failBool:error];
     }
     [subpaths filteredArrayUsingPredicate:[self.class predicateForVideoFiles]];
   });
 
   NSString *joinedPaths = [videoPaths componentsJoinedByString:@":"];
 
-  FBSimulatorApplication *photosApp = [FBSimulatorApplication systemApplicationNamed:@"MobileSlideShow"];
+  NSError *innerError = nil;
+  FBSimulatorApplication *photosApp = [FBSimulatorApplication systemApplicationNamed:@"MobileSlideShow" error:&innerError];
+  if (!photosApp) {
+    return [[[FBSimulatorError describe:@"Could not get the MobileSlideShow App"] causedBy:innerError] failBool:error];
+  }
 
   FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration
     configurationWithApplication:photosApp
@@ -102,27 +106,19 @@ static NSTimeInterval const UploadVideoDefaultWait = 15.0;
     environment:@{@"SHIMULATOR_UPLOAD_VIDEO" : joinedPaths}]
     injectingShimulator];
 
-  {
-    NSError *innerError = nil;
-    if (![[simulator.interact launchApplication:appLaunch] performInteractionWithError:&innerError]) {
-      return [[[FBSimulatorError describe:@"Couldn't launch MobileSlideShow to upload videos"]
-        causedBy:innerError]
-        failBool:error];
-    }
+  if (![[simulator.interact launchApplication:appLaunch] performInteractionWithError:&innerError]) {
+    return [[[FBSimulatorError describe:@"Couldn't launch MobileSlideShow to upload videos"] causedBy:innerError]
+      failBool:error];
   }
 
-  const BOOL success = [self.class waitUntilFileCount:videoPaths.count
-                                     addedToDirectory:dcimPath
-                                        previousCount:dcimPaths.count
-                                                error:error];
+  BOOL success = [self.class
+    waitUntilFileCount:videoPaths.count
+    addedToDirectory:dcimPath
+    previousCount:dcimPaths.count
+    error:error];
 
-  {
-    NSError *innerError = nil;
-    if (![[simulator.interact killApplication:photosApp] performInteractionWithError:nil]) {
-      return [[[FBSimulatorError describe:@"Couldn't kill MobileSlideShow after uploading videos"]
-        causedBy:innerError]
-        failBool:error];
-    }
+  if (![[simulator.interact killApplication:photosApp] performInteractionWithError:nil]) {
+    return [[[FBSimulatorError describe:@"Couldn't kill MobileSlideShow after uploading videos"] causedBy:innerError] failBool:error];
   }
 
   return success;

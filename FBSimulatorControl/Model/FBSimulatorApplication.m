@@ -241,34 +241,43 @@
   return application;
 }
 
-+ (NSArray *)simulatorSystemApplications;
++ (instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
 {
-  static dispatch_once_t onceToken;
-  static NSArray *applications;
-  dispatch_once(&onceToken, ^{
-    NSString *systemAppsDirectory = [FBSimulatorControlStaticConfiguration.developerDirectory
-      stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"];
-
-    NSMutableArray *fullPaths = [NSMutableArray array];
-    for (NSString *contentPath in [NSFileManager.defaultManager contentsOfDirectoryAtPath:systemAppsDirectory error:nil]) {
-      [fullPaths addObject:[systemAppsDirectory stringByAppendingPathComponent:contentPath]];
-    }
-    applications = [self simulatorApplicationsFromPaths:fullPaths];
-  });
-  return applications;
-}
-
-+ (instancetype)systemApplicationNamed:(NSString *)appName
-{
-  for (FBSimulatorApplication *application in self.simulatorSystemApplications) {
-    if ([application.name isEqual:appName]) {
-      return application;
-    }
+  NSMutableDictionary *applicationCache = self.applicationCache;
+  NSString *path = [self pathForSystemApplicationNamed:appName];
+  FBSimulatorApplication *application = applicationCache[path];
+  if (application) {
+    return application;
   }
-  return nil;
+
+  NSError *innerError = nil;
+  application = [FBSimulatorApplication applicationWithPath:path error:&innerError];
+  if (!application) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+  applicationCache[path] = application;
+  return application;
 }
 
 #pragma mark Private
+
++ (NSString *)pathForSystemApplicationNamed:(NSString *)name
+{
+  return [[[FBSimulatorControlStaticConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"]
+    stringByAppendingPathComponent:name]
+    stringByAppendingPathExtension:@"app"];
+}
+
++ (NSMutableDictionary *)applicationCache
+{
+  static dispatch_once_t onceToken;
+  static NSMutableDictionary *cache;
+  dispatch_once(&onceToken, ^{
+    cache = [NSMutableDictionary dictionary];
+  });
+  return cache;
+}
 
 + (FBSimulatorBinary *)binaryForApplicationPath:(NSString *)applicationPath error:(NSError **)error
 {

@@ -19,11 +19,6 @@
 
 @implementation FBProcessLaunchConfigurationTests
 
-- (FBSimulatorApplication *)application
-{
-  return [[FBSimulatorApplication simulatorSystemApplications] firstObject];
-}
-
 - (void)testEqualityOfCopy
 {
   FBApplicationLaunchConfiguration *appLaunch = self.appLaunch1;

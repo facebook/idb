@@ -99,7 +99,7 @@
 @end
 
 /**
- Conveniences for building FBSimulatorApplication instances
+ Conveniences for building FBSimulatorApplication instances.
  */
 @interface FBSimulatorApplication (Helpers)
 
@@ -113,14 +113,6 @@
 + (instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
 
 /**
- Constructing FBSimulatorApplication instances can be expensive, this method can be used to construct them in parallel.
-
- @param paths an Array of File Paths to build FBSimulatorApplication instances for.
- @returns an array of FBSimulatorApplication instances from the paths, NSNull.null for instances that could not be constructed.
- */
-+ (NSArray *)simulatorApplicationsFromPaths:(NSArray *)paths;
-
-/**
  Returns the FBSimulatorApplication for the current version of Xcode's Simulator.app
 
  @param error an error out.
@@ -128,17 +120,13 @@
 + (instancetype)simulatorApplicationWithError:(NSError **)error;
 
 /**
- Returns all of the FBSimulatorApplications for the System Applications on the Simulator
- */
-+ (NSArray *)simulatorSystemApplications;
-
-/**
  Returns the System Application with the provided name.
 
  @param appName the System Application to fetch.
+ @param error any error that occurred in fetching the application.
  @returns FBSimulatorApplication instance if one could for the given name could be found, nil otherwise.
  */
-+ (instancetype)systemApplicationNamed:(NSString *)appName;
++ (instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error;
 
 @end
 
