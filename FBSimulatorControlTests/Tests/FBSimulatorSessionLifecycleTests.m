@@ -13,6 +13,7 @@
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
+#import "FBSimulatorControlFixtures.h"
 
 @interface FBSimulatorSessionLifecycleTests : FBSimulatorControlTestCase
 
@@ -23,11 +24,7 @@
 - (void)testNotifiedByUnexpectedApplicationTermination
 {
   FBSimulatorSession *session = [self createSession];
-
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
-    arguments:@[]
-    environment:@{}];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
   [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
@@ -66,11 +63,7 @@
 - (void)testNotifiedByExpectedApplicationTermination
 {
   FBSimulatorSession *session = [self createSession];
-
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
-    arguments:@[]
-    environment:@{}];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
   [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 

@@ -196,12 +196,21 @@
   if (!path) {
     return [[FBSimulatorError describe:@"Path is nil for Application"] fail:error];
   }
+  NSString *appName = [self appNameForPath:path];
+  if (!appName) {
+    return [[FBSimulatorError describeFormat:@"Could not obtain app name for path %@", path] fail:error];
+  }
+  NSString *bundleID = [self bundleIDForAppAtPath:path];
+  if (!bundleID) {
+    return [[FBSimulatorError describeFormat:@"Could not obtain Bundle ID for app at path %@", path] fail:error];
+  }
+  NSError *innerError = nil;
+  FBSimulatorBinary *binary = [self binaryForApplicationPath:path error:&innerError];
+  if (!binary) {
+    return [[[FBSimulatorError describeFormat:@"Could not obtain binary for app at path %@", path] causedBy:innerError] fail:error];
+  }
 
-  return [[FBSimulatorApplication alloc]
-    initWithName:[self appNameForPath:path]
-    path:path
-    bundleID:[self bundleIDForAppAtPath:path]
-    binary:[self binaryForApplicationPath:path]];
+  return [[FBSimulatorApplication alloc] initWithName:appName path:path bundleID:bundleID binary:binary];
 }
 
 + (NSArray *)simulatorApplicationsFromPaths:(NSArray *)paths
@@ -261,10 +270,19 @@
 
 #pragma mark Private
 
-+ (FBSimulatorBinary *)binaryForApplicationPath:(NSString *)applicationPath
++ (FBSimulatorBinary *)binaryForApplicationPath:(NSString *)applicationPath error:(NSError **)error
 {
   NSString *binaryPath = [self binaryPathForAppAtPath:applicationPath];
-  return [FBSimulatorBinary binaryWithPath:binaryPath error:nil];
+  if (!binaryPath) {
+    return [[FBSimulatorError describeFormat:@"Could not obtain binary path for application at path %@", applicationPath] fail:error];
+  }
+
+  NSError *innerError = nil;
+  FBSimulatorBinary *binary = [FBSimulatorBinary binaryWithPath:binaryPath error:&innerError];
+  if (!binary) {
+    return [[[FBSimulatorError describeFormat:@"Could not obtain binary info for binary at path %@", binaryPath] causedBy:innerError] fail:error];
+  }
+  return binary;
 }
 
 + (NSString *)appNameForPath:(NSString *)appPath
@@ -322,18 +340,20 @@
 
 + (instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
-  if (!binaryPath) {
-    return nil;
-  }
   NSSet *archs = [self binaryArchitecturesForBinaryPath:binaryPath];
-  if (!archs) {
-    return nil;
+  if (archs.count < 1) {
+    return [[FBSimulatorError describeFormat:@"Could not obtain archs for binary %@", binaryPath] fail:error];
   }
 
   return [[FBSimulatorBinary alloc]
-    initWithName:[binaryPath lastPathComponent]
+    initWithName:[self binaryNameForBinaryPath:binaryPath]
     path:binaryPath
     architectures:archs];
+}
+
++ (NSString *)binaryNameForBinaryPath:(NSString *)binaryPath
+{
+  return binaryPath.lastPathComponent;
 }
 
 + (NSSet *)binaryArchitecturesForBinaryPath:(NSString *)binaryPath

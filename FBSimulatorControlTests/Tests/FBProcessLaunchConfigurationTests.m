@@ -11,6 +11,8 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+#include "FBSimulatorControlFixtures.h"
+
 @interface FBProcessLaunchConfigurationTests : XCTestCase
 
 @end
@@ -22,25 +24,9 @@
   return [[FBSimulatorApplication simulatorSystemApplications] firstObject];
 }
 
-- (FBApplicationLaunchConfiguration *)applicationLaunchConfiguration1
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.application
-    arguments:@[@"FOOBAR"]
-    environment:@{@"BING" : @"BAZ"}];
-}
-
-- (FBAgentLaunchConfiguration *)agentLaunchConfiguration1
-{
-  return [FBAgentLaunchConfiguration
-   configurationWithBinary:self.application.binary
-   arguments:@[@"BINGBONG"]
-   environment:@{@"FIB" : @"BLE"}];
-}
-
 - (void)testEqualityOfCopy
 {
-  FBApplicationLaunchConfiguration *appLaunch = [self.applicationLaunchConfiguration1 copy];
+  FBApplicationLaunchConfiguration *appLaunch = self.appLaunch1;
   FBApplicationLaunchConfiguration *appLaunchCopy = [appLaunch copy];
 
   XCTAssertEqualObjects(appLaunch.application, appLaunchCopy.application);
@@ -48,7 +34,7 @@
   XCTAssertEqualObjects(appLaunch.environment, appLaunchCopy.environment);
   XCTAssertEqualObjects(appLaunch, appLaunchCopy);
 
-  FBAgentLaunchConfiguration *agentLaunch = self.agentLaunchConfiguration1;
+  FBAgentLaunchConfiguration *agentLaunch = self.agentLaunch1;
   FBAgentLaunchConfiguration *agentLaunchCopy = [agentLaunch copy];
 
   XCTAssertEqualObjects(agentLaunch.agentBinary, agentLaunchCopy.agentBinary);
@@ -59,7 +45,7 @@
 
 - (void)testArchiving
 {
-  FBApplicationLaunchConfiguration *appLaunch = [self.applicationLaunchConfiguration1 copy];
+  FBApplicationLaunchConfiguration *appLaunch = self.appLaunch1;
   NSData *appLaunchData = [NSKeyedArchiver archivedDataWithRootObject:appLaunch];
   FBApplicationLaunchConfiguration *appLaunchUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:appLaunchData];
 
@@ -68,7 +54,7 @@
   XCTAssertEqualObjects(appLaunch.environment, appLaunchUnarchived.environment);
   XCTAssertEqualObjects(appLaunch, appLaunchUnarchived);
 
-  FBAgentLaunchConfiguration *agentLaunch = [self.agentLaunchConfiguration1 copy];
+  FBAgentLaunchConfiguration *agentLaunch = self.agentLaunch1;
   NSData *agentLaunchData = [NSKeyedArchiver archivedDataWithRootObject:agentLaunch];
   FBAgentLaunchConfiguration *agentLaunchUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:agentLaunchData];
 

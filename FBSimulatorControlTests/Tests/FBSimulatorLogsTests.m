@@ -39,7 +39,8 @@
 - (void)testAppCrashLogIsFetched
 {
   FBSimulatorSession *session = [self createBootedSession];
-  FBApplicationLaunchConfiguration *appLaunch = [[FBSimulatorControlFixtures.tableSearchAppLaunch
+  FBApplicationLaunchConfiguration *appLaunch = [[[self
+    tableSearchAppLaunch]
     injectingShimulator]
     withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
   [self.assert interactionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
@@ -63,7 +64,7 @@
 - (void)flakyOnTravis_testLaunchedApplicationLogs
 {
   FBSimulatorSession *session = [self createBootedSession];
-  FBApplicationLaunchConfiguration *appLaunch = FBSimulatorControlFixtures.tableSearchAppLaunch.injectingShimulator;
+  FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
   [self.assert interactionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
 
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
