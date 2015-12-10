@@ -13,7 +13,7 @@
 #import "FBSimulatorApplication.h"
 #import "FBTaskExecutor.h"
 
-NSString *const FBSimulatorControlSimulatorLaunchEnvironmentMagic = @"__IS_THIS_TRULY_MAGIC__";
+NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
 
 @implementation FBSimulatorControlStaticConfiguration
 

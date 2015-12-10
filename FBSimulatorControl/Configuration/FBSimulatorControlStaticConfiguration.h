@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentMagic;
+extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
 
 /**
  Environment Globals & other derived constants
