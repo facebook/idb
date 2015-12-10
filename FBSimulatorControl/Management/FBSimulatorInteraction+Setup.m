@@ -8,14 +8,14 @@
  */
 
 #import "FBSimulatorInteraction+Setup.h"
-#import "FBSimulatorInteraction+Private.h"
-#import "FBInteraction+Private.h"
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBInteraction+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorInteraction+Private.h"
 
 @implementation FBSimulatorInteraction (Setup)
 

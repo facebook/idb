@@ -11,10 +11,10 @@
 
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorInteraction+Agents.h"
+#import "FBSimulatorInteraction+Applications.h"
 #import "FBSimulatorInteraction+Diagnostics.h"
 #import "FBSimulatorSessionState+Queries.h"
-#import "FBSimulatorInteraction+Applications.h"
-#import "FBSimulatorInteraction+Agents.h"
 
 @implementation FBSimulatorSession (Convenience)
 

@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBSimulatorControlConfiguration;
 @class FBProcessQuery;
+@class FBSimulatorControlConfiguration;
 
 /**
  A class for terminating Simulators.

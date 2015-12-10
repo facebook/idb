@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -40,7 +38,7 @@
 
 /**
  Fetches the Process Info for a given Simulator.
- 
+
  @param simDevice the Simulator to fetch Process Info for.
  @return Process Info if any could be obtained, nil otherwise.
  */

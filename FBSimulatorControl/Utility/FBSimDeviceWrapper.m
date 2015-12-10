@@ -13,8 +13,8 @@
 
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
-#import "FBSimulatorError.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorError.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 const long SimDeviceDefaultTimeout = 60;
@@ -46,7 +46,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
   [newInvocation setArgument:&semaphore atIndex:3];
   [NSThread detachNewThreadSelector:@selector(invoke) toTarget:newInvocation withObject:nil];
 
-  return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, SimDeviceDefaultTimeout * NSEC_PER_SEC)) == 0;
+  return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, SimDeviceDefaultTimeout *NSEC_PER_SEC)) == 0;
 }
 
 - (void)runInvocation:(NSInvocation *)invocation withSemaphore:(dispatch_semaphore_t)semaphore

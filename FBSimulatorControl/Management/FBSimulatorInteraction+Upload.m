@@ -8,18 +8,18 @@
  */
 
 #import "FBSimulatorInteraction+Upload.h"
-#import "FBSimulatorInteraction+Private.h"
-#import "FBInteraction+Private.h"
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBSimulator.h"
-#import "FBSimulatorError.h"
-#import "FBSimulatorSession.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorInteraction+Convenience.h"
-#import "FBSimulatorInteraction+Applications.h"
+#import "FBInteraction+Private.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
+#import "FBSimulator.h"
+#import "FBSimulatorApplication.h"
+#import "FBSimulatorError.h"
+#import "FBSimulatorInteraction+Applications.h"
+#import "FBSimulatorInteraction+Convenience.h"
+#import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorSession.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 static NSTimeInterval const UploadVideoDefaultWait = 15.0;
@@ -139,7 +139,7 @@ static NSTimeInterval const UploadVideoDefaultWait = 15.0;
   if (!success) {
     return [[[FBSimulatorError describeFormat:@"Failed to upload videos"] causedBy:innerError] failBool:error];
   }
-  
+
   return YES;
 }
 

@@ -8,22 +8,22 @@
  */
 
 #import "FBSimulatorInteraction+Agents.h"
-#import "FBSimulatorInteraction+Private.h"
-#import "FBInteraction+Private.h"
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBSimulatorApplication.h"
-#import "FBProcessQuery.h"
+#import "FBInteraction+Private.h"
+#import "FBProcessInfo.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBProcessLaunchConfiguration.h"
-#import "FBSimulatorSessionLifecycle.h"
-#import "FBSimulator.h"
-#import "FBSimulator+Private.h"
-#import "FBSimulatorPool.h"
+#import "FBProcessQuery.h"
 #import "FBSimDeviceWrapper.h"
-#import "FBProcessInfo.h"
+#import "FBSimulator+Private.h"
+#import "FBSimulator.h"
+#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorPool.h"
+#import "FBSimulatorSessionLifecycle.h"
 
 @implementation FBSimulatorInteraction (Agents)
 

@@ -11,14 +11,14 @@
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorSessionState+Private.h"
 
-#import "FBSimulator.h"
 #import "FBSimulator+Private.h"
+#import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLogs.h"
 #import "FBSimulatorInteraction.h"
+#import "FBSimulatorLogs.h"
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulatorSessionState.h"
 

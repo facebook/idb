@@ -8,14 +8,14 @@
  */
 
 #import "FBSimulatorInteraction+Video.h"
-#import "FBSimulatorInteraction+Private.h"
-#import "FBInteraction+Private.h"
 
+#import "FBInteraction+Private.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorWindowTiler.h"
-#import "FBSimulatorVideoRecorder.h"
-#import "FBSimulatorWindowTilingStrategy.h"
+#import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorSessionLifecycle.h"
+#import "FBSimulatorVideoRecorder.h"
+#import "FBSimulatorWindowTiler.h"
+#import "FBSimulatorWindowTilingStrategy.h"
 
 @implementation FBSimulatorInteraction (Video)
 

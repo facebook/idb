@@ -10,9 +10,9 @@
 #import <Foundation/Foundation.h>
 
 @protocol FBProcessInfo;
-@class SimDevice;
-@class FBSimulatorControlConfiguration;
 @class FBProcessQuery;
+@class FBSimulatorControlConfiguration;
+@class SimDevice;
 
 /**
  Augments SimDevice with Process Info and the ability for a custom timeout.

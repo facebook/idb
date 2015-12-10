@@ -11,10 +11,9 @@
 
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorSession.h"
-#import "FBSimulatorInteraction+Private.h"
-#import "FBSimulatorInteraction+Diagnostics.h"
 #import "FBSimulatorSessionLifecycle.h"
 #import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
