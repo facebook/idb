@@ -193,6 +193,54 @@
 
 + (instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
 {
+  NSMutableDictionary *applicationCache = self.applicationCache;
+  FBSimulatorApplication *application = applicationCache[path];
+  if (application) {
+    return application;
+  }
+
+  NSError *innerError = nil;
+  application = [FBSimulatorApplication createApplicationWithPath:path error:&innerError];
+  if (!application) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+  applicationCache[path] = application;
+  return application;
+}
+
++ (instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
+{
+  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] error:error];
+}
+
++ (instancetype)simulatorApplicationWithError:(NSError **)error
+{
+  return [self applicationWithPath:self.pathForSimulatorApplication error:error];
+}
+
+#pragma mark Private
+
++ (NSString *)pathForSimulatorApplication
+{
+  NSString *simulatorBinaryName = [FBSimulatorControlStaticConfiguration.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
+    ? @"Simulator"
+    : @"iOS Simulator";
+
+  return [[FBSimulatorControlStaticConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Applications"]
+    stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
+}
+
++ (NSString *)pathForSystemApplicationNamed:(NSString *)name
+{
+  return [[[FBSimulatorControlStaticConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"]
+    stringByAppendingPathComponent:name]
+    stringByAppendingPathExtension:@"app"];
+}
+
++ (instancetype)createApplicationWithPath:(NSString *)path error:(NSError **)error;
+{
   if (!path) {
     return [[FBSimulatorError describe:@"Path is nil for Application"] fail:error];
   }
@@ -211,62 +259,6 @@
   }
 
   return [[FBSimulatorApplication alloc] initWithName:appName path:path bundleID:bundleID binary:binary];
-}
-
-+ (NSArray *)simulatorApplicationsFromPaths:(NSArray *)paths
-{
-  return [FBConcurrentCollectionOperations
-    generate:paths.count
-    withBlock:^ FBSimulatorApplication * (NSUInteger index) {
-      return [FBSimulatorApplication applicationWithPath:paths[index] error:nil];
-    }];
-}
-
-+ (instancetype)simulatorApplicationWithError:(NSError **)error
-{
-  NSString *simulatorBinaryName = [FBSimulatorControlStaticConfiguration.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
-    ? @"Simulator"
-    : @"iOS Simulator";
-
-  NSString *appPath = [[FBSimulatorControlStaticConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"Applications"]
-    stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
-
-  NSError *innerError = nil;
-  FBSimulatorApplication *application = [self applicationWithPath:appPath error:&innerError];
-  if (!application) {
-    NSString *message = [NSString stringWithFormat:@"Could not locate Simulator Application at %@", appPath];
-    return [FBSimulatorError failWithError:innerError description:message errorOut:error];
-  }
-  return application;
-}
-
-+ (instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
-{
-  NSMutableDictionary *applicationCache = self.applicationCache;
-  NSString *path = [self pathForSystemApplicationNamed:appName];
-  FBSimulatorApplication *application = applicationCache[path];
-  if (application) {
-    return application;
-  }
-
-  NSError *innerError = nil;
-  application = [FBSimulatorApplication applicationWithPath:path error:&innerError];
-  if (!application) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-  applicationCache[path] = application;
-  return application;
-}
-
-#pragma mark Private
-
-+ (NSString *)pathForSystemApplicationNamed:(NSString *)name
-{
-  return [[[FBSimulatorControlStaticConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"]
-    stringByAppendingPathComponent:name]
-    stringByAppendingPathExtension:@"app"];
 }
 
 + (NSMutableDictionary *)applicationCache
@@ -308,18 +300,19 @@
 + (NSString *)binaryPathForAppAtPath:(NSString *)appPath
 {
   NSString *binaryName = [self binaryNameForAppAtPath:appPath];
-  NSString *binaryPathIOS = [appPath stringByAppendingPathComponent:binaryName];
-  if ([NSFileManager.defaultManager fileExistsAtPath:binaryPathIOS]) {
-    return binaryPathIOS;
+  if (!binaryName) {
+    return nil;
   }
+  NSArray *paths = @[
+    [appPath stringByAppendingPathComponent:binaryName],
+    [[appPath stringByAppendingPathComponent:@"Contents/MacOS"] stringByAppendingPathComponent:binaryName]
+  ];
 
-  NSString *binaryPathMacOS = [[appPath
-    stringByAppendingPathComponent:@"Contents/MacOS"]
-    stringByAppendingPathComponent:binaryName];
-  if ([NSFileManager.defaultManager fileExistsAtPath:binaryPathMacOS]) {
-    return binaryPathMacOS;
+  for (NSString *path in paths) {
+    if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
+      return path;
+    }
   }
-
   return nil;
 }
 
@@ -331,14 +324,15 @@
 
 + (NSString *)infoPlistPathForAppAtPath:(NSString *)appPath
 {
-  NSString *plistPath = [appPath stringByAppendingPathComponent:@"info.plist"];
-  if ([NSFileManager.defaultManager fileExistsAtPath:plistPath]) {
-    return plistPath;
-  }
+  NSArray *paths = @[
+    [appPath stringByAppendingPathComponent:@"info.plist"],
+    [[appPath stringByAppendingPathComponent:@"Contents"] stringByAppendingPathComponent:@"Info.plist"]
+  ];
 
-  plistPath = [[appPath stringByAppendingPathComponent:@"Contents"] stringByAppendingPathComponent:@"Info.plist"];
-  if ([NSFileManager.defaultManager fileExistsAtPath:plistPath]) {
-    return plistPath;
+  for (NSString *path in paths) {
+    if ([NSFileManager.defaultManager fileExistsAtPath:path]) {
+      return path;
+    }
   }
   return nil;
 }
