@@ -71,17 +71,15 @@
   // since other processes could have launched with UDID arguments.
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
     NSSet *argumentSet = [NSSet setWithArray:process.environment.allKeys];
-    return [argumentSet containsObject:FBSimulatorControlSimulatorLaunchEnvironmentMagic];
+    return [argumentSet containsObject:FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
   }];
 }
 
 + (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray *)udids
 {
-  NSSet *udidSet = [NSSet setWithArray:udids];
-
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBProcessInfo> process, NSDictionary *_) {
-    NSSet *argumentSet = [NSSet setWithArray:process.arguments];
-    return [udidSet intersectsSet:argumentSet];
+    NSString *UDID = process.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
+    return (UDID && [udids containsObject:UDID]);
   }];
 }
 

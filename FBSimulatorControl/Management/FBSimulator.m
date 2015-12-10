@@ -21,6 +21,7 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorLogs.h"
@@ -260,9 +261,10 @@ NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateN
   }
 
   NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  id<FBProcessInfo> processInfo = [self.processQuery processInfoFor:launchedApplication.processIdentifier];
-  NSSet *arguments = [NSSet setWithArray:processInfo.arguments];
-  if (![arguments containsObject:self.udid]) {
+  id<FBProcessInfo> processInfo = [self.processQuery processInfoFor:launchedApplication.processIdentifier];  
+  NSString *UDID = processInfo.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
+  const BOOL isSimulatorPreparedWithSimCtl = (UDID && [self.udid isEqualToString:UDID]);
+  if (!isSimulatorPreparedWithSimCtl) {
     return;
   }
 

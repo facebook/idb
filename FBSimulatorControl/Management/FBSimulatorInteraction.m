@@ -59,7 +59,7 @@
     id<FBTask> task = [[[[FBTaskExecutor.sharedInstance
       withLaunchPath:simulator.simulatorApplication.binary.path]
       withArguments:[arguments copy]]
-      withEnvironmentAdditions:@{FBSimulatorControlSimulatorLaunchEnvironmentMagic : @"YES"}]
+      withEnvironmentAdditions:@{FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID : simulator.udid}]
       build];
 
     [lifecycle simulatorWillStart:simulator];
