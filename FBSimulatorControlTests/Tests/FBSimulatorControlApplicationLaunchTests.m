@@ -38,7 +38,7 @@
   [self.assert noNotificationsToConsume];
 }
 
-- (void)testLaunchesSampleApplication
+- (void)flakyOnTravis_testLaunchesSampleApplication
 {
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
