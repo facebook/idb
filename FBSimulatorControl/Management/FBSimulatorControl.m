@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import "FBSimulatorControl+Class.h"
+
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
@@ -20,7 +22,6 @@
 
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
-#import "FBSimulatorControl+Class.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
