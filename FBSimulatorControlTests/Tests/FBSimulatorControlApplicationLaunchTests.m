@@ -26,7 +26,7 @@
   FBSimulatorSession *session = [self createSession];
 
   FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
+    configurationWithApplication:self.safariApplication
     arguments:@[]
     environment:@{}];
 
@@ -38,14 +38,10 @@
   [self.assert noNotificationsToConsume];
 }
 
-- (void)testLaunchesSampleApplication
+- (void)flakyOnTravis_testLaunchesSampleApplication
 {
   FBSimulatorSession *session = [self createSession];
-
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithApplication:[FBSimulatorControlFixtures tableSearchApplicationWithError:nil]
-    arguments:@[]
-    environment:@{}];
+  FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
 
   [self.assert interactionSuccessful:[[[session.interact
     bootSimulator]

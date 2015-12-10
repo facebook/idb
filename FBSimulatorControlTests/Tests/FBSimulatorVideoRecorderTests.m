@@ -13,6 +13,7 @@
 
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
+#import "FBSimulatorControlFixtures.h"
 
 @interface FBSimulatorVideoRecorderTests : FBSimulatorControlTestCase
 
@@ -23,12 +24,7 @@
 - (void)disabled_testRecordsVideo
 {
   FBSimulatorSession *session = [self createBootedSession];
-
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
-    arguments:@[]
-    environment:@{}];
-
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
   [self.assert interactionSuccessful:[session.interact launchApplication:appLaunch]];
 
@@ -57,11 +53,7 @@
     NSLog(@"%@ can't run as the host process isn't trusted", NSStringFromSelector(_cmd));
     return;
   }
-
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-   configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
-   arguments:@[]
-   environment:@{}];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
   FBSimulatorSession *firstSession = [self createSession];
   [self.assert interactionSuccessful:[firstSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];

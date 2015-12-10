@@ -12,6 +12,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "CoreSimulatorDoubles.h"
+#import "FBSimulatorControlFixtures.h"
 
 @interface FBSimulatorStateTests : XCTestCase
 
@@ -39,22 +40,6 @@
 - (void)tearDown
 {
   self.generator = nil;
-}
-
-- (FBApplicationLaunchConfiguration *)appLaunch1
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    arguments:@[@"LAUNCH1"]
-    environment:@{@"FOO" : @"BAR"}];
-}
-
-- (FBApplicationLaunchConfiguration *)appLaunch2
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    arguments:@[@"LAUNCH2"]
-    environment:@{@"BING" : @"BONG"}];
 }
 
 - (void)assertState:(FBSimulatorSessionState *)state changes:(NSArray *)changes

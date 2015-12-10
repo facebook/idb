@@ -19,22 +19,16 @@
 
 @implementation FBSimulatorApplicationTests
 
-- (void)testFetchesSimulatorApplications
+- (void)testCanFetchSimulatorApplications
 {
-  NSArray *simulatorApplications = [FBSimulatorApplication simulatorSystemApplications];
-  NSSet *names = [NSSet setWithArray:[simulatorApplications valueForKey:@"name"]];
-
-  XCTAssertTrue([names containsObject:@"MobileSafari"]);
-  XCTAssertTrue([names containsObject:@"Camera"]);
-  XCTAssertTrue([names containsObject:@"Maps"]);
+  XCTAssertNotNil([FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:nil]);
+  XCTAssertNotNil([FBSimulatorApplication systemApplicationNamed:@"Camera" error:nil]);
+  XCTAssertNotNil([FBSimulatorApplication systemApplicationNamed:@"Maps" error:nil]);
 }
 
 - (void)testCreatesSampleApplication
 {
-  NSError *error = nil;
-  FBSimulatorApplication *application = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(application);
+  FBSimulatorApplication *application = self.tableSearchApplication;
   XCTAssertEqualObjects(application.bundleID, @"com.example.apple-samplecode.TableSearch");
   XCTAssertEqualObjects(application.binary.architectures, [NSSet setWithArray:@[@"i386"]]);
 }

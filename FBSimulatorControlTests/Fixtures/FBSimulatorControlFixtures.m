@@ -13,18 +13,10 @@
 
 @implementation FBSimulatorControlFixtures
 
-+ (FBSimulatorApplication *)tableSearchApplicationWithError:(NSError **)error;
++ (FBSimulatorApplication *)tableSearchApplicationWithError:(NSError **)error
 {
   NSString *path = [[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"];
   return [FBSimulatorApplication applicationWithPath:path error:error];
-}
-
-+ (FBApplicationLaunchConfiguration *)tableSearchAppLaunch
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:[self tableSearchApplicationWithError:nil]
-    arguments:@[]
-    environment:@{}];
 }
 
 + (NSString *)photo0Path
@@ -40,6 +32,70 @@
 + (NSString *)video0Path
 {
   return [[NSBundle bundleForClass:self] pathForResource:@"video0" ofType:@"mp4"];
+}
+
+@end
+
+@implementation XCTestCase (FBSimulatorControlFixtures)
+
+- (FBSimulatorApplication *)tableSearchApplication
+{
+  NSError *error = nil;
+  FBSimulatorApplication *value = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(value);
+  return value;
+}
+
+- (FBSimulatorApplication *)safariApplication
+{
+  NSError *error = nil;
+  FBSimulatorApplication *application = [FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(application, @"Could not fetch MobileSafari");
+  return application;
+}
+
+- (FBApplicationLaunchConfiguration *)tableSearchAppLaunch
+{
+  FBSimulatorApplication *application = self.tableSearchApplication;
+  if (!application) {
+    return nil;
+  }
+  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{}];
+}
+
+- (FBApplicationLaunchConfiguration *)safariAppLaunch
+{
+  FBSimulatorApplication *application = self.safariApplication;
+  if (!application) {
+    return nil;
+  }
+  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{}];
+}
+
+- (FBAgentLaunchConfiguration *)agentLaunch1
+{
+  return [FBAgentLaunchConfiguration
+    configurationWithBinary:self.safariApplication.binary
+    arguments:@[@"BINGBONG"]
+    environment:@{@"FIB" : @"BLE"}];
+}
+
+- (FBApplicationLaunchConfiguration *)appLaunch1
+{
+  return [FBApplicationLaunchConfiguration
+    configurationWithApplication:self.tableSearchApplication
+    arguments:@[@"LAUNCH1"]
+    environment:@{@"FOO" : @"BAR"}];
+}
+
+- (FBApplicationLaunchConfiguration *)appLaunch2
+{
+  return [FBApplicationLaunchConfiguration
+    configurationWithApplication:self.safariApplication
+    arguments:@[@"LAUNCH2"]
+    environment:@{@"BING" : @"BONG"}];
 }
 
 @end
