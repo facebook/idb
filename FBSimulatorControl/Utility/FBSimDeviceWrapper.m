@@ -25,7 +25,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 @property (nonatomic, strong, readonly) SimDevice *device;
 @property (nonatomic, strong, readonly) FBProcessQuery *query;
 
-- (id<FBProcessInfo>)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error;
+- (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error;
 
 @end
 
@@ -57,7 +57,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
   dispatch_semaphore_signal(semaphore);
 }
 
-- (id<FBProcessInfo>)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
+- (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
 {
   NSAssert([NSThread isMainThread], @"Must be called from the main thread.");
 
@@ -125,7 +125,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 
 #pragma mark Public
 
-- (id<FBProcessInfo>)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
+- (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
 {
   return [self processInfoForProcessIdentifier:[self.device launchApplicationWithID:appID options:options error:error] error:error];
 }
@@ -135,20 +135,20 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
   return [self.device installApplication:appURL withOptions:options error:error];
 }
 
-- (id<FBProcessInfo>)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error
+- (FBProcessInfo *)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error
 {
   return [self processInfoForProcessIdentifier:[self.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
 }
 
 #pragma mark Private
 
-- (id<FBProcessInfo>)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error
+- (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error
 {
   if (processIdentifier <= -1) {
     return nil;
   }
 
-  id<FBProcessInfo> processInfo = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:ProcessInfoAvailabilityTimeout untilExists:^ id<FBProcessInfo> {
+  FBProcessInfo *processInfo = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:ProcessInfoAvailabilityTimeout untilExists:^ FBProcessInfo * {
     return [self.query processInfoFor:processIdentifier];
   }];
   if (!processInfo) {

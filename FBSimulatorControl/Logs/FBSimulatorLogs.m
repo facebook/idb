@@ -15,9 +15,9 @@
 #import "FBConcurrentCollectionOperations.h"
 #import "FBProcessInfo.h"
 #import "FBSimulator.h"
+#import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorSession.h"
-#import "FBSimulatorSessionState+Queries.h"
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
 
@@ -91,7 +91,7 @@
  */
 - (NSArray *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
 {
-  id<FBProcessInfo> launchdProcess = self.simulator.launchInfo.launchdProcess;
+  FBProcessInfo *launchdProcess = self.simulator.launchInfo.launchdProcess;
   if (!launchdProcess) {
     return @[];
   }
@@ -139,16 +139,16 @@
 
 - (NSArray *)subprocessCrashes
 {
-  return [self subprocessCrashesAfterDate:self.session.state.sessionStartDate];
+  return [self subprocessCrashesAfterDate:self.session.history.sessionStartDate];
 }
 
 - (NSDictionary *)launchedApplicationLogs
 {
-  NSArray *launchedApplications = [self.session.state allLaunchedApplications];
+  NSArray *launchedApplications = [self.session.history allLaunchedApplications];
 
   // TODO: Use asl(3) or syslog(1) instead of grep.
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
-  for (FBUserLaunchedProcess *launchedProcess in launchedApplications) {
+  for (FBProcessInfo *launchedProcess in launchedApplications) {
     logs[launchedProcess] = [[[[[FBWritableLogBuilder builder]
       updateShortName:[NSString stringWithFormat:@"log_%d", launchedProcess.processIdentifier]]
       updateFileType:@"log"]

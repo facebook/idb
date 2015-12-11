@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FBProcessInfo;
+@class FBProcessInfo;
 @class FBProcessQuery;
 @class FBSimulatorControlConfiguration;
 @class SimDevice;
@@ -37,7 +37,7 @@
  @param error an error out for any error that occured.
  @return the Process Identifier of the launched process, -1 otherwise.
  */
-- (id<FBProcessInfo>)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error;
+- (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error;
 
 /**
  Installs an Application, timing out if CoreSimulator gets stuck in a semaphore.
@@ -58,6 +58,6 @@
  @param error an error out for any error that occured.
  @return the Process Identifier of the launched process, -1 otherwise.
  */
-- (id<FBProcessInfo>)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error;
+- (FBProcessInfo *)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error;
 
 @end

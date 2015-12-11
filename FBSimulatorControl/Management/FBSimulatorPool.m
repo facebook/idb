@@ -17,6 +17,7 @@
 #import <CoreSimulator/SimRuntime.h>
 
 #import "FBCoreSimulatorNotifier.h"
+#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"

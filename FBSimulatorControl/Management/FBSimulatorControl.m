@@ -24,10 +24,10 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorHistory.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Convenience.h"
 #import "FBSimulatorSession.h"
-#import "FBSimulatorSessionState.h"
 
 @implementation FBSimulatorControl
 

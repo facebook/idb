@@ -11,7 +11,7 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#include "FBSimulatorControlFixtures.h"
+#import "FBSimulatorControlFixtures.h"
 
 @interface FBProcessLaunchConfigurationTests : XCTestCase
 

@@ -12,6 +12,7 @@
 
 @class FBApplicationLaunchConfiguration;
 @class FBAgentLaunchConfiguration;
+@class FBProcessInfo;
 @class FBSimulatorApplication;
 
 /**
@@ -77,5 +78,15 @@
  Another App Launch Config. Not to be used to launch applications for real.
  */
 - (FBApplicationLaunchConfiguration *)appLaunch2;
+
+/**
+ A Process Info. Does not represent a real process.
+ */
+- (FBProcessInfo *)processInfo1;
+
+/**
+ Another Process Info. Does not represent a real process.
+ */
+- (FBProcessInfo *)processInfo2;
 
 @end

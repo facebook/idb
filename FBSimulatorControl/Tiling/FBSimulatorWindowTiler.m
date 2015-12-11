@@ -40,7 +40,7 @@
   if (!AXIsProcessTrusted()) {
     return [[FBSimulatorError describe:@"Current process is untrusted"] failRect:error];
   }
-  id<FBProcessInfo> processInfo = self.simulator.launchInfo.simulatorProcess;
+  FBProcessInfo *processInfo = self.simulator.launchInfo.simulatorProcess;
   if (!processInfo) {
     return [[[FBSimulatorError describe:@"Cannot find Window ID"] inSimulator:self.simulator] failRect:error];
   }

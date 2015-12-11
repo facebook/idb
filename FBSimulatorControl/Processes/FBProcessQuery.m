@@ -1,0 +1,331 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+#import "FBProcessQuery.h"
+
+#include <libproc.h>
+#include <limits.h>
+#include <string.h>
+#include <sys/sysctl.h>
+
+#import <AppKit/AppKit.h>
+
+#import "FBProcessInfo.h"
+
+#define PID_MAX 99999
+
+#pragma mark Calling libproc
+
+typedef BOOL(^ProcessIterator)(pid_t pid);
+typedef int(^LibProcCaller)(void);
+
+static void IterateWith(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator iterator, LibProcCaller caller)
+{
+  int actualSize = caller();
+  if (actualSize < 1) {
+    return;
+  }
+
+  for (int index = 0; index < actualSize; index++) {
+    pid_t processIdentifier = *(pidBuffer + index);
+    if (!iterator(processIdentifier)) {
+      break;
+    }
+  }
+}
+
+static void IterateAllProcesses(pid_t *pidBuffer, size_t pidBufferSize, ProcessIterator iterator)
+{
+  IterateWith(pidBuffer, pidBufferSize, iterator, ^ int () {
+    return proc_listallpids(pidBuffer, (int) pidBufferSize);
+  });
+}
+
+static void IterateSubprocessesOf(pid_t *pidBuffer, size_t pidBufferSize, pid_t parent, ProcessIterator iterator)
+{
+  IterateWith(pidBuffer, pidBufferSize, iterator, ^ int () {
+    return proc_listchildpids(parent, pidBuffer, (int) pidBufferSize);
+  });
+}
+
+static void IterateOpenFiles(pid_t *pidBuffer, size_t pidBufferSize, const char *path, ProcessIterator iterator)
+{
+  IterateWith(pidBuffer, pidBufferSize,iterator, ^ int () {
+    return proc_listpidspath(
+      PROC_LISTPIDSPATH_PATH_IS_VOLUME,
+      PROC_ALL_PIDS,
+      path,
+      0,
+      pidBuffer,
+      (int) pidBufferSize
+    );
+  });
+}
+
+static inline FBProcessInfo *ProcessInfoForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
+{
+  // Much of the layout information here comes from libtop.c in Apple's top(1) Open Source implementation.
+  int name[3] = {CTL_KERN, KERN_PROCARGS2, processIdentifier};
+
+  size_t actualSize = bufferSize;
+  if (sysctl(name, 3, buffer, &actualSize, NULL, 0) == -1) {
+    return nil;
+  }
+  if (actualSize == 0) {
+    return nil;
+  }
+
+  // First Position is argc.
+  const char *startPosition = buffer;
+  const int argc = *startPosition;
+
+  // If argc isn't 1 or more, something is wrong
+  if (argc < 1) {
+    return nil;
+  }
+
+  // launch path starts above argc
+  char *currentPosition = (char *) startPosition + sizeof(int);
+  NSString *launchPath = [[NSString alloc] initWithCString:currentPosition encoding:NSASCIIStringEncoding];
+  currentPosition += strlen(currentPosition);
+  currentPosition += 1;
+
+  // Move through the padding to get to the the argv
+  while (*currentPosition == '\0') {
+    currentPosition++;
+  }
+
+  // Enumerate up to the value of argc
+  NSMutableArray *arguments = [NSMutableArray array];
+  for (int index = 0; index < argc; index++) {
+    // Create Objective-C String from current position.
+    NSString *argument = [[NSString alloc] initWithCString:currentPosition encoding:NSASCIIStringEncoding];
+    [arguments addObject:argument];
+
+    // Move the current string position passed the null-character.
+    currentPosition += strlen(currentPosition);
+    currentPosition += 1;
+  }
+
+  // Now the environment is here
+  NSMutableDictionary *environment = [NSMutableDictionary dictionary];
+  while (currentPosition != '\0') {
+    NSString *string = [[NSString alloc] initWithCString:currentPosition encoding:NSASCIIStringEncoding];
+    NSArray *tokens = [string componentsSeparatedByString:@"="];
+    // If we don't get 2 tokens, something is malformed.
+    if (tokens.count != 2) {
+      break;
+    }
+    environment[tokens[0]] = tokens[1];
+
+    // Move the current string position passed the null-character.
+    currentPosition += strlen(currentPosition);
+    currentPosition += 1;
+  }
+
+  FBProcessInfo *process = [[FBProcessInfo alloc]
+    initWithProcessIdentifier:processIdentifier
+    launchPath:launchPath
+    arguments:arguments
+    environment:environment];
+
+  return process;
+}
+
+static inline BOOL ProcInfoForProcessIdentifier(pid_t processIdentifier, struct kinfo_proc* procOut)
+{
+  size_t size = sizeof(struct kinfo_proc);
+  int name[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, processIdentifier };
+  if (sysctl(name, 4, procOut, &size, NULL, 0) == -1) {
+    return NO;
+  }
+
+  return YES;
+}
+
+static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffer, size_t bufferSize)
+{
+  return proc_name(processIdentifier, buffer, (uint32_t) bufferSize) > 1;
+}
+
+@interface FBProcessQuery ()
+
+@property (nonatomic, assign, readonly) size_t argumentBufferSize;
+@property (nonatomic, assign, readonly) char *argumentBuffer;
+
+@property (nonatomic, assign, readonly) size_t pidBufferSize;
+@property (nonatomic, assign, readonly) pid_t *pidBuffer;
+
+@end
+
+@implementation FBProcessQuery
+
+#pragma mark Lifecycle
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _argumentBufferSize = sizeof(char) * ARG_MAX;
+  _argumentBuffer = malloc(_argumentBufferSize);
+
+  _pidBufferSize = sizeof(pid_t) * PID_MAX;
+  _pidBuffer = malloc(_pidBufferSize);
+
+  return self;
+}
+
+- (void)dealloc
+{
+  free(_argumentBuffer);
+  free(_pidBuffer);
+}
+
+#pragma mark Queries
+
+- (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier
+{
+  return ProcessInfoForProcessIdentifier(
+    processIdentifier,
+    self.argumentBuffer,
+    self.argumentBufferSize
+  );
+}
+
+- (NSArray *)subprocessesOf:(pid_t)parent
+{
+  NSMutableArray *subprocesses = [NSMutableArray array];
+
+  IterateSubprocessesOf(self.pidBuffer, self.pidBufferSize, parent, ^ BOOL (pid_t pid) {
+    FBProcessInfo *info = [self processInfoFor:pid];
+    if (info) {
+      [subprocesses addObject:info];
+    }
+    return YES;
+  });
+
+  return [subprocesses copy];
+}
+
+- (NSArray *)processesWithLaunchPathSubstring:(NSString *)substring
+{
+  NSMutableArray *subprocesses = [NSMutableArray array];
+
+  IterateAllProcesses(self.pidBuffer, self.pidBufferSize, ^ BOOL (pid_t pid) {
+    FBProcessInfo *info = [self processInfoFor:pid];
+    if (!info) {
+      return YES;
+    }
+    if ([info.launchPath rangeOfString:substring].location == NSNotFound) {
+      return YES;
+    }
+    [subprocesses addObject:info];
+    return YES;
+  });
+
+  return [subprocesses copy];
+}
+
+- (NSArray *)processesWithProcessName:(NSString *)processName;
+{
+  NSMutableArray *subprocesses = [NSMutableArray array];
+  size_t bufferSize = self.argumentBufferSize;
+  char *buffer = self.argumentBuffer;
+  const char *needle = processName.UTF8String;
+
+  IterateAllProcesses(self.pidBuffer, self.pidBufferSize, ^ BOOL (pid_t pid) {
+    if (!ProcessNameForProcessIdentifier(pid, buffer, bufferSize)) {
+      return YES;
+    }
+    if (strcmp(needle, buffer) != 0) {
+      return YES;
+    }
+    FBProcessInfo *info = [self processInfoFor:pid];
+    if (!info) {
+      return YES;
+    }
+    [subprocesses addObject:info];
+    return YES;
+  });
+
+  return [subprocesses copy];
+}
+
+- (pid_t)subprocessOf:(pid_t)parent withName:(NSString *)needleString
+{
+  __block pid_t foundProcess = -1;
+  size_t argumentBufferSize = self.argumentBufferSize;
+  char *argumentBuffer = self.argumentBuffer;
+  const char *needle = needleString.UTF8String;
+
+  IterateSubprocessesOf(self.pidBuffer, self.pidBufferSize, parent, ^ BOOL (pid_t pid) {
+    if (proc_name(pid, argumentBuffer, (uint32_t) argumentBufferSize) == -1) {
+      return YES;
+    }
+    if (strstr(argumentBuffer, needle) == NULL) {
+      return YES;
+    }
+
+    foundProcess = pid;
+    return NO;
+  });
+
+  return foundProcess;
+}
+
+- (pid_t)processWithOpenFileTo:(const char *)filename
+{
+  __block pid_t processIdentifier = -1;
+  IterateOpenFiles(self.pidBuffer, self.pidBufferSize, filename, ^ BOOL (pid_t pid) {
+    processIdentifier = pid;
+    return NO;
+  });;
+  return processIdentifier;
+}
+
+- (pid_t)parentOf:(pid_t)child
+{
+  struct kinfo_proc proc;
+  if (!ProcInfoForProcessIdentifier(child, &proc)) {
+    return -1;
+  }
+  return proc.kp_eproc.e_ppid;
+}
+
+- (NSArray *)runningApplicationsForProcesses:(NSArray *)processes
+{
+  return [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
+}
+
+- (NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process
+{
+  NSRunningApplication *application = [[self
+    runningApplicationsForProcesses:@[process]]
+    firstObject];
+
+  if (![application isKindOfClass:NSRunningApplication.class]) {
+    return nil;
+  }
+
+  return application;
+}
+
+#pragma mark Private
+
+- (NSDictionary *)processIdentifiersToApplications
+{
+  NSArray *applications = NSWorkspace.sharedWorkspace.runningApplications;
+  NSArray *processIdentifiers = [applications valueForKey:@"processIdentifier"];
+  return [NSDictionary dictionaryWithObjects:applications forKeys:processIdentifiers];
+}
+
+@end

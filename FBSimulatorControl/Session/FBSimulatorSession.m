@@ -9,18 +9,106 @@
 
 #import "FBSimulatorSession.h"
 #import "FBSimulatorSession+Private.h"
-#import "FBSimulatorSessionState+Private.h"
 
+#import <objc/runtime.h>
+
+#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorEventRelay.h"
+#import "FBSimulatorHistory+Private.h"
+#import "FBSimulatorHistory.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLogs.h"
-#import "FBSimulatorSessionLifecycle.h"
-#import "FBSimulatorSessionState.h"
+#import "FBSimulatorNotificationEventSink.h"
+
+NSString *const FBSimulatorSessionDidStartNotification = @"FBSimulatorSessionDidStartNotification";
+NSString *const FBSimulatorSessionDidEndNotification = @"FBSimulatorSessionDidEndNotification";
+
+@implementation FBSimulatorSession_NotStarted
+
+- (FBSimulatorInteraction *)interact
+{
+  object_setClass(self, FBSimulatorSession_Started.class);
+  [self fireNotificationNamed:FBSimulatorSessionDidStartNotification];
+  return [self interact];
+}
+
+- (BOOL)terminateWithError:(NSError **)error
+{
+  return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Terminate an session that hasn't started" errorOut:error];
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Session (Not Started): Simulator %@",
+    self.simulator
+  ];
+}
+
+- (FBSimulatorSessionState)state
+{
+  return FBSimulatorSessionStateNotStarted;
+}
+
+@end
+
+@implementation FBSimulatorSession_Started
+
+- (FBSimulatorInteraction *)interact
+{
+  return [FBSimulatorInteraction withSimulator:self.simulator];
+}
+
+- (BOOL)terminateWithError:(NSError **)error
+{
+  object_setClass(self, FBSimulatorSession_Ended.class);
+  BOOL result = [self.simulator freeFromPoolWithError:error];
+  [self fireNotificationNamed:FBSimulatorSessionDidEndNotification];
+  return result;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Session (Started): Simulator %@",
+    self.simulator
+  ];
+}
+
+- (FBSimulatorSessionState)state
+{
+  return FBSimulatorSessionStateStarted;
+}
+
+@end
+
+@implementation FBSimulatorSession_Ended
+
+- (BOOL)terminateWithError:(NSError **)error
+{
+  return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Terminate an already Ended session" errorOut:error];
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Session (Ended): Simulator %@",
+    self.simulator
+  ];
+}
+
+- (FBSimulatorSessionState)state
+{
+  return FBSimulatorSessionStateEnded;
+}
+
+@end
 
 @implementation FBSimulatorSession
 
@@ -30,7 +118,7 @@
 {
   NSParameterAssert(simulator);
 
-  FBSimulatorSession *session = [[FBSimulatorSession alloc] initWithSimulator:simulator];
+  FBSimulatorSession *session = [[FBSimulatorSession_NotStarted alloc] initWithSimulator:simulator];
   simulator.session = session;
   return session;
 }
@@ -42,25 +130,18 @@
     return nil;
   }
 
+
   _simulator = simulator;
-  _lifecycle = [FBSimulatorSessionLifecycle lifecycleWithSession:self];
+  _uuid = NSUUID.UUID;
+
   return self;
 }
 
 #pragma mark - Public Interface
 
-- (BOOL)terminateWithError:(NSError **)error
+- (FBSimulatorHistory *)history
 {
-  if (self.state.lifecycle == FBSimulatorSessionLifecycleStateEnded) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot Terminate an already Ended session" errorOut:error];
-  }
-  [self.lifecycle didEndSession];
-  return [self.simulator freeFromPoolWithError:error];
-}
-
-- (FBSimulatorSessionState *)state
-{
-  return self.lifecycle.currentState;
+  return self.simulator.history;
 }
 
 - (FBSimulatorSessionLogs *)logs
@@ -68,17 +149,23 @@
   return [FBSimulatorSessionLogs withSession:self];
 }
 
-- (FBSimulatorInteraction *)interact;
+- (FBSimulatorInteraction *)interact
 {
-  return [FBSimulatorInteraction withSimulator:self.simulator lifecycle:self.lifecycle];
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
-- (NSString *)description
+- (BOOL)terminateWithError:(NSError **)error
 {
-  return [NSString stringWithFormat:
-    @"Session: Simulator %@",
-    self.simulator
-  ];
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
+}
+
+#pragma mark Private
+
+- (void)fireNotificationNamed:(NSString *)name
+{
+  [NSNotificationCenter.defaultCenter postNotificationName:name object:self];
 }
 
 @end
