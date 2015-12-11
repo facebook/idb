@@ -9,6 +9,7 @@
 
 #import "FBSimulatorApplication.h"
 
+#import "FBBinaryParser.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
@@ -344,7 +345,7 @@
 + (instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
   NSError *innerError = nil;
-  NSSet *archs = [self binaryArchitecturesForBinaryPath:binaryPath error:&innerError];
+  NSSet *archs = [FBBinaryParser architecturesForBinaryAtPath:binaryPath error:&innerError];
   if (archs.count < 1) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -358,32 +359,6 @@
 + (NSString *)binaryNameForBinaryPath:(NSString *)binaryPath
 {
   return binaryPath.lastPathComponent;
-}
-
-+ (NSSet *)binaryArchitecturesForBinaryPath:(NSString *)binaryPath error:(NSError **)error
-{
-  id<FBTask> task = [[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/lipo" arguments:@[@"-info", binaryPath]]
-    startSynchronouslyWithTimeout:30];
-
-  if (task.error) {
-    return [[[FBSimulatorError describeFormat:@"Could not obtain archs for binary %@", binaryPath] causedBy:task.error] fail:error];
-  }
-
-  NSString *taskOutput = task.stdOut;
-  NSArray *possibleArchs = @[@"i386", @"x86_64"];
-  NSMutableArray *actualArchs = [NSMutableArray array];
-  for (NSString *arch in possibleArchs) {
-    if ([taskOutput rangeOfString:arch].location == NSNotFound) {
-      continue;
-    }
-    [actualArchs addObject:arch];
-  }
-
-  if (actualArchs.count < 1) {
-    return [[[FBSimulatorError describeFormat:@"Arch output does not contain any archs %@", taskOutput] causedBy:task.error] fail:error];
-  }
-  return [NSSet setWithArray:actualArchs];
 }
 
 @end
