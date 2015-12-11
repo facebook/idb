@@ -26,7 +26,7 @@
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
   FBProcessInfo *process = [session.history runningProcessForApplication:appLaunch.application];
   XCTAssertNotNil(process);
@@ -48,7 +48,7 @@
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
   FBProcessInfo *process = [session.history runningProcessForApplication:appLaunch.application];
   XCTAssertNotNil(process);
@@ -58,7 +58,7 @@
   }
 
   [self.assert consumeAllNotifications];
-  [self.assert interactionSuccessful:[session.interact killApplication:appLaunch.application]];
+  [self assertInteractionSuccessful:[session.interact killApplication:appLaunch.application]];
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification timeout:20];
   XCTAssertTrue([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);

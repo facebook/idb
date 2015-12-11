@@ -15,6 +15,7 @@
 #import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBProcessInfo.h"
+#import "FBProcessQuery+Helpers.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
 #import "FBSimulatorError.h"

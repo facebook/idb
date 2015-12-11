@@ -10,34 +10,41 @@
 #import <XCTest/XCTest.h>
 
 @class FBSimulatorControl;
+@class FBSimulatorPool;
 @class FBSimulatorSession;
 @protocol FBInteraction;
 
 /**
- Higher-level Assertions.
+ FBSimulatorControl Assertion Helpers.
  */
-@interface FBSimulatorControlAssertions : NSObject
+@interface XCTestCase (FBSimulatorControlAssertions)
 
-+ (instancetype)withTestCase:(XCTestCase *)testCase;
+#pragma mark Interactions
 
-#pragma mark Notifications
+- (void)assertInteractionSuccessful:(id<FBInteraction>)interaction;
+- (void)assertInteractionFailed:(id<FBInteraction>)interaction;
+
+#pragma mark Sessions
+
+- (void)assertShutdownSimulatorAndTerminateSession:(FBSimulatorSession *)session;
+
+#pragma mark Strings
+
+- (void)assertNeedle:(NSString *)needle inHaystack:(NSString *)haystack;
+
+@end
+
+/**
+ Assertion Helpers for FBSimulatorControl Notifications.
+ */
+@interface FBSimulatorControlNotificationAssertions : NSObject
+
++ (instancetype)withTestCase:(XCTestCase *)testCase pool:(FBSimulatorPool *)pool;
 
 - (NSNotification *)consumeNotification:(NSString *)notificationName;
 - (NSNotification *)consumeNotification:(NSString *)notificationName timeout:(NSTimeInterval)timeout;
 - (void)consumeAllNotifications;
 - (void)noNotificationsToConsume;
 
-#pragma mark Interactions
-
-- (void)interactionSuccessful:(id<FBInteraction>)interaction;
-- (void)interactionFailed:(id<FBInteraction>)interaction;
-
-#pragma mark Sessions
-
-- (void)shutdownSimulatorAndTerminateSession:(FBSimulatorSession *)session;
-
-#pragma mark Strings
-
-- (void)needle:(NSString *)needle inHaystack:(NSString *)haystack;
-
 @end
+

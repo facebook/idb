@@ -23,9 +23,10 @@
 
 @implementation FBSimulatorControlTestCase
 
+@synthesize control = _control;
 @synthesize assert = _assert;
 
-#pragma mark Overrideable Defaults
+#pragma mark Property Overrides
 
 - (FBSimulatorControl *)control
 {
@@ -36,17 +37,18 @@
       options:self.managementOptions];
 
     NSError *error;
-    _control = [FBSimulatorControl withConfiguration:configuration error:&error];
-    XCTAssertNotNil(_control, @"Failed to create create control with error %@", error);
+    FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:&error];
+    XCTAssertNil(error);
+    XCTAssertNotNil(control);
+    _control = control;
+    _assert = [FBSimulatorControlNotificationAssertions withTestCase:self pool:control.simulatorPool];
   }
   return _control;
 }
 
-- (FBSimulatorControlAssertions *)assert
+- (FBSimulatorControlNotificationAssertions *)assert
 {
-  if (!_assert) {
-    _assert = [FBSimulatorControlAssertions withTestCase:self];
-  }
+  XCTAssertNotNil(_assert, @"-[FBSimulatorControlTestCase control] should be called before -[FBSimulatorControlTestCase assert]");
   return _assert;
 }
 
@@ -73,7 +75,7 @@
 - (FBSimulatorSession *)createBootedSession
 {
   FBSimulatorSession *session = [self createSession];
-  [self.assert interactionSuccessful:session.interact.bootSimulator];
+  [self assertInteractionSuccessful:session.interact.bootSimulator];
   return session;
 }
 
@@ -89,7 +91,8 @@
 - (void)tearDown
 {
   [self.control.simulatorPool killAllWithError:nil];
-  self.control = nil;
+  _control = nil;
+  _assert = nil;
 }
 
 @end
