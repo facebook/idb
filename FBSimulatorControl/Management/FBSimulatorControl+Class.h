@@ -9,10 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBSimulatorPool.h>
+
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
-@class FBSimulatorPool;
 @class FBSimulatorSession;
 
 /**
@@ -33,10 +34,11 @@
  Creates and returns a new FBSimulatorSession instance. Does not launch the Simulator or any Applications.
 
  @param simulatorConfiguration the Configuration of the Simulator to Launch.
+ @param options the options to for the allocation/freeing of the Simulator.
  @param error an outparam for describing any error that occured during the creation of the Session.
  @returns A new `FBSimulatorSession` instance, or nil if an error occured.
  */
-- (FBSimulatorSession *)createSessionForSimulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration error:(NSError **)error;
+- (FBSimulatorSession *)createSessionForSimulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 
 /**
  The Pool that the FBSimulatorControl instance uses.

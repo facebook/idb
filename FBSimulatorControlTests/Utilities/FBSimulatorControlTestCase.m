@@ -21,6 +21,10 @@
 
 #import "FBSimulatorControlAssertions.h"
 
+@interface FBSimulatorControlTestCase ()
+
+@end
+
 @implementation FBSimulatorControlTestCase
 
 @synthesize control = _control;
@@ -57,19 +61,24 @@
 - (FBSimulator *)allocateSimulator
 {
   NSError *error = nil;
-  FBSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:self.simulatorConfiguration error:&error];
+  FBSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:self.simulatorConfiguration options:self.allocationOptions error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(simulator);
   return simulator;
 }
 
-- (FBSimulatorSession *)createSession
+- (FBSimulatorSession *)createSessionWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
   NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:self.simulatorConfiguration error:&error];
+  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:configuration options:self.allocationOptions error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(session);
   return session;
+}
+
+- (FBSimulatorSession *)createSession
+{
+  return [self createSessionWithConfiguration:self.simulatorConfiguration];
 }
 
 - (FBSimulatorSession *)createBootedSession
@@ -83,7 +92,8 @@
 
 - (void)setUp
 {
-  self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail | FBSimulatorManagementOptionsDeleteOnFree;
+  self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
+  self.allocationOptions = FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsEraseOnAllocate;
   self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
   self.deviceSetPath = nil;
 }

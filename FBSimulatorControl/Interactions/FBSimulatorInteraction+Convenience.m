@@ -12,18 +12,6 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorInteraction+Setup.h"
 
-@implementation FBSimulatorInteraction (Convenience)
-
-- (instancetype)configureWith:(FBSimulatorConfiguration *)configuration
-{
-  if (configuration.locale) {
-    [self setLocale:configuration.locale];
-  }
-  return [self setupKeyboard];
-}
-
-@end
-
 @implementation FBSimulator (FBSimulatorInteraction)
 
 - (FBSimulatorInteraction *)interact

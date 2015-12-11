@@ -55,13 +55,12 @@
 
 #pragma mark - Public Methods
 
-- (FBSimulatorSession *)createSessionForSimulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration error:(NSError **)error;
+- (FBSimulatorSession *)createSessionForSimulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 {
   NSParameterAssert(simulatorConfiguration);
 
   NSError *innerError = nil;
-  FBSimulator *simulator = [self.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&innerError];
-
+  FBSimulator *simulator = [self.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration options:options error:&innerError];
   if (!simulator) {
     return [[[FBSimulatorError describeFormat:@"Failed to allocate simulator for configuration %@", simulatorConfiguration] causedBy:innerError] fail:error];
   }

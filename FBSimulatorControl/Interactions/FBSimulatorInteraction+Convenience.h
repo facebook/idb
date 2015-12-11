@@ -10,22 +10,6 @@
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
 /**
- Some conveniences for making the interactions associated with a Simulator Configuration.
- */
-@interface FBSimulatorInteraction (Convenience)
-
-/**
- Makes an interaction by:
- 1) Setting the Locale (if the configuration contains one)
- 2) Sets up the keyboard
-
- @param configuration the configuration to apply.
- */
-- (instancetype)configureWith:(FBSimulatorConfiguration *)configuration;
-
-@end
-
-/**
  Helps make a more fluent API for interacting with Simulators.
  */
 @interface FBSimulator (FBSimulatorInteraction)

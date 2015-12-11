@@ -44,8 +44,8 @@
 
 - (void)testReallocatesAndErasesFreedDevice
 {
-  FBSimulatorManagementOptions options = FBSimulatorManagementOptionsEraseOnFree | FBSimulatorManagementOptionsDeleteAllOnFirstStart;
-  self.managementOptions = options;
+  FBSimulatorAllocationOptions options = self.allocationOptions;
+  self.allocationOptions = options | FBSimulatorAllocationOptionsEraseOnFree;
 
   FBSimulator *simulator = [self createSession].simulator;
   NSString *simulatorUUID = simulator.udid;
@@ -60,6 +60,9 @@
 
 - (void)testDoesNotReallocateDeletedDevice
 {
+  FBSimulatorAllocationOptions options = self.allocationOptions;
+  self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
+
   FBSimulator *simulator = [self createSession].simulator;
   NSString *simulatorUUID = simulator.udid;
   [self assertFreesSimulator:simulator];
@@ -71,6 +74,9 @@
 
 - (void)testRemovesDeletedDeviceFromSet
 {
+  FBSimulatorAllocationOptions options = self.allocationOptions;
+  self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
+
   FBSimulator *simulator = [self createSession].simulator;
   NSString *simulatorUUID = simulator.udid;
   [self assertFreesSimulator:simulator];

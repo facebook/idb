@@ -17,6 +17,18 @@
 @class SimDevice;
 @class SimDeviceSet;
 
+/**
+ Options for how a pool should handle allocation & freeing.
+ */
+typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
+  FBSimulatorAllocationOptionsCreate = 1 << 0, /** Permit the creation of Simulators when allocating. */
+  FBSimulatorAllocationOptionsReuse = 1 << 1, /** Permit the reuse of Simulators when allocating. */
+  FBSimulatorAllocationOptionsShutdownOnAllocate = 1 << 2, /** Shutdown of the Simulator becomes a precondition of allocation. */
+  FBSimulatorAllocationOptionsEraseOnAllocate = 1 << 4, /** Erasing of the Simulator becomes a precondition of allocation. */
+  FBSimulatorAllocationOptionsDeleteOnFree = 1 << 5, /** Deleting of the Simulator becomes a postcondition of freeing. */
+  FBSimulatorAllocationOptionsEraseOnFree = 1 << 6 /** Erasing of the Simulator becomes a postcondition of freeing. */
+};
+
 @protocol FBSimulatorLogger;
 
 /**
@@ -53,14 +65,15 @@
 
 /**
  Returns a Device for the given parameters. Will create devices where necessary.
- If you plan on running multiple tests in the lifecycle of a process, you should use `freeDevice:error:`
+ If you plan on running multiple tests in the lifecycle of a process, you sshould use `freeDevice:error:`
  otherwise devices will continue to be allocated.
 
  @param configuration the Configuration of the Device to Allocate. Must not be nil.
+ @param options the options for the allocation/freeing of the Simulator.
  @param error an error out for any error that occured.
- @returns a device if one could be found or created, nil if an error occured.
+ @return a FBSimulator if one could be allocated with the provided options, nil otherwise
  */
-- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
+- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 
 /**
  Marks a device that was previously returned from `allocateDeviceWithName:sdkVersion:error:` as free.

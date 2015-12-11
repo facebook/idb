@@ -10,6 +10,7 @@
 #import <XCTest/XCTest.h>
 
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorPool.h>
 
 @class FBSimulator;
 @class FBSimulatorConfiguration;
@@ -29,6 +30,11 @@
 - (FBSimulator *)allocateSimulator;
 
 /**
+ Creates a Session with the provided configuration.
+ */
+- (FBSimulatorSession *)createSessionWithConfiguration:(FBSimulatorConfiguration *)configuration;
+
+/**
  Creates a Session with the default configuration.
  */
 - (FBSimulatorSession *)createSession;
@@ -39,9 +45,14 @@
 - (FBSimulatorSession *)createBootedSession;
 
 /**
- The Per-Test-Case Management Options.
+ The Per-TestCase Management Options for created FBSimulatorControl instances.
  */
 @property (nonatomic, assign, readwrite) FBSimulatorManagementOptions managementOptions;
+
+/**
+ The Per Test Case Allocation Options for created allocated Simulators/Sessions.
+ */
+@property (nonatomic, assign, readwrite) FBSimulatorAllocationOptions allocationOptions;
 
 /**
  A default Simulator Configuration.
