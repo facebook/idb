@@ -36,8 +36,6 @@
 @interface FBSimulatorTerminationStrategy ()
 
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
-@property (nonatomic, copy, readonly) NSArray *allSimulators;
-
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
 - (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error;
@@ -83,16 +81,16 @@
 
 #pragma mark Initialization
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators processQuery:(FBProcessQuery *)processQuery
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery
 {
   BOOL useKill = (configuration.options & FBSimulatorManagementOptionsUseProcessKilling) == FBSimulatorManagementOptionsUseProcessKilling;
   processQuery = processQuery ?: [FBProcessQuery new];
   return useKill
-    ? [[FBSimulatorTerminationStrategy_Kill alloc] initWithConfiguration:configuration allSimulators:allSimulators processQuery:processQuery]
-    : [[FBSimulatorTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration allSimulators:allSimulators processQuery:processQuery];
+    ? [[FBSimulatorTerminationStrategy_Kill alloc] initWithConfiguration:configuration processQuery:processQuery]
+    : [[FBSimulatorTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration processQuery:processQuery];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration allSimulators:(NSArray *)allSimulators processQuery:(FBProcessQuery *)processQuery
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery
 {
   self = [super init];
   if (!self) {
@@ -100,18 +98,12 @@
   }
 
   _configuration = configuration;
-  _allSimulators = allSimulators;
   _processQuery = processQuery;
 
   return self;
 }
 
 #pragma mark Public Methods
-
-- (NSArray *)killAllWithError:(NSError **)error
-{
-  return [self killSimulators:self.allSimulators withError:error];
-}
 
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error
 {
@@ -137,8 +129,76 @@
     if (![self killSimulatorProcess:simulatorProcess error:&innerError]) {
       return [[[[FBSimulatorError describeFormat:@"Could not kill simulator process %@", simulatorProcess] inSimulator:simulator] causedBy:innerError] fail:error];
     }
-    if (![self safeShutdown:simulator withError:&innerError]) {
+    if (![self safeShutdownSimulator:simulator withError:&innerError]) {
       return [[[[FBSimulatorError describe:@"Could not shut down simulator after termination"] inSimulator:simulator] causedBy:innerError] fail:error];
+    }
+  }
+  return simulators;
+}
+
+- (BOOL)safeShutdownSimulator:(FBSimulator *)simulator withError:(NSError **)error
+{
+  // If the device is in a strange state, we should bail now
+  if (simulator.state == FBSimulatorStateUnknown) {
+    return [FBSimulatorError failBoolWithErrorMessage:@"Failed to prepare simulator for usage as it is in an unknown state" errorOut:error];
+  }
+
+  // Calling shutdown when already shutdown should be avoided (if detected).
+  if (simulator.state == FBSimulatorStateShutdown) {
+    return YES;
+  }
+
+  // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
+  // It is possible to recover from this with a few tricks.
+  NSError *innerError = nil;
+  if (simulator.state == FBSimulatorStateCreating) {
+    // Usually, the Simulator will be Shutdown after it transitions from 'Creating'. Extra cleanup if not.
+    if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
+      // In Xcode 7 we can get stuck in the 'Creating' step as well, its possible that we can recover from this by erasing
+      if (![simulator eraseWithError:&innerError]) {
+        return [[[[FBSimulatorError describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"]
+          causedBy:innerError]
+          inSimulator:simulator]
+          failBool:error];
+      }
+
+      // If a device has been erased, we should wait for it to actually be shutdown. Ff it can't be, fail
+      if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
+        return [[[[FBSimulatorError describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"]
+          causedBy:innerError]
+          inSimulator:simulator]
+          failBool:error];;
+      }
+    }
+    // We're done since the Simulator is shutdown.
+    return YES;
+  }
+
+  // Otherwise a shutdown call needs to occur.
+  // Code 159 (Xcode 7) or 146 (Xcode 6) is 'Unable to shutdown device in current state: Shutdown'
+  // We can safely ignore these codes and then confirm that the simulator is truly shutdown.
+  if (![simulator.device shutdownWithError:&innerError] && innerError.code != 159 && innerError.code != 146) {
+    return [FBSimulatorError failBoolWithError:innerError description:@"Simulator could not be shutdown" errorOut:error];
+  }
+
+  // Wait for it to be truly shutdown.
+  if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
+    return [[[[FBSimulatorError describe:@"Failed to wait for simulator preparation to shutdown device"] causedBy:innerError] inSimulator:simulator] failBool:error];
+  }
+  return YES;
+}
+
+- (NSArray *)ensureConsistencyForSimulators:(NSArray *)simulators withError:(NSError **)error
+{
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
+    return simulator.launchInfo == nil && simulator.state != FBSimulatorStateShutdown;
+  }];
+  simulators = [simulators filteredArrayUsingPredicate:predicate];
+
+  for (FBSimulator *simulator in simulators) {
+    NSError *innerError = nil;
+    if (![self safeShutdownSimulator:simulator withError:&innerError]) {
+      return [[[FBSimulatorError describe:@"Failed to ensure consistency by shutting down process-les simulators"] inSimulator:simulator] fail:error];
     }
   }
   return simulators;
@@ -157,6 +217,7 @@
   if (![self killSimulatorProcessesMatchingPredicate:predicate error:&innerError]) {
     return [[[FBSimulatorError describe:@"Could not kill non-current spurious simulators"] causedBy:innerError] failBool:error];
   }
+
   return YES;
 }
 
@@ -179,7 +240,6 @@
   }
   return YES;
 }
-
 
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
 {
@@ -210,25 +270,6 @@
     sleep(1);
   }
   return YES;
-}
-
-- (BOOL)safeShutdown:(FBSimulator *)simulator withError:(NSError **)error
-{
-  // Calling shutdown when already shutdown should be avoided (if detected).
-  if (simulator.state == FBSimulatorStateShutdown) {
-    return YES;
-  }
-
-  // Code 159 (Xcode 7) or 146 (Xcode 6) is 'Unable to shutdown device in current state: Shutdown'
-  // We can safely ignore this and then confirm that the simulator is shutdown
-  NSError *innerError = nil;
-  if (![simulator.device shutdownWithError:&innerError] && innerError.code != 159 && innerError.code != 146) {
-    return [FBSimulatorError failBoolWithError:innerError description:@"Simulator could not be shutdown" errorOut:error];
-  }
-
-  // We rely on the catch-all-non-manged kill command to do the dirty work.
-  // This will confirm that all these simulators are shutdown.
-  return [simulator waitOnState:FBSimulatorStateShutdown withError:error];
 }
 
 @end

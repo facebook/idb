@@ -101,11 +101,10 @@
 
     FBSimulatorTerminationStrategy *terminationStrategy = [FBSimulatorTerminationStrategy
       withConfiguration:simulator.pool.configuration
-      allSimulators:@[simulator]
       processQuery:simulator.processQuery];
 
     NSError *innerError = nil;
-    if (![terminationStrategy killAllWithError:&innerError]) {
+    if (![terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
       return [[[[FBSimulatorError describe:@"Could not shutdown simulator"] inSimulator:simulator] causedBy:innerError] failBool:error];
     }
     [simulator.eventSink didTerminate:YES];

@@ -24,7 +24,7 @@
   return [FBSimulatorControlConfiguration
     configurationWithSimulatorApplication:application
     deviceSetPath:nil
-    options:FBSimulatorManagementOptionsEraseOnFree];
+    options:FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart];
 }
 
 - (void)testEqualityOfCopy

@@ -9,6 +9,8 @@
 
 #import "FBSimulator+Helpers.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
@@ -100,6 +102,15 @@
   BOOL success = [NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil];
   NSAssert(success, @"Cannot create a path for storage at %@", path);
   return path;
+}
+
+- (BOOL)eraseWithError:(NSError **)error
+{
+  NSError *innerError = nil;
+  if (![self.device eraseContentsAndSettingsWithError:&innerError]) {
+    return [[[[FBSimulatorError describeFormat:@"Failed to Erase Contents and Settings %@", self] causedBy:innerError] inSimulator:self] failBool:error];
+  }
+  return YES;
 }
 
 @end

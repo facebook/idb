@@ -64,4 +64,12 @@
  */
 - (NSString *)pathForStorage:(NSString *)key ofExtension:(NSString *)extension;
 
+/**
+ Erases the Simulator, with a descriptive message in the event of a failure.
+
+ @param error a descriptive error for any error that occurred.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)eraseWithError:(NSError **)error;
+
 @end

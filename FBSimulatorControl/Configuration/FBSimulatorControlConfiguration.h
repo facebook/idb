@@ -16,16 +16,16 @@
  */
 extern NSString *const FBSimulatorControlConfigurationDefaultNamePrefix;
 
+/**
+ Options that apply to each FBSimulatorControl instance.
+ */
 typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
-  FBSimulatorManagementOptionsDeleteAllOnFirstStart = 1 << 0,
-  FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart = 1 << 1,
-  FBSimulatorManagementOptionsIgnoreSpuriousKillFail = 1 << 2,
-  FBSimulatorManagementOptionsAlwaysCreateWhenAllocating = 1 << 3,
-  FBSimulatorManagementOptionsDeleteOnFree = 1 << 4,
-  FBSimulatorManagementOptionsEraseOnFree = 1 << 5,
-  FBSimulatorManagementOptionsUseProcessKilling = 1 << 6,
-  FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices = 1 << 7,
-  FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance = 1 << 8,
+  FBSimulatorManagementOptionsDeleteAllOnFirstStart = 1 << 0, /** Deletes all of the devices in a when creating a Simulator Pool */
+  FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart = 1 << 1, /** Kills all Simulators not managed by FBSimulatorControl when creating a Pool */
+  FBSimulatorManagementOptionsIgnoreSpuriousKillFail = 1 << 2, /** Don't fail Pool creation when failing to kill spurious Simulators */
+  FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices = 1 << 3, /** Kills CoreSimulatorService daemons from the non-current Xcode version when creating a Pool */
+  FBSimulatorManagementOptionsUseProcessKilling = 1 << 4, /** Kills Simulators using kill(2) instead of -[NSRunningApplication terminate] */
+  FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance = 1 << 5, /** Uses an alternative strategy for communicating with the Simulator that may be more robust with Xcode 7.1 */
 };
 
 /**
@@ -53,7 +53,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
 @property (nonatomic, copy, readonly) NSString *deviceSetPath;
 
 /**
- The options for Simulator Management.
+ The Options for Simulator Management.
  */
 @property (nonatomic, assign, readonly) FBSimulatorManagementOptions options;
 

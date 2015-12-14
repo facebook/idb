@@ -17,6 +17,7 @@
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
 @property (nonatomic, strong, readonly) NSMutableOrderedSet *allocatedUDIDs;
+@property (nonatomic, strong, readonly) NSMutableDictionary *allocationOptions;
 @property (nonatomic, strong, readonly) NSMutableDictionary *inflatedSimulators;
 
 @property (nonatomic, copy, readwrite) NSError *firstRunError;

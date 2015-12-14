@@ -57,21 +57,14 @@
 {
   // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
   // Create the sessions in sequence, then boot them in paralell.
-  __block NSError *error = nil;
-  FBSimulatorSession *session1 = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session1 = [self createSessionWithConfiguration:FBSimulatorConfiguration.iPhone5];
   XCTAssertEqual(session1.state, FBSimulatorSessionStateNotStarted);
-  XCTAssertNotNil(session1);
-  XCTAssertNil(error);
 
-  FBSimulatorSession *session2 = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPhone5 error:&error];
+  FBSimulatorSession *session2 = [self createSessionWithConfiguration:FBSimulatorConfiguration.iPhone5];
   XCTAssertEqual(session2.state, FBSimulatorSessionStateNotStarted);
-  XCTAssertNotNil(session2);
-  XCTAssertNil(error);
 
-  FBSimulatorSession *session3 = [self.control createSessionForSimulatorConfiguration:FBSimulatorConfiguration.iPad2 error:&error];
+  FBSimulatorSession *session3 = [self createSessionWithConfiguration:FBSimulatorConfiguration.iPad2];
   XCTAssertEqual(session3.state, FBSimulatorSessionStateNotStarted);
-  XCTAssertNotNil(session3);
-  XCTAssertNil(error);
 
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3u);
   XCTAssertEqual(([[NSSet setWithArray:@[session1.simulator.udid, session2.simulator.udid, session3.simulator.udid]] count]), 3u);

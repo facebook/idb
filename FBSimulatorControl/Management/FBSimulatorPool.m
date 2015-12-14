@@ -63,13 +63,13 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
   _configuration = configuration;
   _allocatedUDIDs = [NSMutableOrderedSet new];
+  _allocationOptions = [NSMutableDictionary dictionary];
   _inflatedSimulators = [NSMutableDictionary dictionary];
   _processQuery = [FBProcessQuery new];
   _deviceSet = deviceSet;
 
   return self;
 }
-
 
 + (SimDeviceSet *)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
@@ -110,7 +110,11 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   if (killSpuriousSimulators) {
     BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
     if (![self.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
-      return [[[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+      return [[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] failBool:error];
+    }
+
+    if (![self.terminationStrategy ensureConsistencyForSimulators:self.allSimulators withError:&innerError]) {
+      return [[[FBSimulatorError describe:@"Failed to ensure simulator consistency"] causedBy:innerError] failBool:error];
     }
   }
 
@@ -144,28 +148,30 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 - (FBSimulatorTerminationStrategy *)terminationStrategy
 {
   // `self.allSimulators` is not a constant for the lifetime of self, so should be fetched on all usages.
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration allSimulators:self.allSimulators processQuery:self.processQuery];
+  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processQuery:self.processQuery];
 }
 
 #pragma mark - Public Methods
 
-- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 {
-  FBSimulator *simulator = [self findOrCreateSimulatorWithConfiguration:configuration error:error];
+  FBSimulator *simulator = [self obtainSimulatorWithConfiguration:configuration options:options error:error];
   if (!simulator) {
     return nil;
   }
-  if (![self prepareSimulatorForUsage:simulator configuration:configuration error:error]) {
-    return nil;
+
+  NSError *innerError = nil;
+  if (![self prepareSimulatorForUsage:simulator configuration:configuration options:options error:&innerError]) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
-  [self.allocatedUDIDs addObject:simulator.udid];
+  [self pushAllocation:simulator options:options];
   return simulator;
 }
 
 - (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  [self.allocatedUDIDs removeObject:simulator.udid];
+  FBSimulatorAllocationOptions options = [self popAllocation:simulator];
 
   // Killing is a pre-requesite for deleting/erasing
   NSError *innerError = nil;
@@ -174,7 +180,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   // When Deleting on Free, there's no point in erasing first, so return early.
-  BOOL deleteOnFree = (self.configuration.options & FBSimulatorManagementOptionsDeleteOnFree) == FBSimulatorManagementOptionsDeleteOnFree;
+  BOOL deleteOnFree = (options & FBSimulatorAllocationOptionsDeleteOnFree) == FBSimulatorAllocationOptionsDeleteOnFree;
   if (deleteOnFree) {
     if (![self deleteSimulator:simulator withError:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Deleting Device" errorOut:error];
@@ -182,9 +188,9 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     return YES;
   }
 
-  BOOL eraseOnFree = (self.configuration.options & FBSimulatorManagementOptionsEraseOnFree) == FBSimulatorManagementOptionsEraseOnFree;
+  BOOL eraseOnFree = (self.configuration.options & FBSimulatorAllocationOptionsEraseOnFree) == FBSimulatorAllocationOptionsEraseOnFree;
   if (eraseOnFree) {
-    if (![self eraseSimulator:simulator withError:&innerError]) {
+    if (![simulator eraseWithError:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Erasing Device" errorOut:error];
     }
     return YES;
@@ -195,7 +201,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (NSArray *)killAllWithError:(NSError **)error
 {
-  return [self.terminationStrategy killAllWithError:error];
+  return [self.terminationStrategy killSimulators:self.allSimulators withError:error];
 }
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
@@ -215,15 +221,6 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 }
 
 #pragma mark - Private
-
-- (BOOL)eraseSimulator:(FBSimulator *)simulator withError:(NSError **)error
-{
-  NSError *innerError = nil;
-  if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-    return [[[[FBSimulatorError describeFormat:@"Failed to Erase Contents and Settings %@", simulator] causedBy:innerError] inSimulator:simulator] failBool:error];
-  }
-  return YES;
-}
 
 - (BOOL)deleteSimulator:(FBSimulator *)simulator withError:(NSError **)error
 {
@@ -273,22 +270,28 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
   // Then erase.
   for (FBSimulator *simulator in simulators) {
-    if (![self eraseSimulator:simulator withError:&innerError]) {
+    if (![simulator eraseWithError:&innerError]) {
       return [FBSimulatorError failWithError:innerError errorOut:error];
     }
   }
   return simulators;
 }
 
-- (FBSimulator *)findOrCreateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error
 {
-  BOOL alwaysCreate = (self.configuration.options & FBSimulatorManagementOptionsAlwaysCreateWhenAllocating) == FBSimulatorManagementOptionsAlwaysCreateWhenAllocating;
-  if (alwaysCreate) {
-    return [self createSimulatorWithConfiguration:configuration error:error];
+  BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
+  if (reuse) {
+    FBSimulator *simulator = [self findUnallocatedSimulatorWithConfiguration:configuration];
+    if (simulator) {
+      return simulator;
+    }
   }
 
-  return [self findUnallocatedSimulatorWithConfiguration:configuration]
-      ?: [self createSimulatorWithConfiguration:configuration error:error];
+  BOOL create = (options & FBSimulatorAllocationOptionsCreate) == FBSimulatorAllocationOptionsCreate;
+  if (!create) {
+    return [[FBSimulatorError describeFormat:@"Could not obtain a simulator as the options don't allow creation"] fail:error];
+  }
+  return [self createSimulatorWithConfiguration:configuration error:error];
 }
 
 - (FBSimulator *)findUnallocatedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
@@ -317,54 +320,54 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   return simulator;
 }
 
-- (BOOL)prepareSimulatorForUsage:(FBSimulator *)simulator configuration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (BOOL)prepareSimulatorForUsage:(FBSimulator *)simulator configuration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error
 {
+  // In order to erase, the device *must* be shutdown first.
+  BOOL shutdown = (options & FBSimulatorAllocationOptionsShutdownOnAllocate) == FBSimulatorAllocationOptionsShutdownOnAllocate;
+  BOOL erase = (options & FBSimulatorAllocationOptionsEraseOnAllocate) == FBSimulatorAllocationOptionsEraseOnAllocate;
   NSError *innerError = nil;
-
-  // If the device is in a strange state, we should bail now
-  if (simulator.state == FBSimulatorStateUnknown) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Failed to prepare simulator for usage as it is in an unknown state" errorOut:error];
-  }
-
-  // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
-  if (simulator.state == FBSimulatorStateCreating) {
-    // Usually, the Simulator will be Shutdown after it transitions from 'Creating'. Extra cleanup if not.
-    if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
-      // In Xcode 7 we can get stuck in the 'Creating' step as well, its possible that we can recover from this by erasing
-      if (![self eraseSimulator:simulator withError:&innerError]) {
-        return [[[[FBSimulatorError describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"] causedBy:innerError] inSimulator:simulator] failBool:error];
-      }
-
-      // If a device has been erased, we should wait for it to actually be shutdown. Ff it can't be, fail
-      if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
-        return [[[[FBSimulatorError describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"] causedBy:innerError] inSimulator:simulator] failBool:error];;
-      }
-    }
-  }
-
-  // If the device is not shutdown, kill it.
-  if (simulator.state != FBSimulatorStateShutdown) {
-    if (![self.terminationStrategy killSimulators:@[simulator] withError:error]) {
-      return [[[[FBSimulatorError describe:@"Failed to prepare simulator for usage when shutting it down"] causedBy:innerError] inSimulator:simulator] failBool:error];
-    }
-  }
-
-  // Wait for it to be truly shutdown.
-  if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
-    return [[[[FBSimulatorError describe:@"Failed to wait for simulator preparation to shutdown device"] causedBy:innerError] inSimulator:simulator] failBool:error];
+  if ((shutdown || erase) & ![self.terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
+    return [[[[FBSimulatorError describe:@"Failed to kill a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
 
   // Now we have a device that is shutdown, we should erase it.
-  if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-    return [[[[FBSimulatorError describe:@"Failed to prepare simulator for usage when erasing it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+  if (erase && ![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
+    return [[[[FBSimulatorError describe:@"Failed to erase a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
 
-  // Do the other, non-session based setup steps.
-  if (![[simulator.interact configureWith:configuration] performInteractionWithError:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+  // Do the other configuration that is dependent on a shutdown Simulator.
+  if (shutdown || erase) {
+    if (configuration.locale && ![[simulator.interact setLocale:configuration.locale] performInteractionWithError:&innerError]) {
+      return [[[[FBSimulatorError describe:@"Failed to set the locale on a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+    }
+    if (![[simulator.interact setupKeyboard] performInteractionWithError:&innerError]) {
+      return [[[[FBSimulatorError describe:@"Failed to setup the keyboard of a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+    }
   }
 
   return YES;
+}
+
+- (void)pushAllocation:(FBSimulator *)simulator options:(FBSimulatorAllocationOptions)options
+{
+  NSParameterAssert(simulator);
+  NSParameterAssert(![self.allocatedUDIDs containsObject:simulator.udid]);
+  NSParameterAssert(!self.allocationOptions[simulator.udid]);
+
+  [self.allocatedUDIDs addObject:simulator.udid];
+  self.allocationOptions[simulator.udid] = @(options);
+}
+
+- (FBSimulatorAllocationOptions)popAllocation:(FBSimulator *)simulator
+{
+  NSParameterAssert(simulator);
+  NSParameterAssert([self.allocatedUDIDs containsObject:simulator.udid]);
+  NSParameterAssert(self.allocationOptions[simulator.udid]);
+
+  [self.allocatedUDIDs removeObject:simulator.udid];
+  FBSimulatorAllocationOptions options = [self.allocationOptions[simulator.udid] unsignedIntegerValue];
+  [self.allocationOptions removeObjectForKey:simulator.udid];
+  return options;
 }
 
 #pragma mark - Helpers
