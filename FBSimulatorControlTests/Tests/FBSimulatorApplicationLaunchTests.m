@@ -26,7 +26,6 @@
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  XCTAssertNil(session.simulator.launchInfo);
   [self.assert noNotificationsToConsume];
   [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
@@ -41,7 +40,6 @@
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  XCTAssertNil(session.simulator.launchInfo);
   [self.assert noNotificationsToConsume];
   [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
@@ -64,17 +62,15 @@
   [self.assert noNotificationsToConsume];
 }
 
-- (void)flakyOnTravis_testLaunchesSampleApplication
+- (void)testLaunchesSampleApplication
 {
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
 
-  [self assertInteractionSuccessful:[[[session.interact
-    bootSimulator]
-    installApplication:appLaunch.application]
-    launchApplication:appLaunch]];
+  [self.assert noNotificationsToConsume];
+  [self assertInteractionSuccessful:[[session.interact.bootSimulator installApplication:appLaunch.application] launchApplication:appLaunch]];
 
-  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
+  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification timeout:5];
   [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
