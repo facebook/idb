@@ -60,12 +60,10 @@
   NSParameterAssert(simulatorConfiguration);
 
   NSError *innerError = nil;
-  FBSimulator *simulator = [self.simulatorPool
-    allocateSimulatorWithConfiguration:simulatorConfiguration
-    error:&innerError];
+  FBSimulator *simulator = [self.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration error:&innerError];
 
   if (!simulator) {
-    return [FBSimulatorError failWithError:innerError description:@"Failed to allocate simulator" errorOut:error];
+    return [[[FBSimulatorError describeFormat:@"Failed to allocate simulator for configuration %@", simulatorConfiguration] causedBy:innerError] fail:error];
   }
   return [FBSimulatorSession sessionWithSimulator:simulator];
 }
