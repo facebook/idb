@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBTerminationHandle.h>
 #import <FBSimulatorControl/FBSimulatorLogger.h>
+#import <FBSimulatorControl/FBTerminationHandle.h>
 
 @class FBSimulator;
 
@@ -26,7 +26,7 @@
 
 /**
  Create a new FBSimulatorVideoRecorder for the provided Simulator.
- 
+
  @param simulator the Simulator to Record.
  @param logger a logger to record interactions. May be nil.
  @return a new Video Recorder instance.
@@ -36,7 +36,7 @@
 /**
  Starts recording the Simulator to a File.
  Will delete and overwrite any existing video for the given filePath.
- 
+
  @param filePath the File to Record into.
  @param error the error out, for any error that occurred.
  @returns YES if the recording started successfully, NO otherwise.
@@ -45,7 +45,7 @@
 
 /**
  Ends recording of the Simulator.
- 
+
  @param error the error out, for any error that occured.
  @return the Path of the recorded movie if successful, NO otherwise.
  */

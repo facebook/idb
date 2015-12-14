@@ -9,12 +9,12 @@
 
 #import "FBBinaryParser.h"
 
+#include <mach/machine.h>
 #include <stdio.h>
 
-#include <mach-o/loader.h>
 #include <mach-o/fat.h>
+#include <mach-o/loader.h>
 #include <mach-o/swap.h>
-#include <mach/machine.h>
 
 #import "FBSimulatorError.h"
 

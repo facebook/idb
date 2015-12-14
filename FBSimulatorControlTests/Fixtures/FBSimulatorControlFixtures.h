@@ -10,8 +10,8 @@
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 
-@class FBApplicationLaunchConfiguration;
 @class FBAgentLaunchConfiguration;
+@class FBApplicationLaunchConfiguration;
 @class FBProcessInfo;
 @class FBSimulatorApplication;
 

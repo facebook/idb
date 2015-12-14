@@ -10,11 +10,11 @@
 #import "FBTaskExecutor.h"
 #import "FBTaskExecutor+Private.h"
 
+#import <objc/runtime.h>
+
 #import "FBTask+Private.h"
 #import "FBTask.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
-
-#import <objc/runtime.h>
 
 NSString *const FBTaskExecutorErrorDomain = @"com.facebook.fbsimulatorcontrol.task";
 

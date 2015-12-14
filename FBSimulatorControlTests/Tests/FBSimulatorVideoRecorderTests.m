@@ -12,8 +12,8 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBSimulatorControlAssertions.h"
-#import "FBSimulatorControlTestCase.h"
 #import "FBSimulatorControlFixtures.h"
+#import "FBSimulatorControlTestCase.h"
 
 @interface FBSimulatorVideoRecorderTests : FBSimulatorControlTestCase
 

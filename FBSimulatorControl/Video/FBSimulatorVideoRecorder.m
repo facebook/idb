@@ -9,9 +9,9 @@
 
 #import "FBSimulatorVideoRecorder.h"
 
+#import <AVFoundation/AVFoundation.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <CoreMedia/CoreMedia.h>
-#import <AVFoundation/AVFoundation.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"

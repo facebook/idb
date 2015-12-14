@@ -13,9 +13,9 @@
 
 #import "FBInteraction+Private.h"
 #import "FBProcessInfo.h"
-#import "FBProcessQuery+Helpers.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBProcessLaunchConfiguration.h"
+#import "FBProcessQuery+Helpers.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
