@@ -21,11 +21,13 @@ public struct Command {
 /**
   Describes the Configuration for the running of a Command
 */
-public struct Configuration {
-  let deviceSetPath: String?
-
-  static func defaultConfiguration() -> Configuration {
-    return Configuration(deviceSetPath: nil)
+public final class Configuration : FBSimulatorControlConfiguration {
+  public static func defaultConfiguration() -> Configuration {
+    return Configuration(
+      simulatorApplication: try! FBSimulatorApplication(error: ()),
+      deviceSetPath: nil,
+      options: FBSimulatorManagementOptions()
+    )
   }
 }
 
@@ -47,7 +49,8 @@ public indirect enum Query {
   case UDID(String)
   case State(FBSimulatorState)
   case Configured(FBSimulatorConfiguration)
-  case Compound([Query])
+  case And([Query])
+  case Only(Int, Query)
 }
 
 /**

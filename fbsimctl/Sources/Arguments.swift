@@ -9,11 +9,6 @@
 
 import Foundation
 
-private enum Argument {
-  case Single(String, Bool)
-  case Double(String, String, Bool)
-}
-
 public extension Subcommand {
   public static let HELP_STR = "help"
   public static let INTERACT = "interact"
