@@ -116,4 +116,12 @@
   }];
 }
 
++ (NSPredicate *)processesForBinary:(FBSimulatorBinary *)binary
+{
+  NSString *endPath = binary.path.lastPathComponent;
+  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *processInfo, NSDictionary *_) {
+    return [processInfo.launchPath.lastPathComponent isEqualToString:endPath];
+  }];
+}
+
 @end

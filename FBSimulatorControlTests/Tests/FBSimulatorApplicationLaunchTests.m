@@ -24,17 +24,43 @@
 - (void)testLaunchesSafariApplication
 {
   FBSimulatorSession *session = [self createSession];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.safariApplication
-    arguments:@[]
-    environment:@{}];
+  XCTAssertNil(session.simulator.launchInfo);
+  [self.assert noNotificationsToConsume];
+  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  [self.assert interactionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
-
-  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
+  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification timeout:5];
   [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
+}
+
+- (void)testRelaunchesSafariApplication
+{
+  FBSimulatorSession *session = [self createSession];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
+
+  XCTAssertNil(session.simulator.launchInfo);
+  [self.assert noNotificationsToConsume];
+  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
+
+  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification timeout:5];
+  [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
+
+  NSError *error = nil;
+  BOOL success = [session terminateAppWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
+
+  success = [session relaunchAppWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+
   [self.assert noNotificationsToConsume];
 }
 
@@ -43,7 +69,7 @@
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
 
-  [self.assert interactionSuccessful:[[[session.interact
+  [self assertInteractionSuccessful:[[[session.interact
     bootSimulator]
     installApplication:appLaunch.application]
     launchApplication:appLaunch]];

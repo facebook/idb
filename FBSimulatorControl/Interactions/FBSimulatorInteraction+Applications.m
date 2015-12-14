@@ -13,6 +13,7 @@
 
 #import "FBInteraction+Private.h"
 #import "FBProcessInfo.h"
+#import "FBProcessQuery+Helpers.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimDeviceWrapper.h"
@@ -99,8 +100,12 @@
     [simulator.eventSink applicationDidTerminate:process expected:YES];
     int returnCode = kill(process.processIdentifier, signo);
     if (returnCode != 0) {
-      return [[[FBSimulatorError describeFormat:@"SIGKILL of Application %@ of PID %d failed", application, process.processIdentifier] inSimulator:simulator] failBool:error];
+      return [[[FBSimulatorError describeFormat:@"SIGKILL of %@ failed", process] inSimulator:simulator] failBool:error];
     }
+    if (![simulator.processQuery waitForProcessToDie:process timeout:20]) {
+      return [[[FBSimulatorError describeFormat:@"Termination of process %@ failed in waiting for process to dissappear", process] inSimulator:simulator] failBool:error];
+    }
+
     return YES;
   }];
 }

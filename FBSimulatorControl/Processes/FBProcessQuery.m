@@ -14,8 +14,6 @@
 #include <string.h>
 #include <sys/sysctl.h>
 
-#import <AppKit/AppKit.h>
-
 #import "FBProcessInfo.h"
 
 #define PID_MAX 99999
@@ -299,33 +297,6 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
     return -1;
   }
   return proc.kp_eproc.e_ppid;
-}
-
-- (NSArray *)runningApplicationsForProcesses:(NSArray *)processes
-{
-  return [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
-}
-
-- (NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process
-{
-  NSRunningApplication *application = [[self
-    runningApplicationsForProcesses:@[process]]
-    firstObject];
-
-  if (![application isKindOfClass:NSRunningApplication.class]) {
-    return nil;
-  }
-
-  return application;
-}
-
-#pragma mark Private
-
-- (NSDictionary *)processIdentifiersToApplications
-{
-  NSArray *applications = NSWorkspace.sharedWorkspace.runningApplications;
-  NSArray *processIdentifiers = [applications valueForKey:@"processIdentifier"];
-  return [NSDictionary dictionaryWithObjects:applications forKeys:processIdentifiers];
 }
 
 @end

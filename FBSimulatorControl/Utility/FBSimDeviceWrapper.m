@@ -12,6 +12,7 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBProcessInfo.h"
+#import "FBProcessQuery+Helpers.h"
 #import "FBProcessQuery.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
@@ -148,9 +149,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
     return nil;
   }
 
-  FBProcessInfo *processInfo = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:ProcessInfoAvailabilityTimeout untilExists:^ FBProcessInfo * {
-    return [self.query processInfoFor:processIdentifier];
-  }];
+  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:ProcessInfoAvailabilityTimeout];
   if (!processInfo) {
     return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
   }

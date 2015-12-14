@@ -122,7 +122,6 @@
 {
   return [self updateCurrentState:^ FBSimulatorHistory * (FBSimulatorHistory *history) {
     [history.mutableLaunchedProcesses removeObject:processInfo];
-    [history.mutableProcessLaunchConfigurations removeObjectForKey:processInfo];
     return history;
   }];
 }

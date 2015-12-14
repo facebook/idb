@@ -14,7 +14,7 @@
 #import "FBSimulatorControlAssertions.h"
 #import "FBSimulatorControlTestCase.h"
 
-@interface FBTaskExecutorTests : FBSimulatorControlTestCase
+@interface FBTaskExecutorTests : XCTestCase
 
 @end
 
@@ -30,7 +30,7 @@
     startSynchronouslyWithTimeout:20]
     stdOut];
 
-  [self.assert needle:@"determine file type" inHaystack:stdOut];
+  [self assertNeedle:@"determine file type" inHaystack:stdOut];
 }
 
 - (void)testBackedByFile
@@ -46,8 +46,8 @@
     startSynchronouslyWithTimeout:20];
 
   NSString *stdOutFileContents = [NSString stringWithContentsOfFile:stdOutPath usedEncoding:nil error:nil];
-  [self.assert needle:@"determine file type" inHaystack:stdOutFileContents];
-  [self.assert needle:@"determine file type" inHaystack:task.stdOut];
+  [self assertNeedle:@"determine file type" inHaystack:stdOutFileContents];
+  [self assertNeedle:@"determine file type" inHaystack:task.stdOut];
 }
 
 - (void)testEnvironmentAdditions
@@ -61,7 +61,7 @@
     startSynchronouslyWithTimeout:20]
     stdOut];
 
-  [self.assert needle:@"FOO=BAR" inHaystack:stdOut];
+  [self assertNeedle:@"FOO=BAR" inHaystack:stdOut];
 }
 
 @end

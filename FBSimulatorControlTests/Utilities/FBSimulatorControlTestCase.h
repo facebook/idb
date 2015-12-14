@@ -14,7 +14,7 @@
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
-@class FBSimulatorControlAssertions;
+@class FBSimulatorControlNotificationAssertions;
 @class FBSimulatorSession;
 
 /**
@@ -22,7 +22,6 @@
  Should be overridden to provide Integration tests for Simulators.
  */
 @interface FBSimulatorControlTestCase : XCTestCase
-
 
 /**
  Allocates a Simulator with a default configuration.
@@ -57,11 +56,11 @@
 /**
  The Simulator Control instance that is lazily created from the defaults
  */
-@property (nonatomic, strong, readwrite) FBSimulatorControl *control;
+@property (nonatomic, strong, readonly) FBSimulatorControl *control;
 
 /**
  The FBSimulatorControlAssertions instance
  */
-@property (nonatomic, strong, readonly) FBSimulatorControlAssertions *assert;
+@property (nonatomic, strong, readonly) FBSimulatorControlNotificationAssertions *assert;
 
 @end

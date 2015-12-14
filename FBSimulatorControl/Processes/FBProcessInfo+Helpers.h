@@ -12,7 +12,7 @@
 @class FBSimulatorBinary;
 
 /**
- Helpers for obtaining more information related to a process.
+ Helpers for working with FBProcessInfo objects.
  */
 @interface FBProcessInfo (Helpers)
 

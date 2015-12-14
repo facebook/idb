@@ -34,7 +34,7 @@
   XCTAssertEqual(session.state, FBSimulatorSessionStateNotStarted);
   [self.assert noNotificationsToConsume];
 
-  [self.assert interactionSuccessful:session.interact.bootSimulator];
+  [self assertInteractionSuccessful:session.interact.bootSimulator];
   XCTAssertEqual(session.state, FBSimulatorSessionStateStarted);
   [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
   [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
@@ -45,7 +45,7 @@
   XCTAssertEqual(session.history.runningApplications.count, 0u);
   XCTAssertNotNil(session.simulator.launchInfo);
 
-  [self.assert shutdownSimulatorAndTerminateSession:session];
+  [self assertShutdownSimulatorAndTerminateSession:session];
   XCTAssertEqual(session.state, FBSimulatorSessionStateEnded);
   XCTAssertNil(session.simulator.launchInfo);
   [self.assert consumeNotification:FBSimulatorDidTerminateNotification];
@@ -76,9 +76,9 @@
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3u);
   XCTAssertEqual(([[NSSet setWithArray:@[session1.simulator.udid, session2.simulator.udid, session3.simulator.udid]] count]), 3u);
 
-  [self.assert interactionSuccessful:session1.interact.bootSimulator];
-  [self.assert interactionSuccessful:session2.interact.bootSimulator];
-  [self.assert interactionSuccessful:session3.interact.bootSimulator];
+  [self assertInteractionSuccessful:session1.interact.bootSimulator];
+  [self assertInteractionSuccessful:session2.interact.bootSimulator];
+  [self assertInteractionSuccessful:session3.interact.bootSimulator];
 
   NSArray *sessions = @[session1, session2, session3];
   for (FBSimulatorSession *session in sessions) {
@@ -94,7 +94,7 @@
   XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.simulatorApplication"]].count, 3u);
 
   for (FBSimulatorSession *session in sessions) {
-    [self.assert shutdownSimulatorAndTerminateSession:session];
+    [self assertShutdownSimulatorAndTerminateSession:session];
     XCTAssertNil(session.simulator.launchInfo);
     XCTAssertEqual(session.state, FBSimulatorSessionStateEnded);
   }

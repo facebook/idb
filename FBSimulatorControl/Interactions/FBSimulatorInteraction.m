@@ -143,7 +143,7 @@
     FBProcessInfo *processInfo = [[[[simulator
       launchInfo]
       launchedProcesses]
-      filteredArrayUsingPredicate:[FBProcessQuery processesWithLaunchPath:binary.path]]
+      filteredArrayUsingPredicate:[FBProcessQuery processesForBinary:binary]]
       firstObject];
 
     if (!processInfo) {

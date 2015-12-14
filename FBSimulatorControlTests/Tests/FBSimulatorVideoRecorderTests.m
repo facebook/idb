@@ -26,7 +26,7 @@
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  [self.assert interactionSuccessful:[session.interact launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[session.interact launchApplication:appLaunch]];
 
   FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:session.simulator logger:nil];
 
@@ -56,10 +56,10 @@
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
   FBSimulatorSession *firstSession = [self createSession];
-  [self.assert interactionSuccessful:[firstSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[firstSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
 
   FBSimulatorSession *secondSession = [self createSession];
-  [self.assert interactionSuccessful:[secondSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[secondSession.interact.bootSimulator.tileSimulator.recordVideo launchApplication:appLaunch]];
 
   // Spin the run loop a bit.
   [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:10 untilTrue:^ BOOL {

@@ -72,7 +72,7 @@
 - (FBProcessInfo *)lastLaunchedApplicationProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
-  return self.runningApplications.firstObject ?: [self.previousState lastLaunchedApplication];
+  return self.runningApplications.firstObject ?: [self.previousState lastLaunchedApplicationProcess];
 }
 
 - (FBApplicationLaunchConfiguration *)lastLaunchedApplication
