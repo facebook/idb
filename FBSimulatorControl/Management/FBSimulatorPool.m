@@ -319,6 +319,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   if (!simulator) {
     return [[FBSimulatorError describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString] fail:error];
   }
+  simulator.configuration = configuration;
 
   // This step ensures that the Simulator is in a known-shutdown state after creation.
   // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
