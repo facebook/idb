@@ -119,8 +119,8 @@ private class InteractionRunner : Runner, RelayTransformer {
   func transform(input: String) -> Output {
     let arguments = input.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
     do {
-      let (_, command) = try Command.parser().parse(arguments)
-      let runner = SubcommandRunner(subcommand: command.subcommand, control: self.control)
+      let (_, subcommand) = try Subcommand.parser().parse(arguments)
+      let runner = SubcommandRunner(subcommand: subcommand, control: self.control)
       return runner.run()
     } catch {
       return .Failure("NOPE")
