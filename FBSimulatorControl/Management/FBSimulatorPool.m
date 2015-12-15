@@ -307,14 +307,25 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   SimDeviceType *targetType = configuration.deviceType;
   SimRuntime *targetRuntime = configuration.runtime;
 
+  // First, create the device.
   NSError *innerError = nil;
   SimDevice *device = [self.deviceSet createDeviceWithType:targetType runtime:targetRuntime name:targetName error:&innerError];
   if (!device) {
     return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", targetName, targetRuntime, targetType] causedBy:innerError] fail:error];
   }
+
+  // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
   FBSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
-  simulator.configuration = configuration;
-  NSAssert(simulator, @"Expected simulator with name %@ to be inflated into pool", targetName);
+  if (!simulator) {
+    return [[FBSimulatorError describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString] fail:error];
+  }
+
+  // This step ensures that the Simulator is in a known-shutdown state after creation.
+  // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
+  if (![self.terminationStrategy safeShutdownSimulator:simulator withError:&innerError]) {
+    return [[[[FBSimulatorError describeFormat:@"Could not get newly-created simulator into a shutdown state"] inSimulator:simulator] causedBy:innerError] fail:error];
+  }
+
   return simulator;
 }
 
