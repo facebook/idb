@@ -96,18 +96,16 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     }
   }
 
-
   BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
-  NSArray *result = deleteOnStart
-    ? [self deleteAllWithError:&innerError]
-    : [self killAllWithError:&innerError];
-
-  if (!result) {
-    return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+  if (deleteOnStart) {
+    if (![self deleteAllWithError:&innerError]) {
+      return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+    }
   }
 
+  // Deletion requires killing, so don't duplicate killing
   BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
-  if (killSpuriousSimulators) {
+  if (killSpuriousSimulators && !deleteOnStart) {
     BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
     if (![self.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
       return [[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] failBool:error];
