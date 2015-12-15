@@ -36,12 +36,7 @@ private struct BaseRunner : Runner {
       break
     }
 
-    let controlConfiguration = FBSimulatorControlConfiguration(
-      simulatorApplication: try! FBSimulatorApplication(error: ()),
-      deviceSetPath: nil,
-      options: .KillSpuriousSimulatorsOnFirstStart
-    )
-    let control = FBSimulatorControl.sharedInstanceWithConfiguration(controlConfiguration)
+    let control = try! FBSimulatorControl.withConfiguration(command.configuration)
     switch (self.command.subcommand) {
     case .Interact(let portNumber):
       return InteractionRunner(control: control, portNumber: portNumber).run()
@@ -67,8 +62,11 @@ private struct SubcommandRunner : Runner {
         try simulator.interact().bootSimulator().performInteraction()
         return "Booted \(simulator.udid)"
       }
-    case .Shutdown:
-      return .Failure("unimplemented")
+    case .Shutdown(let query):
+      return self.runSimulatorWithQuery(query) { simulator in
+        try simulator.interact().shutdownSimulator().performInteraction()
+        return "Shutdown \(simulator.udid)"
+      }
     case .Diagnose(let query):
       return self.runSimulatorWithQuery(query) { simulator in
         if let sysLog = simulator.logs.systemLog() {
@@ -144,9 +142,11 @@ private extension Query {
       return FBSimulatorPredicates.withState(state)
     case .Configured(let configuration):
       return FBSimulatorPredicates.matchingConfiguration(configuration)
-    case .Compound(let subqueries):
+    case .And(let subqueries):
       let predicates = subqueries.map {$0.get(pool)}
       return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    case .Only:
+      return NSPredicate(value: false)
     }
   }
 }
