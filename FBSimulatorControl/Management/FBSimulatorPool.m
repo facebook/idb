@@ -329,7 +329,9 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   // Now we have a device that is shutdown, we should erase it.
-  if (erase && ![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
+  // Only erase if the simulator was allocated with reuse, otherwise it is a fresh Simulator that won't need erasing.
+  BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
+  if (reuse && erase && ![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
     return [[[[FBSimulatorError describe:@"Failed to erase a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
   }
 
