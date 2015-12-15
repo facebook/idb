@@ -99,7 +99,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
   if (deleteOnStart) {
     if (![self deleteAllWithError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Failed to teardown previous simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+      return [[[[FBSimulatorError describe:@"Failed to delete all simulators"] causedBy:innerError] recursiveDescription] failBool:error];
     }
   }
 
