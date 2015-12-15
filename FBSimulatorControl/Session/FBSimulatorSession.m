@@ -144,11 +144,6 @@ NSString *const FBSimulatorSessionDidEndNotification = @"FBSimulatorSessionDidEn
   return self.simulator.history;
 }
 
-- (FBSimulatorSessionLogs *)logs
-{
-  return [FBSimulatorSessionLogs withSession:self];
-}
-
 - (FBSimulatorInteraction *)interact
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));

@@ -60,7 +60,7 @@
     }];
 }
 
-+ (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block
++ (NSArray *)mapFilter:(NSArray *)array map:(id (^)(id))block predicate:(NSPredicate *)predicate
 {
   NSMutableArray *output = [NSMutableArray array];
   for (NSUInteger index = 0; index < array.count; index++) {
@@ -82,6 +82,24 @@
   });
 
   return [output filteredArrayUsingPredicate:self.nonTerminalPredicate];
+}
+
++ (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block
+{
+  return[[self
+    map:array
+    withBlock:^ id (id object) {
+      BOOL pass = [predicate evaluateWithObject:object];
+      if (!pass) {
+        return FBConcurrentCollectionOperations_FilterTerminal.terminal;
+      }
+      object = block(object);
+      if (!object) {
+        return NSNull.null;
+      }
+      return object;
+    }]
+    filteredArrayUsingPredicate:self.nonTerminalPredicate];
 }
 
 #pragma mark Private

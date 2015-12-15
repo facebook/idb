@@ -39,16 +39,14 @@
 - (void)testAppCrashLogIsFetched
 {
   FBSimulatorSession *session = [self createBootedSession];
-  FBApplicationLaunchConfiguration *appLaunch = [[[self
-    tableSearchAppLaunch]
-    injectingShimulator]
-    withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
+  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
+
   [self assertInteractionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
 
   // Shimulator sends an unrecognized selector to NSFileManager to cause a crash.
   // The CrashReporter service is a background service as it will symbolicate in a separate process.
   [self assertFindsNeedle:@"-[NSFileManager stringWithFormat:]" fromHaystackBlock:^ NSString * {
-    return [[session.logs.subprocessCrashes firstObject] asString];
+    return [[session.simulator.logs.userLaunchedProcessCrashesSinceLastLaunch firstObject] asString];
   }];
 }
 
@@ -57,7 +55,7 @@
   FBSimulatorSession *session = [self createBootedSession];
 
   [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
-    return session.logs.systemLog.asString;
+    return session.simulator.logs.systemLog.asString;
   }];
 }
 
@@ -68,7 +66,7 @@
   [self assertInteractionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
 
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
-    return [[session.logs.launchedApplicationLogs.allValues firstObject] asString];
+    return [[session.simulator.logs.launchedApplicationLogs.allValues firstObject] asString];
   }];
 }
 

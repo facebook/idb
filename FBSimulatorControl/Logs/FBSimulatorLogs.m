@@ -8,10 +8,10 @@
  */
 
 #import "FBSimulatorLogs.h"
-#import "FBSimulatorLogs+Private.h"
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBCrashLogInfo.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBProcessInfo.h"
 #import "FBSimulator.h"
@@ -21,15 +21,31 @@
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
 
+@interface FBSimulatorLogs ()
+
+@property (nonatomic, weak, readonly) FBSimulator *simulator;
+
+@end
+
 @implementation FBSimulatorLogs
 
 #pragma mark Initializers
 
 + (instancetype)withSimulator:(FBSimulator *)simulator
 {
-  FBSimulatorLogs *logs = [self new];
-  logs.simulator = simulator;
-  return logs;
+  return [[self alloc] initWithSimulator:simulator];
+}
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _simulator = simulator;
+
+  return self;
 }
 
 #pragma mark Accessors
@@ -68,96 +84,37 @@
 {
   return [FBConcurrentCollectionOperations
     map:[self launchdSimSubprocessCrashesPathsAfterDate:date]
-    withBlock:^ FBWritableLog * (NSString *path) {
-      return [[[FBWritableLogBuilder builder]
-        updatePath:path]
-        build];
+    withBlock:^ FBWritableLog * (FBCrashLogInfo *logInfo) {
+      return [logInfo toWritableLog];
     }];
 }
 
-#pragma mark Private
-
-- (NSString *)systemLogPath
+- (NSArray *)userLaunchedProcessCrashesSinceLastLaunch
 {
-  return [self.simulator.device.logPath stringByAppendingPathComponent:@"system.log"];
-}
+  // Going from state transition to 'Booted' can be after the crash report is written for an
+  // Process that instacrashes around the same time the simulator is booted.
+  // Instead, use the 'Booting' state, which will be before any Process could have been launched.
+  NSDate *lastLaunchDate = [[[self.simulator.history
+    lastChangeOfState:FBSimulatorStateBooted]
+    lastChangeOfState:FBSimulatorStateBooting]
+    timestamp];
 
-- (NSString *)coreSimulatorLogPath
-{
-  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/CoreSimulator/CoreSimulator.log"];
-}
-
-- (NSString *)diagnosticReportsPath
-{
-  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
-}
-
-- (NSArray *)diagnosticReportsContents
-{
-  return [NSFileManager.defaultManager subpathsAtPath:self.diagnosticReportsPath];
-}
-
-/**
- It is possible to search for the Simulator UUID inside the Crash Reports, but this only works for the Default Set.
- Custom DeviceSets do not have the Simulator UUID, or even the path to the the launched Executable Image.
- It is possible to filter the results of this to ensure that the crash report is a relevant Application and not some Simulator Service.
- */
-- (NSArray *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
-{
-  FBProcessInfo *launchdProcess = self.simulator.launchInfo.launchdProcess;
-  if (!launchdProcess) {
+  // If we don't have the last launch date, we can't reliably predict which processes are interesting.
+  if (!lastLaunchDate) {
     return @[];
   }
 
-  NSString *needle = [NSString stringWithFormat:@"launchd_sim [%d]", launchdProcess.processIdentifier];
-  NSPredicate *simulatorPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *path, NSDictionary *_) {
-    NSString *fileContents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
-    return [fileContents rangeOfString:needle].location != NSNotFound;
-  }];
-
-  NSFileManager *fileManager = NSFileManager.defaultManager;
-  NSPredicate *datePredicate = [NSPredicate predicateWithValue:YES];
-  if (date) {
-    datePredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *path, NSDictionary *_) {
-      NSDictionary *attributes = [fileManager attributesOfItemAtPath:path error:nil];
-      return [attributes.fileModificationDate isGreaterThanOrEqualTo:date];
-    }];
-  }
-
-  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    datePredicate,
-    simulatorPredicate
-  ]];
-
-  NSString *basePath = self.diagnosticReportsPath;
   return [FBConcurrentCollectionOperations
-    filterMap:[self diagnosticReportsContents]
-    predicate:predicate
-    map:^ NSString * (NSString *fileName) {
-      return [basePath stringByAppendingPathComponent:fileName];
+    filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:lastLaunchDate]
+    predicate:[FBSimulatorLogs predicateForUserLaunchedProcessesInHistory:self.simulator.history]
+    map:^ FBWritableLog * (FBCrashLogInfo *logInfo) {
+      return [logInfo toWritableLog];
     }];
-}
-
-@end
-
-@implementation FBSimulatorSessionLogs
-
-+ (instancetype)withSession:(FBSimulatorSession *)session;
-{
-  FBSimulatorSessionLogs *logs = [FBSimulatorSessionLogs new];
-  logs.simulator = session.simulator;
-  logs.session = session;
-  return logs;
-}
-
-- (NSArray *)subprocessCrashes
-{
-  return [self subprocessCrashesAfterDate:self.session.history.startDate];
 }
 
 - (NSDictionary *)launchedApplicationLogs
 {
-  NSArray *launchedApplications = [self.session.history allLaunchedApplications];
+  NSArray *launchedApplications = [self.simulator.history allLaunchedApplications];
 
   // TODO: Use asl(3) or syslog(1) instead of grep.
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
@@ -183,6 +140,72 @@
   }
 
   return [logs copy];
+}
+
+#pragma mark Private
+
+- (NSString *)systemLogPath
+{
+  return [self.simulator.device.logPath stringByAppendingPathComponent:@"system.log"];
+}
+
+- (NSString *)coreSimulatorLogPath
+{
+  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/CoreSimulator/CoreSimulator.log"];
+}
+
+- (NSString *)diagnosticReportsPath
+{
+  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
+}
+
+- (NSArray *)crashInfoAfterDate:(NSDate *)date
+{
+  NSString *basePath = self.diagnosticReportsPath;
+
+  return [FBConcurrentCollectionOperations
+    filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
+    predicate:[FBSimulatorLogs predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
+    map:^ FBCrashLogInfo * (NSString *fileName) {
+      NSString *path = [basePath stringByAppendingPathComponent:fileName];
+      return [FBCrashLogInfo fromCrashLogAtPath:path];
+    }];
+}
+
+- (NSArray *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
+{
+  FBProcessInfo *launchdProcess = self.simulator.launchInfo.launchdProcess;
+  if (!launchdProcess) {
+    return @[];
+  }
+
+  NSPredicate *parentProcessPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *logInfo, NSDictionary *_) {
+    return [logInfo.parentProcessName isEqualToString:@"launchd_sim"] && logInfo.parentProcessIdentifier == launchdProcess.processIdentifier;
+  }];
+
+  return [[self crashInfoAfterDate:date] filteredArrayUsingPredicate:parentProcessPredicate];
+}
+
++ (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension
+{
+  NSFileManager *fileManager = NSFileManager.defaultManager;
+  NSPredicate *datePredicate = [NSPredicate predicateWithValue:YES];
+  if (date) {
+    datePredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *fileName, NSDictionary *_) {
+      NSString *path = [basePath stringByAppendingPathComponent:fileName];
+      NSDictionary *attributes = [fileManager attributesOfItemAtPath:path error:nil];
+      return [attributes.fileModificationDate isGreaterThanOrEqualTo:date];
+    }];
+  }
+  return [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    [NSPredicate predicateWithFormat:@"pathExtension == %@", extension],
+    datePredicate
+  ]];
+}
+
++ (NSPredicate *)predicateForUserLaunchedProcessesInHistory:(FBSimulatorHistory *)history
+{
+  return [NSPredicate predicateWithValue:YES];
 }
 
 @end

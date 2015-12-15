@@ -33,8 +33,17 @@
 /**
  Map and then filter an array of objects concurrently.
 
- @param array the array to map/filter
+ @param array the array to map/filter.
+ @param block the block to map objects with.
  @param predicate the predicate to filter the mapped objects with.
+ */
++ (NSArray *)mapFilter:(NSArray *)array map:(id (^)(id))block predicate:(NSPredicate *)predicate;
+
+/**
+ Filter then map an array of objects concurrently.
+
+ @param array the array to map/filter.
+ @param predicate the predicate to filter the objects with, before they are mapped.
  @param block the block to map objects with.
  */
 + (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block;

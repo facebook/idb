@@ -14,7 +14,7 @@
 @class FBWritableLog;
 
 /**
- Exposes Simulator Logs & Diagnsotics as `FBWritableLog`s
+ Exposes Simulator Logs & Diagnsotics as FBWritableLog instances.
  */
 @interface FBSimulatorLogs : NSObject
 
@@ -49,27 +49,12 @@
  */
 - (NSArray *)subprocessCrashesAfterDate:(NSDate *)date;
 
-@end
-
 /**
- Exposes Logs & Diagnsotics a Simulator & it's session as `FBWritableLog`s
+ Crashes that occured in the Simulator since the last booting of the Simulator.
+
+ @return an NSArray<FBWritableLog *> of crashes that occured for user processes since the last boot.
  */
-@interface FBSimulatorSessionLogs : FBSimulatorLogs
-
-/**
- Creates and returns a `FBSimulatorSessionLogs` instance.
-
- @param session the Session to fetch logs for.
- @return A new `FBSimulatorLogFetcher` instance.
- */
-+ (instancetype)withSession:(FBSimulatorSession *)session;
-
-/**
- Crashes that occured in the Simulator after the start of the Session.
-
- @return an NSArray<FBWritableLog *> of crashes that occured for user processes since the start of the session.
- */
-- (NSArray *)subprocessCrashes;
+- (NSArray *)userLaunchedProcessCrashesSinceLastLaunch;
 
 /**
  The System Log, filtered and bucketed by Applications that were launched during the Session. Returned as an NSDictionary<NSString *, FBWritableLog *>
