@@ -62,13 +62,15 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 {
   NSAssert([NSThread isMainThread], @"Must be called from the main thread.");
 
+  NSError *__autoreleasing innerError = nil;
+  NSError *__autoreleasing *innerErrorPointer = &innerError;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(launchApplicationWithID:options:error:)]];
   [invocation setTarget:self.device];
   [invocation setSelector:@selector(launchApplicationWithID:options:error:)];
   [invocation setArgument:&appID atIndex:2];
   [invocation setArgument:&options atIndex:3];
-  [invocation setArgument:&error atIndex:4];
-
+  [invocation setArgument:&innerErrorPointer atIndex:4];
+  error = innerErrorPointer;
   if (![self runInvocationInBackgroundUntilTimeout:invocation]) {
     return [[FBSimulatorError describe:@"Timed out calling launchApplicationWithID"] fail:error];
   }
@@ -82,13 +84,15 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 {
   NSAssert([NSThread isMainThread], @"Must be called from the main thread.");
 
+  NSError *__autoreleasing innerError = nil;
+  NSError *__autoreleasing *innerErrorPointer = &innerError;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(installApplication:withOptions:error:)]];
   [invocation setTarget:self.device];
   [invocation setSelector:@selector(installApplication:withOptions:error:)];
   [invocation setArgument:&appURL atIndex:2];
   [invocation setArgument:&options atIndex:3];
-  [invocation setArgument:&error atIndex:4];
-
+  [invocation setArgument:&innerErrorPointer atIndex:4];
+  error = innerErrorPointer;
   if (![self runInvocationInBackgroundUntilTimeout:invocation]) {
     return [[FBSimulatorError describe:@"Timed out calling installApplication"] failBool:error];
   }
