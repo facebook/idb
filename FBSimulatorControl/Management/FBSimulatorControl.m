@@ -23,6 +23,7 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorPool.h"
@@ -75,6 +76,8 @@
   if (!hasRunOnce) {
     return YES;
   }
+
+  FBSetSimulatorLoggingEnabled(FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled);
 
   NSError *innerError = nil;
   if (![DVTPlatform loadAllPlatformsReturningError:&innerError]) {

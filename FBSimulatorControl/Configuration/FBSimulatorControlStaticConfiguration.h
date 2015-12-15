@@ -9,7 +9,21 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ An Environment Variable that is inserted into launched Simulator.app processes
+ in order to easily identify the Simulator UUID that they were launched to run against.
+ */
 extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
+
+/**
+ An Environment Variable to enable Simulator Debug Logging
+ */
+extern NSString *const FBSimulatorControlDebugLogging;
+
+/**
+ Enable/Disable CoreSimulator debug logging.
+ */
+void FBSetSimulatorLoggingEnabled(BOOL enabled);
 
 /**
  Environment Globals & other derived constants
@@ -40,5 +54,10 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  YES if passing a custom SimDeviceSet to the Simulator App is Supported.
  */
 + (BOOL)supportsCustomDeviceSets;
+
+/**
+ Global override for Simulator Debug Logging
+ */
++ (BOOL)simulatorDebugLoggingEnabled;
 
 @end

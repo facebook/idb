@@ -125,14 +125,4 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
  */
 - (NSString *)debugDescription;
 
-/**
- Log SimDeviceSet interactions.
- */
-- (void)startLoggingSimDeviceSetInteractions:(id<FBSimulatorLogger>)logger;
-
 @end
-
-/**
- Enable/disable CoreSimulator debug logging and any other verbose logging we can get our hands on.
- */
-void FBSetSimulatorLoggingEnabled(BOOL enabled);

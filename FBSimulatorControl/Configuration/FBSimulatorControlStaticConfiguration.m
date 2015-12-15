@@ -9,11 +9,20 @@
 
 #import "FBSimulatorControlStaticConfiguration.h"
 
+#import <CoreSimulator/NSUserDefaults-SimDefaults.h>
+
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBTaskExecutor.h"
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
+NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
+
+void FBSetSimulatorLoggingEnabled(BOOL enabled)
+{
+  NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
+  [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
+}
 
 @implementation FBSimulatorControlStaticConfiguration
 
@@ -121,6 +130,11 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   // This means that the '-DeviceSetPath' won't do anything for Simulators booted with prior to Xcode 7.
   // It should be possible to fix this by injecting a shim that swizzles this method in these Xcode versions.
   return [self.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
+}
+
++ (BOOL)simulatorDebugLoggingEnabled
+{
+  return [NSProcessInfo.processInfo.environment[FBSimulatorControlDebugLogging] boolValue];
 }
 
 @end

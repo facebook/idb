@@ -29,6 +29,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistoryGenerator.h"
 #import "FBSimulatorLaunchInfo.h"
+#import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorLogs.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
@@ -68,7 +69,8 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
   FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator withSimulator:self];
   FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink]];
+  FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink]];
   FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:device processQuery:query sink:compositeSink];
 
   _historyGenerator = historyGenerator;

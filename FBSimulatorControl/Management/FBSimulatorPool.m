@@ -10,7 +10,6 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPool+Private.h"
 
-#import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
@@ -419,32 +418,10 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 - (NSString *)debugDescription
 {
   NSMutableString *description = [NSMutableString string];
-  [description appendFormat:@"SimDevices: %@", [self.deviceSet.availableDevices description]];
-  [description appendFormat:@"\nAll Simulators: %@", [self.allSimulators description]];
+  [description appendFormat:@"All Simulators: %@", [self.allSimulators description]];
   [description appendFormat:@"\nAllocated Simulators: %@ \n\n", [self.allocatedSimulators description]];
-  [description appendFormat:@"\nSimulator Processes: %@ \n\n", [self activeSimulatorProcessesWithError:nil]];
+  [description appendFormat:@"\nSimulator Processes: %@ \n\n", [self.processQuery.simulatorProcesses description]];
   return description;
 }
 
-- (void)startLoggingSimDeviceSetInteractions:(id<FBSimulatorLogger>)logger;
-{
-  [FBCoreSimulatorNotifier notifierForPool:self block:^(NSDictionary *info) {
-    [logger logMessage:@"Device Set Changed: %@", info];
-  }];
-}
-
-- (NSString *)activeSimulatorProcessesWithError:(NSError *)error
-{
-  return [[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/pgrep" arguments:@[@"-lf", @"Simulator"]]
-    startSynchronouslyWithTimeout:8]
-    stdOut];
-}
-
 @end
-
-void FBSetSimulatorLoggingEnabled(BOOL enabled)
-{
-  NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
-  [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
-}
