@@ -153,12 +153,12 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 {
-  FBSimulator *simulator = [self obtainSimulatorWithConfiguration:configuration options:options error:error];
+  NSError *innerError = nil;
+  FBSimulator *simulator = [self obtainSimulatorWithConfiguration:configuration options:options error:&innerError];
   if (!simulator) {
-    return nil;
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
-  NSError *innerError = nil;
   if (![self prepareSimulatorForUsage:simulator configuration:configuration options:options error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
