@@ -48,6 +48,16 @@
 
 @implementation FBSimulatorHistory (Queries)
 
+- (NSArray *)launchedAgents
+{
+  return [self.launchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedAgents];
+}
+
+- (NSArray *)launchedApplications
+{
+  return [self.launchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedApplications];
+}
+
 - (NSArray *)allUserLaunchedProcesses
 {
   NSMutableOrderedSet *set = [NSMutableOrderedSet orderedSet];
@@ -72,7 +82,7 @@
 - (FBProcessInfo *)lastLaunchedApplicationProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
-  return self.runningApplications.firstObject ?: [self.previousState lastLaunchedApplicationProcess];
+  return self.launchedApplications.firstObject ?: self.previousState.lastLaunchedApplicationProcess;
 }
 
 - (FBApplicationLaunchConfiguration *)lastLaunchedApplication
@@ -80,10 +90,15 @@
   return self.processLaunchConfigurations[self.lastLaunchedApplicationProcess];
 }
 
-- (FBProcessInfo *)lastLaunchedAgent
+- (FBProcessInfo *)lastLaunchedAgentProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
-  return self.runningAgents.firstObject ?: [self.previousState lastLaunchedAgent];
+  return self.launchedAgents.firstObject ?: self.previousState.lastLaunchedAgentProcess;
+}
+
+- (FBAgentLaunchConfiguration *)lastLaunchedAgent
+{
+  return self.processLaunchConfigurations[self.lastLaunchedAgentProcess];
 }
 
 - (FBProcessInfo *)runningProcessForLaunchConfiguration:(FBProcessLaunchConfiguration *)launchConfig
@@ -93,7 +108,7 @@
 
 - (FBProcessInfo *)runningProcessForBinary:(FBSimulatorBinary *)binary
 {
-  return [[self.runningApplications
+  return [[self.launchedApplications
     filteredArrayUsingPredicate:[FBSimulatorHistory predicateForBinary:binary]]
     firstObject];
 }
@@ -103,20 +118,20 @@
   return [self runningProcessForApplication:application recursive:NO];
 }
 
-- (NSArray *)runningAgents
-{
-  return [self.launchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedAgents];
-}
-
-- (NSArray *)runningApplications
-{
-  return [self.launchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedApplications];
-}
-
 - (id)diagnosticNamed:(NSString *)name forApplication:(FBSimulatorApplication *)application
 {
   FBProcessInfo *processInfo = [self runningProcessForApplication:application recursive:YES];
   return self.processDiagnostics[processInfo][name];
+}
+
+- (instancetype)lastChangeOfState:(FBSimulatorState)state
+{
+  for (FBSimulatorHistory *history in [self changesToSimulatorState]) {
+    if (history.simulatorState == state) {
+      return history;
+    }
+  }
+  return nil;
 }
 
 - (NSArray *)changesToSimulatorState
@@ -124,7 +139,7 @@
   return [self changesToKeyPath:@"simulatorState"];
 }
 
-- (NSDate *)sessionStartDate
+- (NSDate *)startDate
 {
   return self.firstSessionState.timestamp;
 }

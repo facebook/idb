@@ -30,7 +30,7 @@
 /**
  The Simulator's State.
  */
-@property (nonatomic, assign, readonly) FBSimulatorState state;
+@property (nonatomic, assign, readonly) FBSimulatorState simulatorState;
 
 /**
  Process information for the processes that have been launched by FBSimulatorControl.

@@ -152,7 +152,7 @@
 
 - (NSArray *)subprocessCrashes
 {
-  return [self subprocessCrashesAfterDate:self.session.history.sessionStartDate];
+  return [self subprocessCrashesAfterDate:self.session.history.startDate];
 }
 
 - (NSDictionary *)launchedApplicationLogs

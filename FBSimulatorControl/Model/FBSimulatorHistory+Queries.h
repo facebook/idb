@@ -19,6 +19,20 @@
 @interface FBSimulatorHistory (Queries)
 
 /**
+ Returns Agent State for all running agents, does not reach into previous states.
+
+ @return an NSArray<FBProcessInfo> of the currently running, User Launched Agents.
+ */
+- (NSArray *)launchedAgents;
+
+/**
+ Returns Application State for all running applications, does not reach into previous states.
+
+ @return an NSArray<FBProcessInfo> of the currently running, User Launched Applications.
+ */
+- (NSArray *)launchedApplications;
+
+/**
  Returns all of the Agents and Applications that have been launched, in the order that they were launched.
  Reaches into previous states in order to find Agents and Applications that have been terminated.
 
@@ -30,7 +44,7 @@
  Returns all of the Applications that have been launched, in the order that they were launched.
  Reaches into previous states in order to find Applications that have been terminated.
 
- @return An NSArray<FBProcessInfo> of All Launched Applications, most recent first.
+ @return An NSArray<FBProcessInfo> of All Launched Application Processes, most recent first.
  */
 - (NSArray *)allLaunchedApplications;
 
@@ -38,7 +52,7 @@
  Returns all of the Agents that have been launched, in the order that they were launched.
  Reaches into previous states in order to find Agents that have been terminated.
 
- @return An NSArray<FBProcessInfo> of All Launched Agents, most recent first.
+ @return An NSArray<FBProcessInfo> of All Launched Agent Processes, most recent first.
  */
 - (NSArray *)allLaunchedAgents;
 
@@ -54,7 +68,7 @@
  Returns the Launch Configration for the Application that was launched most recently.
  Reaches into previous states in order to find Applications that have been terminated.
 
- @return An FBProcessInfo for the most recently launched Application, nil if no Application has been launched.
+ @return A FBApplicationLaunchConfiguration for the most recently launched Application, nil if no Application has been launched.
  */
 - (FBApplicationLaunchConfiguration *)lastLaunchedApplication;
 
@@ -64,7 +78,15 @@
 
  @return An FBProcessInfo for the most recently launched Agent, nil if no Agent has been launched.
  */
-- (FBProcessInfo *)lastLaunchedAgent;
+- (FBProcessInfo *)lastLaunchedAgentProcess;
+
+/**
+ Returns the Launch Configration for the Agent that was launched most recently.
+ Reaches into previous states in order to find Applications that have been terminated.
+
+ @return An A FBAgentLaunchConfiguration for the most recently launched Agent, nil if no Agent has been launched.
+ */
+- (FBAgentLaunchConfiguration *)lastLaunchedAgent;
 
 /**
  Returns the Process State for the given launch configuration, does not reach into previous states.
@@ -91,20 +113,6 @@
 - (FBProcessInfo *)runningProcessForApplication:(FBSimulatorApplication *)application;
 
 /**
- Returns Agent State for all running agents, does not reach into previous states.
-
- @return an NSArray<FBUserLaunchedProcess> of the currently running, User Launched Agents.
- */
-- (NSArray *)runningAgents;
-
-/**
- Returns Application State for all running applications, does not reach into previous states.
-
- @return an NSArray<FBUserLaunchedProcess> of the currently running, User Launched Applications.
- */
-- (NSArray *)runningApplications;
-
-/**
  Finds the first diagnostic for the provided name, matching the application.
  Reaches into previous states in order to find Diagnostics for Applications that have been terminated.
 
@@ -115,13 +123,21 @@
 - (id<NSCopying, NSCoding>)diagnosticNamed:(NSString *)name forApplication:(FBSimulatorApplication *)application;
 
 /**
- Describes the `simulatorState` changes.
+ Returns the History representing the last change to Simulator State.
+
+ @param state the state change to search for.
+ @return the history of the prior change to the given state, or nil if this change never occurred.
+ */
+- (instancetype)lastChangeOfState:(FBSimulatorState)state;
+
+/**
+ An NSArray<FBSimulatorHistory> of the changes to the `simulatorState` property.
  */
 - (NSArray *)changesToSimulatorState;
 
 /**
- The date of the first session state.
+ The timestamp of the first state.
  */
-- (NSDate *)sessionStartDate;
+- (NSDate *)startDate;
 
 @end

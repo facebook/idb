@@ -97,15 +97,16 @@
   [self.generator didChangeState:FBSimulatorStateShuttingDown];
   [self.generator didChangeState:FBSimulatorStateShutdown];
 
-  FBSimulatorHistory *history = self.generator.history;
-
-  [self assertHistory:history changes:@[
+  FBSimulatorHistory *latest = self.generator.history;
+  [self assertHistory:latest changes:@[
     @(FBSimulatorStateCreating),
     @(FBSimulatorStateBooting),
     @(FBSimulatorStateBooted),
     @(FBSimulatorStateShuttingDown),
     @(FBSimulatorStateShutdown)
   ]];
+
+  XCTAssertEqual(latest.previousState.previousState, [latest lastChangeOfState:FBSimulatorStateBooted]);
 }
 
 @end
