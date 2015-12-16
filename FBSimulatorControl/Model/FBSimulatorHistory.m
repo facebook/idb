@@ -10,6 +10,7 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorHistory+Private.h"
 
+#import "FBCollectionDescriptions.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorApplication.h"
@@ -101,6 +102,8 @@
   return [self.mutableProcessDiagnostics copy];
 }
 
+#pragma mark NSObject
+
 - (NSUInteger)hash
 {
   return self.timestamp.hash |
@@ -125,53 +128,66 @@
          [self.mutableProcessDiagnostics isEqualToDictionary:object.mutableProcessDiagnostics];
 }
 
+#pragma mark Description
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"History: %@",
-    [FBSimulatorHistory describeDifferenceBetween:self and:self.previousState]
+    @"History -> %@",
+    [FBSimulatorHistory describeDifferenceFrom:self.previousState to:self]
   ];
 }
 
 - (NSString *)recursiveChangeDescription
 {
   NSMutableString *string = [NSMutableString string];
-  FBSimulatorHistory *history = self;
-  while (history) {
-    if (string.length > 0) {
-      [string appendString:@"\n"];
-    }
-
-    [string appendString:[FBSimulatorHistory describeDifferenceBetween:history and:history.previousState]];
-    history = history.previousState;
-  }
-  return [string copy];
+  [self recursiveChangeDescriptionWithMutableString:string];
+  return string;
 }
 
-+ (NSString *)describeDifferenceBetween:(FBSimulatorHistory *)first and:(FBSimulatorHistory *)second
+- (void)recursiveChangeDescriptionWithMutableString:(NSMutableString *)string
 {
-  if (first && !second) {
+  if (self.previousState) {
+    [self.previousState recursiveChangeDescriptionWithMutableString:string];
+  }
+  [string appendFormat:@"%@\n", [FBSimulatorHistory describeDifferenceFrom:self.previousState to:self]];
+}
+
++ (NSString *)describeDifferenceFrom:(FBSimulatorHistory *)from to:(FBSimulatorHistory *)to
+{
+  if (to && !from) {
     return @"Inital State";
   }
-
-  NSMutableString *string = [NSMutableString string];
-  if (first.simulatorState != second.simulatorState) {
+  NSMutableString *string = [NSMutableString stringWithFormat:@"%@ -> ", to.timestamp];
+  if (to.simulatorState != from.simulatorState) {
     [string appendFormat:
       @"Simulator State from %@ to %@ | ",
-      [FBSimulator stateStringFromSimulatorState:second.simulatorState],
-      [FBSimulator stateStringFromSimulatorState:first.simulatorState]
+      [FBSimulator stateStringFromSimulatorState:from.simulatorState],
+      [FBSimulator stateStringFromSimulatorState:to.simulatorState]
     ];
   }
-  if (![first.mutableLaunchedProcesses isEqual:second.mutableLaunchedProcesses]) {
-    [string appendFormat:@"Running Processes from %@ to %@ | ", second.mutableLaunchedProcesses, first.mutableLaunchedProcesses];
+  if (![to.mutableLaunchedProcesses isEqualToOrderedSet:from.mutableLaunchedProcesses]) {
+    [string appendFormat:
+      @"Running Processes from %@ to %@ | ",
+      [FBCollectionDescriptions oneLineDescriptionFromArray:from.mutableLaunchedProcesses.array atKeyPath:@"shortDescription"],
+      [FBCollectionDescriptions oneLineDescriptionFromArray:to.mutableLaunchedProcesses.array atKeyPath:@"shortDescription"]
+    ];
   }
-  if (![first.mutableProcessDiagnostics isEqualToDictionary:second.mutableProcessDiagnostics]) {
-    [string appendFormat:@"Diagnostics from %@ to %@ | ", second.mutableProcessDiagnostics, first.mutableProcessDiagnostics];
+  if (![to.mutableSimulatorDiagnostics isEqualToDictionary:from.mutableSimulatorDiagnostics]) {
+    [string appendFormat:@"Simulator Diagnostics from %@ to %@ | ",
+      [FBCollectionDescriptions oneLineDescriptionFromDictionary:from.mutableSimulatorDiagnostics],
+      [FBCollectionDescriptions oneLineDescriptionFromDictionary:to.mutableSimulatorDiagnostics]
+    ];
+  }
+  if (![to.mutableProcessDiagnostics isEqualToDictionary:from.mutableProcessDiagnostics]) {
+    [string appendFormat:@"Process Diagnostics from %@ to %@ | ",
+      [FBCollectionDescriptions oneLineDescriptionFromDictionary:from.mutableProcessDiagnostics],
+      [FBCollectionDescriptions oneLineDescriptionFromDictionary:to.mutableProcessDiagnostics]
+    ];
   }
   if (string.length == 0) {
     return @"No Changes";
   }
-  [string appendFormat:@"At Date %@", second.timestamp];
   return string;
 }
 

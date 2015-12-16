@@ -67,11 +67,6 @@
 @property (nonatomic, copy, readonly) FBSimulatorHistory *previousState;
 
 /**
- A String description of the difference between the provided states.
- */
-+ (NSString *)describeDifferenceBetween:(FBSimulatorHistory *)first and:(FBSimulatorHistory *)second;
-
-/**
  Describes all the changes of the reciever, to the first change.
  */
 - (NSString *)recursiveChangeDescription;
