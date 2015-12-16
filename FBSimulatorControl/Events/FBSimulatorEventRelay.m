@@ -13,8 +13,8 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBDispatchSourceNotifier.h"
 #import "FBCoreSimulatorNotifier.h"
+#import "FBDispatchSourceNotifier.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
