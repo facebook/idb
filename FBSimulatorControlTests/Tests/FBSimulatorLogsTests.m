@@ -59,7 +59,7 @@
   }];
 }
 
-- (void)flakyOnTravis_testLaunchedApplicationLogs
+- (void)testLaunchedApplicationLogs
 {
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;

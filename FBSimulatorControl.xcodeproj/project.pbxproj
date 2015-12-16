@@ -35,6 +35,8 @@
 		AA1D653F1C21A9690069F90D /* FBCollectionDescriptions.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1D653D1C21A9690069F90D /* FBCollectionDescriptions.m */; };
 		AA1D65421C21B38D0069F90D /* FBCrashLogInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1D65401C21B38D0069F90D /* FBCrashLogInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA1D65431C21B38D0069F90D /* FBCrashLogInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1D65411C21B38D0069F90D /* FBCrashLogInfo.m */; };
+		AA1D65461C21CD2A0069F90D /* FBASLParser.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1D65441C21CD2A0069F90D /* FBASLParser.h */; };
+		AA1D65471C21CD2A0069F90D /* FBASLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1D65451C21CD2A0069F90D /* FBASLParser.m */; };
 		AA3230CB1BDA387700C5BA01 /* FBSimulatorControlAssertions.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */; };
 		AA5639551C060005009BAFAA /* FBSimulatorControl.h in Headers */ = {isa = PBXBuildFile; fileRef = AA5639541C05FFF5009BAFAA /* FBSimulatorControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA5696381B9FB7B500A2918F /* DVTFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA5696371B9FB7B500A2918F /* DVTFoundation.framework */; };
@@ -244,6 +246,8 @@
 		AA1D653D1C21A9690069F90D /* FBCollectionDescriptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCollectionDescriptions.m; sourceTree = "<group>"; };
 		AA1D65401C21B38D0069F90D /* FBCrashLogInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCrashLogInfo.h; sourceTree = "<group>"; };
 		AA1D65411C21B38D0069F90D /* FBCrashLogInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogInfo.m; sourceTree = "<group>"; };
+		AA1D65441C21CD2A0069F90D /* FBASLParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBASLParser.h; sourceTree = "<group>"; };
+		AA1D65451C21CD2A0069F90D /* FBASLParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBASLParser.m; sourceTree = "<group>"; };
 		AA3230C91BDA387700C5BA01 /* FBSimulatorControlAssertions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlAssertions.h; sourceTree = "<group>"; };
 		AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlAssertions.m; sourceTree = "<group>"; };
 		AA4876491BAC7399007F7D23 /* FBSimulatorControl-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FBSimulatorControl-Info.plist"; sourceTree = "<group>"; };
@@ -1746,6 +1750,8 @@
 		AA9516F31C15F54600A89CAD /* Logs */ = {
 			isa = PBXGroup;
 			children = (
+				AA1D65441C21CD2A0069F90D /* FBASLParser.h */,
+				AA1D65451C21CD2A0069F90D /* FBASLParser.m */,
 				AA1D65401C21B38D0069F90D /* FBCrashLogInfo.h */,
 				AA1D65411C21B38D0069F90D /* FBCrashLogInfo.m */,
 				AA9516F51C15F54600A89CAD /* FBSimulatorLogs.h */,
@@ -1966,6 +1972,7 @@
 				AA9517851C15F54600A89CAD /* FBSimulatorPool.h in Headers */,
 				AA9517621C15F54600A89CAD /* FBInteraction+Private.h in Headers */,
 				AA9517511C15F54600A89CAD /* FBSimulatorConfiguration.h in Headers */,
+				AA1D65461C21CD2A0069F90D /* FBASLParser.h in Headers */,
 				AA0771F11C1ADFA300E7FD52 /* FBBinaryParser.h in Headers */,
 				AA9517471C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h in Headers */,
 				AA9517BE1C15F54600A89CAD /* FBSimulatorVideoRecorder.h in Headers */,
@@ -2168,6 +2175,7 @@
 				AA9517A81C15F54600A89CAD /* FBTaskExecutor+Convenience.m in Sources */,
 				AA1D653F1C21A9690069F90D /* FBCollectionDescriptions.m in Sources */,
 				AA95174B1C15F54600A89CAD /* FBProcessLaunchConfiguration.m in Sources */,
+				AA1D65471C21CD2A0069F90D /* FBASLParser.m in Sources */,
 				AA9517A31C15F54600A89CAD /* FBSimulatorSession.m in Sources */,
 				AA9517BF1C15F54600A89CAD /* FBSimulatorVideoRecorder.m in Sources */,
 				AA95178F1C15F54600A89CAD /* FBSimulatorApplication.m in Sources */,

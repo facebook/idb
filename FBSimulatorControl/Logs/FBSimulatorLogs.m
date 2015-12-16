@@ -11,6 +11,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBASLParser.h"
 #import "FBCrashLogInfo.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBProcessInfo.h"
@@ -114,29 +115,20 @@
 
 - (NSDictionary *)launchedApplicationLogs
 {
-  NSArray *launchedApplications = [self.simulator.history allLaunchedApplications];
+  NSString *aslPath = self.aslPath;
+  if (!aslPath) {
+    return @{};
+  }
 
-  // TODO: Use asl(3) or syslog(1) instead of grep.
+  FBASLParser *aslParser = [FBASLParser parserForPath:aslPath];
+  if (!aslParser) {
+    return @{};
+  }
+
+  NSArray *launchedApplications = [self.simulator.history allLaunchedApplications];
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
   for (FBProcessInfo *launchedProcess in launchedApplications) {
-    logs[launchedProcess] = [[[[[FBWritableLogBuilder builder]
-      updateShortName:[NSString stringWithFormat:@"log_%d", launchedProcess.processIdentifier]]
-      updateFileType:@"log"]
-      updatePathFromBlock:^ BOOL (NSString *path) {
-        NSString *shellCommand = [NSString stringWithFormat:
-          @"cat %@ | grep %d",
-          [FBTaskExecutor escapePathForShell:self.systemLogPath],
-          launchedProcess.processIdentifier
-        ];
-
-        return [[[[[FBTaskExecutor.sharedInstance
-         withShellTaskCommand:shellCommand]
-         withStdOutPath:path stdErrPath:nil]
-         build]
-         startSynchronouslyWithTimeout:10]
-         wasSuccessful];
-      }]
-      build];
+    logs[launchedProcess] = [aslParser writableLogForProcessInfo:launchedProcess];
   }
 
   return [logs copy];
@@ -157,6 +149,36 @@
 - (NSString *)diagnosticReportsPath
 {
   return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
+}
+
+- (NSString *)aslPath
+{
+  NSString *basePath = [[[NSHomeDirectory()
+    stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
+    stringByAppendingPathComponent:self.simulator.udid]
+    stringByAppendingPathComponent:@"asl"];
+
+  NSFileManager *fileManager = NSFileManager.defaultManager;
+
+  BOOL isDirectory = NO;
+  if (![fileManager fileExistsAtPath:basePath isDirectory:&isDirectory]) {
+    return nil;
+  }
+  if (!isDirectory) {
+    return nil;
+  }
+
+  NSString *file = [[[[NSFileManager.defaultManager
+    contentsOfDirectoryAtPath:basePath error:nil]
+    pathsMatchingExtensions:@[@"asl"]]
+    sortedArrayUsingComparator:[FBSimulatorLogs fileSizeComparatorAtBasePath:basePath]]
+    firstObject];
+
+  if (!file) {
+    return nil;
+  }
+
+  return [basePath stringByAppendingPathComponent:file];
 }
 
 - (NSArray *)crashInfoAfterDate:(NSDate *)date
@@ -206,6 +228,23 @@
 + (NSPredicate *)predicateForUserLaunchedProcessesInHistory:(FBSimulatorHistory *)history
 {
   return [NSPredicate predicateWithValue:YES];
+}
+
++ (NSComparator)fileSizeComparatorAtBasePath:(NSString *)basePath
+{
+  NSFileManager *fileManager = NSFileManager.defaultManager;
+
+  return ^ NSComparisonResult (NSString *leftFilename, NSString *rightFilename) {
+    NSDictionary *leftAttributes = [fileManager attributesOfItemAtPath:[basePath stringByAppendingPathComponent:leftFilename] error:nil];
+    NSDictionary *rightAttributes = [fileManager attributesOfItemAtPath:[basePath stringByAppendingPathComponent:rightFilename] error:nil];
+    if (leftAttributes.fileSize == rightAttributes.fileSize) {
+      return NSOrderedSame;
+    }
+    if (leftAttributes.fileSize > rightAttributes.fileSize) {
+      return NSOrderedAscending;
+    }
+    return NSOrderedDescending;
+  };
 }
 
 @end
