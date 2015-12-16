@@ -41,8 +41,8 @@
   [self.assert noNotificationsToConsume];
 
   XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
-  XCTAssertEqual(session.history.runningAgents.count, 0u);
-  XCTAssertEqual(session.history.runningApplications.count, 0u);
+  XCTAssertEqual(session.history.launchedAgents.count, 0u);
+  XCTAssertEqual(session.history.launchedApplications.count, 0u);
   XCTAssertNotNil(session.simulator.launchInfo);
 
   [self assertShutdownSimulatorAndTerminateSession:session];
@@ -77,8 +77,8 @@
   for (FBSimulatorSession *session in sessions) {
     XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
     XCTAssertEqual(session.state, FBSimulatorSessionStateStarted);
-    XCTAssertEqual(session.history.runningApplications.count, 0u);
-    XCTAssertEqual(session.history.runningAgents.count, 0u);
+    XCTAssertEqual(session.history.launchedAgents.count, 0u);
+    XCTAssertEqual(session.history.launchedApplications.count, 0u);
     XCTAssertNotNil(session.simulator.launchInfo);
   }
 

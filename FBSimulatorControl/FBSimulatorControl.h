@@ -8,6 +8,7 @@
  */
 
 #import <FBSimulatorControl/FBBinaryParser.h>
+#import <FBSimulatorControl/FBCollectionDescriptions.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>

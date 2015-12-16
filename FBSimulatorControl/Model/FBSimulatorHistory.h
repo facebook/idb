@@ -30,7 +30,7 @@
 /**
  The Simulator's State.
  */
-@property (nonatomic, assign, readonly) FBSimulatorState state;
+@property (nonatomic, assign, readonly) FBSimulatorState simulatorState;
 
 /**
  Process information for the processes that have been launched by FBSimulatorControl.
@@ -65,11 +65,6 @@
  The last state, may be nil if this is the first instance.
  */
 @property (nonatomic, copy, readonly) FBSimulatorHistory *previousState;
-
-/**
- A String description of the difference between the provided states.
- */
-+ (NSString *)describeDifferenceBetween:(FBSimulatorHistory *)first and:(FBSimulatorHistory *)second;
 
 /**
  Describes all the changes of the reciever, to the first change.
