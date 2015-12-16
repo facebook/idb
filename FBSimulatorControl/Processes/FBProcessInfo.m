@@ -50,7 +50,9 @@
         [self.environment isEqual:object.environment];
 }
 
-- (NSString *)description
+#pragma mark Descriptions
+
+- (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
     @"Process %@ | PID %d | Arguments %@ | Environment %@",
@@ -59,6 +61,20 @@
     self.arguments,
     self.environment
   ];
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Process %@ | PID %d",
+    self.launchPath.lastPathComponent,
+    self.processIdentifier
+  ];
+}
+
+- (NSString *)description
+{
+  return [self debugDescription];
 }
 
 #pragma mark NSCopying

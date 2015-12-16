@@ -69,4 +69,14 @@
  */
 - (NSArray *)launchedProcesses;
 
+/**
+ A Full Description of the Launch Info.
+ */
+- (NSString *)debugDescription;
+
+/**
+ A Partial Description of the Launch Info.
+ */
+- (NSString *)shortDescription;
+
 @end

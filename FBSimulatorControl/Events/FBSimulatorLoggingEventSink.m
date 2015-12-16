@@ -9,9 +9,11 @@
 
 #import "FBSimulatorLoggingEventSink.h"
 
-#import "FBSimulator.h"
+#import "FBProcessInfo.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator.h"
 #import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorLaunchInfo.h"
 
 @interface FBSimulatorLoggingEventSink ()
 
@@ -46,7 +48,7 @@
 
 - (void)didStartWithLaunchInfo:(FBSimulatorLaunchInfo *)launchInfo
 {
-  [self.logger logMessage:@"%@Did Start => %@", self.prefix, launchInfo];
+  [self.logger logMessage:@"%@Did Start => %@", self.prefix, launchInfo.shortDescription];
 }
 
 - (void)didTerminate:(BOOL)expected
@@ -56,22 +58,22 @@
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
-  [self.logger logMessage:@"%@Agent Did Launch => %@", self.prefix, agentProcess];
+  [self.logger logMessage:@"%@Agent Did Launch => %@", self.prefix, agentProcess.shortDescription];
 }
 
 - (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
 {
-  [self.logger logMessage:@"%@Agent Did Terminate => Expected %d %@ ", self.prefix, expected, agentProcess];
+  [self.logger logMessage:@"%@Agent Did Terminate => Expected %d %@ ", self.prefix, expected, agentProcess.shortDescription];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
-  [self.logger logMessage:@"%@Application Did Launch => %@", self.prefix, applicationProcess];
+  [self.logger logMessage:@"%@Application Did Launch => %@", self.prefix, applicationProcess.shortDescription];
 }
 
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
-  [self.logger logMessage:@"%@Application Did Terminate => Expected %d %@", self.prefix, expected, applicationProcess];
+  [self.logger logMessage:@"%@Application Did Terminate => Expected %d %@", self.prefix, expected, applicationProcess.shortDescription];
 }
 
 - (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value

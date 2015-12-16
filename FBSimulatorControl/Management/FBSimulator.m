@@ -162,7 +162,7 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
     self.name,
     self.udid,
     self.device.stateString,
-    self.launchInfo
+    self.launchInfo.shortDescription
   ];
 }
 

@@ -44,14 +44,14 @@
 @property (nonatomic, copy, readonly) NSString *stdErrPath;
 
 /**
- A Short Description of the reciever.
+ A Full Description of the reciever.
  */
-- (NSString *)shortDescription;
+- (NSString *)debugDescription;
 
 /**
- A Longer Description of the reciever.
+ A Partial Description of the reciever.
  */
-- (NSString *)longDescription;
+- (NSString *)shortDescription;
 
 @end
 
