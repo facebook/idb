@@ -32,6 +32,11 @@
 - (FBWritableLog *)systemLog;
 
 /**
+ The Log for CoreSimulator.
+ */
+- (FBWritableLog *)coreSimulator;
+
+/**
  The Bootstrap of the Simulator's launchd_sim.
  */
 - (FBWritableLog *)simulatorBootstrap;

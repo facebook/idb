@@ -39,11 +39,12 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 /**
  Creates and returns an FBSimulatorPool.
 
- @param configuration the configuration to use.
+ @param configuration the configuration to use. Must not be nil.
+ @param logger the logger to use to verbosely describe what is going on. May be nil.
  @param error any error that occurred during the creation of the pool.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
++ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
 
 /**
  Returns the configuration for the reciever.
@@ -125,14 +126,4 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
  */
 - (NSString *)debugDescription;
 
-/**
- Log SimDeviceSet interactions.
- */
-- (void)startLoggingSimDeviceSetInteractions:(id<FBSimulatorLogger>)logger;
-
 @end
-
-/**
- Enable/disable CoreSimulator debug logging and any other verbose logging we can get our hands on.
- */
-void FBSetSimulatorLoggingEnabled(BOOL enabled);

@@ -15,6 +15,7 @@
 
 @property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
+@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 
 @property (nonatomic, strong, readonly) NSMutableOrderedSet *allocatedUDIDs;
 @property (nonatomic, strong, readonly) NSMutableDictionary *allocationOptions;
@@ -22,7 +23,7 @@
 
 @property (nonatomic, copy, readwrite) NSError *firstRunError;
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet;
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBSimulatorLogger>)logger;
 
 /**
  Kills all of the Simulators the reciever's Device Set.

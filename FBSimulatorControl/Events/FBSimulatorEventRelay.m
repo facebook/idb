@@ -14,6 +14,7 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBDispatchSourceNotifier.h"
+#import "FBCoreSimulatorNotifier.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
@@ -22,13 +23,15 @@
 @interface FBSimulatorEventRelay ()
 
 @property (nonatomic, copy, readwrite) FBSimulatorLaunchInfo *launchInfo;
+@property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
+@property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
 
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 @property (nonatomic, strong, readonly) SimDevice *simDevice;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary *processTerminationNotifiers;
-@property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
+@property (nonatomic, strong, readwrite) FBCoreSimulatorNotifier *stateChangeNotifier;
 
 @end
 
@@ -47,8 +50,10 @@
   _launchInfo = [FBSimulatorLaunchInfo fromSimDevice:simDevice query:processQuery];
   _processTerminationNotifiers = [NSMutableDictionary dictionary];
   _knownLaunchedProcesses = [NSMutableSet set];
+  _lastKnownState = FBSimulatorStateUnknown;
 
   [self registerSimulatorLifecycleHandlers];
+  [self createNotifierForSimDevice:simDevice];
 
   return self;
 }
@@ -137,6 +142,11 @@
 
 - (void)didChangeState:(FBSimulatorState)state
 {
+  if (state == self.lastKnownState) {
+    return;
+  }
+
+  self.lastKnownState = state;
   [self.sink didChangeState:state];
 }
 
@@ -174,6 +184,22 @@
 {
   [self.processTerminationNotifiers.allValues makeObjectsPerformSelector:@selector(terminate)];
   [self.processTerminationNotifiers removeAllObjects];
+  [self.stateChangeNotifier terminate];
+  self.stateChangeNotifier = nil;
+}
+
+#pragma mark State Notifier
+
+- (void)createNotifierForSimDevice:(SimDevice *)device
+{
+  __weak typeof(self) weakSelf = self;
+  self.stateChangeNotifier = [FBCoreSimulatorNotifier notifierForSimDevice:device block:^(NSDictionary *info) {
+    NSNumber *newStateNumber = info[@"new_state"];
+    if (!newStateNumber) {
+      return;
+    }
+    [weakSelf didChangeState:newStateNumber.integerValue];
+  }];
 }
 
 #pragma mark Application Launch/Termination

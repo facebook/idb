@@ -46,4 +46,14 @@
  */
 @property (nonatomic, copy, readonly) NSDictionary *environment;
 
+/**
+ A Full Description of the Process.
+ */
+- (NSString *)debugDescription;
+
+/**
+ A Partial Description of the Process.
+ */
+- (NSString *)shortDescription;
+
 @end

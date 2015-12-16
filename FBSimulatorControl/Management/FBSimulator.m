@@ -29,6 +29,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistoryGenerator.h"
 #import "FBSimulatorLaunchInfo.h"
+#import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorLogs.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
@@ -40,13 +41,14 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
 #pragma mark Lifecycle
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query logger:(id<FBSimulatorLogger>)logger
 {
   return [[FBSimulator alloc]
     initWithDevice:device
     configuration:configuration ?: [self inferSimulatorConfigurationFromDevice:device]
     pool:pool
-    query:query];
+    query:query
+    logger:logger];
 }
 
 + (FBSimulatorConfiguration *)inferSimulatorConfigurationFromDevice:(SimDevice *)device
@@ -54,7 +56,7 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
   return [[FBSimulatorConfiguration.defaultConfiguration withDeviceType:device.deviceType] withRuntime:device.runtime];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query logger:(id<FBSimulatorLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -68,7 +70,8 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 
   FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator withSimulator:self];
   FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink]];
+  FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:logger];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink]];
   FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:device processQuery:query sink:compositeSink];
 
   _historyGenerator = historyGenerator;
@@ -159,7 +162,7 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
     self.name,
     self.udid,
     self.device.stateString,
-    self.launchInfo
+    self.launchInfo.shortDescription
   ];
 }
 

@@ -102,15 +102,6 @@
 
 #pragma mark NSObject
 
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"simulator_pid %d | launchd_sim_pid %d",
-    self.simulatorProcess.processIdentifier,
-    self.launchdProcess.processIdentifier
-  ];
-}
-
 - (NSUInteger)hash
 {
   return self.simulatorApplication.hash ^ self.simulatorProcess.hash | self.launchdProcess.hash;
@@ -125,6 +116,31 @@
   return [self.simulatorApplication isEqual:info.simulatorApplication] &&
          [self.simulatorProcess isEqual:info.simulatorProcess] &&
          [self.launchdProcess isEqual:info.launchdProcess];
+}
+
+#pragma mark Descriptions
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"Simulator Process (%@) | launchd_sim Process (%@)",
+    self.simulatorProcess.debugDescription,
+    self.launchdProcess.debugDescription
+  ];
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"simulator_pid %d | launchd_sim_pid %d",
+    self.simulatorProcess.processIdentifier,
+    self.launchdProcess.processIdentifier
+  ];
+}
+
+- (NSString *)description
+{
+  return self.debugDescription;
 }
 
 #pragma mark NSCopying

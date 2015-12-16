@@ -43,6 +43,14 @@
     build];
 }
 
+- (FBWritableLog *)coreSimulator
+{
+  return [[[[FBWritableLogBuilder builder]
+    updatePath:self.coreSimulatorLogPath]
+    updateHumanReadableName:@"Core Simulator Log"]
+    build];
+}
+
 - (FBWritableLog *)simulatorBootstrap
 {
   NSString *expectedPath = [[self.simulator.device.setPath
@@ -72,6 +80,11 @@
 - (NSString *)systemLogPath
 {
   return [self.simulator.device.logPath stringByAppendingPathComponent:@"system.log"];
+}
+
+- (NSString *)coreSimulatorLogPath
+{
+  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/CoreSimulator/CoreSimulator.log"];
 }
 
 - (NSString *)diagnosticReportsPath

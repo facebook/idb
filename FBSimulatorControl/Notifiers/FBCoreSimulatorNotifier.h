@@ -13,20 +13,30 @@
 
 @class FBSimulator;
 @class FBSimulatorPool;
+@class SimDevice;
 
 /**
  A class for wrapping Core Simulator Notifiers in a `FBTerminationHandle`
  */
-@interface FBCoreSimulatorNotifier : NSObject<FBTerminationHandle>
+@interface FBCoreSimulatorNotifier : NSObject <FBTerminationHandle>
 
 /**
- Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDevice broadcasts for the provided Simulator.
+ Creates and returns an FBSimDeviceNotifier for the lifecycle events that the Simulator's SimDevice broadcasts.
 
  @param simulator the FBSimulator to relay events from.
  @param block the block to call when events are sent from the SimDevice.
  @return an instance of FBSimDeviceNotifier for later termination.
  */
 + (instancetype)notifierForSimulator:(FBSimulator *)simulator block:(void (^)(NSDictionary *info))block;
+
+/**
+ Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDevice broadcasts.
+
+ @param simDevice the FBSimulator to relay events from.
+ @param block the block to call when events are sent from the SimDevice.
+ @return an instance of FBSimDeviceNotifier for later termination.
+ */
++ (instancetype)notifierForSimDevice:(SimDevice *)simDevice block:(void (^)(NSDictionary *info))block;
 
 /**
  Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDeviceSet broadcasts for the provided Pool.

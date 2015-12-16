@@ -92,7 +92,7 @@
   return nil;
 }
 
-- (NSString *)longDescription
+- (NSString *)debugDescription
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
   return nil;
@@ -106,7 +106,7 @@
 
 - (NSString *)description
 {
-  return [self longDescription];
+  return [self debugDescription];
 }
 
 @end
@@ -148,7 +148,7 @@
   return self.application.binary.path;
 }
 
-- (NSString *)longDescription
+- (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
     @"App Launch | Application %@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",
@@ -246,7 +246,7 @@
   return self.agentBinary.path;
 }
 
-- (NSString *)longDescription
+- (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
     @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",

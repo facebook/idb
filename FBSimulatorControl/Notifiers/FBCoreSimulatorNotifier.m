@@ -28,13 +28,18 @@
 
 + (instancetype)notifierForSimulator:(FBSimulator *)simulator block:(void (^)(NSDictionary *info))block
 {
-  id<SimDeviceNotifier> notifier = simulator.device.notificationManager;
-  return [[self alloc] initWithNotifier:notifier block:block];
+  return [self notifierForSimDevice:simulator.device block:block];
 }
 
 + (instancetype)notifierForPool:(FBSimulatorPool *)pool block:(void (^)(NSDictionary *info))block
 {
   id<SimDeviceNotifier> notifier = pool.deviceSet.notificationManager;
+  return [[self alloc] initWithNotifier:notifier block:block];
+}
+
++ (instancetype)notifierForSimDevice:(SimDevice *)simDevice block:(void (^)(NSDictionary *info))block
+{
+  id<SimDeviceNotifier> notifier = simDevice.notificationManager;
   return [[self alloc] initWithNotifier:notifier block:block];
 }
 
