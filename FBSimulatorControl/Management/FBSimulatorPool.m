@@ -38,7 +38,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 #pragma mark - Initializers
 
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
++ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
   SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration error:&innerError];
@@ -46,14 +46,14 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     return [[[FBSimulatorError describe:@"Failed to create device set"] causedBy:innerError] fail:error];
   }
 
-  FBSimulatorPool *pool = [[FBSimulatorPool alloc] initWithConfiguration:configuration deviceSet:deviceSet];
+  FBSimulatorPool *pool = [[FBSimulatorPool alloc] initWithConfiguration:configuration deviceSet:deviceSet logger:logger];
   if (![pool performPoolPreconditionsWithError:&innerError]) {
     return [[[FBSimulatorError describe:@"Failed meet pool preconditions"] causedBy:innerError] fail:error];
   }
   return pool;
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBSimulatorLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -66,6 +66,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   _inflatedSimulators = [NSMutableDictionary dictionary];
   _processQuery = [FBProcessQuery new];
   _deviceSet = deviceSet;
+  _logger = logger;
 
   return self;
 }
@@ -129,7 +130,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     if (self.inflatedSimulators[udid]) {
       continue;
     }
-    FBSimulator *simulator = [FBSimulator fromSimDevice:device configuration:nil pool:self query:self.processQuery];
+    FBSimulator *simulator = [FBSimulator fromSimDevice:device configuration:nil pool:self query:self.processQuery logger:self.logger];
     self.inflatedSimulators[udid] = simulator;
   }
 

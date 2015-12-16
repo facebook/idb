@@ -23,13 +23,9 @@
  Creates a new Logging Event Sink for the provided Simulator.
  
  @param simulator the Simulator to log events for. Will not be retained. Must not be nil.
+ @param logger the Logger to write messages to. May be nil.
  @return a new FBSimulatorLoggingEventSink instance.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
-
-/**
- The Logger to write messages to.
- */
-@property (nonatomic, strong, readwrite) id<FBSimulatorLogger> logger;
++ (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBSimulatorLogger>)logger;
 
 @end

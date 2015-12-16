@@ -26,6 +26,7 @@
 #import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory.h"
+#import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Convenience.h"
 #import "FBSimulatorSession.h"
@@ -34,15 +35,22 @@
 
 #pragma mark - Initializers
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
 {
   if (![FBSimulatorControl doGlobalPreconditionsWithError:error]) {
     return nil;
   }
-  return [[FBSimulatorControl alloc] initWithConfiguration:configuration error:error];
+
+  logger = logger ?: FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled ? FBSimulatorLogger.toNSLog : nil;
+  return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
+{
+  return [self withConfiguration:configuration logger:nil error:error];
+}
+
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
 {
   self = [super init];
   if (!self) {
@@ -50,7 +58,7 @@
   }
 
   _configuration = configuration;
-  _simulatorPool = [FBSimulatorPool poolWithConfiguration:configuration error:error];
+  _simulatorPool = [FBSimulatorPool poolWithConfiguration:configuration logger:logger error:error];
   return self;
 }
 

@@ -15,6 +15,7 @@
 
 @interface FBSimulatorLoggingEventSink ()
 
+@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 @property (nonatomic, copy, readonly) NSString *prefix;
 
 @end
@@ -23,9 +24,8 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBSimulatorLogger>)logger
 {
-  id<FBSimulatorLogger> logger = FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled ? FBSimulatorLogger.toNSLog : nil;
   return [[self alloc] initWithPrefix:[NSString stringWithFormat:@"%@: ", simulator.udid] logger:logger];
 }
 

@@ -15,6 +15,7 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorSession;
+@protocol FBSimulatorLogger;
 
 /**
  The Root Class for the FBSimulatorControl Framework.
@@ -22,7 +23,17 @@
 @interface FBSimulatorControl : NSObject
 
 /**
- Returns a new `FBSimulatorControl` instance.
+ Creates and returns a new `FBSimulatorControl` instance.
+
+ @param configuration the Configuration to setup the instance with.
+ @param logger the logger to use to verbosely describe what is going on. May be nil.
+ @param error any error that occurred during instantiation.
+ @returns a new FBSimulatorControl instance.
+ */
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
+
+/**
+ Creates and returns a new `FBSimulatorControl` instance.
 
  @param configuration the Configuration to setup the instance with.
  @param error any error that occurred during instantiation.
