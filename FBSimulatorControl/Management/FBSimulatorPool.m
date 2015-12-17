@@ -103,7 +103,14 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
     }
   }
 
-  // Deletion requires killing, so don't duplicate killing
+  // Deletion requires killing, so don't duplicate killing.
+  BOOL killOnStart = (self.configuration.options & FBSimulatorManagementOptionsKillAllOnFirstStart) == FBSimulatorManagementOptionsKillAllOnFirstStart;
+  if (killOnStart && !deleteOnStart) {
+    if (![self killAllWithError:&innerError]) {
+      return [[[[FBSimulatorError describe:@"Failed to kill all simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+    }
+  }
+
   BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
   if (killSpuriousSimulators && !deleteOnStart) {
     BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
