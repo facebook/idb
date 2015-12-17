@@ -50,6 +50,14 @@
         [self.environment isEqual:object.environment];
 }
 
+#pragma mark Accessors
+
+- (NSString *)processName
+{
+  // This should be fetched from sysctl/libproc instead.
+  return self.launchPath.lastPathComponent;
+}
+
 #pragma mark Descriptions
 
 - (NSString *)debugDescription
@@ -67,7 +75,7 @@
 {
   return [NSString stringWithFormat:
     @"Process %@ | PID %d",
-    self.launchPath.lastPathComponent,
+    self.processName,
     self.processIdentifier
   ];
 }

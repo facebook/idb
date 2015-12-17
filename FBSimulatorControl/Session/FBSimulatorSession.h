@@ -55,11 +55,6 @@ extern NSString *const FBSimulatorSessionDidEndNotification;
 @property (nonatomic, strong, readonly) FBSimulatorHistory *history;
 
 /**
- Returns the Logs associated with this Session.
- */
-@property (nonatomic, strong, readonly) FBSimulatorSessionLogs *logs;
-
-/**
  Returns the state of the Session.
  */
 @property (nonatomic, assign, readonly) FBSimulatorSessionState state;

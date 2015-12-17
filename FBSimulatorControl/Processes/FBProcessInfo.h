@@ -32,6 +32,11 @@
 @property (nonatomic, assign, readonly) pid_t processIdentifier;
 
 /**
+ The Name of the Process.
+ */
+@property (nonatomic, copy, readonly) NSString *processName;
+
+/**
  The Launch Path of the running process
  */
 @property (nonatomic, copy, readonly) NSString *launchPath;
