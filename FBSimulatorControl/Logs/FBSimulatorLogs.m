@@ -153,32 +153,10 @@
 
 - (NSString *)aslPath
 {
-  NSString *basePath = [[[NSHomeDirectory()
+  return [[[NSHomeDirectory()
     stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
     stringByAppendingPathComponent:self.simulator.udid]
     stringByAppendingPathComponent:@"asl"];
-
-  NSFileManager *fileManager = NSFileManager.defaultManager;
-
-  BOOL isDirectory = NO;
-  if (![fileManager fileExistsAtPath:basePath isDirectory:&isDirectory]) {
-    return nil;
-  }
-  if (!isDirectory) {
-    return nil;
-  }
-
-  NSString *file = [[[[NSFileManager.defaultManager
-    contentsOfDirectoryAtPath:basePath error:nil]
-    pathsMatchingExtensions:@[@"asl"]]
-    sortedArrayUsingComparator:[FBSimulatorLogs fileSizeComparatorAtBasePath:basePath]]
-    firstObject];
-
-  if (!file) {
-    return nil;
-  }
-
-  return [basePath stringByAppendingPathComponent:file];
 }
 
 - (NSArray *)crashInfoAfterDate:(NSDate *)date
@@ -232,22 +210,4 @@
     return [pidSet containsObject:@(crashLog.processIdentifier)];
   }];
 }
-
-+ (NSComparator)fileSizeComparatorAtBasePath:(NSString *)basePath
-{
-  NSFileManager *fileManager = NSFileManager.defaultManager;
-
-  return ^ NSComparisonResult (NSString *leftFilename, NSString *rightFilename) {
-    NSDictionary *leftAttributes = [fileManager attributesOfItemAtPath:[basePath stringByAppendingPathComponent:leftFilename] error:nil];
-    NSDictionary *rightAttributes = [fileManager attributesOfItemAtPath:[basePath stringByAppendingPathComponent:rightFilename] error:nil];
-    if (leftAttributes.fileSize == rightAttributes.fileSize) {
-      return NSOrderedSame;
-    }
-    if (leftAttributes.fileSize > rightAttributes.fileSize) {
-      return NSOrderedAscending;
-    }
-    return NSOrderedDescending;
-  };
-}
-
 @end

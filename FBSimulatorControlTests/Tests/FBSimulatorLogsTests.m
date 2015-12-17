@@ -24,7 +24,7 @@
 - (void)assertFindsNeedle:(NSString *)needle fromHaystackBlock:( NSString *(^)(void) )block
 {
   __block NSString *haystack = nil;
-  BOOL foundLog = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:30 untilTrue:^ BOOL {
+  BOOL foundLog = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:60 untilTrue:^ BOOL {
     haystack = block();
     return haystack != nil;
   }];
