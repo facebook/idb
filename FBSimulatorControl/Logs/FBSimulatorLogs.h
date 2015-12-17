@@ -57,10 +57,10 @@
 - (NSArray *)userLaunchedProcessCrashesSinceLastLaunch;
 
 /**
- The System Log, filtered and bucketed by Applications that were launched during the Session. Returned as an NSDictionary<NSString *, FBWritableLog *>
+ The System Log, filtered and bucketed by Processes that were launched during the Session.
 
  @return an NSDictionary<FBProcessInfo *, FBWritableLog> of the logs, filtered by launched process.
  */
-- (NSDictionary *)launchedApplicationLogs;
+- (NSDictionary *)launchedProcessLogs;
 
 @end

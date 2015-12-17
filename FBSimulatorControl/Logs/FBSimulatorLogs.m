@@ -113,7 +113,7 @@
     }];
 }
 
-- (NSDictionary *)launchedApplicationLogs
+- (NSDictionary *)launchedProcessLogs
 {
   NSString *aslPath = self.aslPath;
   if (!aslPath) {
@@ -125,7 +125,7 @@
     return @{};
   }
 
-  NSArray *launchedApplications = [self.simulator.history allLaunchedApplications];
+  NSArray *launchedApplications = self.simulator.history.allUserLaunchedProcesses;
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
   for (FBProcessInfo *launchedProcess in launchedApplications) {
     logs[launchedProcess] = [aslParser writableLogForProcessInfo:launchedProcess];
@@ -227,7 +227,10 @@
 
 + (NSPredicate *)predicateForUserLaunchedProcessesInHistory:(FBSimulatorHistory *)history
 {
-  return [NSPredicate predicateWithValue:YES];
+  NSSet *pidSet = [NSSet setWithArray:[history.allUserLaunchedProcesses valueForKey:@"processIdentifier"]];
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, NSDictionary *_) {
+    return [pidSet containsObject:@(crashLog.processIdentifier)];
+  }];
 }
 
 + (NSComparator)fileSizeComparatorAtBasePath:(NSString *)basePath

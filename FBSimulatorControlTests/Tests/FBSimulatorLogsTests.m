@@ -66,7 +66,7 @@
   [self assertInteractionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
 
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
-    return [[session.simulator.logs.launchedApplicationLogs.allValues firstObject] asString];
+    return [[session.simulator.logs.launchedProcessLogs.allValues firstObject] asString];
   }];
 }
 
