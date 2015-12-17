@@ -48,14 +48,14 @@
 
 @implementation FBSimulatorHistory (Queries)
 
-- (NSArray *)launchedAgents
-{
-  return [self.launchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedAgents];
-}
-
 - (NSArray *)launchedApplications
 {
-  return [self.launchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedApplications];
+  return [self.launchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedApplicationProcesses];
+}
+
+- (NSArray *)launchedAgents
+{
+  return [self.launchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
 }
 
 - (NSArray *)allUserLaunchedProcesses
@@ -71,12 +71,12 @@
 
 - (NSArray *)allLaunchedApplications
 {
-  return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedApplications];
+  return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedApplicationProcesses];
 }
 
 - (NSArray *)allLaunchedAgents
 {
-  return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:FBSimulatorHistory.predicateForUserLaunchedAgents];
+  return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
 }
 
 - (FBProcessInfo *)lastLaunchedApplicationProcess
@@ -192,17 +192,17 @@
   }];
 }
 
-+ (NSPredicate *)predicateForUserLaunchedApplications
+- (NSPredicate *)predicateForUserLaunchedApplicationProcesses
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    return [process.launchPath rangeOfString:@".app"].location != NSNotFound;
+    return [self.processLaunchConfigurations[process] isKindOfClass:FBApplicationLaunchConfiguration.class];
   }];
 }
 
-+ (NSPredicate *)predicateForUserLaunchedAgents
+- (NSPredicate *)predicateForUserLaunchedAgentProcesses
 {
   return [NSCompoundPredicate notPredicateWithSubpredicate:
-    [self predicateForUserLaunchedApplications]
+    [self predicateForUserLaunchedApplicationProcesses]
   ];
 }
 

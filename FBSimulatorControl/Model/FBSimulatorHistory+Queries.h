@@ -19,18 +19,18 @@
 @interface FBSimulatorHistory (Queries)
 
 /**
- Returns Agent State for all running agents, does not reach into previous states.
-
- @return an NSArray<FBProcessInfo> of the currently running, User Launched Agents.
- */
-- (NSArray *)launchedAgents;
-
-/**
  Returns Application State for all running applications, does not reach into previous states.
 
  @return an NSArray<FBProcessInfo> of the currently running, User Launched Applications.
  */
 - (NSArray *)launchedApplications;
+
+/**
+ Returns Agent State for all running agents, does not reach into previous states.
+
+ @return an NSArray<FBProcessInfo> of the currently running, User Launched Agents.
+ */
+- (NSArray *)launchedAgents;
 
 /**
  Returns all of the Agents and Applications that have been launched, in the order that they were launched.

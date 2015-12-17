@@ -125,9 +125,9 @@
     return @{};
   }
 
-  NSArray *launchedApplications = self.simulator.history.allUserLaunchedProcesses;
+  NSArray *launchedProcesses = self.simulator.history.allUserLaunchedProcesses;
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
-  for (FBProcessInfo *launchedProcess in launchedApplications) {
+  for (FBProcessInfo *launchedProcess in launchedProcesses) {
     logs[launchedProcess] = [aslParser writableLogForProcessInfo:launchedProcess];
   }
 
