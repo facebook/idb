@@ -16,7 +16,7 @@
 		AA93B7D01BE9544000CF6A56 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7CF1BE9544000CF6A56 /* Runners.swift */; };
 		AA93B7D21BEA679600CF6A56 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7D11BEA679600CF6A56 /* Help.swift */; };
 		AA93B7D61BEA97A700CF6A56 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA93B7D51BEA97A700CF6A56 /* Bridging.swift */; };
-		AAEAC9BB1BF23BAE00B5F957 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AAEAC9BB1BF23BAE00B5F957 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AAEAC9BD1BF3CD7B00B5F957 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9BC1BF3CD7B00B5F957 /* SignalHandler.swift */; };
 		AAEAC9BF1BF3EA8200B5F957 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9BE1BF3EA8200B5F957 /* SocketRelay.swift */; };
 		AAEAC9C11BF3EA9200B5F957 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEAC9C01BF3EA9200B5F957 /* StdIORelay.swift */; };
@@ -278,7 +278,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Sources/fbsimctl-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -289,7 +288,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Sources/fbsimctl-Bridging-Header.h";
 			};
