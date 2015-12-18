@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+@protocol FBSimulatorLogger;
+
 /**
  An Environment Variable that is inserted into launched Simulator.app processes
  in order to easily identify the Simulator UUID that they were launched to run against.
@@ -16,9 +18,14 @@
 extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
 
 /**
- An Environment Variable to enable Simulator Debug Logging
+ An Environment Variable to enable Simulator Debug Logging.
  */
 extern NSString *const FBSimulatorControlDebugLogging;
+
+/**
+ An Environment Variable that if set, use dlopen for loading weak frameworks instead of -[NSBundle load].
+ */
+extern NSString *const FBSimulatorControlUsedlopenForFrameworks;
 
 /**
  Enable/Disable CoreSimulator debug logging.
@@ -31,7 +38,7 @@ void FBSetSimulatorLoggingEnabled(BOOL enabled);
 @interface FBSimulatorControlStaticConfiguration : NSObject
 
 /**
- The location of Xcode's Contents/Developer directory
+ The path to of Xcode's /Xcode.app/Contents/Developer directory.
  */
 + (NSString *)developerDirectory;
 
@@ -59,5 +66,15 @@ void FBSetSimulatorLoggingEnabled(BOOL enabled);
  Global override for Simulator Debug Logging
  */
 + (BOOL)simulatorDebugLoggingEnabled;
+
+/**
+ The Default logger to send log messages to.
+ */
++ (id<FBSimulatorLogger>)defaultLogger;
+
+/**
+ A Description of the Current Configuration.
+ */
++ (NSString *)description;
 
 @end

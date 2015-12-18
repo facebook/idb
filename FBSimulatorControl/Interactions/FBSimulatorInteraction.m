@@ -45,6 +45,10 @@
   FBSimulator *simulator = self.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
+    if (!simulator.simulatorApplication) {
+      return [[FBSimulatorError describe:@"Could not boot Simulator as no Simulator Application was provided"] failBool:error];
+    }
+
     NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[@"--args",
       @"-CurrentDeviceUDID", simulator.udid,
       @"-ConnectHardwareKeyboard", @"0",

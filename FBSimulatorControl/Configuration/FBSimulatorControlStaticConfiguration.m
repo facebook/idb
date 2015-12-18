@@ -9,14 +9,84 @@
 
 #import "FBSimulatorControlStaticConfiguration.h"
 
+#include <dlfcn.h>
+
+#import <CoreSimulator/SimRuntime.h>
 #import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorLogger.h"
 #import "FBTaskExecutor.h"
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
 NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
+NSString *const FBSimulatorControlUsedlopenForFrameworks = @"FBSIMULATORCONTROL_USE_DLOPEN";
+
+static void LoadFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
+{
+  NSBundle *bundle = [NSBundle bundleWithPath:path];
+  NSCAssert(bundle, @"Could not create a bundle at path %@", path);
+
+  NSError *error = nil;
+  BOOL success = [bundle loadAndReturnError:&error];
+  NSCAssert(success, @"Could not load bundle with error %@", error);
+  [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
+}
+
+static void dlopenFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
+{
+  NSString *frameworkName = [[path stringByDeletingPathExtension] lastPathComponent];
+  NSString *binaryPath = [path stringByAppendingPathComponent:frameworkName];
+  NSCAssert([NSFileManager.defaultManager fileExistsAtPath:binaryPath], @"Expected %@ to exist", binaryPath);
+
+  [logger logMessage:@"dlopen on binary %@ at path %@", [path lastPathComponent], binaryPath];
+  void *handle = dlopen(binaryPath.UTF8String, RTLD_NOW | RTLD_GLOBAL);
+  NSCAssert(handle, @"dlopen with error %s", dlerror());
+
+  [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
+}
+
+static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
+{
+  // This will assert if the directory could not be found.
+  NSString *developerDirectory = FBSimulatorControlStaticConfiguration.developerDirectory;
+
+  // A Mapping of Class Names to the Frameworks that they belong to. This serves to:
+  // 1) Represent the Frameworks that FBSimulatorControl is dependent on via their classes
+  // 2) Provide a path to the relevant Framework.
+  // 3) Provide a class for sanity checking the Framework load.
+  // 4) Provide a class that can be checked before the Framework load to avoid re-loading the same
+  //    Framework if others have done so before.
+  NSDictionary *classMapping = @{
+    @"SimDevice" : @"Library/PrivateFrameworks/CoreSimulator.framework",
+    @"DVTDevice" : @"../SharedFrameworks/DVTFoundation.framework",
+    @"DTiPhoneSimulatorApplicationSpecifier" : @"../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework"
+  };
+  [logger logMessage:@"Using Developer Directory %@", developerDirectory];
+
+  for (NSString *className in classMapping) {
+    NSString *relativePath = classMapping[className];
+    NSString *path = [[developerDirectory stringByAppendingPathComponent:relativePath] stringByStandardizingPath];
+    if (NSClassFromString(className)) {
+      [logger logMessage:@"%@ is allready loaded, skipping load of framework %@", className, path];
+    }
+
+    [logger logMessage:@"%@ is not loaded. Loading %@ at path %@", className, path.lastPathComponent, path];
+    if (getenv(FBSimulatorControlUsedlopenForFrameworks.UTF8String) != NULL){
+      dlopenFrameworkAtPath(logger, path);
+    } else {
+      LoadFrameworkAtPath(logger, path);
+    }
+
+    NSCAssert(NSClassFromString(className), @"Expected %@ to be loaded after %@ was loaded", className, path.lastPathComponent);
+  }
+}
+
+__attribute__((constructor)) static void EntryPoint()
+{
+  LoadPrivateFrameworks(FBSimulatorControlStaticConfiguration.defaultLogger);
+}
 
 void FBSetSimulatorLoggingEnabled(BOOL enabled)
 {
@@ -29,46 +99,15 @@ void FBSetSimulatorLoggingEnabled(BOOL enabled)
 + (NSString *)developerDirectory
 {
   static dispatch_once_t onceToken;
-  static NSString *developerDirectory;
+  static NSString *directory;
   dispatch_once(&onceToken, ^{
-    NSString *fromXcodeSelect = [self developerDirectoryFromXcodeSelect];
-    NSString *fromRunningProcess = [self developerDirectoryFromRunningProcess];
-    if (fromXcodeSelect && !fromRunningProcess) {
-      developerDirectory = fromXcodeSelect;
-      return;
-    }
-    NSCAssert(
-      [fromRunningProcess isEqualToString:fromXcodeSelect],
-      @"Xcode Paths are different:\nxcode-select:%@\nFrom XCTest Process:%@",
-      fromXcodeSelect,
-      fromRunningProcess
-    );
-    developerDirectory = fromXcodeSelect;
+    directory = [[[FBTaskExecutor.sharedInstance
+      taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
+      startSynchronouslyWithTimeout:10]
+      stdOut];
+    NSCAssert(directory, @"Xcode Path could not be determined from `xcode-select`");
   });
-
-  return developerDirectory;
-}
-
-+ (NSString *)developerDirectoryFromXcodeSelect
-{
-  NSString *path = [[[FBTaskExecutor.sharedInstance
-    taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-    startSynchronouslyWithTimeout:10]
-    stdOut];
-  NSCAssert(path, @"We need to be able to decide the xcode path");
-  return path;
-}
-
-+ (NSString *)developerDirectoryFromRunningProcess
-{
-  NSString *path = [NSProcessInfo.processInfo.arguments firstObject];
-  while (![path hasSuffix:@"/Contents/Developer"]) {
-    path = [path stringByDeletingLastPathComponent];
-    if ([path isEqualToString:@"/"] || [path isEqualToString:@""]) {
-      return nil;
-    }
-  }
-  return path;
+  return directory;
 }
 
 + (NSDecimalNumber *)sdkVersionNumber
@@ -135,6 +174,22 @@ void FBSetSimulatorLoggingEnabled(BOOL enabled)
 + (BOOL)simulatorDebugLoggingEnabled
 {
   return [NSProcessInfo.processInfo.environment[FBSimulatorControlDebugLogging] boolValue];
+}
+
++ (id<FBSimulatorLogger>)defaultLogger
+{
+  return FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled ? FBSimulatorLogger.toNSLog : nil;
+}
+
++ (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Developer Directory %@ | SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
+    self.developerDirectory,
+    self.sdkVersion,
+    self.supportsCustomDeviceSets,
+    self.simulatorDebugLoggingEnabled
+  ];
 }
 
 @end

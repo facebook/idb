@@ -82,8 +82,8 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   }
 
   return deviceSetPath
-    ? [SimDeviceSet setForSetPath:configuration.deviceSetPath]
-    : [SimDeviceSet defaultSet];
+    ? [NSClassFromString(@"SimDeviceSet") setForSetPath:configuration.deviceSetPath]
+    : [NSClassFromString(@"SimDeviceSet") defaultSet];
 }
 
 - (BOOL)performPoolPreconditionsWithError:(NSError **)error
