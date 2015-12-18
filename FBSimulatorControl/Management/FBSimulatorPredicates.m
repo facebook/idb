@@ -16,6 +16,7 @@
 #import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
+#import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool+Private.h"
@@ -66,8 +67,13 @@
 + (NSPredicate *)matchingConfiguration:(FBSimulatorConfiguration *)configuration
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return [candidate.device.deviceType.name isEqual:configuration.deviceType.name] &&
-           [candidate.device.runtime.name isEqual:configuration.runtime.name];
+    if (![candidate.configuration.device isEqual:configuration.device]) {
+      return NO;
+    }
+    if (![candidate.configuration.os isEqual:configuration.os]) {
+      return NO;
+    }
+    return YES;
   }];
 }
 

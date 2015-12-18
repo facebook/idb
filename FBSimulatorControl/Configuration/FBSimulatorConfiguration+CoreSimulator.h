@@ -9,56 +9,99 @@
 
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
 
+@class SimDevice;
 @class SimDeviceType;
 @class SimRuntime;
+
+@protocol FBSimulatorConfiguration_Device;
+@protocol FBSimulatorConfiguration_OS;
 
 /**
  Adapting FBSimulatorConfiguration to CoreSimulator.
  */
 @interface FBSimulatorConfiguration (CoreSimulator)
 
-/**
- The SimRuntime for the current configuration.
- Will return nil, if the runtime is unavailable
- */
-@property (nonatomic, strong, readonly) SimRuntime *runtime;
+#pragma mark Matching Configuration against Available Versions
 
 /**
- The SimRuntime for the current configuration.
- Will return nil, if the runtime is unavailable
+ Returns a new Simulator Configuration, for the newest available OS for given Device.
+
+ @param device the Device to obtain the OS Configuration for
+ @return the newest OS Configuration for the provided Device Configuration, or nil if none is available.
  */
-@property (nonatomic, strong, readonly) SimDeviceType *deviceType;
++ (id<FBSimulatorConfiguration_OS>)newestAvailableOSForDevice:(id<FBSimulatorConfiguration_Device>)device;
 
 /**
- The Defaults override for the Device-Specific scale key in NSUserDefaults.
- See 'defaults read com.apple.iphonesimulator'
+ Returns a new Simulator Configuration, for the newest available OS for the current Device.
+ This method will Assert if there is no available OS Version for the current Device.
+
+ @return a Configuration with the OS Version Applied.
  */
-@property (nonatomic, copy, readonly) NSString *lastScaleKey;
+- (instancetype)newestAvailableOS;
 
 /**
- The Command Line switch to override the Device-Specific scale of a directly-launched the Simulator.
- See 'defaults read com.apple.iphonesimulator'
+ Returns a new Simulator Configuration, for the oldest available OS for given Device.
+
+ @param device the Device to obtain the OS Configuration for
+ @return the newest OS Configuration for the provided Device Configuration, or nil if none is available.
  */
-@property (nonatomic, copy, readonly) NSString *lastScaleCommandLineSwitch;
++ (id<FBSimulatorConfiguration_OS>)oldestAvailableOSForDevice:(id<FBSimulatorConfiguration_Device>)device;
 
 /**
- Returns a new Configuration, for the specific SimRuntime.
+ Returns a new Simulator Configuration, for the oldest available OS for the current Device.
+ This method will Assert if there is no available OS Version for the current Device.
+
+ @return a Configuration with the OS Version Applied.
  */
-- (instancetype)withRuntime:(SimRuntime *)runtime;
+- (instancetype)oldestAvailableOS;
 
 /**
- Returns a new Configuration, for the specific DeviceType.
+ Creates and returns a FBSimulatorConfiguration object that matches the provided device.
+
+ @param device the Device to infer SimulatorConfiguration from.
+ @param error any error that occurs in the inference of a configuration
+ @return A FBSimulatorConfiguration object that matches the device.
  */
-- (instancetype)withDeviceType:(SimDeviceType *)deviceType;
++ (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)device error:(NSError **)error;
 
 /**
- Returns an NSDictionary<FBSimulatorConfiguration, SimRuntime> for the available runtimes.
+ Confirms that the Runtime requirements for the reciever's configurations are met.
+ Since it is possible to construct configurations for a wide range of Device Types & Runtimes,
+ it may be the case the configuration represents an OS Version or Device that is unavaiable.
+
+ Additionally, there are invalid OS Version to Device Type combinations that need to be checked at runtime.
+
+ @param error an error out for any error that occurred.
+ @return YES if the Runtime requirements are met, NO otherwise.
  */
-+ (NSDictionary *)configurationsToAvailableRuntimes;
+- (BOOL)checkRuntimeRequirementsReturningError:(NSError **)error;
+
+#pragma mark Obtaining CoreSimulator Classes
 
 /**
- Returns an NSDictionary<FBSimulatorConfiguration, SimDeviceType> for the available devices.
+ Obtains the appropriate SimRuntime for a given configuration, or nil if no matching runtime is available.
+
+ @param error an error out for any error that occurs.
+ @return a SimRuntime if one could be obtained, nil otherwise.
  */
-+ (NSDictionary *)configurationsToAvailableDeviceTypes;
+- (SimRuntime *)obtainRuntimeWithError:(NSError **)error;
+
+/**
+ Obtains the appropriate SimDeviceType for a given configuration, or nil if no matching SimDeviceType is available.
+
+ @param error an error out for any error that occurs.
+ @return a SimDeviceType if one could be obtained, nil otherwise.
+ */
+- (SimDeviceType *)obtainDeviceTypeWithError:(NSError **)error;
+
+#pragma mark Scale
+
+/**
+ The Command Line Arguments to pass to the Simulator Application, based on the reciever's Device Type.
+
+ @param error an error out for any error that occurs obtaining the SimDeviceType.
+ @return an Array of Command Line Arguments if one could be constructed, nil otherwise.
+ */
+- (NSArray *)lastScaleCommandLineArgumentsWithError:(NSError **)error;
 
 @end

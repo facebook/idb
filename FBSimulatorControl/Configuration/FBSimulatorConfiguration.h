@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 /**
- A Value object that represents the Configuration of a Simulator.
+ A Value object that represents the Configuration of a iPhone, iPad, Watch or TV Simulator.
 
  Class is designed around maximum convenience for specifying a configuration.
  For example to specify an iPad 2 on iOS 8.2:
@@ -107,13 +107,31 @@
 - (instancetype)iPadAir2;
 
 /**
+ The 38mm Apple Watch.
+ */
++ (instancetype)watch38mm;
+- (instancetype)watch38mm;
+
+/**
+ The 42mm Apple Watch.
+ */
++ (instancetype)watch42mm;
+- (instancetype)watch42mm;
+
+/**
+ The 1080p Apple TV.
+ */
++ (instancetype)appleTV1080p;
+- (instancetype)appleTV1080p;
+
+/**
  A Device with the provided name.
  Will return nil, if no device with the given name could be found.
  */
-+ (instancetype)named:(NSString *)deviceType;
-- (instancetype)named:(NSString *)deviceType;
++ (instancetype)withDeviceNamed:(NSString *)deviceName;
+- (instancetype)withDeviceNamed:(NSString *)deviceName;
 
-#pragma mark OS Versions
+#pragma mark iOS Versions
 
 /**
  iOS 7.1
@@ -151,16 +169,50 @@
 - (instancetype)iOS_9_0;
 
 /**
- iOS Device with the given OS version.
- Will return nil, if no OS with the given name could be found.
+ iOS 9.1
  */
-+ (instancetype)iOS:(NSString *)version;
+- (instancetype)iOS_9_1;
 
 /**
- iOS Device with the given OS version.
+ iOS 9.2
+ */
+- (instancetype)iOS_9_2;
+
+/**
+ Device with the given OS version.
  Will return nil, if no OS with the given name could be found.
  */
-- (instancetype)iOS:(NSString *)version;
++ (instancetype)withOSNamed:(NSString *)osName;
+
+/**
+ Device with the given OS version.
+ Will return nil, if no OS with the given name could be found.
+ */
+- (instancetype)withOSNamed:(NSString *)osName;
+
+#pragma mark tvOS Versions
+
+/**
+ tvOS 9.0
+ */
+- (instancetype)tvOS_9_0;
+
+/**
+ tvOS 9.1
+ */
+- (instancetype)tvOS_9_1;
+
+#pragma mark watchOS Versions
+
+/**
+ tvOS 9.0
+ */
+- (instancetype)watchOS_2_0;
+
+/**
+ tvOS 9.1
+ */
+- (instancetype)watchOS_2_1;
 
 #pragma mark Device Scale
 

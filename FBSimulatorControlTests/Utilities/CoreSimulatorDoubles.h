@@ -20,6 +20,7 @@
 
 @interface FBSimulatorControlTests_SimDeviceRuntime_Double : NSObject
 
+@property (nonatomic, readwrite, copy) NSString *name;
 @property (nonatomic, readwrite, copy) NSString *versionString;
 
 @end

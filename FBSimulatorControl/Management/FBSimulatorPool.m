@@ -284,6 +284,11 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 - (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error
 {
+  NSError *innerError = nil;
+  if (![configuration checkRuntimeRequirementsReturningError:&innerError]) {
+    return [[[FBSimulatorError describe:@"Current Runtime environment does not support Simulator Configuration"] causedBy:innerError] fail:error];
+  }
+
   BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
   if (reuse) {
     FBSimulator *simulator = [self findUnallocatedSimulatorWithConfiguration:configuration];
@@ -311,14 +316,22 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 - (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
   NSString *targetName = configuration.deviceName;
-  SimDeviceType *targetType = configuration.deviceType;
-  SimRuntime *targetRuntime = configuration.runtime;
+
+  // See if we meet the runtime requirements to create a Simulator with the given configuration.
+  NSError *innerError = nil;
+  SimDeviceType *deviceType = [configuration obtainDeviceTypeWithError:&innerError];
+  if (!deviceType) {
+    return [[[FBSimulatorError describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration] causedBy:innerError] fail:error];
+  }
+  SimRuntime *runtime = [configuration obtainRuntimeWithError:&innerError];
+  if (!runtime) {
+    return [[[FBSimulatorError describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration] causedBy:innerError] fail:error];
+  }
 
   // First, create the device.
-  NSError *innerError = nil;
-  SimDevice *device = [self.deviceSet createDeviceWithType:targetType runtime:targetRuntime name:targetName error:&innerError];
+  SimDevice *device = [self.deviceSet createDeviceWithType:deviceType runtime:runtime name:targetName error:&innerError];
   if (!device) {
-    return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", targetName, targetRuntime, targetType] causedBy:innerError] fail:error];
+    return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", targetName, runtime, deviceType] causedBy:innerError] fail:error];
   }
 
   // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.

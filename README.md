@@ -7,7 +7,9 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 - Boots multiple iOS Simulators within the same host process or across processes.
 - Does not have to be run from Xcode/`xcodebuild`. Simulators can be launched by a process that has not been spawned by Xcode.
 - `NSNotification`s for the lifecycle of the Simulator and user-launched processes.
-- Boots Simulators across iOS 7, 8 & 9.
+- Boots iPhone & iPad Simulators for iOS 7, 8 & 9.
+- Boots watchOS Simulators since watchOS 2.0.
+- Boots tvOS Simulators since tvOS 9.0.
 - Launching and switching between multiple Apps.
 - Convenient fetching of System, App & Crash logs.
 - Persistent and Queryable history of all Simulator events.
