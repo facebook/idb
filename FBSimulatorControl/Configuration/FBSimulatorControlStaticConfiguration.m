@@ -70,6 +70,7 @@ static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
     NSString *path = [[developerDirectory stringByAppendingPathComponent:relativePath] stringByStandardizingPath];
     if (NSClassFromString(className)) {
       [logger logMessage:@"%@ is allready loaded, skipping load of framework %@", className, path];
+      continue;
     }
 
     [logger logMessage:@"%@ is not loaded. Loading %@ at path %@", className, path.lastPathComponent, path];
