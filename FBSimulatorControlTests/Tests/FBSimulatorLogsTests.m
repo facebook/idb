@@ -36,7 +36,7 @@
   [self assertNeedle:needle inHaystack:haystack];
 }
 
-- (void)testAppCrashLogIsFetched
+- (void)flakyOnTravis_testAppCrashLogIsFetched
 {
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
@@ -50,7 +50,7 @@
   }];
 }
 
-- (void)testSystemLog
+- (void)flakyOnTravis_testSystemLog
 {
   FBSimulatorSession *session = [self createBootedSession];
 
@@ -59,7 +59,7 @@
   }];
 }
 
-- (void)testLaunchedApplicationLogs
+- (void)flakyOnTravis_testLaunchedApplicationLogs
 {
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
