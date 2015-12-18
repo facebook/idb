@@ -62,6 +62,7 @@ static BOOL WriteOutputToFilePath(const char *filePath, asl_object_t aslFile, pi
   if (asl == NULL) {
     return nil;
   }
+  asl_set_filter(asl, ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG));
   return [[self alloc] initWithASLObject:asl];
 }
 

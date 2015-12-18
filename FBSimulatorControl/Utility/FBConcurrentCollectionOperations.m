@@ -86,7 +86,7 @@
 
 + (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block
 {
-  return[[self
+  return [[self
     map:array
     withBlock:^ id (id object) {
       BOOL pass = [predicate evaluateWithObject:object];
