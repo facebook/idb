@@ -64,7 +64,7 @@
   NSError *innerError = nil;
   FBSimulator *simulator = [self.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration options:options error:&innerError];
   if (!simulator) {
-    return [[[FBSimulatorError describeFormat:@"Failed to allocate simulator for configuration %@", simulatorConfiguration] causedBy:innerError] fail:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
   return [FBSimulatorSession sessionWithSimulator:simulator];
 }

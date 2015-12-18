@@ -11,7 +11,9 @@
 
 #import "FBProcessInfo.h"
 #import "FBSimulator.h"
+#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
+#import "FBSimulatorLogger.h"
 
 NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";
 
@@ -145,7 +147,9 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
     userInfo[NSUnderlyingErrorKey] = self.underlyingError;
   }
   [userInfo addEntriesFromDictionary:self.additionalInfo];
-  return [NSError errorWithDomain:FBSimulatorControlErrorDomain code:0 userInfo:[userInfo copy]];
+  NSError *error = [NSError errorWithDomain:FBSimulatorControlErrorDomain code:0 userInfo:[userInfo copy]];
+  [FBSimulatorControlStaticConfiguration.defaultLogger logMessage:@"Error => %@", error];
+  return error;
 }
 
 #pragma mark Private
