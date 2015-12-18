@@ -65,14 +65,23 @@
 
 - (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error
 {
+  // Obtain the NSRunningApplication for the given Application.
   NSRunningApplication *application = [self.processQuery runningApplicationForProcess:process];
   if ([application isKindOfClass:NSNull.class]) {
     return [[FBSimulatorError describeFormat:@"Could not obtain application handle for %@", process] failBool:error];
   }
-  if (![application terminate]) {
-    return [[FBSimulatorError describeFormat:@"Could not termination Application %@", application] failBool:error];
+  // Terminate and return if successful.
+  if ([application terminate]) {
+    return YES;
   }
-  return YES;
+  // If the App is already terminated, everything is ok.
+  if (application.isTerminated) {
+    return YES;
+  }
+  return [[[FBSimulatorError
+    describeFormat:@"Could not terminate Application %@", application]
+    attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+    failBool:error];
 }
 
 @end
@@ -167,7 +176,7 @@
         return [[[[FBSimulatorError describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"]
           causedBy:innerError]
           inSimulator:simulator]
-          failBool:error];;
+          failBool:error];
       }
     }
     // We're done since the Simulator is shutdown.
@@ -235,10 +244,30 @@
 
 - (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error
 {
-  if (kill(process.processIdentifier, SIGTERM) < 0) {
-    return [[FBSimulatorError describeFormat:@"Failed to kill process %@", process] failBool:error];
+  // The kill was successful, all is well.
+  if (kill(process.processIdentifier, SIGTERM) == 0) {
+    return YES;
   }
-  return YES;
+  int errorCode = errno;
+  if (errorCode == EPERM) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to kill process %@ as the sending process does not have the privelages", process]
+      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+      failBool:error];
+  }
+  if (errorCode == ESRCH) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to kill process %@ as the sending process does not exist", process]
+      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+      failBool:error];
+  }
+  if (errorCode == EINVAL) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to kill process %@ as the signal was not a valid signal number", process]
+      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+      failBool:error];
+  }
+  return [[FBSimulatorError describeFormat:@"Failed to kill process %@ with unknown errno %d", process, errorCode] failBool:error];
 }
 
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error

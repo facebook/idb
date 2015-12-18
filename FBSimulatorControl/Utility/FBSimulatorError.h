@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulator;
+@class FBProcessQuery;
 
 /**
  The Error Domain for FBSimulatorControl.
@@ -57,6 +58,14 @@ extern NSString *const FBSimulatorControlErrorDomain;
  */
 - (instancetype)recursiveDescription;
 - (instancetype)noRecursiveDescription;
+
+/**
+ Attaches Process Information to the error.
+
+ @param processIdentifier the Process Identifier to find information for.
+ @param query the Query object to obtain process information from.
+ */
+- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier query:(FBProcessQuery *)query;
 
 /**
  Builds the Error with the applied arguments.
