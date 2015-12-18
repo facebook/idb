@@ -10,6 +10,7 @@
 #import "FBSimulatorError.h"
 
 #import "FBProcessInfo.h"
+#import "FBProcessQuery.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
@@ -130,6 +131,13 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 {
   self.describeRecursively = NO;
   return self;
+}
+
+- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier query:(FBProcessQuery *)query
+{
+  return [self
+    extraInfo:[NSString stringWithFormat:@"%d_process", processIdentifier]
+    value:[query processInfoFor:processIdentifier] ?: @"No Process Info"];
 }
 
 - (NSError *)build
