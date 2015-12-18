@@ -10,15 +10,8 @@
 #import "FBSimulatorControl+Class.h"
 
 #import <CoreSimulator/SimDevice.h>
-#import <CoreSimulator/SimDeviceSet.h>
-#import <CoreSimulator/SimDeviceType.h>
-#import <CoreSimulator/SimRuntime.h>
 
 #import <DVTFoundation/DVTPlatform.h>
-
-#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorApplicationSpecifier.h>
-#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSession.h>
-#import <DVTiPhoneSimulatorRemoteClient/DTiPhoneSimulatorSessionConfig.h>
 
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
@@ -41,7 +34,7 @@
     return nil;
   }
 
-  logger = logger ?: FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled ? FBSimulatorLogger.toNSLog : nil;
+  logger = logger ?: FBSimulatorControlStaticConfiguration.defaultLogger;
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }
 

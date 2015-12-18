@@ -20,14 +20,13 @@ The original use-case for `FBSimulatorControl` was to boot Simulators to run End
 `FBSimulatorControl` works by linking with the private `DVTFoundation`, `CoreSimulator` and `DVTiPhoneSimulatorRemoteClient` frameworks that are present inside the Xcode bundle. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` do. This, combined with launching the Simulator binaries directly, means that multiple Simulators can be launched simultaneously. Test targets can be made that don't depend on any Application targets, or that launch multiple Application targets. This enables running against pre-built and archived Application binaries, rather than a binary that is built by a Test Target.
 
 ## Installation
-The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControLTests.xctest` bundles as-is. The Project is checked-in to the repo.
+The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControlTests.xctest` bundles without any additional dependencies. The Project File is checked into the repo and the Framework can be build from this project.
 
-Once you build the `FBSimulatorControl.framework`, it can be linked into your target like any other 3rd party framework. It does however need some additional linker flags (since it relies on Private Frameworks):
+Once you build the `FBSimulatorControl.framework`, it can be linked like any other 3rd-party Framework for your project:
+- Add `FBSimulatorControl.framework` to the [Target's 'Link Binary With Libraries' build phase](Help/link_binary_with_libraries.png).
+- Ensure that `FBSimulatorControl` is copied into the Target's bundle (if your Target is an Application or Framework) or a path relative to the Executable if your project does not have a bundle.
 
-`FRAMEWORK_SEARCH_PATHS` should include `"$(DEVELOPER_LIBRARY_DIR)/Frameworks" "$(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks" "$(DEVELOPER_DIR)/../SharedFrameworks" "$(SDKROOT)/System/Library/PrivateFrameworks" "$(OTHER_FRAMEWORKS_DIR)"`
-
-
-`OTHER_LDFLAGS` should include `-rpath "$DEVELOPER_LIBRARY_DIR/Frameworks" -rpath "$DEVELOPER_LIBRARY_DIR/PrivateFrameworks" -rpath "$SDKROOT/System/Library/PrivateFrameworks" -rpath "$DEVELOPER_DIR/../SharedFrameworks" -rpath "$DEVELOPER_DIR/../Frameworks"`
+In order to support different environments, `FBSimulatorControl` weakly links against Xcode's Private Frameworks and then loads them on startup. `FBSimulatorControl` will link against the version of Xcode that you have set with [`xcode-select`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/xcode-select.1.html). The Xcode version can be overridden by setting the `DEVELOPER_DIR` environment variable in the process that links with `FBSimulatorControl`.
 
 ## Usage
 [The tests](FBSimulatorControlTests/Tests/FBSimulatorControlApplicationLaunchTests.m#L63) should provide you with some basic guidance for getting started. Run them to see multiple-simulator launching in action.

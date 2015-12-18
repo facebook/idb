@@ -38,8 +38,6 @@
 		AA1D65471C21CD2A0069F90D /* FBASLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1D65451C21CD2A0069F90D /* FBASLParser.m */; };
 		AA3230CB1BDA387700C5BA01 /* FBSimulatorControlAssertions.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */; };
 		AA5639551C060005009BAFAA /* FBSimulatorControl.h in Headers */ = {isa = PBXBuildFile; fileRef = AA5639541C05FFF5009BAFAA /* FBSimulatorControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA5696381B9FB7B500A2918F /* DVTFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA5696371B9FB7B500A2918F /* DVTFoundation.framework */; };
-		AA56963A1B9FB7C800A2918F /* DVTiPhoneSimulatorRemoteClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA5696391B9FB7C800A2918F /* DVTiPhoneSimulatorRemoteClient.framework */; };
 		AA819DB71B9FB40D002F58CA /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */; };
 		AA9517471C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9516C21C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9517481C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9516C31C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m */; };
@@ -163,7 +161,6 @@
 		AAB207C11C2099A9007C7908 /* FBSimulatorLoggingEventSink.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB207BF1C2099A9007C7908 /* FBSimulatorLoggingEventSink.m */; };
 		AAB4AC1E1BB586930046F6A1 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAB4AC1D1BB586930046F6A1 /* AVFoundation.framework */; };
 		AAB4AC271BBBC6880046F6A1 /* FBSimulatorControlTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB4AC261BBBC6880046F6A1 /* FBSimulatorControlTestCase.m */; };
-		AAC083751B9FB88B00451648 /* CoreSimulator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29B6970A5500000000 /* CoreSimulator.framework */; };
 		AAC083761B9FB89600451648 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
 		AAC083781B9FBA7600451648 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AAC083791B9FBACB00451648 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
@@ -177,11 +174,8 @@
 		AAF8DA6A1C1AFFB1003B519E /* FBProcessInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF8DA681C1AFFB1003B519E /* FBProcessInfo.m */; };
 		AAF8DA6D1C1AFFF0003B519E /* FBProcessQuery+Helpers.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF8DA6B1C1AFFF0003B519E /* FBProcessQuery+Helpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAF8DA6E1C1AFFF0003B519E /* FBProcessQuery+Helpers.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF8DA6C1C1AFFF0003B519E /* FBProcessQuery+Helpers.m */; };
-		E7A30F041AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E291AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework */; };
 		E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
 		E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
-		E7A30F04B67B6FA500000000 /* DVTFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29B67B6FA500000000 /* DVTFoundation.framework */; };
-		E7A30F04B6970A5500000000 /* CoreSimulator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29B6970A5500000000 /* CoreSimulator.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -211,7 +205,6 @@
 		1DD70E291A4B50E500000000 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DD70E291AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = DVTiPhoneSimulatorRemoteClient.framework; path = ../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework; sourceTree = DEVELOPER_DIR; };
-		1DD70E2937375B6D00000000 /* XCTest.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = XCTest.framework; path = Developer/Library/Frameworks/XCTest.framework; sourceTree = PLATFORM_DIR; };
 		1DD70E2976B173B900000000 /* Cocoa.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		1DD70E29A6018C7A00000000 /* CoreGraphics.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		1DD70E29B67B6FA500000000 /* DVTFoundation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = DVTFoundation.framework; path = ../SharedFrameworks/DVTFoundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -816,8 +809,6 @@
 		AA4879941BAC74DD007F7D23 /* SimDeviceType-DVTAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceType-DVTAdditions.h"; sourceTree = "<group>"; };
 		AA4879951BAC74DD007F7D23 /* SimRuntime-DVTAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimRuntime-DVTAdditions.h"; sourceTree = "<group>"; };
 		AA5639541C05FFF5009BAFAA /* FBSimulatorControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControl.h; sourceTree = "<group>"; };
-		AA5696371B9FB7B500A2918F /* DVTFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DVTFoundation.framework; path = ../../../../Applications/xcode7_beta6.app/Contents/SharedFrameworks/DVTFoundation.framework; sourceTree = "<group>"; };
-		AA5696391B9FB7C800A2918F /* DVTiPhoneSimulatorRemoteClient.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DVTiPhoneSimulatorRemoteClient.framework; path = ../../../../Applications/xcode7_beta6.app/Contents/SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework; sourceTree = "<group>"; };
 		AA819DB21B9FB40D002F58CA /* FBSimulatorControlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBSimulatorControlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA819E0B1B9FB427002F58CA /* FBSimulatorControlTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FBSimulatorControlTests-Info.plist"; sourceTree = "<group>"; };
 		AA9516C21C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBProcessLaunchConfiguration+Helpers.h"; sourceTree = "<group>"; };
@@ -967,9 +958,6 @@
 				AAC241241BB3113F0054570C /* AppKit.framework in Frameworks */,
 				E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */,
 				E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */,
-				E7A30F04B67B6FA500000000 /* DVTFoundation.framework in Frameworks */,
-				E7A30F041AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework in Frameworks */,
-				E7A30F04B6970A5500000000 /* CoreSimulator.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -980,9 +968,6 @@
 				AA819DB71B9FB40D002F58CA /* FBSimulatorControl.framework in Frameworks */,
 				AAC083791B9FBACB00451648 /* Cocoa.framework in Frameworks */,
 				AAC083761B9FB89600451648 /* CoreGraphics.framework in Frameworks */,
-				AAC083751B9FB88B00451648 /* CoreSimulator.framework in Frameworks */,
-				AA5696381B9FB7B500A2918F /* DVTFoundation.framework in Frameworks */,
-				AA56963A1B9FB7C800A2918F /* DVTiPhoneSimulatorRemoteClient.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1916,15 +1901,12 @@
 				AAB4AC1D1BB586930046F6A1 /* AVFoundation.framework */,
 				AAC241251BB311690054570C /* ApplicationServices.framework */,
 				AAC241231BB3113F0054570C /* AppKit.framework */,
-				AA5696391B9FB7C800A2918F /* DVTiPhoneSimulatorRemoteClient.framework */,
-				AA5696371B9FB7B500A2918F /* DVTFoundation.framework */,
 				1DD70E2976B173B900000000 /* Cocoa.framework */,
 				1DD70E29A6018C7A00000000 /* CoreGraphics.framework */,
 				1DD70E29B6970A5500000000 /* CoreSimulator.framework */,
 				1DD70E29B67B6FA500000000 /* DVTFoundation.framework */,
 				1DD70E291AC72D1E00000000 /* DVTiPhoneSimulatorRemoteClient.framework */,
 				1DD70E291A4B50E500000000 /* FBSimulatorControl.framework */,
-				1DD70E2937375B6D00000000 /* XCTest.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -2271,26 +2253,12 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/Frameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$SDKROOT/System/Library/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../SharedFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../Frameworks'",
+					"-weak_framework",
+					DVTFoundation,
+					"-weak_framework",
+					DVTiPhoneSimulatorRemoteClient,
+					"-weak_framework",
+					CoreSimulator,
 				);
 			};
 			name = Debug;
@@ -2329,26 +2297,12 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/Frameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$SDKROOT/System/Library/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../SharedFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../Frameworks'",
+					"-weak_framework",
+					DVTFoundation,
+					"-weak_framework",
+					DVTiPhoneSimulatorRemoteClient,
+					"-weak_framework",
+					CoreSimulator,
 				);
 			};
 			name = Profile;
@@ -2387,26 +2341,12 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/Frameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$SDKROOT/System/Library/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../SharedFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../Frameworks'",
+					"-weak_framework",
+					DVTFoundation,
+					"-weak_framework",
+					DVTiPhoneSimulatorRemoteClient,
+					"-weak_framework",
+					CoreSimulator,
 				);
 			};
 			name = Release;
@@ -2457,26 +2397,6 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/Frameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$SDKROOT/System/Library/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../SharedFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../Frameworks'",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2522,26 +2442,6 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/Frameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$SDKROOT/System/Library/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../SharedFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../Frameworks'",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2587,26 +2487,6 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/Frameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_LIBRARY_DIR/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$SDKROOT/System/Library/PrivateFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../SharedFrameworks'",
-					"-Xlinker",
-					"-rpath",
-					"-Xlinker",
-					"'$DEVELOPER_DIR/../Frameworks'",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

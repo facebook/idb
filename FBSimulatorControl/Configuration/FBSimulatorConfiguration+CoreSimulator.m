@@ -66,7 +66,7 @@
 + (NSDictionary *)configurationsToAvailableRuntimes
 {
   NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
-  for (SimRuntime *runtime in SimRuntime.supportedRuntimes) {
+  for (SimRuntime *runtime in [NSClassFromString(@"SimRuntime") supportedRuntimes]) {
     FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration iOS:runtime.versionString];
     if (!configuration) {
       continue;
@@ -82,7 +82,7 @@
 + (NSDictionary *)configurationsToAvailableDeviceTypes
 {
   NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
-  for (SimDeviceType *deviceType in SimDeviceType.supportedDeviceTypes) {
+  for (SimDeviceType *deviceType in [NSClassFromString(@"SimDeviceType") supportedDeviceTypes]) {
     FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration named:deviceType.name];
     if (!configuration) {
       continue;

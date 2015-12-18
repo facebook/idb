@@ -9,17 +9,16 @@
 
 #import "FBSimulatorControlTestCase.h"
 
-#import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorApplication.h>
-#import <FBSimulatorControl/FBSimulatorConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
-#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorInteraction.h>
-#import <FBSimulatorControl/FBSimulatorPool+Private.h>
-#import <FBSimulatorControl/FBSimulatorPool.h>
-#import <FBSimulatorControl/FBSimulatorSession.h>
 
 #import "FBSimulatorControlAssertions.h"
+
+// Used to print out environment configuration for debugging.
+__attribute__((constructor)) static void EntryPoint()
+{
+  setenv(FBSimulatorControlDebugLogging.UTF8String, "YES", 1);
+  NSLog(@"Current Configuration => %@", FBSimulatorControlStaticConfiguration.description);
+}
 
 @interface FBSimulatorControlTestCase ()
 
