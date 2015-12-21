@@ -77,8 +77,8 @@ To launch Safari on an iPhone 5, you can use the following:
       arguments:@[]
       environment:@{}];
     
-    // System Applications can be launched directly since they are already installed.
-    // User applications must be installed first with `installSimulator:`
+    // System Applications can be launched directly since they are already 'installed' in the Simulator.
+    // Applications provided by the user must be installed after Booting with `installApplication:`.
     BOOL success = [[[simulator.interact
       bootSimulator]
       launchApplication:appLaunch]
