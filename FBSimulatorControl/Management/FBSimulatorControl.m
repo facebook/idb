@@ -83,7 +83,7 @@
     @"DVTDevice" : @"../SharedFrameworks/DVTFoundation.framework",
     @"DTiPhoneSimulatorApplicationSpecifier" : @"../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework"
   };
-  [logger logMessage:@"Using Developer Directory %@", developerDirectory];
+  [logger logFormat:@"Using Developer Directory %@", developerDirectory];
 
   for (NSString *className in classMapping) {
     NSString *relativePath = classMapping[className];
@@ -91,7 +91,7 @@
 
     // The Class exists, therefore has been loaded
     if (NSClassFromString(className)) {
-      [logger logMessage:@"%@ is allready loaded, skipping load of framework %@", className, path];
+      [logger logFormat:@"%@ is allready loaded, skipping load of framework %@", className, path];
       NSError *innerError = nil;
       if (![self verifyDeveloperDirectoryForPrivateClass:className developerDirectory:developerDirectory logger:logger error:&innerError]) {
         return [FBSimulatorError failBoolWithError:innerError errorOut:error];
@@ -100,17 +100,17 @@
     }
 
     // Otherwise load the Framework.
-    [logger logMessage:@"%@ is not loaded. Loading %@ at path %@", className, path.lastPathComponent, path];
+    [logger logFormat:@"%@ is not loaded. Loading %@ at path %@", className, path.lastPathComponent, path];
     NSError *innerError = nil;
     if (![self loadFrameworkAtPath:path logger:logger error:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
-    [logger logMessage:@"Loaded %@ from %@", className, path];
+    [logger logFormat:@"Loaded %@ from %@", className, path];
   }
 
   // We're done with loading Frameworks.
   hasLoaded = YES;
-  [logger logMessage:@"Loaded All Private Frameworks %@", [FBCollectionDescriptions oneLineDescriptionFromArray:classMapping.allValues atKeyPath:@"lastPathComponent"]];
+  [logger logFormat:@"Loaded All Private Frameworks %@", [FBCollectionDescriptions oneLineDescriptionFromArray:classMapping.allValues atKeyPath:@"lastPathComponent"]];
 
   // Set CoreSimulator Logging since it is now loaded.
   [self setCoreSimulatorLoggingEnabled:FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled];
@@ -121,7 +121,7 @@
 + (void)loadPrivateFrameworksOrAbort
 {
   NSError *error = nil;
-  BOOL success = [FBSimulatorControl loadPrivateFrameworks:FBSimulatorControlStaticConfiguration.defaultLogger error:&error];
+  BOOL success = [FBSimulatorControl loadPrivateFrameworks:FBSimulatorControlStaticConfiguration.defaultLogger.debug error:&error];
   if (success) {
     return;
   }
@@ -166,7 +166,7 @@
       describeFormat:@"Failed to load the the Framework Bundle %@", bundle]
       failBool:error];
   }
-  [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
+  [logger logFormat:@"Successfully loaded %@", path.lastPathComponent];
   return YES;
 }
 
@@ -195,7 +195,7 @@
       describeFormat:@"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, developerDirectory]
       failBool:error];
   }
-  [logger logMessage:@"%@ has correct path of %@", className, basePath];
+  [logger logFormat:@"%@ has correct path of %@", className, basePath];
   return YES;
 }
 

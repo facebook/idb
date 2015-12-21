@@ -125,7 +125,8 @@
 
     FBSimulatorTerminationStrategy *terminationStrategy = [FBSimulatorTerminationStrategy
       withConfiguration:simulator.pool.configuration
-      processQuery:simulator.processQuery];
+      processQuery:simulator.processQuery
+      logger:simulator.pool.logger];
 
     NSError *innerError = nil;
     if (![terminationStrategy killSimulators:@[simulator] withError:&innerError]) {

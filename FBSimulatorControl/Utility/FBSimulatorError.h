@@ -12,6 +12,8 @@
 @class FBSimulator;
 @class FBProcessQuery;
 
+@protocol FBSimulatorLogger;
+
 /**
  The Error Domain for FBSimulatorControl.
  */
@@ -50,6 +52,9 @@ extern NSString *const FBSimulatorControlErrorDomain;
 
 /**
  Automatically attach Simulator diagnostic info.
+ 
+ @param simulator the Simulator to obtain diagnostic information from.
+ @return the reciever, for chaining.
  */
 - (instancetype)inSimulator:(FBSimulator *)simulator;
 
@@ -64,8 +69,20 @@ extern NSString *const FBSimulatorControlErrorDomain;
 
  @param processIdentifier the Process Identifier to find information for.
  @param query the Query object to obtain process information from.
+ @return the reciever, for chaining.
  */
 - (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier query:(FBProcessQuery *)query;
+
+/**
+ Attaches a Logger to the error.
+ A logger will will recieve error messages for any errors that occur.
+ By default this will be the Global Debug logger.
+ Logging can be suppressed by providing a nil logger argument.
+
+ @param logger the logger to log to
+ @return the reciever, for chaining.
+ */
+- (instancetype)logger:(id<FBSimulatorLogger>)logger;
 
 /**
  Builds the Error with the applied arguments.

@@ -130,4 +130,14 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
  */
 @property (nonatomic, strong, readonly) FBSimulatorLogs *logs;
 
+/**
+ A Full Description of the reciever.
+ */
+- (NSString *)debugDescription;
+
+/**
+ A Partial Description of the reciever.
+ */
+- (NSString *)shortDescription;
+
 @end

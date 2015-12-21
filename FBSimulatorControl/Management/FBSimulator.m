@@ -166,7 +166,14 @@
   return [self.device isEqual:simulator.device];
 }
 
+#pragma mark Descriptions
+
 - (NSString *)description
+{
+  return [self debugDescription];
+}
+
+- (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
     @"Name %@ | UUID %@ | State %@ | %@",
@@ -175,6 +182,11 @@
     self.device.stateString,
     self.launchInfo.shortDescription
   ];
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:@"Simulator %@", self.udid];
 }
 
 @end
