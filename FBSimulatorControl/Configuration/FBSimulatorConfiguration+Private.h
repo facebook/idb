@@ -9,84 +9,157 @@
 
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
 
-@protocol FBSimulatorConfigurationNamedDevice <NSObject>
+@interface FBSimulatorConfigurationVariant_Base : NSObject <NSCoding>
+@end
+
+#pragma mark Families
+
+@protocol FBSimulatorConfiguration_Family <NSObject>
+
+- (NSInteger)productFamilyID;
+
+@end
+
+@interface FBSimulatorConfiguration_Family_iPhone : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+
+@end
+
+@interface FBSimulatorConfiguration_Family_iPad : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+
+@end
+
+@interface FBSimulatorConfiguration_Family_Watch : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+
+@end
+
+@interface FBSimulatorConfiguration_Family_TV : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+
+@end
+
+#pragma mark Devices
+
+@protocol FBSimulatorConfiguration_Device <NSObject>
 
 - (NSString *)deviceName;
+- (id<FBSimulatorConfiguration_Family>)family;
 
 @end
 
-@interface FBSimulatorConfigurationVariant_Base : NSObject <NSCoding>
+@interface FBSimulatorConfiguration_Device_iPhone_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Device>
+@end
+
+@interface FBSimulatorConfiguration_Device_iPhone4s : FBSimulatorConfiguration_Device_iPhone_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPhone5 : FBSimulatorConfiguration_Device_iPhone_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPhone5s : FBSimulatorConfiguration_Device_iPhone_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPhone6 : FBSimulatorConfiguration_Device_iPhone_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPhone6Plus : FBSimulatorConfiguration_Device_iPhone_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPhone6S : FBSimulatorConfiguration_Device_iPhone_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPhone6SPlus : FBSimulatorConfiguration_Device_iPhone_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPad_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Device>
+@end
+
+@interface FBSimulatorConfiguration_Device_iPad2 : FBSimulatorConfiguration_Device_iPad_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPadRetina : FBSimulatorConfiguration_Device_iPad_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPadAir : FBSimulatorConfiguration_Device_iPad_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPadAir2 : FBSimulatorConfiguration_Device_iPad_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_iPadPro : FBSimulatorConfiguration_Device_iPad_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_tvOS_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Device>
+@end
+
+@interface FBSimulatorConfiguration_Device_AppleTV1080p : FBSimulatorConfiguration_Device_tvOS_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_watchOS_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_Device>
+@end
+
+@interface FBSimulatorConfiguration_Device_AppleWatch38mm : FBSimulatorConfiguration_Device_watchOS_Base
+@end
+
+@interface FBSimulatorConfiguration_Device_AppleWatch42mm : FBSimulatorConfiguration_Device_watchOS_Base
+@end
+
+#pragma mark OS Versions
+
+@protocol FBSimulatorConfiguration_OS <NSObject>
+
+- (NSString *)name;
+- (NSSet *)families;
 
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone4s : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_OS>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone5 : FBSimulatorConfigurationVariant_Base<FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_7_1 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone5s : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_8_0 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_8_1 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6Plus : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_8_2 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6S : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_8_3 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPhone6SPlus : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_8_4 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPad2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_9_0 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadRetina : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_9_1 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadAir : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_iOS_9_2 : FBSimulatorConfiguration_iOS_Base
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadAir2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_tvOS_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_OS>
 @end
 
-@interface FBSimulatorConfigurationNamedDevice_iPadPro : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationNamedDevice>
+@interface FBSimulatorConfiguration_tvOS_9_0 : FBSimulatorConfiguration_tvOS_Base
 @end
 
-@protocol FBSimulatorConfigurationOSVersion <NSObject>
-
-- (NSString *)osVersion;
-
+@interface FBSimulatorConfiguration_tvOS_9_1 : FBSimulatorConfiguration_tvOS_Base
 @end
 
-@interface FBSimulatorConfigurationOSVersion_7_1 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfiguration_watchOS_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_OS>
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_0 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfiguration_watchOS_2_0 : FBSimulatorConfiguration_watchOS_Base
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_1 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
+@interface FBSimulatorConfiguration_watchOS_2_1 : FBSimulatorConfiguration_watchOS_Base
 @end
 
-@interface FBSimulatorConfigurationOSVersion_8_2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
-@end
-
-@interface FBSimulatorConfigurationOSVersion_8_3 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
-@end
-
-@interface FBSimulatorConfigurationOSVersion_8_4 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
-@end
-
-@interface FBSimulatorConfigurationOSVersion_9_0 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
-@end
-
-@interface FBSimulatorConfigurationOSVersion_9_1 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
-@end
-
-@interface FBSimulatorConfigurationOSVersion_9_2 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationOSVersion>
-@end
+#pragma mark Scales
 
 @protocol FBSimulatorConfigurationScale <NSObject>
 
@@ -108,9 +181,14 @@
 
 @interface FBSimulatorConfiguration ()
 
-@property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationNamedDevice> namedDevice;
-@property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationOSVersion> osVersion;
+@property (nonatomic, strong, readwrite) id<FBSimulatorConfiguration_Device> device;
+@property (nonatomic, strong, readwrite) id<FBSimulatorConfiguration_OS> os;
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationScale> scale;
 @property (nonatomic, strong, readwrite) NSLocale *locale;
+
++ (NSDictionary *)nameToDevice;
++ (NSDictionary *)nameToOSVersion;
+- (instancetype)updateNamedDevice:(id<FBSimulatorConfiguration_Device>)device;
+- (instancetype)updateOSVersion:(id<FBSimulatorConfiguration_OS>)OS;
 
 @end

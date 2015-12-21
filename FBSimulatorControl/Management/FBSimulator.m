@@ -45,15 +45,10 @@ NSTimeInterval const FBSimulatorDefaultTimeout = 20;
 {
   return [[FBSimulator alloc]
     initWithDevice:device
-    configuration:configuration ?: [self inferSimulatorConfigurationFromDevice:device]
+    configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDevice:device error:nil]
     pool:pool
     query:query
     logger:logger];
-}
-
-+ (FBSimulatorConfiguration *)inferSimulatorConfigurationFromDevice:(SimDevice *)device
-{
-  return [[FBSimulatorConfiguration.defaultConfiguration withDeviceType:device.deviceType] withRuntime:device.runtime];
 }
 
 - (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query logger:(id<FBSimulatorLogger>)logger

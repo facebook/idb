@@ -39,19 +39,22 @@
   return dictionary;
 }
 
-- (NSArray *)createPoolWithExistingSimDeviceSpecs:(NSArray *)simulatorspecs
+- (NSArray *)createPoolWithExistingSimDeviceSpecs:(NSArray *)simulatorSpecs
 {
   NSMutableArray *simulators = [NSMutableArray array];
-  for (NSDictionary *simulatorspec in simulatorspecs) {
-    NSString *name = simulatorspec[@"name"];
-    NSUUID *uuid = simulatorspec[@"uuid"] ?: [NSUUID UUID];
-    FBSimulatorState state = [(simulatorspec[@"state"] ?: @(FBSimulatorStateShutdown)) integerValue];
+  for (NSDictionary *simulatorSpec in simulatorSpecs) {
+    NSString *name = simulatorSpec[@"name"];
+    NSUUID *uuid = simulatorSpec[@"uuid"] ?: [NSUUID UUID];
+    NSString *os = simulatorSpec[@"os"] ?: @"iOS 9.0";
+    NSString *version = [[os componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet] lastObject];
+    FBSimulatorState state = [(simulatorSpec[@"state"] ?: @(FBSimulatorStateShutdown)) integerValue];
 
     FBSimulatorControlTests_SimDeviceType_Double *deviceType = [FBSimulatorControlTests_SimDeviceType_Double new];
     deviceType.name = name;
 
     FBSimulatorControlTests_SimDeviceRuntime_Double *runtime = [FBSimulatorControlTests_SimDeviceRuntime_Double new];
-    runtime.versionString = @"9.0";
+    runtime.name = os;
+    runtime.versionString = version;
 
     FBSimulatorControlTests_SimDevice_Double *device = [FBSimulatorControlTests_SimDevice_Double new];
     device.name = name;

@@ -49,11 +49,16 @@
       return [[FBSimulatorError describe:@"Could not boot Simulator as no Simulator Application was provided"] failBool:error];
     }
 
-    NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[@"--args",
+    // Construct the Arguments
+    NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[
+      @"--args",
       @"-CurrentDeviceUDID", simulator.udid,
-      @"-ConnectHardwareKeyboard", @"0",
-      simulator.configuration.lastScaleCommandLineSwitch, simulator.configuration.scaleString,
+      @"-ConnectHardwareKeyboard", @"0"
     ]];
+    NSArray *scaleArguments = [simulator.configuration lastScaleCommandLineArgumentsWithError:nil];
+    if (scaleArguments) {
+      [arguments addObjectsFromArray:scaleArguments];
+    }
     if (simulator.pool.configuration.deviceSetPath) {
       if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
         return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] failBool:error];
@@ -61,6 +66,7 @@
       [arguments addObjectsFromArray:@[@"-DeviceSetPath", simulator.pool.configuration.deviceSetPath]];
     }
 
+    // Construct and start the task.
     id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
       withLaunchPath:simulator.simulatorApplication.binary.path]
       withArguments:[arguments copy]]

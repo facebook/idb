@@ -28,9 +28,15 @@
 
 @implementation FBSimulatorLaunchTests
 
-- (void)doTestLaunchesSingleSimulator
+- (void)doTestLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
-  FBSimulatorSession *session = [self createSession];
+  NSError *error = nil;
+  if (![configuration checkRuntimeRequirementsReturningError:&error]) {
+    NSLog(@"Could not run test for configuration %@ since: %@", configuration, error);
+    return;
+  }
+
+  FBSimulatorSession *session = [self createSessionWithConfiguration:configuration];
   XCTAssertEqual(session.state, FBSimulatorSessionStateNotStarted);
   [self.assert noNotificationsToConsume];
 
@@ -53,7 +59,27 @@
   [self.assert noNotificationsToConsume];
 }
 
-- (void)doTestLaunchesMultipleSimulatorsConcurrently
+- (void)doTestLaunchesiPhone
+{
+  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.iPhone5];
+}
+
+- (void)doTestLaunchesiPad
+{
+  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.iPad2];
+}
+
+- (void)doTestLaunchesWatch
+{
+  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.watch42mm];
+}
+
+- (void)doTestLaunchesTV
+{
+  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.appleTV1080p];
+}
+
+- (void)doTestLaunchesMultipleSimulators
 {
   // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
   // Create the sessions in sequence, then boot them in paralell.
@@ -104,14 +130,29 @@
   return nil;
 }
 
-- (void)testLaunchesSingleSimulator
+- (void)testLaunchesiPhone
 {
-  [self doTestLaunchesSingleSimulator];
+  [self doTestLaunchesiPhone];
 }
 
-- (void)testLaunchesMultipleSimulatorsConcurrently
+- (void)testLaunchesiPad
 {
-  [self doTestLaunchesMultipleSimulatorsConcurrently];
+  [self doTestLaunchesiPad];
+}
+
+- (void)testLaunchesWatch
+{
+  [self doTestLaunchesWatch];
+}
+
+- (void)testLaunchesTV
+{
+  [self doTestLaunchesTV];
+}
+
+- (void)testLaunchesMultipleSimulators
+{
+  [self doTestLaunchesMultipleSimulators];
 }
 
 @end
@@ -123,22 +164,49 @@
   return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorControlSimulatorLaunchTests_CustomSet"];
 }
 
-- (void)testLaunchesSingleSimulator
+- (void)testLaunchesiPhone
 {
   if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
     NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
-  [self doTestLaunchesSingleSimulator];
+  [self doTestLaunchesiPhone];
 }
 
-- (void)testLaunchesMultipleSimulatorsConcurrently
+- (void)testLaunchesiPad
 {
   if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
     NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
-  [self doTestLaunchesMultipleSimulatorsConcurrently];
+  [self doTestLaunchesiPad];
+}
+
+- (void)testLaunchesWatch
+{
+  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+  [self doTestLaunchesWatch];
+}
+
+- (void)testLaunchesTV
+{
+  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+  [self doTestLaunchesTV];
+}
+
+- (void)testLaunchesMultipleSimulators
+{
+  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+  [self doTestLaunchesMultipleSimulators];
 }
 
 @end
