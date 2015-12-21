@@ -78,6 +78,14 @@
   if (application.isTerminated) {
     return YES;
   }
+  // I find your lack of termination disturbing.
+  if ([application forceTerminate]) {
+    return YES;
+  }
+  // If the App is already terminated, everything is ok.
+  if (application.isTerminated) {
+    return YES;
+  }
   return [[[FBSimulatorError
     describeFormat:@"Could not terminate Application %@", application]
     attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
