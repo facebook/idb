@@ -46,11 +46,16 @@ static void VerifyDeveloperDirectoryForPrivateClass(NSString *className, NSStrin
   NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(className)];
   NSCAssert(bundle, @"Could not obtain Framework bundle for class named %@", className);
 
-  BOOL matches = [bundle.bundlePath hasPrefix:developerDirectory];
+  // Developer Directory is: /Applications/Xcode.app/Contents/Developer
+  // The common base path is: is: /Applications/Xcode.app
+  NSString *basePath = [[developerDirectory stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+  BOOL matches = [bundle.bundlePath hasPrefix:basePath];
+
   NSCAssert(
     matches,
-    @"Expected Framework %@ to be loaded for Developer Directory at path %@, unpredicatable behaviour may arise",
+    @"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@ unpredicatable behaviour may arise",
     bundle.bundlePath.lastPathComponent,
+    bundle.bundlePath,
     developerDirectory
   );
 }
