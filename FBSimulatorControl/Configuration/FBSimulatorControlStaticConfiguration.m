@@ -47,6 +47,28 @@ static void dlopenFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
   [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
 }
 
+/**
+ Given that it is possible for FBSimulatorControl.framework to be loaded after any of the
+ Private Frameworks upon which it depends, it's possible that these Frameworks may have
+ been loaded from a different Developer Directory.
+
+ In order to prevent crazy behaviour from arising, FBSimulatorControl will check the
+ directories of these Frameworks match the one that is currently set.
+ */
+static void VerifyDeveloperDirectoryForPrivateClass(NSString *className, NSString *developerDirectory)
+{
+  NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(className)];
+  NSCAssert(bundle, @"Could not obtain Framework bundle for class named %@", className);
+
+  BOOL matches = [bundle.bundlePath hasPrefix:developerDirectory];
+  NSCAssert(
+    matches,
+    @"Expected Framework %@ to be loaded for Developer Directory at path %@, unpredicatable behaviour may arise",
+    bundle.bundlePath.lastPathComponent,
+    developerDirectory
+  );
+}
+
 static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
 {
   // This will assert if the directory could not be found.
@@ -58,6 +80,7 @@ static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
   // 3) Provide a class for sanity checking the Framework load.
   // 4) Provide a class that can be checked before the Framework load to avoid re-loading the same
   //    Framework if others have done so before.
+  // 5) Provide a sanity check that any preloaded Private Frameworks match the current xcode-select version
   NSDictionary *classMapping = @{
     @"SimDevice" : @"Library/PrivateFrameworks/CoreSimulator.framework",
     @"DVTDevice" : @"../SharedFrameworks/DVTFoundation.framework",
@@ -70,6 +93,7 @@ static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
     NSString *path = [[developerDirectory stringByAppendingPathComponent:relativePath] stringByStandardizingPath];
     if (NSClassFromString(className)) {
       [logger logMessage:@"%@ is allready loaded, skipping load of framework %@", className, path];
+      VerifyDeveloperDirectoryForPrivateClass(className, developerDirectory);
       continue;
     }
 
