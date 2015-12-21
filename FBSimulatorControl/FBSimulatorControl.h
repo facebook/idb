@@ -12,6 +12,7 @@
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
+#import <FBSimulatorControl/FBCrashLogInfo.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
 #import <FBSimulatorControl/FBInteraction+Private.h>
 #import <FBSimulatorControl/FBInteraction.h>

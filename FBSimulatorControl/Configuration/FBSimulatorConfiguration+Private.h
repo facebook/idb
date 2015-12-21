@@ -186,9 +186,12 @@
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationScale> scale;
 @property (nonatomic, strong, readwrite) NSLocale *locale;
 
-+ (NSDictionary *)nameToDevice;
-+ (NSDictionary *)nameToOSVersion;
 - (instancetype)updateNamedDevice:(id<FBSimulatorConfiguration_Device>)device;
 - (instancetype)updateOSVersion:(id<FBSimulatorConfiguration_OS>)OS;
+
++ (NSArray *)deviceConfigurations;
++ (NSArray *)OSConfigurations;
++ (NSDictionary *)nameToDevice;
++ (NSDictionary *)nameToOSVersion;
 
 @end

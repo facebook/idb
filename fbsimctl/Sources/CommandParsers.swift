@@ -253,12 +253,12 @@ extension Query : Parsable {
 
   private static func nameParser() -> Parser<Query> {
     return Parser.single { token in
-      let mapping = FBSimulatorConfiguration.configurationsToAvailableDeviceTypes() as! [FBSimulatorConfiguration : AnyObject]
-      let deviceNames = Set(mapping.keys.map { $0.deviceName })
+      let deviceConfigurations = FBSimulatorConfiguration.deviceConfigurations() as! [FBSimulatorConfiguration_Device]
+      let deviceNames = Set(deviceConfigurations.map { $0.deviceName() })
       if (!deviceNames.contains(token)) {
         throw ParseError.InvalidNumber
       }
-      let configuration: FBSimulatorConfiguration! = FBSimulatorConfiguration.named(token)
+      let configuration: FBSimulatorConfiguration! = FBSimulatorConfiguration.withDeviceNamed(token)
       return Query.Configured(configuration)
     }
   }
