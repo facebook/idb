@@ -23,11 +23,6 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 extern NSString *const FBSimulatorControlDebugLogging;
 
 /**
- An Environment Variable that if set, use dlopen for loading weak frameworks instead of -[NSBundle load].
- */
-extern NSString *const FBSimulatorControlUsedlopenForFrameworks;
-
-/**
  Enable/Disable CoreSimulator debug logging.
  */
 void FBSetSimulatorLoggingEnabled(BOOL enabled);

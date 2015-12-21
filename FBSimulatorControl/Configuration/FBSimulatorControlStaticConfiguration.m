@@ -21,7 +21,6 @@
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
 NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
-NSString *const FBSimulatorControlUsedlopenForFrameworks = @"FBSIMULATORCONTROL_USE_DLOPEN";
 
 static void LoadFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
 {
@@ -31,19 +30,6 @@ static void LoadFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
   NSError *error = nil;
   BOOL success = [bundle loadAndReturnError:&error];
   NSCAssert(success, @"Could not load bundle with error %@", error);
-  [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
-}
-
-static void dlopenFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
-{
-  NSString *frameworkName = [[path stringByDeletingPathExtension] lastPathComponent];
-  NSString *binaryPath = [path stringByAppendingPathComponent:frameworkName];
-  NSCAssert([NSFileManager.defaultManager fileExistsAtPath:binaryPath], @"Expected %@ to exist", binaryPath);
-
-  [logger logMessage:@"dlopen on binary %@ at path %@", [path lastPathComponent], binaryPath];
-  void *handle = dlopen(binaryPath.UTF8String, RTLD_NOW | RTLD_GLOBAL);
-  NSCAssert(handle, @"dlopen with error %s", dlerror());
-
   [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
 }
 
@@ -98,11 +84,7 @@ static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
     }
 
     [logger logMessage:@"%@ is not loaded. Loading %@ at path %@", className, path.lastPathComponent, path];
-    if (getenv(FBSimulatorControlUsedlopenForFrameworks.UTF8String) != NULL){
-      dlopenFrameworkAtPath(logger, path);
-    } else {
-      LoadFrameworkAtPath(logger, path);
-    }
+    LoadFrameworkAtPath(logger, path);
 
     NSCAssert(NSClassFromString(className), @"Expected %@ to be loaded after %@ was loaded", className, path.lastPathComponent);
   }
