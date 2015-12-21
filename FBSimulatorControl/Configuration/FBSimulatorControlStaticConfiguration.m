@@ -21,7 +21,6 @@
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
 NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
-NSString *const FBSimulatorControlUsedlopenForFrameworks = @"FBSIMULATORCONTROL_USE_DLOPEN";
 
 static void LoadFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
 {
@@ -34,17 +33,31 @@ static void LoadFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
   [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
 }
 
-static void dlopenFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
+/**
+ Given that it is possible for FBSimulatorControl.framework to be loaded after any of the
+ Private Frameworks upon which it depends, it's possible that these Frameworks may have
+ been loaded from a different Developer Directory.
+
+ In order to prevent crazy behaviour from arising, FBSimulatorControl will check the
+ directories of these Frameworks match the one that is currently set.
+ */
+static void VerifyDeveloperDirectoryForPrivateClass(NSString *className, NSString *developerDirectory)
 {
-  NSString *frameworkName = [[path stringByDeletingPathExtension] lastPathComponent];
-  NSString *binaryPath = [path stringByAppendingPathComponent:frameworkName];
-  NSCAssert([NSFileManager.defaultManager fileExistsAtPath:binaryPath], @"Expected %@ to exist", binaryPath);
+  NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(className)];
+  NSCAssert(bundle, @"Could not obtain Framework bundle for class named %@", className);
 
-  [logger logMessage:@"dlopen on binary %@ at path %@", [path lastPathComponent], binaryPath];
-  void *handle = dlopen(binaryPath.UTF8String, RTLD_NOW | RTLD_GLOBAL);
-  NSCAssert(handle, @"dlopen with error %s", dlerror());
+  // Developer Directory is: /Applications/Xcode.app/Contents/Developer
+  // The common base path is: is: /Applications/Xcode.app
+  NSString *basePath = [[developerDirectory stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+  BOOL matches = [bundle.bundlePath hasPrefix:basePath];
 
-  [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
+  NSCAssert(
+    matches,
+    @"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@ unpredicatable behaviour may arise",
+    bundle.bundlePath.lastPathComponent,
+    bundle.bundlePath,
+    developerDirectory
+  );
 }
 
 static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
@@ -58,6 +71,7 @@ static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
   // 3) Provide a class for sanity checking the Framework load.
   // 4) Provide a class that can be checked before the Framework load to avoid re-loading the same
   //    Framework if others have done so before.
+  // 5) Provide a sanity check that any preloaded Private Frameworks match the current xcode-select version
   NSDictionary *classMapping = @{
     @"SimDevice" : @"Library/PrivateFrameworks/CoreSimulator.framework",
     @"DVTDevice" : @"../SharedFrameworks/DVTFoundation.framework",
@@ -70,15 +84,12 @@ static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
     NSString *path = [[developerDirectory stringByAppendingPathComponent:relativePath] stringByStandardizingPath];
     if (NSClassFromString(className)) {
       [logger logMessage:@"%@ is allready loaded, skipping load of framework %@", className, path];
+      VerifyDeveloperDirectoryForPrivateClass(className, developerDirectory);
       continue;
     }
 
     [logger logMessage:@"%@ is not loaded. Loading %@ at path %@", className, path.lastPathComponent, path];
-    if (getenv(FBSimulatorControlUsedlopenForFrameworks.UTF8String) != NULL){
-      dlopenFrameworkAtPath(logger, path);
-    } else {
-      LoadFrameworkAtPath(logger, path);
-    }
+    LoadFrameworkAtPath(logger, path);
 
     NSCAssert(NSClassFromString(className), @"Expected %@ to be loaded after %@ was loaded", className, path.lastPathComponent);
   }
