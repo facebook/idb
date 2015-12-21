@@ -29,8 +29,19 @@ function cli() {
       $1
 }
 
+function cli_framework() {
+  NAME='fbsimctl'
+  SCHEME='FBSimulatorControlKit'
+  xctool \
+      -workspace $NAME/$NAME.xcworkspace \
+      -scheme $SCHEME \
+      -sdk macosx \
+      $1
+}
+
 if [ "$MODE" = "ci" ]; then
   framework test
+  cli_framework test
   cli build
 fi
 
