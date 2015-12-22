@@ -14,7 +14,7 @@ protocol Runner {
   func run() -> Output
 }
 
-extension Command {
+public extension Command {
   func runFromCLI() -> Void {
     switch (BaseRunner(command: self).run()) {
     case .Failure(let string):
