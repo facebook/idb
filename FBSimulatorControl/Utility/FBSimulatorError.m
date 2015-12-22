@@ -9,6 +9,7 @@
 
 #import "FBSimulatorError.h"
 
+#import "FBCollectionDescriptions.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
 #import "FBSimulator.h"
@@ -118,7 +119,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 {
   return [[self
     extraInfo:@"launchd_is_running" value:@(simulator.launchInfo.launchdProcess != nil)]
-    extraInfo:@"launchd_subprocesses" value:[simulator.launchInfo.launchedProcesses valueForKey:@"shortDescription"]];
+    extraInfo:@"launchd_subprocesses" value:[FBCollectionDescriptions oneLineDescriptionFromArray:simulator.launchInfo.launchedProcesses atKeyPath:@"shortDescription"]];
 }
 
 - (instancetype)recursiveDescription
