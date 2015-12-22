@@ -223,7 +223,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
     if (!info) {
       return YES;
     }
-    if ([info.launchPath rangeOfString:substring].location == NSNotFound) {
+    if (substring && [info.launchPath rangeOfString:substring].location == NSNotFound) {
       return YES;
     }
     [subprocesses addObject:info];
