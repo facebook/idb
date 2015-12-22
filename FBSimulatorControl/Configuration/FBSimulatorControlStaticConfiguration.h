@@ -23,14 +23,19 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 extern NSString *const FBSimulatorControlDebugLogging;
 
 /**
- Enable/Disable CoreSimulator debug logging.
+ An Environment Variable to enable automatic evaluation of Global Preconditions.
  */
-void FBSetSimulatorLoggingEnabled(BOOL enabled);
+extern NSString *const FBSimulatorControlAutomaticallyLoadFrameworks;
 
 /**
  Environment Globals & other derived constants
  */
 @interface FBSimulatorControlStaticConfiguration : NSObject
+
+/**
+ If set to YES, Global Predocitions will automatically be evaluated on launch.
+ */
++ (BOOL)automaticallyLoadFrameworks;
 
 /**
  The path to of Xcode's /Xcode.app/Contents/Developer directory.
