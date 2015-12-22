@@ -48,7 +48,7 @@
 /**
  Loads all of the Frameworks upon which FBSimulatorControl depends.
  This method *must* be called before any class in FBSimulatorControl can be used.
- In order to do this automatically, set `FBSIMULATORCONTROL_EVALUATE_GLOBAL_PRECONDITIONS`.
+ In order to do this automatically, set `FBSIMULATORCONTROL_AUTOMATICALLY_LOAD_FRAMEWORKS`.
 
  @param logger the Logger to log events to.
  @param error any error that occurred during performing the preconditions.

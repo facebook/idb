@@ -31,9 +31,16 @@ Once you build the `FBSimulatorControl.framework`, it can be linked like any oth
 - Add `FBSimulatorControl.framework` to the [Target's 'Link Binary With Libraries' build phase](Help/link_binary_with_libraries.png).
 - Ensure that `FBSimulatorControl` is copied into the Target's bundle (if your Target is an Application or Framework) or a path relative to the Executable if your project does not have a bundle.
 
-In order to support different environments, `FBSimulatorControl` weakly links against Xcode's Private Frameworks and then loads them on startup. `FBSimulatorControl` will link against the version of Xcode that you have set with [`xcode-select`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/xcode-select.1.html). The Xcode version can be overridden by setting the `DEVELOPER_DIR` environment variable in the process that links with `FBSimulatorControl`.
-
 ## Usage
+In order to support different Xcode versions and system environments, `FBSimulatorControl` weakly links against Xcode's Private Frameworks and load these Frameworks when they are needed. `FBSimulatorControl` will link against the version of Xcode that you have set with [`xcode-select`](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/xcode-select.1.html). The Xcode version can be overridden by setting the `DEVELOPER_DIR` environment variable in the process that links with `FBSimulatorControl`.
+
+Since the Frameworks upon which `FBSimulatorControl` depends are loaded laziliy, they must be loaded before using the Framework. This also prevents loading of multiple versions of the Xcode Private Frameworks. There are a number of ways to achieve this:
+- Pass `FBSIMULATORCONTROL_AUTOMATICALLY_LOAD_FRAMEWORKS` to the environment. This will load the Frameworks when `FBSimulatorControl` is linked.
+- Call `+[FBSimulatorControl loadPrivateFrameworksOrAbort]` before using any of the `FBSimulatorControl` classes.
+- Call `+[FBSimulatorControl withConfiguration:error:]` first. This method will ensure that the necessary Frameworks are loaded.
+
+There's no need to worry about these methods conflicting, `FBSimulatorControl` will ensure that the Frameworks are only loaded once.
+
 [The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API. `FBSimulatorControl` has an umbrella that can be imported to give access to the entire API.
 
 For a high level overview:
