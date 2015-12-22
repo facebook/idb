@@ -87,15 +87,81 @@ public extension Query {
     }
 
     if udids.count > 0 {
-      subqueries.append(.UDID(udids))
+      let query = Query.UDID(udids)
+      if states.count == 0 && configurations.count == 0 {
+        return query
+      }
+      subqueries.append(query)
     }
     if states.count > 0 {
-      subqueries.append(.State(states))
+      let query = Query.State(states)
+      if udids.count == 0 && configurations.count == 0 {
+        return query
+      }
+      subqueries.append(query)
     }
     if configurations.count > 0 {
-      subqueries.append(.Configured(configurations))
+      let query = Query.Configured(configurations)
+      if udids.count == 0 && states.count == 0 {
+        return query
+      }
+      subqueries.append(query)
     }
 
     return .And(subqueries)
+  }
+}
+
+public extension Format {
+  static func flatten(formats: [Format]) -> Format {
+    if (formats.count == 1) {
+      return formats.first!
+    }
+
+    return .Compound(formats)
+  }
+}
+
+extension Query : Equatable { }
+public func == (leftQuery: Query, rightQuery: Query) -> Bool {
+  switch (leftQuery, rightQuery) {
+  case (let .UDID(left), let .UDID(right)): return left == right
+  case (let .State(left), let .State(right)): return left == right
+  case (let .Configured(left), let .Configured(right)): return left == right
+  case (let .And(left), let .And(right)): return left == right
+  default: return false
+  }
+}
+
+extension Format : Equatable { }
+public func == (lhs: Format, rhs: Format) -> Bool {
+  switch (lhs, rhs) {
+  case (.UDID, .UDID): return true
+  case (.OSVersion, .OSVersion): return true
+  case (.DeviceName, .DeviceName): return true
+  case (.Name, .Name): return true
+  case (let .Compound(leftComp), let .Compound(rightComp)): return leftComp == rightComp
+  default: return false
+  }
+}
+
+extension Format : Hashable {
+  public var hashValue: Int {
+    get {
+      switch self {
+      case .UDID:
+        return "udid".hashValue
+      case .OSVersion:
+        return "osversion".hashValue
+      case .DeviceName:
+        return "devicename".hashValue
+      case .Name:
+        return "name".hashValue
+      case .Compound(let format):
+        return format.reduce("compound".hashValue) { previous, next in
+          return previous ^ next.hashValue
+        }
+      }
+    }
   }
 }
