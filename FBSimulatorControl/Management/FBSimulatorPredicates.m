@@ -24,6 +24,8 @@
 
 @implementation FBSimulatorPredicates
 
+#pragma mark Pools
+
 + (NSPredicate *)allocatedByPool:(FBSimulatorPool *)pool
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
@@ -38,6 +40,8 @@
   ]];
 }
 
+#pragma mark States
+
 + (NSPredicate *)launched
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
@@ -45,26 +49,42 @@
   }];
 }
 
++ (NSPredicate *)state:(FBSimulatorState)state
+{
+  return [self states:@[@(state)]];
+}
+
++ (NSPredicate *)states:(NSArray *)states
+{
+  NSSet *statesSet = [NSSet setWithArray:states];
+
+  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
+    return [statesSet containsObject:@(candidate.state)];
+  }];
+}
+
+#pragma mark Configurations
+
 + (NSPredicate *)only:(FBSimulator *)simulator
 {
-  return [self onlyUDID:simulator.udid];
+  return [self udid:simulator.udid];
 }
 
-+ (NSPredicate *)onlyUDID:(NSString *)udid
++ (NSPredicate *)udid:(NSString *)udid
 {
+  return [self udids:@[udid]];
+}
+
++ (NSPredicate *)udids:(NSArray *)udids
+{
+  NSSet *udidsSet = [NSSet setWithArray:udids];
+
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return udid && [candidate.udid isEqual:udid];
+    return [udidsSet containsObject:candidate.udid];
   }];
 }
 
-+ (NSPredicate *)withState:(FBSimulatorState)state
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return candidate.state == state;
-  }];
-}
-
-+ (NSPredicate *)matchingConfiguration:(FBSimulatorConfiguration *)configuration
++ (NSPredicate *)configuration:(FBSimulatorConfiguration *)configuration
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
     if (![candidate.configuration.device isEqual:configuration.device]) {

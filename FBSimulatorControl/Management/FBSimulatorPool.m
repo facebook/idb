@@ -308,7 +308,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 {
   NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
     [FBSimulatorPredicates unallocatedByPool:self],
-    [FBSimulatorPredicates matchingConfiguration:configuration]
+    [FBSimulatorPredicates configuration:configuration]
   ]];
   return [[self.allSimulators filteredArrayUsingPredicate:predicate] firstObject];
 }
