@@ -4,10 +4,11 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#import <Foundation/NSDictionary.h>
+#import <objc/NSObject.h>
 
-@interface NSDictionary (envp)
-- (void)freeEnvp:(char **)arg1;
-- (char **)envp;
+@interface __SimKitPlaceholderClass : NSObject
+{
+}
+
 @end
 
