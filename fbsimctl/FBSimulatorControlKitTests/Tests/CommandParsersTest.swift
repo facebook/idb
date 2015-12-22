@@ -51,4 +51,26 @@ class QueryParserTests : XCTestCase {
       self.assertParses(query)
     }
   }
+
+  func testParsesPartially() {
+    let queries = [
+      ["iPhone 5", "Nexus 5", "iPad 2"],
+      ["creating", "booting", "jelly", "shutdown"],
+      ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "banana", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"],
+    ]
+    for query in queries {
+      self.assertParses(query)
+    }
+  }
+
+  func testFailsPartialParse() {
+    let queries = [
+      ["Nexus 5", "iPhone 5", "iPad 2"],
+      ["jelly", "creating", "booting", "shutdown"],
+      ["banana", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"],
+    ]
+    for query in queries {
+      self.assertParseFails(query)
+    }
+  }
 }
