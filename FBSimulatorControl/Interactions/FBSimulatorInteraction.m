@@ -102,7 +102,7 @@
       @"medialibraryd",
     ]];
     BOOL didStartAllRequiredProcesses = [[NSRunLoop mainRunLoop] spinRunLoopWithTimeout:60 untilTrue:^BOOL{
-      NSSet *runningProcesses = [NSSet setWithArray:[simulator.processQuery processesWithLaunchPathSubstring:nil]];
+      NSSet *runningProcesses = [NSSet setWithArray:[simulator.processQuery subprocessesOf:launchInfo.launchdProcess.processIdentifier]];
       runningProcesses = [runningProcesses valueForKey:@"processName"];
       return [requiredProcesses isSubsetOfSet:runningProcesses];
     }];
