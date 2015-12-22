@@ -11,6 +11,8 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBAddVideoPolyfill.h"
+#import "FBSimulator.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Helpers.h"
 #import "FBProcessQuery.h"
@@ -23,7 +25,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 
 @interface FBSimDeviceWrapper ()
 
-@property (nonatomic, strong, readonly) SimDevice *device;
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBProcessQuery *query;
 
 - (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error;
@@ -65,7 +67,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
   NSError *__autoreleasing innerError = nil;
   NSError *__autoreleasing *innerErrorPointer = &innerError;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(launchApplicationWithID:options:error:)]];
-  [invocation setTarget:self.device];
+  [invocation setTarget:self.simulator.device];
   [invocation setSelector:@selector(launchApplicationWithID:options:error:)];
   [invocation setArgument:&appID atIndex:2];
   [invocation setArgument:&options atIndex:3];
@@ -87,7 +89,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
   NSError *__autoreleasing innerError = nil;
   NSError *__autoreleasing *innerErrorPointer = &innerError;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(installApplication:withOptions:error:)]];
-  [invocation setTarget:self.device];
+  [invocation setTarget:self.simulator.device];
   [invocation setSelector:@selector(installApplication:withOptions:error:)];
   [invocation setArgument:&appURL atIndex:2];
   [invocation setArgument:&options atIndex:3];
@@ -108,21 +110,21 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 
 #pragma mark Initializers
 
-+ (instancetype)withSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery
 {
   BOOL timeoutResiliance = (configuration.options & FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance) == FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance;
   return timeoutResiliance
-    ? [[FBSimDeviceWrapper_TimeoutResiliance alloc] initWithSimDevice:device processQuery:processQuery]
-    : [[FBSimDeviceWrapper alloc] initWithSimDevice:device processQuery:processQuery];
+    ? [[FBSimDeviceWrapper_TimeoutResiliance alloc] initWithSimulator:simulator processQuery:processQuery]
+    : [[FBSimDeviceWrapper alloc] initWithSimulator:simulator processQuery:processQuery];
 }
 
-- (instancetype)initWithSimDevice:(SimDevice *)device processQuery:(FBProcessQuery *)query
+- (instancetype)initWithSimulator:(FBSimulator *)simulator processQuery:(FBProcessQuery *)query
 {
   if (!(self = [self init])) {
     return nil;
   }
 
-  _device = device;
+  _simulator = simulator;
   _query = query;
 
   return self;
@@ -132,17 +134,35 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 
 - (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
 {
-  return [self processInfoForProcessIdentifier:[self.device launchApplicationWithID:appID options:options error:error] error:error];
+  return [self processInfoForProcessIdentifier:[self.simulator.device launchApplicationWithID:appID options:options error:error] error:error];
 }
 
 - (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error
 {
-  return [self.device installApplication:appURL withOptions:options error:error];
+  return [self.simulator.device installApplication:appURL withOptions:options error:error];
 }
 
 - (FBProcessInfo *)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error
 {
-  return [self processInfoForProcessIdentifier:[self.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
+  return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
+}
+
+- (BOOL)addVideos:(NSArray *)paths error:(NSError **)error
+{
+  if ([self.simulator.device respondsToSelector:@selector(addVideo:error:)]) {
+    for (NSString *path in paths) {
+      NSURL *url = [NSURL fileURLWithPath:path];
+      NSError *innerError = nil;
+      if (![self.simulator.device addVideo:url error:&innerError]) {
+        return [[[FBSimulatorError
+          describeFormat:@"Failed to upload video at path %@", path]
+          causedBy:innerError]
+          failBool:error];
+      }
+    }
+    return YES;
+  }
+  return [[FBAddVideoPolyfill withSimulator:self.simulator] addVideos:paths error:error];
 }
 
 #pragma mark Private

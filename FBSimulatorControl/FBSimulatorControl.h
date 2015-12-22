@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBSimulatorControl/FBAddVideoPolyfill.h>
 #import <FBSimulatorControl/FBBinaryParser.h>
 #import <FBSimulatorControl/FBCollectionDescriptions.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
@@ -45,7 +46,6 @@
 #import <FBSimulatorControl/FBSimulatorHistoryGenerator.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Agents.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Applications.h>
-#import <FBSimulatorControl/FBSimulatorInteraction+Convenience.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Diagnostics.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Private.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Setup.h>

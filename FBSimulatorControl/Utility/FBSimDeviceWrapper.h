@@ -11,6 +11,7 @@
 
 @class FBProcessInfo;
 @class FBProcessQuery;
+@class FBSimulator;
 @class FBSimulatorControlConfiguration;
 @class SimDevice;
 
@@ -22,15 +23,16 @@
 /**
  Creates a SimDevice Wrapper.
 
- @param device the device to wrap
+ @param simulator the Simulator to wrap
  @param configuration the Simulator Control Configuration.
  @param processQuery the Process Query to obtain process information.
  @return a new SimDevice wrapper.
  */
-+ (instancetype)withSimDevice:(SimDevice *)device configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery;
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery;
 
 /**
- Boots an Application, timing out if CoreSimulator gets stuck in a semaphore.
+ Boots an Application on the Simulator.
+ Will time out with an error if CoreSimulator gets stuck in a semaphore and timeout resiliance is enabled.
 
  @param appID the Application ID to use.
  @param options the Options to use in the launch.
@@ -40,7 +42,8 @@
 - (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error;
 
 /**
- Installs an Application, timing out if CoreSimulator gets stuck in a semaphore.
+ Installs an Application on the Simulator.
+ Will time out with an error if CoreSimulator gets stuck in a semaphore and timeout resiliance is enabled.
 
  @param appURL the Application URL to use.
  @param options the Options to use in the launch.
@@ -50,7 +53,8 @@
 - (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error;
 
 /**
- Spawns a binary, timing out if CoreSimulator gets stuck in a semaphore.
+ Spawns a binary on the Simulator.
+ Will time out with an error if CoreSimulator gets stuck in a semaphore and timeout resiliance is enabled.
 
  @param launchPath the path to the binary.
  @param options the Options to use in the launch.
@@ -59,5 +63,14 @@
  @return the Process Identifier of the launched process, -1 otherwise.
  */
 - (FBProcessInfo *)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error;
+
+/**
+ Adds a Video to the Camera Roll.
+ Will polyfill to the 'Camera App Upload' hack.
+ 
+ @param paths an Array of paths of videos to upload.
+ @return YES if the upload was successful, NO otherwise.
+ */
+- (BOOL)addVideos:(NSArray *)paths error:(NSError **)error;
 
 @end

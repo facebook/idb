@@ -11,8 +11,11 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBSimDeviceWrapper.h"
+#import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
+#import "FBSimulatorInteraction.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulator (Helpers)
@@ -111,6 +114,16 @@
     return [[[[FBSimulatorError describeFormat:@"Failed to Erase Contents and Settings %@", self] causedBy:innerError] inSimulator:self] failBool:error];
   }
   return YES;
+}
+
+- (FBSimulatorInteraction *)interact
+{
+  return [FBSimulatorInteraction withSimulator:self];
+}
+
+- (FBSimDeviceWrapper *)simDeviceWrapper
+{
+  return [FBSimDeviceWrapper withSimulator:self configuration:self.pool.configuration processQuery:self.processQuery];
 }
 
 @end
