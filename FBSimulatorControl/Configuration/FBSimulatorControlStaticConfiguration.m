@@ -16,14 +16,8 @@
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
 NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
-NSString *const FBSimulatorControlAutomaticallyLoadFrameworks = @"FBSIMULATORCONTROL_AUTOMATICALLY_LOAD_FRAMEWORKS";
 
 @implementation FBSimulatorControlStaticConfiguration
-
-+ (BOOL)automaticallyLoadFrameworks
-{
-  return [NSProcessInfo.processInfo.environment[FBSimulatorControlAutomaticallyLoadFrameworks] boolValue];
-}
 
 + (NSString *)developerDirectory
 {

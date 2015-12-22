@@ -27,23 +27,17 @@
 #import "FBSimulatorSession+Convenience.h"
 #import "FBSimulatorSession.h"
 
-__attribute__((constructor)) static void FBSimulatorControlEntryPoint(void)
-{
-  if (FBSimulatorControlStaticConfiguration.automaticallyLoadFrameworks) {
-    [FBSimulatorControl loadPrivateFrameworksOrAbort];
-  }
-}
-
 @implementation FBSimulatorControl
 
 #pragma mark Initializers
 
++ (void)initialize
+{
+  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+}
+
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
 {
-  if (![FBSimulatorControl loadPrivateFrameworks:logger error:error]) {
-    return nil;
-  }
-
   logger = logger ?: FBSimulatorControlStaticConfiguration.defaultLogger;
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }

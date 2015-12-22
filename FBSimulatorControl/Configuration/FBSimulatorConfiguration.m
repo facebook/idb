@@ -12,6 +12,7 @@
 
 #import <objc/runtime.h>
 
+#import "FBSimulatorControl+Class.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControlStaticConfiguration.h"
 
@@ -495,6 +496,11 @@
 @end
 
 @implementation FBSimulatorConfiguration
+
++ (void)initialize
+{
+  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+}
 
 #pragma mark Initializers
 

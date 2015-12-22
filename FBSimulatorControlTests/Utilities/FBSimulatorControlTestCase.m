@@ -18,7 +18,6 @@ __attribute__((constructor)) static void EntryPoint()
 {
   setenv(FBSimulatorControlDebugLogging.UTF8String, "YES", 1);
   NSLog(@"Current Configuration => %@", FBSimulatorControlStaticConfiguration.description);
-  [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
 
 @interface FBSimulatorControlTestCase ()
