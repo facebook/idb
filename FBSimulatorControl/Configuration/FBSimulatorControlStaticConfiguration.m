@@ -9,11 +9,6 @@
 
 #import "FBSimulatorControlStaticConfiguration.h"
 
-#include <dlfcn.h>
-
-#import <CoreSimulator/SimRuntime.h>
-#import <CoreSimulator/NSUserDefaults-SimDefaults.h>
-
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorLogger.h"
@@ -21,92 +16,14 @@
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
 NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
-
-static void LoadFrameworkAtPath(id<FBSimulatorLogger> logger, NSString *path)
-{
-  NSBundle *bundle = [NSBundle bundleWithPath:path];
-  NSCAssert(bundle, @"Could not create a bundle at path %@", path);
-
-  NSError *error = nil;
-  BOOL success = [bundle loadAndReturnError:&error];
-  NSCAssert(success, @"Could not load bundle with error %@", error);
-  [logger logMessage:@"Successfully loaded %@", path.lastPathComponent];
-}
-
-/**
- Given that it is possible for FBSimulatorControl.framework to be loaded after any of the
- Private Frameworks upon which it depends, it's possible that these Frameworks may have
- been loaded from a different Developer Directory.
-
- In order to prevent crazy behaviour from arising, FBSimulatorControl will check the
- directories of these Frameworks match the one that is currently set.
- */
-static void VerifyDeveloperDirectoryForPrivateClass(NSString *className, NSString *developerDirectory)
-{
-  NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(className)];
-  NSCAssert(bundle, @"Could not obtain Framework bundle for class named %@", className);
-
-  // Developer Directory is: /Applications/Xcode.app/Contents/Developer
-  // The common base path is: is: /Applications/Xcode.app
-  NSString *basePath = [[developerDirectory stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
-  BOOL matches = [bundle.bundlePath hasPrefix:basePath];
-
-  NSCAssert(
-    matches,
-    @"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@ unpredicatable behaviour may arise",
-    bundle.bundlePath.lastPathComponent,
-    bundle.bundlePath,
-    developerDirectory
-  );
-}
-
-static void LoadPrivateFrameworks(id<FBSimulatorLogger> logger)
-{
-  // This will assert if the directory could not be found.
-  NSString *developerDirectory = FBSimulatorControlStaticConfiguration.developerDirectory;
-
-  // A Mapping of Class Names to the Frameworks that they belong to. This serves to:
-  // 1) Represent the Frameworks that FBSimulatorControl is dependent on via their classes
-  // 2) Provide a path to the relevant Framework.
-  // 3) Provide a class for sanity checking the Framework load.
-  // 4) Provide a class that can be checked before the Framework load to avoid re-loading the same
-  //    Framework if others have done so before.
-  // 5) Provide a sanity check that any preloaded Private Frameworks match the current xcode-select version
-  NSDictionary *classMapping = @{
-    @"SimDevice" : @"Library/PrivateFrameworks/CoreSimulator.framework",
-    @"DVTDevice" : @"../SharedFrameworks/DVTFoundation.framework",
-    @"DTiPhoneSimulatorApplicationSpecifier" : @"../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework"
-  };
-  [logger logMessage:@"Using Developer Directory %@", developerDirectory];
-
-  for (NSString *className in classMapping) {
-    NSString *relativePath = classMapping[className];
-    NSString *path = [[developerDirectory stringByAppendingPathComponent:relativePath] stringByStandardizingPath];
-    if (NSClassFromString(className)) {
-      [logger logMessage:@"%@ is allready loaded, skipping load of framework %@", className, path];
-      VerifyDeveloperDirectoryForPrivateClass(className, developerDirectory);
-      continue;
-    }
-
-    [logger logMessage:@"%@ is not loaded. Loading %@ at path %@", className, path.lastPathComponent, path];
-    LoadFrameworkAtPath(logger, path);
-
-    NSCAssert(NSClassFromString(className), @"Expected %@ to be loaded after %@ was loaded", className, path.lastPathComponent);
-  }
-}
-
-__attribute__((constructor)) static void EntryPoint()
-{
-  LoadPrivateFrameworks(FBSimulatorControlStaticConfiguration.defaultLogger);
-}
-
-void FBSetSimulatorLoggingEnabled(BOOL enabled)
-{
-  NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
-  [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
-}
+NSString *const FBSimulatorControlAutomaticallyLoadFrameworks = @"FBSIMULATORCONTROL_AUTOMATICALLY_LOAD_FRAMEWORKS";
 
 @implementation FBSimulatorControlStaticConfiguration
+
++ (BOOL)automaticallyLoadFrameworks
+{
+  return [NSProcessInfo.processInfo.environment[FBSimulatorControlAutomaticallyLoadFrameworks] boolValue];
+}
 
 + (NSString *)developerDirectory
 {
