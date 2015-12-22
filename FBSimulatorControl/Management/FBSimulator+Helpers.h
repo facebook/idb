@@ -9,6 +9,9 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
+@class FBSimDeviceWrapper;
+@class FBSimulatorInteraction;
+
 @interface FBSimulator (Helpers)
 
 /**
@@ -71,5 +74,15 @@
  @return YES if successful, NO otherwise.
  */
 - (BOOL)eraseWithError:(NSError **)error;
+
+/**
+ Creates an `FBSimulatorInteraction` for the reciever.
+ */
+- (FBSimulatorInteraction *)interact;
+
+/**
+ Creates a FBSimDeviceWrapper for the Simulator.
+ */
+- (FBSimDeviceWrapper *)simDeviceWrapper;
 
 @end
