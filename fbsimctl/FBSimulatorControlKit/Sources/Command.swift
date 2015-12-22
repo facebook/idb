@@ -48,9 +48,9 @@ public indirect enum Format {
  Intersection is achieved with the .And enumeration.
 */
 public indirect enum Query {
-  case UDID([String])
-  case State([FBSimulatorState])
-  case Configured([FBSimulatorConfiguration])
+  case UDID(Set<String>)
+  case State(Set<FBSimulatorState>)
+  case Configured(Set<FBSimulatorConfiguration>)
   case And([Query])
 }
 
@@ -73,15 +73,15 @@ public extension Query {
       return queries.first!
     }
 
-    var udids: [String] = []
-    var states: [FBSimulatorState] = []
-    var configurations: [FBSimulatorConfiguration] = []
+    var udids: Set<String> = []
+    var states: Set<FBSimulatorState> = []
+    var configurations: Set<FBSimulatorConfiguration> = []
     var subqueries: [Query] = []
     for query in queries {
       switch query {
-      case .UDID(let udid): udids.appendContentsOf(udid)
-      case .State(let state): states.appendContentsOf(state)
-      case .Configured(let configuration): configurations.appendContentsOf(configuration)
+      case .UDID(let udid): udids.unionInPlace(udid)
+      case .State(let state): states.unionInPlace(state)
+      case .Configured(let configuration): configurations.unionInPlace(configuration)
       case .And(let subquery): subqueries.appendContentsOf(subquery)
       }
     }

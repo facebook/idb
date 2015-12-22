@@ -32,7 +32,8 @@ class QueryParserTests : XCTestCase {
       ["Galaxy S5"],
       ["Nexus Chromebook Pixel G4 Droid S5 S1 S4 4S"],
       ["makingtea"],
-      ["B8EEA6C4-47E5-92DE-014E0ECD8139"]
+      ["B8EEA6C4-47E5-92DE-014E0ECD8139"],
+      []
     ]
     for query in queries {
       self.assertParseFails(query)
