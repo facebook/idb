@@ -136,17 +136,20 @@ private extension Query {
 
   func get(pool: FBSimulatorPool) -> NSPredicate {
     switch (self) {
-    case .UDID(let udid):
-      return FBSimulatorPredicates.onlyUDID(udid)
-    case .State(let state):
-      return FBSimulatorPredicates.withState(state)
-    case .Configured(let configuration):
-      return FBSimulatorPredicates.matchingConfiguration(configuration)
+    case .UDID(let udids):
+      return FBSimulatorPredicates.udids(Array(udids))
+    case .State(let states):
+      return NSCompoundPredicate(
+        orPredicateWithSubpredicates: states.map(FBSimulatorPredicates.state) as! [NSPredicate]
+      )
+    case .Configured(let configurations):
+      return NSCompoundPredicate(
+        orPredicateWithSubpredicates: configurations.map(FBSimulatorPredicates.configuration) as! [NSPredicate]
+      )
     case .And(let subqueries):
-      let predicates = subqueries.map {$0.get(pool)}
-      return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
-    case .Only:
-      return NSPredicate(value: false)
+      return NSCompoundPredicate(
+        andPredicateWithSubpredicates: subqueries.map { $0.get(pool) }
+      )
     }
   }
 }

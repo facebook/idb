@@ -21,7 +21,7 @@ public extension Command {
   }
 }
 
-enum ParseError : ErrorType {
+public enum ParseError : ErrorType {
   case EndOfInput
   case DoesNotMatch(String, String)
   case InvalidNumber
@@ -36,7 +36,7 @@ enum ParseError : ErrorType {
 /**
  Protocol for parsing a list of tokens.
  */
-struct Parser<A> {
+public struct Parser<A> {
   let output: [String] throws -> ([String], A)
 
   func parse(tokens: [String]) throws -> ([String], A) {
@@ -132,6 +132,12 @@ extension Parser {
     }
   }
 
+  static func succeeded(token: String, by: Parser<A>) -> Parser<A> {
+    return Parser<()>
+      .ofString(token, constant: ())
+      .sequence(by)
+  }
+
   static func ofTwo<B>(a: Parser<A>, b: Parser<B>) -> Parser<(A, B)> {
     return a.bind { valueA in
       return b.fmap { valueB in
@@ -141,21 +147,15 @@ extension Parser {
   }
 
   static func ofMany(parsers: [Parser<A>]) -> Parser<[A]> {
-    return self.ofManyCount(parsers, count: 0)
+    return self.ofManyCount(0, parsers: parsers)
   }
 
   static func ofAny(parsers: [Parser<A>]) -> Parser<A> {
-    return self.ofManyCount(parsers, count: 1)
+    return self.ofManyCount(1, parsers: parsers)
       .fmap { $0.first! }
   }
 
-  static func succeeded(token: String, by: Parser<A>) -> Parser<A> {
-    return Parser<()>
-      .ofString(token, constant: ())
-      .sequence(by)
-  }
-
-  static func ofManyCount(parsers: [Parser<A>], count: Int) -> Parser<[A]> {
+  static func ofManyCount(count: Int, parsers: [Parser<A>]) -> Parser<[A]> {
     assert(count >= 0, "Count should be >= 0")
     return Parser<[A]>() { tokens in
       var success = true
@@ -184,6 +184,6 @@ extension Parser {
   }
 }
 
-protocol Parsable {
+public protocol Parsable {
   static func parser() -> Parser<Self>
 }

@@ -48,7 +48,7 @@ extension Parser {
 }
 
 extension FBSimulatorState : Parsable {
-  static func parser() -> Parser<FBSimulatorState> {
+  public static func parser() -> Parser<FBSimulatorState> {
     return Parser<FBSimulatorState>.single { token in
       let state = FBSimulator.simulatorStateFromStateString(token)
       switch (state) {
@@ -68,7 +68,7 @@ extension FBSimulatorState : Parsable {
 }
 
 extension Command : Parsable {
-  static func parser() -> Parser<Command> {
+  public static func parser() -> Parser<Command> {
     return Parser
       .ofTwo(Configuration.parser(), b: Subcommand.parser())
       .fmap { (configuration, subcommand) in
@@ -78,7 +78,7 @@ extension Command : Parsable {
 }
 
 extension FBSimulatorAllocationOptions : Parsable {
-  static func parser() -> Parser<FBSimulatorAllocationOptions> {
+  public static func parser() -> Parser<FBSimulatorAllocationOptions> {
     return Parser
       .ofMany([
         self.createParser(),
@@ -123,7 +123,7 @@ extension FBSimulatorAllocationOptions : Parsable {
 }
 
 extension FBSimulatorManagementOptions : Parsable {
-  static func parser() -> Parser<FBSimulatorManagementOptions> {
+  public static func parser() -> Parser<FBSimulatorManagementOptions> {
     return Parser
       .ofMany([
         self.deleteAllOnFirstParser(),
@@ -168,7 +168,7 @@ extension FBSimulatorManagementOptions : Parsable {
 }
 
 extension Configuration : Parsable {
-  static func parser() -> Parser<Configuration> {
+  public static func parser() -> Parser<Configuration> {
     return Parser.ofTwo(deviceSetParser(), b: FBSimulatorManagementOptions.parser())
       .fmap { setPath, options in
         return Configuration(
@@ -187,7 +187,7 @@ extension Configuration : Parsable {
 }
 
 extension Subcommand : Parsable {
-  static func parser() -> Parser<Subcommand> {
+  public static func parser() -> Parser<Subcommand> {
     return Parser.ofAny([
       self.helpParser(),
       self.interactParser(),
@@ -238,17 +238,18 @@ extension Subcommand : Parsable {
 }
 
 extension Query : Parsable {
-  static func parser() -> Parser<Query> {
+  public static func parser() -> Parser<Query> {
     return Parser
-      .ofAny([
-        Parser.ofString("creating", constant: Query.State(FBSimulatorState.Creating)),
-        Parser.ofString("shutdown", constant: Query.State(FBSimulatorState.Shutdown)),
-        Parser.ofString("booting", constant: Query.State(FBSimulatorState.Booting)),
-        Parser.ofString("booted", constant: Query.State(FBSimulatorState.Booted)),
-        Parser.ofString("shutting-down", constant: Query.State(FBSimulatorState.Booted)),
+      .ofManyCount(1, parsers: [
+        Parser.ofString("creating", constant: Query.State([FBSimulatorState.Creating])),
+        Parser.ofString("shutdown", constant: Query.State([FBSimulatorState.Shutdown])),
+        Parser.ofString("booting", constant: Query.State([FBSimulatorState.Booting])),
+        Parser.ofString("booted", constant: Query.State([FBSimulatorState.Booted])),
+        Parser.ofString("shutting-down", constant: Query.State([FBSimulatorState.Booted])),
         Query.uuidParser(),
         Query.nameParser()
       ])
+      .fmap { Query.flatten($0) }
   }
 
   private static func nameParser() -> Parser<Query> {
@@ -259,17 +260,19 @@ extension Query : Parsable {
         throw ParseError.InvalidNumber
       }
       let configuration: FBSimulatorConfiguration! = FBSimulatorConfiguration.withDeviceNamed(token)
-      return Query.Configured(configuration)
+      return Query.Configured([configuration])
     }
   }
 
   private static func uuidParser() -> Parser<Query> {
-    return Parser<Query>.ofUDID().fmap { Query.UDID($0.UUIDString) }
+    return Parser<Query>
+      .ofUDID()
+      .fmap { Query.UDID([$0.UUIDString]) }
   }
 }
 
 extension Format : Parsable {
-  static func parser() -> Parser<Format> {
+  public static func parser() -> Parser<Format> {
     return Parser
       .ofMany([
         Parser.ofString("--udid", constant: Format.UDID),

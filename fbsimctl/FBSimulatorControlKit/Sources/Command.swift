@@ -43,14 +43,15 @@ public indirect enum Format {
 }
 
 /**
- Defines the pieces of a Query for Simulators
+ Defines the components of Query for Simulators.
+ Each of the fundemental cases takes a collection of values to allow for a union for each case.
+ Intersection is achieved with the .And enumeration.
 */
 public indirect enum Query {
-  case UDID(String)
-  case State(FBSimulatorState)
-  case Configured(FBSimulatorConfiguration)
+  case UDID(Set<String>)
+  case State(Set<FBSimulatorState>)
+  case Configured(Set<FBSimulatorConfiguration>)
   case And([Query])
-  case Only(Int, Query)
 }
 
 /**
@@ -63,4 +64,38 @@ public indirect enum Subcommand {
   case Shutdown(Query)
   case Diagnose(Query)
   case Help(Subcommand?)
+}
+
+
+public extension Query {
+  static func flatten(queries: [Query]) -> Query {
+    if (queries.count == 1) {
+      return queries.first!
+    }
+
+    var udids: Set<String> = []
+    var states: Set<FBSimulatorState> = []
+    var configurations: Set<FBSimulatorConfiguration> = []
+    var subqueries: [Query] = []
+    for query in queries {
+      switch query {
+      case .UDID(let udid): udids.unionInPlace(udid)
+      case .State(let state): states.unionInPlace(state)
+      case .Configured(let configuration): configurations.unionInPlace(configuration)
+      case .And(let subquery): subqueries.appendContentsOf(subquery)
+      }
+    }
+
+    if udids.count > 0 {
+      subqueries.append(.UDID(udids))
+    }
+    if states.count > 0 {
+      subqueries.append(.State(states))
+    }
+    if configurations.count > 0 {
+      subqueries.append(.Configured(configurations))
+    }
+
+    return .And(subqueries)
+  }
 }
