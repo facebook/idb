@@ -70,7 +70,7 @@ extension FBSimulatorState : Parsable {
 extension Command : Parsable {
   public static func parser() -> Parser<Command> {
     return Parser
-      .ofTwo(Configuration.parser(), Subcommand.parser())
+      .ofTwo(Configuration.parser(), Action.parser())
       .fmap { (configuration, subcommand) in
         Command(configuration: configuration, subcommand: subcommand)
     }
@@ -194,8 +194,8 @@ extension Configuration : Parsable {
   }
 }
 
-extension Subcommand : Parsable {
-  public static func parser() -> Parser<Subcommand> {
+extension Action : Parsable {
+  public static func parser() -> Parser<Action> {
     return Parser.ofAny([
       self.helpParser(),
       self.interactParser(),
@@ -206,42 +206,42 @@ extension Subcommand : Parsable {
     ])
   }
 
-  static func helpParser() -> Parser<Subcommand> {
+  static func helpParser() -> Parser<Action> {
     return Parser.ofString("help", .Help(nil))
   }
 
-  static func interactParser() -> Parser<Subcommand> {
+  static func interactParser() -> Parser<Action> {
     return Parser
       .succeeded("interact", by: Parser.succeeded("--port", by: Parser<Int>.ofInt()).optional())
-      .fmap { Subcommand.Interact($0) }
+      .fmap { Action.Interact($0) }
   }
 
-  static func listParser() -> Parser<Subcommand> {
+  static func listParser() -> Parser<Action> {
     let followingParser = Parser
       .ofTwo(Query.parser(), Format.parser())
       .fmap { (query, format) in
-        Subcommand.List(query, format)
+        Action.List(query, format)
     }
 
     return Parser.succeeded("list", by: followingParser)
   }
 
-  static func bootParser() -> Parser<Subcommand> {
+  static func bootParser() -> Parser<Action> {
     return Parser
       .succeeded("boot", by: Query.parser())
-      .fmap { Subcommand.Boot($0) }
+      .fmap { Action.Boot($0) }
   }
 
-  static func shutdownParser() -> Parser<Subcommand> {
+  static func shutdownParser() -> Parser<Action> {
     return Parser
       .succeeded("shutdown", by: Query.parser())
-      .fmap { Subcommand.Shutdown($0) }
+      .fmap { Action.Shutdown($0) }
   }
 
-  static func diagnoseParser() -> Parser<Subcommand> {
+  static func diagnoseParser() -> Parser<Action> {
     return Parser
       .succeeded("diagnose", by: Query.parser())
-      .fmap { Subcommand.Diagnose($0) }
+      .fmap { Action.Diagnose($0) }
   }
 }
 

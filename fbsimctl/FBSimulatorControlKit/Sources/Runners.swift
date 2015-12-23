@@ -41,14 +41,14 @@ private struct BaseRunner : Runner {
     case .Interact(let portNumber):
       return InteractionRunner(control: control, portNumber: portNumber).run()
     default:
-      let runner = SubcommandRunner(subcommand: self.command.subcommand, control: control)
+      let runner = ActionRunner(subcommand: self.command.subcommand, control: control)
       return runner.run()
     }
   }
 }
 
-private struct SubcommandRunner : Runner {
-  let subcommand: Subcommand
+private struct ActionRunner : Runner {
+  let subcommand: Action
   let control: FBSimulatorControl
 
   // TODO: Sessions don't make much sense in this context, combine multiple simulators into one session
@@ -119,8 +119,8 @@ private class InteractionRunner : Runner, RelayTransformer {
   func transform(input: String) -> Output {
     let arguments = input.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
     do {
-      let (_, subcommand) = try Subcommand.parser().parse(arguments)
-      let runner = SubcommandRunner(subcommand: subcommand, control: self.control)
+      let (_, subcommand) = try Action.parser().parse(arguments)
+      let runner = ActionRunner(subcommand: subcommand, control: self.control)
       return runner.run()
     } catch {
       return .Failure("NOPE")

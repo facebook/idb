@@ -9,7 +9,7 @@
 
 import Foundation
 
-public extension Subcommand {
+public extension Action {
   public static let HELP_STR = "help"
   public static let INTERACT = "interact"
   public static let LIST = "list"

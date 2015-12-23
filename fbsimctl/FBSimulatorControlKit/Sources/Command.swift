@@ -15,7 +15,7 @@ import FBSimulatorControl
 */
 public struct Command {
   let configuration: Configuration
-  let subcommand: Subcommand
+  let subcommand: Action
 }
 
 /**
@@ -55,15 +55,15 @@ public indirect enum Query {
 }
 
 /**
- The Base of all fbsimctl commands
+ An Action that can be performed provided a FBSimulatorControl instance.
 */
-public indirect enum Subcommand {
+public indirect enum Action {
   case Interact(Int?)
   case List(Query, Format)
   case Boot(Query)
   case Shutdown(Query)
   case Diagnose(Query)
-  case Help(Subcommand?)
+  case Help(Action?)
 }
 
 
