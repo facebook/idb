@@ -22,13 +22,6 @@ public struct Command {
   Describes the Configuration for the running of a Command
 */
 public final class Configuration : FBSimulatorControlConfiguration {
-  public static func defaultConfiguration() -> Configuration {
-    return Configuration(
-      simulatorApplication: try! FBSimulatorApplication(error: ()),
-      deviceSetPath: nil,
-      options: FBSimulatorManagementOptions()
-    )
-  }
 }
 
 /**

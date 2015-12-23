@@ -16,7 +16,7 @@ public extension Command {
       let (_, command) = try Command.parser().parse(arguments)
       return command
     } catch {
-      return Command(configuration: Configuration.defaultConfiguration(), subcommand: .Help(nil))
+      return Command(configuration: Configuration.defaultValue(), subcommand: .Help(nil))
     }
   }
 }
@@ -132,7 +132,7 @@ extension Parser {
     }
   }
 
-  static func succeeded(token: String, by: Parser<A>) -> Parser<A> {
+  static func succeeded(token: String, _ by: Parser<A>) -> Parser<A> {
     return Parser<()>
       .ofString(token, ())
       .sequence(by)

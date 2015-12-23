@@ -190,7 +190,7 @@ extension Configuration : Parsable {
 
   public static func deviceSetParser() -> Parser<String> {
     return Parser
-      .succeeded("--device-set", by: Parser<String>.ofDirectory())
+      .succeeded("--device-set", Parser<String>.ofDirectory())
   }
 }
 
@@ -212,35 +212,38 @@ extension Action : Parsable {
 
   static func interactParser() -> Parser<Action> {
     return Parser
-      .succeeded("interact", by: Parser.succeeded("--port", by: Parser<Int>.ofInt()).optional())
+      .succeeded("interact", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
       .fmap { Action.Interact($0) }
   }
 
   static func listParser() -> Parser<Action> {
     let followingParser = Parser
-      .ofTwo(Query.parser(), Format.parser())
+      .ofTwo(
+        Query.parser().fallback(Query.defaultValue()),
+        Format.parser().fallback(Format.defaultValue())
+      )
       .fmap { (query, format) in
         Action.List(query, format)
     }
 
-    return Parser.succeeded("list", by: followingParser)
+    return Parser.succeeded("list", followingParser)
   }
 
   static func bootParser() -> Parser<Action> {
     return Parser
-      .succeeded("boot", by: Query.parser())
+      .succeeded("boot", Query.parser())
       .fmap { Action.Boot($0) }
   }
 
   static func shutdownParser() -> Parser<Action> {
     return Parser
-      .succeeded("shutdown", by: Query.parser())
+      .succeeded("shutdown", Query.parser().fallback(Query.defaultValue()))
       .fmap { Action.Shutdown($0) }
   }
 
   static func diagnoseParser() -> Parser<Action> {
     return Parser
-      .succeeded("diagnose", by: Query.parser())
+      .succeeded("diagnose", Query.parser().fallback(Query.defaultValue()))
       .fmap { Action.Diagnose($0) }
   }
 }
