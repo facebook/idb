@@ -241,11 +241,7 @@ extension Query : Parsable {
   public static func parser() -> Parser<Query> {
     return Parser
       .ofManyCount(1, parsers: [
-        Parser.ofString("creating", constant: Query.State([FBSimulatorState.Creating])),
-        Parser.ofString("shutdown", constant: Query.State([FBSimulatorState.Shutdown])),
-        Parser.ofString("booting", constant: Query.State([FBSimulatorState.Booting])),
-        Parser.ofString("booted", constant: Query.State([FBSimulatorState.Booted])),
-        Parser.ofString("shutting-down", constant: Query.State([FBSimulatorState.Booted])),
+        FBSimulatorState.parser().fmap { Query.State([$0]) },
         Query.uuidParser(),
         Query.nameParser()
       ])
@@ -274,17 +270,12 @@ extension Query : Parsable {
 extension Format : Parsable {
   public static func parser() -> Parser<Format> {
     return Parser
-      .ofMany([
+      .ofManyCount(1, parsers: [
         Parser.ofString("--udid", constant: Format.UDID),
         Parser.ofString("--name", constant: Format.Name),
-        Parser.ofString("--device-name", constant: Format.Name),
-        Parser.ofString("--os-constant: version", constant: Format.Name)
+        Parser.ofString("--device-name", constant: Format.DeviceName),
+        Parser.ofString("--os", constant: Format.OSVersion)
       ])
-      .fmap { formats in
-        if (formats.isEmpty) {
-          return Format.Compound([Format.Name, Format.UDID])
-        }
-        return Format.Compound(formats)
+      .fmap { Format.flatten($0) }
     }
-  }
 }

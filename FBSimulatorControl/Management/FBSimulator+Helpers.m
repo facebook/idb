@@ -22,7 +22,7 @@
 
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
 {
-  stateString = [stateString lowercaseString];
+  stateString = [[stateString lowercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@" "];
   if ([stateString isEqualToString:@"creating"]) {
     return FBSimulatorStateCreating;
   }
@@ -39,7 +39,7 @@
     return FBSimulatorStateCreating;
   }
   if ([stateString isEqualToString:@"shutting down"]) {
-    return FBSimulatorStateCreating;
+    return FBSimulatorStateShuttingDown;
   }
   return FBSimulatorStateUnknown;
 }
