@@ -94,7 +94,7 @@
 
     // Waitng for all required processes to start
     NSSet *requiredProcessNames = simulator.requiredProcessNamesToVerifyBooted;
-    BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:60 untilTrue:^ BOOL {
+    BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBSimulatorControlStaticConfiguration.slowTimeout untilTrue:^ BOOL {
       NSSet *runningProcessNames = [NSSet setWithArray:[launchInfo.launchedProcesses valueForKey:@"processName"]];
       return [requiredProcessNames isSubsetOfSet:runningProcessNames];
     }];
