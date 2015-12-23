@@ -12,6 +12,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBCollectionDescriptions.h"
 #import "FBInteraction+Private.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessQuery+Simulators.h"
@@ -92,23 +93,17 @@
     }
 
     // Waitng for all required processes to start
-    NSSet *requiredProcesses = [NSSet setWithArray:
-    @[
-      @"SpringBoard",
-      @"com.apple.accessibility.AccessibilityUIServer",
-      @"com.apple.audio.SystemSoundServer-iOS-Simulator",
-      @"AssetCacheLocatorService",
-      @"MobileCal",
-      @"medialibraryd",
-    ]];
-    BOOL didStartAllRequiredProcesses = [[NSRunLoop mainRunLoop] spinRunLoopWithTimeout:60 untilTrue:^BOOL{
+    NSSet *requiredProcesses = simulator.requiredProcessNamesToVerifyBooted;
+    BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:60 untilTrue:^ BOOL {
       NSSet *runningProcesses = [NSSet setWithArray:[simulator.processQuery subprocessesOf:launchInfo.launchdProcess.processIdentifier]];
       runningProcesses = [runningProcesses valueForKey:@"processName"];
       return [requiredProcesses isSubsetOfSet:runningProcesses];
     }];
-
     if (!didStartAllRequiredProcesses) {
-      return [[[FBSimulatorError describeFormat:@"Timed out waiting for all required processes to start"] inSimulator:simulator] failBool:error];
+      return [[[FBSimulatorError
+        describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionDescriptions oneLineDescriptionFromArray:requiredProcesses.allObjects]]
+        inSimulator:simulator]
+        failBool:error];
     }
 
     // Pass on the success to the event sink.

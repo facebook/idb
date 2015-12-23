@@ -85,4 +85,16 @@
  */
 - (FBSimDeviceWrapper *)simDeviceWrapper;
 
+/*
+ A Set of process names that are used to determine whether all the Simulator OS services
+ have been launched after booting.
+
+ There is a period of time between when CoreSimulator says that the Simulator is 'Booted'
+ and when it is stable enough state to launch Applications/Daemons, these Service Names
+ represent the Services that are known to signify readyness.
+
+ @return a NSSet<NSString> of the required process names.
+ */
+- (NSSet *)requiredProcessNamesToVerifyBooted;
+
 @end

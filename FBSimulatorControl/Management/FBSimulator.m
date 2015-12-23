@@ -15,6 +15,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
+#import <CoreSimulator/SimDeviceType.h>
 
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBProcessInfo.h"
@@ -88,6 +89,23 @@
 - (FBSimulatorState)state
 {
   return (NSInteger) self.device.state;
+}
+
+- (FBSimulatorProductFamily)productFamily
+{
+  int familyID = self.device.deviceType.productFamilyID;
+  switch (familyID) {
+    case 1:
+      return FBSimulatorProductFamilyiPhone;
+    case 2:
+      return FBSimulatorProductFamilyiPad;
+    case 3:
+      return FBSimulatorProductFamilyAppleTV;
+    case 4:
+      return FBSimulatorProductFamilyAppleWatch;
+    default:
+      return FBSimulatorProductFamilyUnknown;
+  }
 }
 
 - (NSString *)stateString

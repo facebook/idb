@@ -59,36 +59,36 @@
 
 @implementation FBSimulatorConfiguration_Family_iPhone
 
-- (NSInteger)productFamilyID
+- (FBSimulatorProductFamily)productFamilyID
 {
-  return 1;
+  return FBSimulatorProductFamilyiPhone;
 }
 
 @end
 
 @implementation FBSimulatorConfiguration_Family_iPad
 
-- (NSInteger)productFamilyID
+- (FBSimulatorProductFamily)productFamilyID
 {
-  return 2;
+  return FBSimulatorProductFamilyiPad;
 }
 
 @end
 
 @implementation FBSimulatorConfiguration_Family_TV
 
-- (NSInteger)productFamilyID
+- (FBSimulatorProductFamily)productFamilyID
 {
-  return 3;
+  return FBSimulatorProductFamilyAppleTV;
 }
 
 @end
 
 @implementation FBSimulatorConfiguration_Family_Watch
 
-- (NSInteger)productFamilyID
+- (FBSimulatorProductFamily)productFamilyID
 {
-  return 4;
+  return FBSimulatorProductFamilyAppleWatch;
 }
 
 @end

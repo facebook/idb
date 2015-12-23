@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
 
 @interface FBSimulatorConfigurationVariant_Base : NSObject <NSCoding>
@@ -16,7 +17,7 @@
 
 @protocol FBSimulatorConfiguration_Family <NSObject>
 
-- (NSInteger)productFamilyID;
+- (FBSimulatorProductFamily)productFamilyID;
 
 @end
 
