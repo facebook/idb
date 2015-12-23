@@ -132,11 +132,9 @@
   if (self.productFamily == FBSimulatorProductFamilyiPhone || self.productFamily == FBSimulatorProductFamilyiPad) {
     return [NSSet setWithArray:@[
        @"SpringBoard",
-       @"com.apple.accessibility.AccessibilityUIServer",
-       @"com.apple.audio.SystemSoundServer-iOS-Simulator",
-       @"AssetCacheLocatorService",
-       @"MobileCal",
-       @"medialibraryd",
+       @"SimulatorBridge",
+       @"backboardd",
+       @"installd",
     ]];
   }
   if (self.productFamily == FBSimulatorProductFamilyAppleWatch || self.productFamily == FBSimulatorProductFamilyAppleTV) {
