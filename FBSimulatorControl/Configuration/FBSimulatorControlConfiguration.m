@@ -9,6 +9,7 @@
 
 #import "FBSimulatorControlConfiguration.h"
 
+#import "FBSimulatorControl+Class.h"
 #import "FBSimulatorApplication.h"
 
 NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
@@ -22,6 +23,11 @@ NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
 @end
 
 @implementation FBSimulatorControlConfiguration
+
++ (void)initialize
+{
+  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+}
 
 #pragma mark Initializers
 

@@ -36,6 +36,11 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
 
 @implementation FBSimulatorPool
 
++ (void)initialize
+{
+  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+}
+
 #pragma mark - Initializers
 
 + (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
