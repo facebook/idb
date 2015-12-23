@@ -138,7 +138,7 @@ extension Parser {
       .sequence(by)
   }
 
-  static func ofTwo<B>(a: Parser<A>, b: Parser<B>) -> Parser<(A, B)> {
+  static func ofTwo<B>(a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
     return a.bind { valueA in
       return b.fmap { valueB in
         return (valueA, valueB)
