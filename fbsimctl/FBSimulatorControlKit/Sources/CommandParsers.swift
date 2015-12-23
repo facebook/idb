@@ -86,8 +86,9 @@ extension FBSimulatorAllocationOptions : Parsable {
         self.shutdownOnAllocateParser(),
         self.eraseOnAllocateParser(),
         self.deleteOnFreeParser(),
-        self.eraseOnAllocateParser()
-        ])
+        self.eraseOnAllocateParser(),
+        self.eraseOnFreeParser()
+      ])
       .fmap { options in
         var set = FBSimulatorAllocationOptions()
         for option in options {
@@ -98,41 +99,42 @@ extension FBSimulatorAllocationOptions : Parsable {
   }
 
   static func createParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--create", constant: FBSimulatorAllocationOptions.Create)
+    return Parser.ofString("--create", FBSimulatorAllocationOptions.Create)
   }
 
   static func reuseParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--reuse", constant: FBSimulatorAllocationOptions.Reuse)
+    return Parser.ofString("--reuse", FBSimulatorAllocationOptions.Reuse)
   }
 
   static func shutdownOnAllocateParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--shutdown-on-allocate", constant: FBSimulatorAllocationOptions.ShutdownOnAllocate)
+    return Parser.ofString("--shutdown-on-allocate", FBSimulatorAllocationOptions.ShutdownOnAllocate)
   }
 
   static func eraseOnAllocateParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--erase-on-allocate", constant: FBSimulatorAllocationOptions.EraseOnAllocate)
+    return Parser.ofString("--erase-on-allocate", FBSimulatorAllocationOptions.EraseOnAllocate)
   }
 
   static func deleteOnFreeParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--delete-on-free", constant: FBSimulatorAllocationOptions.DeleteOnFree)
+    return Parser.ofString("--delete-on-free", FBSimulatorAllocationOptions.DeleteOnFree)
   }
 
   static func eraseOnFreeParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--erase-on-free", constant: FBSimulatorAllocationOptions.EraseOnFree)
+    return Parser.ofString("--erase-on-free", FBSimulatorAllocationOptions.EraseOnFree)
   }
 }
 
 extension FBSimulatorManagementOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorManagementOptions> {
     return Parser
-      .ofMany([
+      .ofManyCount(1, [
         self.deleteAllOnFirstParser(),
-        self.killSpuriousCoreSimulatorServicesParser(),
+        self.killAllOnFirstParser(),
+        self.killSpuriousSimulatorsOnFirstStartParser(),
         self.ignoreSpuriousKillFailParser(),
         self.killSpuriousCoreSimulatorServicesParser(),
         self.useProcessKillingParser(),
         self.useSimDeviceTimeoutResilianceParser()
-        ])
+      ])
       .fmap { options in
         var set = FBSimulatorManagementOptions()
         for option in options {
@@ -143,27 +145,31 @@ extension FBSimulatorManagementOptions : Parsable {
   }
 
   static func deleteAllOnFirstParser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser.ofString("--delete-all", constant: FBSimulatorManagementOptions.DeleteAllOnFirstStart)
+    return Parser.ofString("--delete-all", .DeleteAllOnFirstStart)
+  }
+
+  static func killAllOnFirstParser() -> Parser<FBSimulatorManagementOptions> {
+    return Parser.ofString("--kill-all", .KillAllOnFirstStart)
   }
 
   static func killSpuriousSimulatorsOnFirstStartParser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser.ofString("--kill-spurious", constant: FBSimulatorManagementOptions.KillSpuriousCoreSimulatorServices)
+    return Parser.ofString("--kill-spurious", .KillSpuriousSimulatorsOnFirstStart)
   }
 
   static func ignoreSpuriousKillFailParser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser.ofString("--ignore-spurious-kill-fail", constant: FBSimulatorManagementOptions.IgnoreSpuriousKillFail)
+    return Parser.ofString("--ignore-spurious-kill-fail", .IgnoreSpuriousKillFail)
   }
 
   static func killSpuriousCoreSimulatorServicesParser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser.ofString("--kill-spurious-services", constant: FBSimulatorManagementOptions.KillSpuriousCoreSimulatorServices)
+    return Parser.ofString("--kill-spurious-services", .KillSpuriousCoreSimulatorServices)
   }
 
   static func useProcessKillingParser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser.ofString("--process-killing", constant: FBSimulatorManagementOptions.UseProcessKilling)
+    return Parser.ofString("--process-killing", .UseProcessKilling)
   }
 
   static func useSimDeviceTimeoutResilianceParser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser.ofString("--timeout-resiliance", constant: FBSimulatorManagementOptions.KillSpuriousCoreSimulatorServices)
+    return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
   }
 }
 
@@ -199,7 +205,7 @@ extension Subcommand : Parsable {
   }
 
   static func helpParser() -> Parser<Subcommand> {
-    return Parser.ofString("help", constant: .Help(nil))
+    return Parser.ofString("help", .Help(nil))
   }
 
   static func interactParser() -> Parser<Subcommand> {
@@ -240,7 +246,7 @@ extension Subcommand : Parsable {
 extension Query : Parsable {
   public static func parser() -> Parser<Query> {
     return Parser
-      .ofManyCount(1, parsers: [
+      .ofManyCount(1, [
         FBSimulatorState.parser().fmap { Query.State([$0]) },
         Query.uuidParser(),
         Query.nameParser()
@@ -270,11 +276,11 @@ extension Query : Parsable {
 extension Format : Parsable {
   public static func parser() -> Parser<Format> {
     return Parser
-      .ofManyCount(1, parsers: [
-        Parser.ofString("--udid", constant: Format.UDID),
-        Parser.ofString("--name", constant: Format.Name),
-        Parser.ofString("--device-name", constant: Format.DeviceName),
-        Parser.ofString("--os", constant: Format.OSVersion)
+      .ofManyCount(1, [
+        Parser.ofString("--udid", Format.UDID),
+        Parser.ofString("--name", Format.Name),
+        Parser.ofString("--device-name", Format.DeviceName),
+        Parser.ofString("--os", Format.OSVersion)
       ])
       .fmap { Format.flatten($0) }
     }
