@@ -15,6 +15,13 @@
 @interface FBCollectionDescriptions : NSObject
 
 /**
+ Creates a One-Line Array description from the array, using the -[NSObject description] keypath.
+
+ @param array the Array to construct a description for.
+ */
++ (NSString *)oneLineDescriptionFromArray:(NSArray *)array;
+
+/**
  Creates a One-Line Array description from the array, with a given keyPath.
 
  @param array the Array to construct a description for.

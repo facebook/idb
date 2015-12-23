@@ -127,4 +127,25 @@
   return [FBSimDeviceWrapper withSimulator:self configuration:self.pool.configuration processQuery:self.processQuery];
 }
 
+- (NSSet *)requiredProcessNamesToVerifyBooted
+{
+  if (self.productFamily == FBSimulatorProductFamilyiPhone || self.productFamily == FBSimulatorProductFamilyiPad) {
+    return [NSSet setWithArray:@[
+       @"SpringBoard",
+       @"SimulatorBridge",
+       @"backboardd",
+       @"installd",
+    ]];
+  }
+  if (self.productFamily == FBSimulatorProductFamilyAppleWatch || self.productFamily == FBSimulatorProductFamilyAppleTV) {
+    return [NSSet setWithArray:@[
+       @"backboardd",
+       @"networkd",
+       @"mobileassetd",
+       @"UserEventAgent",
+    ]];
+  }
+  return [NSSet set];
+}
+
 @end

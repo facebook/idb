@@ -12,6 +12,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBCollectionDescriptions.h"
 #import "FBInteraction+Private.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessQuery+Simulators.h"
@@ -89,6 +90,19 @@
     FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:simulator.device query:simulator.processQuery];
     if (!launchInfo) {
       return [[[FBSimulatorError describe:@"Could not obtain process info for booted simulator process"] inSimulator:simulator] failBool:error];
+    }
+
+    // Waitng for all required processes to start
+    NSSet *requiredProcessNames = simulator.requiredProcessNamesToVerifyBooted;
+    BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBSimulatorControlStaticConfiguration.slowTimeout untilTrue:^ BOOL {
+      NSSet *runningProcessNames = [NSSet setWithArray:[launchInfo.launchedProcesses valueForKey:@"processName"]];
+      return [requiredProcessNames isSubsetOfSet:runningProcessNames];
+    }];
+    if (!didStartAllRequiredProcesses) {
+      return [[[FBSimulatorError
+        describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionDescriptions oneLineDescriptionFromArray:requiredProcessNames.allObjects]]
+        inSimulator:simulator]
+        failBool:error];
     }
 
     // Pass on the success to the event sink.

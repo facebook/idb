@@ -11,6 +11,11 @@
 
 @implementation FBCollectionDescriptions
 
++ (NSString *)oneLineDescriptionFromArray:(NSArray *)array
+{
+  return [self oneLineDescriptionFromArray:array atKeyPath:@"description"];
+}
+
 + (NSString *)oneLineDescriptionFromArray:(NSArray *)array atKeyPath:(NSString *)keyPath
 {
   return [NSString stringWithFormat:@"[%@]", [[array valueForKeyPath:keyPath] componentsJoinedByString:@", "]];

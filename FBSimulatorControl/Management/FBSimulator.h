@@ -34,6 +34,18 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
 };
 
 /**
+ Uses the known values of SimDeviceType ProductFamilyID, to construct an enumeration.
+ These mirror the values from -[SimDeviceState productFamilyID].
+ */
+typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
+  FBSimulatorProductFamilyUnknown = 0,
+  FBSimulatorProductFamilyiPhone = 1,
+  FBSimulatorProductFamilyiPad = 2,
+  FBSimulatorProductFamilyAppleTV = 3,
+  FBSimulatorProductFamilyAppleWatch = 4,
+};
+
+/**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
 @interface FBSimulator : NSObject
@@ -82,6 +94,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorState) {
  The State of the allocated Simulator.
  */
 @property (nonatomic, assign, readonly) FBSimulatorState state;
+
+/**
+ The Product Family of the Simulator.
+ */
+@property (nonatomic, assign, readonly) FBSimulatorProductFamily productFamily;
 
 /**
  A string representation of the Simulator State.
