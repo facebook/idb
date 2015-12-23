@@ -92,7 +92,7 @@
 
 /**
  Predicate for matching SimDevices against a Configuration.
- 
+
  @param configuration the configuration to match against.
  @return an NSPredicate.
  */

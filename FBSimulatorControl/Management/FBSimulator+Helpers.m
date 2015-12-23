@@ -14,8 +14,8 @@
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorPool.h"
 #import "FBSimulatorInteraction.h"
+#import "FBSimulatorPool.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulator (Helpers)

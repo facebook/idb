@@ -9,12 +9,12 @@
 
 #import "FBAddVideoPolyfill.h"
 
-#import "FBSimulator.h"
+#import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Applications.h"
-#import "FBProcessLaunchConfiguration+Helpers.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 static NSTimeInterval const UploadVideoDefaultWait = 15.0;
@@ -127,7 +127,7 @@ static NSTimeInterval const UploadVideoDefaultWait = 15.0;
   if (!success) {
     return [[[FBSimulatorError describeFormat:@"Failed to upload videos"] causedBy:innerError] failBool:error];
   }
-  
+
   return YES;
 }
 

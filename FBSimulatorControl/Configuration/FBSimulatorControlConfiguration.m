@@ -9,8 +9,8 @@
 
 #import "FBSimulatorControlConfiguration.h"
 
-#import "FBSimulatorControl+Class.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorControl+Class.h"
 
 NSString *const FBSimulatorControlConfigurationDefaultNamePrefix = @"E2E";
 

@@ -67,7 +67,7 @@
 /**
  Adds a Video to the Camera Roll.
  Will polyfill to the 'Camera App Upload' hack.
- 
+
  @param paths an Array of paths of videos to upload.
  @return YES if the upload was successful, NO otherwise.
  */

@@ -18,7 +18,7 @@
 
 /**
  Makes a Polyfill for the given Simulator.
- 
+
  @param simulator the Simulator to polyfill.
  @return a new FBAddVideoPolyfill instance.
  */
@@ -26,7 +26,7 @@
 
 /**
  Adds a Video to the Camera Roll by injecting Shimulator into 'MobileSlideshow' and using this hook to upload videos.
- 
+
  @param paths the paths of the videos to upload.
  @param error an error out.
  @return YES if successful, NO otherwise.

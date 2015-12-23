@@ -12,10 +12,10 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBAddVideoPolyfill.h"
-#import "FBSimulator.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Helpers.h"
 #import "FBProcessQuery.h"
+#import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
