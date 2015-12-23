@@ -12,11 +12,6 @@
 #import <FBSimulatorControl/FBTerminationHandle.h>
 
 /**
- The Default Timeout for Tasks
- */
-extern NSTimeInterval const FBTaskDefaultTimeout;
-
-/**
  Programmatic interface to a Task.
  */
 @protocol FBTask <NSObject, FBTerminationHandle>

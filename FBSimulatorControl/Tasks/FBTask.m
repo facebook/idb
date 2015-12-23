@@ -13,11 +13,6 @@
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
-/**
- The default timeout for synchronous command waits
- */
-NSTimeInterval const FBTaskDefaultTimeout = 30;
-
 @implementation FBTask
 
 #pragma mark Initializers
@@ -83,7 +78,7 @@ NSTimeInterval const FBTaskDefaultTimeout = 30;
     NSString *message = [NSString stringWithFormat:
       @"Shell command '%@' took longer than %f seconds to execute",
       self.task,
-      FBTaskDefaultTimeout
+      timeout
     ];
     self.runningError = [self errorForDescription:message];
   }

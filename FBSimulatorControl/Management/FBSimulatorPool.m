@@ -32,8 +32,6 @@
 #import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
-static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
-
 @implementation FBSimulatorPool
 
 + (void)initialize
@@ -244,7 +242,7 @@ static NSTimeInterval const FBSimulatorPoolDefaultWait = 30.0;
   // Deleting the device from the set can still leave it around for a few seconds.
   // This could race with methods that may reallocate the newly-deleted device
   // So we should wait for the device to no longer be present in the underlying set.
-  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorPoolDefaultWait untilTrue:^ BOOL {
+  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlStaticConfiguration.regularTimeout untilTrue:^ BOOL {
     NSOrderedSet *udidSet = [self.allSimulators valueForKey:@"udid"];
     return ![udidSet containsObject:udid];
   }];

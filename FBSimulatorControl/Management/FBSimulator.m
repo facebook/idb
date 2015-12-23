@@ -35,8 +35,6 @@
 #import "FBSimulatorPool.h"
 #import "FBTaskExecutor.h"
 
-NSTimeInterval const FBSimulatorDefaultTimeout = 20;
-
 @implementation FBSimulator
 
 #pragma mark Lifecycle

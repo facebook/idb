@@ -9,6 +9,7 @@
 
 #import "FBAddVideoPolyfill.h"
 
+#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
@@ -16,8 +17,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Applications.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
-
-static NSTimeInterval const UploadVideoDefaultWait = 15.0;
 
 @interface FBAddVideoPolyfill ()
 
@@ -117,7 +116,7 @@ static NSTimeInterval const UploadVideoDefaultWait = 15.0;
   NSFileManager *fileManager = [NSFileManager defaultManager];
   __block NSError *innerError = nil;
   const BOOL success = [NSRunLoop.currentRunLoop
-    spinRunLoopWithTimeout:UploadVideoDefaultWait
+    spinRunLoopWithTimeout:FBSimulatorControlStaticConfiguration.regularTimeout
     untilTrue:^ BOOL {
       NSArray *paths = [fileManager subpathsOfDirectoryAtPath:directory error:&innerError];
       paths = [paths filteredArrayUsingPredicate:[self.class predicateForVideoFiles]];
