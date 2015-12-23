@@ -93,15 +93,14 @@
     }
 
     // Waitng for all required processes to start
-    NSSet *requiredProcesses = simulator.requiredProcessNamesToVerifyBooted;
+    NSSet *requiredProcessNames = simulator.requiredProcessNamesToVerifyBooted;
     BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:60 untilTrue:^ BOOL {
-      NSSet *runningProcesses = [NSSet setWithArray:[simulator.processQuery subprocessesOf:launchInfo.launchdProcess.processIdentifier]];
-      runningProcesses = [runningProcesses valueForKey:@"processName"];
-      return [requiredProcesses isSubsetOfSet:runningProcesses];
+      NSSet *runningProcessNames = [NSSet setWithArray:[launchInfo.launchedProcesses valueForKey:@"processName"]];
+      return [requiredProcessNames isSubsetOfSet:runningProcessNames];
     }];
     if (!didStartAllRequiredProcesses) {
       return [[[FBSimulatorError
-        describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionDescriptions oneLineDescriptionFromArray:requiredProcesses.allObjects]]
+        describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionDescriptions oneLineDescriptionFromArray:requiredProcessNames.allObjects]]
         inSimulator:simulator]
         failBool:error];
     }
