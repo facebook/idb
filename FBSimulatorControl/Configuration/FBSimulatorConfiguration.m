@@ -12,8 +12,8 @@
 
 #import <objc/runtime.h>
 
-#import "FBSimulatorControl+Class.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
+#import "FBSimulatorControl+Class.h"
 #import "FBSimulatorControlStaticConfiguration.h"
 
 @implementation FBSimulatorConfigurationVariant_Base

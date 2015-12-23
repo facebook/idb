@@ -9,11 +9,11 @@
 
 #import "FBAddVideoPolyfill.h"
 
-#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Applications.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
