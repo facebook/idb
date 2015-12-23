@@ -44,7 +44,7 @@ public indirect enum Query {
   case UDID(Set<String>)
   case State(Set<FBSimulatorState>)
   case Configured(Set<FBSimulatorConfiguration>)
-  case And([Query])
+  case And(Set<Query>)
 }
 
 /**
@@ -69,13 +69,13 @@ public extension Query {
     var udids: Set<String> = []
     var states: Set<FBSimulatorState> = []
     var configurations: Set<FBSimulatorConfiguration> = []
-    var subqueries: [Query] = []
+    var subqueries: Set<Query> = []
     for query in queries {
       switch query {
       case .UDID(let udid): udids.unionInPlace(udid)
       case .State(let state): states.unionInPlace(state)
       case .Configured(let configuration): configurations.unionInPlace(configuration)
-      case .And(let subquery): subqueries.appendContentsOf(subquery)
+      case .And(let subquery): subqueries.unionInPlace(subquery)
       }
     }
 
@@ -84,21 +84,21 @@ public extension Query {
       if states.count == 0 && configurations.count == 0 {
         return query
       }
-      subqueries.append(query)
+      subqueries.insert(query)
     }
     if states.count > 0 {
       let query = Query.State(states)
       if udids.count == 0 && configurations.count == 0 {
         return query
       }
-      subqueries.append(query)
+      subqueries.insert(query)
     }
     if configurations.count > 0 {
       let query = Query.Configured(configurations)
       if udids.count == 0 && states.count == 0 {
         return query
       }
-      subqueries.append(query)
+      subqueries.insert(query)
     }
 
     return .And(subqueries)
@@ -115,6 +115,26 @@ public extension Format {
   }
 }
 
+extension Action : Equatable { }
+public func == (leftAction: Action, rightAction: Action) -> Bool {
+  switch (leftAction, rightAction) {
+  case (.Interact(let leftPort), .Interact(let rightPort)):
+    return leftPort == rightPort
+  case (.List(let leftQuery, let leftFormat), .List(let rightQuery, let rightFormat)):
+    return leftQuery == rightQuery && leftFormat == rightFormat
+  case (.Boot(let leftQuery), .Boot(let rightQuery)):
+    return leftQuery == rightQuery
+  case (.Shutdown(let leftQuery), .Shutdown(let rightQuery)):
+    return leftQuery == rightQuery
+  case (.Diagnose(let leftQuery), .Diagnose(let rightQuery)):
+    return leftQuery == rightQuery
+  case (.Help(let leftHelp), .Help(let rightHelp)):
+    return leftHelp == rightHelp
+  default:
+    return false
+  }
+}
+
 extension Query : Equatable { }
 public func == (leftQuery: Query, rightQuery: Query) -> Bool {
   switch (leftQuery, rightQuery) {
@@ -123,6 +143,23 @@ public func == (leftQuery: Query, rightQuery: Query) -> Bool {
   case (.Configured(let left), .Configured(let right)): return left == right
   case (.And(let left), .And(let right)): return left == right
   default: return false
+  }
+}
+
+extension Query : Hashable {
+  public var hashValue: Int {
+    get {
+      switch self {
+      case .UDID(let udids):
+        return 1 ^ udids.hashValue
+      case .Configured(let configurations):
+        return 2 ^ configurations.hashValue
+      case .State(let states):
+        return 4 ^ states.hashValue
+      case .And(let subqueries):
+        return subqueries.hashValue
+      }
+    }
   }
 }
 
@@ -143,13 +180,13 @@ extension Format : Hashable {
     get {
       switch self {
       case .UDID:
-        return "udid".hashValue
+        return 1
       case .OSVersion:
-        return "osversion".hashValue
+        return 2
       case .DeviceName:
-        return "devicename".hashValue
+        return 3
       case .Name:
-        return "name".hashValue
+        return 4
       case .Compound(let format):
         return format.reduce("compound".hashValue) { previous, next in
           return previous ^ next.hashValue

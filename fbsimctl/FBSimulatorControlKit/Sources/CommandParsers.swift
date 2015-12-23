@@ -231,7 +231,7 @@ extension Action : Parsable {
 
   static func bootParser() -> Parser<Action> {
     return Parser
-      .succeeded("boot", Query.parser())
+      .succeeded("boot", Query.parser().fallback(Query.defaultValue()))
       .fmap { Action.Boot($0) }
   }
 
