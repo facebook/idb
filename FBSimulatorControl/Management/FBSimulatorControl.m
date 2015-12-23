@@ -110,7 +110,7 @@
 
   // We're done with loading Frameworks.
   hasLoaded = YES;
-  [logger logMessage:@"Loaded All Private Frameworks %@", [FBCollectionDescriptions oneLineDescriptionFromArray:classMapping.allKeys atKeyPath:@"description"]];
+  [logger logMessage:@"Loaded All Private Frameworks %@", [FBCollectionDescriptions oneLineDescriptionFromArray:classMapping.allValues atKeyPath:@"lastPathComponent"]];
 
   // Set CoreSimulator Logging since it is now loaded.
   [self setCoreSimulatorLoggingEnabled:FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled];
