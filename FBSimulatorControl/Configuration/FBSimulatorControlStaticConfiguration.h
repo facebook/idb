@@ -48,6 +48,21 @@ extern NSString *const FBSimulatorControlDebugLogging;
 + (NSString *)sdkVersion;
 
 /**
+ A Timeout Value when waiting on events that should happen 'fast'
+ */
++ (NSTimeInterval)fastTimeout;
+
+/**
+ A Timeout Value when waiting on events that will take some time longer than 'fast' events.
+ */
++ (NSTimeInterval)regularTimeout;
+
+/**
+ A Timeout Value when waiting on events that will a longer period of time.
+ */
++ (NSTimeInterval)slowTimeout;
+
+/**
  YES if passing a custom SimDeviceSet to the Simulator App is Supported.
  */
 + (BOOL)supportsCustomDeviceSets;

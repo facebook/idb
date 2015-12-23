@@ -26,7 +26,7 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
   dispatch_once(&onceToken, ^{
     directory = [[[FBTaskExecutor.sharedInstance
       taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-      startSynchronouslyWithTimeout:10]
+      startSynchronouslyWithTimeout:FBSimulatorControlStaticConfiguration.fastTimeout]
       stdOut];
     NSCAssert(directory, @"Xcode Path could not be determined from `xcode-select`");
   });
@@ -58,7 +58,7 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
   dispatch_once(&onceToken, ^{
     NSString *showSdks= [[[FBTaskExecutor.sharedInstance
       taskWithLaunchPath:@"/usr/bin/xcodebuild" arguments:@[@"-showsdks"]]
-      startSynchronouslyWithTimeout:10]
+      startSynchronouslyWithTimeout:FBSimulatorControlStaticConfiguration.fastTimeout]
       stdOut];
 
     NSString *pattern = @"iphonesimulator(.*)";
@@ -84,6 +84,21 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
     sdkVersion = [showSdks substringWithRange:[match rangeAtIndex:1]];
   });
   return sdkVersion;
+}
+
++ (NSTimeInterval)fastTimeout
+{
+  return 10;
+}
+
++ (NSTimeInterval)regularTimeout
+{
+  return 30;
+}
+
++ (NSTimeInterval)slowTimeout
+{
+  return 120;
 }
 
 + (BOOL)supportsCustomDeviceSets

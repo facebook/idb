@@ -21,11 +21,6 @@
 @class SimDevice;
 
 /**
- The Default timeout for waits.
- */
-extern NSTimeInterval const FBSimulatorDefaultTimeout;
-
-/**
  Uses the known values of SimDevice State, to construct an enumeration.
  These mirror the values from -[SimDeviceState state].
  */

@@ -17,11 +17,9 @@
 #import "FBProcessQuery.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorControlStaticConfiguration.h"
 #import "FBSimulatorError.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
-
-const long SimDeviceDefaultTimeout = 60;
-const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
 
 @interface FBSimDeviceWrapper ()
 
@@ -49,7 +47,8 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
   [newInvocation setArgument:&semaphore atIndex:3];
   [NSThread detachNewThreadSelector:@selector(invoke) toTarget:newInvocation withObject:nil];
 
-  return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, SimDeviceDefaultTimeout *NSEC_PER_SEC)) == 0;
+  int64_t timeout = ((int64_t) FBSimulatorControlStaticConfiguration.slowTimeout) * ((int64_t) NSEC_PER_SEC);
+  return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, timeout)) == 0;
 }
 
 - (void)runInvocation:(NSInvocation *)invocation withSemaphore:(dispatch_semaphore_t)semaphore
@@ -173,7 +172,7 @@ const NSTimeInterval ProcessInfoAvailabilityTimeout = 15;
     return nil;
   }
 
-  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:ProcessInfoAvailabilityTimeout];
+  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:FBSimulatorControlStaticConfiguration.regularTimeout];
   if (!processInfo) {
     return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
   }
