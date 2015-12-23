@@ -118,10 +118,10 @@ public extension Format {
 extension Query : Equatable { }
 public func == (leftQuery: Query, rightQuery: Query) -> Bool {
   switch (leftQuery, rightQuery) {
-  case (let .UDID(left), let .UDID(right)): return left == right
-  case (let .State(left), let .State(right)): return left == right
-  case (let .Configured(left), let .Configured(right)): return left == right
-  case (let .And(left), let .And(right)): return left == right
+  case (.UDID(let left), .UDID(let right)): return left == right
+  case (.State(let left), .State(let right)): return left == right
+  case (.Configured(let left), .Configured(let right)): return left == right
+  case (.And(let left), .And(let right)): return left == right
   default: return false
   }
 }
@@ -133,7 +133,7 @@ public func == (lhs: Format, rhs: Format) -> Bool {
   case (.OSVersion, .OSVersion): return true
   case (.DeviceName, .DeviceName): return true
   case (.Name, .Name): return true
-  case (let .Compound(leftComp), let .Compound(rightComp)): return leftComp == rightComp
+  case (.Compound(let leftComp), .Compound(let rightComp)): return leftComp == rightComp
   default: return false
   }
 }
