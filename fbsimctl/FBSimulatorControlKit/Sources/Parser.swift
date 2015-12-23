@@ -16,7 +16,7 @@ public extension Command {
       let (_, command) = try Command.parser().parse(arguments)
       return command
     } catch {
-      return Command(configuration: Configuration.defaultValue(), subcommand: .Help(nil))
+      return Command.Help(nil)
     }
   }
 }
@@ -143,6 +143,17 @@ extension Parser {
       return b.fmap { valueB in
         return (valueA, valueB)
       }
+    }
+  }
+
+  static func alternative(parsers: [Parser<A>]) -> Parser<A> {
+    return Parser<A>() { tokens in
+      for parser in parsers {
+        do {
+          return try parser.parse(tokens)
+        } catch {}
+      }
+      throw ParseError.EndOfInput
     }
   }
 

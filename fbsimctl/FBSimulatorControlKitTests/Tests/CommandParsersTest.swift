@@ -228,3 +228,18 @@ class ActionParserTests : XCTestCase {
     ])
   }
 }
+
+class CommandParserTests : XCTestCase {
+  func testParsesSingleAction() {
+    self.assertParsesAll(Command.parser(), [
+      (["interact"], Command.Single(Configuration.defaultValue(), Action.Interact(nil))),
+      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Single(Configuration.defaultValue(), Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])))),
+    ])
+  }
+
+  func testParsesHelp() {
+    self.assertParsesAll(Command.parser(), [
+      (["help"], Command.Help(nil))
+    ])
+  }
+}

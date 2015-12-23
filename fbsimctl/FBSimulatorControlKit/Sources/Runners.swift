@@ -29,31 +29,29 @@ private struct BaseRunner : Runner {
   let command: Command
 
   func run() -> Output {
-    switch (self.command.subcommand) {
+    switch (self.command) {
     case .Help:
       return .Success(Command.getHelp())
-    default:
-      break
-    }
-
-    let control = try! FBSimulatorControl.withConfiguration(command.configuration)
-    switch (self.command.subcommand) {
-    case .Interact(let portNumber):
-      return InteractionRunner(control: control, portNumber: portNumber).run()
-    default:
-      let runner = ActionRunner(subcommand: self.command.subcommand, control: control)
-      return runner.run()
+    case .Single(let configuration, let action):
+      let control = try! FBSimulatorControl.withConfiguration(configuration)
+      switch (action) {
+      case .Interact(let portNumber):
+        return InteractionRunner(control: control, portNumber: portNumber).run()
+      default:
+        let runner = ActionRunner(action: action, control: control)
+        return runner.run()
+      }
     }
   }
 }
 
 private struct ActionRunner : Runner {
-  let subcommand: Action
+  let action: Action
   let control: FBSimulatorControl
 
   // TODO: Sessions don't make much sense in this context, combine multiple simulators into one session
   func run() -> Output {
-    switch (self.subcommand) {
+    switch (self.action) {
     case .List(let query, let format):
       let simulators = Query.perform(control.simulatorPool, query: query)
       return .Success(Format.formatAll(format)(simulators: simulators))
@@ -119,8 +117,8 @@ private class InteractionRunner : Runner, RelayTransformer {
   func transform(input: String) -> Output {
     let arguments = input.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
     do {
-      let (_, subcommand) = try Action.parser().parse(arguments)
-      let runner = ActionRunner(subcommand: subcommand, control: self.control)
+      let (_, action) = try Action.parser().parse(arguments)
+      let runner = ActionRunner(action: action, control: self.control)
       return runner.run()
     } catch {
       return .Failure("NOPE")

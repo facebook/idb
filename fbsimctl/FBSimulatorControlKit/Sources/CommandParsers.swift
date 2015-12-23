@@ -70,10 +70,23 @@ extension FBSimulatorState : Parsable {
 extension Command : Parsable {
   public static func parser() -> Parser<Command> {
     return Parser
+      .alternative([
+        self.helpParser(),
+        self.actionParser()
+      ])
+  }
+
+  static func actionParser() -> Parser<Command> {
+    return Parser
       .ofTwo(Configuration.parser(), Action.parser())
-      .fmap { (configuration, subcommand) in
-        Command(configuration: configuration, subcommand: subcommand)
-    }
+      .fmap { (configuration, action) in
+        return Command.Single(configuration, action)
+      }
+  }
+
+  static func helpParser() -> Parser<Command> {
+    return Parser
+      .ofString("help", .Help(nil))
   }
 }
 
@@ -197,17 +210,12 @@ extension Configuration : Parsable {
 extension Action : Parsable {
   public static func parser() -> Parser<Action> {
     return Parser.ofAny([
-      self.helpParser(),
       self.interactParser(),
       self.listParser(),
       self.bootParser(),
       self.shutdownParser(),
       self.diagnoseParser(),
     ])
-  }
-
-  static func helpParser() -> Parser<Action> {
-    return Parser.ofString("help", .Help(nil))
   }
 
   static func interactParser() -> Parser<Action> {

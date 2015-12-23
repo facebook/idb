@@ -11,14 +11,6 @@ import Foundation
 import FBSimulatorControl
 
 /**
- Defines a single transaction with FBSimulatorControl
-*/
-public struct Command {
-  let configuration: Configuration
-  let subcommand: Action
-}
-
-/**
   Describes the Configuration for the running of a Command
 */
 public final class Configuration : FBSimulatorControlConfiguration {
@@ -59,6 +51,13 @@ public indirect enum Action {
   case Help(Action?)
 }
 
+/**
+ The entry point for all commands.
+ */
+public enum Command {
+  case Single(Configuration, Action)
+  case Help(Action?)
+}
 
 public extension Query {
   static func flatten(queries: [Query]) -> Query {
@@ -112,6 +111,18 @@ public extension Format {
     }
 
     return .Compound(formats)
+  }
+}
+
+extension Command : Equatable {}
+public func == (left: Command, right: Command) -> Bool {
+  switch (left, right) {
+  case (.Single(let leftConfiguration, let leftAction), .Single(let rightConfiguration, let rightAction)):
+    return leftConfiguration == rightConfiguration && leftAction == rightAction
+  case (.Help(let leftAction), .Help(let rightAction)):
+    return leftAction == rightAction
+  default:
+    return false
   }
 }
 
