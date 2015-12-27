@@ -225,7 +225,13 @@ class ActionParserTests : XCTestCase {
 class CommandParserTests : XCTestCase {
   func testParsesSingleAction() {
     self.assertParsesAll(Command.parser(), [
-      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Single(Configuration.defaultValue(), Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])))),
+      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))])),
+    ])
+  }
+
+  func testParsesMultipleActions() {
+    self.assertParsesAll(Command.parser(), [
+      (["list", "booted", "boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [Action.List(Query.State([.Booted]), Format.defaultValue()), Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))])),
     ])
   }
 

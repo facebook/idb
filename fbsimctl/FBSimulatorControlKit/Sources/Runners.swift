@@ -35,10 +35,23 @@ private struct BaseRunner : Runner {
     case .Interact(let configuration, let port):
       let control = try! FBSimulatorControl.withConfiguration(configuration)
       return InteractionRunner(control: control, portNumber: port).run()
-    case .Single(let configuration, let action):
+    case .Perform(let configuration, let actions):
       let control = try! FBSimulatorControl.withConfiguration(configuration)
-      return ActionRunner(action: action, control: control).run()
+      return ActionsRunner(actions: actions, control: control).run()
     }
+  }
+}
+
+private struct ActionsRunner : Runner {
+  let actions: [Action]
+  let control: FBSimulatorControl
+
+  func run() -> Output {
+    var output = Output.Success("")
+    for action in actions {
+      output = ActionRunner(action: action, control: control).run()
+    }
+    return output
   }
 }
 

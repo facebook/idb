@@ -54,7 +54,7 @@ public indirect enum Action {
  The entry point for all commands.
  */
 public enum Command {
-  case Single(Configuration, Action)
+  case Perform(Configuration, [Action])
   case Interact(Configuration, Int?)
   case Help(Action?)
 }
@@ -117,8 +117,8 @@ public extension Format {
 extension Command : Equatable {}
 public func == (left: Command, right: Command) -> Bool {
   switch (left, right) {
-  case (.Single(let leftConfiguration, let leftAction), .Single(let rightConfiguration, let rightAction)):
-    return leftConfiguration == rightConfiguration && leftAction == rightAction
+  case (.Perform(let leftConfiguration, let leftActions), .Perform(let rightConfiguration, let rightActions)):
+    return leftConfiguration == rightConfiguration && leftActions == rightActions
   case (.Interact(let leftConfiguration, let leftPort), .Interact(let rightConfiguration, let rightPort)):
     return leftConfiguration == rightConfiguration &&  leftPort == rightPort
   case (.Help(let leftAction), .Help(let rightAction)):

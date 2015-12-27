@@ -79,9 +79,12 @@ extension Command : Parsable {
 
   static func actionParser() -> Parser<Command> {
     return Parser
-      .ofTwo(Configuration.parser(), Action.parser())
-      .fmap { (configuration, action) in
-        return Command.Single(configuration, action)
+      .ofTwo(
+        Configuration.parser(),
+        Parser.manyCount(1, Action.parser())
+      )
+      .fmap { (configuration, actions) in
+        return Command.Perform(configuration, actions)
       }
   }
 
