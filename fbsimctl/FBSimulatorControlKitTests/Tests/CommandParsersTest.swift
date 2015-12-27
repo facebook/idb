@@ -131,3 +131,56 @@ class FBSimulatorAllocationOptionsParserTests : XCTestCase {
     ])
   }
 }
+
+class ConfigurationParserTests : XCTestCase {
+  func testParsesEmpty() {
+    self.assertParses(Configuration.parser(), [], Configuration(
+      simulatorApplication: try! FBSimulatorApplication(error: ()),
+      deviceSetPath: nil,
+      options: FBSimulatorManagementOptions()
+    ))
+  }
+
+  func testParsesWithSetPath() {
+    self.assertParses(
+      Configuration.parser(),
+      ["--device-set", "/usr/bin"],
+      Configuration(
+        simulatorApplication: try! FBSimulatorApplication(error: ()),
+        deviceSetPath: "/usr/bin",
+        options: FBSimulatorManagementOptions()
+      )
+    )
+  }
+
+  func testParseFailureWithInvalidSetPath() {
+    self.assertParseFails(
+      Configuration.deviceSetParser(),
+      ["--device-set", "/usr/asd2asd2___2332213/asdbin"]
+    )
+  }
+
+  func testParsesWithOptions() {
+    self.assertParses(
+      Configuration.parser(),
+      ["--kill-all", "--process-killing"],
+      Configuration(
+        simulatorApplication: try! FBSimulatorApplication(error: ()),
+        deviceSetPath: nil,
+        options: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
+      )
+    )
+  }
+
+  func testParsesWithSetPathAndOptions() {
+    self.assertParses(
+      Configuration.parser(),
+      ["--device-set", "/usr/bin", "--delete-all", "--kill-spurious"],
+      Configuration(
+        simulatorApplication: try! FBSimulatorApplication(error: ()),
+        deviceSetPath: "/usr/bin",
+        options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
+      )
+    )
+  }
+}

@@ -70,7 +70,7 @@ extension FBSimulatorState : Parsable {
 extension Command : Parsable {
   public static func parser() -> Parser<Command> {
     return Parser
-      .ofTwo(Configuration.parser(), b: Subcommand.parser())
+      .ofTwo(Configuration.parser(), Subcommand.parser())
       .fmap { (configuration, subcommand) in
         Command(configuration: configuration, subcommand: subcommand)
     }
@@ -175,7 +175,10 @@ extension FBSimulatorManagementOptions : Parsable {
 
 extension Configuration : Parsable {
   public static func parser() -> Parser<Configuration> {
-    return Parser.ofTwo(deviceSetParser(), b: FBSimulatorManagementOptions.parser())
+    return Parser.ofTwo(
+        self.deviceSetParser().optional(),
+        FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions())
+      )
       .fmap { setPath, options in
         return Configuration(
           simulatorApplication: try! FBSimulatorApplication(error: ()),
@@ -185,10 +188,9 @@ extension Configuration : Parsable {
       }
   }
 
-  static func deviceSetParser() -> Parser<String?> {
+  public static func deviceSetParser() -> Parser<String> {
     return Parser
-      .succeeded("--device-set", by: Parser<String>.ofDirectory() )
-      .optional()
+      .succeeded("--device-set", by: Parser<String>.ofDirectory())
   }
 }
 
@@ -216,7 +218,7 @@ extension Subcommand : Parsable {
 
   static func listParser() -> Parser<Subcommand> {
     let followingParser = Parser
-      .ofTwo(Query.parser(), b: Format.parser())
+      .ofTwo(Query.parser(), Format.parser())
       .fmap { (query, format) in
         Subcommand.List(query, format)
     }
