@@ -114,7 +114,7 @@ extension Parser {
     }
   }
 
-  static func ofString(string: String, constant: A) -> Parser<A> {
+  static func ofString(string: String, _ constant: A) -> Parser<A> {
     return Parser.single { token in
       if token != string {
         throw ParseError.DoesNotMatch(token, string)
@@ -134,7 +134,7 @@ extension Parser {
 
   static func succeeded(token: String, by: Parser<A>) -> Parser<A> {
     return Parser<()>
-      .ofString(token, constant: ())
+      .ofString(token, ())
       .sequence(by)
   }
 
@@ -147,15 +147,15 @@ extension Parser {
   }
 
   static func ofMany(parsers: [Parser<A>]) -> Parser<[A]> {
-    return self.ofManyCount(0, parsers: parsers)
+    return self.ofManyCount(0, parsers)
   }
 
   static func ofAny(parsers: [Parser<A>]) -> Parser<A> {
-    return self.ofManyCount(1, parsers: parsers)
+    return self.ofManyCount(1, parsers)
       .fmap { $0.first! }
   }
 
-  static func ofManyCount(count: Int, parsers: [Parser<A>]) -> Parser<[A]> {
+  static func ofManyCount(count: Int, _ parsers: [Parser<A>]) -> Parser<[A]> {
     assert(count >= 0, "Count should be >= 0")
     return Parser<[A]>() { tokens in
       var success = true

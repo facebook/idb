@@ -88,3 +88,46 @@ class FormatParserTests : XCTestCase {
     ])
   }
 }
+
+class FBSimulatorManagementOptionsParserTests : XCTestCase {
+  func testParsesSimple() {
+    self.assertParsesAll(FBSimulatorManagementOptions.parser(), [
+      (["--delete-all"], FBSimulatorManagementOptions.DeleteAllOnFirstStart),
+      (["--kill-all"], FBSimulatorManagementOptions.KillAllOnFirstStart),
+      (["--kill-spurious"], FBSimulatorManagementOptions.KillSpuriousSimulatorsOnFirstStart),
+      (["--ignore-spurious-kill-fail"], FBSimulatorManagementOptions.IgnoreSpuriousKillFail),
+      (["--kill-spurious-services"], FBSimulatorManagementOptions.KillSpuriousCoreSimulatorServices),
+      (["--process-killing"], FBSimulatorManagementOptions.UseProcessKilling),
+      (["--timeout-resiliance"], FBSimulatorManagementOptions.UseSimDeviceTimeoutResiliance)
+    ])
+  }
+
+  func testParsesCompound() {
+    self.assertParsesAll(FBSimulatorManagementOptions.parser(), [
+      (["--delete-all", "--kill-all"], FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillAllOnFirstStart)),
+      (["--kill-spurious-services", "--process-killing"], FBSimulatorManagementOptions.KillSpuriousCoreSimulatorServices.union(.UseProcessKilling)),
+      (["--ignore-spurious-kill-fail", "--timeout-resiliance"], FBSimulatorManagementOptions.IgnoreSpuriousKillFail.union(.UseSimDeviceTimeoutResiliance)),
+      (["--kill-spurious", "--ignore-spurious-kill-fail"], FBSimulatorManagementOptions.KillSpuriousSimulatorsOnFirstStart.union(.IgnoreSpuriousKillFail))
+    ])
+  }
+}
+
+class FBSimulatorAllocationOptionsParserTests : XCTestCase {
+  func testParsesSimple() {
+    self.assertParsesAll(FBSimulatorAllocationOptions.parser(), [
+      (["--create"], FBSimulatorAllocationOptions.Create),
+      (["--reuse"], FBSimulatorAllocationOptions.Reuse),
+      (["--shutdown-on-allocate"], FBSimulatorAllocationOptions.ShutdownOnAllocate),
+      (["--erase-on-allocate"], FBSimulatorAllocationOptions.EraseOnAllocate),
+      (["--delete-on-free"], FBSimulatorAllocationOptions.DeleteOnFree),
+      (["--erase-on-free"], FBSimulatorAllocationOptions.EraseOnFree)
+    ])
+  }
+
+  func testParsesCompound() {
+    self.assertParsesAll(FBSimulatorAllocationOptions.parser(), [
+      (["--create", "--reuse", "--erase-on-free"], FBSimulatorAllocationOptions.Create.union(.Reuse).union(.EraseOnFree)),
+      (["--shutdown-on-allocate", "--create", "--erase-on-free"], FBSimulatorAllocationOptions.Create.union(.ShutdownOnAllocate).union(.EraseOnFree)),
+    ])
+  }
+}
