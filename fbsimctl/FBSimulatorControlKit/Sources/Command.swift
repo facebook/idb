@@ -117,28 +117,28 @@ public extension Format {
 extension Command : Equatable {}
 public func == (left: Command, right: Command) -> Bool {
   switch (left, right) {
-  case (.Perform(let leftConfiguration, let leftActions), .Perform(let rightConfiguration, let rightActions)):
-    return leftConfiguration == rightConfiguration && leftActions == rightActions
+  case (.Perform(let leftConfiguration, let lefts), .Perform(let rightConfiguration, let rights)):
+    return leftConfiguration == rightConfiguration && lefts == rights
   case (.Interact(let leftConfiguration, let leftPort), .Interact(let rightConfiguration, let rightPort)):
     return leftConfiguration == rightConfiguration &&  leftPort == rightPort
-  case (.Help(let leftAction), .Help(let rightAction)):
-    return leftAction == rightAction
+  case (.Help(let left), .Help(let right)):
+    return left == right
   default:
     return false
   }
 }
 
 extension Action : Equatable { }
-public func == (leftAction: Action, rightAction: Action) -> Bool {
-  switch (leftAction, rightAction) {
-  case (.List(let leftQuery, let leftFormat), .List(let rightQuery, let rightFormat)):
-    return leftQuery == rightQuery && leftFormat == rightFormat
-  case (.Boot(let leftQuery), .Boot(let rightQuery)):
-    return leftQuery == rightQuery
-  case (.Shutdown(let leftQuery), .Shutdown(let rightQuery)):
-    return leftQuery == rightQuery
-  case (.Diagnose(let leftQuery), .Diagnose(let rightQuery)):
-    return leftQuery == rightQuery
+public func == (left: Action, right: Action) -> Bool {
+  switch (left, right) {
+  case (.List(let left, let leftFormat), .List(let right, let rightFormat)):
+    return left == right && leftFormat == rightFormat
+  case (.Boot(let left), .Boot(let right)):
+    return left == right
+  case (.Shutdown(let left), .Shutdown(let right)):
+    return left == right
+  case (.Diagnose(let left), .Diagnose(let right)):
+    return left == right
   case (.Help(let leftHelp), .Help(let rightHelp)):
     return leftHelp == rightHelp
   default:
@@ -147,8 +147,8 @@ public func == (leftAction: Action, rightAction: Action) -> Bool {
 }
 
 extension Query : Equatable { }
-public func == (leftQuery: Query, rightQuery: Query) -> Bool {
-  switch (leftQuery, rightQuery) {
+public func == (left: Query, right: Query) -> Bool {
+  switch (left, right) {
   case (.UDID(let left), .UDID(let right)): return left == right
   case (.State(let left), .State(let right)): return left == right
   case (.Configured(let left), .Configured(let right)): return left == right
@@ -175,8 +175,8 @@ extension Query : Hashable {
 }
 
 extension Format : Equatable { }
-public func == (lhs: Format, rhs: Format) -> Bool {
-  switch (lhs, rhs) {
+public func == (left: Format, right: Format) -> Bool {
+  switch (left, right) {
   case (.UDID, .UDID): return true
   case (.OSVersion, .OSVersion): return true
   case (.DeviceName, .DeviceName): return true

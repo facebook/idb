@@ -10,7 +10,7 @@
 import Foundation
 
 /**
- A Class that acts as a sink and source of lines, transforming input to output via InputOutputRelayDataSource
+ A Protocol for instances that act as sinks of and sources of lines.
  */
 protocol Relay {
   func start()
@@ -18,14 +18,14 @@ protocol Relay {
 }
 
 /**
- DataSource for transforming Input to Output
+ DataSource for transforming Input to Output.
  */
 protocol RelayTransformer {
   func transform(input: String) -> Output
 }
 
 /**
-  Enum for defining the result of a translation
+  Enum for defining the result of a translation.
  */
 public enum Output {
   case Success(String)
@@ -33,7 +33,7 @@ public enum Output {
 }
 
 /**
- A sink of Strings
+ A sink of Strings.
  */
 protocol OutputWriter {
   func writeOut(string: String)
@@ -41,7 +41,7 @@ protocol OutputWriter {
 }
 
 /**
-  A Connection of input to output via a buffer
+  A Connection of Input-to-Output via a buffer.
  */
 class RelayConnection : LineBufferDelegate {
   let transformer: RelayTransformer
