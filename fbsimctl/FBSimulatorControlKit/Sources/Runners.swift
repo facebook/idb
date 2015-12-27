@@ -29,31 +29,39 @@ private struct BaseRunner : Runner {
   let command: Command
 
   func run() -> Output {
-    switch (self.command.subcommand) {
+    switch (self.command) {
     case .Help:
       return .Success(Command.getHelp())
-    default:
-      break
-    }
-
-    let control = try! FBSimulatorControl.withConfiguration(command.configuration)
-    switch (self.command.subcommand) {
-    case .Interact(let portNumber):
-      return InteractionRunner(control: control, portNumber: portNumber).run()
-    default:
-      let runner = SubcommandRunner(subcommand: self.command.subcommand, control: control)
-      return runner.run()
+    case .Interact(let configuration, let port):
+      let control = try! FBSimulatorControl.withConfiguration(configuration)
+      return InteractionRunner(control: control, portNumber: port).run()
+    case .Perform(let configuration, let actions):
+      let control = try! FBSimulatorControl.withConfiguration(configuration)
+      return ActionsRunner(actions: actions, control: control).run()
     }
   }
 }
 
-private struct SubcommandRunner : Runner {
-  let subcommand: Subcommand
+private struct ActionsRunner : Runner {
+  let actions: [Action]
+  let control: FBSimulatorControl
+
+  func run() -> Output {
+    var output = Output.Success("")
+    for action in actions {
+      output = ActionRunner(action: action, control: control).run()
+    }
+    return output
+  }
+}
+
+private struct ActionRunner : Runner {
+  let action: Action
   let control: FBSimulatorControl
 
   // TODO: Sessions don't make much sense in this context, combine multiple simulators into one session
   func run() -> Output {
-    switch (self.subcommand) {
+    switch (self.action) {
     case .List(let query, let format):
       let simulators = Query.perform(control.simulatorPool, query: query)
       return .Success(Format.formatAll(format)(simulators: simulators))
@@ -119,8 +127,8 @@ private class InteractionRunner : Runner, RelayTransformer {
   func transform(input: String) -> Output {
     let arguments = input.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
     do {
-      let (_, subcommand) = try Subcommand.parser().parse(arguments)
-      let runner = SubcommandRunner(subcommand: subcommand, control: self.control)
+      let (_, action) = try Action.parser().parse(arguments)
+      let runner = ActionRunner(action: action, control: self.control)
       return runner.run()
     } catch {
       return .Failure("NOPE")

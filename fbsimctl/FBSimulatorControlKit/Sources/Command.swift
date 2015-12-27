@@ -11,24 +11,9 @@ import Foundation
 import FBSimulatorControl
 
 /**
- Defines a single transaction with FBSimulatorControl
-*/
-public struct Command {
-  let configuration: Configuration
-  let subcommand: Subcommand
-}
-
-/**
   Describes the Configuration for the running of a Command
 */
 public final class Configuration : FBSimulatorControlConfiguration {
-  public static func defaultConfiguration() -> Configuration {
-    return Configuration(
-      simulatorApplication: try! FBSimulatorApplication(error: ()),
-      deviceSetPath: nil,
-      options: FBSimulatorManagementOptions()
-    )
-  }
 }
 
 /**
@@ -51,21 +36,28 @@ public indirect enum Query {
   case UDID(Set<String>)
   case State(Set<FBSimulatorState>)
   case Configured(Set<FBSimulatorConfiguration>)
-  case And([Query])
+  case And(Set<Query>)
 }
 
 /**
- The Base of all fbsimctl commands
+ An Action that can be performed provided a FBSimulatorControl instance.
 */
-public indirect enum Subcommand {
-  case Interact(Int?)
+public indirect enum Action {
   case List(Query, Format)
   case Boot(Query)
   case Shutdown(Query)
   case Diagnose(Query)
-  case Help(Subcommand?)
+  case Help(Action?)
 }
 
+/**
+ The entry point for all commands.
+ */
+public enum Command {
+  case Perform(Configuration, [Action])
+  case Interact(Configuration, Int?)
+  case Help(Action?)
+}
 
 public extension Query {
   static func flatten(queries: [Query]) -> Query {
@@ -76,13 +68,13 @@ public extension Query {
     var udids: Set<String> = []
     var states: Set<FBSimulatorState> = []
     var configurations: Set<FBSimulatorConfiguration> = []
-    var subqueries: [Query] = []
+    var subqueries: Set<Query> = []
     for query in queries {
       switch query {
       case .UDID(let udid): udids.unionInPlace(udid)
       case .State(let state): states.unionInPlace(state)
       case .Configured(let configuration): configurations.unionInPlace(configuration)
-      case .And(let subquery): subqueries.appendContentsOf(subquery)
+      case .And(let subquery): subqueries.unionInPlace(subquery)
       }
     }
 
@@ -91,21 +83,21 @@ public extension Query {
       if states.count == 0 && configurations.count == 0 {
         return query
       }
-      subqueries.append(query)
+      subqueries.insert(query)
     }
     if states.count > 0 {
       let query = Query.State(states)
       if udids.count == 0 && configurations.count == 0 {
         return query
       }
-      subqueries.append(query)
+      subqueries.insert(query)
     }
     if configurations.count > 0 {
       let query = Query.Configured(configurations)
       if udids.count == 0 && states.count == 0 {
         return query
       }
-      subqueries.append(query)
+      subqueries.insert(query)
     }
 
     return .And(subqueries)
@@ -122,14 +114,63 @@ public extension Format {
   }
 }
 
+extension Command : Equatable {}
+public func == (left: Command, right: Command) -> Bool {
+  switch (left, right) {
+  case (.Perform(let leftConfiguration, let leftActions), .Perform(let rightConfiguration, let rightActions)):
+    return leftConfiguration == rightConfiguration && leftActions == rightActions
+  case (.Interact(let leftConfiguration, let leftPort), .Interact(let rightConfiguration, let rightPort)):
+    return leftConfiguration == rightConfiguration &&  leftPort == rightPort
+  case (.Help(let leftAction), .Help(let rightAction)):
+    return leftAction == rightAction
+  default:
+    return false
+  }
+}
+
+extension Action : Equatable { }
+public func == (leftAction: Action, rightAction: Action) -> Bool {
+  switch (leftAction, rightAction) {
+  case (.List(let leftQuery, let leftFormat), .List(let rightQuery, let rightFormat)):
+    return leftQuery == rightQuery && leftFormat == rightFormat
+  case (.Boot(let leftQuery), .Boot(let rightQuery)):
+    return leftQuery == rightQuery
+  case (.Shutdown(let leftQuery), .Shutdown(let rightQuery)):
+    return leftQuery == rightQuery
+  case (.Diagnose(let leftQuery), .Diagnose(let rightQuery)):
+    return leftQuery == rightQuery
+  case (.Help(let leftHelp), .Help(let rightHelp)):
+    return leftHelp == rightHelp
+  default:
+    return false
+  }
+}
+
 extension Query : Equatable { }
 public func == (leftQuery: Query, rightQuery: Query) -> Bool {
   switch (leftQuery, rightQuery) {
-  case (let .UDID(left), let .UDID(right)): return left == right
-  case (let .State(left), let .State(right)): return left == right
-  case (let .Configured(left), let .Configured(right)): return left == right
-  case (let .And(left), let .And(right)): return left == right
+  case (.UDID(let left), .UDID(let right)): return left == right
+  case (.State(let left), .State(let right)): return left == right
+  case (.Configured(let left), .Configured(let right)): return left == right
+  case (.And(let left), .And(let right)): return left == right
   default: return false
+  }
+}
+
+extension Query : Hashable {
+  public var hashValue: Int {
+    get {
+      switch self {
+      case .UDID(let udids):
+        return 1 ^ udids.hashValue
+      case .Configured(let configurations):
+        return 2 ^ configurations.hashValue
+      case .State(let states):
+        return 4 ^ states.hashValue
+      case .And(let subqueries):
+        return subqueries.hashValue
+      }
+    }
   }
 }
 
@@ -140,7 +181,7 @@ public func == (lhs: Format, rhs: Format) -> Bool {
   case (.OSVersion, .OSVersion): return true
   case (.DeviceName, .DeviceName): return true
   case (.Name, .Name): return true
-  case (let .Compound(leftComp), let .Compound(rightComp)): return leftComp == rightComp
+  case (.Compound(let leftComp), .Compound(let rightComp)): return leftComp == rightComp
   default: return false
   }
 }
@@ -150,13 +191,13 @@ extension Format : Hashable {
     get {
       switch self {
       case .UDID:
-        return "udid".hashValue
+        return 1
       case .OSVersion:
-        return "osversion".hashValue
+        return 2
       case .DeviceName:
-        return "devicename".hashValue
+        return 3
       case .Name:
-        return "name".hashValue
+        return 4
       case .Compound(let format):
         return format.reduce("compound".hashValue) { previous, next in
           return previous ^ next.hashValue

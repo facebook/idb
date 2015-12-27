@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -182,5 +180,71 @@ class ConfigurationParserTests : XCTestCase {
         options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
     )
+  }
+}
+
+class ActionParserTests : XCTestCase {
+  func testParsesList() {
+    self.assertParsesAll(Action.parser(), [
+      (["list"], Action.List(Query.defaultValue(), Format.defaultValue())),
+      (["list", "booted"], Action.List(Query.State([.Booted]), Format.defaultValue())),
+      (["list", "--name"], Action.List(Query.defaultValue(), Format.Name)),
+      (["list", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "--os"], Action.List(Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), Format.OSVersion)),
+      (["list", "booted", "iPhone 5", "--device-name", "--os"], Action.List(Query.And([.State([.Booted]), .Configured([FBSimulatorConfiguration.iPhone5()])]), Format.Compound([.DeviceName, .OSVersion])))
+    ])
+  }
+
+  func testParsesBoot() {
+    self.assertParsesAll(Action.parser(), [
+      (["boot"], Action.Boot(Query.defaultValue())),
+      (["boot", "iPad 2"], Action.Boot(.Configured([FBSimulatorConfiguration.iPad2()]))),
+      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))),
+      (["boot", "iPhone 5", "shutdown", "iPhone 6"], Action.Boot(.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]))),
+    ])
+  }
+
+  func testParsesShutdown() {
+    self.assertParsesAll(Action.parser(), [
+      (["shutdown"], Action.Shutdown(Query.defaultValue())),
+      (["shutdown", "iPad 2"], Action.Shutdown(.Configured([FBSimulatorConfiguration.iPad2()]))),
+      (["shutdown", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action.Shutdown(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))),
+      (["shutdown", "iPhone 5", "shutdown", "iPhone 6"], Action.Shutdown(.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]))),
+    ])
+  }
+
+  func testParsesDiagnose() {
+    self.assertParsesAll(Action.parser(), [
+      (["diagnose"], Action.Diagnose(Query.defaultValue())),
+      (["diagnose", "iPad 2"], Action.Diagnose(.Configured([FBSimulatorConfiguration.iPad2()]))),
+      (["diagnose", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action.Diagnose(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))),
+      (["diagnose", "iPhone 5", "shutdown", "iPhone 6"], Action.Diagnose(.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]))),
+    ])
+  }
+}
+
+class CommandParserTests : XCTestCase {
+  func testParsesSingleAction() {
+    self.assertParsesAll(Command.parser(), [
+      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))])),
+    ])
+  }
+
+  func testParsesMultipleActions() {
+    self.assertParsesAll(Command.parser(), [
+      (["list", "booted", "boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [Action.List(Query.State([.Booted]), Format.defaultValue()), Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))])),
+    ])
+  }
+
+  func testParsesInteract() {
+    self.assertParsesAll(Command.parser(), [
+      (["interact"], Command.Interact(Configuration.defaultValue(), nil)),
+      (["interact", "--port", "42"], Command.Interact(Configuration.defaultValue(), 42))
+    ])
+  }
+
+  func testParsesHelp() {
+    self.assertParsesAll(Command.parser(), [
+      (["help"], Command.Help(nil))
+    ])
   }
 }

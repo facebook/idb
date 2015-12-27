@@ -16,7 +16,7 @@ public extension Command {
       let (_, command) = try Command.parser().parse(arguments)
       return command
     } catch {
-      return Command(configuration: Configuration.defaultConfiguration(), subcommand: .Help(nil))
+      return Command.Help(nil)
     }
   }
 }
@@ -132,7 +132,7 @@ extension Parser {
     }
   }
 
-  static func succeeded(token: String, by: Parser<A>) -> Parser<A> {
+  static func succeeded(token: String, _ by: Parser<A>) -> Parser<A> {
     return Parser<()>
       .ofString(token, ())
       .sequence(by)
@@ -146,41 +146,50 @@ extension Parser {
     }
   }
 
-  static func ofMany(parsers: [Parser<A>]) -> Parser<[A]> {
-    return self.ofManyCount(0, parsers)
+  static func alternative(parsers: [Parser<A>]) -> Parser<A> {
+    return Parser<A>() { tokens in
+      for parser in parsers {
+        do {
+          return try parser.parse(tokens)
+        } catch {}
+      }
+      throw ParseError.EndOfInput
+    }
   }
 
-  static func ofAny(parsers: [Parser<A>]) -> Parser<A> {
-    return self.ofManyCount(1, parsers)
-      .fmap { $0.first! }
-  }
-
-  static func ofManyCount(count: Int, _ parsers: [Parser<A>]) -> Parser<[A]> {
+  static func manyCount(count: Int, _ parser: Parser<A>) -> Parser<[A]> {
     assert(count >= 0, "Count should be >= 0")
     return Parser<[A]>() { tokens in
-      var success = true
       var values: [A] = []
       var runningArgs = tokens
-      var successes = 0
+      var applicationCount = 0
 
-      while (success && !runningArgs.isEmpty) {
-        success = false
-        for parser in parsers {
-          do {
-            let output = try parser.parse(runningArgs)
-            success = true
-            successes++
-            runningArgs = output.0
-            values.append(output.1)
-          } catch {}
+      do {
+        while (runningArgs.count > 0) {
+          let output = try parser.parse(runningArgs)
+          applicationCount++
+          runningArgs = output.0
+          values.append(output.1)
         }
-      }
+      } catch { }
 
-      if (successes < count) {
+      if (applicationCount < count) {
         throw ParseError.EndOfInput
       }
       return (runningArgs, values)
     }
+  }
+
+  static func many(parser: Parser<A>) -> Parser<[A]> {
+    return self.manyCount(0, parser)
+  }
+
+  static func alternativeMany(parsers: [Parser<A>]) -> Parser<[A]> {
+    return Parser.many(Parser.alternative(parsers))
+  }
+
+  static func alternativeMany(count: Int, _ parsers: [Parser<A>]) -> Parser<[A]> {
+    return Parser.manyCount(count, Parser.alternative(parsers))
   }
 }
 

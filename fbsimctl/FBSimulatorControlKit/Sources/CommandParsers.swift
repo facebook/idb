@@ -70,17 +70,45 @@ extension FBSimulatorState : Parsable {
 extension Command : Parsable {
   public static func parser() -> Parser<Command> {
     return Parser
-      .ofTwo(Configuration.parser(), Subcommand.parser())
-      .fmap { (configuration, subcommand) in
-        Command(configuration: configuration, subcommand: subcommand)
-    }
+      .alternative([
+        self.helpParser(),
+        self.interactParser(),
+        self.actionParser()
+      ])
+  }
+
+  static func actionParser() -> Parser<Command> {
+    return Parser
+      .ofTwo(
+        Configuration.parser(),
+        Parser.manyCount(1, Action.parser())
+      )
+      .fmap { (configuration, actions) in
+        return Command.Perform(configuration, actions)
+      }
+  }
+
+  static func interactParser() -> Parser<Command> {
+    return Parser
+      .ofTwo(
+        Configuration.parser(),
+        Parser.succeeded("interact", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+      )
+      .fmap { (configuration, port) in
+        return Command.Interact(configuration, port)
+      }
+  }
+
+  static func helpParser() -> Parser<Command> {
+    return Parser
+      .ofString("help", .Help(nil))
   }
 }
 
 extension FBSimulatorAllocationOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorAllocationOptions> {
     return Parser
-      .ofMany([
+      .alternativeMany([
         self.createParser(),
         self.reuseParser(),
         self.shutdownOnAllocateParser(),
@@ -126,7 +154,7 @@ extension FBSimulatorAllocationOptions : Parsable {
 extension FBSimulatorManagementOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorManagementOptions> {
     return Parser
-      .ofManyCount(1, [
+      .alternativeMany(1, [
         self.deleteAllOnFirstParser(),
         self.killAllOnFirstParser(),
         self.killSpuriousSimulatorsOnFirstStartParser(),
@@ -190,15 +218,13 @@ extension Configuration : Parsable {
 
   public static func deviceSetParser() -> Parser<String> {
     return Parser
-      .succeeded("--device-set", by: Parser<String>.ofDirectory())
+      .succeeded("--device-set", Parser<String>.ofDirectory())
   }
 }
 
-extension Subcommand : Parsable {
-  public static func parser() -> Parser<Subcommand> {
-    return Parser.ofAny([
-      self.helpParser(),
-      self.interactParser(),
+extension Action : Parsable {
+  public static func parser() -> Parser<Action> {
+    return Parser.alternative([
       self.listParser(),
       self.bootParser(),
       self.shutdownParser(),
@@ -206,49 +232,42 @@ extension Subcommand : Parsable {
     ])
   }
 
-  static func helpParser() -> Parser<Subcommand> {
-    return Parser.ofString("help", .Help(nil))
-  }
-
-  static func interactParser() -> Parser<Subcommand> {
-    return Parser
-      .succeeded("interact", by: Parser.succeeded("--port", by: Parser<Int>.ofInt()).optional())
-      .fmap { Subcommand.Interact($0) }
-  }
-
-  static func listParser() -> Parser<Subcommand> {
+  static func listParser() -> Parser<Action> {
     let followingParser = Parser
-      .ofTwo(Query.parser(), Format.parser())
+      .ofTwo(
+        Query.parser().fallback(Query.defaultValue()),
+        Format.parser().fallback(Format.defaultValue())
+      )
       .fmap { (query, format) in
-        Subcommand.List(query, format)
+        Action.List(query, format)
     }
 
-    return Parser.succeeded("list", by: followingParser)
+    return Parser.succeeded("list", followingParser)
   }
 
-  static func bootParser() -> Parser<Subcommand> {
+  static func bootParser() -> Parser<Action> {
     return Parser
-      .succeeded("boot", by: Query.parser())
-      .fmap { Subcommand.Boot($0) }
+      .succeeded("boot", Query.parser().fallback(Query.defaultValue()))
+      .fmap { Action.Boot($0) }
   }
 
-  static func shutdownParser() -> Parser<Subcommand> {
+  static func shutdownParser() -> Parser<Action> {
     return Parser
-      .succeeded("shutdown", by: Query.parser())
-      .fmap { Subcommand.Shutdown($0) }
+      .succeeded("shutdown", Query.parser().fallback(Query.defaultValue()))
+      .fmap { Action.Shutdown($0) }
   }
 
-  static func diagnoseParser() -> Parser<Subcommand> {
+  static func diagnoseParser() -> Parser<Action> {
     return Parser
-      .succeeded("diagnose", by: Query.parser())
-      .fmap { Subcommand.Diagnose($0) }
+      .succeeded("diagnose", Query.parser().fallback(Query.defaultValue()))
+      .fmap { Action.Diagnose($0) }
   }
 }
 
 extension Query : Parsable {
   public static func parser() -> Parser<Query> {
     return Parser
-      .ofManyCount(1, [
+      .alternativeMany(1, [
         FBSimulatorState.parser().fmap { Query.State([$0]) },
         Query.uuidParser(),
         Query.nameParser()
@@ -278,7 +297,7 @@ extension Query : Parsable {
 extension Format : Parsable {
   public static func parser() -> Parser<Format> {
     return Parser
-      .ofManyCount(1, [
+      .alternativeMany(1, [
         Parser.ofString("--udid", Format.UDID),
         Parser.ofString("--name", Format.Name),
         Parser.ofString("--device-name", Format.DeviceName),
