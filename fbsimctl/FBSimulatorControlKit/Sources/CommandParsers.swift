@@ -93,7 +93,7 @@ extension Command : Parsable {
 extension FBSimulatorAllocationOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorAllocationOptions> {
     return Parser
-      .ofMany([
+      .alternativeMany([
         self.createParser(),
         self.reuseParser(),
         self.shutdownOnAllocateParser(),
@@ -139,7 +139,7 @@ extension FBSimulatorAllocationOptions : Parsable {
 extension FBSimulatorManagementOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorManagementOptions> {
     return Parser
-      .ofManyCount(1, [
+      .alternativeMany(1, [
         self.deleteAllOnFirstParser(),
         self.killAllOnFirstParser(),
         self.killSpuriousSimulatorsOnFirstStartParser(),
@@ -209,7 +209,7 @@ extension Configuration : Parsable {
 
 extension Action : Parsable {
   public static func parser() -> Parser<Action> {
-    return Parser.ofAny([
+    return Parser.alternative([
       self.interactParser(),
       self.listParser(),
       self.bootParser(),
@@ -259,7 +259,7 @@ extension Action : Parsable {
 extension Query : Parsable {
   public static func parser() -> Parser<Query> {
     return Parser
-      .ofManyCount(1, [
+      .alternativeMany(1, [
         FBSimulatorState.parser().fmap { Query.State([$0]) },
         Query.uuidParser(),
         Query.nameParser()
@@ -289,7 +289,7 @@ extension Query : Parsable {
 extension Format : Parsable {
   public static func parser() -> Parser<Format> {
     return Parser
-      .ofManyCount(1, [
+      .alternativeMany(1, [
         Parser.ofString("--udid", Format.UDID),
         Parser.ofString("--name", Format.Name),
         Parser.ofString("--device-name", Format.DeviceName),
