@@ -184,13 +184,6 @@ class ConfigurationParserTests : XCTestCase {
 }
 
 class ActionParserTests : XCTestCase {
-  func testParsesInteract() {
-    self.assertParsesAll(Action.parser(), [
-      (["interact"], Action.Interact(nil)),
-      (["interact", "--port", "42"], Action.Interact(42))
-    ])
-  }
-
   func testParsesList() {
     self.assertParsesAll(Action.parser(), [
       (["list"], Action.List(Query.defaultValue(), Format.defaultValue())),
@@ -232,8 +225,14 @@ class ActionParserTests : XCTestCase {
 class CommandParserTests : XCTestCase {
   func testParsesSingleAction() {
     self.assertParsesAll(Command.parser(), [
-      (["interact"], Command.Single(Configuration.defaultValue(), Action.Interact(nil))),
       (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Single(Configuration.defaultValue(), Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])))),
+    ])
+  }
+
+  func testParsesInteract() {
+    self.assertParsesAll(Command.parser(), [
+      (["interact"], Command.Interact(Configuration.defaultValue(), nil)),
+      (["interact", "--port", "42"], Command.Interact(Configuration.defaultValue(), 42))
     ])
   }
 

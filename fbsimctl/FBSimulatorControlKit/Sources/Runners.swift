@@ -32,15 +32,12 @@ private struct BaseRunner : Runner {
     switch (self.command) {
     case .Help:
       return .Success(Command.getHelp())
+    case .Interact(let configuration, let port):
+      let control = try! FBSimulatorControl.withConfiguration(configuration)
+      return InteractionRunner(control: control, portNumber: port).run()
     case .Single(let configuration, let action):
       let control = try! FBSimulatorControl.withConfiguration(configuration)
-      switch (action) {
-      case .Interact(let portNumber):
-        return InteractionRunner(control: control, portNumber: portNumber).run()
-      default:
-        let runner = ActionRunner(action: action, control: control)
-        return runner.run()
-      }
+      return ActionRunner(action: action, control: control).run()
     }
   }
 }

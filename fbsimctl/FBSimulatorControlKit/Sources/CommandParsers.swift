@@ -72,6 +72,7 @@ extension Command : Parsable {
     return Parser
       .alternative([
         self.helpParser(),
+        self.interactParser(),
         self.actionParser()
       ])
   }
@@ -81,6 +82,17 @@ extension Command : Parsable {
       .ofTwo(Configuration.parser(), Action.parser())
       .fmap { (configuration, action) in
         return Command.Single(configuration, action)
+      }
+  }
+
+  static func interactParser() -> Parser<Command> {
+    return Parser
+      .ofTwo(
+        Configuration.parser(),
+        Parser.succeeded("interact", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+      )
+      .fmap { (configuration, port) in
+        return Command.Interact(configuration, port)
       }
   }
 
@@ -210,18 +222,11 @@ extension Configuration : Parsable {
 extension Action : Parsable {
   public static func parser() -> Parser<Action> {
     return Parser.alternative([
-      self.interactParser(),
       self.listParser(),
       self.bootParser(),
       self.shutdownParser(),
       self.diagnoseParser(),
     ])
-  }
-
-  static func interactParser() -> Parser<Action> {
-    return Parser
-      .succeeded("interact", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
-      .fmap { Action.Interact($0) }
   }
 
   static func listParser() -> Parser<Action> {

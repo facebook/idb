@@ -43,7 +43,6 @@ public indirect enum Query {
  An Action that can be performed provided a FBSimulatorControl instance.
 */
 public indirect enum Action {
-  case Interact(Int?)
   case List(Query, Format)
   case Boot(Query)
   case Shutdown(Query)
@@ -56,6 +55,7 @@ public indirect enum Action {
  */
 public enum Command {
   case Single(Configuration, Action)
+  case Interact(Configuration, Int?)
   case Help(Action?)
 }
 
@@ -119,6 +119,8 @@ public func == (left: Command, right: Command) -> Bool {
   switch (left, right) {
   case (.Single(let leftConfiguration, let leftAction), .Single(let rightConfiguration, let rightAction)):
     return leftConfiguration == rightConfiguration && leftAction == rightAction
+  case (.Interact(let leftConfiguration, let leftPort), .Interact(let rightConfiguration, let rightPort)):
+    return leftConfiguration == rightConfiguration &&  leftPort == rightPort
   case (.Help(let leftAction), .Help(let rightAction)):
     return leftAction == rightAction
   default:
@@ -129,8 +131,6 @@ public func == (left: Command, right: Command) -> Bool {
 extension Action : Equatable { }
 public func == (leftAction: Action, rightAction: Action) -> Bool {
   switch (leftAction, rightAction) {
-  case (.Interact(let leftPort), .Interact(let rightPort)):
-    return leftPort == rightPort
   case (.List(let leftQuery, let leftFormat), .List(let rightQuery, let rightFormat)):
     return leftQuery == rightQuery && leftFormat == rightFormat
   case (.Boot(let leftQuery), .Boot(let rightQuery)):
