@@ -128,27 +128,27 @@
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections;
 {
-  [self.logger logMessage:@"Capture started to %@", fileURL];
+  [self.logger logFormat:@"Capture started to %@", fileURL];
 }
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didPauseRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections
 {
-  [self.logger logMessage:@"Capture paused at %@", fileURL];
+  [self.logger logFormat:@"Capture paused at %@", fileURL];
 }
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didResumeRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connection
 {
-  [self.logger logMessage:@"Capture resumed at %@", fileURL];
+  [self.logger logFormat:@"Capture resumed at %@", fileURL];
 }
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput willFinishRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections error:(NSError *)error
 {
-  [self.logger logMessage:@"Will finish recording to %@", fileURL];
+  [self.logger logFormat:@"Will finish recording to %@", fileURL];
 }
 
 - (void)captureOutput:(AVCaptureFileOutput *)captureOutput didFinishRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections error:(NSError *)error;
 {
-  [self.logger logMessage:@"Did finish recording to %@", fileURL];
+  [self.logger logFormat:@"Did finish recording to %@", fileURL];
 }
 
 - (BOOL)captureOutputShouldProvideSampleAccurateRecordingStart:(AVCaptureOutput *)captureOutput

@@ -95,14 +95,22 @@
   BOOL killSpuriousCoreSimulatorServices = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
   if (killSpuriousCoreSimulatorServices) {
     if (![self.terminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
-      return [[[FBSimulatorError describe:@"Failed to kill spurious CoreSimulatorServices"] causedBy:innerError] failBool:error];
+      return [[[[FBSimulatorError
+        describe:@"Failed to kill spurious CoreSimulatorServices"]
+        causedBy:innerError]
+        logger:self.logger]
+        failBool:error];
     }
   }
 
   BOOL deleteOnStart = (self.configuration.options & FBSimulatorManagementOptionsDeleteAllOnFirstStart) == FBSimulatorManagementOptionsDeleteAllOnFirstStart;
   if (deleteOnStart) {
     if (![self deleteAllWithError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Failed to delete all simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+      return [[[[FBSimulatorError
+        describe:@"Failed to delete all simulators"]
+        causedBy:innerError] 
+        logger:self.logger]
+        failBool:error];
     }
   }
 
@@ -110,7 +118,11 @@
   BOOL killOnStart = (self.configuration.options & FBSimulatorManagementOptionsKillAllOnFirstStart) == FBSimulatorManagementOptionsKillAllOnFirstStart;
   if (killOnStart && !deleteOnStart) {
     if (![self killAllWithError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Failed to kill all simulators"] causedBy:innerError] recursiveDescription] failBool:error];
+      return [[[[FBSimulatorError
+        describe:@"Failed to kill all simulators"]
+        causedBy:innerError]
+        logger:self.logger]
+        failBool:error];
     }
   }
 
@@ -118,14 +130,23 @@
   if (killSpuriousSimulators && !deleteOnStart) {
     BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
     if (![self.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
-      return [[[FBSimulatorError describe:@"Failed to kill spurious simulators"] causedBy:innerError] failBool:error];
+      return [[[[FBSimulatorError
+        describe:@"Failed to kill spurious simulators"]
+        causedBy:innerError]
+        logger:self.logger]
+        failBool:error];
     }
 
     if (![self.terminationStrategy ensureConsistencyForSimulators:self.allSimulators withError:&innerError]) {
-      return [[[FBSimulatorError describe:@"Failed to ensure simulator consistency"] causedBy:innerError] failBool:error];
+      return [[[[FBSimulatorError
+        describe:@"Failed to ensure simulator consistency"]
+        causedBy:innerError]
+        logger:self.logger]
+        failBool:error];
     }
   }
 
+  [self.logger.debug logFormat:@"Completed Pool Preconditons"];
   return YES;
 }
 
@@ -156,7 +177,7 @@
 - (FBSimulatorTerminationStrategy *)terminationStrategy
 {
   // `self.allSimulators` is not a constant for the lifetime of self, so should be fetched on all usages.
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processQuery:self.processQuery];
+  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processQuery:self.processQuery logger:self.logger];
 }
 
 #pragma mark - Public Methods
@@ -184,14 +205,24 @@
   // Killing is a pre-requesite for deleting/erasing
   NSError *innerError = nil;
   if (![self.terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Killing Device" errorOut:error];
+    return [[[[[FBSimulatorError
+      describe:@"Failed to Free Device in Killing Device"]
+      causedBy:innerError]
+      inSimulator:simulator]
+      logger:self.logger]
+      failBool:error];
   }
 
   // When Deleting on Free, there's no point in erasing first, so return early.
   BOOL deleteOnFree = (options & FBSimulatorAllocationOptionsDeleteOnFree) == FBSimulatorAllocationOptionsDeleteOnFree;
   if (deleteOnFree) {
     if (![self deleteSimulator:simulator withError:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Deleting Device" errorOut:error];
+      return [[[[[FBSimulatorError
+        describe:@"Failed to Free Device in Deleting Device"]
+        causedBy:innerError]
+        inSimulator:simulator]
+        logger:self.logger]
+        failBool:error];
     }
     return YES;
   }
@@ -199,7 +230,12 @@
   BOOL eraseOnFree = (self.configuration.options & FBSimulatorAllocationOptionsEraseOnFree) == FBSimulatorAllocationOptionsEraseOnFree;
   if (eraseOnFree) {
     if (![simulator eraseWithError:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to Free Device in Erasing Device" errorOut:error];
+      return [[[[[FBSimulatorError
+        describe:@"Failed to Free Device in Erasing Device"]
+        causedBy:innerError]
+        inSimulator:simulator]
+        logger:self.logger]
+        failBool:error];
     }
     return YES;
   }
@@ -222,7 +258,11 @@
   // Attempt to kill any and all simulators belonging to this pool before deleting.
   NSError *innerError = nil;
   if (![self killAllWithError:&innerError]) {
-    return [[[FBSimulatorError describe:@"Failed to kill all simulators prior to delete all"] causedBy:innerError] fail:error];
+    return [[[[FBSimulatorError
+      describe:@"Failed to kill all simulators prior to delete all"]
+      causedBy:innerError]
+      logger:self.logger]
+      fail:error];
   }
 
   return [self deleteSimulators:self.allSimulators withError:error];
@@ -236,7 +276,12 @@
 
   NSError *innerError = nil;
   if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
-    return [[[[FBSimulatorError describeFormat:@"Failed to Delete simulator %@", simulator] causedBy:innerError] inSimulator:simulator] failBool:error];
+    return [[[[[FBSimulatorError
+      describeFormat:@"Failed to Delete simulator %@", simulator]
+      causedBy:innerError]
+      inSimulator:simulator]
+      logger:self.logger]
+      failBool:error];
   }
 
   // Deleting the device from the set can still leave it around for a few seconds.
@@ -248,7 +293,11 @@
   }];
 
   if (!wasRemovedFromDeviceSet) {
-    return [[[FBSimulatorError describeFormat:@"Simulator with UDID %@ should have been removed from set but wasn't.", udid] inSimulator:simulator] failBool:error];
+    return [[[[FBSimulatorError
+      describeFormat:@"Simulator with UDID %@ should have been removed from set but wasn't.", udid]
+      inSimulator:simulator]
+      logger:self.logger]
+      failBool:error];
   }
 
   return YES;
@@ -289,7 +338,11 @@
 {
   NSError *innerError = nil;
   if (![configuration checkRuntimeRequirementsReturningError:&innerError]) {
-    return [[[FBSimulatorError describe:@"Current Runtime environment does not support Simulator Configuration"] causedBy:innerError] fail:error];
+    return [[[[FBSimulatorError
+      describe:@"Current Runtime environment does not support Simulator Configuration"]
+      causedBy:innerError]
+      logger:self.logger]
+      fail:error];
   }
 
   BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
@@ -302,7 +355,10 @@
 
   BOOL create = (options & FBSimulatorAllocationOptionsCreate) == FBSimulatorAllocationOptionsCreate;
   if (!create) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain a simulator as the options don't allow creation"] fail:error];
+    return [[[FBSimulatorError
+      describeFormat:@"Could not obtain a simulator as the options don't allow creation"]
+      logger:self.logger]
+      fail:error];
   }
   return [self createSimulatorWithConfiguration:configuration error:error];
 }
@@ -324,30 +380,50 @@
   NSError *innerError = nil;
   SimDeviceType *deviceType = [configuration obtainDeviceTypeWithError:&innerError];
   if (!deviceType) {
-    return [[[FBSimulatorError describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration] causedBy:innerError] fail:error];
+    return [[[[FBSimulatorError
+      describeFormat:@"Could not obtain a DeviceType for Configuration %@", configuration]
+      causedBy:innerError]
+      logger:self.logger]
+      fail:error];
   }
   SimRuntime *runtime = [configuration obtainRuntimeWithError:&innerError];
   if (!runtime) {
-    return [[[FBSimulatorError describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration] causedBy:innerError] fail:error];
+    return [[[[FBSimulatorError
+      describeFormat:@"Could not obtain a SimRuntime for Configuration %@", configuration]
+      causedBy:innerError]
+      logger:self.logger]
+      fail:error];
   }
 
   // First, create the device.
   SimDevice *device = [self.deviceSet createDeviceWithType:deviceType runtime:runtime name:targetName error:&innerError];
   if (!device) {
-    return [[[FBSimulatorError describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", targetName, runtime, deviceType] causedBy:innerError] fail:error];
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to create a simulator with the name %@, runtime %@, type %@", targetName, runtime, deviceType]
+      causedBy:innerError]
+      logger:self.logger]
+      fail:error];
   }
 
   // The SimDevice should now be in the DeviceSet and thus in the collection of Simulators.
   FBSimulator *simulator = [FBSimulatorPool keySimulatorsByUDID:self.allSimulators][device.UDID.UUIDString];
   if (!simulator) {
-    return [[FBSimulatorError describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString] fail:error];
+    return [[[FBSimulatorError
+      describeFormat:@"Expected simulator with UDID %@ to be inflated", device.UDID.UUIDString]
+      logger:self.logger]
+      fail:error];
   }
   simulator.configuration = configuration;
 
   // This step ensures that the Simulator is in a known-shutdown state after creation.
   // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
   if (![self.terminationStrategy safeShutdownSimulator:simulator withError:&innerError]) {
-    return [[[[FBSimulatorError describeFormat:@"Could not get newly-created simulator into a shutdown state"] inSimulator:simulator] causedBy:innerError] fail:error];
+    return [[[[[FBSimulatorError
+      describeFormat:@"Could not get newly-created simulator into a shutdown state"]
+      inSimulator:simulator]
+      causedBy:innerError]
+      logger:self.logger]
+      fail:error];
   }
 
   return simulator;
@@ -360,23 +436,43 @@
   BOOL erase = (options & FBSimulatorAllocationOptionsEraseOnAllocate) == FBSimulatorAllocationOptionsEraseOnAllocate;
   NSError *innerError = nil;
   if ((shutdown || erase) & ![self.terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
-    return [[[[FBSimulatorError describe:@"Failed to kill a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+    return [[[[[FBSimulatorError
+      describe:@"Failed to kill a Simulator when allocating it"]
+      causedBy:innerError]
+      inSimulator:simulator]
+      logger:self.logger]
+      failBool:error];
   }
 
   // Now we have a device that is shutdown, we should erase it.
   // Only erase if the simulator was allocated with reuse, otherwise it is a fresh Simulator that won't need erasing.
   BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
   if (reuse && erase && ![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-    return [[[[FBSimulatorError describe:@"Failed to erase a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+    return [[[[[FBSimulatorError
+      describe:@"Failed to erase a Simulator when allocating it"]
+      causedBy:innerError]
+      inSimulator:simulator]
+      logger:self.logger]
+      failBool:error];
   }
 
   // Do the other configuration that is dependent on a shutdown Simulator.
   if (shutdown || erase) {
     if (configuration.locale && ![[simulator.interact setLocale:configuration.locale] performInteractionWithError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Failed to set the locale on a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+      return [[[[[FBSimulatorError
+        describe:@"Failed to set the locale on a Simulator when allocating it"]
+        causedBy:innerError]
+        inSimulator:simulator]
+        logger:self.logger]
+        failBool:error];
     }
     if (![[simulator.interact setupKeyboard] performInteractionWithError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Failed to setup the keyboard of a Simulator when allocating it"] causedBy:innerError] inSimulator:simulator] failBool:error];
+      return [[[[[FBSimulatorError
+        describe:@"Failed to setup the keyboard of a Simulator when allocating it"]
+        causedBy:innerError]
+        inSimulator:simulator]
+        logger:self.logger]
+        failBool:error];
     }
   }
 

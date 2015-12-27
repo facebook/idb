@@ -28,7 +28,7 @@
 
 + (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBSimulatorLogger>)logger
 {
-  return [[self alloc] initWithPrefix:[NSString stringWithFormat:@"%@: ", simulator.udid] logger:logger];
+  return [[self alloc] initWithPrefix:[NSString stringWithFormat:@"%@: ", simulator.udid] logger:logger.info.timestamped];
 }
 
 - (instancetype)initWithPrefix:(NSString *)prefix logger:(id<FBSimulatorLogger>)logger
@@ -48,42 +48,42 @@
 
 - (void)didStartWithLaunchInfo:(FBSimulatorLaunchInfo *)launchInfo
 {
-  [self.logger logMessage:@"%@Did Start => %@", self.prefix, launchInfo.shortDescription];
+  [self.logger logFormat:@"%@Did Start => %@", self.prefix, launchInfo.shortDescription];
 }
 
 - (void)didTerminate:(BOOL)expected
 {
-  [self.logger logMessage:@"%@Did Terminate => Expected %d", self.prefix, expected];
+  [self.logger logFormat:@"%@Did Terminate => Expected %d", self.prefix, expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
-  [self.logger logMessage:@"%@Agent Did Launch => %@", self.prefix, agentProcess.shortDescription];
+  [self.logger logFormat:@"%@Agent Did Launch => %@", self.prefix, agentProcess.shortDescription];
 }
 
 - (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
 {
-  [self.logger logMessage:@"%@Agent Did Terminate => Expected %d %@ ", self.prefix, expected, agentProcess.shortDescription];
+  [self.logger logFormat:@"%@Agent Did Terminate => Expected %d %@ ", self.prefix, expected, agentProcess.shortDescription];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
-  [self.logger logMessage:@"%@Application Did Launch => %@", self.prefix, applicationProcess.shortDescription];
+  [self.logger logFormat:@"%@Application Did Launch => %@", self.prefix, applicationProcess.shortDescription];
 }
 
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
-  [self.logger logMessage:@"%@Application Did Terminate => Expected %d %@", self.prefix, expected, applicationProcess.shortDescription];
+  [self.logger logFormat:@"%@Application Did Terminate => Expected %d %@", self.prefix, expected, applicationProcess.shortDescription];
 }
 
 - (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value
 {
-  [self.logger logMessage:@"%@Diagnostic Information Available => %@", self.prefix, name];
+  [self.logger logFormat:@"%@Diagnostic Information Available => %@", self.prefix, name];
 }
 
 - (void)didChangeState:(FBSimulatorState)state
 {
-  [self.logger logMessage:@"%@Did Change State => %@", self.prefix, [FBSimulator stateStringFromSimulatorState:state]];
+  [self.logger logFormat:@"%@Did Change State => %@", self.prefix, [FBSimulator stateStringFromSimulatorState:state]];
 }
 
 - (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle

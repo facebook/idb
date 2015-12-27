@@ -13,6 +13,8 @@
 @class FBSimulator;
 @class FBSimulatorControlConfiguration;
 
+@protocol FBSimulatorLogger;
+
 /**
  A class for terminating Simulators.
  */
@@ -23,10 +25,10 @@
 
  @param configuration the Configuration of FBSimulatorControl.
  @param processQuery the process query object to use. If nil, one will be created
-
+ @param logger the Logger to log all activities on.
  @return a configured FBSimulatorTerminationStrategy instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
 
 /**
  Kills the provided Simulators.
@@ -36,7 +38,7 @@
 
  @param simulators the Simulators to Kill.
  @param error an error out if any error occured.
- @returns an array of the Simulators that this were killed if successful, nil otherwise.
+ @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error;
 
@@ -74,7 +76,7 @@
  This method will not kill Simulators that are launched by FBSimulatorControl in another, or the same process.
 
  @param error an error out if any error occured.
- @returns an YES if successful, nil otherwise.
+ @return an YES if successful, nil otherwise.
  */
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
 
@@ -83,7 +85,7 @@
  Running multiple versions of the Service on the same machine can lead to instability such as Simulator statuses not updating.
 
  @param error an error out if any error occured.
- @returns an YES if successful, nil otherwise.
+ @return an YES if successful, nil otherwise.
  */
 - (BOOL)killSpuriousCoreSimulatorServicesWithError:(NSError **)error;
 
