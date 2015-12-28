@@ -30,6 +30,19 @@ protocol RelayTransformer {
 public enum Output {
   case Success(String)
   case Failure(String)
+
+  func append(second: Output) -> Output {
+    switch (self, second) {
+    case (.Success(let firstString), .Success(let secondString)):
+      return .Success("\(firstString)\n\(secondString)")
+    case (.Success(let firstString), .Failure(let secondString)):
+      return .Failure("\(firstString)\n\(secondString)")
+    case (.Failure(let firstString), .Success(let secondString)):
+      return .Failure("\(firstString)\n\(secondString)")
+    case (.Failure(let firstString), .Failure(let secondString)):
+      return .Failure("\(firstString)\n\(secondString)")
+    }
+  }
 }
 
 /**
