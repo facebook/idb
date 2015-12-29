@@ -9,6 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ Bridging Preprocessor Macros to values, so that they can be read in Swift.
+ */
 @interface Constants : NSObject
 
 + (int32_t)sol_socket;

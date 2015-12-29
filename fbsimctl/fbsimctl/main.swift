@@ -8,6 +8,10 @@
  */
 
 import Foundation
+import FBSimulatorControl
+
+let argumentSet = Set(NSProcessInfo.processInfo().arguments)
+FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(argumentSet.contains(Configuration.DEBUG_LOGGING_FLAG))
 
 Command
   .fromArguments(Array(NSProcessInfo.processInfo().arguments.dropFirst(1)))

@@ -79,7 +79,7 @@ extension Command : Parsable {
 
   static func actionParser() -> Parser<Command> {
     return Parser
-      .ofTwo(
+      .ofTwoSequenced(
         Configuration.parser(),
         Parser.manyCount(1, Action.parser())
       )
@@ -90,7 +90,7 @@ extension Command : Parsable {
 
   static func interactParser() -> Parser<Command> {
     return Parser
-      .ofTwo(
+      .ofTwoSequenced(
         Configuration.parser(),
         Parser.succeeded("interact", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
       )
@@ -203,18 +203,24 @@ extension FBSimulatorManagementOptions : Parsable {
 
 extension Configuration : Parsable {
   public static func parser() -> Parser<Configuration> {
-    return Parser.ofTwo(
-        self.deviceSetParser().optional(),
-        FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions())
+    return Parser
+      .ofTwoSequenced(
+        Parser<Bool>.ofFlag(Configuration.DEBUG_LOGGING_FLAG),
+        self.controlConfigurationParser()
       )
-      .fmap { setPath, options in
-        return Configuration(deviceSetPath: setPath, options: options)
+      .fmap { (debugLogging, controlConfiguration) in
+        return Configuration(controlConfiguration: controlConfiguration, debugLogging: debugLogging)
       }
   }
 
-  public static func deviceSetParser() -> Parser<String> {
-    return Parser
-      .succeeded("--device-set", Parser<String>.ofDirectory())
+  public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
+    return Parser.ofTwoSequenced(
+        Parser.succeeded("--device-set", Parser<String>.ofDirectory()).optional(),
+        FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions.defaultValue())
+      )
+      .fmap { setPath, options in
+        return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
+      }
   }
 }
 
@@ -230,7 +236,7 @@ extension Action : Parsable {
 
   static func listParser() -> Parser<Action> {
     let followingParser = Parser
-      .ofTwo(
+      .ofTwoSequenced(
         Query.parser().fallback(Query.defaultValue()),
         Format.parser().fallback(Format.defaultValue())
       )

@@ -14,6 +14,13 @@ protocol Runner {
   func run() -> Output
 }
 
+extension Configuration {
+  func build() -> FBSimulatorControl {
+    let logger = FBSimulatorLogger.aslLogger().writeToStderrr(true, withDebugLogging: self.debugLogging)
+    return try! FBSimulatorControl.withConfiguration(self.controlConfiguration, logger: logger)
+  }
+}
+
 public extension Command {
   func runFromCLI() -> Void {
     switch (BaseRunner(command: self).run()) {
@@ -49,11 +56,9 @@ private struct BaseRunner : Runner {
     case .Help:
       return .Success(Command.getHelp())
     case .Interact(let configuration, let port):
-      let control = try! FBSimulatorControl.withConfiguration(configuration)
-      return InteractionRunner(control: control, portNumber: port).run()
+      return InteractionRunner(control: configuration.build(), portNumber: port).run()
     case .Perform(let configuration, let actions):
-      let control = try! FBSimulatorControl.withConfiguration(configuration)
-      return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: control) } ).run()
+      return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: configuration.build()) } ).run()
     }
   }
 }
