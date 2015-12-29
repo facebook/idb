@@ -15,7 +15,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 
 @implementation FBProcessQuery (Simulators)
 
@@ -118,7 +118,7 @@
 
 + (NSPredicate *)coreSimulatorProcessesForCurrentXcode
 {
-  return [self processesWithLaunchPath:FBSimulatorControlStaticConfiguration.developerDirectory];
+  return [self processesWithLaunchPath:FBSimulatorControlGlobalConfiguration.developerDirectory];
 }
 
 + (NSPredicate *)processesWithLaunchPath:(NSString *)launchPath

@@ -14,7 +14,7 @@
 
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl+Class.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 
 @implementation FBSimulatorConfigurationVariant_Base
 

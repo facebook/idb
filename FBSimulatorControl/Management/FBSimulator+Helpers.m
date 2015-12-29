@@ -13,7 +13,7 @@
 
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorPool.h"
@@ -65,7 +65,7 @@
 
 - (BOOL)waitOnState:(FBSimulatorState)state
 {
-  return [self waitOnState:state timeout:FBSimulatorControlStaticConfiguration.regularTimeout];
+  return [self waitOnState:state timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
 }
 
 - (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout

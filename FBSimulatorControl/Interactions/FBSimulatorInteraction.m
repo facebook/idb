@@ -23,7 +23,7 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLaunchInfo.h"
@@ -57,7 +57,7 @@
       [arguments addObjectsFromArray:scaleArguments];
     }
     if (simulator.pool.configuration.deviceSetPath) {
-      if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+      if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
         return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] failBool:error];
       }
       [arguments addObjectsFromArray:@[@"-DeviceSetPath", simulator.pool.configuration.deviceSetPath]];
@@ -90,7 +90,7 @@
 
     // Waitng for all required processes to start
     NSSet *requiredProcessNames = simulator.requiredProcessNamesToVerifyBooted;
-    BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBSimulatorControlStaticConfiguration.slowTimeout untilTrue:^ BOOL {
+    BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
       NSSet *runningProcessNames = [NSSet setWithArray:[launchInfo.launchedProcesses valueForKey:@"processName"]];
       return [requiredProcessNames isSubsetOfSet:runningProcessNames];
     }];

@@ -13,7 +13,7 @@
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
 #import "FBSimulator.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorLogger.h"
 
@@ -40,7 +40,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 
   _additionalInfo = [NSMutableDictionary dictionary];
   _describeRecursively = YES;
-  _logger = FBSimulatorControlStaticConfiguration.defaultLogger;
+  _logger = FBSimulatorControlGlobalConfiguration.defaultLogger;
 
   return self;
 }

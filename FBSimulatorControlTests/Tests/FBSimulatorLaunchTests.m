@@ -166,7 +166,7 @@
 
 - (void)testLaunchesiPhone
 {
-  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
     NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
@@ -175,7 +175,7 @@
 
 - (void)testLaunchesiPad
 {
-  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
     NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
@@ -184,7 +184,7 @@
 
 - (void)testLaunchesWatch
 {
-  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
     NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
@@ -193,7 +193,7 @@
 
 - (void)testLaunchesTV
 {
-  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
     NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
@@ -202,7 +202,7 @@
 
 - (void)testLaunchesMultipleSimulators
 {
-  if (!FBSimulatorControlStaticConfiguration.supportsCustomDeviceSets) {
+  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
     NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
