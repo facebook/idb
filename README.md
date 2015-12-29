@@ -56,8 +56,7 @@ To launch Safari on an iPhone 5, you can use the following:
     // This Configuration will ensure that no other Simulators are running.
     FBSimulatorManagementOptions managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;    
     FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
-      configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-      deviceSetPath:nil
+      configurationWithDeviceSetPath:nil
       options:managementOptions];
     
     // The principal class, must be retained as long as the Framework is used.
