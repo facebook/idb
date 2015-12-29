@@ -44,6 +44,8 @@
 		AA6085DC1C287E02009B500E /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
+		AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D34D1C32EA4D00434516 /* Writer.swift */; };
+		AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D34D1C32EA4D00434516 /* Writer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +98,7 @@
 		AAE35AC61C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AAE35ACB1C2865C10073CC70 /* FBSimulatorControlKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBSimulatorControlKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AD21C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AAF2D34D1C32EA4D00434516 /* Writer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Writer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +147,7 @@
 				AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */,
 				AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */,
 				AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */,
+				AAF2D34D1C32EA4D00434516 /* Writer.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -349,6 +353,7 @@
 				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
 				AA6085D21C287E02009B500E /* Command.swift in Sources */,
 				AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */,
+				AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */,
 				AA6085D41C287E02009B500E /* Constants.m in Sources */,
 				AA6085D51C287E02009B500E /* Help.swift in Sources */,
 				AA6085D61C287E02009B500E /* LineBuffer.swift in Sources */,
@@ -373,6 +378,7 @@
 				AA1B7F6F1C2867EE0038C6A5 /* Constants.m in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
 				AA1B7F6A1C2867EE0038C6A5 /* Arguments.swift in Sources */,
+				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
 				AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */,
 				AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */,

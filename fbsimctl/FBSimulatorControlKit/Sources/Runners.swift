@@ -11,7 +11,7 @@ import Foundation
 import FBSimulatorControl
 
 protocol Runner {
-  func run() -> Output
+  func run(writer: Writer) -> ActionResult
 }
 
 extension Configuration {
@@ -23,11 +23,12 @@ extension Configuration {
 
 public extension Command {
   func runFromCLI() -> Void {
-    switch (BaseRunner(command: self).run()) {
+    let writer = StdIOWriter()
+    switch (BaseRunner(command: self).run(StdIOWriter())) {
     case .Failure(let string):
-      print(string)
-    case .Success(let string):
-      print(string)
+      writer.writeOut(string)
+    default:
+      break
     }
   }
 }
@@ -35,10 +36,10 @@ public extension Command {
 private struct SequenceRunner : Runner {
   let runners: [Runner]
 
-  func run() -> Output {
-    var output = Output.Success("")
+  func run(writer: Writer) -> ActionResult {
+    var output = ActionResult.Success
     for runner in runners {
-      output = output.append(runner.run())
+      output = output.append(runner.run(writer))
       switch output {
         case .Failure: return output
         default: continue
@@ -51,14 +52,15 @@ private struct SequenceRunner : Runner {
 private struct BaseRunner : Runner {
   let command: Command
 
-  func run() -> Output {
+  func run(writer: Writer) -> ActionResult {
     switch (self.command) {
     case .Help:
-      return .Success(Command.getHelp())
+      writer.write(Command.getHelp())
+      return .Success
     case .Interact(let configuration, let port):
-      return InteractionRunner(control: configuration.build(), portNumber: port).run()
+      return InteractionRunner(control: configuration.build(), portNumber: port).run(writer)
     case .Perform(let configuration, let actions):
-      return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: configuration.build()) } ).run()
+      return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: configuration.build()) } ).run(writer)
     }
   }
 }
@@ -68,57 +70,58 @@ private struct ActionRunner : Runner {
   let action: Action
   let control: FBSimulatorControl
 
-  // TODO: Sessions don't make much sense in this context, combine multiple simulators into one session
-  func run() -> Output {
+  func run(writer: Writer) -> ActionResult {
     switch (self.action) {
     case .List(let query, let format):
       let simulators = Query.perform(control.simulatorPool, query: query)
-      return .Success(Format.formatAll(format)(simulators: simulators))
+      writer.write(Format.formatAll(format)(simulators: simulators))
+      return .Success
     case .Boot(let query):
-      return self.runSimulatorWithQuery(query) { simulator in
+      return self.runWithQuery(query, writer) { simulator in
+        writer.write("Booting \(simulator.udid)")
         try simulator.interact().bootSimulator().performInteraction()
-        return "Booted \(simulator.udid)"
+        writer.write("Booted \(simulator.udid)")
       }
     case .Shutdown(let query):
-      return self.runSimulatorWithQuery(query) { simulator in
+      return self.runWithQuery(query, writer) { simulator in
+        writer.write("Shutting Down \(simulator.udid)")
         try simulator.interact().shutdownSimulator().performInteraction()
-        return "Shutdown \(simulator.udid)"
+        writer.write("Shutdown \(simulator.udid)")
       }
     case .Diagnose(let query):
-      return self.runSimulatorWithQuery(query) { simulator in
+      return self.runWithQuery(query, writer) { simulator in
         if let sysLog = simulator.logs.systemLog() {
-          return "\(sysLog.shortName) \(sysLog.asPath)"
+          writer.write("\(sysLog.shortName) \(sysLog.asPath)")
         }
-        return ""
       }
     default:
       return .Failure("unimplemented")
     }
   }
 
-  private func runSimulatorWithQuery(query: Query, _ transform: FBSimulator throws -> String) -> Output {
-    return QueryRunner(query: query, control: self.control, transform: transform).run()
+  private func runWithQuery(query: Query, _ writer: Writer, _ transform: FBSimulator throws -> Void) -> ActionResult {
+    return QueryRunner(query: query, control: self.control, transform: transform).run(writer)
   }
 }
 
 private struct QueryRunner : Runner {
   let query: Query
   let control: FBSimulatorControl
-  let transform: FBSimulator throws -> String
+  let transform: FBSimulator throws -> Void
 
-  func run() -> Output {
+  func run(writer: Writer) -> ActionResult {
     let simulators = Query.perform(self.control.simulatorPool, query: query)
-    return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, transform: self.transform) } ).run()
+    return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, transform: self.transform) } ).run(writer)
   }
 
   struct SimulatorRunner : Runner {
     let simulator: FBSimulator
-    let transform: FBSimulator throws -> String
+    let transform: FBSimulator throws -> Void
 
-    func run() -> Output {
+    func run(writer: Writer) -> ActionResult {
       do {
-        let result = try self.transform(self.simulator)
-        return .Success(result)
+        try self.transform(self.simulator)
+        return .Success
       } catch let error as NSError {
         return .Failure(error.description)
       }
@@ -135,23 +138,25 @@ private class InteractionRunner : Runner, RelayTransformer {
     self.portNumber = portNumber
   }
 
-  func run() -> Output {
+  func run(writer: Writer) -> ActionResult {
     if let portNumber = self.portNumber {
-      print("Starting Socket server on \(portNumber)")
+      writer.write("Starting Socket server on \(portNumber)")
       SocketRelay(portNumber: portNumber, transformer: self).start()
-      return .Success("Ending Socket Server")
+      writer.write("Ending Socket Server")
+    } else {
+      writer.write("Starting local interactive mode, listening on stdin")
+      StdIORelay(transformer: self).start()
+      writer.write("Ending local interactive mode")
     }
-    print("Starting local interactive mode")
-    StdIORelay(transformer: self).start()
-    return .Success("Ending local interactive mode")
+    return .Success
   }
 
-  func transform(input: String) -> Output {
+  func transform(input: String, writer: Writer) -> ActionResult {
     let arguments = input.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
     do {
       let (_, action) = try Action.parser().parse(arguments)
       let runner = ActionRunner(action: action, control: self.control)
-      return runner.run()
+      return runner.run(writer)
     } catch {
       return .Failure("NOPE")
     }

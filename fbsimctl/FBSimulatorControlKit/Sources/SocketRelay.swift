@@ -124,7 +124,7 @@ class SocketConnection {
     }
   }
 
-  private class OutputDelegate : NSObject, NSStreamDelegate, OutputWriter {
+  private class OutputDelegate : NSObject, NSStreamDelegate, ActionResultWriter {
     var buffer: String = ""
     let stream: NSOutputStream
 
@@ -134,7 +134,7 @@ class SocketConnection {
 
     @objc func stream(stream: NSStream, handleEvent eventCode: NSStreamEvent) {
       assert(stream == self.stream, "Handled delegate from unexpected stream")
-      print("Output Event \(eventCode.description)")
+      print("ActionResult Event \(eventCode.description)")
       switch (eventCode.rawValue) {
         case NSStreamEvent.HasSpaceAvailable.rawValue:
           self.flushAvailable()
@@ -143,14 +143,18 @@ class SocketConnection {
       }
     }
 
-    func writeOut(string: String) {
+    func write(string: String) {
       buffer.appendContentsOf(string)
       self.flushAvailable()
     }
 
-    func writeErr(string: String) {
-      buffer.appendContentsOf(string)
-      self.flushAvailable()
+    func writeActionResult(actionResult: ActionResult) {
+      switch actionResult {
+      case .Failure(let string):
+        self.write(string)
+      default:
+        break
+      }
     }
 
     func flushAvailable() {
@@ -180,7 +184,7 @@ class SocketConnection {
   init(readStream: NSInputStream, writeStream: NSOutputStream, delegate: SocketConnectionDelegate, transformer: RelayTransformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(transformer: transformer, outputWriter: self.writeStreamDelegate)
+    self.relayConnection = RelayConnection(transformer: transformer, actionResultWriter: self.writeStreamDelegate)
     self.readStream = readStream
     self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
   }
