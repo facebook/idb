@@ -45,29 +45,9 @@
  */
 - (id<FBSimulatorLogger>)error;
 
-/**
- Returns the Timestamped variant.
- */
-- (id<FBSimulatorLogger>)timestamped;
-
 @end
 
 @interface FBSimulatorLogger : NSObject
-
-/**
- An implementation of `FBSimulatorLogger` that logs events below an ASL Log Level.
- 
- @param maxLevel the Maximum ASL Log Level to Log.
- @return an FBSimulatorLogger instance.
- */
-+ (id<FBSimulatorLogger>)toNSLogWithMaxLevel:(int)maxLevel;
-
-/**
- An implementation of `FBSimulatorLogger` that logs all events to NSLog.
- 
- @return an FBSimulatorLogger instance.
- */
-+ (id<FBSimulatorLogger>)toNSLog;
 
 /**
  An implementation of `FBSimulatorLogger` that logs all events using ASL.
