@@ -25,6 +25,22 @@ public extension Command {
   }
 }
 
+private struct SequenceRunner : Runner {
+  let runners: [Runner]
+
+  func run() -> Output {
+    var output = Output.Success("")
+    for runner in runners {
+      output = output.append(runner.run())
+      switch output {
+        case .Failure: return output
+        default: continue
+      }
+    }
+    return output
+  }
+}
+
 private struct BaseRunner : Runner {
   let command: Command
 
@@ -37,23 +53,11 @@ private struct BaseRunner : Runner {
       return InteractionRunner(control: control, portNumber: port).run()
     case .Perform(let configuration, let actions):
       let control = try! FBSimulatorControl.withConfiguration(configuration)
-      return ActionsRunner(actions: actions, control: control).run()
+      return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: control) } ).run()
     }
   }
 }
 
-private struct ActionsRunner : Runner {
-  let actions: [Action]
-  let control: FBSimulatorControl
-
-  func run() -> Output {
-    var output = Output.Success("")
-    for action in actions {
-      output = ActionRunner(action: action, control: control).run()
-    }
-    return output
-  }
-}
 
 private struct ActionRunner : Runner {
   let action: Action
@@ -87,22 +91,35 @@ private struct ActionRunner : Runner {
     }
   }
 
-  private func runSimulatorWithQuery(query: Query, with: FBSimulator throws -> String) -> Output {
-    do {
-      var buffer = ""
-      let simulators = Query.perform(self.control.simulatorPool, query: query)
-      for simulator in simulators {
-        let result = try with(simulator)
-        buffer.appendContentsOf(result)
-        buffer.append("\n" as Character)
-      }
-      return .Success(buffer)
-    } catch let error as NSError {
-      return .Failure(error.description)
-    }
+  private func runSimulatorWithQuery(query: Query, _ transform: FBSimulator throws -> String) -> Output {
+    return QueryRunner(query: query, control: self.control, transform: transform).run()
   }
 }
 
+private struct QueryRunner : Runner {
+  let query: Query
+  let control: FBSimulatorControl
+  let transform: FBSimulator throws -> String
+
+  func run() -> Output {
+    let simulators = Query.perform(self.control.simulatorPool, query: query)
+    return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, transform: self.transform) } ).run()
+  }
+
+  struct SimulatorRunner : Runner {
+    let simulator: FBSimulator
+    let transform: FBSimulator throws -> String
+
+    func run() -> Output {
+      do {
+        let result = try self.transform(self.simulator)
+        return .Success(result)
+      } catch let error as NSError {
+        return .Failure(error.description)
+      }
+    }
+  }
+}
 
 private class InteractionRunner : Runner, RelayTransformer {
   let control: FBSimulatorControl
