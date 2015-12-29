@@ -33,11 +33,16 @@
 
 /**
  Retries the last chained interaction by `retries`, if it fails.
+
+ @param retries the number of times to retry if the prior interaction fails.
+ @return the reciever, for chaining.
  */
 - (instancetype)retry:(NSUInteger)retries;
 
 /**
  Ignores any failure that occurs in the last interaction if any occured.
+
+ @return the reciever, for chaining.
  */
 - (instancetype)ignoreFailure;
 

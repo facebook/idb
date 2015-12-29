@@ -23,9 +23,7 @@
 {
   NSParameterAssert(locale);
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSString *localeIdentifier = [locale localeIdentifier];
     NSString *languageIdentifier = [NSLocale canonicalLanguageIdentifierFromString:localeIdentifier];
     NSDictionary *preferencesDict = @{
@@ -47,9 +45,7 @@
 {
   NSParameterAssert(application);
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSString *simulatorRoot = simulator.device.dataPath;
     NSString *bundleID = application.bundleID;
 
@@ -81,9 +77,7 @@
 
 - (instancetype)setupKeyboard
 {
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSString *simulatorRoot = simulator.device.dataPath;
     NSString *preferencesPath = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences/com.apple.Preferences.plist"];
     NSError *innerError = nil;

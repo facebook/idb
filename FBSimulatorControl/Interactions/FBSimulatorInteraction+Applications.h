@@ -15,21 +15,33 @@
 
 /**
  Installs the given Application.
+
+ @param application the Application to Install.
+ @return the reciever, for chaining.
  */
 - (instancetype)installApplication:(FBSimulatorApplication *)application;
 
 /**
  Launches the Application with the given Configuration.
+
+ @param appLaunch the Application Launch Configuration to Launch.
+ @return the reciever, for chaining.
  */
 - (instancetype)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 /**
  Unix Signals the Application.
+
+ @param signal the unix signo to send.
+ @return the reciever, for chaining.
  */
 - (instancetype)signal:(int)signal application:(FBSimulatorApplication *)application;
 
 /**
  Kills the provided Application.
+
+ @param application the Application to kill.
+ @return the reciever, for chaining.
  */
 - (instancetype)killApplication:(FBSimulatorApplication *)application;
 

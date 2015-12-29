@@ -20,6 +20,7 @@
  Chains an interaction using the provided block
 
  @param block the block to perform the interaction with. Passes an NSError to return error information and the interaction for further chaining.
+ @return the reciever, for chaining.
  */
 - (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block;
 
@@ -27,11 +28,14 @@
  Fails the Interaction with the provided error.
 
  @param error the error to fail the interaction with.
+ @return the reciever, for chaining.
  */
 - (instancetype)failWith:(NSError *)error;
 
 /**
  Passes the interaction.
+
+ @return the reciever, for chaining.
  */
 - (instancetype)succeed;
 

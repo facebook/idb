@@ -7,27 +7,35 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
-@class FBAgentLaunchConfiguration;
-@class FBSimulatorBinary;
-
-@interface FBSimulatorInteraction (Agents)
+/**
+ Interactions for the Lifecycle of the Simulator.
+ */
+@interface FBSimulatorInteraction (Lifecycle)
 
 /**
- Launches the provided Agent with the given Configuration.
+ Boots the Simulator.
 
- @param agentLaunch the Agent Launch Configuration to Launch.
  @return the reciever, for chaining.
  */
-- (instancetype)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch;
+- (instancetype)bootSimulator;
 
 /**
- Launches the provided Agent.
+ Shuts the Simulator down.
 
- @param agent the Agent Launch Configuration to Launch.
  @return the reciever, for chaining.
  */
-- (instancetype)killAgent:(FBSimulatorBinary *)agent;
+- (instancetype)shutdownSimulator;
+
+/**
+ Opens the provided URL on the Simulator.
+
+ @param url the URL to open.
+ @return the reciever, for chaining.
+ */
+- (instancetype)openURL:(NSURL *)url;
 
 @end

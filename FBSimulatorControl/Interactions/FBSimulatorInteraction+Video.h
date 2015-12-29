@@ -15,16 +15,23 @@
 
 /**
  Tiles the Simulator according to the 'tilingStrategy'.
+
+ @param tilingStrategy the Tiling Strategy to use.
+ @return the reciever, for chaining.
  */
 - (instancetype)tileSimulator:(id<FBSimulatorWindowTilingStrategy>)tilingStrategy;
 
 /**
  Tiles the Simulator according to the occlusion other Simulators.
+
+ @return the reciever, for chaining.
  */
 - (instancetype)tileSimulator;
 
 /**
  Records Video of the Simulator, until the Session is terminated.
+
+ @return the reciever, for chaining.
  */
 - (instancetype)recordVideo;
 
