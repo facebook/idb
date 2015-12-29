@@ -69,4 +69,11 @@
  */
 + (id<FBSimulatorLogger>)toNSLog;
 
+/**
+ An implementation of `FBSimulatorLogger` that logs all events using ASL.
+
+ @return an FBSimulatorLogger instance.
+ */
++ (id<FBSimulatorLogger>)toASL;
+
 @end

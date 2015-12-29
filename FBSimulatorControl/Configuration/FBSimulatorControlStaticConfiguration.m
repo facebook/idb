@@ -116,7 +116,7 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
 
 + (id<FBSimulatorLogger>)defaultLogger
 {
-  return FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled ? FBSimulatorLogger.toNSLog : nil;
+  return FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled ? FBSimulatorLogger.toASL : nil;
 }
 
 + (NSString *)description
