@@ -45,6 +45,15 @@
  */
 - (id<FBSimulatorLogger>)error;
 
+/**
+ Updates the Logger to write to stderr.
+
+ @param writeToStdErr YES if all future log messages should be written to stderr, NO otherwise.
+ @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
+ @return the reciever, for chaining.
+ */
+- (instancetype)writeToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
+
 @end
 
 @interface FBSimulatorLogger : NSObject
@@ -52,10 +61,8 @@
 /**
  An implementation of `FBSimulatorLogger` that logs all events using ASL.
 
- @param writeToStdErr YES if logged messages should be written to stderr, NO otherwise.
- @param debugLogging YES if logged messages should include debug messages, NO otherwise.
  @return an FBSimulatorLogger instance.
  */
-+ (id<FBSimulatorLogger>)withASLWritingToStderr:(BOOL)writeToStdErr debugLogging:(BOOL)debugLogging;
++ (id<FBSimulatorLogger>)aslLogger;
 
 @end

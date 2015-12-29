@@ -122,7 +122,12 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
 
 + (id<FBSimulatorLogger>)defaultLogger
 {
-  return [FBSimulatorLogger withASLWritingToStderr:self.simulatorStandardLoggingEnabled debugLogging:self.simulatorDebugLoggingEnabled];
+  static dispatch_once_t onceToken;
+  static id<FBSimulatorLogger> logger;
+  dispatch_once(&onceToken, ^{
+    logger = [[FBSimulatorLogger aslLogger] writeToStderrr:self.simulatorStandardLoggingEnabled withDebugLogging:self.simulatorDebugLoggingEnabled];
+  });
+  return logger;
 }
 
 + (NSString *)description
