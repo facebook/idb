@@ -16,8 +16,9 @@
 // Used to print out environment configuration for debugging.
 __attribute__((constructor)) static void EntryPoint()
 {
-  setenv(FBSimulatorControlDebugLogging.UTF8String, "YES", 1);
-  NSLog(@"Current Configuration => %@", FBSimulatorControlStaticConfiguration.description);
+  setenv(FBSimulatorControlDebugLogging.UTF8String, "NO", 1);
+  setenv(FBSimulatorControlStandardLogging.UTF8String, "YES", 1);
+  [FBSimulatorControlStaticConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBSimulatorControlStaticConfiguration.description];
 }
 
 @interface FBSimulatorControlTestCase ()
