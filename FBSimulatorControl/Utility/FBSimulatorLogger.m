@@ -103,9 +103,11 @@
   static dispatch_once_t onceToken;
   static FBSimulatorLogger_ASL *logger;
   dispatch_once(&onceToken, ^{
-    u_int32_t options = writeToStdErr ? ASL_OPT_STDERR : 0;
-    asl_object_t asl = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", options);
-    asl_set_filter(asl, ASL_FILTER_MASK_UPTO(debugLogging ? ASL_LEVEL_DEBUG : ASL_LEVEL_INFO ));
+    asl_object_t asl = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
+    if (writeToStdErr) {
+      int filterLimit = debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
+      asl_add_output_file(asl, STDERR_FILENO, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
+    }
 
     FBASLContainer *aslContainer = [[FBASLContainer alloc] initWithASLObject:asl];
     logger = [[FBSimulatorLogger_ASL alloc] initWithASLClient:aslContainer currentLevel:ASL_LEVEL_INFO];
