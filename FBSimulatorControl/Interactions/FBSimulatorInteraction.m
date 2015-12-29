@@ -46,10 +46,6 @@
   FBSimulator *simulator = self.simulator;
 
   return [self interact:^ BOOL (NSError **error, id _) {
-    if (!simulator.simulatorApplication) {
-      return [[FBSimulatorError describe:@"Could not boot Simulator as no Simulator Application was provided"] failBool:error];
-    }
-
     // Construct the Arguments
     NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[
       @"--args",
@@ -69,7 +65,7 @@
 
     // Construct and start the task.
     id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
-      withLaunchPath:simulator.simulatorApplication.binary.path]
+      withLaunchPath:FBSimulatorApplication.simulatorApplication.binary.path]
       withArguments:[arguments copy]]
       withEnvironmentAdditions:@{ FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID : simulator.udid }]
       build]

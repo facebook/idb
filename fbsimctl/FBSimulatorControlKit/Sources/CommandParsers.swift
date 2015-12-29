@@ -208,11 +208,7 @@ extension Configuration : Parsable {
         FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions())
       )
       .fmap { setPath, options in
-        return Configuration(
-          simulatorApplication: try! FBSimulatorApplication(error: ()),
-          deviceSetPath: setPath,
-          options: options
-        )
+        return Configuration(deviceSetPath: setPath, options: options)
       }
   }
 

@@ -19,11 +19,8 @@
 
 - (FBSimulatorControlConfiguration *)configuration
 {
-  FBSimulatorApplication *application = [FBSimulatorApplication simulatorApplicationWithError:nil];
-
   return [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:application
-    deviceSetPath:nil
+    configurationWithDeviceSetPath:nil
     options:FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart];
 }
 
@@ -32,7 +29,6 @@
   FBSimulatorControlConfiguration *config = self.configuration;
   FBSimulatorControlConfiguration *configCopy = [config copy];
 
-  XCTAssertEqualObjects(config.simulatorApplication, configCopy.simulatorApplication);
   XCTAssertEqual(config.options, configCopy.options);
   XCTAssertEqualObjects(config, configCopy);
 }
@@ -43,7 +39,6 @@
   NSData *configData = [NSKeyedArchiver archivedDataWithRootObject:config];
   FBSimulatorControlConfiguration *configUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:configData];
 
-  XCTAssertEqualObjects(config.simulatorApplication, configUnarchived.simulatorApplication);
   XCTAssertEqual(config.options, configUnarchived.options);
   XCTAssertEqualObjects(config, configUnarchived);
 }

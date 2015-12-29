@@ -113,11 +113,6 @@
   return [FBSimulator stateStringFromSimulatorState:self.state];
 }
 
-- (FBSimulatorApplication *)simulatorApplication
-{
-  return self.pool.configuration.simulatorApplication;
-}
-
 - (NSString *)dataDirectory
 {
   return self.device.dataPath;

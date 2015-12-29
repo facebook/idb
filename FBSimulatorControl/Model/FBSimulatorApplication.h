@@ -114,10 +114,10 @@
 
 /**
  Returns the FBSimulatorApplication for the current version of Xcode's Simulator.app
-
- @param error an error out.
+ 
+ @return A FBSimulatorApplication instance for the Simulator.app.
  */
-+ (instancetype)simulatorApplicationWithError:(NSError **)error;
++ (instancetype)simulatorApplication;
 
 /**
  Returns the System Application with the provided name.
