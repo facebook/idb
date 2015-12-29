@@ -28,7 +28,7 @@
 
 + (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBSimulatorLogger>)logger
 {
-  return [[self alloc] initWithPrefix:[NSString stringWithFormat:@"%@: ", simulator.udid] logger:logger.info.timestamped];
+  return [[self alloc] initWithPrefix:[NSString stringWithFormat:@"%@: ", simulator.udid] logger:logger.info];
 }
 
 - (instancetype)initWithPrefix:(NSString *)prefix logger:(id<FBSimulatorLogger>)logger

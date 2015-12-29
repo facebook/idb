@@ -15,6 +15,7 @@
 #import "FBTaskExecutor.h"
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
+NSString *const FBSimulatorControlStandardLogging = @"FBSIMULATORCONTROL_LOGGING";
 NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
 
 @implementation FBSimulatorControlStaticConfiguration
@@ -109,6 +110,11 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
   return [self.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
 }
 
++ (BOOL)simulatorStandardLoggingEnabled
+{
+  return [NSProcessInfo.processInfo.environment[FBSimulatorControlStandardLogging] boolValue] || self.simulatorDebugLoggingEnabled;
+}
+
 + (BOOL)simulatorDebugLoggingEnabled
 {
   return [NSProcessInfo.processInfo.environment[FBSimulatorControlDebugLogging] boolValue];
@@ -116,7 +122,7 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
 
 + (id<FBSimulatorLogger>)defaultLogger
 {
-  return FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled ? FBSimulatorLogger.toNSLog : nil;
+  return [FBSimulatorLogger withASLWritingToStderr:self.simulatorStandardLoggingEnabled debugLogging:self.simulatorDebugLoggingEnabled];
 }
 
 + (NSString *)description
