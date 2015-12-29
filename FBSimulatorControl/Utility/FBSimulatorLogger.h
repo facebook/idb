@@ -72,8 +72,10 @@
 /**
  An implementation of `FBSimulatorLogger` that logs all events using ASL.
 
+ @param writeToStdErr YES if logged messages should be written to stderr, NO otherwise.
+ @param debugLogging YES if logged messages should include debug messages, NO otherwise.
  @return an FBSimulatorLogger instance.
  */
-+ (id<FBSimulatorLogger>)toASL;
++ (id<FBSimulatorLogger>)withASLWritingToStderr:(BOOL)writeToStdErr debugLogging:(BOOL)debugLogging;
 
 @end

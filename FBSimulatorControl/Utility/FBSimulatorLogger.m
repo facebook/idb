@@ -310,13 +310,15 @@
   return [self toNSLogWithMaxLevel:100];
 }
 
-+ (id<FBSimulatorLogger>)toASL
++ (id<FBSimulatorLogger>)withASLWritingToStderr:(BOOL)writeToStdErr debugLogging:(BOOL)debugLogging
 {
   static dispatch_once_t onceToken;
   static FBSimulatorLogger_ASL *logger;
   dispatch_once(&onceToken, ^{
-    asl_object_t asl = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", ASL_OPT_NO_REMOTE | ASL_OPT_STDERR);
-    asl_set_filter(asl, ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG));
+    u_int32_t options = writeToStdErr ? ASL_OPT_STDERR : 0;
+    asl_object_t asl = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", options);
+    asl_set_filter(asl, ASL_FILTER_MASK_UPTO(debugLogging ? ASL_LEVEL_DEBUG : ASL_LEVEL_INFO ));
+
     FBASLContainer *aslContainer = [[FBASLContainer alloc] initWithASLObject:asl];
     logger = [[FBSimulatorLogger_ASL alloc] initWithASLClient:aslContainer currentLevel:ASL_LEVEL_INFO];
   });

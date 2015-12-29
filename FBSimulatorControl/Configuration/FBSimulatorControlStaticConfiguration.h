@@ -18,7 +18,12 @@
 extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
 
 /**
- An Environment Variable to enable Simulator Debug Logging.
+ An Environment Variable: 'FBSIMULATORCONTROL_LOGGING' to enable logging of Informational Messages to stderr.
+ */
+extern NSString *const FBSimulatorControlStandardLogging;
+
+/**
+ An Environment Variable: 'FBSIMULATORCONTROL_DEBUG_LOGGING' to enable logging of Debug Messages to stderr.
  */
 extern NSString *const FBSimulatorControlDebugLogging;
 
@@ -68,12 +73,17 @@ extern NSString *const FBSimulatorControlDebugLogging;
 + (BOOL)supportsCustomDeviceSets;
 
 /**
- Global override for Simulator Debug Logging
+ YES if informattional logging should be written to stderr, NO otherwise.
+ */
++ (BOOL)simulatorStandardLoggingEnabled;
+
+/**
+ YES if Debug information should be written to stderr, NO otherwise.
  */
 + (BOOL)simulatorDebugLoggingEnabled;
 
 /**
- The Default logger to send log messages to.
+ The default logger to send log messages to.
  */
 + (id<FBSimulatorLogger>)defaultLogger;
 
