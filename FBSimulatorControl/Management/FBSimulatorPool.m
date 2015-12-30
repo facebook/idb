@@ -434,29 +434,41 @@
 
 - (BOOL)prepareSimulatorForUsage:(FBSimulator *)simulator configuration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error
 {
+  [self.logger.debug logFormat:@"Preparing Simulator %@ for usage", simulator.udid];
+  NSError *innerError = nil;
+
   // In order to erase, the device *must* be shutdown first.
   BOOL shutdown = (options & FBSimulatorAllocationOptionsShutdownOnAllocate) == FBSimulatorAllocationOptionsShutdownOnAllocate;
   BOOL erase = (options & FBSimulatorAllocationOptionsEraseOnAllocate) == FBSimulatorAllocationOptionsEraseOnAllocate;
-  NSError *innerError = nil;
-  if ((shutdown || erase) & ![self.terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
-    return [[[[[FBSimulatorError
-      describe:@"Failed to kill a Simulator when allocating it"]
-      causedBy:innerError]
-      inSimulator:simulator]
-      logger:self.logger]
-      failBool:error];
+  BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
+
+  if (shutdown || erase) {
+    [self.logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
+    if (![self.terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
+      return [[[[[FBSimulatorError
+        describe:@"Failed to kill a Simulator when allocating it"]
+        causedBy:innerError]
+        inSimulator:simulator]
+        logger:self.logger]
+        failBool:error];
+    }
   }
 
-  // Now we have a device that is shutdown, we should erase it.
   // Only erase if the simulator was allocated with reuse, otherwise it is a fresh Simulator that won't need erasing.
-  BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
-  if (reuse && erase && ![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
-    return [[[[[FBSimulatorError
-      describe:@"Failed to erase a Simulator when allocating it"]
-      causedBy:innerError]
-      inSimulator:simulator]
-      logger:self.logger]
-      failBool:error];
+  if (reuse && erase) {
+    [self.logger.debug logFormat:@"Erasing Simulator %@", simulator.udid];
+    if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
+      return [[[[[FBSimulatorError
+        describe:@"Failed to erase a Simulator when allocating it"]
+        causedBy:innerError]
+        inSimulator:simulator]
+        logger:self.logger]
+        failBool:error];
+    }
+    [self.logger.debug logFormat:@"Shutting down Simulator after erase %@", simulator.udid];
+    if (![self.terminationStrategy safeShutdownSimulator:simulator withError:&innerError]) {
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    }
   }
 
   // Do the other configuration that is dependent on a shutdown Simulator.
