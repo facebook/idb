@@ -608,15 +608,30 @@
          ((self.locale == nil && object.locale == nil) || [self.locale isEqual:object.locale]);
 }
 
-- (NSString *)description
+#pragma mark Description
+
+- (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"Simulator '%@' | OS Version '%@' | Locale '%@' | Scale '%@'",
-    self.deviceName,
-    self.osVersionString,
+    @"%@ | Locale '%@' | Scale '%@'",
+    self.shortDescription,
     self.locale,
     self.scaleString
   ];
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Device '%@' | OS Version '%@'",
+    self.deviceName,
+    self.osVersionString
+  ];
+}
+
+- (NSString *)description
+{
+  return [self shortDescription];
 }
 
 #pragma mark Devices

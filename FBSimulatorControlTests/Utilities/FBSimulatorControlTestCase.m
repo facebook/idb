@@ -17,7 +17,7 @@
 __attribute__((constructor)) static void EntryPoint()
 {
   [FBSimulatorControlGlobalConfiguration setStderrLoggingEnabled:YES];
-  [FBSimulatorControlGlobalConfiguration setDebugLoggingEnabled:NO];
+  [FBSimulatorControlGlobalConfiguration setDebugLoggingEnabled:YES];
   [FBSimulatorControlGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBSimulatorControlGlobalConfiguration.description];
 }
 

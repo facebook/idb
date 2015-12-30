@@ -349,6 +349,7 @@
   if (reuse) {
     FBSimulator *simulator = [self findUnallocatedSimulatorWithConfiguration:configuration];
     if (simulator) {
+      [self.logger.debug logFormat:@"Found unallocated simulator %@ matching %@", simulator.udid, configuration];
       return simulator;
     }
   }
@@ -396,6 +397,7 @@
   }
 
   // First, create the device.
+  [self.logger.debug logFormat:@"Creating device with Type %@ Runtime %@", deviceType, runtime];
   SimDevice *device = [self.deviceSet createDeviceWithType:deviceType runtime:runtime name:targetName error:&innerError];
   if (!device) {
     return [[[[FBSimulatorError
@@ -414,6 +416,7 @@
       fail:error];
   }
   simulator.configuration = configuration;
+  [self.logger.debug logFormat:@"Created Simulator %@ for configuration %@", simulator.udid, configuration];
 
   // This step ensures that the Simulator is in a known-shutdown state after creation.
   // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
