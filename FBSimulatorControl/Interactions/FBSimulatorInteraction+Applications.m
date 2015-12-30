@@ -23,6 +23,7 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorPool.h"
 
@@ -123,6 +124,31 @@
     if (![[simulator.interact launchApplication:launchConfig] performInteractionWithError:&innerError]) {
       return [[[FBSimulatorError
         describeFormat:@"Failed to re-launch %@", launchConfig]
+        inSimulator:simulator]
+        failBool:error];
+    }
+    return YES;
+  }];
+}
+
+- (instancetype)terminateLastLaunchedApplication
+{
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    // Obtain Application Launch info for the last launch.
+    FBApplicationLaunchConfiguration *launchConfig = simulator.history.lastLaunchedApplication;
+    if (!launchConfig) {
+      return [[[FBSimulatorError
+        describe:@"Cannot re-launch an Application until one has been launched"]
+        inSimulator:simulator]
+        failBool:error];
+    }
+
+    // Kill the Application
+    NSError *innerError = nil;
+    if (![[simulator.interact killApplication:launchConfig.application] performInteractionWithError:&innerError]) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Failed to terminate the app launched with %@", launchConfig]
+        causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
     }
