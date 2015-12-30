@@ -45,4 +45,14 @@
  */
 - (instancetype)killApplication:(FBSimulatorApplication *)application;
 
+/**
+ Relaunches the last-launched Application:
+ - If the Application is running, it will be killed first then launched.
+ - If the Application has terminated, it will be launched.
+ - If no Application has been launched yet, the interaction will fail.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)relaunchLastLaunchedApplication;
+
 @end
