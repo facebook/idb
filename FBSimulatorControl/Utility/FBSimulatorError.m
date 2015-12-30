@@ -167,7 +167,10 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
   [userInfo addEntriesFromDictionary:self.additionalInfo];
 
   NSError *error = [NSError errorWithDomain:FBSimulatorControlErrorDomain code:0 userInfo:[userInfo copy]];
-  [self.logger.error logFormat:@"Error => %@", error];
+  if (FBSimulatorControlGlobalConfiguration.debugLoggingEnabled) {
+    [self.logger.error logFormat:@"New Error Built ==> %@", error];
+  }
+
   return error;
 }
 
