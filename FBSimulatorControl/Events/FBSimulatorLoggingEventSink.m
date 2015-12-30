@@ -12,7 +12,7 @@
 #import "FBProcessInfo.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
 
 @interface FBSimulatorLoggingEventSink ()

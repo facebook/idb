@@ -20,7 +20,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 /**
  An Environment Variable: 'FBSIMULATORCONTROL_LOGGING' to enable logging of Informational Messages to stderr.
  */
-extern NSString *const FBSimulatorControlStandardLogging;
+extern NSString *const FBSimulatorControlStderrLogging;
 
 /**
  An Environment Variable: 'FBSIMULATORCONTROL_DEBUG_LOGGING' to enable logging of Debug Messages to stderr.
@@ -28,9 +28,9 @@ extern NSString *const FBSimulatorControlStandardLogging;
 extern NSString *const FBSimulatorControlDebugLogging;
 
 /**
- Environment Globals & other derived constants
+ Environment Globals & other derived constants.
  */
-@interface FBSimulatorControlStaticConfiguration : NSObject
+@interface FBSimulatorControlGlobalConfiguration : NSObject
 
 /**
  The path to of Xcode's /Xcode.app/Contents/Developer directory.
@@ -75,12 +75,12 @@ extern NSString *const FBSimulatorControlDebugLogging;
 /**
  YES if informattional logging should be written to stderr, NO otherwise.
  */
-+ (BOOL)simulatorStandardLoggingEnabled;
++ (BOOL)stderrLoggingEnabled;
 
 /**
  YES if Debug information should be written to stderr, NO otherwise.
  */
-+ (BOOL)simulatorDebugLoggingEnabled;
++ (BOOL)debugLoggingEnabled;
 
 /**
  The default logger to send log messages to.
@@ -91,5 +91,27 @@ extern NSString *const FBSimulatorControlDebugLogging;
  A Description of the Current Configuration.
  */
 + (NSString *)description;
+
+@end
+
+/**
+ Update the Global Configuration at (early) runtime by modifying the Environment.
+ These Methods should typically be called *before any other* method in FBSimulatorControl.
+ */
+@interface FBSimulatorControlGlobalConfiguration (Environment)
+
+/**
+ Update the current process environment to enable logging to stderr.
+
+ @param enabled YES if stderr logging should be enabled, NO otherwise.
+ */
++ (void)setStderrLoggingEnabled:(BOOL)enabled;
+
+/**
+ Update the current process environment to enable debug logging to stderr.
+
+ @param enabled YES if stderr debuglogging should be enabled, NO otherwise.
+ */
++ (void)setDebugLoggingEnabled:(BOOL)enabled;
 
 @end

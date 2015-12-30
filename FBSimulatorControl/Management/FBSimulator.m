@@ -24,7 +24,7 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventRelay.h"
 #import "FBSimulatorEventSink.h"

@@ -19,7 +19,7 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorLogger.h"
@@ -38,7 +38,7 @@
 
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
 {
-  logger = logger ?: FBSimulatorControlStaticConfiguration.defaultLogger;
+  logger = logger ?: FBSimulatorControlGlobalConfiguration.defaultLogger;
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }
 
@@ -69,7 +69,7 @@
   }
 
   // This will assert if the directory could not be found.
-  NSString *developerDirectory = FBSimulatorControlStaticConfiguration.developerDirectory;
+  NSString *developerDirectory = FBSimulatorControlGlobalConfiguration.developerDirectory;
 
   // A Mapping of Class Names to the Frameworks that they belong to. This serves to:
   // 1) Represent the Frameworks that FBSimulatorControl is dependent on via their classes
@@ -113,7 +113,7 @@
   [logger logFormat:@"Loaded All Private Frameworks %@", [FBCollectionDescriptions oneLineDescriptionFromArray:classMapping.allValues atKeyPath:@"lastPathComponent"]];
 
   // Set CoreSimulator Logging since it is now loaded.
-  [self setCoreSimulatorLoggingEnabled:FBSimulatorControlStaticConfiguration.simulatorDebugLoggingEnabled];
+  [self setCoreSimulatorLoggingEnabled:FBSimulatorControlGlobalConfiguration.debugLoggingEnabled];
 
   return YES;
 }
@@ -121,7 +121,7 @@
 + (void)loadPrivateFrameworksOrAbort
 {
   NSError *error = nil;
-  BOOL success = [FBSimulatorControl loadPrivateFrameworks:FBSimulatorControlStaticConfiguration.defaultLogger.debug error:&error];
+  BOOL success = [FBSimulatorControl loadPrivateFrameworks:FBSimulatorControlGlobalConfiguration.defaultLogger.debug error:&error];
   if (success) {
     return;
   }

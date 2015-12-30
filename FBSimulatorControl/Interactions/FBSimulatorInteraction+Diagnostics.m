@@ -10,7 +10,7 @@
 #import "FBSimulatorInteraction+Diagnostics.h"
 
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
@@ -84,7 +84,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
     id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, process.processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 
-    [task startSynchronouslyWithTimeout:FBSimulatorControlStaticConfiguration.regularTimeout];
+    [task startSynchronouslyWithTimeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
     if (task.error) {
       return [FBSimulatorError failBoolWithError:task.error errorOut:error];
     }

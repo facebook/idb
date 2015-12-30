@@ -17,7 +17,7 @@
 #import "FBProcessQuery.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
@@ -47,7 +47,7 @@
   [newInvocation setArgument:&semaphore atIndex:3];
   [NSThread detachNewThreadSelector:@selector(invoke) toTarget:newInvocation withObject:nil];
 
-  int64_t timeout = ((int64_t) FBSimulatorControlStaticConfiguration.slowTimeout) * ((int64_t) NSEC_PER_SEC);
+  int64_t timeout = ((int64_t) FBSimulatorControlGlobalConfiguration.slowTimeout) * ((int64_t) NSEC_PER_SEC);
   return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, timeout)) == 0;
 }
 
@@ -172,7 +172,7 @@
     return nil;
   }
 
-  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:FBSimulatorControlStaticConfiguration.regularTimeout];
+  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
   if (!processInfo) {
     return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
   }

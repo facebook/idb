@@ -11,7 +11,7 @@
 
 #import "FBBinaryParser.h"
 #import "FBConcurrentCollectionOperations.h"
-#import "FBSimulatorControlStaticConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBTaskExecutor.h"
 
@@ -226,18 +226,18 @@
 
 + (NSString *)pathForSimulatorApplication
 {
-  NSString *simulatorBinaryName = [FBSimulatorControlStaticConfiguration.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
+  NSString *simulatorBinaryName = [FBSimulatorControlGlobalConfiguration.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
     ? @"Simulator"
     : @"iOS Simulator";
 
-  return [[FBSimulatorControlStaticConfiguration.developerDirectory
+  return [[FBSimulatorControlGlobalConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Applications"]
     stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
 }
 
 + (NSString *)pathForSystemApplicationNamed:(NSString *)name
 {
-  return [[[FBSimulatorControlStaticConfiguration.developerDirectory
+  return [[[FBSimulatorControlGlobalConfiguration.developerDirectory
     stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"]
     stringByAppendingPathComponent:name]
     stringByAppendingPathExtension:@"app"];
