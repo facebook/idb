@@ -172,13 +172,20 @@
 
 - (BOOL)safeShutdownSimulator:(FBSimulator *)simulator withError:(NSError **)error
 {
+  [self.logger.debug logFormat:@"Starting Safe Shutdown of %@", simulator.udid];
+
   // If the device is in a strange state, we should bail now
   if (simulator.state == FBSimulatorStateUnknown) {
-    return [FBSimulatorError failBoolWithErrorMessage:@"Failed to prepare simulator for usage as it is in an unknown state" errorOut:error];
+    return [[[[FBSimulatorError
+      describe:@"Failed to prepare simulator for usage as it is in an unknown state"]
+      inSimulator:simulator]
+      logger:self.logger]
+      failBool:error];
   }
 
   // Calling shutdown when already shutdown should be avoided (if detected).
   if (simulator.state == FBSimulatorStateShutdown) {
+    [self.logger.debug logFormat:@"Shutdown of %@ succeeded as it is allready shutdown", simulator.udid];
     return YES;
   }
 
@@ -186,9 +193,11 @@
   // It is possible to recover from this with a few tricks.
   NSError *innerError = nil;
   if (simulator.state == FBSimulatorStateCreating) {
-    // Usually, the Simulator will be Shutdown after it transitions from 'Creating'. Extra cleanup if not.
+
+    [self.logger.debug logFormat:@"Simulator %@ is Creating, waiting for state to change to Shutdown", simulator.udid];
     if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
-      // In Xcode 7 we can get stuck in the 'Creating' step as well, its possible that we can recover from this by erasing
+
+      [self.logger.debug logFormat:@"Simulator %@ is stuck in Creating: erasing now", simulator.udid];
       if (![simulator eraseWithError:&innerError]) {
         return [[[[[FBSimulatorError
           describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"]
@@ -208,13 +217,14 @@
           failBool:error];
       }
     }
-    // We're done since the Simulator is shutdown.
+
+    [self.logger.debug logFormat:@"Simulator %@ has transitioned from Creating to Shutdown", simulator.udid];
     return YES;
   }
 
-  // Otherwise a shutdown call needs to occur.
   // Code 159 (Xcode 7) or 146 (Xcode 6) is 'Unable to shutdown device in current state: Shutdown'
   // We can safely ignore these codes and then confirm that the simulator is truly shutdown.
+  [self.logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
   if (![simulator.device shutdownWithError:&innerError] && innerError.code != 159 && innerError.code != 146) {
     return [[[[[FBSimulatorError
       describe:@"Simulator could not be shutdown"]
@@ -224,7 +234,8 @@
       failBool:error];
   }
 
-  // Wait for it to be truly shutdown.
+
+  [self.logger.debug logFormat:@"Confirming Simulator %@ is shutdown", simulator.udid];
   if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
     return [[[[[FBSimulatorError
       describe:@"Failed to wait for simulator preparation to shutdown device"]
@@ -233,6 +244,7 @@
       logger:self.logger]
       failBool:error];
   }
+  [self.logger.debug logFormat:@"Simulator %@ is now shutdown", simulator.udid];
   return YES;
 }
 
