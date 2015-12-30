@@ -24,7 +24,6 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
-#import "FBSimulatorSession+Convenience.h"
 #import "FBSimulatorSession.h"
 
 @implementation FBSimulatorControl

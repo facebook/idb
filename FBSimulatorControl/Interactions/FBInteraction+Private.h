@@ -12,7 +12,7 @@
 @interface FBInteraction ()
 
 /**
- The NSMutableArray<id<FBInteraction>> to chain together.
+ The NSMutableArray<id<FBInteraction>> to be chained together when `performInteractionWithError:` is called.
  */
 @property (nonatomic, strong) NSMutableArray *interactions;
 

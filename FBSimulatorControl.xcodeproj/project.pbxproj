@@ -116,8 +116,6 @@
 		AA95179C1C15F54600A89CAD /* FBProcessQuery+Simulators.m in Sources */ = {isa = PBXBuildFile; fileRef = AA95171E1C15F54600A89CAD /* FBProcessQuery+Simulators.m */; };
 		AA95179D1C15F54600A89CAD /* FBProcessQuery.h in Headers */ = {isa = PBXBuildFile; fileRef = AA95171F1C15F54600A89CAD /* FBProcessQuery.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA95179E1C15F54600A89CAD /* FBProcessQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9517201C15F54600A89CAD /* FBProcessQuery.m */; };
-		AA95179F1C15F54600A89CAD /* FBSimulatorSession+Convenience.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9517221C15F54600A89CAD /* FBSimulatorSession+Convenience.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA9517A01C15F54600A89CAD /* FBSimulatorSession+Convenience.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9517231C15F54600A89CAD /* FBSimulatorSession+Convenience.m */; };
 		AA9517A11C15F54600A89CAD /* FBSimulatorSession+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9517241C15F54600A89CAD /* FBSimulatorSession+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9517A21C15F54600A89CAD /* FBSimulatorSession.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9517251C15F54600A89CAD /* FBSimulatorSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9517A31C15F54600A89CAD /* FBSimulatorSession.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9517261C15F54600A89CAD /* FBSimulatorSession.m */; };
@@ -898,8 +896,6 @@
 		AA95171E1C15F54600A89CAD /* FBProcessQuery+Simulators.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBProcessQuery+Simulators.m"; sourceTree = "<group>"; };
 		AA95171F1C15F54600A89CAD /* FBProcessQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessQuery.h; sourceTree = "<group>"; };
 		AA9517201C15F54600A89CAD /* FBProcessQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessQuery.m; sourceTree = "<group>"; };
-		AA9517221C15F54600A89CAD /* FBSimulatorSession+Convenience.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorSession+Convenience.h"; sourceTree = "<group>"; };
-		AA9517231C15F54600A89CAD /* FBSimulatorSession+Convenience.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBSimulatorSession+Convenience.m"; sourceTree = "<group>"; };
 		AA9517241C15F54600A89CAD /* FBSimulatorSession+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorSession+Private.h"; sourceTree = "<group>"; };
 		AA9517251C15F54600A89CAD /* FBSimulatorSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorSession.h; sourceTree = "<group>"; };
 		AA9517261C15F54600A89CAD /* FBSimulatorSession.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorSession.m; sourceTree = "<group>"; };
@@ -1839,8 +1835,6 @@
 		AA9517211C15F54600A89CAD /* Session */ = {
 			isa = PBXGroup;
 			children = (
-				AA9517221C15F54600A89CAD /* FBSimulatorSession+Convenience.h */,
-				AA9517231C15F54600A89CAD /* FBSimulatorSession+Convenience.m */,
 				AA9517241C15F54600A89CAD /* FBSimulatorSession+Private.h */,
 				AA9517251C15F54600A89CAD /* FBSimulatorSession.h */,
 				AA9517261C15F54600A89CAD /* FBSimulatorSession.m */,
@@ -2018,7 +2012,6 @@
 				AA95175B1C15F54600A89CAD /* FBSimulatorEventSink.h in Headers */,
 				AA95179B1C15F54600A89CAD /* FBProcessQuery+Simulators.h in Headers */,
 				AA9517891C15F54600A89CAD /* FBSimulatorTerminationStrategy.h in Headers */,
-				AA95179F1C15F54600A89CAD /* FBSimulatorSession+Convenience.h in Headers */,
 				AA9517651C15F54600A89CAD /* FBSimulatorInteraction+Agents.h in Headers */,
 				AA1D65421C21B38D0069F90D /* FBCrashLogInfo.h in Headers */,
 				AA95175E1C15F54600A89CAD /* FBSimulatorHistoryGenerator.h in Headers */,
@@ -2159,7 +2152,6 @@
 				AA9517781C15F54600A89CAD /* FBSimulatorLogs.m in Sources */,
 				AA95177D1C15F54600A89CAD /* FBSimulator+Helpers.m in Sources */,
 				AA9517B91C15F54600A89CAD /* FBSimulatorError.m in Sources */,
-				AA9517A01C15F54600A89CAD /* FBSimulatorSession+Convenience.m in Sources */,
 				AA9517BB1C15F54600A89CAD /* FBSimulatorLogger.m in Sources */,
 				AAF8DA6A1C1AFFB1003B519E /* FBProcessInfo.m in Sources */,
 				AA9517861C15F54600A89CAD /* FBSimulatorPool.m in Sources */,
