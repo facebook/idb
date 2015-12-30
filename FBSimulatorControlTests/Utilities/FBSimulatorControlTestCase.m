@@ -13,14 +13,6 @@
 
 #import "FBSimulatorControlAssertions.h"
 
-// Used to print out environment configuration for debugging.
-__attribute__((constructor)) static void EntryPoint()
-{
-  [FBSimulatorControlGlobalConfiguration setStderrLoggingEnabled:YES];
-  [FBSimulatorControlGlobalConfiguration setDebugLoggingEnabled:NO];
-  [FBSimulatorControlGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBSimulatorControlGlobalConfiguration.description];
-}
-
 @interface FBSimulatorControlTestCase ()
 
 @end
@@ -29,6 +21,14 @@ __attribute__((constructor)) static void EntryPoint()
 
 @synthesize control = _control;
 @synthesize assert = _assert;
+
++ (void)initialize
+{
+  [FBSimulatorControlGlobalConfiguration setStderrLoggingEnabled:YES];
+  [FBSimulatorControlGlobalConfiguration setDebugLoggingEnabled:NO];
+  [FBSimulatorControlGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBSimulatorControlGlobalConfiguration.description];
+  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+}
 
 #pragma mark Property Overrides
 

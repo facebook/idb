@@ -15,6 +15,7 @@
  Sets the locale for the simulator.
 
  @param locale the locale to set, must not be nil.
+ @return the reciever, for chaining.
  */
 - (instancetype)setLocale:(NSLocale *)locale;
 
@@ -22,14 +23,17 @@
  Authorizes the Location Settings for the provided application.
 
  @param application the Application to authorize settings for.
+ @return the reciever, for chaining.
  */
 - (instancetype)authorizeLocationSettingsForApplication:(FBSimulatorApplication *)application;
 
 /**
- Setups keyboard for simulator
+ Prepares the Simulator Keyboard, prior to launch.
  1) Disables Caps Lock
  2) Disables Auto Capitalize
  3) Disables Auto Correction / QuickType
+
+ @return the reciever, for chaining.
  */
 - (instancetype)setupKeyboard;
 

@@ -15,6 +15,7 @@
  Uploads photos to the Camera Roll of the Simulator
 
  @param photoPaths photoPaths an NSArray<NSString *> of File Paths for the Photos to Upload.
+ @return the reciever, for chaining.
  */
 - (instancetype)uploadPhotos:(NSArray *)photoPaths;
 
@@ -22,6 +23,7 @@
  Uploads videos to the Camera Roll of the Simulator
 
  @param videoPaths an NSArray<NSString *> of File Paths for the Videos to Upload.
+ @return the reciever, for chaining.
  */
 - (instancetype)uploadVideos:(NSArray *)videoPaths;
 

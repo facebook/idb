@@ -32,9 +32,7 @@
     return [self succeed];
   }
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     if (simulator.state != FBSimulatorStateBooted) {
       return [[FBSimulatorError describeFormat:@"Simulator must be booted to upload photos, is %@", simulator.device.stateString] failBool:error];
     }
@@ -57,8 +55,7 @@
     return [self succeed];
   }
 
-  FBSimulator *simulator = self.simulator;
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
     BOOL success = [simulator.simDeviceWrapper addVideos:videoPaths error:&innerError];
     if (!success) {

@@ -18,7 +18,27 @@
 
 /**
  Chains an interaction on an process, for the given application.
+
+ @param binary the binary to interact with.
+ @param block the block to execute with the process.
+ @return the reciever, for chaining.
  */
-- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(FBProcessInfo *process, NSError **error))block;
+- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block;
+
+/**
+ Interact with a Shutdown Simulator. Will ensure that the Simulator is in the appropriate state.
+
+ @param block the block to execute with the Shutdown Simulator.
+ @return the reciever, for chaining.
+ */
+- (instancetype)interactWithShutdownSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+
+/**
+ Interact with a Shutdown Simulator. Will ensure that the Simulator is in the appropriate state.s
+
+ @param block the block to execute with the Shutdown Simulator.
+ @return the reciever, for chaining.
+ */
+- (instancetype)interactWithBootedSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
 
 @end

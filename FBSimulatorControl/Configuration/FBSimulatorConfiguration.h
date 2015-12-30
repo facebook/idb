@@ -50,6 +50,18 @@
  */
 + (instancetype)defaultConfiguration;
 
+#pragma mark Description
+
+/**
+ A Full Description of the reciever.
+ */
+- (NSString *)debugDescription;
+
+/**
+ A Partial Description of the reciever.
+ */
+- (NSString *)shortDescription;
+
 #pragma mark Devices
 
 /**

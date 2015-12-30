@@ -24,9 +24,7 @@
 {
   NSParameterAssert(tilingStrategy);
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler withSimulator:simulator strategy:tilingStrategy];
     NSError *innerError = nil;
     if (CGRectIsNull([tiler placeInForegroundWithError:&innerError])) {
@@ -43,9 +41,7 @@
 
 - (instancetype)recordVideo
 {
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:simulator logger:nil];
     NSString *path = [simulator pathForStorage:@"video" ofExtension:@"mp4"];
 

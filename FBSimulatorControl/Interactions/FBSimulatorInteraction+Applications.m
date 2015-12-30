@@ -32,9 +32,7 @@
 {
   NSParameterAssert(application);
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
     if (![simulator.simDeviceWrapper installApplication:[NSURL fileURLWithPath:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
       return [[[FBSimulatorError describeFormat:@"Failed to install Application %@", application] causedBy:innerError] failBool:error];
@@ -48,9 +46,7 @@
 {
   NSParameterAssert(appLaunch);
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
     NSDictionary *installedApps = [simulator.device installedAppsWithError:&innerError];
     if (!installedApps) {
@@ -93,9 +89,7 @@
 {
   NSParameterAssert(application);
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self binary:application.binary interact:^ BOOL (FBProcessInfo *process, NSError **error) {
+  return [self binary:application.binary interact:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     [simulator.eventSink applicationDidTerminate:process expected:YES];
     int returnCode = kill(process.processIdentifier, signo);
     if (returnCode != 0) {

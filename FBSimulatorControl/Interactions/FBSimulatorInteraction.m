@@ -41,125 +41,44 @@
   return interaction;
 }
 
-- (instancetype)bootSimulator
+#pragma mark Private
+
+- (instancetype)interactWithSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block
 {
-  FBSimulator *simulator = self.simulator;
+  return [self interact:^ BOOL (NSError **error, FBSimulatorInteraction *interaction) {
+    return block(error, interaction.simulator);
+  }];
+}
 
-  return [self interact:^ BOOL (NSError **error, id _) {
-    // Construct the Arguments
-    NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[
-      @"--args",
-      @"-CurrentDeviceUDID", simulator.udid,
-      @"-ConnectHardwareKeyboard", @"0"
-    ]];
-    NSArray *scaleArguments = [simulator.configuration lastScaleCommandLineArgumentsWithError:nil];
-    if (scaleArguments) {
-      [arguments addObjectsFromArray:scaleArguments];
-    }
-    if (simulator.pool.configuration.deviceSetPath) {
-      if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
-        return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] failBool:error];
-      }
-      [arguments addObjectsFromArray:@[@"-DeviceSetPath", simulator.pool.configuration.deviceSetPath]];
-    }
-
-    // Construct and start the task.
-    id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
-      withLaunchPath:FBSimulatorApplication.simulatorApplication.binary.path]
-      withArguments:[arguments copy]]
-      withEnvironmentAdditions:@{ FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID : simulator.udid }]
-      build]
-      startAsynchronously];
-
-    // Expect no immediate error.
-    if (task.error) {
-      return [[[[FBSimulatorError describe:@"Failed to Launch Simulator Process"] causedBy:task.error] inSimulator:simulator] failBool:error];
-    }
-
-    // Expect the state of the simulator to be updated.
-    BOOL didBoot = [simulator waitOnState:FBSimulatorStateBooted];
-    if (!didBoot) {
-      return [[[FBSimulatorError describeFormat:@"Timed out waiting for device to be Booted, got %@", simulator.device.stateString] inSimulator:simulator] failBool:error];
-    }
-
-    // Expect the launch info for the process to exist.
-    FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:simulator.device query:simulator.processQuery];
-    if (!launchInfo) {
-      return [[[FBSimulatorError describe:@"Could not obtain process info for booted simulator process"] inSimulator:simulator] failBool:error];
-    }
-
-    // Waitng for all required processes to start
-    NSSet *requiredProcessNames = simulator.requiredProcessNamesToVerifyBooted;
-    BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-      NSSet *runningProcessNames = [NSSet setWithArray:[launchInfo.launchedProcesses valueForKey:@"processName"]];
-      return [requiredProcessNames isSubsetOfSet:runningProcessNames];
-    }];
-    if (!didStartAllRequiredProcesses) {
+- (instancetype)interactWithSimulatorAtState:(FBSimulatorState)state block:(BOOL (^)(NSError **error, FBSimulator *simulator))block
+{
+  return [self interactWithSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    if (simulator.state != state) {
       return [[[FBSimulatorError
-        describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionDescriptions oneLineDescriptionFromArray:requiredProcessNames.allObjects]]
+        describeFormat:@"Expected Simulator %@ to be %@, but it was '%@'", simulator.udid, simulator.stateString, [FBSimulator stateStringFromSimulatorState:simulator.state]]
         inSimulator:simulator]
         failBool:error];
     }
-
-    // Pass on the success to the event sink.
-    [simulator.eventSink didStartWithLaunchInfo:launchInfo];
-    [simulator.eventSink terminationHandleAvailable:task];
-
-    return YES;
+    return block(error, simulator);
   }];
 }
 
-- (instancetype)shutdownSimulator
+- (instancetype)interactWithShutdownSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block
 {
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
-    FBSimulatorLaunchInfo *launchInfo = simulator.launchInfo;
-    if (!launchInfo) {
-      return [[[FBSimulatorError describe:@"Could not shutdown simulator as there is no available launch info"] inSimulator:simulator] failBool:error];
-    }
-
-    FBSimulatorTerminationStrategy *terminationStrategy = [FBSimulatorTerminationStrategy
-      withConfiguration:simulator.pool.configuration
-      processQuery:simulator.processQuery
-      logger:simulator.pool.logger];
-
-    NSError *innerError = nil;
-    if (![terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Could not shutdown simulator"] inSimulator:simulator] causedBy:innerError] failBool:error];
-    }
-    [simulator.eventSink didTerminate:YES];
-
-    return YES;
-  }];
+  return [self interactWithSimulatorAtState:FBSimulatorStateShutdown block:block];
 }
 
-- (instancetype)openURL:(NSURL *)url
+- (instancetype)interactWithBootedSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block
 {
-  NSParameterAssert(url);
-
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
-    NSError *innerError = nil;
-    if (![simulator.device openURL:url error:&innerError]) {
-      NSString *description = [NSString stringWithFormat:@"Failed to open URL %@ on simulator %@", url, simulator];
-      return [FBSimulatorError failBoolWithError:innerError description:description errorOut:error];
-    }
-    return YES;
-  }];
+  return [self interactWithSimulatorAtState:FBSimulatorStateBooted block:block];
 }
 
-#pragma mark Private
-
-- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(FBProcessInfo *process, NSError **error))block
+- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
 {
   NSParameterAssert(binary);
   NSParameterAssert(block);
 
-  FBSimulator *simulator = self.simulator;
-
-  return [self interact:^ BOOL (NSError **error, id _) {
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBProcessInfo *processInfo = [[[[simulator
       launchInfo]
       launchedProcesses]
@@ -169,7 +88,7 @@
     if (!processInfo) {
       return [[[FBSimulatorError describeFormat:@"Could not find an active process for %@", binary] inSimulator:simulator] failBool:error];
     }
-    return block(processInfo, error);
+    return block(error, simulator, processInfo);
   }];
 }
 

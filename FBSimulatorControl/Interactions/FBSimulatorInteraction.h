@@ -18,7 +18,7 @@
 @class FBSimulatorSessionLifecycle;
 
 /**
- Pre-session interactions used pre-launch of a Simulator
+ Interactions for FBSimulator Instances.
  */
 @interface FBSimulatorInteraction : FBInteraction
 
@@ -28,20 +28,5 @@
  @param simulator the Simulator to interact with, must not be nil.
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator;
-
-/**
- Boots the Simulator.
- */
-- (instancetype)bootSimulator;
-
-/**
- Shuts the Simulator down.
- */
-- (instancetype)shutdownSimulator;
-
-/**
- Opens the provided URL on the Device
- */
-- (instancetype)openURL:(NSURL *)url;
 
 @end
