@@ -21,27 +21,49 @@ public extension Command {
   }
 }
 
-public enum ParseError : ErrorType {
+public enum ParseError : ErrorType, CustomStringConvertible {
   case EndOfInput
   case DoesNotMatch(String, String)
-  case InvalidNumber
-  case InvalidPath
+  case CouldNotInterpret(String, String)
+  case Custom(String)
 
-  static func DoesNotMatchAnyOf(matches: [String]) -> ParseError {
-    let inner = (matches as NSArray).componentsJoinedByString(", ")
-    return .DoesNotMatch("any of", "[\(inner)]")
+  public var description: String {
+    get {
+      switch self {
+      case .EndOfInput:
+        return "End of Input"
+      case .DoesNotMatch(let expected, let actual):
+        return "'\(actual)' does not match '\(expected)'"
+      case .CouldNotInterpret(let typeName, let actual):
+        return "\(actual) could not be interpreted as \(typeName)"
+      case .Custom(let message):
+        return message
+      }
+    }
   }
 }
 
 /**
  Protocol for parsing a list of tokens.
  */
-public struct Parser<A> {
+public struct Parser<A> : CustomStringConvertible {
+  let matchDescription: String
   let output: [String] throws -> ([String], A)
+
+  init(_ matchDescription: String, output: [String] throws -> ([String], A)) {
+    self.matchDescription = matchDescription
+    self.output = output
+  }
 
   func parse(tokens: [String]) throws -> ([String], A) {
     let (nextTokens, value) = try output(tokens)
     return (nextTokens, value)
+  }
+
+  public var description: String {
+    get {
+      return self.matchDescription
+    }
   }
 }
 
@@ -50,14 +72,14 @@ public struct Parser<A> {
 */
 extension Parser {
   func fmap<B>(f: A -> B) -> Parser<B> {
-    return Parser<B>() { input in
+    return Parser<B>(self.matchDescription) { input in
       let (tokensOut, a) = try self.output(input)
       return (tokensOut, f(a))
     }
   }
 
   func bind<B>(f: A -> Parser<B>) -> Parser<B> {
-    return Parser<B> { tokens in
+    return Parser<B>(self.matchDescription) { tokens in
       let (tokensA, valueA) = try self.parse(tokens)
       let (tokensB, valueB) = try f(valueA).parse(tokensA)
       return (tokensB, valueB)
@@ -65,7 +87,7 @@ extension Parser {
   }
 
   func optional() -> Parser<A?> {
-    return Parser<A?> { tokens in
+    return Parser<A?>(self.matchDescription) { tokens in
       do {
         let (nextTokens, value) = try self.parse(tokens)
         return (nextTokens, Optional.Some(value))
@@ -76,7 +98,9 @@ extension Parser {
   }
 
   func sequence<B>(p: Parser<B>) -> Parser<B> {
-    return self.bind { _ in p }
+    return self
+      .bind({ _ in p })
+      .describe("\(self) followed by \(p)")
   }
 }
 
@@ -99,14 +123,18 @@ extension Parser {
     return self.handle { _ in a }
   }
 
+  func describe(description: String) -> Parser<A> {
+    return Parser(description, output: self.output)
+  }
+
   static func fail(error: ParseError) -> Parser<A> {
-    return Parser<A> { _ in
+    return Parser<A>("fail Parser") { _ in
       throw error
     }
   }
 
-  static func single(f: String throws -> A) -> Parser<A> {
-    return Parser<A>() { tokens in
+  static func single(description: String, f: String throws -> A) -> Parser<A> {
+    return Parser<A>(description) { tokens in
       guard let actual = tokens.first else {
         throw ParseError.EndOfInput
       }
@@ -115,7 +143,7 @@ extension Parser {
   }
 
   static func ofString(string: String, _ constant: A) -> Parser<A> {
-    return Parser.single { token in
+    return Parser.single(string) { token in
       if token != string {
         throw ParseError.DoesNotMatch(token, string)
       }
@@ -127,12 +155,13 @@ extension Parser {
     return Parser<Bool>
       .ofString(flag, true)
       .fallback(false)
+      .describe("Flag \(flag)")
   }
 
   static func ofInt() -> Parser<Int> {
-    return Parser<Int>.single { token in
+    return Parser<Int>.single("Of Int") { token in
       guard let integer = NSNumberFormatter().numberFromString(token)?.integerValue else {
-        throw ParseError.InvalidNumber
+        throw ParseError.CouldNotInterpret("Int", token)
       }
       return integer
     }
@@ -142,55 +171,60 @@ extension Parser {
     return Parser<()>
       .ofString(token, ())
       .sequence(by)
+      .describe("\(token) followed by \(by)")
   }
 
   static func ofTwoSequenced<B>(a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
-    return a.bind { valueA in
-      return b.fmap { valueB in
-        return (valueA, valueB)
-      }
-    }
+    return
+      a.bind({ valueA in
+        return b.fmap { valueB in
+          return (valueA, valueB)
+        }
+      })
+      .describe("\(a) followed by \(b)")
   }
 
   static func ofThreeSequenced<B, C>(a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>) -> Parser<(A, B, C)> {
-    return a.bind { valueA in
-      return b.bind { valueB in
-        return c.fmap { valueC in
-          return (valueA, valueB, valueC)
+    return
+      a.bind({ valueA in
+        return b.bind { valueB in
+          return c.fmap { valueC in
+            return (valueA, valueB, valueC)
+          }
         }
-      }
-    }
+      })
+      .describe("\(a) followed by \(b) followed by \(c)")
   }
 
   static func alternative(parsers: [Parser<A>]) -> Parser<A> {
-    return Parser<A>() { tokens in
+    return Parser<A>("Any of \(parsers)") { tokens in
       for parser in parsers {
         do {
           return try parser.parse(tokens)
         } catch {}
       }
-      throw ParseError.EndOfInput
+      throw ParseError.DoesNotMatch(parsers.description, tokens.description)
     }
   }
 
   static func manyCount(count: Int, _ parser: Parser<A>) -> Parser<[A]> {
     assert(count >= 0, "Count should be >= 0")
-    return Parser<[A]>() { tokens in
+    return Parser<[A]>("At least \(count) of \(parser)") { tokens in
       var values: [A] = []
       var runningArgs = tokens
-      var applicationCount = 0
+      var parseCount = 0
 
       do {
         while (runningArgs.count > 0) {
           let output = try parser.parse(runningArgs)
-          applicationCount++
+          parseCount++
           runningArgs = output.0
           values.append(output.1)
         }
       } catch { }
 
-      if (applicationCount < count) {
-        throw ParseError.EndOfInput
+      if (parseCount < count) {
+        throw ParseError.Custom("Only \(parseCount) of \(parser)")
       }
       return (runningArgs, values)
     }

@@ -15,7 +15,7 @@ class StdIORelay : Relay {
   private let stdIn: NSFileHandle
 
   init(transformer: RelayTransformer) {
-    self.relayConnection = RelayConnection(transformer: transformer, outputWriter: StdIOWriter())
+    self.relayConnection = RelayConnection(transformer: transformer, actionResultWriter: StdIOWriter())
     self.stdIn = NSFileHandle.fileHandleWithStandardInput()
   }
 
@@ -32,30 +32,43 @@ class StdIORelay : Relay {
   func stop() {
     self.stdIn.readabilityHandler = nil
   }
+}
 
-  class StdIOWriter : OutputWriter {
-    private let stdOut: NSFileHandle
-    private let stdErr: NSFileHandle
+class StdIOWriter : Writer, ActionResultWriter {
+  private let stdOut: NSFileHandle
+  private let stdErr: NSFileHandle
 
-    init() {
-      self.stdOut = NSFileHandle.fileHandleWithStandardOutput()
-      self.stdErr = NSFileHandle.fileHandleWithStandardError()
+  init() {
+    self.stdOut = NSFileHandle.fileHandleWithStandardOutput()
+    self.stdErr = NSFileHandle.fileHandleWithStandardError()
+  }
+
+  func write(string: String) {
+    self.writeOut(string)
+  }
+
+  func writeActionResult(actionResult: ActionResult) {
+    switch actionResult {
+    case .Failure(let string):
+      self.writeErr(string)
+    default:
+      break
     }
+  }
 
-    func writeOut(string: String) {
-      self.write(string, handle: self.stdOut)
-    }
+  func writeOut(string: String) {
+    self.write(string, handle: self.stdOut)
+  }
 
-    func writeErr(string: String) {
-      self.write(string, handle: self.stdErr)
-    }
+  func writeErr(string: String) {
+    self.write(string, handle: self.stdErr)
+  }
 
-    private func write(var string: String, handle: NSFileHandle) {
-      if (string.characters.last != "\n") {
-        string.append("\n" as Character)
-      }
-      let data = string.dataUsingEncoding(NSUTF8StringEncoding)!
-      handle.writeData(data)
+  private func write(var string: String, handle: NSFileHandle) {
+    if (string.characters.last != "\n") {
+      string.append("\n" as Character)
     }
+    let data = string.dataUsingEncoding(NSUTF8StringEncoding)!
+    handle.writeData(data)
   }
 }

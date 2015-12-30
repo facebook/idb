@@ -18,61 +18,28 @@ protocol Relay {
 }
 
 /**
- DataSource for transforming Input to Output.
+ A Protocol for performing an Action producing an ActionResult.
  */
 protocol RelayTransformer {
-  func transform(input: String) -> Output
+  func transform(input: String, writer: Writer) -> ActionResult
 }
 
 /**
-  Enum for defining the result of a translation.
- */
-public enum Output {
-  case Success(String)
-  case Failure(String)
-
-  func append(second: Output) -> Output {
-    switch (self, second) {
-    case (.Success(let firstString), .Success(let secondString)):
-      return .Success("\(firstString)\n\(secondString)")
-    case (.Success(let firstString), .Failure(let secondString)):
-      return .Failure("\(firstString)\n\(secondString)")
-    case (.Failure(let firstString), .Success(let secondString)):
-      return .Failure("\(firstString)\n\(secondString)")
-    case (.Failure(let firstString), .Failure(let secondString)):
-      return .Failure("\(firstString)\n\(secondString)")
-    }
-  }
-}
-
-/**
- A sink of Strings.
- */
-protocol OutputWriter {
-  func writeOut(string: String)
-  func writeErr(string: String)
-}
-
-/**
-  A Connection of Input-to-Output via a buffer.
+ A Connection of Input-to-Output via a buffer.
  */
 class RelayConnection : LineBufferDelegate {
   let transformer: RelayTransformer
-  let outputWriter: OutputWriter
+  let actionResultWriter: ActionResultWriter
   lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
 
-  init (transformer: RelayTransformer, outputWriter: OutputWriter) {
+  init (transformer: RelayTransformer, actionResultWriter: ActionResultWriter) {
     self.transformer = transformer
-    self.outputWriter = outputWriter
+    self.actionResultWriter = actionResultWriter
   }
 
   func buffer(lineAvailable: String) {
-    let result = self.transformer.transform(lineAvailable)
-    switch (result) {
-    case .Success(let string):
-      self.outputWriter.writeOut(string)
-    case .Failure(let string):
-      self.outputWriter.writeErr(string)
-    }
+    self.actionResultWriter.writeActionResult(
+      self.transformer.transform(lineAvailable, writer: self.actionResultWriter)
+    )
   }
 }

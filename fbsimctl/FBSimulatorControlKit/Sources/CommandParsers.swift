@@ -12,35 +12,38 @@ import FBSimulatorControl
 
 extension Parser {
   static func ofUDID() -> Parser<NSUUID> {
-    return Parser<NSUUID>.single { token in
+    let expected = NSStringFromClass(NSUUID.self)
+    return Parser<NSUUID>.single("A \(expected)") { token in
       guard let uuid = NSUUID(UUIDString: token) else {
-        throw ParseError.InvalidNumber
+        throw ParseError.CouldNotInterpret(expected, token)
       }
       return uuid
     }
   }
 
   static func ofDirectory() -> Parser<String> {
-    return Parser<String>.single { token in
+    let expected = "A Directory"
+    return Parser<String>.single(expected) { token in
       var isDirectory: ObjCBool = false
       if !NSFileManager.defaultManager().fileExistsAtPath(token, isDirectory: &isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should exist, but doesn't")
       }
       if (!isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should be a directory, but isn't")
       }
       return token
     }
   }
 
   static func ofFile() -> Parser<String> {
-    return Parser<String>.single { token in
+    let expected = "A Directory"
+    return Parser<String>.single(expected) { token in
       var isDirectory: ObjCBool = false
       if !NSFileManager.defaultManager().fileExistsAtPath(token, isDirectory: &isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should exist, but doesn't")
       }
       if (isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should be a file, but isn't")
       }
       return token
     }
@@ -49,17 +52,18 @@ extension Parser {
 
 extension FBSimulatorState : Parsable {
   public static func parser() -> Parser<FBSimulatorState> {
-    return Parser<FBSimulatorState>.single { token in
+    return Parser<FBSimulatorState>.single("A Simulator State") { token in
       let state = FBSimulator.simulatorStateFromStateString(token)
       switch (state) {
       case .Unknown:
-        throw ParseError.DoesNotMatchAnyOf([
+        let possible = [
           FBSimulatorState.Creating.description,
           FBSimulatorState.Shutdown.description,
           FBSimulatorState.Booting.description,
           FBSimulatorState.Booted.description,
           FBSimulatorState.ShuttingDown.description
-        ])
+        ]
+        throw ParseError.DoesNotMatch(possible.description, token)
       default:
         return state
       }
@@ -278,11 +282,11 @@ extension Query : Parsable {
   }
 
   private static func nameParser() -> Parser<Query> {
-    return Parser.single { token in
+    return Parser.single("A Device Name") { token in
       let deviceConfigurations = FBSimulatorConfiguration.deviceConfigurations() as! [FBSimulatorConfiguration_Device]
       let deviceNames = Set(deviceConfigurations.map { $0.deviceName() })
       if (!deviceNames.contains(token)) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("\(token) is not a valid device name")
       }
       let configuration: FBSimulatorConfiguration! = FBSimulatorConfiguration.withDeviceNamed(token)
       return Query.Configured([configuration])
