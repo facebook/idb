@@ -48,15 +48,10 @@
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
 
-  NSError *error = nil;
-  BOOL success = [session terminateAppWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
+  [self assertInteractionSuccessful:session.interact.terminateLastLaunchedApplication];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
 
-  success = [session relaunchAppWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
+  [self assertInteractionSuccessful:session.interact.relaunchLastLaunchedApplication];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
 
   [self.assert noNotificationsToConsume];
