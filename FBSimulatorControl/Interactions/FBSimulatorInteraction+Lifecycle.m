@@ -11,7 +11,6 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBSimulatorInteraction+Private.h"
 #import "FBCollectionDescriptions.h"
 #import "FBInteraction+Private.h"
 #import "FBProcessLaunchConfiguration.h"
@@ -26,6 +25,7 @@
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"

@@ -465,7 +465,7 @@
         logger:self.logger]
         failBool:error];
     }
-    [self.logger.debug logFormat:@"Shutting down Simulator after erase %@", simulator.udid];
+    [self.logger.debug logFormat:@"Shutting down Simulator after erase %@", simulator.udid];
     if (![self.terminationStrategy safeShutdownSimulator:simulator withError:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
