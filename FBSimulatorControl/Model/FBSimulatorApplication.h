@@ -114,7 +114,7 @@
 
 /**
  Returns the FBSimulatorApplication for the current version of Xcode's Simulator.app
- 
+
  @return A FBSimulatorApplication instance for the Simulator.app.
  */
 + (instancetype)simulatorApplication;

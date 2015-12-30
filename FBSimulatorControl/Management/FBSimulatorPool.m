@@ -108,7 +108,7 @@
     if (![self deleteAllWithError:&innerError]) {
       return [[[[FBSimulatorError
         describe:@"Failed to delete all simulators"]
-        causedBy:innerError] 
+        causedBy:innerError]
         logger:self.logger]
         failBool:error];
     }
