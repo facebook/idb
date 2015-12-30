@@ -55,13 +55,25 @@
 
 #pragma mark Predicates
 
++ (NSPredicate *)simulatorProcessesWithCorrectLaunchPath
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
+    return [process.launchPath isEqualToString:FBSimulatorApplication.simulatorApplication.binary.path];
+  }];
+}
+
 + (NSPredicate *)simulatorsProcessesLaunchedUnderConfiguration:(FBSimulatorControlConfiguration *)configuration
 {
-  // If it's from a different Xcode version, the binary path will be different.
-  NSString *simulatorBinaryPath = configuration.simulatorApplication.binary.path;
-  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    return [process.launchPath isEqualToString:simulatorBinaryPath];
+  NSString *deviceSetPath = configuration.deviceSetPath;
+  NSPredicate *argumentsPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
+    NSSet *arguments = [NSSet setWithArray:process.arguments];
+    return [arguments containsObject:deviceSetPath];
   }];
+
+  return [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    self.simulatorProcessesWithCorrectLaunchPath,
+    argumentsPredicate
+  ]];
 }
 
 + (NSPredicate *)simulatorProcessesLaunchedBySimulatorControl

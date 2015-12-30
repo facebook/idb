@@ -111,11 +111,6 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, copy, readonly) NSString *dataDirectory;
 
 /**
- The Application that the Simulator should be launched with.
- */
-@property (nonatomic, copy, readonly) FBSimulatorApplication *simulatorApplication;
-
-/**
  The FBSimulatorConfiguration representing this Simulator.
  */
 @property (nonatomic, copy, readonly) FBSimulatorConfiguration *configuration;

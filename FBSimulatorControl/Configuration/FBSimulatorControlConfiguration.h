@@ -12,11 +12,6 @@
 @class FBSimulatorApplication;
 
 /**
- The default prefix for Pool-Managed Simulators
- */
-extern NSString *const FBSimulatorControlConfigurationDefaultNamePrefix;
-
-/**
  Options that apply to each FBSimulatorControl instance.
  */
 typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
@@ -37,16 +32,11 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
 /**
  Creates and returns a new Configuration with the provided parameters.
 
- @param simulatorApplication the FBSimulatorApplication for the Simulator.app.
  @param options the options for Simulator Management.
+ @param deviceSetPath the Path to the Device Set. If nil, the default Device Set will be used.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithSimulatorApplication:(FBSimulatorApplication *)simulatorApplication deviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options;
-
-/**
- The FBSimulatorApplication for the Simulator.app.
- */
-@property (nonatomic, copy, readonly) FBSimulatorApplication *simulatorApplication;
++ (instancetype)configurationWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options;
 
 /**
  The Location of the SimDeviceSet. If no path is provided, the default device set will be used.

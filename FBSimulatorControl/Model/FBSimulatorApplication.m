@@ -214,9 +214,12 @@
   return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] error:error];
 }
 
-+ (instancetype)simulatorApplicationWithError:(NSError **)error
++ (instancetype)simulatorApplication;
 {
-  return [self applicationWithPath:self.pathForSimulatorApplication error:error];
+  NSError *error = nil;
+  FBSimulatorApplication *application = [self applicationWithPath:self.pathForSimulatorApplication error:&error];
+  NSAssert(application, @"Expected to be able to build an Application, got an error %@", application);
+  return application;
 }
 
 #pragma mark Private

@@ -133,7 +133,6 @@ class FBSimulatorAllocationOptionsParserTests : XCTestCase {
 class ConfigurationParserTests : XCTestCase {
   func testParsesEmpty() {
     self.assertParses(Configuration.parser(), [], Configuration(
-      simulatorApplication: try! FBSimulatorApplication(error: ()),
       deviceSetPath: nil,
       options: FBSimulatorManagementOptions()
     ))
@@ -144,7 +143,6 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--device-set", "/usr/bin"],
       Configuration(
-        simulatorApplication: try! FBSimulatorApplication(error: ()),
         deviceSetPath: "/usr/bin",
         options: FBSimulatorManagementOptions()
       )
@@ -163,7 +161,6 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--kill-all", "--process-killing"],
       Configuration(
-        simulatorApplication: try! FBSimulatorApplication(error: ()),
         deviceSetPath: nil,
         options: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
       )
@@ -175,7 +172,6 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--device-set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
-        simulatorApplication: try! FBSimulatorApplication(error: ()),
         deviceSetPath: "/usr/bin",
         options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )

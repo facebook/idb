@@ -35,10 +35,7 @@ __attribute__((constructor)) static void EntryPoint()
 - (FBSimulatorControl *)control
 {
   if (!_control) {
-    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
-      configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-      deviceSetPath:self.deviceSetPath
-      options:self.managementOptions];
+    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:self.deviceSetPath options:self.managementOptions];
 
     NSError *error;
     FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:&error];

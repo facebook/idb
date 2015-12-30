@@ -16,11 +16,7 @@ public protocol Default {
 
 extension Configuration : Default {
   public static func defaultValue() -> Configuration {
-    return Configuration(
-      simulatorApplication: try! FBSimulatorApplication(error: ()),
-      deviceSetPath: nil,
-      options: FBSimulatorManagementOptions()
-    )
+    return Configuration(deviceSetPath: nil, options: FBSimulatorManagementOptions())
   }
 }
 

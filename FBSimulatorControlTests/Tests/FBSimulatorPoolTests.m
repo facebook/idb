@@ -69,10 +69,7 @@
   FBSimulatorControlTests_SimDeviceSet_Double *deviceSet = [FBSimulatorControlTests_SimDeviceSet_Double new];
   deviceSet.availableDevices = [simulators copy];
 
-  FBSimulatorControlConfiguration *poolConfig = [FBSimulatorControlConfiguration
-    configurationWithSimulatorApplication:[FBSimulatorApplication simulatorApplicationWithError:nil]
-    deviceSetPath:nil
-    options:0];
+  FBSimulatorControlConfiguration *poolConfig = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0];
   self.pool = [[FBSimulatorPool alloc] initWithConfiguration:poolConfig deviceSet:(id)deviceSet logger:nil];
 
   return deviceSet.availableDevices;
