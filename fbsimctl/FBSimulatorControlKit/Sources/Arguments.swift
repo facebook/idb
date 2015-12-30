@@ -16,3 +16,7 @@ public extension Action {
   public static let BOOT = "boot"
   public static let SHUTDOWN = "shutdown"
 }
+
+public extension Configuration {
+  public static let DEBUG_LOGGING_FLAG = "--debug-logging"
+}

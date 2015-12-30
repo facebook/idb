@@ -13,7 +13,9 @@ import FBSimulatorControl
 /**
   Describes the Configuration for the running of a Command
 */
-public final class Configuration : FBSimulatorControlConfiguration {
+public struct Configuration {
+  let controlConfiguration: FBSimulatorControlConfiguration
+  let debugLogging: Bool
 }
 
 /**
@@ -112,6 +114,11 @@ public extension Format {
 
     return .Compound(formats)
   }
+}
+
+extension Configuration : Equatable {}
+public func == (left: Configuration, right: Configuration) -> Bool {
+  return left.debugLogging == right.debugLogging && left.controlConfiguration == right.controlConfiguration
 }
 
 extension Command : Equatable {}

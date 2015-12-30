@@ -123,6 +123,12 @@ extension Parser {
     }
   }
 
+  static func ofFlag(flag: String) -> Parser<Bool> {
+    return Parser<Bool>
+      .ofString(flag, true)
+      .fallback(false)
+  }
+
   static func ofInt() -> Parser<Int> {
     return Parser<Int>.single { token in
       guard let integer = NSNumberFormatter().numberFromString(token)?.integerValue else {
@@ -138,10 +144,20 @@ extension Parser {
       .sequence(by)
   }
 
-  static func ofTwo<B>(a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
+  static func ofTwoSequenced<B>(a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
     return a.bind { valueA in
       return b.fmap { valueB in
         return (valueA, valueB)
+      }
+    }
+  }
+
+  static func ofThreeSequenced<B, C>(a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>) -> Parser<(A, B, C)> {
+    return a.bind { valueA in
+      return b.bind { valueB in
+        return c.fmap { valueC in
+          return (valueA, valueB, valueC)
+        }
       }
     }
   }

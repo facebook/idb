@@ -14,9 +14,19 @@ public protocol Default {
   static func defaultValue() -> Self
 }
 
+extension FBSimulatorManagementOptions : Default {
+  public static func defaultValue() -> FBSimulatorManagementOptions {
+    return FBSimulatorManagementOptions()
+  }
+}
+
 extension Configuration : Default {
   public static func defaultValue() -> Configuration {
-    return Configuration(deviceSetPath: nil, options: FBSimulatorManagementOptions())
+    return Configuration(controlConfiguration: self.defaultControlConfiguration(), debugLogging: false)
+  }
+
+  public static func defaultControlConfiguration() -> FBSimulatorControlConfiguration {
+    return FBSimulatorControlConfiguration(deviceSetPath: nil, options: FBSimulatorManagementOptions())
   }
 }
 
