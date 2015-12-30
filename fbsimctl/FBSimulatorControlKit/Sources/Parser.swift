@@ -21,15 +21,30 @@ public extension Command {
   }
 }
 
-public enum ParseError : ErrorType {
+public enum ParseError : ErrorType, CustomStringConvertible {
   case EndOfInput
   case DoesNotMatch(String, String)
-  case InvalidNumber
-  case InvalidPath
+  case CouldNotInterpret(String, String)
+  case Custom(String)
 
   static func DoesNotMatchAnyOf(matches: [String]) -> ParseError {
     let inner = (matches as NSArray).componentsJoinedByString(", ")
     return .DoesNotMatch("any of", "[\(inner)]")
+  }
+
+  public var description: String {
+    get {
+      switch self {
+      case .EndOfInput:
+        return "End of Input"
+      case .DoesNotMatch(let expected, let actual):
+        return "'\(actual)' does not match '\(expected)'"
+      case .CouldNotInterpret(let typeName, let actual):
+        return "\(actual) could not be interpreted as \(typeName)"
+      case .Custom(let message):
+        return message
+      }
+    }
   }
 }
 
@@ -132,7 +147,7 @@ extension Parser {
   static func ofInt() -> Parser<Int> {
     return Parser<Int>.single { token in
       guard let integer = NSNumberFormatter().numberFromString(token)?.integerValue else {
-        throw ParseError.InvalidNumber
+        throw ParseError.CouldNotInterpret("Int", token)
       }
       return integer
     }

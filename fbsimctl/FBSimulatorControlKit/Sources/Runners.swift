@@ -157,10 +157,10 @@ private class InteractionRunner : Runner, RelayTransformer {
       let (_, action) = try Action.parser().parse(arguments)
       let runner = ActionRunner(action: action, control: self.control)
       return runner.run(writer)
+    } catch let error as ParseError {
+      return .Failure("Error: \(error.description)")
     } catch let error as NSError {
       return .Failure(error.description)
-    } catch _ as ParseError {
-      return .Failure("Failed to parse '\(input)'")
     }
   }
 }

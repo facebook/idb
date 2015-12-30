@@ -14,7 +14,7 @@ extension Parser {
   static func ofUDID() -> Parser<NSUUID> {
     return Parser<NSUUID>.single { token in
       guard let uuid = NSUUID(UUIDString: token) else {
-        throw ParseError.InvalidNumber
+        throw ParseError.CouldNotInterpret(NSStringFromClass(NSUUID.self), token)
       }
       return uuid
     }
@@ -24,10 +24,10 @@ extension Parser {
     return Parser<String>.single { token in
       var isDirectory: ObjCBool = false
       if !NSFileManager.defaultManager().fileExistsAtPath(token, isDirectory: &isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should exist, but doesn't")
       }
       if (!isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should be a directory, but isn't")
       }
       return token
     }
@@ -37,10 +37,10 @@ extension Parser {
     return Parser<String>.single { token in
       var isDirectory: ObjCBool = false
       if !NSFileManager.defaultManager().fileExistsAtPath(token, isDirectory: &isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should exist, but doesn't")
       }
       if (isDirectory) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("'\(token)' should be a file, but isn't")
       }
       return token
     }
@@ -282,7 +282,7 @@ extension Query : Parsable {
       let deviceConfigurations = FBSimulatorConfiguration.deviceConfigurations() as! [FBSimulatorConfiguration_Device]
       let deviceNames = Set(deviceConfigurations.map { $0.deviceName() })
       if (!deviceNames.contains(token)) {
-        throw ParseError.InvalidNumber
+        throw ParseError.Custom("\(token) is not a valid device name")
       }
       let configuration: FBSimulatorConfiguration! = FBSimulatorConfiguration.withDeviceNamed(token)
       return Query.Configured([configuration])
