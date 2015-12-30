@@ -94,21 +94,27 @@
   return [[FBSimulatorLogger_ASL alloc] initWithASLClient:self.aslContainer currentLevel:ASL_LEVEL_ERR];
 }
 
+- (instancetype)writeToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
+{
+  if (writeToStdErr) {
+    int filterLimit = debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
+    asl_add_output_file(self.aslContainer.asl, STDERR_FILENO, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
+  } else {
+    asl_remove_log_file(self.aslContainer.asl, STDERR_FILENO);
+  }
+  return self;
+}
+
 @end
 
 @implementation FBSimulatorLogger
 
-+ (id<FBSimulatorLogger>)withASLWritingToStderr:(BOOL)writeToStdErr debugLogging:(BOOL)debugLogging
++ (id<FBSimulatorLogger>)aslLogger
 {
   static dispatch_once_t onceToken;
   static FBSimulatorLogger_ASL *logger;
   dispatch_once(&onceToken, ^{
     asl_object_t asl = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
-    if (writeToStdErr) {
-      int filterLimit = debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
-      asl_add_output_file(asl, STDERR_FILENO, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
-    }
-
     FBASLContainer *aslContainer = [[FBASLContainer alloc] initWithASLObject:asl];
     logger = [[FBSimulatorLogger_ASL alloc] initWithASLClient:aslContainer currentLevel:ASL_LEVEL_INFO];
   });
