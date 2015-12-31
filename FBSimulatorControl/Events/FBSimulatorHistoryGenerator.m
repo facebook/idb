@@ -18,34 +18,67 @@
 @interface FBSimulatorHistoryGenerator ()
 
 @property (nonatomic, strong, readwrite) FBSimulatorHistory *history;
+@property (nonatomic, copy, readonly) NSString *persistencePath;
 
 @end
 
 @implementation FBSimulatorHistoryGenerator
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
-{
-  FBSimulatorHistory *history = [FBSimulatorHistory new];
-  history.simulatorState = simulator.state;
+#pragma mark Initializers
 
-  return [[FBSimulatorHistoryGenerator new] initWithHistory:history];
++ (instancetype)forSimulator:(FBSimulator *)simulator
+{
+  return [[FBSimulatorHistoryGenerator new] initWithHistory:[self fetchHistoryForSimulator:simulator] persistencePath:[self pathForPerisistantHistory:simulator]];
 }
 
-- (instancetype)initWithHistory:(FBSimulatorHistory *)history
+- (instancetype)initWithHistory:(FBSimulatorHistory *)history persistencePath:(NSString *)persistencePath
 {
+  NSParameterAssert(history);
+  NSParameterAssert(persistencePath);
+
   self = [super init];
   if (!self) {
     return nil;
   }
 
   _history = history;
+  _persistencePath = persistencePath;
 
   return self;
 }
 
+#pragma mark Public
+
 - (FBSimulatorHistory *)currentState
 {
   return self.history;
+}
+
+#pragma mark Persistence
+
+- (void)removePersistentHistory
+{
+  [NSFileManager.defaultManager removeItemAtPath:self.persistencePath error:nil];
+}
+
++ (NSString *)pathForPerisistantHistory:(FBSimulator *)simulator
+{
+  return [[simulator.dataDirectory
+    stringByAppendingPathComponent:@"fbsimulatorcontrol"]
+    stringByAppendingPathExtension:@"history"];
+}
+
++ (FBSimulatorHistory *)freshHistoryForSimulator:(FBSimulator *)simulator
+{
+  FBSimulatorHistory *history = [FBSimulatorHistory new];
+  history.simulatorState = simulator.state;
+  return history;
+}
+
++ (FBSimulatorHistory *)fetchHistoryForSimulator:(FBSimulator *)simulator
+{
+  return [NSKeyedUnarchiver unarchiveObjectWithFile:[self pathForPerisistantHistory:simulator]]
+      ?: [self freshHistoryForSimulator:simulator];
 }
 
 #pragma mark FBSimulatorEventSink Implementation

@@ -29,8 +29,8 @@
   device.UDID = [NSUUID UUID];
   device.name = @"iPhoneMega";
 
-  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:nil pool:nil query:nil logger:nil];
-  self.generator = [FBSimulatorHistoryGenerator withSimulator:simulator];
+  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:nil pool:nil query:nil];
+  self.generator = [FBSimulatorHistoryGenerator forSimulator:simulator];
 }
 
 - (void)tearDown

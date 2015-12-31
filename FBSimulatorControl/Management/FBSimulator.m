@@ -42,15 +42,15 @@
 
 + (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query logger:(id<FBSimulatorLogger>)logger
 {
-  return [[FBSimulator alloc]
+  return [[[FBSimulator alloc]
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDevice:device error:nil]
     pool:pool
-    query:query
-    logger:logger];
+    query:query]
+    attachEventSinkComposition:logger];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query
 {
   self = [super init];
   if (!self) {
@@ -62,11 +62,16 @@
   _pool = pool;
   _processQuery = query;
 
-  FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator withSimulator:self];
+  return self;
+}
+
+- (instancetype)attachEventSinkComposition:(id<FBSimulatorLogger>)logger
+{
+  FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator forSimulator:self];
   FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:logger];
   FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink]];
-  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:device processQuery:query sink:compositeSink];
+  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device processQuery:self.processQuery sink:compositeSink];
 
   _historyGenerator = historyGenerator;
   _eventRelay = relay;

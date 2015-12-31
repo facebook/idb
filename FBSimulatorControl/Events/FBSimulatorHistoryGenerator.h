@@ -20,17 +20,28 @@
 /**
  An Object responsible for building `FBSimulatorHistory` be converting events into state.
  Links are maintained to previous states, so the entire history of the Simulator can be interrogated at any time.
+
+ Is also responsible for serializing/deserializing prior history to file.
  */
 @interface FBSimulatorHistoryGenerator : NSObject <FBSimulatorEventSink>
 
 /**
- Creates and returns a State Event Sink for the given Simulator
+ Creates and returns a History Generator for the Provided Simulator.
+ 
+ @param simulator the Simulator to generate history for. Will not be retained. Must not be nil.
+ @return a new FBSimulatorHistoryGenerator instance
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
++ (instancetype)forSimulator:(FBSimulator *)simulator;
 
 /**
- The Current History.
+ The Current History, will be updated as events are recieved.
  */
 @property (nonatomic, strong, readonly) FBSimulatorHistory *history;
+
+/**
+ If set to YES: History will be serialized to file.
+ If set to NO: History will not be serialized to file.
+ */
+@property (nonatomic, assign, readonly, getter=isPersistenceEnabled) BOOL peristenceEnabled;
 
 @end

@@ -17,9 +17,22 @@
 
 @implementation FBSimulatorControlTests_SimDevice_Double
 
+@synthesize dataPath = _dataPath;
+
 - (BOOL)isEqual:(FBSimulatorControlTests_SimDevice_Double *)object
 {
   return [self.UDID isEqual:object.UDID];
+}
+
+- (NSString *)dataPath
+{
+  if (!_dataPath) {
+    _dataPath = [[NSTemporaryDirectory()
+      stringByAppendingPathComponent:@"SimDevice_Double"]
+      stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_Data", self.UDID.UUIDString]];
+    [NSFileManager.defaultManager createDirectoryAtPath:_dataPath withIntermediateDirectories:YES attributes:nil error:nil];
+  }
+  return _dataPath;
 }
 
 @end
