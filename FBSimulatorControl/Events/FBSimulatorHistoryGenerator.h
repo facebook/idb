@@ -41,6 +41,8 @@
 /**
  If set to YES: History will be serialized to file.
  If set to NO: History will not be serialized to file.
+ 
+ When setting this to NO, persistent history will be deleted from the filesystem.
  */
 @property (nonatomic, assign, readonly, getter=isPersistenceEnabled) BOOL peristenceEnabled;
 

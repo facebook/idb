@@ -24,6 +24,8 @@
 
 @implementation FBSimulatorHistoryGenerator
 
+@synthesize peristenceEnabled = _peristenceEnabled;
+
 #pragma mark Initializers
 
 + (instancetype)forSimulator:(FBSimulator *)simulator
@@ -45,6 +47,21 @@
   _persistencePath = persistencePath;
 
   return self;
+}
+
+#pragma mark Accessors
+
+- (BOOL)isPeristenceEnabled
+{
+  return _peristenceEnabled;
+}
+
+- (void)setPeristenceEnabled:(BOOL)peristenceEnabled
+{
+  if (peristenceEnabled == NO) {
+    [self removePersistentHistory];
+  }
+  _peristenceEnabled = peristenceEnabled;
 }
 
 #pragma mark Public
