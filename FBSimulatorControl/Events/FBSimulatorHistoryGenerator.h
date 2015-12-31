@@ -44,6 +44,6 @@
  
  When setting this to NO, persistent history will be deleted from the filesystem.
  */
-@property (nonatomic, assign, readonly, getter=isPersistenceEnabled) BOOL peristenceEnabled;
+@property (nonatomic, assign, readwrite, getter=isPersistenceEnabled) BOOL peristenceEnabled;
 
 @end

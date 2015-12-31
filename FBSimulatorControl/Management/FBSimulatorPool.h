@@ -26,7 +26,8 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
   FBSimulatorAllocationOptionsShutdownOnAllocate = 1 << 2, /** Shutdown of the Simulator becomes a precondition of allocation. */
   FBSimulatorAllocationOptionsEraseOnAllocate = 1 << 4, /** Erasing of the Simulator becomes a precondition of allocation. */
   FBSimulatorAllocationOptionsDeleteOnFree = 1 << 5, /** Deleting of the Simulator becomes a postcondition of freeing. */
-  FBSimulatorAllocationOptionsEraseOnFree = 1 << 6 /** Erasing of the Simulator becomes a postcondition of freeing. */
+  FBSimulatorAllocationOptionsEraseOnFree = 1 << 6, /** Erasing of the Simulator becomes a postcondition of freeing. */
+  FBSimulatorAllocationOptionsPersistHistory = 1 << 7 /** Fetch & Persist History for the allocated Simulator. */
 };
 
 @protocol FBSimulatorLogger;
