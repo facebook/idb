@@ -6,13 +6,14 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 ## Features
 - Boots multiple iOS Simulators within the same host process or across processes.
 - Does not have to be run from Xcode/`xcodebuild`. Simulators can be launched by a process that has not been spawned by Xcode.
-- `NSNotification`s for the lifecycle of the Simulator and user-launched processes.
 - Boots iPhone & iPad Simulators for iOS 7, 8 & 9.
 - Boots watchOS Simulators since watchOS 2.0.
 - Boots tvOS Simulators since tvOS 9.0.
 - Launching and switching between multiple Apps.
-- Convenient fetching of System, App & Crash logs.
+- Convenient and fast fetching of System, App & Crash logs.
 - Persistent and Queryable history of all Simulator events.
+- Detailed logging covering lifecycle events including booting, launching Apps and unexpected termination.
+- `NSNotification`s for many events in the lifecycle of Simulators and their processes.
 - Knowledge about the state of all Simulators can be re-built when `FBSimulatorControl` is launched.
 - No external dependencies.
 - Launch Applications and Agents with [Command Line Arguments](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L24) and [Environment Variables](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L29).
@@ -90,9 +91,12 @@ To launch Safari on an iPhone 5, you can use the following:
 
 
 ## Multisim
-`FBSimulatorControl` launches Xcode's Simulator Applications directly, allowing specific Simulators to be targeted by UDID. `Simulator.app` uses a default set of Simulators located at `~/Library/Developer/CoreSimulator/Devices`. By passing arguments to the `Simulator.app` binary, a different Device Set can be used, allowing multiple pools of Simulators to be booted, without interference.
+`FBSimulatorControl` launches Xcode's Simulator Applications directly, allowing specific Simulators to be targeted by UDID. `Simulator.app` uses a default set of Simulators located at `~/Library/Developer/CoreSimulator/Devices`. By passing arguments to the `Simulator.app` binary, `FBSimulatorControl` can launch Simulators from Device Sets other than the default. This allows multiple sets of Simulators to be booted from separate host processes, without interference.
 
-This is only supported on Xcode 7.
+This is only supported on Xcode 7 or greater.
+
+## `fbsimctl`
+[`fbsimctl` is a Command Line Interface](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md) for `FBSimulatorControl` API calls, so `FBSimulatorControl` functionality can be used without the need to integrate with the Framework. It is currently under development.
 
 ## Contributing
 See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to work on the issues!
