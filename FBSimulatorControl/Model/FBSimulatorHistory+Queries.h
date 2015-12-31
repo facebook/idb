@@ -19,22 +19,24 @@
 @interface FBSimulatorHistory (Queries)
 
 /**
- Returns Application State for all running applications, does not reach into previous states.
+ Returns Process Info for currently-running applications.
+ Does not reach into previous states.
 
  @return an NSArray<FBProcessInfo> of the currently running, User Launched Applications.
  */
-- (NSArray *)launchedApplications;
+- (NSArray *)launchedApplicationProcesses;
 
 /**
- Returns Agent State for all running agents, does not reach into previous states.
+ Returns Process Info for currently-running agents.
+ Does not reach into history.
 
  @return an NSArray<FBProcessInfo> of the currently running, User Launched Agents.
  */
-- (NSArray *)launchedAgents;
+- (NSArray *)launchedAgentProcesses;
 
 /**
  Returns all of the Agents and Applications that have been launched, in the order that they were launched.
- Reaches into previous states in order to find Agents and Applications that have been terminated.
+ Reaches into history in order to find Agents and Applications that have terminated.
 
  @return An NSArray<FBProcessInfo> of All Launched Processes, most recent first.
  */
@@ -42,19 +44,19 @@
 
 /**
  Returns all of the Applications that have been launched, in the order that they were launched.
- Reaches into previous states in order to find Applications that have been terminated.
+ Reaches into history in order to find Applications that have terminated.
 
  @return An NSArray<FBProcessInfo> of All Launched Application Processes, most recent first.
  */
-- (NSArray *)allLaunchedApplications;
+- (NSArray *)allLaunchedApplicationProcesses;
 
 /**
  Returns all of the Agents that have been launched, in the order that they were launched.
- Reaches into previous states in order to find Agents that have been terminated.
+ Reaches into previous states in order to find Agents that have terminated.
 
  @return An NSArray<FBProcessInfo> of All Launched Agent Processes, most recent first.
  */
-- (NSArray *)allLaunchedAgents;
+- (NSArray *)allLaunchedAgentProcesses;
 
 /**
  Returns Process Info for the Application that was launched most recently.

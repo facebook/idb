@@ -48,12 +48,12 @@
 
 @implementation FBSimulatorHistory (Queries)
 
-- (NSArray *)launchedApplications
+- (NSArray *)launchedApplicationProcesses
 {
   return [self.launchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedApplicationProcesses];
 }
 
-- (NSArray *)launchedAgents
+- (NSArray *)launchedAgentProcesses
 {
   return [self.launchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
 }
@@ -69,12 +69,12 @@
   return [set array];
 }
 
-- (NSArray *)allLaunchedApplications
+- (NSArray *)allLaunchedApplicationProcesses
 {
   return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedApplicationProcesses];
 }
 
-- (NSArray *)allLaunchedAgents
+- (NSArray *)allLaunchedAgentProcesses
 {
   return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
 }
@@ -82,7 +82,7 @@
 - (FBProcessInfo *)lastLaunchedApplicationProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
-  return self.launchedApplications.firstObject ?: self.previousState.lastLaunchedApplicationProcess;
+  return self.launchedApplicationProcesses.firstObject ?: self.previousState.lastLaunchedApplicationProcess;
 }
 
 - (FBApplicationLaunchConfiguration *)lastLaunchedApplication
@@ -93,7 +93,7 @@
 - (FBProcessInfo *)lastLaunchedAgentProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
-  return self.launchedAgents.firstObject ?: self.previousState.lastLaunchedAgentProcess;
+  return self.launchedAgentProcesses.firstObject ?: self.previousState.lastLaunchedAgentProcess;
 }
 
 - (FBAgentLaunchConfiguration *)lastLaunchedAgent
@@ -108,7 +108,7 @@
 
 - (FBProcessInfo *)runningProcessForBinary:(FBSimulatorBinary *)binary
 {
-  return [[self.launchedApplications
+  return [[self.launchedApplicationProcesses
     filteredArrayUsingPredicate:[FBSimulatorHistory predicateForBinary:binary]]
     firstObject];
 }
