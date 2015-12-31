@@ -226,7 +226,7 @@
 
   NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
   FBProcessInfo *simulatorProcess =[self.processQuery processInfoFor:launchedApplication.processIdentifier];
-  if (!simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID]) {
+  if (![simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID] isEqual:self.simDevice.UDID.UUIDString]) {
     return;
   }
   FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.simDevice simulatorApplication:launchedApplication query:self.processQuery timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
