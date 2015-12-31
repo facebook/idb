@@ -48,14 +48,11 @@
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    NSDictionary *installedApps = [simulator.device installedAppsWithError:&innerError];
-    if (!installedApps) {
-      return [[[FBSimulatorError describe:@"Failed to get installed apps"] inSimulator:simulator] failBool:error];
-    }
-    if (!installedApps[appLaunch.application.bundleID]) {
+    FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.application.bundleID error:&innerError];
+    if (!application) {
       return [[[[FBSimulatorError
         describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.application.bundleID]
-        extraInfo:@"installed_apps" value:installedApps]
+        causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
     }

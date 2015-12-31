@@ -11,8 +11,10 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import "FBCollectionDescriptions.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
+#import "FBSimulatorApplication.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
@@ -20,6 +22,11 @@
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulator (Helpers)
+
+- (FBSimulatorInteraction *)interact
+{
+  return [FBSimulatorInteraction withSimulator:self];
+}
 
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
 {
@@ -117,9 +124,37 @@
   return YES;
 }
 
-- (FBSimulatorInteraction *)interact
+- (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  return [FBSimulatorInteraction withSimulator:self];
+  NSError *innerError = nil;
+  NSDictionary *installedApps = [self.device installedAppsWithError:&innerError];
+  if (!installedApps) {
+    return [[[[FBSimulatorError
+      describe:@"Failed to get installed apps"]
+      inSimulator:self]
+      causedBy:innerError]
+      fail:error];
+  }
+  NSDictionary *appInfo = installedApps[bundleID];
+  if (!appInfo) {
+    return [[[[[FBSimulatorError
+      describeFormat:@"Failed to get app with bundle ID %@ from %@", bundleID, [FBCollectionDescriptions oneLineDescriptionFromArray:installedApps.allKeys]]
+      extraInfo:@"installed_apps" value:installedApps.allKeys]
+      inSimulator:self]
+      causedBy:innerError]
+      fail:error];
+  }
+  NSString *appPath = appInfo[@"Path"];
+  FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:appPath error:&innerError];
+  if (!application) {
+    return [[[[[FBSimulatorError
+      describeFormat:@"Failed to get Application description of %@ at %@", bundleID, appPath]
+      extraInfo:@"installed_apps" value:installedApps.allKeys]
+      inSimulator:self]
+      causedBy:innerError]
+      fail:error];
+  }
+  return application;
 }
 
 - (FBSimDeviceWrapper *)simDeviceWrapper
