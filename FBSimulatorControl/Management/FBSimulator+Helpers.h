@@ -15,6 +15,11 @@
 @interface FBSimulator (Helpers)
 
 /**
+ Creates an `FBSimulatorInteraction` for the reciever.
+ */
+- (FBSimulatorInteraction *)interact;
+
+/**
  Synchronously waits on the provided state.
 
  @param state the state to wait on
@@ -76,9 +81,13 @@
 - (BOOL)eraseWithError:(NSError **)error;
 
 /**
- Creates an `FBSimulatorInteraction` for the reciever.
+ Fetches the FBSimulatorApplication instance by Bundle ID, on the Simulator.
+
+ @param bundleID the Bundle ID to fetch an installed application for.
+ @param error an error out for any error that occurs.
+ @return a FBSimulatorApplication instance if one could be obtained, NO otherwise.
  */
-- (FBSimulatorInteraction *)interact;
+- (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Creates a FBSimDeviceWrapper for the Simulator.
