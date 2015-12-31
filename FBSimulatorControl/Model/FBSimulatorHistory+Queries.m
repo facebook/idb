@@ -79,21 +79,26 @@
   return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
 }
 
+- (NSArray *)allProcessLaunches
+{
+  return self.processLaunchConfigurations.allValues;
+}
+
 - (FBProcessInfo *)lastLaunchedApplicationProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
   return self.launchedApplicationProcesses.firstObject ?: self.previousState.lastLaunchedApplicationProcess;
 }
 
-- (FBApplicationLaunchConfiguration *)lastLaunchedApplication
-{
-  return self.processLaunchConfigurations[self.lastLaunchedApplicationProcess];
-}
-
 - (FBProcessInfo *)lastLaunchedAgentProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
   return self.launchedAgentProcesses.firstObject ?: self.previousState.lastLaunchedAgentProcess;
+}
+
+- (FBApplicationLaunchConfiguration *)lastLaunchedApplication
+{
+  return self.processLaunchConfigurations[self.lastLaunchedApplicationProcess];
 }
 
 - (FBAgentLaunchConfiguration *)lastLaunchedAgent

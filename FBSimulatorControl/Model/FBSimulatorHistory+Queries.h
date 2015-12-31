@@ -59,6 +59,17 @@
 - (NSArray *)allLaunchedAgentProcesses;
 
 /**
+ Returns all Process Launch Configurations.
+ Reaches into previous states in order to find Processes that have terminated.
+
+ @return An NSArray<FBProcessLaunchConfiguration> of all historical Process Launches. Ordering is arbitrary.
+ */
+- (NSArray *)allProcessLaunches;
+ @return An NSArray<FBApplicationLaunchConfiguration> of all historical Application Launches. Ordering is arbitrary.
+ */
+- (NSArray *)allProcessLaunches;
+
+/**
  Returns Process Info for the Application that was launched most recently.
  Reaches into previous states in order to find Applications that have been terminated.
 
@@ -67,20 +78,20 @@
 - (FBProcessInfo *)lastLaunchedApplicationProcess;
 
 /**
- Returns the Launch Configration for the Application that was launched most recently.
- Reaches into previous states in order to find Applications that have been terminated.
-
- @return A FBApplicationLaunchConfiguration for the most recently launched Application, nil if no Application has been launched.
- */
-- (FBApplicationLaunchConfiguration *)lastLaunchedApplication;
-
-/**
  Returns Process Info for the Agent that was launched most recently.
  Reaches into previous states in order to find Agents that have been terminated.
 
  @return An FBProcessInfo for the most recently launched Agent, nil if no Agent has been launched.
  */
 - (FBProcessInfo *)lastLaunchedAgentProcess;
+
+/**
+ Returns the Launch Configration for the Application that was launched most recently.
+ Reaches into previous states in order to find Applications that have been terminated.
+
+ @return A FBApplicationLaunchConfiguration for the most recently launched Application, nil if no Application has been launched.
+ */
+- (FBApplicationLaunchConfiguration *)lastLaunchedApplication;
 
 /**
  Returns the Launch Configration for the Agent that was launched most recently.
