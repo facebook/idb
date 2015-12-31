@@ -219,16 +219,4 @@
   return nextSessionState;
 }
 
-+ (FBProcessInfo *)updateProcessState:(FBProcessInfo *)processState withBlock:( FBProcessInfo *(^)(FBProcessInfo *processState) )block
-{
-  FBProcessInfo *nextProcessState = block([processState copy]);
-  if (!nextProcessState) {
-    return processState;
-  }
-  if ([nextProcessState isEqual:processState]) {
-    return processState;
-  }
-  return nextProcessState;
-}
-
 @end
