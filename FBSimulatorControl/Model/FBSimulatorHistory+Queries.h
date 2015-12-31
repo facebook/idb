@@ -65,9 +65,14 @@
  @return An NSArray<FBProcessLaunchConfiguration> of all historical Process Launches. Ordering is arbitrary.
  */
 - (NSArray *)allProcessLaunches;
+
+/**
+ Returns all Application Launch Configurations.
+ Reaches into previous states in order to find Applications that have terminated.
+
  @return An NSArray<FBApplicationLaunchConfiguration> of all historical Application Launches. Ordering is arbitrary.
  */
-- (NSArray *)allProcessLaunches;
+- (NSArray *)allApplicationLaunches;
 
 /**
  Returns Process Info for the Application that was launched most recently.

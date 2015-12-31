@@ -84,6 +84,11 @@
   return self.processLaunchConfigurations.allValues;
 }
 
+- (NSArray *)allApplicationLaunches
+{
+  return [self.allProcessLaunches filteredArrayUsingPredicate:[FBSimulatorHistory predicateForApplicationLaunches]];
+}
+
 - (FBProcessInfo *)lastLaunchedApplicationProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
@@ -194,6 +199,13 @@
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
     return [process.launchPath isEqualToString:binary.path];
+  }];
+}
+
++ (NSPredicate *)predicateForApplicationLaunches
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessLaunchConfiguration *processLaunch, NSDictionary *_) {
+    return [processLaunch isKindOfClass:FBApplicationLaunchConfiguration.class];
   }];
 }
 
