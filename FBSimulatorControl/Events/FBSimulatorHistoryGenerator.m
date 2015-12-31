@@ -25,6 +25,7 @@
 @implementation FBSimulatorHistoryGenerator
 
 @synthesize peristenceEnabled = _peristenceEnabled;
+@synthesize history = _history;
 
 #pragma mark Initializers
 
@@ -64,6 +65,19 @@
   _peristenceEnabled = peristenceEnabled;
 }
 
+- (FBSimulatorHistory *)history
+{
+  return _history;
+}
+
+- (void)setHistory:(FBSimulatorHistory *)history
+{
+  if (![history isEqual:_history]) {
+    [self persist];
+  }
+  _history = history;
+}
+
 #pragma mark Public
 
 - (FBSimulatorHistory *)currentState
@@ -96,6 +110,14 @@
 {
   return [NSKeyedUnarchiver unarchiveObjectWithFile:[self pathForPerisistantHistory:simulator]]
       ?: [self freshHistoryForSimulator:simulator];
+}
+
+- (BOOL)persist
+{
+  if (!self.isPersistenceEnabled) {
+    return YES;
+  }
+  return [NSKeyedArchiver archiveRootObject:self.history toFile:self.persistencePath];
 }
 
 #pragma mark FBSimulatorEventSink Implementation
