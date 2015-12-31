@@ -89,6 +89,13 @@
   return [self.allProcessLaunches filteredArrayUsingPredicate:[FBSimulatorHistory predicateForApplicationLaunches]];
 }
 
+- (NSArray *)allAgentLaunches
+{
+  return [self.allProcessLaunches
+    filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:[FBSimulatorHistory predicateForApplicationLaunches]]
+  ];
+}
+
 - (FBProcessInfo *)lastLaunchedApplicationProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.

@@ -75,6 +75,14 @@
 - (NSArray *)allApplicationLaunches;
 
 /**
+ Returns all Agent Launch Configurations.
+ Reaches into previous states in order to find Agents that have terminated.
+
+ @return An NSArray<FBAgentLaunchConfiguration> of all historical Application Launches. Ordering is arbitrary.
+ */
+- (NSArray *)allAgentLaunches;
+
+/**
  Returns Process Info for the Application that was launched most recently.
  Reaches into previous states in order to find Applications that have been terminated.
 
