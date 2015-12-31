@@ -48,12 +48,12 @@
 
 @implementation FBSimulatorHistory (Queries)
 
-- (NSArray *)launchedApplications
+- (NSArray *)launchedApplicationProcesses
 {
   return [self.launchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedApplicationProcesses];
 }
 
-- (NSArray *)launchedAgents
+- (NSArray *)launchedAgentProcesses
 {
   return [self.launchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
 }
@@ -69,31 +69,48 @@
   return [set array];
 }
 
-- (NSArray *)allLaunchedApplications
+- (NSArray *)allLaunchedApplicationProcesses
 {
   return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedApplicationProcesses];
 }
 
-- (NSArray *)allLaunchedAgents
+- (NSArray *)allLaunchedAgentProcesses
 {
   return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
+}
+
+- (NSArray *)allProcessLaunches
+{
+  return self.processLaunchConfigurations.allValues;
+}
+
+- (NSArray *)allApplicationLaunches
+{
+  return [self.allProcessLaunches filteredArrayUsingPredicate:[FBSimulatorHistory predicateForApplicationLaunches]];
+}
+
+- (NSArray *)allAgentLaunches
+{
+  return [self.allProcessLaunches
+    filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:[FBSimulatorHistory predicateForApplicationLaunches]]
+  ];
 }
 
 - (FBProcessInfo *)lastLaunchedApplicationProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
-  return self.launchedApplications.firstObject ?: self.previousState.lastLaunchedApplicationProcess;
-}
-
-- (FBApplicationLaunchConfiguration *)lastLaunchedApplication
-{
-  return self.processLaunchConfigurations[self.lastLaunchedApplicationProcess];
+  return self.launchedApplicationProcesses.firstObject ?: self.previousState.lastLaunchedApplicationProcess;
 }
 
 - (FBProcessInfo *)lastLaunchedAgentProcess
 {
   // launchedProcesses has last event based ordering. Message-to-nil will return immediately in base-case.
-  return self.launchedAgents.firstObject ?: self.previousState.lastLaunchedAgentProcess;
+  return self.launchedAgentProcesses.firstObject ?: self.previousState.lastLaunchedAgentProcess;
+}
+
+- (FBApplicationLaunchConfiguration *)lastLaunchedApplication
+{
+  return self.processLaunchConfigurations[self.lastLaunchedApplicationProcess];
 }
 
 - (FBAgentLaunchConfiguration *)lastLaunchedAgent
@@ -108,7 +125,7 @@
 
 - (FBProcessInfo *)runningProcessForBinary:(FBSimulatorBinary *)binary
 {
-  return [[self.launchedApplications
+  return [[self.launchedApplicationProcesses
     filteredArrayUsingPredicate:[FBSimulatorHistory predicateForBinary:binary]]
     firstObject];
 }
@@ -189,6 +206,13 @@
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
     return [process.launchPath isEqualToString:binary.path];
+  }];
+}
+
++ (NSPredicate *)predicateForApplicationLaunches
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessLaunchConfiguration *processLaunch, NSDictionary *_) {
+    return [processLaunch isKindOfClass:FBApplicationLaunchConfiguration.class];
   }];
 }
 
