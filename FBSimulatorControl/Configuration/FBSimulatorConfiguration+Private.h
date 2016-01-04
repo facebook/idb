@@ -160,32 +160,10 @@
 @interface FBSimulatorConfiguration_watchOS_2_1 : FBSimulatorConfiguration_watchOS_Base
 @end
 
-#pragma mark Scales
-
-@protocol FBSimulatorConfigurationScale <NSObject>
-
-- (NSString *)scaleString;
-
-@end
-
-@interface FBSimulatorConfigurationScale_25 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
-@end
-
-@interface FBSimulatorConfigurationScale_50 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
-@end
-
-@interface FBSimulatorConfigurationScale_75 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
-@end
-
-@interface FBSimulatorConfigurationScale_100 : FBSimulatorConfigurationVariant_Base <FBSimulatorConfigurationScale>
-@end
-
 @interface FBSimulatorConfiguration ()
 
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfiguration_Device> device;
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfiguration_OS> os;
-@property (nonatomic, strong, readwrite) id<FBSimulatorConfigurationScale> scale;
-@property (nonatomic, strong, readwrite) NSLocale *locale;
 
 - (instancetype)updateNamedDevice:(id<FBSimulatorConfiguration_Device>)device;
 - (instancetype)updateOSVersion:(id<FBSimulatorConfiguration_OS>)OS;

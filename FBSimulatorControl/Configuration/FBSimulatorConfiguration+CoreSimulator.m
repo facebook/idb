@@ -103,21 +103,6 @@
   return [matchingDeviceTypes firstObject];
 }
 
-#pragma mark Scale
-
-- (NSArray *)lastScaleCommandLineArgumentsWithError:(NSError **)error;
-{
-  SimDeviceType *deviceType = [self obtainDeviceTypeWithError:error];
-  if (!deviceType) {
-    return nil;
-  }
-  NSString *lastScaleKey = [NSString stringWithFormat: @"SimulatorWindowLastScale-%@", deviceType.identifier];
-  return @[
-    [NSString stringWithFormat:@"-%@", lastScaleKey],
-    self.scale.scaleString
-  ];
-}
-
 #pragma mark Private
 
 + (NSArray *)supportedRuntimes

@@ -11,17 +11,26 @@
 
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
+@class FBSimulatorLaunchConfiguration;
+
 /**
  Interactions for the Lifecycle of the Simulator.
  */
 @interface FBSimulatorInteraction (Lifecycle)
 
 /**
- Boots the Simulator.
+ Boots the Simulator with the default Simulator Launch Configuration.
 
  @return the reciever, for chaining.
  */
 - (instancetype)bootSimulator;
+
+/**
+ Boots the Simulator with the default Simulator Launch Configuration.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)bootSimulator:(FBSimulatorLaunchConfiguration *)configuration;
 
 /**
  Shuts the Simulator down.

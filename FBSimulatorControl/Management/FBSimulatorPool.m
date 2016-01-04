@@ -473,26 +473,6 @@
     }
   }
 
-  // Do the other configuration that is dependent on a shutdown Simulator.
-  if (shutdown || erase) {
-    if (configuration.locale && ![[simulator.interact setLocale:configuration.locale] performInteractionWithError:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to set the locale on a Simulator when allocating it"]
-        causedBy:innerError]
-        inSimulator:simulator]
-        logger:self.logger]
-        failBool:error];
-    }
-    if (![[simulator.interact setupKeyboard] performInteractionWithError:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to setup the keyboard of a Simulator when allocating it"]
-        causedBy:innerError]
-        inSimulator:simulator]
-        logger:self.logger]
-        failBool:error];
-    }
-  }
-
   // Enable/Disable Persistence
   simulator.historyGenerator.peristenceEnabled = enablePersistence;
 
