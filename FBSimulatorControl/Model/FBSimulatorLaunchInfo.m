@@ -63,6 +63,13 @@
   return launchInfo;
 }
 
++ (instancetype)fromSimDevice:(SimDevice *)simDevice simulatorApplication:(NSRunningApplication *)simulatorApplication query:(FBProcessQuery *)query timeout:(NSTimeInterval)timeout
+{
+  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^id{
+    return [FBSimulatorLaunchInfo fromSimDevice:simDevice simulatorApplication:simulatorApplication query:query];
+  }];
+}
+
 + (instancetype)fromSimDevice:(SimDevice *)simDevice simulatorApplication:(NSRunningApplication *)simulatorApplication query:(FBProcessQuery *)query
 {
   FBProcessInfo *simulatorProcess = [query simulatorApplicationProcessForSimDevice:simDevice];

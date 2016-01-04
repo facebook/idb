@@ -50,6 +50,17 @@
 + (instancetype)fromSimDevice:(SimDevice *)simDevice simulatorApplication:(NSRunningApplication *)simulatorApplication query:(FBProcessQuery *)query;
 
 /**
+ Creates a FBSimulatorLaunchInfo object from the provided SimDevice & NSRunningApplication combination.
+
+ @param simDevice the SimDevice to create the launch info from.
+ @param simulatorApplication the Simulator Application to create the launch info from. If this conflicts with the SimDevice, nil is returned.
+ @param query the Process Query object to obtain Process/Application info from.
+ @param timeout the maximum time to wait for information to appear.
+ @return a FBSimulatorLaunchInfo instance if process information could be obtained, nil otherwise.
+ */
++ (instancetype)fromSimDevice:(SimDevice *)simDevice simulatorApplication:(NSRunningApplication *)simulatorApplication query:(FBProcessQuery *)query timeout:(NSTimeInterval)timeout;
+
+/**
  Process Information for the Simulator.app
  */
 @property (nonatomic, copy, readonly) FBProcessInfo *simulatorProcess;

@@ -18,6 +18,7 @@
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
 
 @interface FBSimulatorEventRelay ()
@@ -224,7 +225,11 @@
   }
 
   NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.simDevice simulatorApplication:launchedApplication query:self.processQuery];
+  FBProcessInfo *simulatorProcess =[self.processQuery processInfoFor:launchedApplication.processIdentifier];
+  if (![simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID] isEqual:self.simDevice.UDID.UUIDString]) {
+    return;
+  }
+  FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.simDevice simulatorApplication:launchedApplication query:self.processQuery timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
   if (!launchInfo) {
     return;
   }
