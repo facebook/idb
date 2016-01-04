@@ -29,6 +29,7 @@
 
 @property (nonatomic, readwrite, copy) NSString *name;
 @property (nonatomic, readwrite, copy) NSUUID *UDID;
+@property (nonatomic, readwrite, copy) NSString *dataPath;
 @property (nonatomic, readwrite, assign) unsigned long long state;
 @property (nonatomic, readwrite, strong) FBSimulatorControlTests_SimDeviceType_Double *deviceType;
 @property (nonatomic, readwrite, strong) FBSimulatorControlTests_SimDeviceRuntime_Double *runtime;

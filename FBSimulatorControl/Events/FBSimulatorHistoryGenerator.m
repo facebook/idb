@@ -18,34 +18,106 @@
 @interface FBSimulatorHistoryGenerator ()
 
 @property (nonatomic, strong, readwrite) FBSimulatorHistory *history;
+@property (nonatomic, copy, readonly) NSString *persistencePath;
 
 @end
 
 @implementation FBSimulatorHistoryGenerator
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
-{
-  FBSimulatorHistory *history = [FBSimulatorHistory new];
-  history.simulatorState = simulator.state;
+@synthesize peristenceEnabled = _peristenceEnabled;
+@synthesize history = _history;
 
-  return [[FBSimulatorHistoryGenerator new] initWithHistory:history];
+#pragma mark Initializers
+
++ (instancetype)forSimulator:(FBSimulator *)simulator
+{
+  return [[FBSimulatorHistoryGenerator new] initWithHistory:[self fetchHistoryForSimulator:simulator] persistencePath:[self pathForPerisistantHistory:simulator]];
 }
 
-- (instancetype)initWithHistory:(FBSimulatorHistory *)history
+- (instancetype)initWithHistory:(FBSimulatorHistory *)history persistencePath:(NSString *)persistencePath
 {
+  NSParameterAssert(history);
+  NSParameterAssert(persistencePath);
+
   self = [super init];
   if (!self) {
     return nil;
   }
 
   _history = history;
+  _persistencePath = persistencePath;
 
   return self;
 }
 
+#pragma mark Accessors
+
+- (BOOL)isPeristenceEnabled
+{
+  return _peristenceEnabled;
+}
+
+- (void)setPeristenceEnabled:(BOOL)peristenceEnabled
+{
+  if (peristenceEnabled == NO) {
+    [self removePersistentHistory];
+  }
+  _peristenceEnabled = peristenceEnabled;
+}
+
+- (FBSimulatorHistory *)history
+{
+  return _history;
+}
+
+- (void)setHistory:(FBSimulatorHistory *)history
+{
+  if (![history isEqual:_history]) {
+    [self persist];
+  }
+  _history = history;
+}
+
+#pragma mark Public
+
 - (FBSimulatorHistory *)currentState
 {
   return self.history;
+}
+
+#pragma mark Persistence
+
+- (void)removePersistentHistory
+{
+  [NSFileManager.defaultManager removeItemAtPath:self.persistencePath error:nil];
+}
+
++ (NSString *)pathForPerisistantHistory:(FBSimulator *)simulator
+{
+  return [[simulator.dataDirectory
+    stringByAppendingPathComponent:@"fbsimulatorcontrol"]
+    stringByAppendingPathExtension:@"history"];
+}
+
++ (FBSimulatorHistory *)freshHistoryForSimulator:(FBSimulator *)simulator
+{
+  FBSimulatorHistory *history = [FBSimulatorHistory new];
+  history.simulatorState = simulator.state;
+  return history;
+}
+
++ (FBSimulatorHistory *)fetchHistoryForSimulator:(FBSimulator *)simulator
+{
+  return [NSKeyedUnarchiver unarchiveObjectWithFile:[self pathForPerisistantHistory:simulator]]
+      ?: [self freshHistoryForSimulator:simulator];
+}
+
+- (BOOL)persist
+{
+  if (!self.isPersistenceEnabled) {
+    return YES;
+  }
+  return [NSKeyedArchiver archiveRootObject:self.history toFile:self.persistencePath];
 }
 
 #pragma mark FBSimulatorEventSink Implementation
@@ -167,18 +239,6 @@
   nextSessionState.timestamp = [NSDate date];
   nextSessionState.previousState = sessionState;
   return nextSessionState;
-}
-
-+ (FBProcessInfo *)updateProcessState:(FBProcessInfo *)processState withBlock:( FBProcessInfo *(^)(FBProcessInfo *processState) )block
-{
-  FBProcessInfo *nextProcessState = block([processState copy]);
-  if (!nextProcessState) {
-    return processState;
-  }
-  if ([nextProcessState isEqual:processState]) {
-    return processState;
-  }
-  return nextProcessState;
 }
 
 @end
