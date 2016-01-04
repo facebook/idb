@@ -81,7 +81,7 @@
 
 - (NSArray *)allProcessLaunches
 {
-  return self.processLaunchConfigurations.allValues;
+  return [self.processLaunchConfigurations objectsForKeys:self.launchedProcesses notFoundMarker:NSNull.null];
 }
 
 - (NSArray *)allApplicationLaunches

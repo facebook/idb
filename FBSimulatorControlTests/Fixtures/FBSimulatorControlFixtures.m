@@ -117,4 +117,13 @@
     environment:self.appLaunch2.environment];
 }
 
+- (FBProcessInfo *)processInfo2a
+{
+  return [[FBProcessInfo alloc]
+    initWithProcessIdentifier:30
+    launchPath:self.appLaunch2.application.binary.path
+    arguments:self.appLaunch2.arguments
+    environment:self.appLaunch2.environment];
+}
+
 @end
