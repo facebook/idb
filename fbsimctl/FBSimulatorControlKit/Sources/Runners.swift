@@ -94,8 +94,6 @@ private struct ActionRunner : Runner {
           writer.write("\(sysLog.shortName) \(sysLog.asPath)")
         }
       }
-    default:
-      return .Failure("unimplemented")
     }
   }
 

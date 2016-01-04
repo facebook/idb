@@ -49,7 +49,6 @@ public indirect enum Action {
   case Boot(Query)
   case Shutdown(Query)
   case Diagnose(Query)
-  case Help(Action?)
 }
 
 /**
@@ -146,8 +145,6 @@ public func == (left: Action, right: Action) -> Bool {
     return left == right
   case (.Diagnose(let left), .Diagnose(let right)):
     return left == right
-  case (.Help(let leftHelp), .Help(let rightHelp)):
-    return leftHelp == rightHelp
   default:
     return false
   }
