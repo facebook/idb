@@ -49,6 +49,7 @@ public enum Interaction {
   case Boot
   case Shutdown
   case Diagnose
+  case Install(FBSimulatorApplication)
 }
 
 /**
@@ -135,7 +136,7 @@ public func == (left: Command, right: Command) -> Bool {
   case (.Perform(let leftConfiguration, let lefts), .Perform(let rightConfiguration, let rights)):
     return leftConfiguration == rightConfiguration && lefts == rights
   case (.Interact(let leftConfiguration, let leftPort), .Interact(let rightConfiguration, let rightPort)):
-    return leftConfiguration == rightConfiguration &&  leftPort == rightPort
+    return leftConfiguration == rightConfiguration && leftPort == rightPort
   case (.Help(let left), .Help(let right)):
     return left == right
   default:
@@ -146,6 +147,24 @@ public func == (left: Command, right: Command) -> Bool {
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
   return left.format == right.format && left.query == right.query && left.interaction == right.interaction
+}
+
+extension Interaction : Equatable { }
+public func == (left: Interaction, right: Interaction) -> Bool {
+  switch (left, right) {
+  case (.List, .List):
+    return true
+  case (.Boot, .Boot):
+    return true
+  case (.Shutdown, .Shutdown):
+    return true
+  case (.Diagnose, .Diagnose):
+    return true
+  case (.Install(let leftApp), .Install(let rightApp)):
+    return leftApp == rightApp
+  default:
+    return false
+  }
 }
 
 extension Query : Equatable { }

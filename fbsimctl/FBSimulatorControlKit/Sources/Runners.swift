@@ -97,6 +97,10 @@ private struct SimulatorRunner : Runner {
         if let sysLog = simulator.logs.systemLog() {
           writer.write("\(sysLog.shortName) \(sysLog.asPath)")
         }
+      case .Install(let application):
+        writer.write("Installing \(application.path) on \(self.formattedSimulator())")
+        try simulator.interact().installApplication(application).performInteraction()
+        writer.write("Installed \(application.path) on \(self.formattedSimulator())")
       }
     } catch let error as NSError {
       return .Failure(error.description)
