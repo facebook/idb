@@ -71,10 +71,11 @@ public struct Parser<A> : CustomStringConvertible {
   Primitives
 */
 extension Parser {
-  func fmap<B>(f: A -> B) -> Parser<B> {
+  func fmap<B>(f: A throws -> B) -> Parser<B> {
     return Parser<B>(self.matchDescription) { input in
       let (tokensOut, a) = try self.output(input)
-      return (tokensOut, f(a))
+      let b = try f(a)
+      return (tokensOut, b)
     }
   }
 

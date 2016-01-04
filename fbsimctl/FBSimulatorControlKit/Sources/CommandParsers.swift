@@ -243,7 +243,7 @@ extension Interaction : Parsable {
     return Parser
       .succeeded("install", Parser<String>.ofDirectory())
       .fmap { appPath in
-        let application = try! FBSimulatorApplication(path: appPath)
+        let application = try FBSimulatorApplication(path: appPath)
         return Interaction.Install(application)
       }
   }
