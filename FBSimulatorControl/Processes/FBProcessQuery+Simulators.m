@@ -58,7 +58,7 @@
 + (NSPredicate *)simulatorProcessesWithCorrectLaunchPath
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    return [process.launchPath isEqualToString:FBSimulatorApplication.simulatorApplication.binary.path];
+    return [process.launchPath isEqualToString:FBSimulatorApplication.xcodeSimulator.binary.path];
   }];
 }
 

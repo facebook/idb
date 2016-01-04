@@ -117,7 +117,7 @@
 
  @return A FBSimulatorApplication instance for the Simulator.app.
  */
-+ (instancetype)simulatorApplication;
++ (instancetype)xcodeSimulator;
 
 /**
  Returns the System Application with the provided name.
