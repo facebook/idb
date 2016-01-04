@@ -220,7 +220,9 @@ class InteractionParserTests : XCTestCase {
     self.assertFailsToParseAll(Interaction.parser(), [
       ["listaa"],
       ["aboota"],
-      ["ddshutdown"]
+      ["ddshutdown"],
+      ["install"],
+      ["install", "/dev/null"],
     ])
   }
 }
