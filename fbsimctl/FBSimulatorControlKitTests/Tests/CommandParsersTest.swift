@@ -211,7 +211,8 @@ class InteractionParserTests : XCTestCase {
       (["list"], Interaction.List),
       (["boot"], Interaction.Boot),
       (["shutdown"], Interaction.Shutdown),
-      (["diagnose"], Interaction.Diagnose)
+      (["diagnose"], Interaction.Diagnose),
+      (["install", FBSimulatorApplication.xcodeSimulator().path], Interaction.Install(FBSimulatorApplication.xcodeSimulator()))
     ])
   }
 
