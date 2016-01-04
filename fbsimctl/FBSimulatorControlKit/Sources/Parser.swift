@@ -15,7 +15,11 @@ public extension Command {
     do {
       let (_, command) = try Command.parser().parse(arguments)
       return command
-    } catch {
+    } catch let error as ParseError {
+      print("Failed to Parse Command \(error)")
+      return Command.Help(nil)
+    } catch let error as NSError {
+      print("Failed to Parse Command \(error)")
       return Command.Help(nil)
     }
   }
