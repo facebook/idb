@@ -205,41 +205,60 @@ class ConfigurationParserTests : XCTestCase {
   }
 }
 
+class InteractionParserTests : XCTestCase {
+  func testParsesAllCases() {
+    self.assertParsesAll(Interaction.parser(), [
+      (["list"], Interaction.List),
+      (["boot"], Interaction.Boot),
+      (["shutdown"], Interaction.Shutdown),
+      (["diagnose"], Interaction.Diagnose)
+    ])
+  }
+
+  func testDoesNotParseInvalidTokens() {
+    self.assertFailsToParseAll(Interaction.parser(), [
+      ["listaa"],
+      ["aboota"],
+      ["ddshutdown"]
+    ])
+  }
+}
+
 class ActionParserTests : XCTestCase {
   func testParsesList() {
     self.assertParsesAll(Action.parser(), [
-      (["list"], Action.List(Query.defaultValue(), Format.defaultValue())),
-      (["list", "booted"], Action.List(Query.State([.Booted]), Format.defaultValue())),
-      (["list", "--name"], Action.List(Query.defaultValue(), Format.Name)),
-      (["list", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "--os"], Action.List(Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), Format.OSVersion)),
-      (["list", "booted", "iPhone 5", "--device-name", "--os"], Action.List(Query.And([.State([.Booted]), .Configured([FBSimulatorConfiguration.iPhone5()])]), Format.Compound([.DeviceName, .OSVersion])))
+      (["list"], Action(interaction: .List, query: Query.defaultValue(), format: Format.defaultValue())),
+      (["list", "booted"], Action(interaction: .List, query: Query.State([.Booted]), format: Format.defaultValue())),
+      (["list", "--name"], Action(interaction: .List, query: Query.defaultValue(), format: Format.Name)),
+      (["list", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "--os"], Action(interaction: .List, query: Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.OSVersion)),
+      (["list", "booted", "iPhone 5", "--device-name", "--os"], Action(interaction: .List, query: Query.And([.State([.Booted]), .Configured([FBSimulatorConfiguration.iPhone5()])]), format: Format.Compound([.DeviceName, .OSVersion])))
     ])
   }
 
   func testParsesBoot() {
     self.assertParsesAll(Action.parser(), [
-      (["boot"], Action.Boot(Query.defaultValue())),
-      (["boot", "iPad 2"], Action.Boot(.Configured([FBSimulatorConfiguration.iPad2()]))),
-      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))),
-      (["boot", "iPhone 5", "shutdown", "iPhone 6"], Action.Boot(.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]))),
+      (["boot"], Action(interaction: .Boot, query: Query.defaultValue(), format: Format.defaultValue())),
+      (["boot", "iPad 2"], Action(interaction: .Boot, query: .Configured([FBSimulatorConfiguration.iPad2()]), format: Format.defaultValue())),
+      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())),
+      (["boot", "iPhone 5", "shutdown", "iPhone 6"], Action(interaction: .Boot, query: .And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), format: Format.defaultValue()))
     ])
   }
 
   func testParsesShutdown() {
     self.assertParsesAll(Action.parser(), [
-      (["shutdown"], Action.Shutdown(Query.defaultValue())),
-      (["shutdown", "iPad 2"], Action.Shutdown(.Configured([FBSimulatorConfiguration.iPad2()]))),
-      (["shutdown", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action.Shutdown(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))),
-      (["shutdown", "iPhone 5", "shutdown", "iPhone 6"], Action.Shutdown(.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]))),
+      (["shutdown"], Action(interaction: .Shutdown, query: Query.defaultValue(), format: Format.defaultValue())),
+      (["shutdown", "iPad 2"], Action(interaction: .Shutdown, query: .Configured([FBSimulatorConfiguration.iPad2()]), format: Format.defaultValue())),
+      (["shutdown", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action(interaction: .Shutdown, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())),
+      (["shutdown", "iPhone 5", "shutdown", "iPhone 6"], Action(interaction: .Shutdown, query: .And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), format: Format.defaultValue())),
     ])
   }
 
   func testParsesDiagnose() {
     self.assertParsesAll(Action.parser(), [
-      (["diagnose"], Action.Diagnose(Query.defaultValue())),
-      (["diagnose", "iPad 2"], Action.Diagnose(.Configured([FBSimulatorConfiguration.iPad2()]))),
-      (["diagnose", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action.Diagnose(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))),
-      (["diagnose", "iPhone 5", "shutdown", "iPhone 6"], Action.Diagnose(.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]))),
+      (["diagnose"], Action(interaction: .Diagnose, query: Query.defaultValue(), format: Format.defaultValue())),
+      (["diagnose", "iPad 2"], Action(interaction: .Diagnose, query: .Configured([FBSimulatorConfiguration.iPad2()]), format: Format.defaultValue())),
+      (["diagnose", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action(interaction: .Diagnose, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())),
+      (["diagnose", "iPhone 5", "shutdown", "iPhone 6"], Action(interaction: .Diagnose, query: .And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), format: Format.defaultValue())),
     ])
   }
 }
@@ -247,13 +266,16 @@ class ActionParserTests : XCTestCase {
 class CommandParserTests : XCTestCase {
   func testParsesSingleAction() {
     self.assertParsesAll(Command.parser(), [
-      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))])),
+      (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())])),
     ])
   }
 
   func testParsesMultipleActions() {
     self.assertParsesAll(Command.parser(), [
-      (["list", "booted", "boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [Action.List(Query.State([.Booted]), Format.defaultValue()), Action.Boot(.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))])),
+      (["list", "booted", "boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Command.Perform(Configuration.defaultValue(), [
+        Action(interaction: .List, query: Query.State([.Booted]), format: Format.defaultValue()),
+        Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())
+      ])),
     ])
   }
 

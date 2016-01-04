@@ -42,13 +42,22 @@ public indirect enum Query {
 }
 
 /**
- An Action that can be performed provided a FBSimulatorControl instance.
+ An Interaction represents a Single, synchronous interaction with a Simulator.
+ */
+public enum Interaction {
+  case List
+  case Boot
+  case Shutdown
+  case Diagnose
+}
+
+/**
+ An Action represents an Interaction that is performed on a particular Query of Simulators.
 */
-public indirect enum Action {
-  case List(Query, Format)
-  case Boot(Query)
-  case Shutdown(Query)
-  case Diagnose(Query)
+public struct Action {
+  let interaction: Interaction
+  let query: Query
+  let format: Format
 }
 
 /**
@@ -57,7 +66,7 @@ public indirect enum Action {
 public enum Command {
   case Perform(Configuration, [Action])
   case Interact(Configuration, Int?)
-  case Help(Action?)
+  case Help(Interaction?)
 }
 
 public extension Query {
@@ -136,18 +145,7 @@ public func == (left: Command, right: Command) -> Bool {
 
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
-  switch (left, right) {
-  case (.List(let left, let leftFormat), .List(let right, let rightFormat)):
-    return left == right && leftFormat == rightFormat
-  case (.Boot(let left), .Boot(let right)):
-    return left == right
-  case (.Shutdown(let left), .Shutdown(let right)):
-    return left == right
-  case (.Diagnose(let left), .Diagnose(let right)):
-    return left == right
-  default:
-    return false
-  }
+  return left.format == right.format && left.query == right.query && left.interaction == right.interaction
 }
 
 extension Query : Equatable { }
