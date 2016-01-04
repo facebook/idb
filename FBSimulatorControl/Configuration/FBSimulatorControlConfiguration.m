@@ -10,7 +10,7 @@
 #import "FBSimulatorControlConfiguration.h"
 
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControl+Class.h"
+#import "FBSimulatorControl+PrincipalClass.h"
 
 @interface FBSimulatorControlConfiguration ()
 

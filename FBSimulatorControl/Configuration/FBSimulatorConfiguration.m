@@ -13,7 +13,7 @@
 #import <objc/runtime.h>
 
 #import "FBSimulatorConfiguration+CoreSimulator.h"
-#import "FBSimulatorControl+Class.h"
+#import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 
 @implementation FBSimulatorConfigurationVariant_Base
