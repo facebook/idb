@@ -228,45 +228,28 @@ extension Configuration : Parsable {
   }
 }
 
-extension Action : Parsable {
-  public static func parser() -> Parser<Action> {
+extension Interaction : Parsable {
+  public static func parser() -> Parser<Interaction> {
     return Parser.alternative([
-      self.listParser(),
-      self.bootParser(),
-      self.shutdownParser(),
-      self.diagnoseParser(),
+      Parser.ofString("list", Interaction.List),
+      Parser.ofString("boot", Interaction.Boot),
+      Parser.ofString("shutdown", Interaction.Shutdown),
+      Parser.ofString("diagnose", Interaction.Diagnose)
     ])
   }
+}
 
-  static func listParser() -> Parser<Action> {
-    let followingParser = Parser
-      .ofTwoSequenced(
+extension Action : Parsable {
+  public static func parser() -> Parser<Action> {
+    return Parser
+      .ofThreeSequenced(
+        Interaction.parser(),
         Query.parser().fallback(Query.defaultValue()),
         Format.parser().fallback(Format.defaultValue())
       )
-      .fmap { (query, format) in
-        Action.List(query, format)
-    }
-
-    return Parser.succeeded("list", followingParser)
-  }
-
-  static func bootParser() -> Parser<Action> {
-    return Parser
-      .succeeded("boot", Query.parser().fallback(Query.defaultValue()))
-      .fmap { Action.Boot($0) }
-  }
-
-  static func shutdownParser() -> Parser<Action> {
-    return Parser
-      .succeeded("shutdown", Query.parser().fallback(Query.defaultValue()))
-      .fmap { Action.Shutdown($0) }
-  }
-
-  static func diagnoseParser() -> Parser<Action> {
-    return Parser
-      .succeeded("diagnose", Query.parser().fallback(Query.defaultValue()))
-      .fmap { Action.Diagnose($0) }
+      .fmap { (interaction, query, format) in
+        return Action(interaction: interaction, query: query, format: format)
+      }
   }
 }
 

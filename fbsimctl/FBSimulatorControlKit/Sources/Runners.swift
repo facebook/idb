@@ -58,76 +58,58 @@ private struct BaseRunner : Runner {
       writer.write(Command.getHelp())
       return .Success
     case .Interact(let configuration, let port):
-      return InteractionRunner(control: configuration.build(), portNumber: port).run(writer)
+      return InteractiveRunner(control: configuration.build(), portNumber: port).run(writer)
     case .Perform(let configuration, let actions):
       return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: configuration.build()) } ).run(writer)
     }
   }
 }
 
-
 private struct ActionRunner : Runner {
   let action: Action
   let control: FBSimulatorControl
 
   func run(writer: Writer) -> ActionResult {
-    switch (self.action) {
-    case .List(let query, let format):
-      let simulators = Query.perform(control.simulatorPool, query: query)
-      writer.write(Format.formatAll(format)(simulators: simulators))
-      return .Success
-    case .Boot(let query):
-      return self.runWithQuery(query, writer) { simulator in
-        writer.write("Booting \(simulator.udid)")
+    let simulators = Query.perform(self.control.simulatorPool, query: action.query)
+    return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, interaction: self.action.interaction, format: self.action.format) } ).run(writer)
+  }
+}
+
+private struct SimulatorRunner : Runner {
+  let simulator: FBSimulator
+  let interaction: Interaction
+  let format: Format
+
+  func run(writer: Writer) -> ActionResult {
+    do {
+      switch self.interaction {
+      case .List:
+        writer.write(self.formattedSimulator())
+      case .Boot:
+        writer.write("Booting \(self.formattedSimulator())")
         try simulator.interact().bootSimulator().performInteraction()
-        writer.write("Booted \(simulator.udid)")
-      }
-    case .Shutdown(let query):
-      return self.runWithQuery(query, writer) { simulator in
-        writer.write("Shutting Down \(simulator.udid)")
+        writer.write("Booted \(self.formattedSimulator())")
+      case .Shutdown:
+        writer.write("Shutting Down \(self.formattedSimulator())")
         try simulator.interact().shutdownSimulator().performInteraction()
-        writer.write("Shutdown \(simulator.udid)")
-      }
-    case .Diagnose(let query):
-      return self.runWithQuery(query, writer) { simulator in
+        writer.write("Shutdown \(self.formattedSimulator())")
+      case .Diagnose:
         if let sysLog = simulator.logs.systemLog() {
           writer.write("\(sysLog.shortName) \(sysLog.asPath)")
         }
       }
+    } catch let error as NSError {
+      return .Failure(error.description)
     }
+    return .Success
   }
 
-  private func runWithQuery(query: Query, _ writer: Writer, _ transform: FBSimulator throws -> Void) -> ActionResult {
-    return QueryRunner(query: query, control: self.control, transform: transform).run(writer)
+  private func formattedSimulator() -> String {
+    return Format.format(self.format, simulator: self.simulator)
   }
 }
 
-private struct QueryRunner : Runner {
-  let query: Query
-  let control: FBSimulatorControl
-  let transform: FBSimulator throws -> Void
-
-  func run(writer: Writer) -> ActionResult {
-    let simulators = Query.perform(self.control.simulatorPool, query: query)
-    return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, transform: self.transform) } ).run(writer)
-  }
-
-  struct SimulatorRunner : Runner {
-    let simulator: FBSimulator
-    let transform: FBSimulator throws -> Void
-
-    func run(writer: Writer) -> ActionResult {
-      do {
-        try self.transform(self.simulator)
-        return .Success
-      } catch let error as NSError {
-        return .Failure(error.description)
-      }
-    }
-  }
-}
-
-private class InteractionRunner : Runner, RelayTransformer {
+class InteractiveRunner : Runner, RelayTransformer {
   let control: FBSimulatorControl
   let portNumber: Int?
 
@@ -163,7 +145,7 @@ private class InteractionRunner : Runner, RelayTransformer {
   }
 }
 
-private extension Query {
+extension Query {
   static func perform(pool: FBSimulatorPool, query: Query) -> [FBSimulator] {
     let array: NSArray = pool.allSimulators
     return array.filteredArrayUsingPredicate(query.get(pool)) as! [FBSimulator]
@@ -189,8 +171,8 @@ private extension Query {
   }
 }
 
-private extension Format {
-  static func format(format: Format)(simulator: FBSimulator) -> String {
+extension Format {
+  static func format(format: Format, simulator: FBSimulator) -> String {
     switch (format) {
     case Format.UDID:
       return simulator.udid
@@ -201,14 +183,8 @@ private extension Format {
     case Format.OSVersion:
       return simulator.configuration.osVersionString
     case Format.Compound(let subformats):
-      let tokens: NSArray = subformats.map { Format.format($0)(simulator: simulator) }
+      let tokens: NSArray = subformats.map { Format.format($0, simulator: simulator)  }
       return tokens.componentsJoinedByString(" ")
     }
-  }
-
-  static func formatAll(format: Format)(simulators: [FBSimulator]) -> String {
-    return simulators
-      .map(Format.format(format))
-      .joinWithSeparator("\n")
   }
 }
