@@ -62,7 +62,7 @@
  Returns all Process Launch Configurations.
  Reaches into previous states in order to find Processes that have terminated.
 
- @return An NSArray<FBProcessLaunchConfiguration> of all historical Process Launches. Ordering is arbitrary.
+ @return An NSArray<FBProcessLaunchConfiguration> of all historical Process Launches, most recent first.
  */
 - (NSArray *)allProcessLaunches;
 
@@ -70,7 +70,7 @@
  Returns all Application Launch Configurations.
  Reaches into previous states in order to find Applications that have terminated.
 
- @return An NSArray<FBApplicationLaunchConfiguration> of all historical Application Launches. Ordering is arbitrary.
+ @return An NSArray<FBApplicationLaunchConfiguration> of all historical Application Launches, most recent first.
  */
 - (NSArray *)allApplicationLaunches;
 
@@ -78,7 +78,7 @@
  Returns all Agent Launch Configurations.
  Reaches into previous states in order to find Agents that have terminated.
 
- @return An NSArray<FBAgentLaunchConfiguration> of all historical Application Launches. Ordering is arbitrary.
+ @return An NSArray<FBAgentLaunchConfiguration> of all historical Application Launches, most recent first.
  */
 - (NSArray *)allAgentLaunches;
 

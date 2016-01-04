@@ -89,4 +89,9 @@
  */
 - (FBProcessInfo *)processInfo2;
 
+/**
+ Another Process Info, like 'processInfo2a' but with a different pid. Does not represent a real process.
+ */
+- (FBProcessInfo *)processInfo2a;
+
 @end

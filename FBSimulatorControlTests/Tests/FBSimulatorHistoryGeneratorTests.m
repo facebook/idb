@@ -56,6 +56,15 @@
   XCTAssertEqualObjects(self.appLaunch2, lastLaunchedApp);
 }
 
+- (void)testRecencyOfApplicationLaunchConfigurations
+{
+  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
+  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2 stdOut:nil stdErr:nil];
+  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2a stdOut:nil stdErr:nil];
+
+  XCTAssertEqualObjects(self.generator.history.allApplicationLaunches, (@[self.appLaunch2, self.appLaunch2, self.appLaunch1]));
+}
+
 - (void)testAppendsDiagnosticInformationToState
 {
   [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
