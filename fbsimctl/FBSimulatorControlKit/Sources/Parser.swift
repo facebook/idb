@@ -15,7 +15,11 @@ public extension Command {
     do {
       let (_, command) = try Command.parser().parse(arguments)
       return command
-    } catch {
+    } catch let error as ParseError {
+      print("Failed to Parse Command \(error)")
+      return Command.Help(nil)
+    } catch let error as NSError {
+      print("Failed to Parse Command \(error)")
       return Command.Help(nil)
     }
   }
@@ -71,10 +75,11 @@ public struct Parser<A> : CustomStringConvertible {
   Primitives
 */
 extension Parser {
-  func fmap<B>(f: A -> B) -> Parser<B> {
+  func fmap<B>(f: A throws -> B) -> Parser<B> {
     return Parser<B>(self.matchDescription) { input in
       let (tokensOut, a) = try self.output(input)
-      return (tokensOut, f(a))
+      let b = try f(a)
+      return (tokensOut, b)
     }
   }
 

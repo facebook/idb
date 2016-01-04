@@ -234,8 +234,18 @@ extension Interaction : Parsable {
       Parser.ofString("list", Interaction.List),
       Parser.ofString("boot", Interaction.Boot),
       Parser.ofString("shutdown", Interaction.Shutdown),
-      Parser.ofString("diagnose", Interaction.Diagnose)
+      Parser.ofString("diagnose", Interaction.Diagnose),
+      self.installParser()
     ])
+  }
+
+  private static func installParser() -> Parser<Interaction> {
+    return Parser
+      .succeeded("install", Parser<String>.ofDirectory())
+      .fmap { appPath in
+        let application = try FBSimulatorApplication(path: appPath)
+        return Interaction.Install(application)
+      }
   }
 }
 

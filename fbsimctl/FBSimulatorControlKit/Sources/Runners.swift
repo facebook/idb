@@ -84,19 +84,23 @@ private struct SimulatorRunner : Runner {
     do {
       switch self.interaction {
       case .List:
-        writer.write(self.formattedSimulator())
+        writer.write(self.formattedSimulator)
       case .Boot:
-        writer.write("Booting \(self.formattedSimulator())")
+        writer.write("Booting \(self.formattedSimulator)")
         try simulator.interact().bootSimulator().performInteraction()
-        writer.write("Booted \(self.formattedSimulator())")
+        writer.write("Booted \(self.formattedSimulator)")
       case .Shutdown:
-        writer.write("Shutting Down \(self.formattedSimulator())")
+        writer.write("Shutting Down \(self.formattedSimulator)")
         try simulator.interact().shutdownSimulator().performInteraction()
-        writer.write("Shutdown \(self.formattedSimulator())")
+        writer.write("Shutdown \(self.formattedSimulator)")
       case .Diagnose:
         if let sysLog = simulator.logs.systemLog() {
           writer.write("\(sysLog.shortName) \(sysLog.asPath)")
         }
+      case .Install(let application):
+        writer.write("Installing \(application.path) on \(self.formattedSimulator)")
+        try simulator.interact().installApplication(application).performInteraction()
+        writer.write("Installed \(application.path) on \(self.formattedSimulator)")
       }
     } catch let error as NSError {
       return .Failure(error.description)
@@ -104,8 +108,10 @@ private struct SimulatorRunner : Runner {
     return .Success
   }
 
-  private func formattedSimulator() -> String {
-    return Format.format(self.format, simulator: self.simulator)
+  private var formattedSimulator: String {
+    get {
+      return Format.format(self.format, simulator: self.simulator)
+    }
   }
 }
 

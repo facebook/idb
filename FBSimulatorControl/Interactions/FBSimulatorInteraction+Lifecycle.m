@@ -56,7 +56,7 @@
 
     // Construct and start the task.
     id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
-      withLaunchPath:FBSimulatorApplication.simulatorApplication.binary.path]
+      withLaunchPath:FBSimulatorApplication.xcodeSimulator.binary.path]
       withArguments:[arguments copy]]
       withEnvironmentAdditions:@{ FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID : simulator.udid }]
       build]

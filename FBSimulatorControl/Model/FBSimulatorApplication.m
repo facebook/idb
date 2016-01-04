@@ -214,7 +214,7 @@
   return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] error:error];
 }
 
-+ (instancetype)simulatorApplication;
++ (instancetype)xcodeSimulator;
 {
   NSError *error = nil;
   FBSimulatorApplication *application = [self applicationWithPath:self.pathForSimulatorApplication error:&error];
