@@ -540,7 +540,7 @@
 
 - (NSUInteger)hash
 {
-  return self.deviceName.hash | self.osVersionString.hash;
+  return self.deviceName.hash ^ self.osVersionString.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorConfiguration *)object
