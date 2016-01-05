@@ -21,11 +21,6 @@
 
 @implementation FBSimulatorWindowTilingTests
 
-- (FBSimulatorConfiguration *)simulatorConfiguration
-{
-  return FBSimulatorConfiguration.iPhone5.scale50Percent;
-}
-
 - (void)testTilesSingleiPhoneSimulatorInTopLeft
 {
   // Approval is required externally to the Test Runner. Without approval, the tests can't run

@@ -9,12 +9,27 @@
 
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
+@class FBSimulatorLaunchConfiguration;
+
+/**
+ Interactions for Simulators that should occur Prior to the launch of the Simulator.
+ */
 @interface FBSimulatorInteraction (Setup)
+
+/**
+ Prepares the Simulator for Launch:
+ - Sets the Locale (if set)
+ - Sets up the keyboard.
+ 
+ @param configuration the configuration to use.
+ @return the reciever, for chaining.
+ */
+- (instancetype)prepareForLaunch:(FBSimulatorLaunchConfiguration *)configuration;
 
 /**
  Sets the locale for the simulator.
 
- @param locale the locale to set, must not be nil.
+ @param locale the locale to set.
  @return the reciever, for chaining.
  */
 - (instancetype)setLocale:(NSLocale *)locale;

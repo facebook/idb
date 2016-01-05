@@ -94,14 +94,4 @@
  */
 - (SimDeviceType *)obtainDeviceTypeWithError:(NSError **)error;
 
-#pragma mark Scale
-
-/**
- The Command Line Arguments to pass to the Simulator Application, based on the reciever's Device Type.
-
- @param error an error out for any error that occurs obtaining the SimDeviceType.
- @return an Array of Command Line Arguments if one could be constructed, nil otherwise.
- */
-- (NSArray *)lastScaleCommandLineArgumentsWithError:(NSError **)error;
-
 @end

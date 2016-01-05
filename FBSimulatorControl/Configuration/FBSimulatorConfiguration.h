@@ -35,32 +35,10 @@
 @property (nonatomic, copy, readonly) NSString *osVersionString;
 
 /**
- The Locale in which to Simulate, may be nil.
- */
-@property (nonatomic, strong, readonly) NSLocale *locale;
-
-/**
- A String representing the Scale at which to launch the Simulator.
- */
-@property (nonatomic, copy, readonly) NSString *scaleString;
-
-/**
  Returns the Default Configuration.
  The OS Version is derived from the SDK Version.
  */
 + (instancetype)defaultConfiguration;
-
-#pragma mark Description
-
-/**
- A Full Description of the reciever.
- */
-- (NSString *)debugDescription;
-
-/**
- A Partial Description of the reciever.
- */
-- (NSString *)shortDescription;
 
 #pragma mark Devices
 
@@ -225,39 +203,5 @@
  tvOS 9.1
  */
 - (instancetype)watchOS_2_1;
-
-#pragma mark Device Scale
-
-/**
- Launch at 25% Scale.
- */
-- (instancetype)scale25Percent;
-
-/**
- Launch at 50% Scale.
- */
-- (instancetype)scale50Percent;
-
-/**
- Launch at 75% Scale.
- */
-- (instancetype)scale75Percent;
-
-/**
- Launch at 100% Scale.
- */
-- (instancetype)scale100Percent;
-
-#pragma mark Locale
-
-/**
- A new configuration with the provided locale
- */
-- (instancetype)withLocale:(NSLocale *)locale;
-
-/**
- A new configuration with the provided localeIdentifier.
- */
-- (instancetype)withLocaleNamed:(NSString *)localeIdentifier;
 
 @end

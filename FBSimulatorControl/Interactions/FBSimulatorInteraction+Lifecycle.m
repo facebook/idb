@@ -26,6 +26,8 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorLaunchConfiguration+Helpers.h"
+#import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
@@ -36,22 +38,22 @@
 
 - (instancetype)bootSimulator
 {
+  return [self bootSimulator:FBSimulatorLaunchConfiguration.defaultConfiguration];
+}
+
+- (instancetype)bootSimulator:(FBSimulatorLaunchConfiguration *)configuration
+{
+  NSParameterAssert(configuration);
+
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    // Construct the Arguments
-    NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[
-      @"--args",
-      @"-CurrentDeviceUDID", simulator.udid,
-      @"-ConnectHardwareKeyboard", @"0"
-    ]];
-    NSArray *scaleArguments = [simulator.configuration lastScaleCommandLineArgumentsWithError:nil];
-    if (scaleArguments) {
-      [arguments addObjectsFromArray:scaleArguments];
-    }
-    if (simulator.pool.configuration.deviceSetPath) {
-      if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
-        return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] failBool:error];
-      }
-      [arguments addObjectsFromArray:@[@"-DeviceSetPath", simulator.pool.configuration.deviceSetPath]];
+    // Fetch the Boot arguments
+    NSError *innerError = nil;
+    NSArray *arguments = [configuration xcodeSimulatorApplicationArgumentsForSimulator:simulator error:&innerError];
+    if (!arguments) {
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to create boot args for Configuration %@", configuration]
+        causedBy:innerError]
+        failBool:error];
     }
 
     // Construct and start the task.

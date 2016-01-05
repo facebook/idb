@@ -16,12 +16,22 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorLaunchConfiguration.h"
 
 @implementation FBSimulatorInteraction (Setup)
 
+- (instancetype)prepareForLaunch:(FBSimulatorLaunchConfiguration *)configuration
+{
+  return [[self
+    setLocale:configuration.locale]
+    setupKeyboard];
+}
+
 - (instancetype)setLocale:(NSLocale *)locale
 {
-  NSParameterAssert(locale);
+  if (!locale) {
+    return [self succeed];
+  }
 
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSString *localeIdentifier = [locale localeIdentifier];
