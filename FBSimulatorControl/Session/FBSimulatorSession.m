@@ -116,20 +116,17 @@ NSString *const FBSimulatorSessionDidEndNotification = @"FBSimulatorSessionDidEn
 
 + (instancetype)sessionWithSimulator:(FBSimulator *)simulator
 {
-  NSParameterAssert(simulator);
-
-  FBSimulatorSession *session = [[FBSimulatorSession_NotStarted alloc] initWithSimulator:simulator];
-  simulator.session = session;
-  return session;
+  return  [[FBSimulatorSession_NotStarted alloc] initWithSimulator:simulator];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
 {
+  NSParameterAssert(simulator);
+
   self = [super init];
   if (!self) {
     return nil;
   }
-
 
   _simulator = simulator;
   _uuid = NSUUID.UUID;

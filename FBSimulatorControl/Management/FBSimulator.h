@@ -10,14 +10,14 @@
 #import <Foundation/Foundation.h>
 
 @protocol FBSimulatorEventSink;
+@protocol FBSimulatorLogger;
+@class FBSimulatorLogger;
 @class FBProcessQuery;
-@class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
 @class FBSimulatorHistory;
 @class FBSimulatorLaunchInfo;
 @class FBSimulatorLogs;
 @class FBSimulatorPool;
-@class FBSimulatorSession;
 @class SimDevice;
 
 /**
@@ -71,14 +71,14 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 /**
+ The Simulator's Logger.
+ */
+@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+
+/**
  History of the Simulator.
  */
 @property (nonatomic, strong, readonly) FBSimulatorHistory *history;
-
-/**
- The Session to which the Simulator belongs, if any.
- */
-@property (nonatomic, weak, readonly) FBSimulatorSession *session;
 
 /**
  The Name of the allocated Simulator.

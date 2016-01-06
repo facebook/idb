@@ -9,6 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
+@class FBSimulatorApplication;
 @class FBSimDeviceWrapper;
 @class FBSimulatorInteraction;
 
