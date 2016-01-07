@@ -33,9 +33,22 @@
 
 @end
 
+@interface FBSimulatorLaunchInfo_DirectLaunch : FBSimulatorLaunchInfo
+
+@end
+
 @implementation FBSimulatorLaunchInfo
 
 #pragma mark Public
+
++ (instancetype)directLaunchOfSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query
+{
+  FBProcessInfo *launchdSimProcess = [query launchdSimProcessForSimDevice:simDevice];
+  if (!launchdSimProcess) {
+    return nil;
+  }
+  return [[FBSimulatorLaunchInfo_DirectLaunch alloc] initWithDevice:simDevice query:query launchdProcess:launchdSimProcess];
+}
 
 + (instancetype)launchedViaApplicationOfSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query
 {
@@ -179,18 +192,38 @@
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"%@ | Simulator Process (%@)",
-    [super debugDescription],
-    self.simulatorProcess.debugDescription
+    @"Launched via Application (%@) | %@",
+    self.simulatorProcess.debugDescription,
+    [super debugDescription]
   ];
 }
 
 - (NSString *)shortDescription
 {
   return [NSString stringWithFormat:
-    @"%@ | simulator_pid %d",
-    [super shortDescription],
-    self.launchdProcess.processIdentifier
+    @"Launched via Application pid %d | %@",
+    self.simulatorProcess.processIdentifier,
+    [super shortDescription]
+  ];
+}
+
+@end
+
+@implementation FBSimulatorLaunchInfo_DirectLaunch
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"Directly Launched with %@",
+    [super debugDescription]
+  ];
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Directly Launched with %@",
+    [super shortDescription]
   ];
 }
 

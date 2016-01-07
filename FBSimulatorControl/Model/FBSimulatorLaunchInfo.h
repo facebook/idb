@@ -25,6 +25,17 @@
 
 /**
  Creates a FBSimulatorLaunchInfo object from the provided SimDevice.
+ Does not need to meet the Simulator.app precondition.
+ Assumes that the Simulator was launched without a containing application.
+
+ @param simDevice the Simulator Device to create the launch info from.
+ @param query the Process Query object to obtain Process info from.
+ @return a FBSimulatorLaunchInfo instance if process information could be obtained, nil otherwise.
+ */
++ (instancetype)directLaunchOfSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query;
+
+/**
+ Creates a FBSimulatorLaunchInfo object from the provided SimDevice.
  Must meet the Simulator.app process precondition.
 
  @param simDevice the Simulator Device to create the launch info from.
