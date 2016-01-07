@@ -15,50 +15,63 @@
 @class SimDevice;
 
 /**
- Information about the current launch of a Simulator.
+ Information about the a launched Simulator.
+
+ A Launched Simulator will meet the following conditions:
+ 1) Have a valid launchd_sim process.
+ 2) If launched via a Simulator.app, have a valid Simulator.app process.
  */
 @interface FBSimulatorLaunchInfo : NSObject <NSCopying>
 
 /**
  Creates a FBSimulatorLaunchInfo object from the provided SimDevice.
+ Must meet the Simulator.app process precondition.
 
  @param simDevice the Simulator Device to create the launch info from.
  @param query the Process Query object to obtain Process/Application info from.
  @return a FBSimulatorLaunchInfo instance if process information could be obtained, nil otherwise.
  */
-+ (instancetype)fromSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query;
++ (instancetype)launchedViaApplicationOfSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query;
 
 /**
  Creates a FBSimulatorLaunchInfo object from the provided SimDevice.
- Since it may take a short while for process info to update a timeout can be provided.
+ Must meet the Simulator.app process precondition.
+
+ This variant is called when it is preferable to wait a short while for process information to appear.
+ This is the case when an Simulator.app has just started, but hasn't yet booted the SimDevice.
 
  @param simDevice the Simulator Device to create the launch info from.
  @param query the Process Query object to obtain Process/Application info from.
  @param timeout the maximum time to wait for information to appear.
  @return a FBSimulatorLaunchInfo instance if process information could be obtained, nil otherwise.
  */
-+ (instancetype)fromSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query timeout:(NSTimeInterval)timeout;
++ (instancetype)launchedViaApplicationOfSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query timeout:(NSTimeInterval)timeout;
 
 /**
  Creates a FBSimulatorLaunchInfo object from the provided SimDevice & NSRunningApplication combination.
+ Must meet the Simulator.app process precondition.
 
- @param simDevice the SimDevice to create the launch info from.
  @param simulatorApplication the Simulator Application to create the launch info from. If this conflicts with the SimDevice, nil is returned.
+ @param simDevice the SimDevice to create the launch info from.
  @param query the Process Query object to obtain Process/Application info from.
  @return a FBSimulatorLaunchInfo instance if process information could be obtained, nil otherwise.
  */
-+ (instancetype)fromSimDevice:(SimDevice *)simDevice simulatorApplication:(NSRunningApplication *)simulatorApplication query:(FBProcessQuery *)query;
++ (instancetype)launchedViaApplication:(NSRunningApplication *)simulatorApplication ofSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query;
 
 /**
  Creates a FBSimulatorLaunchInfo object from the provided SimDevice & NSRunningApplication combination.
+ Must meet the Simulator.app process precondition.
 
- @param simDevice the SimDevice to create the launch info from.
+ This variant is called when it is preferable to wait a short while for process information to appear.
+ This is the case when an Simulator.app has just started, but hasn't yet booted the SimDevice.
+
  @param simulatorApplication the Simulator Application to create the launch info from. If this conflicts with the SimDevice, nil is returned.
+ @param simDevice the SimDevice to create the launch info from.
  @param query the Process Query object to obtain Process/Application info from.
  @param timeout the maximum time to wait for information to appear.
  @return a FBSimulatorLaunchInfo instance if process information could be obtained, nil otherwise.
  */
-+ (instancetype)fromSimDevice:(SimDevice *)simDevice simulatorApplication:(NSRunningApplication *)simulatorApplication query:(FBProcessQuery *)query timeout:(NSTimeInterval)timeout;
++ (instancetype)launchedViaApplication:(NSRunningApplication *)simulatorApplication ofSimDevice:(SimDevice *)simDevice query:(FBProcessQuery *)query timeout:(NSTimeInterval)timeout;
 
 /**
  Process Information for the Simulator.app

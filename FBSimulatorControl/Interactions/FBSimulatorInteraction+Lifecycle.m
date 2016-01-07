@@ -76,7 +76,7 @@
     }
 
     // Expect the launch info for the process to exist.
-    FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:simulator.device query:simulator.processQuery];
+    FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo launchedViaApplicationOfSimDevice:simulator.device query:simulator.processQuery];
     if (!launchInfo) {
       return [[[FBSimulatorError describe:@"Could not obtain process info for booted simulator process"] inSimulator:simulator] failBool:error];
     }

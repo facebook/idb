@@ -48,7 +48,7 @@
   _sink = sink;
   _simDevice = simDevice;
   _processQuery = processQuery;
-  _launchInfo = [FBSimulatorLaunchInfo fromSimDevice:simDevice query:processQuery];
+  _launchInfo = [FBSimulatorLaunchInfo launchedViaApplicationOfSimDevice:simDevice query:processQuery];
   _processTerminationNotifiers = [NSMutableDictionary dictionary];
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
@@ -229,7 +229,7 @@
   if (![simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID] isEqual:self.simDevice.UDID.UUIDString]) {
     return;
   }
-  FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:self.simDevice simulatorApplication:launchedApplication query:self.processQuery timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
+  FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo launchedViaApplication:launchedApplication ofSimDevice:self.simDevice query:self.processQuery timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
   if (!launchInfo) {
     return;
   }
