@@ -128,4 +128,15 @@
   return [[FBSimulatorError describeFormat:@"Failed to kill process %@ with unknown errno %d", process, errorCode] failBool:error];
 }
 
+- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+{
+  for (FBProcessInfo *process in processes) {
+    NSParameterAssert(process.processIdentifier > 1);
+    if (![self killProcess:process error:error]) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
 @end

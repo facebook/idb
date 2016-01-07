@@ -61,11 +61,6 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 @property (nonatomic, copy, readonly) NSArray *allSimulators;
 
 /**
- Returns the Simulator Termination Strategy associated with the reciever.
- */
-@property (nonatomic, strong, readonly) FBSimulatorTerminationStrategy *terminationStrategy;
-
-/**
  Returns a Device for the given parameters. Will create devices where necessary.
  If you plan on running multiple tests in the lifecycle of a process, you sshould use `freeDevice:error:`
  otherwise devices will continue to be allocated.

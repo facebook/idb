@@ -38,12 +38,21 @@
 + (instancetype)withRunningApplicationTermination:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;;
 
 /**
- Uses methods on NSRunningApplication to terminate Applications
+ Terminates a Process of the provided Process Info.
  
  @param process the process to terminate, must not be nil.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
 - (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error;
+
+/**
+ Terminates a number of Processes of the provided Process Info Array.
+
+ @param processes an NSArray<FBProcessInfo> of processes to terminate.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error;
 
 @end

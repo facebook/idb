@@ -16,6 +16,7 @@
 #import <CoreSimulator/SimRuntime.h>
 
 #import "FBCoreSimulatorNotifier.h"
+#import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
@@ -94,7 +95,7 @@
   NSError *innerError = nil;
   BOOL killSpuriousCoreSimulatorServices = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices) == FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices;
   if (killSpuriousCoreSimulatorServices) {
-    if (![self.terminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
+    if (![self.coreSimulatorTerminationStrategy killSpuriousCoreSimulatorServicesWithError:&innerError]) {
       return [[[[FBSimulatorError
         describe:@"Failed to kill spurious CoreSimulatorServices"]
         causedBy:innerError]
@@ -129,17 +130,9 @@
   BOOL killSpuriousSimulators = (self.configuration.options & FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart) == FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;
   if (killSpuriousSimulators && !deleteOnStart) {
     BOOL failOnSpuriousKillFail = (self.configuration.options & FBSimulatorManagementOptionsIgnoreSpuriousKillFail) != FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-    if (![self.terminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
+    if (![self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:&innerError] && failOnSpuriousKillFail) {
       return [[[[FBSimulatorError
         describe:@"Failed to kill spurious simulators"]
-        causedBy:innerError]
-        logger:self.logger]
-        failBool:error];
-    }
-
-    if (![self.terminationStrategy ensureConsistencyForSimulators:self.allSimulators withError:&innerError]) {
-      return [[[[FBSimulatorError
-        describe:@"Failed to ensure simulator consistency"]
         causedBy:innerError]
         logger:self.logger]
         failBool:error];
@@ -174,11 +167,15 @@
   return [self.inflatedSimulators objectsForKeys:currentSimulatorUDIDs notFoundMarker:NSNull.null];
 }
 
-- (FBSimulatorTerminationStrategy *)terminationStrategy
+- (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
-  // `self.allSimulators` is not a constant for the lifetime of self, so should be fetched on all usages.
   return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processQuery:self.processQuery logger:self.logger];
 }
+
+- (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
+{
+  return [FBCoreSimulatorTerminationStrategy withProcessQuery:self.processQuery logger:self.logger];
+};
 
 #pragma mark - Public Methods
 
@@ -204,7 +201,7 @@
 
   // Killing is a pre-requesite for deleting/erasing
   NSError *innerError = nil;
-  if (![self.terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
+  if (![self.simulatorTerminationStrategy killSimulators:@[simulator] withError:&innerError]) {
     return [[[[[FBSimulatorError
       describe:@"Failed to Free Device in Killing Device"]
       causedBy:innerError]
@@ -245,12 +242,12 @@
 
 - (NSArray *)killAllWithError:(NSError **)error
 {
-  return [self.terminationStrategy killSimulators:self.allSimulators withError:error];
+  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators withError:error];
 }
 
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
 {
-  return [self.terminationStrategy killSpuriousSimulatorsWithError:error];
+  return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
 }
 
 - (NSArray *)deleteAllWithError:(NSError **)error
@@ -321,7 +318,7 @@
 {
   NSError *innerError = nil;
   // Kill all the simulators first
-  if (![self.terminationStrategy killSimulators:simulators withError:&innerError]) {
+  if (![self.simulatorTerminationStrategy killSimulators:simulators withError:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
@@ -446,7 +443,7 @@
   // Shutdown first.
   if (shutdown || erase) {
     [self.logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
-    if (![self.terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
+    if (![self.simulatorTerminationStrategy killSimulators:@[simulator] withError:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Failed to kill a Simulator when allocating it"]
         causedBy:innerError]

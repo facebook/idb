@@ -83,61 +83,49 @@
 
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error
 {
-  // It looks like there is a bug with El Capitan, where terminating mutliple Applications quickly
+  // It looks like there is a bug with El Capitan, where terminating multiple Applications quickly
   // can result in the dock getting into an inconsistent state displaying icons for terminated Applications.
+  //
   // This happens regardless of how the Application was terminated.
-  // The process backing the terminated Application is definitely gone, but the Icon isn't.
+  // The process backing the terminated Application is definitely gone, but the dock icon isn't.
   // The Application appears in the Force Quit menu, but cannot ever be quit by conventional means.
   // Attempting to shutdown the Mac will result in hanging (probably because it can't terminate the App).
   //
   // The only remedy is to quit 'launchservicesd' followed by 'Dock.app'.
   // This will clear up the stale state that must exist in the Dock/launchservicesd.
   // Waiting after killing of processes by a short period of time is sufficient to mitigate this issue.
-  // Since `safeShutdown:withError:` will spin the run loop until CoreSimulator confirms that the device is shutdown,
+  // Since `-[FBSimDeviceWrapper shutdownWithError:]` will spin the run loop until CoreSimulator confirms that the device is shutdown,
   // this will give a sufficient amount of time between killing Applications.
 
   [self.logger.debug logFormat:@"Killing %@", [FBCollectionDescriptions oneLineDescriptionFromArray:simulators atKeyPath:@"shortDescription"]];
   for (FBSimulator *simulator in simulators) {
     FBProcessInfo *simulatorProcess = simulator.launchInfo.simulatorProcess ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
-    if (!simulatorProcess) {
-      [self.logger.debug logFormat:@"Will not kill %@ as it is not launched", simulator.shortDescription];
-      continue;
-    }
     NSError *innerError = nil;
-    if (![self.processTerminationStrategy killProcess:simulatorProcess error:&innerError]) {
-      return [[[[[FBSimulatorError
-        describeFormat:@"Could not kill simulator process %@", simulatorProcess]
-        inSimulator:simulator]
-        causedBy:innerError]
-        logger:self.logger]
-        fail:error];
+
+    // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
+    // This prevents 'Zombie' Simulator.app from existing.
+    if (simulatorProcess) {
+      [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
+      if (![self.processTerminationStrategy killProcess:simulatorProcess error:&innerError]) {
+        return [[[[[FBSimulatorError
+          describeFormat:@"Could not kill simulator process %@", simulatorProcess]
+          inSimulator:simulator]
+          causedBy:innerError]
+          logger:self.logger]
+          fail:error];
+      }
+    } else {
+      [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
     }
+
+    // Shutdown will:
+    // 1) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
+    // 2) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
     if (![simulator.simDeviceWrapper shutdownWithError:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Could not shut down simulator after termination"]
         inSimulator:simulator]
         causedBy:innerError]
-        logger:self.logger]
-        fail:error];
-    }
-    [self.logger.info logFormat:@"Killed & Shutdown %@", simulator];
-  }
-  return simulators;
-}
-
-- (NSArray *)ensureConsistencyForSimulators:(NSArray *)simulators withError:(NSError **)error
-{
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
-    return simulator.launchInfo == nil && simulator.state != FBSimulatorStateShutdown;
-  }];
-  simulators = [simulators filteredArrayUsingPredicate:predicate];
-
-  for (FBSimulator *simulator in simulators) {
-    NSError *innerError = nil;
-    if (![simulator.simDeviceWrapper shutdownWithError:&innerError]) {
-      return [[[[FBSimulatorError
-        describe:@"Failed to ensure consistency by shutting down process-less simulators"]
-        inSimulator:simulator]
         logger:self.logger]
         fail:error];
     }
@@ -166,28 +154,7 @@
   return YES;
 }
 
-- (BOOL)killSpuriousCoreSimulatorServicesWithError:(NSError **)error
-{
-  NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
-    [FBProcessQuery coreSimulatorProcessesForCurrentXcode]
-  ];
-  NSArray *processes = [[self.processQuery coreSimulatorServiceProcesses] filteredArrayUsingPredicate:predicate];
-
-  return [self killProcesses:processes error:error];
-}
-
 #pragma mark Private
-
-- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
-{
-  for (FBProcessInfo *process in processes) {
-    NSParameterAssert(process.processIdentifier > 1);
-    if (![self.processTerminationStrategy killProcess:process error:error]) {
-      return NO;
-    }
-  }
-  return YES;
-}
 
 - (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
 {

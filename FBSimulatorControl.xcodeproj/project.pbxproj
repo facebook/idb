@@ -38,6 +38,8 @@
 		AA1D65471C21CD2A0069F90D /* FBASLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1D65451C21CD2A0069F90D /* FBASLParser.m */; };
 		AA2219911C3D868300371B01 /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA22198F1C3D868300371B01 /* FBProcessTerminationStrategy.h */; };
 		AA2219921C3D868300371B01 /* FBProcessTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2219901C3D868300371B01 /* FBProcessTerminationStrategy.m */; };
+		AA2219951C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2219931C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA2219961C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2219941C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.m */; };
 		AA3230CB1BDA387700C5BA01 /* FBSimulatorControlAssertions.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */; };
 		AA5639551C060005009BAFAA /* FBSimulatorControl.h in Headers */ = {isa = PBXBuildFile; fileRef = AA5639541C05FFF5009BAFAA /* FBSimulatorControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA819DB71B9FB40D002F58CA /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */; };
@@ -245,6 +247,8 @@
 		AA1D65451C21CD2A0069F90D /* FBASLParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBASLParser.m; sourceTree = "<group>"; };
 		AA22198F1C3D868300371B01 /* FBProcessTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessTerminationStrategy.h; sourceTree = "<group>"; };
 		AA2219901C3D868300371B01 /* FBProcessTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessTerminationStrategy.m; sourceTree = "<group>"; };
+		AA2219931C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCoreSimulatorTerminationStrategy.h; sourceTree = "<group>"; };
+		AA2219941C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCoreSimulatorTerminationStrategy.m; sourceTree = "<group>"; };
 		AA2DDC231C283F40000689C6 /* __SimKitPlaceholderClass.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = __SimKitPlaceholderClass.h; sourceTree = "<group>"; };
 		AA2DDC241C283F40000689C6 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
 		AA2DDC251C283F40000689C6 /* NSError-SimulatorKitNSErrorAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSError-SimulatorKitNSErrorAdditions.h"; sourceTree = "<group>"; };
@@ -1786,6 +1790,8 @@
 		AA9516FA1C15F54600A89CAD /* Management */ = {
 			isa = PBXGroup;
 			children = (
+				AA2219931C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.h */,
+				AA2219941C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.m */,
 				AA22198F1C3D868300371B01 /* FBProcessTerminationStrategy.h */,
 				AA2219901C3D868300371B01 /* FBProcessTerminationStrategy.m */,
 				AA9516FE1C15F54600A89CAD /* FBSimulator.h */,
@@ -2048,6 +2054,7 @@
 				AAF2D3561C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.h in Headers */,
 				AA95179D1C15F54600A89CAD /* FBProcessQuery.h in Headers */,
 				AA9517A11C15F54600A89CAD /* FBSimulatorSession+Private.h in Headers */,
+				AA2219951C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.h in Headers */,
 				AA9517871C15F54600A89CAD /* FBSimulatorPredicates.h in Headers */,
 				AA9517811C15F54600A89CAD /* FBSimulatorControl+PrincipalClass.h in Headers */,
 				AA9517BA1C15F54600A89CAD /* FBSimulatorLogger.h in Headers */,
@@ -2184,6 +2191,7 @@
 				AA9517981C15F54600A89CAD /* FBCoreSimulatorNotifier.m in Sources */,
 				AA9517731C15F54600A89CAD /* FBSimulatorInteraction+Video.m in Sources */,
 				AA9517BD1C15F54600A89CAD /* NSRunLoop+SimulatorControlAdditions.m in Sources */,
+				AA2219961C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.m in Sources */,
 				AA9517AB1C15F54600A89CAD /* FBTaskExecutor.m in Sources */,
 				AA9517751C15F54600A89CAD /* FBSimulatorInteraction.m in Sources */,
 				AA95175A1C15F54600A89CAD /* FBSimulatorEventRelay.m in Sources */,
