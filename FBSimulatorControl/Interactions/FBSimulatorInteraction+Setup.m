@@ -39,6 +39,9 @@
     NSDictionary *preferencesDict = @{
       @"AppleLocale": localeIdentifier,
       @"AppleLanguages": @[ languageIdentifier ],
+      // We force the simulator to have a US keyboard for automation's sake.
+      @"AppleKeyboards": @[ @"en_US@hw=US;sw=QWERTY" ],
+      @"AppleKeyboardsExpanded": @1,
     };
 
     NSString *simulatorRoot = simulator.device.dataPath;
