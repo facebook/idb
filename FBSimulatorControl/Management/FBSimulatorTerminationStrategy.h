@@ -43,20 +43,6 @@
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error;
 
 /**
- 'Shutting Down' a Simulator can be a little hairier than just calling 'shutdown'.
- This method of shutting down takes into account a variety of error states and attempts to recover from them.
-
- Note that 'Shutting Down' a Simulator is different to 'terminating' or 'killing'.
- Killing a Simulator will kill the Simulator.app process.
- When 'killing' a Simulator is expected that the process will termitate and some time later the state will update to 'Shutdown'.
-
- @param simulator the Simulator to safe shutdown.
- @param error a descriptive error for any error that occurred.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)safeShutdownSimulator:(FBSimulator *)simulator withError:(NSError **)error;
-
-/**
  It's possible a Simulator is in a non-'Shutdown' state, without an associated Simulator process.
  These Simulators will be Shutdown to ensure that CoreSimulator is in a known-consistent state.
 

@@ -420,7 +420,7 @@
 
   // This step ensures that the Simulator is in a known-shutdown state after creation.
   // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-  if (![self.terminationStrategy safeShutdownSimulator:simulator withError:&innerError]) {
+  if (![simulator.simDeviceWrapper shutdownWithError:&innerError]) {
     return [[[[[FBSimulatorError
       describeFormat:@"Could not get newly-created simulator into a shutdown state"]
       inSimulator:simulator]
@@ -468,7 +468,7 @@
         failBool:error];
     }
     [self.logger.debug logFormat:@"Shutting down Simulator after erase %@", simulator.udid];
-    if (![self.terminationStrategy safeShutdownSimulator:simulator withError:&innerError]) {
+    if (![simulator.simDeviceWrapper shutdownWithError:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }
