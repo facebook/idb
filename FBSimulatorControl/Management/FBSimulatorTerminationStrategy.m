@@ -16,6 +16,7 @@
 
 #import "FBCollectionDescriptions.h"
 #import "FBCoreSimulatorNotifier.h"
+#import "FBProcessTerminationStrategy.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
@@ -39,61 +40,7 @@
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
-
-- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error;
-- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error;
-- (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error;
-
-@end
-
-@interface FBSimulatorTerminationStrategy_Kill : FBSimulatorTerminationStrategy
-
-@end
-
-@implementation FBSimulatorTerminationStrategy_Kill
-
-- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error
-{
-  return [self killProcess:process error:error];
-}
-
-@end
-
-@interface FBSimulatorTerminationStrategy_WorkspaceQuit : FBSimulatorTerminationStrategy
-
-@end
-
-@implementation FBSimulatorTerminationStrategy_WorkspaceQuit
-
-- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error
-{
-  // Obtain the NSRunningApplication for the given Application.
-  NSRunningApplication *application = [self.processQuery runningApplicationForProcess:process];
-  if ([application isKindOfClass:NSNull.class]) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain application handle for %@", process] failBool:error];
-  }
-  // Terminate and return if successful.
-  if ([application terminate]) {
-    return YES;
-  }
-  // If the App is already terminated, everything is ok.
-  if (application.isTerminated) {
-    return YES;
-  }
-  // I find your lack of termination disturbing.
-  if ([application forceTerminate]) {
-    return YES;
-  }
-  // If the App is already terminated, everything is ok.
-  if (application.isTerminated) {
-    return YES;
-  }
-  return [[[[FBSimulatorError
-    describeFormat:@"Could not terminate Application %@", application]
-    attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
-    logger:self.logger]
-    failBool:error];
-}
+@property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
 @end
 
@@ -104,14 +51,20 @@
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
 {
   BOOL useKill = (configuration.options & FBSimulatorManagementOptionsUseProcessKilling) == FBSimulatorManagementOptionsUseProcessKilling;
-  processQuery = processQuery ?: [FBProcessQuery new];
-  return useKill
-    ? [[FBSimulatorTerminationStrategy_Kill alloc] initWithConfiguration:configuration processQuery:processQuery logger:logger]
-    : [[FBSimulatorTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration processQuery:processQuery logger:logger];
+  FBProcessTerminationStrategy *processTerminationStrategy = useKill
+    ? [FBProcessTerminationStrategy withProcessKilling:processQuery logger:logger]
+    : [FBProcessTerminationStrategy withRunningApplicationTermination:processQuery logger:logger];
+
+  return [[self alloc] initWithConfiguration:configuration processQuery:processQuery processTerminationStrategy:processTerminationStrategy logger:logger];
+
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBSimulatorLogger>)logger
 {
+  NSParameterAssert(processQuery);
+  NSParameterAssert(configuration);
+  NSParameterAssert(processTerminationStrategy);
+
   self = [super init];
   if (!self) {
     return nil;
@@ -120,6 +73,7 @@
   _configuration = configuration;
   _processQuery = processQuery;
   _logger = logger;
+  _processTerminationStrategy = processTerminationStrategy;
 
   return self;
 }
@@ -149,7 +103,7 @@
       continue;
     }
     NSError *innerError = nil;
-    if (![self killSimulatorProcess:simulatorProcess error:&innerError]) {
+    if (![self.processTerminationStrategy killProcess:simulatorProcess error:&innerError]) {
       return [[[[[FBSimulatorError
         describeFormat:@"Could not kill simulator process %@", simulatorProcess]
         inSimulator:simulator]
@@ -301,54 +255,15 @@
 
 #pragma mark Private
 
-- (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error
-{
-  // The kill was successful, all is well.
-  [self.logger.debug logFormat:@"Killing %@", process.shortDescription];
-  if (kill(process.processIdentifier, SIGTERM) == 0) {
-    return YES;
-  }
-  int errorCode = errno;
-  if (errorCode == EPERM) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to kill process %@ as the sending process does not have the privelages", process]
-      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
-      logger:self.logger]
-      failBool:error];
-  }
-  if (errorCode == ESRCH) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to kill process %@ as the sending process does not exist", process]
-      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
-      logger:self.logger]
-      failBool:error];
-  }
-  if (errorCode == EINVAL) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to kill process %@ as the signal was not a valid signal number", process]
-      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
-      logger:self.logger]
-      failBool:error];
-  }
-  [self.logger.debug logFormat:@"Killed %@", process.shortDescription];
-  return [[FBSimulatorError describeFormat:@"Failed to kill process %@ with unknown errno %d", process, errorCode] failBool:error];
-}
-
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
 {
   for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
-    if (![self killProcess:process error:error]) {
+    if (![self.processTerminationStrategy killProcess:process error:error]) {
       return NO;
     }
   }
   return YES;
-}
-
-- (BOOL)killSimulatorProcess:(FBProcessInfo *)process error:(NSError **)error
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return NO;
 }
 
 - (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
@@ -356,7 +271,7 @@
   NSArray *processes = [self.processQuery.simulatorProcesses filteredArrayUsingPredicate:predicate];
   for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
-    if (![self killProcess:process error:error]) {
+    if (![self.processTerminationStrategy killProcess:process error:error]) {
       return NO;
     }
     // See comment in `killSimulators:withError:`
