@@ -12,10 +12,10 @@
 #import <AppKit/AppKit.h>
 
 #import "FBProcessInfo.h"
-#import "FBSimulatorError.h"
-#import "FBSimulatorLogger.h"
 #import "FBProcessQuery+Helpers.h"
 #import "FBProcessQuery.h"
+#import "FBSimulatorError.h"
+#import "FBSimulatorLogger.h"
 
 @interface FBProcessTerminationStrategy ()
 

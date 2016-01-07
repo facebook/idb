@@ -20,7 +20,7 @@
 
 /**
  Uses kill(2) to terminate Applications.
- 
+
  @param processQuery the Process Query object to use.
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
@@ -39,7 +39,7 @@
 
 /**
  Terminates a Process of the provided Process Info.
- 
+
  @param process the process to terminate, must not be nil.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.

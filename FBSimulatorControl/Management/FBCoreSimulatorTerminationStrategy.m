@@ -10,9 +10,9 @@
 #import "FBCoreSimulatorTerminationStrategy.h"
 
 #import "FBCollectionDescriptions.h"
-#import "FBSimulatorLogger.h"
-#import "FBProcessTerminationStrategy.h"
 #import "FBProcessQuery+Simulators.h"
+#import "FBProcessTerminationStrategy.h"
+#import "FBSimulatorLogger.h"
 
 @interface FBCoreSimulatorTerminationStrategy ()
 

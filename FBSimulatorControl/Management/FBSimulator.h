@@ -11,11 +11,11 @@
 
 @protocol FBSimulatorEventSink;
 @protocol FBSimulatorLogger;
-@class FBSimulatorLogger;
 @class FBProcessQuery;
 @class FBSimulatorConfiguration;
 @class FBSimulatorHistory;
 @class FBSimulatorLaunchInfo;
+@class FBSimulatorLogger;
 @class FBSimulatorLogs;
 @class FBSimulatorPool;
 @class SimDevice;

@@ -19,7 +19,7 @@
 
 /**
  Creates and returns a new Core Simulator Termination Strategy from the arguments.
- 
+
  @param processQuery the Process Query object to use.
  @param logger the logger to use.
  */
