@@ -36,22 +36,27 @@
   NSRunningApplication *application = [self.processQuery runningApplicationForProcess:process];
   // If the Application Handle doesn't exist, assume it isn't an Application and use good-ole kill(2)
   if ([application isKindOfClass:NSNull.class]) {
+    [self.logger.debug logFormat:@"Application Handle for %@ does not exist, falling back to kill(2)", process.shortDescription];
     return [super killProcess:process error:error];
   }
   // Terminate and return if successful.
   if ([application terminate]) {
+    [self.logger.debug logFormat:@"Terminated %@ with Application Termination", process.shortDescription];
     return YES;
   }
   // If the App is already terminated, everything is ok.
   if (application.isTerminated) {
+    [self.logger.debug logFormat:@"Application %@ is Terminated", process.shortDescription];
     return YES;
   }
   // I find your lack of termination disturbing.
   if ([application forceTerminate]) {
+    [self.logger.debug logFormat:@"Terminated %@ with Forced Application Termination", process.shortDescription];
     return YES;
   }
   // If the App is already terminated, everything is ok.
   if (application.isTerminated) {
+    [self.logger.debug logFormat:@"Application %@ terminated after Forced Application Termination", process.shortDescription];
     return YES;
   }
   return [[[[FBSimulatorError
