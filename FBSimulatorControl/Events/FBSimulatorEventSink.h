@@ -23,16 +23,21 @@
 @protocol FBSimulatorEventSink <NSObject>
 
 /**
- Event for the launch of a Simulator.
+ Event for the launch of a Simulator's Container Application Process.
+ This is the Simulator.app's Process.
+ 
+ @param launchInfo the launch info for the launched Simulator.
  */
-- (void)didStartWithLaunchInfo:(FBSimulatorLaunchInfo *)launchInfo;
+- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo;
 
 /**
- Event for the termination of a Simulator.
+ Event for the launch of a Simulator's Container Application Process.
+ This is the Simulator.app's Process.
 
+ @param launchInfo the launch info the terminated Simulator.
  @param expected whether the termination was expected or not.
  */
-- (void)didTerminate:(BOOL)expected;
+- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected;
 
 /**
  Event for the launch of an Agent.

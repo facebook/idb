@@ -34,17 +34,17 @@
   return self;
 }
 
-- (void)didStartWithLaunchInfo:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink didStartWithLaunchInfo:launchInfo];
+    [sink containerApplicationDidLaunch:launchInfo];
   }
 }
 
-- (void)didTerminate:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink didTerminate:expected];
+    [sink containerApplicationDidTerminate:launchInfo expected:expected];
   }
 }
 

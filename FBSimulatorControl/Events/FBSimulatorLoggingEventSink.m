@@ -46,14 +46,14 @@
 
 #pragma mark FBSimulatorEventSink Implementation
 
-- (void)didStartWithLaunchInfo:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo
 {
-  [self.logger logFormat:@"%@Did Start => %@", self.prefix, launchInfo.shortDescription];
+  [self.logger logFormat:@"%@Container Application Did Launch => %@", self.prefix, launchInfo.shortDescription];
 }
 
-- (void)didTerminate:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected
 {
-  [self.logger logFormat:@"%@Did Terminate => Expected %d", self.prefix, expected];
+  [self.logger logFormat:@"%@Container Application Did Terminate => Expected %d", self.prefix, expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr

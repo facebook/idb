@@ -95,7 +95,7 @@
     }
 
     // Pass on the success to the event sink.
-    [simulator.eventSink didStartWithLaunchInfo:launchInfo];
+    [simulator.eventSink containerApplicationDidLaunch:launchInfo];
     [simulator.eventSink terminationHandleAvailable:task];
 
     return YES;
@@ -119,7 +119,7 @@
     if (![terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
       return [[[[FBSimulatorError describe:@"Could not shutdown simulator"] inSimulator:simulator] causedBy:innerError] failBool:error];
     }
-    [simulator.eventSink didTerminate:YES];
+    [simulator.eventSink containerApplicationDidTerminate:launchInfo expected:YES];
 
     return YES;
   }];

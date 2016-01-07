@@ -67,7 +67,7 @@
 
 #pragma mark FBSimulatorEventSink Protocol Implementation
 
-- (void)didStartWithLaunchInfo:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo
 {
   NSParameterAssert(launchInfo);
 
@@ -80,17 +80,17 @@
     return;
   }
   self.launchInfo = launchInfo;
-  [self.sink didStartWithLaunchInfo:launchInfo];
+  [self.sink containerApplicationDidLaunch:launchInfo];
 }
 
-- (void)didTerminate:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected
 {
   // De-duplicate known-terminated Simulators.
   if (!self.launchInfo) {
     return;
   }
   self.launchInfo = nil;
-  [self.sink didTerminate:expected];
+  [self.sink containerApplicationDidTerminate:launchInfo expected:expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
@@ -228,7 +228,7 @@
   if (!launchInfo) {
     return;
   }
-  [self didStartWithLaunchInfo:launchInfo];
+  [self containerApplicationDidLaunch:launchInfo];
 }
 
 - (void)discardLaunchInfoFromBoot
@@ -239,7 +239,7 @@
   }
 
   // Notify of Simulator Termination.
-  [self didTerminate:NO];
+  [self containerApplicationDidTerminate:self.launchInfo expected:NO];
 }
 
 #pragma mark Simulator Application Launch/Termination
@@ -280,7 +280,7 @@
   if (!launchInfo) {
     return;
   }
-  [self didStartWithLaunchInfo:launchInfo];
+  [self containerApplicationDidLaunch:launchInfo];
 }
 
 - (void)workspaceApplicationDidTerminate:(NSNotification *)notification
@@ -297,7 +297,7 @@
   }
 
   // Notify of Simulator Termination.
-  [self didTerminate:NO];
+  [self containerApplicationDidTerminate:self.launchInfo expected:NO];
 }
 
 @end

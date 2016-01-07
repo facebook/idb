@@ -106,8 +106,8 @@
 - (void)registerNotificationObservers
 {
   NSArray *notificationNames = @[
-    FBSimulatorDidLaunchNotification,
-    FBSimulatorDidTerminateNotification,
+    FBSimulatorContainerDidLaunchNotification,
+    FBSimulatorContainerDidTerminateNotification,
     FBSimulatorApplicationProcessDidLaunchNotification,
     FBSimulatorApplicationProcessDidTerminateNotification,
     FBSimulatorAgentProcessDidLaunchNotification,
@@ -247,12 +247,12 @@
 
 - (NSArray *)expectedBootNotificationNames
 {
-  return @[FBSimulatorDidLaunchNotification];
+  return @[FBSimulatorContainerDidLaunchNotification];
 }
 
 - (NSArray *)expectedShutdownNotificationNames
 {
-  return @[FBSimulatorDidTerminateNotification];
+  return @[FBSimulatorContainerDidTerminateNotification];
 }
 
 @end
