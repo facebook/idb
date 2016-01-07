@@ -16,7 +16,9 @@
 @class SimDevice;
 
 /**
- Augments SimDevice with Process Info and the ability for a custom timeout.
+ Mirrors the Method Signatures in SimDevice. Augmenting with:
+ - More informative return values.
+ - Implementations that are more resiliant to failure in CoreSimulator.
  */
 @interface FBSimDeviceWrapper : NSObject
 
@@ -29,6 +31,26 @@
  @return a new SimDevice wrapper.
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery;
+
+/**
+ 'Shutting Down' a Simulator can be a little hairier than just calling '-[SimDevice shutdownWithError:]'.
+ This method of shutting down takes into account a variety of error states and attempts to recover from them.
+
+ Note that 'Shutting Down' a Simulator is different to 'terminating' or 'killing':
+ - Killing a Simulator will kill the Simulator.app process.
+ - Killing the Simulator.app process will soon-after get the SimDevice into a 'Shutdown' state in CoreSimulator.
+ - This will take a number of seconds and represents an inconsistent state for the Simulator.
+ - Calling Shutdown on a Simulator without terminating the Simulator.app process first will result in a 'Zombie' Simulator.
+ - A 'Zombie' Simulator.app is a Simulator that isn't backed by a running SimDevice in CoreSimulator.
+
+ Therefore this method should be called if:
+ - A Simulator has no corresponding 'Simulator.app'. This is the case if `-[SimDevice bootWithOptions:error]` has been called directly.
+ - After Simulator's corresponding 'Simulator.app' has been killed.
+
+ @param error a descriptive error for any error that occurred.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)shutdownWithError:(NSError **)error;
 
 /**
  Boots an Application on the Simulator.

@@ -33,7 +33,7 @@
 /**
  Kills the provided Simulators.
  This call ensures that all of the Simulators:
- 1) Have any relevant Simulator.app process killed
+ 1) Have any relevant Simulator.app process killed (if any applicable Simulator.app process is found).
  2) Have the appropriate SimDevice state at 'Shutdown'
 
  @param simulators the Simulators to Kill.
@@ -41,30 +41,6 @@
  @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
 - (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error;
-
-/**
- 'Shutting Down' a Simulator can be a little hairier than just calling 'shutdown'.
- This method of shutting down takes into account a variety of error states and attempts to recover from them.
-
- Note that 'Shutting Down' a Simulator is different to 'terminating' or 'killing'.
- Killing a Simulator will kill the Simulator.app process.
- When 'killing' a Simulator is expected that the process will termitate and some time later the state will update to 'Shutdown'.
-
- @param simulator the Simulator to safe shutdown.
- @param error a descriptive error for any error that occurred.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)safeShutdownSimulator:(FBSimulator *)simulator withError:(NSError **)error;
-
-/**
- It's possible a Simulator is in a non-'Shutdown' state, without an associated Simulator process.
- These Simulators will be Shutdown to ensure that CoreSimulator is in a known-consistent state.
-
- @param simulators the Simulators to Kill.
- @param error an error out if any error occured.
- @returns an array of the Simulators that this were killed if successful, nil otherwise.
- */
-- (NSArray *)ensureConsistencyForSimulators:(NSArray *)simulators withError:(NSError **)error;
 
 /**
  Kills all of the Simulators that are not launched by `FBSimulatorControl`.
@@ -79,14 +55,5 @@
  @return an YES if successful, nil otherwise.
  */
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
-
-/**
- Kills all of the 'com.apple.CoreSimulatorService' processes that are not used by the current `FBSimulatorControl` configuration.
- Running multiple versions of the Service on the same machine can lead to instability such as Simulator statuses not updating.
-
- @param error an error out if any error occured.
- @return an YES if successful, nil otherwise.
- */
-- (BOOL)killSpuriousCoreSimulatorServicesWithError:(NSError **)error;
 
 @end
