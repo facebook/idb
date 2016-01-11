@@ -7,26 +7,78 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <XCTest/XCTest.h>
+#import "FBSimulatorTestTemplates.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBSimulatorControlAssertions.h"
+#import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorLaunchTests : FBSimulatorControlTestCase
+@implementation FBSimulatorTestTemplates
 
-@end
+- (NSArray *)expectedBootNotificationNames
+{
+  return @[FBSimulatorDidLaunchNotification];
+}
 
-@interface FBSimulatorLaunchTests_DefaultSet : FBSimulatorLaunchTests
+- (NSArray *)expectedShutdownNotificationNames
+{
+  return @[FBSimulatorDidTerminateNotification];
+}
 
-@end
+- (void)doTestLaunchesSafariApplication
+{
+  FBSimulatorSession *session = [self createSession];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-@interface FBSimulatorLaunchTests_CustomSet : FBSimulatorLaunchTests
+  [self.assert consumeAllNotifications];
+  [self assertInteractionSuccessful:[[session.interact bootSimulator:self.simulatorLaunchConfiguration] launchApplication:appLaunch]];
 
-@end
+  [self.assert consumeNotifications:self.expectedBootNotificationNames];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
 
-@implementation FBSimulatorLaunchTests
+  XCTAssertNotNil(session.simulator.launchInfo);
+}
+
+- (void)doTestRelaunchesSafariApplication
+{
+  FBSimulatorSession *session = [self createSession];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
+
+  [self.assert consumeAllNotifications];
+  [self assertInteractionSuccessful:[[session.interact bootSimulator:self.simulatorLaunchConfiguration] launchApplication:appLaunch]];
+
+  [self.assert consumeNotifications:self.expectedBootNotificationNames];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
+
+  XCTAssertNotNil(session.simulator.launchInfo);
+
+  [self assertInteractionSuccessful:session.interact.terminateLastLaunchedApplication];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
+
+  [self assertInteractionSuccessful:session.interact.relaunchLastLaunchedApplication];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+
+  [self.assert noNotificationsToConsume];
+}
+
+- (void)doTestLaunchesSampleApplication
+{
+  FBSimulatorSession *session = [self createSession];
+  FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
+
+  [self.assert consumeAllNotifications];
+  [self assertInteractionSuccessful:[[[session.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:appLaunch.application] launchApplication:appLaunch]];
+
+  [self.assert consumeNotifications:self.expectedBootNotificationNames];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
+
+  XCTAssertNotNil(session.simulator.launchInfo);
+}
 
 - (void)doTestLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
@@ -40,10 +92,9 @@
   XCTAssertEqual(session.state, FBSimulatorSessionStateNotStarted);
   [self.assert noNotificationsToConsume];
 
-  [self assertInteractionSuccessful:session.interact.bootSimulator];
+  [self assertInteractionSuccessful:[session.interact bootSimulator:self.simulatorLaunchConfiguration]];
   XCTAssertEqual(session.state, FBSimulatorSessionStateStarted);
-  [self.assert consumeNotification:FBSimulatorSessionDidStartNotification];
-  [self.assert consumeNotification:FBSimulatorDidLaunchNotification];
+  [self.assert consumeNotifications:self.expectedBootNotificationNames];
   [self.assert noNotificationsToConsume];
 
   XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
@@ -53,10 +104,10 @@
 
   [self assertShutdownSimulatorAndTerminateSession:session];
   XCTAssertEqual(session.state, FBSimulatorSessionStateEnded);
-  XCTAssertNil(session.simulator.launchInfo);
-  [self.assert consumeNotification:FBSimulatorDidTerminateNotification];
-  [self.assert consumeNotification:FBSimulatorSessionDidEndNotification];
+  [self.assert consumeNotifications:self.expectedShutdownNotificationNames];
   [self.assert noNotificationsToConsume];
+
+  XCTAssertNil(session.simulator.launchInfo);
 }
 
 - (void)doTestLaunchesiPhone
@@ -95,9 +146,9 @@
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3u);
   XCTAssertEqual(([[NSSet setWithArray:@[session1.simulator.udid, session2.simulator.udid, session3.simulator.udid]] count]), 3u);
 
-  [self assertInteractionSuccessful:session1.interact.bootSimulator];
-  [self assertInteractionSuccessful:session2.interact.bootSimulator];
-  [self assertInteractionSuccessful:session3.interact.bootSimulator];
+  [self assertInteractionSuccessful:[session1.interact bootSimulator:self.simulatorLaunchConfiguration]];
+  [self assertInteractionSuccessful:[session2.interact bootSimulator:self.simulatorLaunchConfiguration]];
+  [self assertInteractionSuccessful:[session3.interact bootSimulator:self.simulatorLaunchConfiguration]];
 
   NSArray *sessions = @[session1, session2, session3];
   for (FBSimulatorSession *session in sessions) {
@@ -110,7 +161,6 @@
 
   XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.simulatorProcess.processIdentifier"]].count, 3u);
   XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.launchdProcess.processIdentifier"]].count, 3u);
-  XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.simulatorApplication"]].count, 3u);
 
   for (FBSimulatorSession *session in sessions) {
     [self assertShutdownSimulatorAndTerminateSession:session];
@@ -119,94 +169,6 @@
   }
 
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0u);
-}
-
-@end
-
-@implementation FBSimulatorLaunchTests_DefaultSet
-
-- (NSString *)deviceSetPath
-{
-  return nil;
-}
-
-- (void)testLaunchesiPhone
-{
-  [self doTestLaunchesiPhone];
-}
-
-- (void)testLaunchesiPad
-{
-  [self doTestLaunchesiPad];
-}
-
-- (void)testLaunchesWatch
-{
-  [self doTestLaunchesWatch];
-}
-
-- (void)testLaunchesTV
-{
-  [self doTestLaunchesTV];
-}
-
-- (void)testLaunchesMultipleSimulators
-{
-  [self doTestLaunchesMultipleSimulators];
-}
-
-@end
-
-@implementation FBSimulatorLaunchTests_CustomSet
-
-- (NSString *)deviceSetPath
-{
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorControlSimulatorLaunchTests_CustomSet"];
-}
-
-- (void)testLaunchesiPhone
-{
-  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
-    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-    return;
-  }
-  [self doTestLaunchesiPhone];
-}
-
-- (void)testLaunchesiPad
-{
-  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
-    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-    return;
-  }
-  [self doTestLaunchesiPad];
-}
-
-- (void)testLaunchesWatch
-{
-  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
-    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-    return;
-  }
-  [self doTestLaunchesWatch];
-}
-
-- (void)testLaunchesTV
-{
-  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
-    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-    return;
-  }
-  [self doTestLaunchesTV];
-}
-
-- (void)testLaunchesMultipleSimulators
-{
-  if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
-    NSLog(@"-[%@ %@] can't run as Custom Device Sets are not supported for this version of Xcode", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-    return;
-  }
-  [self doTestLaunchesMultipleSimulators];
 }
 
 @end

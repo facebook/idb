@@ -100,14 +100,6 @@
   for (NSString *notificationName in notificationNames) {
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(simulatorNotificationRecieved:) name:notificationName object:nil];
   }
-
-  notificationNames = @[
-    FBSimulatorSessionDidStartNotification,
-    FBSimulatorSessionDidEndNotification
-  ];
-  for (NSString *notificationName in notificationNames) {
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(sessionNotificationReceieved:) name:notificationName object:nil];
-  }
 }
 
 - (void)tearDown
@@ -122,11 +114,6 @@
 }
 
 #pragma mark Notifications
-
-- (void)sessionNotificationReceieved:(NSNotification *)notification
-{
-  [self.notificationsRecieved addObject:notification];
-}
 
 - (void)simulatorNotificationRecieved:(NSNotification *)notification
 {
