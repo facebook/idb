@@ -41,44 +41,4 @@
   XCTAssertEqual(CGRectGetMinX(position), 0);
 }
 
-- (void)disabled_testTilesMultipleiPhones5Horizontally
-{
-  // Approval is required externally to the Test Runner. Without approval, the tests can't run
-  if (!AXIsProcessTrusted()) {
-    NSLog(@"%@ can't run as the host process isn't trusted", NSStringFromSelector(_cmd));
-    return;
-  }
-  CGFloat scaleFactor = NSScreen.mainScreen.backingScaleFactor;
-
-  FBSimulatorSession *firstSession = [self createBootedSession];
-  FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler
-    withSimulator:firstSession.simulator
-    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:firstSession.simulator]];
-  NSError *error = nil;
-  CGRect position = [tiler placeInForegroundWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertEqual(CGRectGetMinX(position), 0);
-  XCTAssertEqual(CGRectGetMinY(position), 0);
-
-  FBSimulatorSession *secondSession = [self createBootedSession];
-  tiler = [FBSimulatorWindowTiler
-    withSimulator:secondSession.simulator
-    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:secondSession.simulator]];
-  position = [tiler placeInForegroundWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertEqual(CGRectGetMinX(position), 320 / scaleFactor);
-  XCTAssertEqual(CGRectGetMinY(position), 0);
-
-  FBSimulatorSession *thirdSession = [self createBootedSession];
-  XCTAssertNotNil(thirdSession);
-  XCTAssertNil(error);
-  tiler = [FBSimulatorWindowTiler
-    withSimulator:thirdSession.simulator
-    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:thirdSession.simulator]];
-  position = [tiler placeInForegroundWithError:&error];
-  XCTAssertNil(error);
-  XCTAssertEqual(CGRectGetMinX(position), 640 / scaleFactor);
-  XCTAssertEqual(CGRectGetMinY(position), 0);
-}
-
 @end
