@@ -63,4 +63,48 @@
   XCTAssertNil(simulator.launchInfo);
 }
 
+- (void)testNotifiedByUnexpectedApplicationTermination
+{
+  FBSimulatorSession *session = [self createSession];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
+
+  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
+
+  FBProcessInfo *process = [session.history runningProcessForApplication:appLaunch.application];
+  XCTAssertNotNil(process);
+  if (!process) {
+    // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
+    return;
+  }
+
+  [self.assert consumeAllNotifications];
+  XCTAssertEqual(kill((pid_t)process.processIdentifier, SIGKILL), 0);
+
+  NSNotification *actual = [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification timeout:20];
+  XCTAssertFalse([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
+  XCTAssertNil([session.history runningProcessForApplication:appLaunch.application]);
+}
+
+- (void)testNotifiedByExpectedApplicationTermination
+{
+  FBSimulatorSession *session = [self createSession];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
+
+  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
+
+  FBProcessInfo *process = [session.history runningProcessForApplication:appLaunch.application];
+  XCTAssertNotNil(process);
+  if (!process) {
+    // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
+    return;
+  }
+
+  [self.assert consumeAllNotifications];
+  [self assertInteractionSuccessful:[session.interact killApplication:appLaunch.application]];
+
+  NSNotification *actual = [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification timeout:20];
+  XCTAssertTrue([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
+  XCTAssertNil([session.history runningProcessForApplication:appLaunch.application]);
+}
+
 @end
