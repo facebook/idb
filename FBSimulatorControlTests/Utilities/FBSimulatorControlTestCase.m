@@ -92,6 +92,7 @@
   self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
   self.allocationOptions = FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsEraseOnAllocate;
   self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
+  self.simulatorLaunchConfiguration = FBSimulatorLaunchConfiguration.defaultConfiguration;
   self.deviceSetPath = nil;
 }
 
@@ -100,6 +101,15 @@
   [self.control.simulatorPool killAllWithError:nil];
   _control = nil;
   _assert = nil;
+}
+
++ (BOOL)isRunningOnTravis
+{
+  if (NSProcessInfo.processInfo.environment[@"TRAVIS"]) {
+    NSLog(@"Running in Travis environment, skipping test");
+    return YES;
+  }
+  return NO;
 }
 
 @end

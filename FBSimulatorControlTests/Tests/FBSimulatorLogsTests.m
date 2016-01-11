@@ -24,7 +24,7 @@
 - (void)assertFindsNeedle:(NSString *)needle fromHaystackBlock:( NSString *(^)(void) )block
 {
   __block NSString *haystack = nil;
-  BOOL foundLog = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:60 untilTrue:^ BOOL {
+  BOOL foundLog = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
     haystack = block();
     return haystack != nil;
   }];
@@ -36,8 +36,12 @@
   [self assertNeedle:needle inHaystack:haystack];
 }
 
-- (void)flakyOnTravis_testAppCrashLogIsFetched
+- (void)testAppCrashLogIsFetched
 {
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
@@ -50,8 +54,12 @@
   }];
 }
 
-- (void)flakyOnTravis_testSystemLog
+- (void)testSystemLog
 {
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
   FBSimulatorSession *session = [self createBootedSession];
 
   [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
@@ -59,8 +67,12 @@
   }];
 }
 
-- (void)flakyOnTravis_testLaunchedApplicationLogs
+- (void)testLaunchedApplicationLogs
 {
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
   FBSimulatorSession *session = [self createBootedSession];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
   [self assertInteractionSuccessful:[[session.interact installApplication:appLaunch.application] launchApplication:appLaunch]];
