@@ -21,15 +21,28 @@
 
 #pragma mark Interactions
 
+/**
+ Assertion Failure if the Interaction Fails.
+ */
 - (void)assertInteractionSuccessful:(id<FBInteraction>)interaction;
+
+/**
+ Assertion Failure if the Interaction Succeeds.
+ */
 - (void)assertInteractionFailed:(id<FBInteraction>)interaction;
 
 #pragma mark Sessions
 
+/**
+ Assertion failure if the Session fails to terminate
+ */
 - (void)assertShutdownSimulatorAndTerminateSession:(FBSimulatorSession *)session;
 
 #pragma mark Strings
 
+/**
+ Assertion failure if the needle can't be found in the haystack.
+ */
 - (void)assertNeedle:(NSString *)needle inHaystack:(NSString *)haystack;
 
 @end
@@ -41,9 +54,31 @@
 
 + (instancetype)withTestCase:(XCTestCase *)testCase pool:(FBSimulatorPool *)pool;
 
+/**
+ Assertion Failure if a notification of the given name isn't the first in the list of received notifications.
+ */
 - (NSNotification *)consumeNotification:(NSString *)notificationName;
+
+/**
+ Assertion Failure if a notification of the given name isn't the first in the list of received notifications.
+ Will wait timeout seconds for the notification to appear if there isn't a notification recieved.
+ */
 - (NSNotification *)consumeNotification:(NSString *)notificationName timeout:(NSTimeInterval)timeout;
-- (void)consumeAllNotifications;
+
+/**
+ Assertion Failure if all of the notifications don't appear in the list of notifications recieved.s
+ Ordering doesn't matter but the notifications must be contiguous.
+ */
+- (NSNotification *)consumeNotifications:(NSArray *)notificationNames;
+
+/**
+ Assertion failure if there are pending notifications.
+ */
 - (void)noNotificationsToConsume;
+
+/**
+ Removes all pending notifications
+ */
+- (void)consumeAllNotifications;
 
 @end
