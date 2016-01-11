@@ -13,7 +13,6 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
-#import "FBSimulatorLaunchInfo.h"
 
 @interface FBSimulatorLoggingEventSink ()
 
@@ -46,14 +45,24 @@
 
 #pragma mark FBSimulatorEventSink Implementation
 
-- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
 {
-  [self.logger logFormat:@"%@Container Application Did Launch => %@", self.prefix, launchInfo.shortDescription];
+  [self.logger logFormat:@"%@Container Application Did Launch => %@", self.prefix, applicationProcess.shortDescription];
 }
 
-- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
-  [self.logger logFormat:@"%@Container Application Did Terminate => Expected %d", self.prefix, expected];
+  [self.logger logFormat:@"%@Container Application Did Terminate => %@ Expected %d", self.prefix, applicationProcess.shortDescription, expected];
+}
+
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+{
+  [self.logger logFormat:@"%@Simulator Did launch => %@", self.prefix, launchdSimProcess.shortDescription];
+}
+
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+{
+  [self.logger logFormat:@"%@Simulator Did Terminate => %@ Expected %d", self.prefix, launchdSimProcess.shortDescription, expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr

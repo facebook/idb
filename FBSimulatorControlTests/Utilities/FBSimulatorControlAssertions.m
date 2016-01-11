@@ -62,13 +62,15 @@
 - (void)assertSimulatorBooted:(FBSimulator *)simulator
 {
   XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
-  XCTAssertNotNil(simulator.launchInfo);
+  XCTAssertNotNil(simulator.launchdSimProcess);
+  XCTAssertNotNil(simulator.containerApplication);
 }
 
 - (void)assertSimulatorShutdown:(FBSimulator *)simulator
 {
   XCTAssertEqual(simulator.state, FBSimulatorStateShutdown);
-  XCTAssertNil(simulator.launchInfo);
+  XCTAssertNil(simulator.launchdSimProcess);
+  XCTAssertNil(simulator.containerApplication);
 }
 
 @end
@@ -106,6 +108,8 @@
 - (void)registerNotificationObservers
 {
   NSArray *notificationNames = @[
+    FBSimulatorDidLaunchNotification,
+    FBSimulatorDidTerminateNotification,
     FBSimulatorContainerDidLaunchNotification,
     FBSimulatorContainerDidTerminateNotification,
     FBSimulatorApplicationProcessDidLaunchNotification,
@@ -247,12 +251,12 @@
 
 - (NSArray *)expectedBootNotificationNames
 {
-  return @[FBSimulatorContainerDidLaunchNotification];
+  return @[FBSimulatorDidLaunchNotification, FBSimulatorContainerDidLaunchNotification];
 }
 
 - (NSArray *)expectedShutdownNotificationNames
 {
-  return @[FBSimulatorContainerDidTerminateNotification];
+  return @[FBSimulatorDidTerminateNotification, FBSimulatorContainerDidTerminateNotification];
 }
 
 @end

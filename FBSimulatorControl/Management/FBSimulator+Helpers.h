@@ -96,6 +96,11 @@
 - (FBSimDeviceWrapper *)simDeviceWrapper;
 
 /*
+ The Subprocesses of the launchd_sim process.
+ */
+- (NSArray *)launchdSimSubprocesses;
+
+/*
  A Set of process names that are used to determine whether all the Simulator OS services
  have been launched after booting.
 

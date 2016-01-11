@@ -9,6 +9,8 @@
 
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
+@class FBProcessQuery;
+
 /**
  Automatically subscribes to event sources that create Simulator Events passively.
  The results of these event sources are translated into events for the relayed sink.
@@ -30,6 +32,11 @@
 /**
  The current Simulator Launch Info.
  */
-@property (nonatomic, copy, readonly) FBSimulatorLaunchInfo *launchInfo;
+@property (nonatomic, copy, readonly) FBProcessInfo *launchdSimProcess;
+
+/**
+ The current Container Application
+ */
+@property (nonatomic, copy, readonly) FBProcessInfo *containerApplication;
 
 @end

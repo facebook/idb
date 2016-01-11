@@ -11,9 +11,9 @@
 
 @class FBAgentLaunchConfiguration;
 @class FBApplicationLaunchConfiguration;
+@class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorApplication;
-@class FBSimulatorLaunchInfo;
 @protocol FBTerminationHandle;
 @class FBProcessInfo;
 
@@ -26,18 +26,32 @@
  Event for the launch of a Simulator's Container Application Process.
  This is the Simulator.app's Process.
  
- @param launchInfo the launch info for the launched Simulator.
+ @param applicationProcess the Process Information for the launched Application Process.
  */
-- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo;
+- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess;
 
 /**
  Event for the launch of a Simulator's Container Application Process.
  This is the Simulator.app's Process.
 
- @param launchInfo the launch info the terminated Simulator.
+ @param applicationProcess the Process Information for the terminated Application Process.
  @param expected whether the termination was expected or not.
  */
-- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected;
+- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected;
+
+/**
+ Event for the launch of a Simulator's launchd_sim.
+
+ @param launchdSimProcess the launchd_sim process
+ */
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess;
+
+/**
+ Event for the termination of a Simulator's launchd_sim.
+
+ @param launchdSimProcess the launchd_sim process
+ */
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected;
 
 /**
  Event for the launch of an Agent.

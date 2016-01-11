@@ -19,11 +19,12 @@
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
-#import "FBSimulatorLaunchInfo.h"
 
 @interface FBSimulatorEventRelay ()
 
-@property (nonatomic, copy, readwrite) FBSimulatorLaunchInfo *launchInfo;
+@property (nonatomic, copy, readwrite) FBProcessInfo *launchdSimProcess;
+@property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
+
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
 
@@ -48,10 +49,13 @@
   _sink = sink;
   _simDevice = simDevice;
   _processQuery = processQuery;
-  _launchInfo = [FBSimulatorLaunchInfo launchedViaApplicationOfSimDevice:simDevice query:processQuery];
+
   _processTerminationNotifiers = [NSMutableDictionary dictionary];
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
+
+  _launchdSimProcess = [processQuery launchdSimProcessForSimDevice:simDevice];
+  _containerApplication = [processQuery simulatorApplicationProcessForSimDevice:simDevice];
 
   [self registerSimulatorLifecycleHandlers];
   [self createNotifierForSimDevice:simDevice];
@@ -67,30 +71,52 @@
 
 #pragma mark FBSimulatorEventSink Protocol Implementation
 
-- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
 {
-  NSParameterAssert(launchInfo);
+  NSParameterAssert(applicationProcess);
 
   // If we have Application-centric Launch Info, deduplicate.
-  if (self.launchInfo.simulatorProcess) {
+  if (self.containerApplication) {
     return;
   }
-  // If there's allready launch info and the new info lacks application launch info, deduplicate.
-  if (self.launchInfo && !launchInfo.simulatorProcess) {
-    return;
-  }
-  self.launchInfo = launchInfo;
-  [self.sink containerApplicationDidLaunch:launchInfo];
+  self.containerApplication = applicationProcess;
+  [self.sink containerApplicationDidLaunch:applicationProcess];
 }
 
-- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
+  NSParameterAssert(applicationProcess);
+
   // De-duplicate known-terminated Simulators.
-  if (!self.launchInfo) {
+  if (!self.containerApplication) {
     return;
   }
-  self.launchInfo = nil;
-  [self.sink containerApplicationDidTerminate:launchInfo expected:expected];
+  self.containerApplication = nil;
+  [self.sink containerApplicationDidTerminate:applicationProcess expected:expected];
+}
+
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+{
+  NSParameterAssert(launchdSimProcess);
+
+  // De-duplicate known-launched launchd_sims.
+  if (self.launchdSimProcess) {
+    return;
+  }
+  self.launchdSimProcess = launchdSimProcess;
+  [self.sink simulatorDidLaunch:launchdSimProcess];
+}
+
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+{
+  NSParameterAssert(launchdSimProcess);
+
+  // De-duplicate known-terminated launchd_sims.
+  if (!self.launchdSimProcess) {
+    return;
+  }
+  self.launchdSimProcess = nil;
+  [self.sink simulatorDidTerminate:launchdSimProcess expected:expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
@@ -153,10 +179,10 @@
     return;
   }
   if (state == FBSimulatorStateBooted) {
-    [self fetchLaunchInfoFromBoot];
+    [self fetchLaunchdSimInfoFromBoot];
   }
-  if (state != FBSimulatorStateBooted) {
-    [self discardLaunchInfoFromBoot];
+  if (state == FBSimulatorStateShutdown || state == FBSimulatorStateShuttingDown) {
+    [self discardLaunchdSimInfoFromBoot];
   }
 
   self.lastKnownState = state;
@@ -217,29 +243,29 @@
 
 #pragma mark Updating Launch Info from CoreSimulator Notifications
 
-- (void)fetchLaunchInfoFromBoot
+- (void)fetchLaunchdSimInfoFromBoot
 {
-  // We allready have launch info, possibly superceeded by an Application LaunchInfo variant.
-  if (self.launchInfo) {
+  // We allready have launchd_sim info, don't bother fetching.
+  if (self.launchdSimProcess) {
     return;
   }
 
-  FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo directLaunchOfSimDevice:self.simDevice query:self.processQuery];
-  if (!launchInfo) {
+  FBProcessInfo *launchdSim = [self.processQuery launchdSimProcessForSimDevice:self.simDevice];
+  if (!launchdSim) {
     return;
   }
-  [self containerApplicationDidLaunch:launchInfo];
+  [self simulatorDidLaunch:launchdSim];
 }
 
-- (void)discardLaunchInfoFromBoot
+- (void)discardLaunchdSimInfoFromBoot
 {
   // Don't look at the application if we know if we don't consider the Simulator boot.
-  if (!self.launchInfo) {
+  if (!self.launchdSimProcess) {
     return;
   }
 
   // Notify of Simulator Termination.
-  [self containerApplicationDidTerminate:self.launchInfo expected:NO];
+  [self simulatorDidTerminate:self.launchdSimProcess expected:NO];
 }
 
 #pragma mark Simulator Application Launch/Termination
@@ -258,46 +284,38 @@
 
 - (void)workspaceApplicationDidLaunch:(NSNotification *)notification
 {
-  // Don't fetch Launch Info for the Application if we an Application corresponding to it.
-  // This will superceed any launchInfo information that has been considered a 'Direct Launch'
-  // See the FBSimlatorLaunchInfo header for more information about the differences.
-  if (self.launchInfo.simulatorProcess) {
+  // Don't fetch Container Application info if we already have it
+  if (self.containerApplication) {
     return;
   }
 
   // The Application must contain the FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID key in the environment
   // This Environment Variable exists to allow interested parties to know the UDID of the Launched Simulator,
-  // without having to inspect the Simulator Application's launchd_sim
+  // without having to inspect the Simulator Application's launchd_sim first.
   NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  FBProcessInfo *simulatorProcess =[self.processQuery processInfoFor:launchedApplication.processIdentifier];
+  FBProcessInfo *simulatorProcess = [self.processQuery processInfoFor:launchedApplication.processIdentifier];
   if (![simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID] isEqual:self.simDevice.UDID.UUIDString]) {
     return;
   }
 
-  // A timeout is used here as there may be some latency in the Simulator.app launching and the Simulator.app booting the SimDevice.
-  // Waiting a reasonable time here prevents the booting of the SimDevice racing with the delivery of NSWorkspaceDidLaunchApplicationNotification.
-  FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo launchedViaApplication:launchedApplication ofSimDevice:self.simDevice query:self.processQuery timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
-  if (!launchInfo) {
-    return;
-  }
-  [self containerApplicationDidLaunch:launchInfo];
+  [self containerApplicationDidLaunch:simulatorProcess];
 }
 
 - (void)workspaceApplicationDidTerminate:(NSNotification *)notification
 {
   // Don't look at the application if we know if we don't consider the Simulator launched.
-  if (!self.launchInfo) {
+  if (!self.containerApplication) {
     return;
   }
 
   // See if the terminated application is the same as the launch info.
   NSRunningApplication *terminatedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  if (terminatedApplication.processIdentifier != self.launchInfo.simulatorApplication.processIdentifier) {
+  if (terminatedApplication.processIdentifier != self.containerApplication.processIdentifier) {
     return;
   }
 
   // Notify of Simulator Termination.
-  [self containerApplicationDidTerminate:self.launchInfo expected:NO];
+  [self containerApplicationDidTerminate:self.containerApplication expected:NO];
 }
 
 @end

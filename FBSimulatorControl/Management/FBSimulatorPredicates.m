@@ -18,7 +18,6 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool+Private.h"
 #import "FBSimulatorPool.h"
 
@@ -45,7 +44,7 @@
 + (NSPredicate *)launched
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
-    return simulator.launchInfo.simulatorProcess.processIdentifier > 1 || simulator.launchInfo.launchdProcess.processIdentifier > 1;
+    return simulator.launchdSimProcess.processIdentifier > 1;
   }];
 }
 

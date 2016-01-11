@@ -34,17 +34,31 @@
   return self;
 }
 
-- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink containerApplicationDidLaunch:launchInfo];
+    [sink containerApplicationDidLaunch:applicationProcess];
   }
 }
 
-- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink containerApplicationDidTerminate:launchInfo expected:expected];
+    [sink containerApplicationDidTerminate:applicationProcess expected:expected];
+  }
+}
+
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+{
+  for (id<FBSimulatorEventSink> sink in self.sinks) {
+    [sink simulatorDidLaunch:launchdSimProcess];
+  }
+}
+
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+{
+  for (id<FBSimulatorEventSink> sink in self.sinks) {
+    [sink simulatorDidTerminate:launchdSimProcess expected:expected];
   }
 }
 

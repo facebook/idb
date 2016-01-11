@@ -17,7 +17,6 @@
 #import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorSession.h"
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
@@ -174,7 +173,7 @@
 
 - (NSArray *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
 {
-  FBProcessInfo *launchdProcess = self.simulator.launchInfo.launchdProcess;
+  FBProcessInfo *launchdProcess = self.simulator.launchdSimProcess;
   if (!launchdProcess) {
     return @[];
   }

@@ -58,7 +58,6 @@
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorLaunchInfo.h>
 #import <FBSimulatorControl/FBSimulatorLogger.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
 #import <FBSimulatorControl/FBSimulatorLogs.h>

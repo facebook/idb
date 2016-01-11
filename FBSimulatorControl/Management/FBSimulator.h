@@ -11,10 +11,11 @@
 
 @protocol FBSimulatorEventSink;
 @protocol FBSimulatorLogger;
+@class FBProcessInfo;
+@class FBProcessInfo;
 @class FBProcessQuery;
 @class FBSimulatorConfiguration;
 @class FBSimulatorHistory;
-@class FBSimulatorLaunchInfo;
 @class FBSimulatorLogger;
 @class FBSimulatorLogs;
 @class FBSimulatorPool;
@@ -116,9 +117,14 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, copy, readonly) FBSimulatorConfiguration *configuration;
 
 /**
- The FBSimulatorLaunchInfo object for the Simulator.
+ The launchd_sim process info for the Simulator, if launched.
  */
-@property (nonatomic, strong, readonly) FBSimulatorLaunchInfo *launchInfo;
+@property (nonatomic, copy, readonly) FBProcessInfo *launchdSimProcess;
+
+/**
+ The FBProcessInfo associated with the Container Application that launched the Simulator.
+ */
+@property (nonatomic, copy, readonly) FBProcessInfo *containerApplication;
 
 /**
  The FBSimulatorLogs instance for fetching logs for the Simulator.

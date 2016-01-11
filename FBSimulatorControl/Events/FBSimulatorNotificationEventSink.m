@@ -9,6 +9,8 @@
 
 #import "FBSimulatorNotificationEventSink.h"
 
+NSString *const FBSimulatorDidLaunchNotification = @"FBSimulatorDidLaunchNotification";
+NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateNotification";
 NSString *const FBSimulatorContainerDidLaunchNotification = @"FBSimulatorContainerDidLaunchNotification";
 NSString *const FBSimulatorContainerDidTerminateNotification = @"FBSimulatorContainerDidTerminateNotification";
 NSString *const FBSimulatorApplicationProcessDidLaunchNotification = @"FBSimulatorApplicationProcessDidLaunchNotification";
@@ -17,6 +19,7 @@ NSString *const FBSimulatorAgentProcessDidLaunchNotification = @"FBSimulatorAgen
 NSString *const FBSimulatorAgentProcessDidTerminateNotification = @"FBSimulatorAgentProcessDidTerminateNotification";
 NSString *const FBSimulatorGainedDiagnosticInformation = @"FBSimulatorGainedDiagnosticInformation";
 NSString *const FBSimulatorStateDidChange = @"FBSimulatorStateDidChange";
+
 NSString *const FBSimulatorExpectedTerminationKey = @"expected";
 NSString *const FBSimulatorProcessKey = @"process";
 NSString *const FBSimulatorDiagnosticName = @"diagnostic_name";
@@ -40,14 +43,34 @@ NSString *const FBSimulatorStateKey = @"simulator_state";
   return sink;
 }
 
-- (void)containerApplicationDidLaunch:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
 {
-  [self materializeNotification:FBSimulatorContainerDidLaunchNotification userInfo:@{}];
+  [self materializeNotification:FBSimulatorContainerDidLaunchNotification userInfo:@{
+    FBSimulatorProcessKey : applicationProcess
+  }];
 }
 
-- (void)containerApplicationDidTerminate:(FBSimulatorLaunchInfo *)launchInfo expected:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
-  [self materializeNotification:FBSimulatorContainerDidTerminateNotification userInfo:@{ FBSimulatorExpectedTerminationKey : @(expected) }];
+  [self materializeNotification:FBSimulatorContainerDidTerminateNotification userInfo:@{
+    FBSimulatorExpectedTerminationKey : @(expected),
+    FBSimulatorProcessKey : applicationProcess
+  }];
+}
+
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+{
+  [self materializeNotification:FBSimulatorDidLaunchNotification userInfo:@{
+    FBSimulatorProcessKey : launchdSimProcess
+  }];
+}
+
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+{
+  [self materializeNotification:FBSimulatorDidTerminateNotification userInfo:@{
+    FBSimulatorExpectedTerminationKey : @(expected),
+    FBSimulatorProcessKey : launchdSimProcess
+  }];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr

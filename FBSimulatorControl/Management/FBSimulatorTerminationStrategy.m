@@ -99,7 +99,7 @@
 
   [self.logger.debug logFormat:@"Killing %@", [FBCollectionDescriptions oneLineDescriptionFromArray:simulators atKeyPath:@"shortDescription"]];
   for (FBSimulator *simulator in simulators) {
-    FBProcessInfo *simulatorProcess = simulator.launchInfo.simulatorProcess ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
+    FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
     NSError *innerError = nil;
 
     // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
