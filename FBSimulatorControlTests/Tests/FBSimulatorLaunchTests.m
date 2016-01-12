@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorTestTemplates.h"
+#import <XCTest/XCTest.h>
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
@@ -15,7 +15,11 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
-@implementation FBSimulatorTestTemplates
+@interface FBSimulatorLaunchTests : FBSimulatorControlTestCase
+
+@end
+
+@implementation FBSimulatorLaunchTests
 
 - (NSArray *)expectedBootNotificationNames
 {
@@ -27,7 +31,7 @@
   return @[FBSimulatorDidTerminateNotification];
 }
 
-- (void)doTestLaunchesSafariApplication
+- (void)testLaunchesSafariApplication
 {
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
@@ -42,7 +46,7 @@
   XCTAssertNotNil(session.simulator.launchInfo);
 }
 
-- (void)doTestRelaunchesSafariApplication
+- (void)testRelaunchesSafariApplication
 {
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
@@ -65,7 +69,7 @@
   [self.assert noNotificationsToConsume];
 }
 
-- (void)doTestLaunchesSampleApplication
+- (void)testLaunchesSampleApplication
 {
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
@@ -80,7 +84,7 @@
   XCTAssertNotNil(session.simulator.launchInfo);
 }
 
-- (void)doTestLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
+- (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
   NSError *error = nil;
   if (![configuration checkRuntimeRequirementsReturningError:&error]) {
@@ -110,27 +114,27 @@
   XCTAssertNil(session.simulator.launchInfo);
 }
 
-- (void)doTestLaunchesiPhone
+- (void)testLaunchesiPhone
 {
-  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.iPhone5];
+  [self testLaunchesSingleSimulator:FBSimulatorConfiguration.iPhone5];
 }
 
-- (void)doTestLaunchesiPad
+- (void)testLaunchesiPad
 {
-  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.iPad2];
+  [self testLaunchesSingleSimulator:FBSimulatorConfiguration.iPad2];
 }
 
-- (void)doTestLaunchesWatch
+- (void)testLaunchesWatch
 {
-  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.watch42mm];
+  [self testLaunchesSingleSimulator:FBSimulatorConfiguration.watch42mm];
 }
 
-- (void)doTestLaunchesTV
+- (void)testLaunchesTV
 {
-  [self doTestLaunchesSingleSimulator:FBSimulatorConfiguration.appleTV1080p];
+  [self testLaunchesSingleSimulator:FBSimulatorConfiguration.appleTV1080p];
 }
 
-- (void)doTestLaunchesMultipleSimulators
+- (void)testLaunchesMultipleSimulators
 {
   // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
   // Create the sessions in sequence, then boot them in paralell.

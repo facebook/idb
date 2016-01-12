@@ -13,6 +13,10 @@
 
 #import "FBSimulatorControlAssertions.h"
 
+static NSString *const DeviceSetEnvKey = @"FBSIMULATORCONTROL_DEVICE_SET";
+static NSString *const DeviceSetEnvDefault = @"default";
+static NSString *const DeviceSetEnvCustom = @"custom";
+
 @interface FBSimulatorControlTestCase ()
 
 @end
@@ -85,24 +89,6 @@
   return session;
 }
 
-#pragma mark XCTestCase
-
-- (void)setUp
-{
-  self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
-  self.allocationOptions = FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsEraseOnAllocate;
-  self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-  self.simulatorLaunchConfiguration = FBSimulatorLaunchConfiguration.defaultConfiguration;
-  self.deviceSetPath = nil;
-}
-
-- (void)tearDown
-{
-  [self.control.simulatorPool killAllWithError:nil];
-  _control = nil;
-  _assert = nil;
-}
-
 + (BOOL)isRunningOnTravis
 {
   if (NSProcessInfo.processInfo.environment[@"TRAVIS"]) {
@@ -112,4 +98,30 @@
   return NO;
 }
 
++ (NSString *)defaultDeviceSetPath
+{
+  NSString *value = NSProcessInfo.processInfo.environment[DeviceSetEnvKey];
+  if ([value isEqualToString:DeviceSetEnvCustom]) {
+    return [NSTemporaryDirectory() stringByAppendingPathComponent:@"FBSimulatorControlSimulatorLaunchTests_CustomSet"];
+  }
+  return nil;
+}
+
+#pragma mark XCTestCase
+
+- (void)setUp
+{
+  self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
+  self.allocationOptions = FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsEraseOnAllocate;
+  self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
+  self.simulatorLaunchConfiguration = FBSimulatorLaunchConfiguration.defaultConfiguration;
+  self.deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath;
+}
+
+- (void)tearDown
+{
+  [self.control.simulatorPool killAllWithError:nil];
+  _control = nil;
+  _assert = nil;
+}
 @end
