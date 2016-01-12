@@ -41,6 +41,8 @@
   BOOL success = [session terminateWithError:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
+
+  [self assertSimulatorShutdown:session.simulator];
 }
 
 #pragma mark Strings
@@ -53,6 +55,20 @@
     return;
   }
   XCTFail(@"needle '%@' to be contained in haystack '%@'", needle, haystack);
+}
+
+#pragma mark Simulators
+
+- (void)assertSimulatorBooted:(FBSimulator *)simulator
+{
+  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
+  XCTAssertNotNil(simulator.launchInfo);
+}
+
+- (void)assertSimulatorShutdown:(FBSimulator *)simulator
+{
+  XCTAssertEqual(simulator.state, FBSimulatorStateShutdown);
+  XCTAssertNil(simulator.launchInfo);
 }
 
 @end
@@ -193,6 +209,16 @@
   [self failIfFalse:(self.notificationsRecieved.count == 0) line:__LINE__ withFormat:@"Expected no notifications but got %@", [self.notificationsRecieved valueForKey:@"name"]];
 }
 
+- (void)bootingNotificationsFired
+{
+  [self consumeNotifications:self.expectedBootNotificationNames];
+}
+
+- (void)shutdownNotificationsFired
+{
+  [self consumeNotifications:self.expectedShutdownNotificationNames];
+}
+
 #pragma mark Helpers
 
 - (void)failIfFalse:(BOOL)value line:(NSUInteger)line withFormat:(NSString *)format, ...
@@ -217,6 +243,16 @@
   va_end(args);
 
   [self.testCase recordFailureWithDescription:string inFile:@(__FILE__) atLine:line expected:YES];
+}
+
+- (NSArray *)expectedBootNotificationNames
+{
+  return @[FBSimulatorDidLaunchNotification];
+}
+
+- (NSArray *)expectedShutdownNotificationNames
+{
+  return @[FBSimulatorDidTerminateNotification];
 }
 
 @end

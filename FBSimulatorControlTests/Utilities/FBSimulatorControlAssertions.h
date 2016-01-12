@@ -9,6 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
+@class FBSimulator;
 @class FBSimulatorControl;
 @class FBSimulatorPool;
 @class FBSimulatorSession;
@@ -45,6 +46,18 @@
  */
 - (void)assertNeedle:(NSString *)needle inHaystack:(NSString *)haystack;
 
+#pragma mark Simulators
+
+/**
+ Assertion failure if the Simulator isn't booted.
+ */
+- (void)assertSimulatorBooted:(FBSimulator *)simulator;
+
+/**
+ Assertion failure if the Simulator isn't shutdown.
+ */
+- (void)assertSimulatorShutdown:(FBSimulator *)simulator;
+
 @end
 
 /**
@@ -52,6 +65,9 @@
  */
 @interface FBSimulatorControlNotificationAssertions : NSObject
 
+/**
+ Create a Notification Assertions Instance for the provided test case & pool
+ */
 + (instancetype)withTestCase:(XCTestCase *)testCase pool:(FBSimulatorPool *)pool;
 
 /**
@@ -80,5 +96,15 @@
  Removes all pending notifications
  */
 - (void)consumeAllNotifications;
+
+/**
+ Assertion failure if the Notifications that fire on booting haven't been recieved;
+ */
+- (void)bootingNotificationsFired;
+
+/**
+ Assertion failure if the Notifications that fire on shutdown haven't been recieved;
+ */
+- (void)shutdownNotificationsFired;
 
 @end

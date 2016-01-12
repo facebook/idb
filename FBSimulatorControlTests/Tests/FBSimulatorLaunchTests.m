@@ -15,21 +15,12 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
+
 @interface FBSimulatorLaunchTests : FBSimulatorControlTestCase
 
 @end
 
 @implementation FBSimulatorLaunchTests
-
-- (NSArray *)expectedBootNotificationNames
-{
-  return @[FBSimulatorDidLaunchNotification];
-}
-
-- (NSArray *)expectedShutdownNotificationNames
-{
-  return @[FBSimulatorDidTerminateNotification];
-}
 
 - (void)testLaunchesSafariApplication
 {
@@ -39,11 +30,10 @@
   [self.assert consumeAllNotifications];
   [self assertInteractionSuccessful:[[session.interact bootSimulator:self.simulatorLaunchConfiguration] launchApplication:appLaunch]];
 
-  [self.assert consumeNotifications:self.expectedBootNotificationNames];
+  [self.assert bootingNotificationsFired];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
-
-  XCTAssertNotNil(session.simulator.launchInfo);
+  [self assertSimulatorBooted:session.simulator];
 }
 
 - (void)testRelaunchesSafariApplication
@@ -54,11 +44,10 @@
   [self.assert consumeAllNotifications];
   [self assertInteractionSuccessful:[[session.interact bootSimulator:self.simulatorLaunchConfiguration] launchApplication:appLaunch]];
 
-  [self.assert consumeNotifications:self.expectedBootNotificationNames];
+  [self.assert bootingNotificationsFired];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
-
-  XCTAssertNotNil(session.simulator.launchInfo);
+  [self assertSimulatorBooted:session.simulator];
 
   [self assertInteractionSuccessful:session.interact.terminateLastLaunchedApplication];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
@@ -77,11 +66,10 @@
   [self.assert consumeAllNotifications];
   [self assertInteractionSuccessful:[[[session.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:appLaunch.application] launchApplication:appLaunch]];
 
-  [self.assert consumeNotifications:self.expectedBootNotificationNames];
+  [self.assert bootingNotificationsFired];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
-
-  XCTAssertNotNil(session.simulator.launchInfo);
+  [self assertSimulatorBooted:session.simulator];
 }
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
@@ -93,25 +81,20 @@
   }
 
   FBSimulatorSession *session = [self createSessionWithConfiguration:configuration];
-  XCTAssertEqual(session.state, FBSimulatorSessionStateNotStarted);
   [self.assert noNotificationsToConsume];
 
   [self assertInteractionSuccessful:[session.interact bootSimulator:self.simulatorLaunchConfiguration]];
-  XCTAssertEqual(session.state, FBSimulatorSessionStateStarted);
-  [self.assert consumeNotifications:self.expectedBootNotificationNames];
+  [self.assert bootingNotificationsFired];
   [self.assert noNotificationsToConsume];
 
   XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
   XCTAssertEqual(session.history.launchedAgentProcesses.count, 0u);
   XCTAssertEqual(session.history.launchedApplicationProcesses.count, 0u);
-  XCTAssertNotNil(session.simulator.launchInfo);
+  [self assertSimulatorBooted:session.simulator];
 
   [self assertShutdownSimulatorAndTerminateSession:session];
-  XCTAssertEqual(session.state, FBSimulatorSessionStateEnded);
-  [self.assert consumeNotifications:self.expectedShutdownNotificationNames];
+  [self.assert shutdownNotificationsFired];
   [self.assert noNotificationsToConsume];
-
-  XCTAssertNil(session.simulator.launchInfo);
 }
 
 - (void)testLaunchesiPhone
@@ -156,11 +139,9 @@
 
   NSArray *sessions = @[session1, session2, session3];
   for (FBSimulatorSession *session in sessions) {
-    XCTAssertEqual(session.simulator.state, FBSimulatorStateBooted);
-    XCTAssertEqual(session.state, FBSimulatorSessionStateStarted);
     XCTAssertEqual(session.history.launchedAgentProcesses.count, 0u);
     XCTAssertEqual(session.history.launchedApplicationProcesses.count, 0u);
-    XCTAssertNotNil(session.simulator.launchInfo);
+    [self assertSimulatorBooted:session.simulator];
   }
 
   XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.simulatorProcess.processIdentifier"]].count, 3u);
@@ -168,8 +149,6 @@
 
   for (FBSimulatorSession *session in sessions) {
     [self assertShutdownSimulatorAndTerminateSession:session];
-    XCTAssertNil(session.simulator.launchInfo);
-    XCTAssertEqual(session.state, FBSimulatorSessionStateEnded);
   }
 
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0u);
