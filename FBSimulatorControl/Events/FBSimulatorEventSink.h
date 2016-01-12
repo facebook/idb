@@ -15,7 +15,6 @@
 @class FBSimulator;
 @class FBSimulatorApplication;
 @protocol FBTerminationHandle;
-@class FBProcessInfo;
 
 /**
  A reciever of Simulator Events
@@ -25,7 +24,7 @@
 /**
  Event for the launch of a Simulator's Container Application Process.
  This is the Simulator.app's Process.
- 
+
  @param applicationProcess the Process Information for the launched Application Process.
  */
 - (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess;

@@ -12,8 +12,8 @@
 #import "FBCollectionDescriptions.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
-#import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorLogger.h"
 

@@ -10,7 +10,6 @@
 #import <FBSimulatorControl/FBProcessQuery.h>
 
 @class FBProcessInfo;
-@class FBProcessInfo;
 @class NSRunningApplication;
 
 /**
