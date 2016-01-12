@@ -16,6 +16,7 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlNotificationAssertions;
+@class FBSimulatorLaunchConfiguration;
 @class FBSimulatorSession;
 
 /**
@@ -60,6 +61,11 @@
 @property (nonatomic, strong, readwrite) FBSimulatorConfiguration *simulatorConfiguration;
 
 /**
+ A default Simulator Launch Configuration.
+ */
+@property (nonatomic, strong, readwrite) FBSimulatorLaunchConfiguration *simulatorLaunchConfiguration;
+
+/**
  The Per-Test-Case Device Set Path.
  */
 @property (nonatomic, copy, readwrite) NSString *deviceSetPath;
@@ -73,5 +79,10 @@
  The FBSimulatorControlAssertions instance
  */
 @property (nonatomic, strong, readonly) FBSimulatorControlNotificationAssertions *assert;
+
+/**
+ Some tests are flakier on travis, this is a temporary way of disabling them until they are improved.
+ */
++ (BOOL)isRunningOnTravis;
 
 @end

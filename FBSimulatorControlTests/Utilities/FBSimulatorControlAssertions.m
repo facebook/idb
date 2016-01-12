@@ -100,14 +100,6 @@
   for (NSString *notificationName in notificationNames) {
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(simulatorNotificationRecieved:) name:notificationName object:nil];
   }
-
-  notificationNames = @[
-    FBSimulatorSessionDidStartNotification,
-    FBSimulatorSessionDidEndNotification
-  ];
-  for (NSString *notificationName in notificationNames) {
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(sessionNotificationReceieved:) name:notificationName object:nil];
-  }
 }
 
 - (void)tearDown
@@ -122,11 +114,6 @@
 }
 
 #pragma mark Notifications
-
-- (void)sessionNotificationReceieved:(NSNotification *)notification
-{
-  [self.notificationsRecieved addObject:notification];
-}
 
 - (void)simulatorNotificationRecieved:(NSNotification *)notification
 {
@@ -144,7 +131,7 @@
     return nil;
   }
   NSNotification *actual = self.notificationsRecieved.firstObject;
-  [self failIfFalse:[notificationName isEqualToString:actual.name] line:__LINE__ withFormat:@"Expected Notification %@ to be sent but got %@", notificationName, self.notificationsRecieved];
+  [self failIfFalse:[notificationName isEqualToString:actual.name] line:__LINE__ withFormat:@"Expected Notification %@ to be sent but got %@", notificationName, [self.notificationsRecieved valueForKey:@"name"]];
   [self.notificationsRecieved removeObjectAtIndex:0];
   return actual;
 }
@@ -163,15 +150,35 @@
     return nil;
   }
 
-  [self failIfFalse:[notificationName isEqualToString:actual.name] line:__LINE__ withFormat:@"Expected Notification %@ to be sent but got %@", notificationName, self.notificationsRecieved];
+  [self failIfFalse:[notificationName isEqualToString:actual.name] line:__LINE__ withFormat:@"Expected Notification %@ to be sent but got %@", notificationName, [self.notificationsRecieved valueForKey:@"name"]];
   [self.notificationsRecieved removeObjectAtIndex:0];
+  return actual;
+}
+
+- (NSArray *)consumeNotifications:(NSArray *)notificationNames
+{
+  if (notificationNames.count > self.notificationsRecieved.count) {
+    [self failOnLine:__LINE__ withFormat:@"Expected to be able to consume %@ but there were only %d notifications to consume", notificationNames, self.notificationsRecieved.count];
+    return nil;
+  }
+
+  NSRange sliceRange = NSMakeRange(0, notificationNames.count);
+
+  NSArray *toConsumeSlice = [[[self.notificationsRecieved valueForKey:@"name"] subarrayWithRange:sliceRange] sortedArrayUsingSelector:@selector(compare:)];
+  notificationNames = [notificationNames sortedArrayUsingSelector:@selector(compare:)];
+  if (![toConsumeSlice isEqualToArray:notificationNames]) {
+    [self failOnLine:__LINE__ withFormat:@"Expected notifications named %@ but got %@", notificationNames, toConsumeSlice];
+  }
+
+  NSArray *actual = [self.notificationsRecieved subarrayWithRange:sliceRange];
+  [self.notificationsRecieved removeObjectsInRange:sliceRange];
   return actual;
 }
 
 - (void)consumeAllNotifications
 {
   // Spin run loop to filter out any pending notifications.
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:2 untilTrue:^BOOL{
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^{
     return NO;
   }];
   [self.notificationsRecieved removeAllObjects];
@@ -180,10 +187,10 @@
 - (void)noNotificationsToConsume
 {
   // Spin run loop to filter out any pending notifications.
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:2 untilTrue:^BOOL{
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^{
     return NO;
   }];
-  [self failIfFalse:(self.notificationsRecieved.count == 0) line:__LINE__ withFormat:@"Expected no notifications but got %@", self.notificationsRecieved];
+  [self failIfFalse:(self.notificationsRecieved.count == 0) line:__LINE__ withFormat:@"Expected no notifications but got %@", [self.notificationsRecieved valueForKey:@"name"]];
 }
 
 #pragma mark Helpers
