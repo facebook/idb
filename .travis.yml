@@ -1,7 +1,8 @@
 language: objective-c
 osx_image: xcode7.2
 env:
-- MODE=framework
+- MODE=framework FBSIMULATORCONTROL_DEVICE_SET=default
+- MODE=framework FBSIMULATORCONTROL_DEVICE_SET=custom
 - MODE=cli
 - MODE=cli_framework
 script: ./build.sh
