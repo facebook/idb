@@ -12,7 +12,6 @@
 #import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorWindowHelpers.h"
@@ -40,7 +39,7 @@
   if (!AXIsProcessTrusted()) {
     return [[FBSimulatorError describe:@"Current process is untrusted"] failRect:error];
   }
-  FBProcessInfo *processInfo = self.simulator.launchInfo.simulatorProcess;
+  FBProcessInfo *processInfo = self.simulator.containerApplication;
   if (!processInfo) {
     return [[[FBSimulatorError describe:@"Cannot find Window ID"] inSimulator:self.simulator] failRect:error];
   }

@@ -29,7 +29,6 @@
 #import "FBSimulatorEventRelay.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistoryGenerator.h"
-#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorLogs.h"
 #import "FBSimulatorNotificationEventSink.h"
@@ -138,9 +137,14 @@
   return [FBSimulatorLogs withSimulator:self];
 }
 
-- (FBSimulatorLaunchInfo *)launchInfo
+- (FBProcessInfo *)launchdSimProcess
 {
-  return self.eventRelay.launchInfo;
+  return self.eventRelay.launchdSimProcess;
+}
+
+- (FBProcessInfo *)containerApplication
+{
+  return self.eventRelay.containerApplication;
 }
 
 - (FBSimulatorHistory *)history
@@ -178,11 +182,12 @@
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"Name %@ | UUID %@ | State %@ | %@",
+    @"Name %@ | UUID %@ | State %@ | %@ | %@",
     self.name,
     self.udid,
     self.device.stateString,
-    self.launchInfo.shortDescription
+    self.launchdSimProcess,
+    self.containerApplication
   ];
 }
 

@@ -28,7 +28,6 @@
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
-#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorTerminationStrategy.h"
@@ -64,27 +63,52 @@
       build]
       startAsynchronously];
 
+    [simulator.eventSink terminationHandleAvailable:task];
+
     // Expect no immediate error.
     if (task.error) {
-      return [[[[FBSimulatorError describe:@"Failed to Launch Simulator Process"] causedBy:task.error] inSimulator:simulator] failBool:error];
+      return [[[[FBSimulatorError
+        describe:@"Failed to Launch Simulator Process"]
+        causedBy:task.error]
+        inSimulator:simulator]
+        failBool:error];
     }
 
     // Expect the state of the simulator to be updated.
     BOOL didBoot = [simulator waitOnState:FBSimulatorStateBooted];
     if (!didBoot) {
-      return [[[FBSimulatorError describeFormat:@"Timed out waiting for device to be Booted, got %@", simulator.device.stateString] inSimulator:simulator] failBool:error];
+      return [[[FBSimulatorError
+        describeFormat:@"Timed out waiting for device to be Booted, got %@", simulator.device.stateString]
+        inSimulator:simulator]
+        failBool:error];
     }
 
+
     // Expect the launch info for the process to exist.
-    FBSimulatorLaunchInfo *launchInfo = [FBSimulatorLaunchInfo fromSimDevice:simulator.device query:simulator.processQuery];
-    if (!launchInfo) {
-      return [[[FBSimulatorError describe:@"Could not obtain process info for booted simulator process"] inSimulator:simulator] failBool:error];
+    FBProcessQuery *processQuery = simulator.processQuery;
+    FBProcessInfo *containerApplication = [simulator.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
+    if (!containerApplication) {
+      return [[[FBSimulatorError
+        describe:@"Could not obtain process info for container application"]
+        inSimulator:simulator]
+        failBool:error];
     }
+    [simulator.eventSink containerApplicationDidLaunch:containerApplication];
+
+    // Expect the launchd_sim process to be updated.
+    FBProcessInfo *launchdSimProcess = [processQuery launchdSimProcessForSimDevice:simulator.device];
+    if (!launchdSimProcess) {
+      return [[[FBSimulatorError
+        describe:@"Could not obtain process info for launchd_sim process"]
+        inSimulator:simulator]
+        failBool:error];
+    }
+    [simulator.eventSink simulatorDidLaunch:launchdSimProcess];
 
     // Waitng for all required processes to start
     NSSet *requiredProcessNames = simulator.requiredProcessNamesToVerifyBooted;
     BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-      NSSet *runningProcessNames = [NSSet setWithArray:[launchInfo.launchedProcesses valueForKey:@"processName"]];
+      NSSet *runningProcessNames = [NSSet setWithArray:[[processQuery subprocessesOf:launchdSimProcess.processIdentifier] valueForKey:@"processName"]];
       return [requiredProcessNames isSubsetOfSet:runningProcessNames];
     }];
     if (!didStartAllRequiredProcesses) {
@@ -95,8 +119,7 @@
     }
 
     // Pass on the success to the event sink.
-    [simulator.eventSink didStartWithLaunchInfo:launchInfo];
-    [simulator.eventSink terminationHandleAvailable:task];
+    [simulator.eventSink containerApplicationDidLaunch:containerApplication];
 
     return YES;
   }];
@@ -105,10 +128,8 @@
 - (instancetype)shutdownSimulator
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBSimulatorLaunchInfo *launchInfo = simulator.launchInfo;
-    if (!launchInfo) {
-      return [[[FBSimulatorError describe:@"Could not shutdown simulator as there is no available launch info"] inSimulator:simulator] failBool:error];
-    }
+    FBProcessInfo *containerApplication = simulator.containerApplication;
+    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess;
 
     FBSimulatorTerminationStrategy *terminationStrategy = [FBSimulatorTerminationStrategy
       withConfiguration:simulator.pool.configuration
@@ -119,7 +140,8 @@
     if (![terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
       return [[[[FBSimulatorError describe:@"Could not shutdown simulator"] inSimulator:simulator] causedBy:innerError] failBool:error];
     }
-    [simulator.eventSink didTerminate:YES];
+    [simulator.eventSink containerApplicationDidTerminate:containerApplication expected:YES];
+    [simulator.eventSink simulatorDidTerminate:launchdSimProcess expected:YES];
 
     return YES;
   }];

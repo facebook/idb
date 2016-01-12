@@ -12,14 +12,24 @@
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
 /**
- Notification that is fired when a Simulator Process Starts.
+ Notification that is fired when a Simulator Launches.
  */
 extern NSString *const FBSimulatorDidLaunchNotification;
 
 /**
- Notification that is fired when a Simulator Process Terminates.
+ Notification that is fired when a Simulator Launches.
  */
 extern NSString *const FBSimulatorDidTerminateNotification;
+
+/**
+ Notification that is fired when a Simulator's Container Process Starts.
+ */
+extern NSString *const FBSimulatorContainerDidLaunchNotification;
+
+/**
+ Notification that is fired when a Simulator's Container Process Starts.
+ */
+extern NSString *const FBSimulatorContainerDidTerminateNotification;
 
 /**
  Notification that is fired when a Application Process Launches.

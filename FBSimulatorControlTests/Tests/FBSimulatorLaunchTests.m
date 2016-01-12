@@ -144,8 +144,7 @@
     [self assertSimulatorBooted:session.simulator];
   }
 
-  XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.simulatorProcess.processIdentifier"]].count, 3u);
-  XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchInfo.launchdProcess.processIdentifier"]].count, 3u);
+  XCTAssertEqual([NSSet setWithArray:[sessions valueForKeyPath:@"simulator.launchdSimProcess.processIdentifier"]].count, 3u);
 
   for (FBSimulatorSession *session in sessions) {
     [self assertShutdownSimulatorAndTerminateSession:session];

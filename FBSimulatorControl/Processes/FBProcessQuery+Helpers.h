@@ -46,7 +46,7 @@
 /**
  Returns the NSRunningApplication for the provided FBProcessInfo *.
 
- @param process the process to obtain the NSRunningApplication instance for/
+ @param process the application process to obtain the NSRunningApplication instance for.
  @return a FBProcessInfo for the running application, nil if one could not be found.
  */
 - (NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process;

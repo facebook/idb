@@ -33,7 +33,7 @@
   FBSimulatorSession *session = [self createBootedSession];
   FBSimulator *simulator = session.simulator;
 
-  FBProcessInfo *containerProcess = simulator.launchInfo.simulatorProcess;
+  FBProcessInfo *containerProcess = simulator.containerApplication;
   XCTAssertNotNil(containerProcess);
 
   NSSet *arguments = [NSSet setWithArray:containerProcess.arguments];
@@ -49,7 +49,7 @@
     return NO;
   }];
 
-  FBProcessInfo *containerApplication = simulator.launchInfo.simulatorProcess;
+  FBProcessInfo *containerApplication = simulator.containerApplication;
   XCTAssertNotNil(containerApplication);
 
   NSRunningApplication *workspaceApplication = [simulator.processQuery runningApplicationForProcess:containerApplication];
@@ -60,7 +60,7 @@
     return NO;
   }];
 
-  XCTAssertNil(simulator.launchInfo);
+  XCTAssertNil(simulator.containerApplication);
 }
 
 - (void)testNotifiedByUnexpectedApplicationTermination

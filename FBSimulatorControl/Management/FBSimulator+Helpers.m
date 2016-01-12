@@ -12,6 +12,8 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBCollectionDescriptions.h"
+#import "FBProcessInfo.h"
+#import "FBProcessQuery.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
@@ -160,6 +162,15 @@
 - (FBSimDeviceWrapper *)simDeviceWrapper
 {
   return [FBSimDeviceWrapper withSimulator:self configuration:self.pool.configuration processQuery:self.processQuery];
+}
+
+- (NSArray *)launchdSimSubprocesses
+{
+  FBProcessInfo *launchdSim = self.launchdSimProcess;
+  if (!launchdSim) {
+    return @[];
+  }
+  return [self.processQuery subprocessesOf:launchdSim.processIdentifier];
 }
 
 - (NSSet *)requiredProcessNamesToVerifyBooted

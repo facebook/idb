@@ -12,9 +12,9 @@
 #import "FBCollectionDescriptions.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
+#import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
-#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorLogger.h"
 
 NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";
@@ -121,8 +121,8 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 - (instancetype)inSimulator:(FBSimulator *)simulator
 {
   return [[self
-    extraInfo:@"launchd_is_running" value:@(simulator.launchInfo.launchdProcess != nil)]
-    extraInfo:@"launchd_subprocesses" value:[FBCollectionDescriptions oneLineDescriptionFromArray:simulator.launchInfo.launchedProcesses atKeyPath:@"shortDescription"]];
+    extraInfo:@"launchd_is_running" value:@(simulator.launchdSimProcess != nil)]
+    extraInfo:@"launchd_subprocesses" value:[FBCollectionDescriptions oneLineDescriptionFromArray:simulator.launchdSimSubprocesses atKeyPath:@"shortDescription"]];
 }
 
 - (instancetype)recursiveDescription

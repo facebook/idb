@@ -16,6 +16,7 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
+#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBProcessQuery (Simulators)
 
@@ -44,6 +45,13 @@
   return [[[self simulatorProcesses]
     filteredArrayUsingPredicate:[FBProcessQuery simulatorProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
     firstObject];
+}
+
+- (FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice timeout:(NSTimeInterval)timeout
+{
+  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^{
+    return [self simulatorApplicationProcessForSimDevice:simDevice];
+  }];
 }
 
 - (FBProcessInfo *)launchdSimProcessForSimDevice:(SimDevice *)simDevice

@@ -62,12 +62,22 @@
 
 #pragma mark FBSimulatorEventSink Implementation
 
-- (void)didStartWithLaunchInfo:(FBSimulatorLaunchInfo *)launchInfo
+- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
 {
 
 }
 
-- (void)didTerminate:(BOOL)expected
+- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+{
+
+}
+
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+{
+
+}
+
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
 {
   [self terminateAllHandles];
 }

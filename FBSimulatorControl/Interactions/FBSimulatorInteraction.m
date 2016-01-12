@@ -26,7 +26,6 @@
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorLaunchInfo.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorTerminationStrategy.h"
@@ -79,9 +78,8 @@
   NSParameterAssert(block);
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBProcessInfo *processInfo = [[[[simulator
-      launchInfo]
-      launchedProcesses]
+    FBProcessInfo *processInfo = [[[simulator
+      launchdSimSubprocesses]
       filteredArrayUsingPredicate:[FBProcessQuery processesForBinary:binary]]
       firstObject];
 

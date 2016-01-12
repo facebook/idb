@@ -11,6 +11,7 @@
 
 #import <FBSimulatorControl/FBProcessQuery.h>
 
+@class FBProcessInfo;
 @class FBSimulatorBinary;
 @class FBSimulatorControlConfiguration;
 @class SimDevice;
@@ -41,9 +42,18 @@
  Fetches the Process Info for a given Simulator.
 
  @param simDevice the Simulator to fetch Process Info for.
- @return Process Info if any could be obtained, nil otherwise.
+ @return Application Process Info if any could be obtained, nil otherwise.
  */
 - (FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice;
+
+/**
+ Fetches the Process Info for a given Simulator, with a timeout as the process info may take a while to appear
+
+ @param simDevice the Simulator to fetch Process Info for.
+ @param timeout the time to wait for the process info to appear.
+ @return Application Process Info if any could be obtained, nil otherwise.
+ */
+- (FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice timeout:(NSTimeInterval)timeout;
 
 /**
  Fetches the Process Info for a given Simulator's launchd_sim.
