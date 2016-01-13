@@ -11,10 +11,10 @@ import Foundation
 import FBSimulatorControl
 
 public extension Command {
-  public static func fromArguments(arguments: [String]) -> Command {
+  public static func fromArguments(arguments: [String], environment: [String : String]) -> Command {
     do {
       let (_, command) = try Command.parser().parse(arguments)
-      return command
+      return command.appendEnvironment(environment)
     } catch let error as ParseError {
       print("Failed to Parse Command \(error)")
       return Command.Help(nil)
