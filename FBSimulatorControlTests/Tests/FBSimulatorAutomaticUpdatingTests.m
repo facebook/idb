@@ -65,6 +65,10 @@
 
 - (void)testNotifiedByUnexpectedApplicationTermination
 {
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
@@ -87,6 +91,10 @@
 
 - (void)testNotifiedByExpectedApplicationTermination
 {
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
   FBSimulatorSession *session = [self createSession];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
