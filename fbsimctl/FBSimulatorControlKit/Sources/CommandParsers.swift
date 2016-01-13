@@ -290,11 +290,11 @@ extension Action : Parsable {
   public static func parser() -> Parser<Action> {
     return Parser
       .ofThreeSequenced(
-        Interaction.parser(),
         Query.parser().fallback(Query.defaultValue()),
-        Format.parser().fallback(Format.defaultValue())
+        Format.parser().fallback(Format.defaultValue()),
+        Interaction.parser()
       )
-      .fmap { (interaction, query, format) in
+      .fmap { (query, format, interaction) in
         return Action(interaction: interaction, query: query, format: format)
       }
   }
