@@ -212,7 +212,9 @@ class InteractionParserTests : XCTestCase {
       (["boot"], Interaction.Boot),
       (["shutdown"], Interaction.Shutdown),
       (["diagnose"], Interaction.Diagnose),
-      (["install", Fixtures.application().path], Interaction.Install(Fixtures.application()))
+      (["install", Fixtures.application().path], Interaction.Install(Fixtures.application())),
+      (["launch", Fixtures.application().path], Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: [], environment: [:]))),
+      (["launch", Fixtures.binary().path], Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:])))
     ])
   }
 
@@ -250,6 +252,30 @@ class ActionParserTests : XCTestCase {
   func testParsesInstall() {
     let interaction = Interaction.Install(Fixtures.application())
     let prefix: [String] = ["install", Fixtures.application().path]
+
+    self.assertParsesAll(Action.parser(), [
+      (prefix, Action(interaction: interaction, query: Query.defaultValue(), format: Format.defaultValue())),
+      (prefix + ["iPad 2"], Action(interaction: interaction, query: .Configured([FBSimulatorConfiguration.iPad2()]), format: Format.defaultValue())),
+      (prefix + ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action(interaction: interaction, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())),
+      (prefix + ["iPhone 5", "shutdown", "iPhone 6"], Action(interaction: interaction, query: .And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), format: Format.defaultValue())),
+    ])
+  }
+
+  func testParsesAppLaunch() {
+    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: [], environment: [:]))
+    let prefix: [String] = ["launch", Fixtures.application().path]
+
+    self.assertParsesAll(Action.parser(), [
+      (prefix, Action(interaction: interaction, query: Query.defaultValue(), format: Format.defaultValue())),
+      (prefix + ["iPad 2"], Action(interaction: interaction, query: .Configured([FBSimulatorConfiguration.iPad2()]), format: Format.defaultValue())),
+      (prefix + ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action(interaction: interaction, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())),
+      (prefix + ["iPhone 5", "shutdown", "iPhone 6"], Action(interaction: interaction, query: .And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), format: Format.defaultValue())),
+    ])
+  }
+
+  func testParsesAgentLaunch() {
+    let interaction = Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:]))
+    let prefix: [String] = ["launch", Fixtures.binary().path]
 
     self.assertParsesAll(Action.parser(), [
       (prefix, Action(interaction: interaction, query: Query.defaultValue(), format: Format.defaultValue())),

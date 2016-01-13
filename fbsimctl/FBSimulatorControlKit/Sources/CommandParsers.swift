@@ -36,7 +36,7 @@ extension Parser {
   }
 
   static func ofFile() -> Parser<String> {
-    let expected = "A Directory"
+    let expected = "A File"
     return Parser<String>.single(expected) { token in
       var isDirectory: ObjCBool = false
       if !NSFileManager.defaultManager().fileExistsAtPath(token, isDirectory: &isDirectory) {
@@ -46,6 +46,28 @@ extension Parser {
         throw ParseError.Custom("'\(token)' should be a file, but isn't")
       }
       return token
+    }
+  }
+
+  static func ofApplication() -> Parser<FBSimulatorApplication> {
+    let expected = "An Application"
+    return Parser<FBSimulatorApplication>.single(expected) { token in
+      do {
+        return try FBSimulatorApplication(path: token)
+      } catch let error as NSError {
+        throw ParseError.Custom("Could not get an app \(token) \(error.description)")
+      }
+    }
+  }
+
+  static func ofBinary() -> Parser<FBSimulatorBinary> {
+    let expected = "A Binary"
+    return Parser<FBSimulatorBinary>.single(expected) { token in
+      do {
+        return try FBSimulatorBinary(path: token)
+      } catch let error as NSError {
+        throw ParseError.Custom("Could not get an binary \(token) \(error.description)")
+      }
     }
   }
 }
@@ -235,17 +257,41 @@ extension Interaction : Parsable {
       Parser.ofString("boot", Interaction.Boot),
       Parser.ofString("shutdown", Interaction.Shutdown),
       Parser.ofString("diagnose", Interaction.Diagnose),
-      self.installParser()
+      self.installParser(),
+      self.launchParser()
     ])
   }
 
   private static func installParser() -> Parser<Interaction> {
     return Parser
-      .succeeded("install", Parser<String>.ofDirectory())
-      .fmap { appPath in
-        let application = try FBSimulatorApplication(path: appPath)
-        return Interaction.Install(application)
-      }
+      .succeeded("install", Parser<FBSimulatorApplication>.ofApplication())
+      .fmap { Interaction.Install($0) }
+  }
+
+  private static func launchParser() -> Parser<Interaction> {
+    return Parser
+      .succeeded("launch", self.processLaunchParser())
+      .fmap { Interaction.Launch($0) }
+  }
+
+  private static func processLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
+    return Parser<FBProcessLaunchConfiguration>
+      .alternative([
+        self.agentLaunchParser(),
+        self.appLaunchParser()
+      ])
+  }
+
+  private static func agentLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
+    return Parser<FBSimulatorBinary>
+      .ofBinary()
+      .fmap { FBAgentLaunchConfiguration(binary: $0, arguments: [], environment: [:]) }
+  }
+
+  private static func appLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
+    return Parser<FBSimulatorApplication>
+      .ofApplication()
+      .fmap { FBApplicationLaunchConfiguration(application: $0, arguments: [], environment: [:]) }
   }
 }
 

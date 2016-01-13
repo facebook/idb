@@ -101,6 +101,15 @@ private struct SimulatorRunner : Runner {
         writer.write("Installing \(application.path) on \(self.formattedSimulator)")
         try simulator.interact().installApplication(application).performInteraction()
         writer.write("Installed \(application.path) on \(self.formattedSimulator)")
+      case .Launch(let launch):
+        writer.write("Launching \(launch.shortDescription()) on \(self.formattedSimulator)")
+        if let appLaunch = launch as? FBApplicationLaunchConfiguration {
+          try simulator.interact().launchApplication(appLaunch).performInteraction()
+        }
+        else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
+          try simulator.interact().launchAgent(agentLaunch).performInteraction()
+        }
+        writer.write("Launched \(launch.shortDescription()) on \(self.formattedSimulator)")
       }
     } catch let error as NSError {
       return .Failure(error.description)
