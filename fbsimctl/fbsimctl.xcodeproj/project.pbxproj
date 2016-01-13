@@ -23,7 +23,7 @@
 		AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
 		AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
 		AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
-		AA2AFD731C29412C000123BA /* CommandParsersTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTest.swift */; };
+		AA2AFD731C29412C000123BA /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA3ADDB91C2B19A4004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
@@ -87,7 +87,7 @@
 		AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignalHandler.swift; sourceTree = "<group>"; };
 		AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketRelay.swift; sourceTree = "<group>"; };
 		AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StdIORelay.swift; sourceTree = "<group>"; };
-		AA2AFD721C29412C000123BA /* CommandParsersTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsersTest.swift; sourceTree = "<group>"; };
+		AA2AFD721C29412C000123BA /* CommandParsersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsersTests.swift; sourceTree = "<group>"; };
 		AA2AFD741C294158000123BA /* TestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		AA6085BF1C287B36009B500E /* fbsimctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fbsimctl.h; sourceTree = "<group>"; };
@@ -166,7 +166,7 @@
 		AA2AFD711C29412C000123BA /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				AA2AFD721C29412C000123BA /* CommandParsersTest.swift */,
+				AA2AFD721C29412C000123BA /* CommandParsersTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -397,7 +397,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA2AFD731C29412C000123BA /* CommandParsersTest.swift in Sources */,
+				AA2AFD731C29412C000123BA /* CommandParsersTests.swift in Sources */,
 				AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */,
 				AAF6DC801C466E7600C7E1E2 /* Fixtures.swift in Sources */,
 			);
