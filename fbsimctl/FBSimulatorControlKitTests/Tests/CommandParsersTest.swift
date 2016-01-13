@@ -212,7 +212,7 @@ class InteractionParserTests : XCTestCase {
       (["boot"], Interaction.Boot),
       (["shutdown"], Interaction.Shutdown),
       (["diagnose"], Interaction.Diagnose),
-      (["install", FBSimulatorApplication.xcodeSimulator().path], Interaction.Install(FBSimulatorApplication.xcodeSimulator()))
+      (["install", Fixtures.application().path], Interaction.Install(Fixtures.application()))
     ])
   }
 
@@ -244,6 +244,18 @@ class ActionParserTests : XCTestCase {
       (["boot", "iPad 2"], Action(interaction: .Boot, query: .Configured([FBSimulatorConfiguration.iPad2()]), format: Format.defaultValue())),
       (["boot", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())),
       (["boot", "iPhone 5", "shutdown", "iPhone 6"], Action(interaction: .Boot, query: .And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), format: Format.defaultValue()))
+    ])
+  }
+
+  func testParsesInstall() {
+    let interaction = Interaction.Install(Fixtures.application())
+    let prefix: [String] = ["install", Fixtures.application().path]
+
+    self.assertParsesAll(Action.parser(), [
+      (prefix, Action(interaction: interaction, query: Query.defaultValue(), format: Format.defaultValue())),
+      (prefix + ["iPad 2"], Action(interaction: interaction, query: .Configured([FBSimulatorConfiguration.iPad2()]), format: Format.defaultValue())),
+      (prefix + ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Action(interaction: interaction, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())),
+      (prefix + ["iPhone 5", "shutdown", "iPhone 6"], Action(interaction: interaction, query: .And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), format: Format.defaultValue())),
     ])
   }
 
