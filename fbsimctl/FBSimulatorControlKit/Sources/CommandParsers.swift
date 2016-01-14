@@ -347,7 +347,8 @@ extension Format : Parsable {
         Parser.ofString("--name", Format.Name),
         Parser.ofString("--device-name", Format.DeviceName),
         Parser.ofString("--os", Format.OSVersion),
-        Parser.ofString("--state", Format.State)
+        Parser.ofString("--state", Format.State),
+        Parser.ofString("--pid", Format.ProcessIdentifier)
       ])
       .fmap { Format.flatten($0) }
     }
