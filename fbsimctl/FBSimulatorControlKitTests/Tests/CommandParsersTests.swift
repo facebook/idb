@@ -252,9 +252,21 @@ class ActionParserTests : XCTestCase {
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
+  func testParsesAppLaunchWithArguments() {
+    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.application().path, "--foo", "-b", "-a", "-r"]
+    self.assertWithDefaultActions(interaction, suffix: suffix)
+  }
+
   func testParsesAgentLaunch() {
     let interaction = Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:]))
     let suffix: [String] = ["launch", Fixtures.binary().path]
+    self.assertWithDefaultActions(interaction, suffix: suffix)
+  }
+
+  func testParsesAgentLaunchWithArguments() {
+    let interaction = Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.binary().path, "--foo", "-b", "-a", "-r"]
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
