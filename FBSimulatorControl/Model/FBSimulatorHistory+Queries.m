@@ -192,6 +192,21 @@
   return recursive ? [self.previousState runningProcessForApplication:application recursive:recursive] : nil;
 }
 
+- (NSDictionary *)processTerminationStatuses
+{
+  NSDictionary *processDiagnostics = self.processDiagnostics;
+  NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
+  for (FBProcessInfo *process in processDiagnostics) {
+    NSDictionary *diagnostics = processDiagnostics[process];
+    NSNumber *terminationStatus = diagnostics[FBSimulatorHistoryDiagnosticNameTerminationStatus];
+    if (![terminationStatus isKindOfClass:NSNumber.class]) {
+      continue;
+    }
+    statuses[process] = terminationStatus;
+  }
+  return [statuses copy];
+}
+
 - (instancetype)firstSessionState
 {
   if (self.previousState == nil) {

@@ -16,6 +16,8 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorSession.h"
 
+NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"termination_status";
+
 @implementation FBSimulatorHistory
 
 - (instancetype)init
