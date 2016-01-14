@@ -67,14 +67,15 @@ class FormatParserTests : XCTestCase {
       (["--udid"], .UDID),
       (["--name"], .Name),
       (["--device-name"], .DeviceName),
-      (["--os"], .OSVersion)
+      (["--os"], .OSVersion),
+      (["--state"], .State),
     ])
   }
 
   func testParsesCompoundFormats() {
     self.assertParsesAll(Format.parser(), [
       (["--name", "--device-name"], .Compound([.Name, .DeviceName])),
-      (["--udid", "--name", "--device-name", "--os"], .Compound([.UDID, .Name, .DeviceName, .OSVersion]))
+      (["--udid", "--name", "--state", "--device-name", "--os"], .Compound([.UDID, .Name, .State, .DeviceName, .OSVersion]))
     ])
   }
 

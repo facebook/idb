@@ -197,6 +197,8 @@ extension Format {
       return simulator.configuration.deviceName
     case Format.OSVersion:
       return simulator.configuration.osVersionString
+    case Format.State:
+      return simulator.stateString
     case Format.Compound(let subformats):
       let tokens: NSArray = subformats.map { Format.format($0, simulator: simulator)  }
       return tokens.componentsJoinedByString(" ")
