@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA1B7F6A1C2867EE0038C6A5 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5B1C2867EE0038C6A5 /* Arguments.swift */; };
 		AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */; };
 		AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5D1C2867EE0038C6A5 /* Command.swift */; };
 		AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */; };
@@ -29,7 +28,6 @@
 		AA3ADDB91C2B19A4004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA6085BE1C287AC3009B500E /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA6085CF1C287DBD009B500E /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE35A7C1C2863EB0073CC70 /* main.swift */; };
-		AA6085D01C287E02009B500E /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5B1C2867EE0038C6A5 /* Arguments.swift */; };
 		AA6085D11C287E02009B500E /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */; };
 		AA6085D21C287E02009B500E /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5D1C2867EE0038C6A5 /* Command.swift */; };
 		AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */; };
@@ -76,7 +74,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		AA1B7F5B1C2867EE0038C6A5 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
 		AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
 		AA1B7F5D1C2867EE0038C6A5 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
 		AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsers.swift; sourceTree = "<group>"; };
@@ -139,7 +136,6 @@
 		AA1B7F5A1C2867EE0038C6A5 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				AA1B7F5B1C2867EE0038C6A5 /* Arguments.swift */,
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
@@ -359,7 +355,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA6085D01C287E02009B500E /* Arguments.swift in Sources */,
 				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
 				AA6085D21C287E02009B500E /* Command.swift in Sources */,
 				AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */,
@@ -389,7 +384,6 @@
 				AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */,
 				AA1B7F6F1C2867EE0038C6A5 /* Constants.m in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
-				AA1B7F6A1C2867EE0038C6A5 /* Arguments.swift in Sources */,
 				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
 				AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */,
