@@ -169,6 +169,11 @@
 - (instancetype)iOS_9_2;
 
 /**
+ iOS 9.3
+ */
+- (instancetype)iOS_9_3;
+
+/**
  Device with the given OS version.
  Will return nil, if no OS with the given name could be found.
  */
@@ -192,16 +197,26 @@
  */
 - (instancetype)tvOS_9_1;
 
+/**
+ tvOS 9.2
+ */
+- (instancetype)tvOS_9_2;
+
 #pragma mark watchOS Versions
 
 /**
- tvOS 9.0
+ watchOS 2.0
  */
 - (instancetype)watchOS_2_0;
 
 /**
- tvOS 9.1
+ watchOS 2.1
  */
 - (instancetype)watchOS_2_1;
+
+/**
+ watchOS 2.2
+ */
+- (instancetype)watchOS_2_2;
 
 @end
