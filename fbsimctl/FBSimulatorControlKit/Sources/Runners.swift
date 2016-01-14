@@ -189,15 +189,28 @@ extension Query {
 extension Format {
   static func format(format: Format, simulator: FBSimulator) -> String {
     switch (format) {
-    case Format.UDID:
+    case .UDID:
       return simulator.udid
-    case Format.Name:
+    case .Name:
       return simulator.name
-    case Format.DeviceName:
-      return simulator.configuration.deviceName
-    case Format.OSVersion:
-      return simulator.configuration.osVersionString
-    case Format.Compound(let subformats):
+    case .DeviceName:
+      guard let configuration = simulator.configuration else {
+        return "unknown-name"
+      }
+      return configuration.deviceName
+    case .OSVersion:
+      guard let configuration = simulator.configuration else {
+        return "unknown-os"
+      }
+      return configuration.osVersionString
+    case .State:
+      return simulator.stateString
+    case .ProcessIdentifier:
+      guard let process = simulator.launchdSimProcess else {
+        return "no-process"
+      }
+      return process.processIdentifier.description
+    case .Compound(let subformats):
       let tokens: NSArray = subformats.map { Format.format($0, simulator: simulator)  }
       return tokens.componentsJoinedByString(" ")
     }

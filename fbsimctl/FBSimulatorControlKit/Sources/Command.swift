@@ -26,6 +26,8 @@ public indirect enum Format {
   case Name
   case DeviceName
   case OSVersion
+  case State
+  case ProcessIdentifier
   case Compound([Format])
 }
 
@@ -205,6 +207,8 @@ public func == (left: Format, right: Format) -> Bool {
   case (.OSVersion, .OSVersion): return true
   case (.DeviceName, .DeviceName): return true
   case (.Name, .Name): return true
+  case (.State, .State): return true
+  case (.ProcessIdentifier, .ProcessIdentifier): return true
   case (.Compound(let leftComp), .Compound(let rightComp)): return leftComp == rightComp
   default: return false
   }
@@ -215,13 +219,17 @@ extension Format : Hashable {
     get {
       switch self {
       case .UDID:
-        return 1
+        return 1 << 0
       case .OSVersion:
-        return 2
+        return 1 << 1
       case .DeviceName:
-        return 3
+        return 1 << 2
       case .Name:
-        return 4
+        return 1 << 3
+      case .State:
+        return 1 << 4
+      case .ProcessIdentifier:
+        return 1 << 5
       case .Compound(let format):
         return format.reduce("compound".hashValue) { previous, next in
           return previous ^ next.hashValue
