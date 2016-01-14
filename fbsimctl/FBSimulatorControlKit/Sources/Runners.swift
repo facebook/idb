@@ -194,9 +194,15 @@ extension Format {
     case .Name:
       return simulator.name
     case .DeviceName:
-      return simulator.configuration.deviceName
+      guard let configuration = simulator.configuration else {
+        return "unknown-name"
+      }
+      return configuration.deviceName
     case .OSVersion:
-      return simulator.configuration.osVersionString
+      guard let configuration = simulator.configuration else {
+        return "unknown-os"
+      }
+      return configuration.osVersionString
     case .State:
       return simulator.stateString
     case .ProcessIdentifier:
