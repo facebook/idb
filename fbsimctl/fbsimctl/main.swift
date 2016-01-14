@@ -10,12 +10,14 @@
 import Foundation
 import FBSimulatorControl
 
-let arguments = NSProcessInfo.processInfo().arguments.dropFirst(1)
+let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
 let argumentSet = Set(arguments)
 FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(argumentSet.contains(Flags.DebugLogging))
 
 let environment = NSProcessInfo.processInfo().environment
 
-Command
-  .fromArguments(Array(NSProcessInfo.processInfo().arguments.dropFirst(1)), environment: environment)
+let returnCode = Command
+  .fromArguments(arguments, environment: environment)
   .runFromCLI()
+
+exit(returnCode)
