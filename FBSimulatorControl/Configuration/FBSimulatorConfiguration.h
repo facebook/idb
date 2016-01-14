@@ -197,6 +197,11 @@
  */
 - (instancetype)tvOS_9_1;
 
+/**
+ tvOS 9.2
+ */
+- (instancetype)tvOS_9_2;
+
 #pragma mark watchOS Versions
 
 /**

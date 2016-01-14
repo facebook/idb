@@ -433,6 +433,15 @@
 
 @end
 
+@implementation FBSimulatorConfiguration_tvOS_9_2
+
+- (NSString *)name
+{
+  return @"tvOS 9.2";
+}
+
+@end
+
 @implementation FBSimulatorConfiguration_watchOS_Base
 
 - (NSString *)name
@@ -767,6 +776,11 @@
   return [self updateOSVersionClass:FBSimulatorConfiguration_tvOS_9_1.class];
 }
 
+- (instancetype)tvOS_9_2
+{
+  return [self updateOSVersionClass:FBSimulatorConfiguration_tvOS_9_2.class];
+}
+
 - (instancetype)watchOS_2_0
 {
   return [self updateOSVersionClass:FBSimulatorConfiguration_watchOS_2_0.class];
@@ -875,6 +889,7 @@
       FBSimulatorConfiguration_iOS_9_3.new,
       FBSimulatorConfiguration_tvOS_9_0.new,
       FBSimulatorConfiguration_tvOS_9_1.new,
+      FBSimulatorConfiguration_tvOS_9_2.new,
       FBSimulatorConfiguration_watchOS_2_0.new,
       FBSimulatorConfiguration_watchOS_2_1.new
     ];

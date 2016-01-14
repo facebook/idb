@@ -154,6 +154,9 @@
 @interface FBSimulatorConfiguration_tvOS_9_1 : FBSimulatorConfiguration_tvOS_Base
 @end
 
+@interface FBSimulatorConfiguration_tvOS_9_2 : FBSimulatorConfiguration_tvOS_Base
+@end
+
 @interface FBSimulatorConfiguration_watchOS_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_OS>
 @end
 
