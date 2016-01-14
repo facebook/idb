@@ -231,7 +231,7 @@ extension Configuration : Parsable {
   public static func parser() -> Parser<Configuration> {
     return Parser
       .ofTwoSequenced(
-        Parser<Bool>.ofFlag("--debug-logging"),
+        Parser<Bool>.ofFlag(Flags.DebugLogging),
         self.controlConfigurationParser()
       )
       .fmap { (debugLogging, controlConfiguration) in

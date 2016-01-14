@@ -12,7 +12,7 @@ import FBSimulatorControl
 
 let arguments = NSProcessInfo.processInfo().arguments.dropFirst(1)
 let argumentSet = Set(arguments)
-FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(argumentSet.contains(Configuration.DEBUG_LOGGING_FLAG))
+FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(argumentSet.contains(Flags.DebugLogging))
 
 let environment = NSProcessInfo.processInfo().environment
 
