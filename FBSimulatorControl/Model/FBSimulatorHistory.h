@@ -17,6 +17,11 @@
 @class FBSimulatorSession;
 
 /**
+ A Diagnostic key for the Termination Status.
+ */
+extern NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus;
+
+/**
  A value representing a history of events that have occurred for a Simulator.
  Can be serialized for reading across host processes.
  */

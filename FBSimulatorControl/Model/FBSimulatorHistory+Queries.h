@@ -139,6 +139,14 @@
 - (FBProcessInfo *)runningProcessForApplication:(FBSimulatorApplication *)application;
 
 /**
+ Returns a mapping of Process Identifier to Termination Status.
+ The Termination status is @YES if the Termination was expected, @NO otherwise.
+
+ @return a NSDictionary<FBProcessInfo *, NSNumber *> of Process Info to Termination status.
+ */
+- (NSDictionary *)processTerminationStatuses;
+
+/**
  Finds the first diagnostic for the provided name, matching the application.
  Reaches into previous states in order to find Diagnostics for Applications that have been terminated.
 

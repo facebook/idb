@@ -146,6 +146,7 @@
 - (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
 {
   [self processTerminated:agentProcess];
+  [self update:agentProcess withProcessDiagnosticNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
@@ -156,6 +157,7 @@
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
   [self processTerminated:applicationProcess];
+  [self update:applicationProcess withProcessDiagnosticNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
 }
 
 - (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value
