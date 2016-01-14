@@ -148,7 +148,10 @@ class InteractiveRunner : Runner, RelayTransformer {
   }
 
   func transform(input: String, writer: Writer) -> ActionResult {
-    let arguments = input.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
+    let arguments = input
+      .stringByTrimmingCharactersInSet(NSCharacterSet.newlineCharacterSet())
+      .componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
+
     do {
       let (_, action) = try Action.parser().parse(arguments)
       let runner = ActionRunner(action: action, control: self.control)
