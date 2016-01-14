@@ -241,7 +241,7 @@ extension Configuration : Parsable {
 
   public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
     return Parser.ofTwoSequenced(
-        Parser.succeeded("--device-set", Parser<String>.ofDirectory()).optional(),
+        Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
         FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions.defaultValue())
       )
       .fmap { setPath, options in

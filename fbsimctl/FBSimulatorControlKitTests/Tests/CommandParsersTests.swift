@@ -151,7 +151,7 @@ class ConfigurationParserTests : XCTestCase {
   func testParsesWithSetPath() {
     self.assertParses(
       Configuration.parser(),
-      ["--device-set", "/usr/bin"],
+      ["--set", "/usr/bin"],
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
@@ -179,7 +179,7 @@ class ConfigurationParserTests : XCTestCase {
   func testParsesWithSetPathAndOptions() {
     self.assertParses(
       Configuration.parser(),
-      ["--device-set", "/usr/bin", "--delete-all", "--kill-spurious"],
+      ["--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
@@ -193,7 +193,7 @@ class ConfigurationParserTests : XCTestCase {
   func testParsesWithAllTheAbove() {
     self.assertParses(
       Configuration.parser(),
-      ["--debug-logging", "--device-set", "/usr/bin", "--delete-all", "--kill-spurious"],
+      ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
