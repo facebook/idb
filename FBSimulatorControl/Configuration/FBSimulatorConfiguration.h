@@ -169,6 +169,11 @@
 - (instancetype)iOS_9_2;
 
 /**
+ iOS 9.3
+ */
+- (instancetype)iOS_9_3;
+
+/**
  Device with the given OS version.
  Will return nil, if no OS with the given name could be found.
  */

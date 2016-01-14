@@ -142,6 +142,9 @@
 @interface FBSimulatorConfiguration_iOS_9_2 : FBSimulatorConfiguration_iOS_Base
 @end
 
+@interface FBSimulatorConfiguration_iOS_9_3 : FBSimulatorConfiguration_iOS_Base
+@end
+
 @interface FBSimulatorConfiguration_tvOS_Base : FBSimulatorConfigurationVariant_Base <FBSimulatorConfiguration_OS>
 @end
 

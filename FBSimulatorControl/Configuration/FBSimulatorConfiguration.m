@@ -391,6 +391,15 @@
 
 @end
 
+@implementation FBSimulatorConfiguration_iOS_9_3
+
+- (NSString *)name
+{
+  return @"iOS 9.3";
+}
+
+@end
+
 @implementation FBSimulatorConfiguration_tvOS_Base
 
 - (NSString *)name
@@ -743,6 +752,11 @@
   return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_9_2.class];
 }
 
+- (instancetype)iOS_9_3
+{
+  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_9_3.class];
+}
+
 - (instancetype)tvOS_9_0
 {
   return [self updateOSVersionClass:FBSimulatorConfiguration_tvOS_9_0.class];
@@ -858,6 +872,7 @@
       FBSimulatorConfiguration_iOS_9_0.new,
       FBSimulatorConfiguration_iOS_9_1.new,
       FBSimulatorConfiguration_iOS_9_2.new,
+      FBSimulatorConfiguration_iOS_9_3.new,
       FBSimulatorConfiguration_tvOS_9_0.new,
       FBSimulatorConfiguration_tvOS_9_1.new,
       FBSimulatorConfiguration_watchOS_2_0.new,
