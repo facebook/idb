@@ -22,13 +22,14 @@ extension Configuration {
 }
 
 public extension Command {
-  func runFromCLI() -> Void {
+  func runFromCLI() -> Int32 {
     let writer = StdIOWriter()
     switch (BaseRunner(command: self).run(StdIOWriter())) {
+    case .Success:
+      return 0
     case .Failure(let string):
       writer.writeOut(string)
-    default:
-      break
+      return 1
     }
   }
 }

@@ -16,6 +16,8 @@ FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(argumentSet.contain
 
 let environment = NSProcessInfo.processInfo().environment
 
-Command
+let returnCode = Command
   .fromArguments(Array(NSProcessInfo.processInfo().arguments.dropFirst(1)), environment: environment)
   .runFromCLI()
+
+exit(returnCode)
