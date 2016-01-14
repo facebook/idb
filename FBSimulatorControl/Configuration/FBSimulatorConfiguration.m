@@ -475,6 +475,15 @@
 
 @end
 
+@implementation FBSimulatorConfiguration_watchOS_2_2
+
+- (NSString *)name
+{
+  return @"watchOS 2.2";
+}
+
+@end
+
 @implementation FBSimulatorConfiguration
 
 + (void)initialize
@@ -791,6 +800,11 @@
   return [self updateOSVersionClass:FBSimulatorConfiguration_watchOS_2_1.class];
 }
 
+- (instancetype)watchOS_2_2
+{
+  return [self updateOSVersionClass:FBSimulatorConfiguration_watchOS_2_2.class];
+}
+
 + (instancetype)withOSNamed:(NSString *)osName
 {
   return [self.defaultConfiguration withOSNamed:osName];
@@ -891,7 +905,8 @@
       FBSimulatorConfiguration_tvOS_9_1.new,
       FBSimulatorConfiguration_tvOS_9_2.new,
       FBSimulatorConfiguration_watchOS_2_0.new,
-      FBSimulatorConfiguration_watchOS_2_1.new
+      FBSimulatorConfiguration_watchOS_2_1.new,
+      FBSimulatorConfiguration_watchOS_2_2.new
     ];
   });
   return OSConfigurations;

@@ -205,13 +205,18 @@
 #pragma mark watchOS Versions
 
 /**
- tvOS 9.0
+ watchOS 2.0
  */
 - (instancetype)watchOS_2_0;
 
 /**
- tvOS 9.1
+ watchOS 2.1
  */
 - (instancetype)watchOS_2_1;
+
+/**
+ watchOS 2.2
+ */
+- (instancetype)watchOS_2_2;
 
 @end

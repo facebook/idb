@@ -166,6 +166,9 @@
 @interface FBSimulatorConfiguration_watchOS_2_1 : FBSimulatorConfiguration_watchOS_Base
 @end
 
+@interface FBSimulatorConfiguration_watchOS_2_2 : FBSimulatorConfiguration_watchOS_Base
+@end
+
 @interface FBSimulatorConfiguration ()
 
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfiguration_Device> device;
