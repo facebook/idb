@@ -74,23 +74,14 @@ extension Parser {
 
 extension FBSimulatorState : Parsable {
   public static func parser() -> Parser<FBSimulatorState> {
-    return Parser<FBSimulatorState>.single("A Simulator State") { token in
-      let state = FBSimulator.simulatorStateFromStateString(token)
-      switch (state) {
-      case .Unknown:
-        let possible = [
-          FBSimulatorState.Creating.description,
-          FBSimulatorState.Shutdown.description,
-          FBSimulatorState.Booting.description,
-          FBSimulatorState.Booted.description,
-          FBSimulatorState.ShuttingDown.description
-        ]
-        throw ParseError.DoesNotMatch(possible.description, token)
-      default:
-        return state
-      }
+    return Parser.alternative([
+        Parser.ofString("--state=creating", FBSimulatorState.Creating),
+        Parser.ofString("--state=shutdown", FBSimulatorState.Shutdown),
+        Parser.ofString("--state=booting", FBSimulatorState.Booting),
+        Parser.ofString("--state=booted", FBSimulatorState.Booted),
+        Parser.ofString("--state=shutting-down", FBSimulatorState.ShuttingDown),
+      ])
     }
-  }
 }
 
 extension Command : Parsable {
