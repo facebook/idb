@@ -274,15 +274,29 @@ extension Interaction : Parsable {
   }
 
   private static func agentLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
-    return Parser<FBSimulatorBinary>
-      .ofBinary()
-      .fmap { FBAgentLaunchConfiguration(binary: $0, arguments: [], environment: [:]) }
+    return Parser
+      .ofTwoSequenced(
+        Parser<FBSimulatorBinary>.ofBinary(),
+        self.argumentParser()
+      )
+      .fmap { (binary, arguments) in
+        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:])
+      }
   }
 
   private static func appLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
-    return Parser<FBSimulatorApplication>
-      .ofApplication()
-      .fmap { FBApplicationLaunchConfiguration(application: $0, arguments: [], environment: [:]) }
+    return Parser
+      .ofTwoSequenced(
+        Parser<FBSimulatorApplication>.ofApplication(),
+        self.argumentParser()
+      )
+      .fmap { (application, arguments) in
+        return FBApplicationLaunchConfiguration(application: application, arguments: arguments, environment : [:])
+      }
+    }
+
+  private static func argumentParser() -> Parser<[String]> {
+    return Parser.many(Parser<String>.ofAny())
   }
 }
 

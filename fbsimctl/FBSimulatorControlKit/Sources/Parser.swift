@@ -147,6 +147,10 @@ extension Parser {
     }
   }
 
+  static func ofAny() -> Parser<String> {
+    return Parser<String>.single("Anything", f: { $0 } )
+  }
+
   static func ofString(string: String, _ constant: A) -> Parser<A> {
     return Parser.single(string) { token in
       if token != string {
