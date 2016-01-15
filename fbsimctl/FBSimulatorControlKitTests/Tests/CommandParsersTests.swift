@@ -135,7 +135,15 @@ class FBSimulatorAllocationOptionsParserTests : XCTestCase {
 class ConfigurationParserTests : XCTestCase {
   func testParsesEmpty() {
     self.assertParses(
-      Configuration.parser(), [], Configuration.defaultValue()
+      Configuration.parser(),
+      [],
+      Configuration(
+        controlConfiguration: FBSimulatorControlConfiguration(
+          deviceSetPath: nil,
+          options: FBSimulatorManagementOptions()
+        ),
+        options: Configuration.Options()
+      )
     )
   }
 
@@ -144,7 +152,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging"],
       Configuration(
-        controlConfiguration: Configuration.defaultControlConfiguration(),
+        controlConfiguration: Configuration.defaultValue.controlConfiguration,
         options: Configuration.Options.DebugLogging
       )
     )
@@ -155,7 +163,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--json"],
       Configuration(
-        controlConfiguration: Configuration.defaultControlConfiguration(),
+        controlConfiguration: Configuration.defaultValue.controlConfiguration,
         options: Configuration.Options.JSONOutput
       )
     )
@@ -168,7 +176,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
-          options: FBSimulatorManagementOptions.defaultValue()
+          options: Configuration.defaultValue.controlConfiguration.options
         ),
         options: Configuration.Options()
       )
@@ -313,7 +321,7 @@ class CommandParserTests : XCTestCase {
       Command.parser(), 
       ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"],
       Command.Perform(
-        Configuration.defaultValue(),
+        Configuration.defaultValue,
         Action(
           interactions: [.Boot],
           query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
@@ -328,7 +336,7 @@ class CommandParserTests : XCTestCase {
       Command.parser(),
       ["--state=booted", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "list", "boot"],
       Command.Perform(
-        Configuration.defaultValue(),
+        Configuration.defaultValue,
         Action(
           interactions: [ .List, .Boot ],
           query: Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
@@ -340,8 +348,8 @@ class CommandParserTests : XCTestCase {
 
   func testParsesInteract() {
     self.assertParsesAll(Command.parser(), [
-      (["interact"], Command.Interact(Configuration.defaultValue(), nil)),
-      (["interact", "--port", "42"], Command.Interact(Configuration.defaultValue(), 42))
+      (["interact"], Command.Interact(Configuration.defaultValue, nil)),
+      (["interact", "--port", "42"], Command.Interact(Configuration.defaultValue, 42))
     ])
   }
 

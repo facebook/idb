@@ -86,12 +86,12 @@ extension Configuration : Parsable {
 
   public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
     return Parser.ofTwoSequenced(
-      Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
-      FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions.defaultValue())
+        Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
+        FBSimulatorManagementOptions.parser()
       )
       .fmap { setPath, options in
         return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
-    }
+      }
   }
 
   static func optionsParser() -> Parser<Configuration.Options> {

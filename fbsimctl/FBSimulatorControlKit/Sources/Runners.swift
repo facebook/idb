@@ -15,10 +15,10 @@ protocol Runner {
 }
 
 extension Configuration {
-  func buildSimulatorControl() -> FBSimulatorControl {
+  func buildSimulatorControl() throws -> FBSimulatorControl {
     let debugLogging = self.options.contains(Configuration.Options.DebugLogging)
     let logger = FBSimulatorLogger.aslLogger().writeToStderrr(true, withDebugLogging: debugLogging)
-    return try! FBSimulatorControl.withConfiguration(self.controlConfiguration, logger: logger)
+    return try FBSimulatorControl.withConfiguration(self.controlConfiguration, logger: logger)
   }
 }
 
@@ -55,28 +55,37 @@ private struct BaseRunner : Runner {
   let command: Command
 
   func run(writer: Writer) -> ActionResult {
-    switch (self.command) {
-    case .Help:
-      writer.write(Command.getHelp())
-      return .Success
-    case .Interact(let configuration, let port):
-      let control = configuration.buildSimulatorControl()
-      return InteractiveRunner(control: control, portNumber: port).run(writer)
-    case .Perform(let configuration, let action):
-      let control = configuration.buildSimulatorControl()
-      return ActionRunner(action: action, control: control).run(writer)
+    do {
+      switch (self.command) {
+      case .Help:
+        writer.write(Command.getHelp())
+        return .Success
+      case .Interact(let configuration, let port):
+        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath)
+        let control = try configuration.buildSimulatorControl()
+        return InteractiveRunner(control: control, defaults: defaults, portNumber: port).run(writer)
+      case .Perform(let configuration, let action):
+        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath)
+        let control = try configuration.buildSimulatorControl()
+        return ActionRunner(control: control, defaults: defaults, action: action).run(writer)
+      }
+    } catch DefaultsError.UnreadableRCFile(let string) {
+      return .Failure("Unreadable .rc file " + string)
+    } catch let error as NSError {
+      return .Failure(error.description)
     }
   }
 }
 
 private struct ActionRunner : Runner {
-  let action: Action
   let control: FBSimulatorControl
+  let defaults: Defaults
+  let action: Action
 
   func run(writer: Writer) -> ActionResult {
     do {
       let simulators = try Query.perform(self.control.simulatorPool, query: action.query)
-      let format = self.action.format ?? Format.defaultValue()
+      let format = self.action.format ?? defaults.format
       let runners: [Runner] = self.action.interactions.flatMap { interaction in
         simulators.map { simulator in
           SimulatorRunner(simulator: simulator, interaction: interaction, format: format)
@@ -87,6 +96,44 @@ private struct ActionRunner : Runner {
       return ActionResult.Failure(error.description)
     } catch {
       return ActionResult.Failure("Unknown Query Error")
+    }
+  }
+}
+
+class InteractiveRunner : Runner, RelayTransformer {
+  let control: FBSimulatorControl
+  let defaults: Defaults
+  let portNumber: Int?
+
+  init(control: FBSimulatorControl, defaults: Defaults, portNumber: Int?) {
+    self.control = control
+    self.portNumber = portNumber
+    self.defaults = defaults
+  }
+
+  func run(writer: Writer) -> ActionResult {
+    if let portNumber = self.portNumber {
+      writer.write("Starting Socket server on \(portNumber)")
+      SocketRelay(portNumber: portNumber, transformer: self).start()
+      writer.write("Ending Socket Server")
+    } else {
+      writer.write("Starting local interactive mode, listening on stdin")
+      StdIORelay(transformer: self).start()
+      writer.write("Ending local interactive mode")
+    }
+    return .Success
+  }
+
+  func transform(input: String, writer: Writer) -> ActionResult {
+    do {
+      let arguments = Arguments.fromString(input)
+      let (_, action) = try Action.parser().parse(arguments)
+      let runner = ActionRunner(control: self.control, defaults: self.defaults, action: action)
+      return runner.run(writer)
+    } catch let error as ParseError {
+      return .Failure("Error: \(error.description)")
+    } catch let error as NSError {
+      return .Failure(error.description)
     }
   }
 }
@@ -143,42 +190,6 @@ private struct SimulatorRunner : Runner {
   private var formattedSimulator: String {
     get {
       return Format.format(self.format, simulator: self.simulator)
-    }
-  }
-}
-
-class InteractiveRunner : Runner, RelayTransformer {
-  let control: FBSimulatorControl
-  let portNumber: Int?
-
-  init(control: FBSimulatorControl, portNumber: Int?) {
-    self.control = control
-    self.portNumber = portNumber
-  }
-
-  func run(writer: Writer) -> ActionResult {
-    if let portNumber = self.portNumber {
-      writer.write("Starting Socket server on \(portNumber)")
-      SocketRelay(portNumber: portNumber, transformer: self).start()
-      writer.write("Ending Socket Server")
-    } else {
-      writer.write("Starting local interactive mode, listening on stdin")
-      StdIORelay(transformer: self).start()
-      writer.write("Ending local interactive mode")
-    }
-    return .Success
-  }
-
-  func transform(input: String, writer: Writer) -> ActionResult {
-    do {
-      let arguments = Arguments.fromString(input)
-      let (_, action) = try Action.parser().parse(arguments)
-      let runner = ActionRunner(action: action, control: self.control)
-      return runner.run(writer)
-    } catch let error as ParseError {
-      return .Failure("Error: \(error.description)")
-    } catch let error as NSError {
-      return .Failure(error.description)
     }
   }
 }

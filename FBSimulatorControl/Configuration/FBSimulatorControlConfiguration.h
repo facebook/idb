@@ -36,12 +36,12 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
  @param deviceSetPath the Path to the Device Set. If nil, the default Device Set will be used.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithDeviceSetPath:(NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options;
++ (instancetype _Nonnull)configurationWithDeviceSetPath:(NSString *_Nullable)deviceSetPath options:(FBSimulatorManagementOptions)options;
 
 /**
  The Location of the SimDeviceSet. If no path is provided, the default device set will be used.
  */
-@property (nonatomic, copy, readonly) NSString *deviceSetPath;
+@property (nonatomic, copy, readonly) NSString *_Nullable deviceSetPath;
 
 /**
  The Options for Simulator Management.

@@ -10,28 +10,78 @@
 import Foundation
 import FBSimulatorControl
 
-public protocol Default {
-  static func defaultValue() -> Self
-}
+let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
 
-extension FBSimulatorManagementOptions : Default {
-  public static func defaultValue() -> FBSimulatorManagementOptions {
-    return FBSimulatorManagementOptions()
+public enum DefaultsError : ErrorType, CustomStringConvertible {
+  case UnreadableRCFile(String)
+
+  public var description: String {
+    get {
+      switch self {
+      case .UnreadableRCFile(let underlyingError):
+        return "Unreadable RC File " + underlyingError
+      }
+    }
   }
 }
 
-extension Configuration : Default {
-  public static func defaultValue() -> Configuration {
-    return Configuration(controlConfiguration: self.defaultControlConfiguration(), options: Configuration.Options())
-  }
+public protocol Defaultable {
+  static var defaultValue: Self { get }
+}
 
-  public static func defaultControlConfiguration() -> FBSimulatorControlConfiguration {
-    return FBSimulatorControlConfiguration(deviceSetPath: nil, options: FBSimulatorManagementOptions())
+extension Format : Defaultable {
+  public static var defaultValue: Format {
+    get {
+      return .Compound([ .UDID, .Name])
+    }
   }
 }
 
-extension Format : Default {
-  public static func defaultValue() -> Format {
-    return .Compound([ .UDID, .Name])
+extension Configuration : Defaultable {
+  public static var defaultValue: Configuration {
+    get {
+      return Configuration(
+        controlConfiguration: FBSimulatorControlConfiguration(
+          deviceSetPath: nil,
+          options: FBSimulatorManagementOptions()
+        ),
+        options: Configuration.Options()
+      )
+    }
   }
 }
+
+public struct Defaults {
+  let format: Format
+  let configuration: Configuration
+  let query: Query?
+
+  static func from(setPath: String?) throws -> Defaults {
+    do {
+      var configuration: Configuration? = nil
+      var format: Format? = nil
+      if let rcContents = try? String(contentsOfURL: DefaultsRCFile) {
+        let rcTokens = Arguments.fromString(rcContents)
+        (_, (configuration, format)) = try self.rcFileParser.parse(rcTokens)
+      }
+
+      return Defaults(
+        format: format ?? Format.defaultValue,
+        configuration: configuration ?? Configuration.defaultValue,
+        query: nil
+      )
+    } catch let error as ParseError {
+      throw DefaultsError.UnreadableRCFile(error.description)
+    }
+  }
+
+  static var rcFileParser: Parser<(Configuration?, Format?)> {
+    get {
+      return Parser.ofTwoSequenced(
+        Configuration.parser().optional(),
+        Format.parser().optional()
+      )
+    }
+  }
+}
+
