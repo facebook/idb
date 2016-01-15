@@ -66,11 +66,18 @@ extension Configuration {
 
 let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
 
-public struct Defaults {
+public class Defaults {
   let logWriter: Writer
   let format: Format
   let configuration: Configuration
   var query: Query?
+
+  init(logWriter: Writer, format: Format, configuration: Configuration, query: Query?) {
+    self.logWriter = logWriter
+    self.format = format
+    self.configuration = configuration
+    self.query = query
+  }
 
   static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
     do {
@@ -99,12 +106,19 @@ public struct Defaults {
     }
   }
 
-  static var rcFileParser: Parser<(Configuration?, Format?)> {
+  private static var rcFileParser: Parser<(Configuration?, Format?)> {
     get {
       return Parser.ofTwoSequenced(
         Configuration.parser().optional(),
         Format.parser().optional()
       )
+    }
+  }
+
+  private var lastQueryLocation: NSURL {
+    get {
+      let setPath = self.configuration.controlConfiguration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
+      return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
     }
   }
 }

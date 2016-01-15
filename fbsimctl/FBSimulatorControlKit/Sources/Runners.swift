@@ -84,7 +84,7 @@ private struct ActionRunner : Runner {
 
   func run(writer: Writer) -> ActionResult {
     do {
-      let simulators = try Query.perform(self.control.simulatorPool, query: action.query)
+      let simulators = try Query.perform(self.control.simulatorPool, query: action.query, defaults: self.defaults)
       let format = self.action.format ?? defaults.format
       let runners: [Runner] = self.action.interactions.flatMap { interaction in
         simulators.map { simulator in

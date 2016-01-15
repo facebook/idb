@@ -49,3 +49,15 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
 @property (nonatomic, assign, readonly) FBSimulatorManagementOptions options;
 
 @end
+
+/**
+ Global CoreSimulatorConfiguration
+ */
+@interface FBSimulatorControlConfiguration (Helpers)
+
+/**
+ The Location of the Default SimDeviceSet
+ */
++ (NSString *_Nonnull)defaultDeviceSetPath;
+
+@end

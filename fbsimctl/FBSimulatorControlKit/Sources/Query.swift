@@ -39,18 +39,19 @@ public indirect enum Query {
 }
 
 extension Query {
-  static func perform(pool: FBSimulatorPool, query: Query?) throws -> [FBSimulator] {
+  static func perform(pool: FBSimulatorPool, query: Query?, defaults: Defaults) throws -> [FBSimulator] {
+    guard let query = query ?? defaults.query else {
+      throw QueryError.NoQueryProvided
+    }
     if pool.allSimulators.count == 0 {
       throw QueryError.PoolIsEmpty
-    }
-    guard let query = query else {
-      throw QueryError.NoQueryProvided
     }
     let array: NSArray = pool.allSimulators
     let matching = array.filteredArrayUsingPredicate(query.get(pool)) as! [FBSimulator]
     if matching.count == 0 {
       throw QueryError.NoMatches
     }
+    defaults.query = query
     return matching
   }
 
