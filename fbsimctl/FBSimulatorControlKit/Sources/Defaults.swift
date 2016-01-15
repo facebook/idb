@@ -35,9 +35,3 @@ extension Format : Default {
     return .Compound([ .UDID, .Name])
   }
 }
-
-extension Query : Default {
-  public static func defaultValue() -> Query {
-    return .And([])
-  }
-}

@@ -291,7 +291,7 @@ class ActionParserTests : XCTestCase {
 
   func assertWithDefaultActions(interaction: Interaction, suffix: [String]) {
     return self.unzipAndAssert(interaction, suffix: suffix, extras: [
-      ([], Query.defaultValue(), Format.defaultValue()),
+      ([], nil, Format.defaultValue()),
       (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), Format.defaultValue()),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), Format.defaultValue()),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), Format.defaultValue()),
@@ -299,7 +299,7 @@ class ActionParserTests : XCTestCase {
     ])
   }
 
-  func unzipAndAssert(interaction: Interaction, suffix: [String], extras: [([String], Query, Format)]) {
+  func unzipAndAssert(interaction: Interaction, suffix: [String], extras: [([String], Query?, Format)]) {
     let pairs = extras.map { (tokens, query, format) in
       return (tokens + suffix, Action(interaction: interaction, query: query, format: format))
     }

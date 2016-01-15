@@ -72,8 +72,14 @@ private struct ActionRunner : Runner {
   let control: FBSimulatorControl
 
   func run(writer: Writer) -> ActionResult {
-    let simulators = Query.perform(self.control.simulatorPool, query: action.query)
-    return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, interaction: self.action.interaction, format: self.action.format) } ).run(writer)
+    do {
+      let simulators = try Query.perform(self.control.simulatorPool, query: action.query)
+      return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, interaction: self.action.interaction, format: self.action.format) } ).run(writer)
+    } catch let error as QueryError {
+      return ActionResult.Failure(error.description)
+    } catch {
+      return ActionResult.Failure("Unknown Query Error")
+    }
   }
 }
 
@@ -165,32 +171,6 @@ class InteractiveRunner : Runner, RelayTransformer {
       return .Failure("Error: \(error.description)")
     } catch let error as NSError {
       return .Failure(error.description)
-    }
-  }
-}
-
-extension Query {
-  static func perform(pool: FBSimulatorPool, query: Query) -> [FBSimulator] {
-    let array: NSArray = pool.allSimulators
-    return array.filteredArrayUsingPredicate(query.get(pool)) as! [FBSimulator]
-  }
-
-  func get(pool: FBSimulatorPool) -> NSPredicate {
-    switch (self) {
-    case .UDID(let udids):
-      return FBSimulatorPredicates.udids(Array(udids))
-    case .State(let states):
-      return NSCompoundPredicate(
-        orPredicateWithSubpredicates: states.map(FBSimulatorPredicates.state) as! [NSPredicate]
-      )
-    case .Configured(let configurations):
-      return NSCompoundPredicate(
-        orPredicateWithSubpredicates: configurations.map(FBSimulatorPredicates.configuration) as! [NSPredicate]
-      )
-    case .And(let subqueries):
-      return NSCompoundPredicate(
-        andPredicateWithSubpredicates: subqueries.map { $0.get(pool) }
-      )
     }
   }
 }

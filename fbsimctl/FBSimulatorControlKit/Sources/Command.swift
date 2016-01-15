@@ -42,18 +42,6 @@ public indirect enum Format {
 }
 
 /**
- Defines the components of Query for Simulators.
- Each of the fundemental cases takes a collection of values to allow for a union for each case.
- Intersection is achieved with the .And enumeration.
-*/
-public indirect enum Query {
-  case UDID(Set<String>)
-  case State(Set<FBSimulatorState>)
-  case Configured(Set<FBSimulatorConfiguration>)
-  case And(Set<Query>)
-}
-
-/**
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Interaction {
@@ -66,11 +54,11 @@ public enum Interaction {
 }
 
 /**
- An Action represents an Interaction that is performed on a particular Query of Simulators.
+ An Action represents an Interaction with a Query of Simulators and a Format of textual output.
 */
 public struct Action {
   let interaction: Interaction
-  let query: Query
+  let query: Query?
   let format: Format
 }
 
@@ -81,51 +69,6 @@ public enum Command {
   case Perform(Configuration, [Action])
   case Interact(Configuration, Int?)
   case Help(Interaction?)
-}
-
-public extension Query {
-  static func flatten(queries: [Query]) -> Query {
-    if (queries.count == 1) {
-      return queries.first!
-    }
-
-    var udids: Set<String> = []
-    var states: Set<FBSimulatorState> = []
-    var configurations: Set<FBSimulatorConfiguration> = []
-    var subqueries: Set<Query> = []
-    for query in queries {
-      switch query {
-      case .UDID(let udid): udids.unionInPlace(udid)
-      case .State(let state): states.unionInPlace(state)
-      case .Configured(let configuration): configurations.unionInPlace(configuration)
-      case .And(let subquery): subqueries.unionInPlace(subquery)
-      }
-    }
-
-    if udids.count > 0 {
-      let query = Query.UDID(udids)
-      if states.count == 0 && configurations.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
-    }
-    if states.count > 0 {
-      let query = Query.State(states)
-      if udids.count == 0 && configurations.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
-    }
-    if configurations.count > 0 {
-      let query = Query.Configured(configurations)
-      if udids.count == 0 && states.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
-    }
-
-    return .And(subqueries)
-  }
 }
 
 public extension Format {
@@ -179,34 +122,6 @@ public func == (left: Interaction, right: Interaction) -> Bool {
     return leftLaunch == rightLaunch
   default:
     return false
-  }
-}
-
-extension Query : Equatable { }
-public func == (left: Query, right: Query) -> Bool {
-  switch (left, right) {
-  case (.UDID(let left), .UDID(let right)): return left == right
-  case (.State(let left), .State(let right)): return left == right
-  case (.Configured(let left), .Configured(let right)): return left == right
-  case (.And(let left), .And(let right)): return left == right
-  default: return false
-  }
-}
-
-extension Query : Hashable {
-  public var hashValue: Int {
-    get {
-      switch self {
-      case .UDID(let udids):
-        return 1 ^ udids.hashValue
-      case .Configured(let configurations):
-        return 2 ^ configurations.hashValue
-      case .State(let states):
-        return 4 ^ states.hashValue
-      case .And(let subqueries):
-        return subqueries.hashValue
-      }
-    }
   }
 }
 

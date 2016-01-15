@@ -295,7 +295,7 @@ extension Action : Parsable {
   public static func parser() -> Parser<Action> {
     return Parser
       .ofThreeSequenced(
-        Query.parser().fallback(Query.defaultValue()),
+        Query.parser().optional(),
         Format.parser().fallback(Format.defaultValue()),
         Interaction.parser()
       )
