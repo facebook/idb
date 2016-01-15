@@ -16,7 +16,7 @@ import FBSimulatorControl
 public struct Configuration {
   public struct Options : OptionSetType {
     public let rawValue : Int
-    public init(rawValue:Int) {
+    public init(rawValue: Int) {
       self.rawValue = rawValue
     }
 

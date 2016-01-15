@@ -133,17 +133,11 @@ class FBSimulatorAllocationOptionsParserTests : XCTestCase {
 }
 
 class ConfigurationParserTests : XCTestCase {
-  func testParsesEmpty() {
+  func testParsesEmptyAsDefaultValue() {
     self.assertParses(
       Configuration.parser(),
       [],
-      Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: nil,
-          options: FBSimulatorManagementOptions()
-        ),
-        options: Configuration.Options()
-      )
+      Configuration.defaultValue
     )
   }
 

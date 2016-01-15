@@ -61,12 +61,12 @@ private struct BaseRunner : Runner {
         writer.write(Command.getHelp())
         return .Success
       case .Interact(let configuration, let port):
-        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath, logWriter: FileHandleWriter.stdIOWriter.failure)
-        let control = try configuration.buildSimulatorControl()
+        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
+        let control = try defaults.configuration.buildSimulatorControl()
         return InteractiveRunner(control: control, defaults: defaults, portNumber: port).run(writer)
       case .Perform(let configuration, let action):
-        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath, logWriter: FileHandleWriter.stdIOWriter.failure)
-        let control = try configuration.buildSimulatorControl()
+        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
+        let control = try defaults.configuration.buildSimulatorControl()
         return ActionRunner(control: control, defaults: defaults, action: action).run(writer)
       }
     } catch DefaultsError.UnreadableRCFile(let string) {

@@ -10,8 +10,6 @@
 import Foundation
 import FBSimulatorControl
 
-let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
-
 public enum DefaultsError : ErrorType, CustomStringConvertible {
   case UnreadableRCFile(String)
 
@@ -41,33 +39,59 @@ extension Configuration : Defaultable {
   public static var defaultValue: Configuration {
     get {
       return Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: nil,
-          options: FBSimulatorManagementOptions()
-        ),
+        controlConfiguration: self.defaultControlConfiguration,
         options: Configuration.Options()
+      )
+    }
+  }
+
+  public static var defaultControlConfiguration: FBSimulatorControlConfiguration {
+    get {
+      return FBSimulatorControlConfiguration(
+        deviceSetPath: nil,
+        options: FBSimulatorManagementOptions()
       )
     }
   }
 }
 
+extension Configuration {
+  func updateIfNonDefault(configuration: Configuration) -> Configuration {
+    if self == Configuration.defaultValue {
+      return configuration
+    }
+    return self
+  }
+}
+
+let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
+
 public struct Defaults {
+  let logWriter: Writer
   let format: Format
   let configuration: Configuration
-  let query: Query?
+  var query: Query?
 
-  static func from(setPath: String?) throws -> Defaults {
+  static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
     do {
-      var configuration: Configuration? = nil
+      var configuration: Configuration = configuration
       var format: Format? = nil
+
       if let rcContents = try? String(contentsOfURL: DefaultsRCFile) {
         let rcTokens = Arguments.fromString(rcContents)
-        (_, (configuration, format)) = try self.rcFileParser.parse(rcTokens)
+        let (_, result) = try self.rcFileParser.parse(rcTokens)
+        if let rcConfiguration = result.0 {
+          configuration = configuration.updateIfNonDefault(rcConfiguration)
+        }
+        if let rcFormat = result.1 {
+          format = rcFormat
+        }
       }
 
       return Defaults(
+        logWriter: logWriter,
         format: format ?? Format.defaultValue,
-        configuration: configuration ?? Configuration.defaultValue,
+        configuration: configuration,
         query: nil
       )
     } catch let error as ParseError {
