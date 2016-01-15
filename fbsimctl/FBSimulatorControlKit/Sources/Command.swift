@@ -59,7 +59,7 @@ public enum Interaction {
 public struct Action {
   let interaction: Interaction
   let query: Query?
-  let format: Format
+  let format: Format?
 }
 
 /**

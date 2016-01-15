@@ -296,7 +296,7 @@ extension Action : Parsable {
     return Parser
       .ofThreeSequenced(
         Query.parser().optional(),
-        Format.parser().fallback(Format.defaultValue()),
+        Format.parser().optional(),
         Interaction.parser()
       )
       .fmap { (query, format, interaction) in

@@ -74,7 +74,8 @@ private struct ActionRunner : Runner {
   func run(writer: Writer) -> ActionResult {
     do {
       let simulators = try Query.perform(self.control.simulatorPool, query: action.query)
-      return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, interaction: self.action.interaction, format: self.action.format) } ).run(writer)
+      let format = self.action.format ?? Format.defaultValue()
+      return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, interaction: self.action.interaction, format: format) } ).run(writer)
     } catch let error as QueryError {
       return ActionResult.Failure(error.description)
     } catch {

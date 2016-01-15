@@ -22,7 +22,6 @@
 		AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
 		AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
 		AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
-		AA2AFD731C29412C000123BA /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA3ADDB91C2B19A4004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
@@ -50,6 +49,8 @@
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AACF9F541C46E85800B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
+		AAE0C5561C49214F005DE6D9 /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
+		AAE0C5571C492158005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
 		AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D34D1C32EA4D00434516 /* Writer.swift */; };
@@ -370,6 +371,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAE0C5571C492158005DE6D9 /* Query.swift in Sources */,
 				AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */,
 				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
 				AA54EF6F1C47E9FC006D5118 /* Constants.swift in Sources */,
@@ -422,9 +424,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA2AFD731C29412C000123BA /* CommandParsersTests.swift in Sources */,
 				AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */,
 				AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */,
+				AAE0C5561C49214F005DE6D9 /* CommandParsersTests.swift in Sources */,
 				AAF6DC801C466E7600C7E1E2 /* Fixtures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
