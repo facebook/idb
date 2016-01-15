@@ -13,7 +13,7 @@
  Defines the content & metadata of a log.
  Lazily converts between data formats.
  */
-@interface FBWritableLog : NSObject<NSCopying>
+@interface FBWritableLog : NSObject <NSCopying>
 
 /**
  The name of the Log for uniquely identifying the log.
@@ -53,9 +53,25 @@
 @property (nonatomic, readonly, copy) NSString *asPath;
 
 /**
+ The content and metadata of the log, as a NSDictionary.
+ All keys and values are types allowable by NSJSONSerialization.
+ */
+@property (nonatomic, readonly, copy) NSDictionary *asDictionary;
+
+/**
  Whether the log has content or is missing/empty.
  */
 @property (nonatomic, readonly, assign) BOOL hasLogContent;
+
+/**
+ A Full Description of the Log.
+ */
+- (NSString *)debugDescription;
+
+/**
+ A Partial Description of the Log.
+ */
+- (NSString *)shortDescription;
 
 @end
 

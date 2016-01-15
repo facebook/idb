@@ -8,9 +8,49 @@
  */
 
 #import "FBWritableLog.h"
-#import "FBWritableLog+Private.h"
 
 #import <objc/runtime.h>
+
+@interface FBWritableLog ()
+
+@property (nonatomic, copy, readwrite) NSString *shortName;
+@property (nonatomic, copy, readwrite) NSString *fileType;
+@property (nonatomic, copy, readwrite) NSString *humanReadableName;
+@property (nonatomic, copy, readwrite) NSString *destination;
+
+@property (nonatomic, copy, readwrite) NSData *logData;
+@property (nonatomic, copy, readwrite) NSString *logString;
+@property (nonatomic, copy, readwrite) NSString *logPath;
+
+@end
+
+/**
+ A representation of a Writable Log, backed by NSData.
+ */
+@interface FBWritableLog_Data : FBWritableLog
+
+@end
+
+/**
+ A representation of a Writable Log, backed by an NSString.
+ */
+@interface FBWritableLog_String : FBWritableLog
+
+@end
+
+/**
+ A representation of a Writable Log, backed by a File Path.
+ */
+@interface FBWritableLog_Path : FBWritableLog
+
+@end
+
+/**
+ A representation of a Writable Log, where the log is known to not exist.
+ */
+@interface FBWritableLog_Empty : FBWritableLog
+
+@end
 
 @implementation FBWritableLog
 
@@ -27,18 +67,6 @@
   return log;
 }
 
-- (NSData *)data
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be subclassed", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSString *)string
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be subclassed", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
 - (NSString *)temporaryFilePath
 {
   NSString *localUniqueID = self.shortName ?: [NSString stringWithFormat:@"%@_%@", NSUUID.UUID.UUIDString, @"unknown_log"];
@@ -51,6 +79,45 @@
 - (BOOL)hasLogContent
 {
   return NO;
+}
+
+- (NSDictionary *)asDictionary
+{
+  NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+  if (self.shortName) {
+    dictionary[@"short_name"] = self.shortName;
+  }
+  if (self.humanReadableName) {
+    dictionary[@"human_name"] = self.humanReadableName;
+  }
+  if (self.fileType) {
+    dictionary[@"file_type"] = self.fileType;
+  }
+  return dictionary;
+}
+
+- (NSString *)description
+{
+  return self.shortDescription;
+}
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"%@ | Human Name '%@' | File Type '%@'",
+    self.shortDescription,
+    self.humanReadableName,
+    self.fileType
+  ];
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Short Name '%@' | Content %d",
+    self.shortName,
+    self.hasLogContent
+  ];
 }
 
 @end
@@ -81,9 +148,35 @@
   return self.logPath;
 }
 
+- (NSDictionary *)asDictionary
+{
+  NSMutableDictionary *dictionary = [[super asDictionary] mutableCopy];
+  NSString *base64String = [self.logData base64EncodedStringWithOptions:0];
+  if (base64String) {
+    dictionary[@"data"] = base64String;
+  }
+  return dictionary;
+}
+
 - (BOOL)hasLogContent
 {
   return self.logData.length >= 1;
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Data Log %@",
+    [super shortDescription]
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"Data Log %@",
+    [super debugDescription]
+  ];
 }
 
 @end
@@ -114,9 +207,33 @@
   return self.logPath;
 }
 
+- (NSDictionary *)asDictionary
+{
+  NSMutableDictionary *dictionary = [[super asDictionary] mutableCopy];
+  dictionary[@"contents"] = self.logString;
+  return dictionary;
+}
+
 - (BOOL)hasLogContent
 {
   return self.logString.length >= 1;
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"String Log %@",
+    [super shortDescription]
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"String Log %@ | Content '%@'",
+    [super debugDescription],
+    self.asString
+  ];
 }
 
 @end
@@ -144,10 +261,35 @@
   return self.logPath;
 }
 
+- (NSDictionary *)asDictionary
+{
+  NSMutableDictionary *dictionary = [[super asDictionary] mutableCopy];
+  dictionary[@"location"] = self.logPath;
+  return dictionary;
+}
+
 - (BOOL)hasLogContent
 {
   NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.logPath error:nil];
   return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Path Log %@ | Path %@",
+    [super shortDescription],
+    self.asPath
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"Path Log %@ | Path %@",
+    [super debugDescription],
+    self.asPath
+  ];
 }
 
 @end
