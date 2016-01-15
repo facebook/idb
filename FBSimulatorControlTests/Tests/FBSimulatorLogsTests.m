@@ -63,7 +63,7 @@
   FBSimulatorSession *session = [self createBootedSession];
 
   [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
-    return session.simulator.logs.systemLog.asString;
+    return session.simulator.logs.syslog.asString;
   }];
 }
 

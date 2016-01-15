@@ -15,6 +15,10 @@
 
 /**
  Exposes Simulator Logs & Diagnsotics as FBWritableLog instances.
+
+ Instances of FBWritableLog exposed by this class are not nullable since FBWritableLog's can be empty:
+ - This means that values do not have to be checked before storing in collections
+ - Missing content can be inserted into the FBWritableLog instances, retaining the original metadata.
  */
 @interface FBSimulatorLogs : NSObject
 
@@ -27,9 +31,17 @@
 + (instancetype)withSimulator:(FBSimulator *)simulator;
 
 /**
+ All of the FBWritableLog instances for the Simulator.
+ Prunes empty logs.
+
+ @return an NSArray<FBWritableLog> of all the Writable Logs associated with the Simulator.
+ */
+- (NSArray *)allLogs;
+
+/**
  The syslog of the Simulator.
  */
-- (FBWritableLog *)systemLog;
+- (FBWritableLog *)syslog;
 
 /**
  The Log for CoreSimulator.
