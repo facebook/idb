@@ -10,6 +10,7 @@
 #import "FBSimulatorApplication.h"
 
 #import "FBBinaryParser.h"
+#import "FBCollectionDescriptions.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
@@ -95,7 +96,12 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Name: %@ | Path: %@ | Architectures: %@", self.name, self.path, self.architectures];
+  return [NSString stringWithFormat:
+    @"Name: %@ | Path: %@ | Architectures: %@",
+    self.name,
+    self.path,
+    [FBCollectionDescriptions oneLineDescriptionFromArray:self.architectures.allObjects]
+  ];
 }
 
 @end
@@ -185,7 +191,13 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:@"Name: %@ | ID: %@ | Path: %@ | Binary (%@)", self.name, self.bundleID, self.path, self.binary];
+  return [NSString stringWithFormat:
+    @"Name: %@ | ID: %@ | Path: %@ | Binary (%@)",
+    self.name,
+    self.bundleID,
+    self.path,
+    self.binary
+  ];
 }
 
 @end

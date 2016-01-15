@@ -35,8 +35,16 @@
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    if (![simulator.simDeviceWrapper installApplication:[NSURL fileURLWithPath:application.path] withOptions:@{@"CFBundleIdentifier" : application.bundleID} error:error]) {
-      return [[[FBSimulatorError describeFormat:@"Failed to install Application %@", application] causedBy:innerError] failBool:error];
+    NSDictionary *options = @{
+      @"CFBundleIdentifier" : application.bundleID
+    };
+    NSURL *appURL = [NSURL fileURLWithPath:application.path];
+
+    if (![simulator.simDeviceWrapper installApplication:appURL withOptions:options error:&innerError]) {
+      return [[[FBSimulatorError
+        describeFormat:@"Failed to install Application %@ with options %@", application, options]
+        causedBy:innerError]
+        failBool:error];
     }
 
     return YES;
