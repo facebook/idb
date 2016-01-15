@@ -24,12 +24,12 @@ extension Configuration {
 
 public extension Command {
   func runFromCLI() -> Int32 {
-    let writer = StdIOWriter()
-    switch (BaseRunner(command: self).run(StdIOWriter())) {
+    let writer = FileHandleWriter.stdIOWriter
+    switch BaseRunner(command: self).run(writer.success) {
     case .Success:
       return 0
     case .Failure(let string):
-      writer.writeOut(string)
+      writer.failure.write(string)
       return 1
     }
   }
@@ -61,11 +61,11 @@ private struct BaseRunner : Runner {
         writer.write(Command.getHelp())
         return .Success
       case .Interact(let configuration, let port):
-        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath)
+        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath, logWriter: FileHandleWriter.stdIOWriter.failure)
         let control = try configuration.buildSimulatorControl()
         return InteractiveRunner(control: control, defaults: defaults, portNumber: port).run(writer)
       case .Perform(let configuration, let action):
-        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath)
+        let defaults = try Defaults.from(configuration.controlConfiguration.deviceSetPath, logWriter: FileHandleWriter.stdIOWriter.failure)
         let control = try configuration.buildSimulatorControl()
         return ActionRunner(control: control, defaults: defaults, action: action).run(writer)
       }

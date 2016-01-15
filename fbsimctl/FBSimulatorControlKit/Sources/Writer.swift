@@ -12,8 +12,16 @@ import Foundation
 /**
  A Protocol for writing Strings out.
  */
-protocol Writer {
+public protocol Writer {
   func write(string: String)
+}
+
+/**
+ A Protocol for writing Strings out.
+ */
+public struct SuccessFailureWriter {
+  let success: Writer
+  let failure: Writer
 }
 
 /**
@@ -40,6 +48,13 @@ public enum ActionResult {
 /**
  A Protocol for writing an ActionResult.
  */
-protocol ActionResultWriter : Writer {
-  func writeActionResult(actionResult: ActionResult)
+public extension SuccessFailureWriter {
+  func writeActionResult(actionResult: ActionResult) {
+    switch actionResult {
+    case .Failure(let string):
+      self.failure.write(string)
+    default:
+      break
+    }
+  }
 }

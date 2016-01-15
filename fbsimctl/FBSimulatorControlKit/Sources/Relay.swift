@@ -29,17 +29,17 @@ protocol RelayTransformer {
  */
 class RelayConnection : LineBufferDelegate {
   let transformer: RelayTransformer
-  let actionResultWriter: ActionResultWriter
+  let writer: SuccessFailureWriter
   lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
 
-  init (transformer: RelayTransformer, actionResultWriter: ActionResultWriter) {
+  init (transformer: RelayTransformer, writer: SuccessFailureWriter) {
     self.transformer = transformer
-    self.actionResultWriter = actionResultWriter
+    self.writer = writer
   }
 
   func buffer(lineAvailable: String) {
-    self.actionResultWriter.writeActionResult(
-      self.transformer.transform(lineAvailable, writer: self.actionResultWriter)
+    self.writer.writeActionResult(
+      self.transformer.transform(lineAvailable, writer: self.writer.success)
     )
   }
 }

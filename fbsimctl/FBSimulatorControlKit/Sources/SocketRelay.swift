@@ -124,7 +124,7 @@ class SocketConnection {
     }
   }
 
-  private class OutputDelegate : NSObject, NSStreamDelegate, ActionResultWriter {
+  private class OutputDelegate : NSObject, NSStreamDelegate, Writer {
     var buffer: String = ""
     let stream: NSOutputStream
 
@@ -148,15 +148,6 @@ class SocketConnection {
       self.flushAvailable()
     }
 
-    func writeActionResult(actionResult: ActionResult) {
-      switch actionResult {
-      case .Failure(let string):
-        self.write(string)
-      default:
-        break
-      }
-    }
-
     func flushAvailable() {
       while (buffer.characters.count > 0 && self.stream.hasSpaceAvailable) {
         // TODO: Buffer appropriately
@@ -169,6 +160,15 @@ class SocketConnection {
         data.getBytes(cData, length: data.length)
         stream.write(cData, maxLength: data.length)
         cData.destroy()
+      }
+    }
+
+    var successFailureWriter: SuccessFailureWriter {
+      get {
+        return SuccessFailureWriter(
+          success: self,
+          failure: self
+        )
       }
     }
   }
@@ -184,7 +184,7 @@ class SocketConnection {
   init(readStream: NSInputStream, writeStream: NSOutputStream, delegate: SocketConnectionDelegate, transformer: RelayTransformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(transformer: transformer, actionResultWriter: self.writeStreamDelegate)
+    self.relayConnection = RelayConnection(transformer: transformer, writer: self.writeStreamDelegate.successFailureWriter)
     self.readStream = readStream
     self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
   }
