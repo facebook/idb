@@ -72,6 +72,36 @@ extension Parser {
   }
 }
 
+extension Configuration : Parsable {
+  public static func parser() -> Parser<Configuration> {
+    return Parser
+      .ofTwoSequenced(
+        self.optionsParser(),
+        self.controlConfigurationParser()
+      )
+      .fmap { (options, controlConfiguration) in
+        return Configuration(controlConfiguration: controlConfiguration, options: options)
+      }
+  }
+
+  public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
+    return Parser.ofTwoSequenced(
+      Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
+      FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions.defaultValue())
+      )
+      .fmap { setPath, options in
+        return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
+    }
+  }
+
+  static func optionsParser() -> Parser<Configuration.Options> {
+    return Parser<Configuration.Options>.unionOptions([
+      Parser.ofString(Flags.DebugLogging, Configuration.Options.DebugLogging),
+      Parser.ofString("--json", Configuration.Options.JSONOutput)
+    ])
+  }
+}
+
 extension FBSimulatorState : Parsable {
   public static func parser() -> Parser<FBSimulatorState> {
     return Parser.alternative([
@@ -199,29 +229,6 @@ extension FBSimulatorManagementOptions : Parsable {
 
   static func useSimDeviceTimeoutResilianceParser() -> Parser<FBSimulatorManagementOptions> {
     return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
-  }
-}
-
-extension Configuration : Parsable {
-  public static func parser() -> Parser<Configuration> {
-    return Parser
-      .ofTwoSequenced(
-        Parser<Bool>.ofFlag(Flags.DebugLogging),
-        self.controlConfigurationParser()
-      )
-      .fmap { (debugLogging, controlConfiguration) in
-        return Configuration(controlConfiguration: controlConfiguration, debugLogging: debugLogging)
-      }
-  }
-
-  public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
-    return Parser.ofTwoSequenced(
-        Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
-        FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions.defaultValue())
-      )
-      .fmap { setPath, options in
-        return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
-      }
   }
 }
 

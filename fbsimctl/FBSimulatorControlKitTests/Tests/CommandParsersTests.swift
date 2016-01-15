@@ -145,7 +145,18 @@ class ConfigurationParserTests : XCTestCase {
       ["--debug-logging"],
       Configuration(
         controlConfiguration: Configuration.defaultControlConfiguration(),
-        debugLogging: true
+        options: Configuration.Options.DebugLogging
+      )
+    )
+  }
+
+  func testParsesWithJSONOutput() {
+    self.assertParses(
+      Configuration.parser(),
+      ["--json"],
+      Configuration(
+        controlConfiguration: Configuration.defaultControlConfiguration(),
+        options: Configuration.Options.JSONOutput
       )
     )
   }
@@ -159,7 +170,7 @@ class ConfigurationParserTests : XCTestCase {
           deviceSetPath: "/usr/bin",
           options: FBSimulatorManagementOptions.defaultValue()
         ),
-        debugLogging: false
+        options: Configuration.Options()
       )
     )
   }
@@ -173,7 +184,7 @@ class ConfigurationParserTests : XCTestCase {
           deviceSetPath: nil,
           options: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
         ),
-        debugLogging: false
+        options: Configuration.Options()
       )
     )
   }
@@ -187,7 +198,7 @@ class ConfigurationParserTests : XCTestCase {
           deviceSetPath: "/usr/bin",
           options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
         ),
-        debugLogging: false
+        options: Configuration.Options()
       )
     )
   }
@@ -195,13 +206,13 @@ class ConfigurationParserTests : XCTestCase {
   func testParsesWithAllTheAbove() {
     self.assertParses(
       Configuration.parser(),
-      ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
+      ["--debug-logging", "--json", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
           options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
         ),
-        debugLogging: true
+        options: Configuration.Options.DebugLogging.union(Configuration.Options.JSONOutput)
       )
     )
   }

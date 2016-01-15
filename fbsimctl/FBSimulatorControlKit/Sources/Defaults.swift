@@ -22,7 +22,7 @@ extension FBSimulatorManagementOptions : Default {
 
 extension Configuration : Default {
   public static func defaultValue() -> Configuration {
-    return Configuration(controlConfiguration: self.defaultControlConfiguration(), debugLogging: false)
+    return Configuration(controlConfiguration: self.defaultControlConfiguration(), options: Configuration.Options())
   }
 
   public static func defaultControlConfiguration() -> FBSimulatorControlConfiguration {

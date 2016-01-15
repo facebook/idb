@@ -14,8 +14,18 @@ import FBSimulatorControl
   Describes the Configuration for the running of a Command
 */
 public struct Configuration {
+  public struct Options : OptionSetType {
+    public let rawValue : Int
+    public init(rawValue:Int) {
+      self.rawValue = rawValue
+    }
+
+    static let DebugLogging  = Options(rawValue: 1 << 0)
+    static let JSONOutput  = Options(rawValue: 1 << 1)
+  }
+
   let controlConfiguration: FBSimulatorControlConfiguration
-  let debugLogging: Bool
+  let options: Options
 }
 
 /**
@@ -130,7 +140,7 @@ public extension Format {
 
 extension Configuration : Equatable {}
 public func == (left: Configuration, right: Configuration) -> Bool {
-  return left.debugLogging == right.debugLogging && left.controlConfiguration == right.controlConfiguration
+  return left.options == right.options && left.controlConfiguration == right.controlConfiguration
 }
 
 extension Command : Equatable {}
