@@ -15,7 +15,7 @@ protocol Runner {
 }
 
 extension Configuration {
-  func build() -> FBSimulatorControl {
+  func buildSimulatorControl() -> FBSimulatorControl {
     let debugLogging = self.options.contains(Configuration.Options.DebugLogging)
     let logger = FBSimulatorLogger.aslLogger().writeToStderrr(true, withDebugLogging: debugLogging)
     return try! FBSimulatorControl.withConfiguration(self.controlConfiguration, logger: logger)
@@ -60,9 +60,11 @@ private struct BaseRunner : Runner {
       writer.write(Command.getHelp())
       return .Success
     case .Interact(let configuration, let port):
-      return InteractiveRunner(control: configuration.build(), portNumber: port).run(writer)
-    case .Perform(let configuration, let actions):
-      return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: configuration.build()) } ).run(writer)
+      let control = configuration.buildSimulatorControl()
+      return InteractiveRunner(control: control, portNumber: port).run(writer)
+    case .Perform(let configuration, let action):
+      let control = configuration.buildSimulatorControl()
+      return ActionRunner(action: action, control: control).run(writer)
     }
   }
 }
@@ -75,7 +77,12 @@ private struct ActionRunner : Runner {
     do {
       let simulators = try Query.perform(self.control.simulatorPool, query: action.query)
       let format = self.action.format ?? Format.defaultValue()
-      return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, interaction: self.action.interaction, format: format) } ).run(writer)
+      let runners: [Runner] = self.action.interactions.flatMap { interaction in
+        simulators.map { simulator in
+          SimulatorRunner(simulator: simulator, interaction: interaction, format: format)
+        }
+      }
+      return SequenceRunner(runners: runners).run(writer)
     } catch let error as QueryError {
       return ActionResult.Failure(error.description)
     } catch {

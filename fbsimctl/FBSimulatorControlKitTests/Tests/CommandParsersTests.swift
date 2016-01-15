@@ -290,7 +290,7 @@ class ActionParserTests : XCTestCase {
   }
 
   func assertWithDefaultActions(interaction: Interaction, suffix: [String]) {
-    return self.unzipAndAssert(interaction, suffix: suffix, extras: [
+    return self.unzipAndAssert([interaction], suffix: suffix, extras: [
       ([], nil, nil),
       (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
@@ -299,28 +299,43 @@ class ActionParserTests : XCTestCase {
     ])
   }
 
-  func unzipAndAssert(interaction: Interaction, suffix: [String], extras: [([String], Query?, Format?)]) {
+  func unzipAndAssert(interactions: [Interaction], suffix: [String], extras: [([String], Query?, Format?)]) {
     let pairs = extras.map { (tokens, query, format) in
-      return (tokens + suffix, Action(interaction: interaction, query: query, format: format))
+      return (tokens + suffix, Action(interactions: interactions, query: query, format: format))
     }
     self.assertParsesAll(Action.parser(), pairs)
   }
 }
 
 class CommandParserTests : XCTestCase {
-  func testParsesSingleAction() {
-    self.assertParsesAll(Command.parser(), [
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"], Command.Perform(Configuration.defaultValue(), [Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: nil)])),
-    ])
+  func testParsesSingleInteraction() {
+    self.assertParses(
+      Command.parser(), 
+      ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"],
+      Command.Perform(
+        Configuration.defaultValue(),
+        Action(
+          interactions: [.Boot],
+          query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
+          format: nil
+        )
+      )
+    )
   }
 
-  func testParsesMultipleActions() {
-    self.assertParsesAll(Command.parser(), [
-      (["--state=booted", "list", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"], Command.Perform(Configuration.defaultValue(), [
-        Action(interaction: .List, query: Query.State([.Booted]), format: nil),
-        Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: nil)
-      ])),
-    ])
+  func testParsesMultipleInteractions() {
+    self.assertParses(
+      Command.parser(),
+      ["--state=booted", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "list", "boot"],
+      Command.Perform(
+        Configuration.defaultValue(),
+        Action(
+          interactions: [ .List, .Boot ],
+          query: Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
+          format: nil
+        )
+      )
+    )
   }
 
   func testParsesInteract() {

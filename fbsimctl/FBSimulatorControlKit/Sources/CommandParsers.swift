@@ -128,10 +128,10 @@ extension Command : Parsable {
     return Parser
       .ofTwoSequenced(
         Configuration.parser(),
-        Parser.manyCount(1, Action.parser())
+        Action.parser()
       )
-      .fmap { (configuration, actions) in
-        return Command.Perform(configuration, actions)
+      .fmap { (configuration, action) in
+        return Command.Perform(configuration, action)
       }
   }
 
@@ -297,10 +297,10 @@ extension Action : Parsable {
       .ofThreeSequenced(
         Query.parser().optional(),
         Format.parser().optional(),
-        Interaction.parser()
+        Parser.manyCount(1, Interaction.parser())
       )
-      .fmap { (query, format, interaction) in
-        return Action(interaction: interaction, query: query, format: format)
+      .fmap { (query, format, interactions) in
+        return Action(interactions: interactions, query: query, format: format)
       }
   }
 }

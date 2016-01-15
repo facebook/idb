@@ -57,7 +57,7 @@ public enum Interaction {
  An Action represents an Interaction with a Query of Simulators and a Format of textual output.
 */
 public struct Action {
-  let interaction: Interaction
+  let interactions: [Interaction]
   let query: Query?
   let format: Format?
 }
@@ -66,7 +66,7 @@ public struct Action {
  The entry point for all commands.
  */
 public enum Command {
-  case Perform(Configuration, [Action])
+  case Perform(Configuration, Action)
   case Interact(Configuration, Int?)
   case Help(Interaction?)
 }
@@ -102,7 +102,7 @@ public func == (left: Command, right: Command) -> Bool {
 
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
-  return left.format == right.format && left.query == right.query && left.interaction == right.interaction
+  return left.format == right.format && left.query == right.query && left.interactions == right.interactions
 }
 
 extension Interaction : Equatable { }
