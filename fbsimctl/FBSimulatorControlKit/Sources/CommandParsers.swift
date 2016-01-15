@@ -124,23 +124,15 @@ extension Command : Parsable {
 
 extension FBSimulatorAllocationOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser
-      .alternativeMany([
-        self.createParser(),
-        self.reuseParser(),
-        self.shutdownOnAllocateParser(),
-        self.eraseOnAllocateParser(),
-        self.deleteOnFreeParser(),
-        self.eraseOnAllocateParser(),
-        self.eraseOnFreeParser()
-      ])
-      .fmap { options in
-        var set = FBSimulatorAllocationOptions()
-        for option in options {
-          set.unionInPlace(option)
-        }
-        return set
-      }
+    return Parser<FBSimulatorAllocationOptions>.unionOptions([
+      self.createParser(),
+      self.reuseParser(),
+      self.shutdownOnAllocateParser(),
+      self.eraseOnAllocateParser(),
+      self.deleteOnFreeParser(),
+      self.eraseOnAllocateParser(),
+      self.eraseOnFreeParser()
+    ])
   }
 
   static func createParser() -> Parser<FBSimulatorAllocationOptions> {
@@ -170,23 +162,15 @@ extension FBSimulatorAllocationOptions : Parsable {
 
 extension FBSimulatorManagementOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser
-      .alternativeMany(1, [
-        self.deleteAllOnFirstParser(),
-        self.killAllOnFirstParser(),
-        self.killSpuriousSimulatorsOnFirstStartParser(),
-        self.ignoreSpuriousKillFailParser(),
-        self.killSpuriousCoreSimulatorServicesParser(),
-        self.useProcessKillingParser(),
-        self.useSimDeviceTimeoutResilianceParser()
-      ])
-      .fmap { options in
-        var set = FBSimulatorManagementOptions()
-        for option in options {
-          set.unionInPlace(option)
-        }
-        return set
-    }
+    return Parser<FBSimulatorManagementOptions>.unionOptions([
+      self.deleteAllOnFirstParser(),
+      self.killAllOnFirstParser(),
+      self.killSpuriousSimulatorsOnFirstStartParser(),
+      self.ignoreSpuriousKillFailParser(),
+      self.killSpuriousCoreSimulatorServicesParser(),
+      self.useProcessKillingParser(),
+      self.useSimDeviceTimeoutResilianceParser()
+    ])
   }
 
   static func deleteAllOnFirstParser() -> Parser<FBSimulatorManagementOptions> {
