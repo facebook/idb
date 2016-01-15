@@ -95,9 +95,14 @@ private struct SimulatorRunner : Runner {
         try simulator.interact().shutdownSimulator().performInteraction()
         writer.write("Shutdown \(self.formattedSimulator)")
       case .Diagnose:
-        if let sysLog = simulator.logs.systemLog() {
-          writer.write("\(sysLog.shortName) \(sysLog.asPath)")
+        let logs: [NSDictionary] = simulator.logs.allLogs().flatMap { candidate in
+          guard let log = candidate as? FBWritableLog else {
+            return nil
+          }
+          return log.asDictionary
         }
+        let string = try JSON.serializeToString(logs)
+        writer.write(string)
       case .Install(let application):
         writer.write("Installing \(application.path) on \(self.formattedSimulator)")
         try simulator.interact().installApplication(application).performInteraction()
@@ -114,6 +119,8 @@ private struct SimulatorRunner : Runner {
       }
     } catch let error as NSError {
       return .Failure(error.description)
+    } catch is JSONError {
+      return .Failure("Failed to encode to JSON")
     }
     return .Success
   }
