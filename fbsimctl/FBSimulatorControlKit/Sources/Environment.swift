@@ -25,11 +25,12 @@ public extension Command {
 
 public extension Action {
   func appendEnvironment(environment: [String : String]) -> Action {
-    return Action(
-      interactions: self.interactions.map { $0.appendEnvironment(environment) },
-      query: self.query,
-      format: self.format
-    )
+    switch self {
+    case .Interact(let interactions, let query, let format):
+      return .Interact(interactions.map { $0.appendEnvironment(environment) }, query, format)
+    default:
+      return self
+    }
   }
 }
 

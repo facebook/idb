@@ -293,6 +293,13 @@ extension Interaction : Parsable {
 
 extension Action : Parsable {
   public static func parser() -> Parser<Action> {
+    return Parser.alternative([
+      self.interactionParser(),
+      self.createParser()
+    ])
+  }
+
+  private static func interactionParser() -> Parser<Action> {
     return Parser
       .ofThreeSequenced(
         Query.parser().optional(),
@@ -300,38 +307,52 @@ extension Action : Parsable {
         Parser.manyCount(1, Interaction.parser())
       )
       .fmap { (query, format, interactions) in
-        return Action(interactions: interactions, query: query, format: format)
+        return Action.Interact(interactions, query, format)
+      }
+  }
+
+  private static func createParser() -> Parser<Action> {
+    return Parser
+      .ofThreeSequenced(
+        Format.parser().optional(),
+        Parser.ofString("create", true),
+        FBSimulatorConfigurationParser.parser()
+      )
+      .fmap { (format, _, configuration) in
+        return Action.Create(configuration, format)
       }
   }
 }
 
 extension Query : Parsable {
   public static func parser() -> Parser<Query> {
-    return Parser
+    return Parser<Query>
       .alternativeMany(1, [
-        FBSimulatorState.parser().fmap { Query.State([$0]) },
-        Query.uuidParser(),
-        Query.nameParser()
+        self.simulatorStateParser(),
+        self.uuidParser(),
+        self.simulatorConfigurationParser()
       ])
       .fmap { Query.flatten($0) }
-  }
-
-  private static func nameParser() -> Parser<Query> {
-    return Parser.single("A Device Name") { token in
-      let deviceConfigurations = FBSimulatorConfiguration.deviceConfigurations() as! [FBSimulatorConfiguration_Device]
-      let deviceNames = Set(deviceConfigurations.map { $0.deviceName() })
-      if (!deviceNames.contains(token)) {
-        throw ParseError.Custom("\(token) is not a valid device name")
-      }
-      let configuration: FBSimulatorConfiguration! = FBSimulatorConfiguration.withDeviceNamed(token)
-      return Query.Configured([configuration])
-    }
   }
 
   private static func uuidParser() -> Parser<Query> {
     return Parser<Query>
       .ofUDID()
       .fmap { Query.UDID([$0.UUIDString]) }
+  }
+
+  private static func simulatorStateParser() -> Parser<Query> {
+    return FBSimulatorState
+      .parser()
+      .fmap { Query.State([$0]) }
+  }
+
+  private static func simulatorConfigurationParser() -> Parser<Query> {
+    return FBSimulatorConfigurationParser
+      .parser()
+      .fmap { configuration in
+        Query.Configured(Set([configuration]))
+      }
   }
 }
 
@@ -348,4 +369,51 @@ extension Format : Parsable {
       ])
       .fmap { Format.flatten($0) }
     }
+}
+
+/**
+ A separate struct for FBSimulatorConfiguration is needed as Parsable protcol conformance cannot be
+ applied to FBSimulatorConfiguration as it is a non-final.
+ */
+struct FBSimulatorConfigurationParser {
+  static func parser() -> Parser<FBSimulatorConfiguration> {
+    return Parser
+      .ofTwoSequenced(
+        self.deviceParser().optional(),
+        self.osVersionParser().optional()
+      )
+      .fmap { (device, os) in
+        if device == nil && os == nil {
+          throw ParseError.Custom("Simulator Configuration must contain at least a device name and os version")
+        }
+        let configuration = FBSimulatorConfiguration.defaultConfiguration().copy() as! FBSimulatorConfiguration
+        if let device = device {
+          configuration.device = device
+        }
+        if let os = os {
+          configuration.os = os
+        }
+        return configuration
+      }
+  }
+
+  static func deviceParser() -> Parser<FBSimulatorConfiguration_Device> {
+    return Parser.single("A Device Name") { token in
+      let nameToDevice = FBSimulatorConfiguration.nameToDevice() as! [String : FBSimulatorConfiguration_Device]
+      guard let device = nameToDevice[token] else {
+        throw ParseError.Custom("\(token) is not a valid device name")
+      }
+      return device
+    }
+  }
+
+  static func osVersionParser() -> Parser<FBSimulatorConfiguration_OS> {
+    return Parser.single("An OS Version") { token in
+      let nameToOSVersion = FBSimulatorConfiguration.nameToOSVersion() as! [String : FBSimulatorConfiguration_OS]
+      guard let osVersion = nameToOSVersion[token] else {
+        throw ParseError.Custom("\(token) is not a valid device name")
+      }
+      return osVersion
+    }
+  }
 }

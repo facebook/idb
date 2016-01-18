@@ -83,19 +83,11 @@ private struct ActionRunner : Runner {
   let action: Action
 
   func run(writer: Writer) -> ActionResult {
-    do {
-      let simulators = try Query.perform(self.control.simulatorPool, query: action.query, defaults: self.defaults)
-      let format = self.action.format ?? defaults.format
-      let runners: [Runner] = self.action.interactions.flatMap { interaction in
-        simulators.map { simulator in
-          SimulatorRunner(simulator: simulator, interaction: interaction, format: format)
-        }
-      }
-      return SequenceRunner(runners: runners).run(writer)
-    } catch let error as QueryError {
-      return ActionResult.Failure(error.description)
-    } catch {
-      return ActionResult.Failure("Unknown Query Error")
+    switch self.action {
+    case .Interact(let interactions, let query, let format):
+      return InteractionRunner(control: control, defaults: defaults, interactions: interactions, query: query, format: format).run(writer)
+    case .Create(let configuration, let format):
+      return CreationRunner(control: control, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(writer)
     }
   }
 }
@@ -134,6 +126,48 @@ class InteractiveRunner : Runner, RelayTransformer {
       return .Failure("Error: \(error.description)")
     } catch let error as NSError {
       return .Failure(error.description)
+    }
+  }
+}
+
+struct InteractionRunner : Runner {
+  let control: FBSimulatorControl
+  let defaults: Defaults
+  let interactions: [Interaction]
+  let query: Query?
+  let format: Format?
+
+  func run(writer: Writer) -> ActionResult {
+    do {
+      let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults)
+      let format = self.format ?? defaults.format
+      let runners: [Runner] = self.interactions.flatMap { interaction in
+        simulators.map { simulator in
+          SimulatorRunner(simulator: simulator, interaction: interaction, format: format)
+        }
+      }
+      return SequenceRunner(runners: runners).run(writer)
+    } catch let error as QueryError {
+      return ActionResult.Failure(error.description)
+    } catch {
+      return ActionResult.Failure("Unknown Query Error")
+    }
+  }
+}
+
+struct CreationRunner : Runner {
+  let control: FBSimulatorControl
+  let simulatorConfiguration: FBSimulatorConfiguration
+  let format: Format
+
+  func run(writer: Writer) -> ActionResult {
+    do {
+      let options = FBSimulatorAllocationOptions.Create
+      let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
+      writer.write("Created \(self.format.withSimulator(simulator))")
+      return ActionResult.Success
+    } catch let error as NSError {
+      return ActionResult.Failure("Failed to Create Simulator \(error.description)")
     }
   }
 }
@@ -189,14 +223,14 @@ private struct SimulatorRunner : Runner {
 
   private var formattedSimulator: String {
     get {
-      return Format.format(self.format, simulator: self.simulator)
+      return self.format.withSimulator(simulator)
     }
   }
 }
 
 extension Format {
-  static func format(format: Format, simulator: FBSimulator) -> String {
-    switch (format) {
+  func withSimulator(simulator: FBSimulator) -> String {
+    switch (self) {
     case .UDID:
       return simulator.udid
     case .Name:
@@ -219,7 +253,9 @@ extension Format {
       }
       return process.processIdentifier.description
     case .Compound(let subformats):
-      let tokens: NSArray = subformats.map { Format.format($0, simulator: simulator)  }
+      let tokens: NSArray = subformats.map { format in
+        format.withSimulator(simulator)
+      }
       return tokens.componentsJoinedByString(" ")
     }
   }

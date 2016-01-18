@@ -54,12 +54,13 @@ public enum Interaction {
 }
 
 /**
- An Action represents an Interaction with a Query of Simulators and a Format of textual output.
+ An Action represents either:
+ 1) An Interaction with a Query of Simulators and a Format of textual output.
+ 2) The Creation of a Simulator based on a FBSimulatorConfiguration and Format textual output.
 */
-public struct Action {
-  let interactions: [Interaction]
-  let query: Query?
-  let format: Format?
+public enum Action {
+  case Interact([Interaction], Query?, Format?)
+  case Create(FBSimulatorConfiguration, Format?)
 }
 
 /**
@@ -102,7 +103,14 @@ public func == (left: Command, right: Command) -> Bool {
 
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
-  return left.format == right.format && left.query == right.query && left.interactions == right.interactions
+  switch (left, right) {
+    case (.Interact(let leftInteractions, let leftQuery, let leftFormat), .Interact(let rightInteractions, let rightQuery, let rightFormat)):
+      return leftInteractions == rightInteractions && leftQuery == rightQuery && leftFormat == rightFormat
+    case (.Create(let leftConfiguration, let leftFormat), .Create(let rightConfiguration, let rightFormat)):
+      return leftConfiguration == rightConfiguration && leftFormat == rightFormat
+    default:
+      return true
+  }
 }
 
 extension Interaction : Equatable { }

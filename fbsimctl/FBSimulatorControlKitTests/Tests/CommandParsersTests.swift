@@ -132,6 +132,35 @@ class FBSimulatorAllocationOptionsParserTests : XCTestCase {
   }
 }
 
+class FBSimulatorConfigurationParserTests : XCTestCase {
+  func testFailsToParseEmpty() {
+    self.assertParseFails(FBSimulatorConfigurationParser.parser(), [])
+  }
+
+  func testParsesOSAlone() {
+    self.assertParses(
+      FBSimulatorConfigurationParser.parser(),
+      ["iOS 9.2"],
+      FBSimulatorConfiguration.defaultConfiguration().iOS_9_2()
+    )
+  }
+
+  func testParsesDeviceAlone() {
+    self.assertParses(
+      FBSimulatorConfigurationParser.parser(),
+      ["iPhone 6"],
+      FBSimulatorConfiguration.defaultConfiguration().iPhone6()
+    )
+  }
+
+  func parsesOSAndDevice(){
+    self.assertParsesAll(FBSimulatorConfigurationParser.parser(), [
+      (["iPhone 6", "iOS 9.2"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2()),
+      (["iPad 2", "iOS 9.0"], FBSimulatorConfiguration.defaultConfiguration().iPad2().iOS_9_0()),
+    ])
+  }
+}
+
 class ConfigurationParserTests : XCTestCase {
   func testParsesEmptyAsDefaultValue() {
     self.assertParses(
@@ -291,6 +320,18 @@ class ActionParserTests : XCTestCase {
     self.assertWithDefaultActions(Interaction.Diagnose, suffix: ["diagnose"])
   }
 
+  func testFailsToParseCreate() {
+    self.assertParseFails(Action.parser(), ["create"])
+  }
+
+  func testParsesCreate() {
+    self.assertParsesAll(Action.parser(), [
+      (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6(), nil)),
+      (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2(), nil)),
+      (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2(), nil)),
+    ])
+  }
+
   func assertWithDefaultActions(interaction: Interaction, suffix: [String]) {
     return self.unzipAndAssert([interaction], suffix: suffix, extras: [
       ([], nil, nil),
@@ -303,7 +344,7 @@ class ActionParserTests : XCTestCase {
 
   func unzipAndAssert(interactions: [Interaction], suffix: [String], extras: [([String], Query?, Format?)]) {
     let pairs = extras.map { (tokens, query, format) in
-      return (tokens + suffix, Action(interactions: interactions, query: query, format: format))
+      return (tokens + suffix, Action.Interact(interactions, query, format))
     }
     self.assertParsesAll(Action.parser(), pairs)
   }
@@ -316,10 +357,10 @@ class CommandParserTests : XCTestCase {
       ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"],
       Command.Perform(
         Configuration.defaultValue,
-        Action(
-          interactions: [.Boot],
-          query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
-          format: nil
+        Action.Interact(
+          [.Boot],
+          .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
+          nil
         )
       )
     )
@@ -331,10 +372,10 @@ class CommandParserTests : XCTestCase {
       ["--state=booted", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "list", "boot"],
       Command.Perform(
         Configuration.defaultValue,
-        Action(
-          interactions: [ .List, .Boot ],
-          query: Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
-          format: nil
+        Action.Interact(
+          [ .List, .Boot ],
+          Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
+          nil
         )
       )
     )
