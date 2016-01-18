@@ -199,6 +199,10 @@ private struct SimulatorRunner : Runner {
         }
         let string = try JSON.serializeToString(logs)
         writer.write(string)
+      case .Delete:
+        writer.write("Deleteing \(self.formattedSimulator)")
+        try simulator.pool!.deleteSimulator(simulator)
+        writer.write("Deleted \(self.formattedSimulator)")
       case .Install(let application):
         writer.write("Installing \(application.path) on \(self.formattedSimulator)")
         try simulator.interact().installApplication(application).performInteraction()

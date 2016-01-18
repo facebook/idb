@@ -239,6 +239,7 @@ extension Interaction : Parsable {
       Parser.ofString("boot", Interaction.Boot),
       Parser.ofString("shutdown", Interaction.Shutdown),
       Parser.ofString("diagnose", Interaction.Diagnose),
+      Parser.ofString("delete", Interaction.Delete),
       self.installParser(),
       self.launchParser()
     ])

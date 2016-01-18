@@ -256,6 +256,7 @@ class InteractionParserTests : XCTestCase {
       (["boot"], Interaction.Boot),
       (["shutdown"], Interaction.Shutdown),
       (["diagnose"], Interaction.Diagnose),
+      (["delete"], Interaction.Delete),
       (["install", Fixtures.application().path], Interaction.Install(Fixtures.application())),
       (["launch", Fixtures.application().path], Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: [], environment: [:]))),
       (["launch", Fixtures.binary().path], Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:])))
@@ -280,6 +281,18 @@ class ActionParserTests : XCTestCase {
 
   func testParsesBoot() {
     self.assertWithDefaultActions(Interaction.Boot, suffix: ["boot"])
+  }
+
+  func testParsesShutdown() {
+    self.assertWithDefaultActions(Interaction.Shutdown, suffix: ["shutdown"])
+  }
+
+  func testParsesDiagnose() {
+    self.assertWithDefaultActions(Interaction.Diagnose, suffix: ["diagnose"])
+  }
+
+  func testParsesDelete() {
+    self.assertWithDefaultActions(Interaction.Delete, suffix: ["delete"])
   }
 
   func testParsesInstall() {
@@ -310,14 +323,6 @@ class ActionParserTests : XCTestCase {
     let interaction = Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
     let suffix: [String] = ["launch", Fixtures.binary().path, "--foo", "-b", "-a", "-r"]
     self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesShutdown() {
-    self.assertWithDefaultActions(Interaction.Shutdown, suffix: ["shutdown"])
-  }
-
-  func testParsesDiagnose() {
-    self.assertWithDefaultActions(Interaction.Diagnose, suffix: ["diagnose"])
   }
 
   func testFailsToParseCreate() {
