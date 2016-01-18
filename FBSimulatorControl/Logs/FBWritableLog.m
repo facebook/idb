@@ -120,6 +120,11 @@
   ];
 }
 
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  return NO;
+}
+
 @end
 
 @implementation FBWritableLog_Data
@@ -179,6 +184,11 @@
   ];
 }
 
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  return [self.logData writeToFile:path options:0 error:error];
+}
+
 @end
 
 @implementation FBWritableLog_String
@@ -236,6 +246,11 @@
   ];
 }
 
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  return [self.logString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
+}
+
 @end
 
 @implementation FBWritableLog_Path
@@ -290,6 +305,11 @@
     [super debugDescription],
     self.asPath
   ];
+}
+
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  return [NSFileManager.defaultManager copyItemAtPath:self.logPath toPath:path error:error];
 }
 
 @end

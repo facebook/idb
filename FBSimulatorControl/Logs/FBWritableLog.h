@@ -11,7 +11,7 @@
 
 /**
  Defines the content & metadata of a log.
- Lazily converts between data formats.
+ Lazily converts between the backing store data formats.
  */
 @interface FBWritableLog : NSObject <NSCopying>
 
@@ -72,6 +72,15 @@
  A Partial Description of the Log.
  */
 - (NSString *)shortDescription;
+
+/**
+ Writes the FBWritableLog out to a file path in the most efficient way for the backing store of the log.
+
+ @param path the File Path write to.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error;
 
 @end
 
