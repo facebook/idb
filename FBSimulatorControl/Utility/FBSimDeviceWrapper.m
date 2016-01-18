@@ -65,21 +65,22 @@
 {
   NSAssert([NSThread isMainThread], @"Must be called from the main thread.");
 
-  NSError *__autoreleasing innerError = nil;
-  NSError *__autoreleasing *innerErrorPointer = &innerError;
+  NSError *innerError = nil;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(launchApplicationWithID:options:error:)]];
   [invocation setTarget:self.simulator.device];
   [invocation setSelector:@selector(launchApplicationWithID:options:error:)];
   [invocation setArgument:&appID atIndex:2];
   [invocation setArgument:&options atIndex:3];
-  [invocation setArgument:&innerErrorPointer atIndex:4];
-  error = innerErrorPointer;
+  [invocation setArgument:&innerError atIndex:4];
   if (![self runInvocationInBackgroundUntilTimeout:invocation]) {
     return [[FBSimulatorError describe:@"Timed out calling launchApplicationWithID"] fail:error];
   }
 
   pid_t pid;
   [invocation getReturnValue:&pid];
+  if (pid <= 0) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
   return [self processInfoForProcessIdentifier:pid error:error];
 }
 
