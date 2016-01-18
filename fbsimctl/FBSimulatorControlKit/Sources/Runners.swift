@@ -15,20 +15,21 @@ protocol Runner {
 }
 
 extension Configuration {
-  func build() -> FBSimulatorControl {
-    let logger = FBSimulatorLogger.aslLogger().writeToStderrr(true, withDebugLogging: self.debugLogging)
-    return try! FBSimulatorControl.withConfiguration(self.controlConfiguration, logger: logger)
+  func buildSimulatorControl() throws -> FBSimulatorControl {
+    let debugLogging = self.options.contains(Configuration.Options.DebugLogging)
+    let logger = FBSimulatorLogger.aslLogger().writeToStderrr(true, withDebugLogging: debugLogging)
+    return try FBSimulatorControl.withConfiguration(self.controlConfiguration, logger: logger)
   }
 }
 
 public extension Command {
   func runFromCLI() -> Int32 {
-    let writer = StdIOWriter()
-    switch (BaseRunner(command: self).run(StdIOWriter())) {
+    let writer = FileHandleWriter.stdIOWriter
+    switch BaseRunner(command: self).run(writer.success) {
     case .Success:
       return 0
     case .Failure(let string):
-      writer.writeOut(string)
+      writer.failure.write(string)
       return 1
     }
   }
@@ -54,25 +55,120 @@ private struct BaseRunner : Runner {
   let command: Command
 
   func run(writer: Writer) -> ActionResult {
-    switch (self.command) {
-    case .Help:
-      writer.write(Command.getHelp())
-      return .Success
-    case .Interact(let configuration, let port):
-      return InteractiveRunner(control: configuration.build(), portNumber: port).run(writer)
-    case .Perform(let configuration, let actions):
-      return SequenceRunner(runners: actions.map { ActionRunner(action: $0, control: configuration.build()) } ).run(writer)
+    do {
+      switch (self.command) {
+      case .Help:
+        writer.write(Command.getHelp())
+        return .Success
+      case .Interactive(let configuration, let port):
+        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
+        let control = try defaults.configuration.buildSimulatorControl()
+        return InteractiveRunner(control: control, defaults: defaults, portNumber: port).run(writer)
+      case .Perform(let configuration, let action):
+        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
+        let control = try defaults.configuration.buildSimulatorControl()
+        return ActionRunner(control: control, defaults: defaults, action: action).run(writer)
+      }
+    } catch DefaultsError.UnreadableRCFile(let string) {
+      return .Failure("Unreadable .rc file " + string)
+    } catch let error as NSError {
+      return .Failure(error.description)
     }
   }
 }
 
 private struct ActionRunner : Runner {
-  let action: Action
   let control: FBSimulatorControl
+  let defaults: Defaults
+  let action: Action
 
   func run(writer: Writer) -> ActionResult {
-    let simulators = Query.perform(self.control.simulatorPool, query: action.query)
-    return SequenceRunner(runners: simulators.map { SimulatorRunner(simulator: $0, interaction: self.action.interaction, format: self.action.format) } ).run(writer)
+    switch self.action {
+    case .Interact(let interactions, let query, let format):
+      return InteractionRunner(control: control, defaults: defaults, interactions: interactions, query: query, format: format).run(writer)
+    case .Create(let configuration, let format):
+      return CreationRunner(control: control, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(writer)
+    }
+  }
+}
+
+class InteractiveRunner : Runner, RelayTransformer {
+  let control: FBSimulatorControl
+  let defaults: Defaults
+  let portNumber: Int?
+
+  init(control: FBSimulatorControl, defaults: Defaults, portNumber: Int?) {
+    self.control = control
+    self.portNumber = portNumber
+    self.defaults = defaults
+  }
+
+  func run(writer: Writer) -> ActionResult {
+    if let portNumber = self.portNumber {
+      writer.write("Starting Socket server on \(portNumber)")
+      SocketRelay(portNumber: portNumber, transformer: self).start()
+      writer.write("Ending Socket Server")
+    } else {
+      writer.write("Starting local interactive mode, listening on stdin")
+      StdIORelay(transformer: self).start()
+      writer.write("Ending local interactive mode")
+    }
+    return .Success
+  }
+
+  func transform(input: String, writer: Writer) -> ActionResult {
+    do {
+      let arguments = Arguments.fromString(input)
+      let (_, action) = try Action.parser().parse(arguments)
+      let runner = ActionRunner(control: self.control, defaults: self.defaults, action: action)
+      return runner.run(writer)
+    } catch let error as ParseError {
+      return .Failure("Error: \(error.description)")
+    } catch let error as NSError {
+      return .Failure(error.description)
+    }
+  }
+}
+
+struct InteractionRunner : Runner {
+  let control: FBSimulatorControl
+  let defaults: Defaults
+  let interactions: [Interaction]
+  let query: Query?
+  let format: Format?
+
+  func run(writer: Writer) -> ActionResult {
+    do {
+      let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults)
+      let format = self.format ?? defaults.format
+      let runners: [Runner] = self.interactions.flatMap { interaction in
+        simulators.map { simulator in
+          SimulatorRunner(simulator: simulator, interaction: interaction, format: format)
+        }
+      }
+      return SequenceRunner(runners: runners).run(writer)
+    } catch let error as QueryError {
+      return ActionResult.Failure(error.description)
+    } catch {
+      return ActionResult.Failure("Unknown Query Error")
+    }
+  }
+}
+
+struct CreationRunner : Runner {
+  let control: FBSimulatorControl
+  let simulatorConfiguration: FBSimulatorConfiguration
+  let format: Format
+
+  func run(writer: Writer) -> ActionResult {
+    do {
+      let options = FBSimulatorAllocationOptions.Create
+      let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
+      writer.write("Created \(self.format.withSimulator(simulator))")
+      return ActionResult.Success
+    } catch let error as NSError {
+      return ActionResult.Failure("Failed to Create Simulator \(error.description)")
+    }
   }
 }
 
@@ -95,9 +191,18 @@ private struct SimulatorRunner : Runner {
         try simulator.interact().shutdownSimulator().performInteraction()
         writer.write("Shutdown \(self.formattedSimulator)")
       case .Diagnose:
-        if let sysLog = simulator.logs.systemLog() {
-          writer.write("\(sysLog.shortName) \(sysLog.asPath)")
+        let logs: [NSDictionary] = simulator.logs.allLogs().flatMap { candidate in
+          guard let log = candidate as? FBWritableLog else {
+            return nil
+          }
+          return log.asDictionary
         }
+        let string = try JSON.serializeToString(logs)
+        writer.write(string)
+      case .Delete:
+        writer.write("Deleteing \(self.formattedSimulator)")
+        try simulator.pool!.deleteSimulator(simulator)
+        writer.write("Deleted \(self.formattedSimulator)")
       case .Install(let application):
         writer.write("Installing \(application.path) on \(self.formattedSimulator)")
         try simulator.interact().installApplication(application).performInteraction()
@@ -114,85 +219,22 @@ private struct SimulatorRunner : Runner {
       }
     } catch let error as NSError {
       return .Failure(error.description)
+    } catch is JSONError {
+      return .Failure("Failed to encode to JSON")
     }
     return .Success
   }
 
   private var formattedSimulator: String {
     get {
-      return Format.format(self.format, simulator: self.simulator)
-    }
-  }
-}
-
-class InteractiveRunner : Runner, RelayTransformer {
-  let control: FBSimulatorControl
-  let portNumber: Int?
-
-  init(control: FBSimulatorControl, portNumber: Int?) {
-    self.control = control
-    self.portNumber = portNumber
-  }
-
-  func run(writer: Writer) -> ActionResult {
-    if let portNumber = self.portNumber {
-      writer.write("Starting Socket server on \(portNumber)")
-      SocketRelay(portNumber: portNumber, transformer: self).start()
-      writer.write("Ending Socket Server")
-    } else {
-      writer.write("Starting local interactive mode, listening on stdin")
-      StdIORelay(transformer: self).start()
-      writer.write("Ending local interactive mode")
-    }
-    return .Success
-  }
-
-  func transform(input: String, writer: Writer) -> ActionResult {
-    let arguments = input
-      .stringByTrimmingCharactersInSet(NSCharacterSet.newlineCharacterSet())
-      .componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
-
-    do {
-      let (_, action) = try Action.parser().parse(arguments)
-      let runner = ActionRunner(action: action, control: self.control)
-      return runner.run(writer)
-    } catch let error as ParseError {
-      return .Failure("Error: \(error.description)")
-    } catch let error as NSError {
-      return .Failure(error.description)
-    }
-  }
-}
-
-extension Query {
-  static func perform(pool: FBSimulatorPool, query: Query) -> [FBSimulator] {
-    let array: NSArray = pool.allSimulators
-    return array.filteredArrayUsingPredicate(query.get(pool)) as! [FBSimulator]
-  }
-
-  func get(pool: FBSimulatorPool) -> NSPredicate {
-    switch (self) {
-    case .UDID(let udids):
-      return FBSimulatorPredicates.udids(Array(udids))
-    case .State(let states):
-      return NSCompoundPredicate(
-        orPredicateWithSubpredicates: states.map(FBSimulatorPredicates.state) as! [NSPredicate]
-      )
-    case .Configured(let configurations):
-      return NSCompoundPredicate(
-        orPredicateWithSubpredicates: configurations.map(FBSimulatorPredicates.configuration) as! [NSPredicate]
-      )
-    case .And(let subqueries):
-      return NSCompoundPredicate(
-        andPredicateWithSubpredicates: subqueries.map { $0.get(pool) }
-      )
+      return self.format.withSimulator(simulator)
     }
   }
 }
 
 extension Format {
-  static func format(format: Format, simulator: FBSimulator) -> String {
-    switch (format) {
+  func withSimulator(simulator: FBSimulator) -> String {
+    switch (self) {
     case .UDID:
       return simulator.udid
     case .Name:
@@ -215,7 +257,9 @@ extension Format {
       }
       return process.processIdentifier.description
     case .Compound(let subformats):
-      let tokens: NSArray = subformats.map { Format.format($0, simulator: simulator)  }
+      let tokens: NSArray = subformats.map { format in
+        format.withSimulator(simulator)
+      }
       return tokens.componentsJoinedByString(" ")
     }
   }

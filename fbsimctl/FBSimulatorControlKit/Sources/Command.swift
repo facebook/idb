@@ -14,8 +14,18 @@ import FBSimulatorControl
   Describes the Configuration for the running of a Command
 */
 public struct Configuration {
+  public struct Options : OptionSetType {
+    public let rawValue : Int
+    public init(rawValue: Int) {
+      self.rawValue = rawValue
+    }
+
+    static let DebugLogging = Options(rawValue: 1 << 0)
+    static let JSONOutput = Options(rawValue: 1 << 1)
+  }
+
   let controlConfiguration: FBSimulatorControlConfiguration
-  let debugLogging: Bool
+  let options: Options
 }
 
 /**
@@ -32,18 +42,6 @@ public indirect enum Format {
 }
 
 /**
- Defines the components of Query for Simulators.
- Each of the fundemental cases takes a collection of values to allow for a union for each case.
- Intersection is achieved with the .And enumeration.
-*/
-public indirect enum Query {
-  case UDID(Set<String>)
-  case State(Set<FBSimulatorState>)
-  case Configured(Set<FBSimulatorConfiguration>)
-  case And(Set<Query>)
-}
-
-/**
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Interaction {
@@ -51,71 +49,28 @@ public enum Interaction {
   case Boot
   case Shutdown
   case Diagnose
+  case Delete
   case Install(FBSimulatorApplication)
   case Launch(FBProcessLaunchConfiguration)
 }
 
 /**
- An Action represents an Interaction that is performed on a particular Query of Simulators.
+ An Action represents either:
+ 1) An Interaction with a Query of Simulators and a Format of textual output.
+ 2) The Creation of a Simulator based on a FBSimulatorConfiguration and Format textual output.
 */
-public struct Action {
-  let interaction: Interaction
-  let query: Query
-  let format: Format
+public enum Action {
+  case Interact([Interaction], Query?, Format?)
+  case Create(FBSimulatorConfiguration, Format?)
 }
 
 /**
  The entry point for all commands.
  */
 public enum Command {
-  case Perform(Configuration, [Action])
-  case Interact(Configuration, Int?)
+  case Perform(Configuration, Action)
+  case Interactive(Configuration, Int?)
   case Help(Interaction?)
-}
-
-public extension Query {
-  static func flatten(queries: [Query]) -> Query {
-    if (queries.count == 1) {
-      return queries.first!
-    }
-
-    var udids: Set<String> = []
-    var states: Set<FBSimulatorState> = []
-    var configurations: Set<FBSimulatorConfiguration> = []
-    var subqueries: Set<Query> = []
-    for query in queries {
-      switch query {
-      case .UDID(let udid): udids.unionInPlace(udid)
-      case .State(let state): states.unionInPlace(state)
-      case .Configured(let configuration): configurations.unionInPlace(configuration)
-      case .And(let subquery): subqueries.unionInPlace(subquery)
-      }
-    }
-
-    if udids.count > 0 {
-      let query = Query.UDID(udids)
-      if states.count == 0 && configurations.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
-    }
-    if states.count > 0 {
-      let query = Query.State(states)
-      if udids.count == 0 && configurations.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
-    }
-    if configurations.count > 0 {
-      let query = Query.Configured(configurations)
-      if udids.count == 0 && states.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
-    }
-
-    return .And(subqueries)
-  }
 }
 
 public extension Format {
@@ -130,7 +85,7 @@ public extension Format {
 
 extension Configuration : Equatable {}
 public func == (left: Configuration, right: Configuration) -> Bool {
-  return left.debugLogging == right.debugLogging && left.controlConfiguration == right.controlConfiguration
+  return left.options == right.options && left.controlConfiguration == right.controlConfiguration
 }
 
 extension Command : Equatable {}
@@ -138,7 +93,7 @@ public func == (left: Command, right: Command) -> Bool {
   switch (left, right) {
   case (.Perform(let leftConfiguration, let lefts), .Perform(let rightConfiguration, let rights)):
     return leftConfiguration == rightConfiguration && lefts == rights
-  case (.Interact(let leftConfiguration, let leftPort), .Interact(let rightConfiguration, let rightPort)):
+  case (.Interactive(let leftConfiguration, let leftPort), .Interactive(let rightConfiguration, let rightPort)):
     return leftConfiguration == rightConfiguration && leftPort == rightPort
   case (.Help(let left), .Help(let right)):
     return left == right
@@ -149,7 +104,14 @@ public func == (left: Command, right: Command) -> Bool {
 
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
-  return left.format == right.format && left.query == right.query && left.interaction == right.interaction
+  switch (left, right) {
+    case (.Interact(let leftInteractions, let leftQuery, let leftFormat), .Interact(let rightInteractions, let rightQuery, let rightFormat)):
+      return leftInteractions == rightInteractions && leftQuery == rightQuery && leftFormat == rightFormat
+    case (.Create(let leftConfiguration, let leftFormat), .Create(let rightConfiguration, let rightFormat)):
+      return leftConfiguration == rightConfiguration && leftFormat == rightFormat
+    default:
+      return true
+  }
 }
 
 extension Interaction : Equatable { }
@@ -163,40 +125,14 @@ public func == (left: Interaction, right: Interaction) -> Bool {
     return true
   case (.Diagnose, .Diagnose):
     return true
+  case (.Delete, .Delete):
+    return true
   case (.Install(let leftApp), .Install(let rightApp)):
     return leftApp == rightApp
   case (.Launch(let leftLaunch), .Launch(let rightLaunch)):
     return leftLaunch == rightLaunch
   default:
     return false
-  }
-}
-
-extension Query : Equatable { }
-public func == (left: Query, right: Query) -> Bool {
-  switch (left, right) {
-  case (.UDID(let left), .UDID(let right)): return left == right
-  case (.State(let left), .State(let right)): return left == right
-  case (.Configured(let left), .Configured(let right)): return left == right
-  case (.And(let left), .And(let right)): return left == right
-  default: return false
-  }
-}
-
-extension Query : Hashable {
-  public var hashValue: Int {
-    get {
-      switch self {
-      case .UDID(let udids):
-        return 1 ^ udids.hashValue
-      case .Configured(let configurations):
-        return 2 ^ configurations.hashValue
-      case .State(let states):
-        return 4 ^ states.hashValue
-      case .And(let subqueries):
-        return subqueries.hashValue
-      }
-    }
   }
 }
 

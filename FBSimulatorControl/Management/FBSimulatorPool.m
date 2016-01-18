@@ -269,8 +269,9 @@
 
 - (BOOL)deleteSimulator:(FBSimulator *)simulator withError:(NSError **)error
 {
-  NSString *udid = simulator.udid;
+  NSParameterAssert(simulator.pool == self);
 
+  NSString *udid = simulator.udid;
   NSError *innerError = nil;
   if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
     return [[[[[FBSimulatorError
@@ -288,7 +289,6 @@
     NSOrderedSet *udidSet = [self.allSimulators valueForKey:@"udid"];
     return ![udidSet containsObject:udid];
   }];
-
   if (!wasRemovedFromDeviceSet) {
     return [[[[FBSimulatorError
       describeFormat:@"Simulator with UDID %@ should have been removed from set but wasn't.", udid]

@@ -132,10 +132,41 @@ class FBSimulatorAllocationOptionsParserTests : XCTestCase {
   }
 }
 
-class ConfigurationParserTests : XCTestCase {
-  func testParsesEmpty() {
+class FBSimulatorConfigurationParserTests : XCTestCase {
+  func testFailsToParseEmpty() {
+    self.assertParseFails(FBSimulatorConfigurationParser.parser(), [])
+  }
+
+  func testParsesOSAlone() {
     self.assertParses(
-      Configuration.parser(), [], Configuration.defaultValue()
+      FBSimulatorConfigurationParser.parser(),
+      ["iOS 9.2"],
+      FBSimulatorConfiguration.defaultConfiguration().iOS_9_2()
+    )
+  }
+
+  func testParsesDeviceAlone() {
+    self.assertParses(
+      FBSimulatorConfigurationParser.parser(),
+      ["iPhone 6"],
+      FBSimulatorConfiguration.defaultConfiguration().iPhone6()
+    )
+  }
+
+  func parsesOSAndDevice(){
+    self.assertParsesAll(FBSimulatorConfigurationParser.parser(), [
+      (["iPhone 6", "iOS 9.2"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2()),
+      (["iPad 2", "iOS 9.0"], FBSimulatorConfiguration.defaultConfiguration().iPad2().iOS_9_0()),
+    ])
+  }
+}
+
+class ConfigurationParserTests : XCTestCase {
+  func testParsesEmptyAsDefaultValue() {
+    self.assertParses(
+      Configuration.parser(),
+      [],
+      Configuration.defaultValue
     )
   }
 
@@ -144,8 +175,19 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging"],
       Configuration(
-        controlConfiguration: Configuration.defaultControlConfiguration(),
-        debugLogging: true
+        controlConfiguration: Configuration.defaultValue.controlConfiguration,
+        options: Configuration.Options.DebugLogging
+      )
+    )
+  }
+
+  func testParsesWithJSONOutput() {
+    self.assertParses(
+      Configuration.parser(),
+      ["--json"],
+      Configuration(
+        controlConfiguration: Configuration.defaultValue.controlConfiguration,
+        options: Configuration.Options.JSONOutput
       )
     )
   }
@@ -157,9 +199,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
-          options: FBSimulatorManagementOptions.defaultValue()
+          options: Configuration.defaultValue.controlConfiguration.options
         ),
-        debugLogging: false
+        options: Configuration.Options()
       )
     )
   }
@@ -173,7 +215,7 @@ class ConfigurationParserTests : XCTestCase {
           deviceSetPath: nil,
           options: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
         ),
-        debugLogging: false
+        options: Configuration.Options()
       )
     )
   }
@@ -187,7 +229,7 @@ class ConfigurationParserTests : XCTestCase {
           deviceSetPath: "/usr/bin",
           options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
         ),
-        debugLogging: false
+        options: Configuration.Options()
       )
     )
   }
@@ -195,13 +237,13 @@ class ConfigurationParserTests : XCTestCase {
   func testParsesWithAllTheAbove() {
     self.assertParses(
       Configuration.parser(),
-      ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
+      ["--debug-logging", "--json", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
           options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
         ),
-        debugLogging: true
+        options: Configuration.Options.DebugLogging.union(Configuration.Options.JSONOutput)
       )
     )
   }
@@ -214,6 +256,7 @@ class InteractionParserTests : XCTestCase {
       (["boot"], Interaction.Boot),
       (["shutdown"], Interaction.Shutdown),
       (["diagnose"], Interaction.Diagnose),
+      (["delete"], Interaction.Delete),
       (["install", Fixtures.application().path], Interaction.Install(Fixtures.application())),
       (["launch", Fixtures.application().path], Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: [], environment: [:]))),
       (["launch", Fixtures.binary().path], Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:])))
@@ -238,6 +281,18 @@ class ActionParserTests : XCTestCase {
 
   func testParsesBoot() {
     self.assertWithDefaultActions(Interaction.Boot, suffix: ["boot"])
+  }
+
+  func testParsesShutdown() {
+    self.assertWithDefaultActions(Interaction.Shutdown, suffix: ["shutdown"])
+  }
+
+  func testParsesDiagnose() {
+    self.assertWithDefaultActions(Interaction.Diagnose, suffix: ["diagnose"])
+  }
+
+  func testParsesDelete() {
+    self.assertWithDefaultActions(Interaction.Delete, suffix: ["delete"])
   }
 
   func testParsesInstall() {
@@ -270,52 +325,71 @@ class ActionParserTests : XCTestCase {
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
-  func testParsesShutdown() {
-    self.assertWithDefaultActions(Interaction.Shutdown, suffix: ["shutdown"])
+  func testFailsToParseCreate() {
+    self.assertParseFails(Action.parser(), ["create"])
   }
 
-  func testParsesDiagnose() {
-    self.assertWithDefaultActions(Interaction.Diagnose, suffix: ["diagnose"])
+  func testParsesCreate() {
+    self.assertParsesAll(Action.parser(), [
+      (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6(), nil)),
+      (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2(), nil)),
+      (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2(), nil)),
+    ])
   }
 
   func assertWithDefaultActions(interaction: Interaction, suffix: [String]) {
-    return self.unzipAndAssert(interaction, suffix: suffix, extras: [
-      ([], Query.defaultValue(), Format.defaultValue()),
-      (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), Format.defaultValue()),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), Format.defaultValue()),
-      (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), Format.defaultValue()),
+    return self.unzipAndAssert([interaction], suffix: suffix, extras: [
+      ([], nil, nil),
+      (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
+      (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), nil),
       (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), Format.Compound([.DeviceName, .OSVersion]))
     ])
   }
 
-  func unzipAndAssert(interaction: Interaction, suffix: [String], extras: [([String], Query, Format)]) {
+  func unzipAndAssert(interactions: [Interaction], suffix: [String], extras: [([String], Query?, Format?)]) {
     let pairs = extras.map { (tokens, query, format) in
-      return (tokens + suffix, Action(interaction: interaction, query: query, format: format))
+      return (tokens + suffix, Action.Interact(interactions, query, format))
     }
     self.assertParsesAll(Action.parser(), pairs)
   }
 }
 
 class CommandParserTests : XCTestCase {
-  func testParsesSingleAction() {
-    self.assertParsesAll(Command.parser(), [
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"], Command.Perform(Configuration.defaultValue(), [Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())])),
-    ])
+  func testParsesSingleInteraction() {
+    self.assertParses(
+      Command.parser(), 
+      ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"],
+      Command.Perform(
+        Configuration.defaultValue,
+        Action.Interact(
+          [.Boot],
+          .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
+          nil
+        )
+      )
+    )
   }
 
-  func testParsesMultipleActions() {
-    self.assertParsesAll(Command.parser(), [
-      (["--state=booted", "list", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"], Command.Perform(Configuration.defaultValue(), [
-        Action(interaction: .List, query: Query.State([.Booted]), format: Format.defaultValue()),
-        Action(interaction: .Boot, query: .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), format: Format.defaultValue())
-      ])),
-    ])
+  func testParsesMultipleInteractions() {
+    self.assertParses(
+      Command.parser(),
+      ["--state=booted", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "list", "boot"],
+      Command.Perform(
+        Configuration.defaultValue,
+        Action.Interact(
+          [ .List, .Boot ],
+          Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
+          nil
+        )
+      )
+    )
   }
 
   func testParsesInteract() {
     self.assertParsesAll(Command.parser(), [
-      (["interact"], Command.Interact(Configuration.defaultValue(), nil)),
-      (["interact", "--port", "42"], Command.Interact(Configuration.defaultValue(), 42))
+      (["-i"], Command.Interactive(Configuration.defaultValue, nil)),
+      (["-i", "--port", "42"], Command.Interactive(Configuration.defaultValue, 42))
     ])
   }
 

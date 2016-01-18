@@ -10,6 +10,7 @@
 #import "FBSimulatorLogs.h"
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBASLParser.h"
 #import "FBConcurrentCollectionOperations.h"
@@ -50,7 +51,22 @@
 
 #pragma mark Accessors
 
-- (FBWritableLog *)systemLog
+- (NSArray *)allLogs
+{
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBWritableLog *log, NSDictionary *_) {
+    return log.hasLogContent;
+  }];
+
+  NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
+    [self syslog],
+    [self coreSimulator],
+    [self simulatorBootstrap]
+  ]];
+  [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
+  return [logs filteredArrayUsingPredicate:predicate];
+}
+
+- (FBWritableLog *)syslog
 {
   return [[[[[FBWritableLogBuilder builder]
     updatePath:self.systemLogPath]
@@ -69,7 +85,7 @@
 
 - (FBWritableLog *)simulatorBootstrap
 {
-  NSString *expectedPath = [[self.simulator.device.setPath
+  NSString *expectedPath = [[self.simulator.device.deviceSet.setPath
     stringByAppendingPathComponent:self.simulator.udid]
     stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
 

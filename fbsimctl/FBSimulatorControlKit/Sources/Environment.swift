@@ -16,7 +16,7 @@ public extension Command {
   func appendEnvironment(environment: [String : String]) -> Command {
     switch self {
     case .Perform(let config, let action):
-      return .Perform(config, action.map { $0.appendEnvironment(environment) })
+      return .Perform(config, action.appendEnvironment(environment))
     default:
       return self
     }
@@ -25,11 +25,12 @@ public extension Command {
 
 public extension Action {
   func appendEnvironment(environment: [String : String]) -> Action {
-    return Action(
-      interaction: self.interaction.appendEnvironment(environment),
-      query: self.query,
-      format: self.format
-    )
+    switch self {
+    case .Interact(let interactions, let query, let format):
+      return .Interact(interactions.map { $0.appendEnvironment(environment) }, query, format)
+    default:
+      return self
+    }
   }
 }
 

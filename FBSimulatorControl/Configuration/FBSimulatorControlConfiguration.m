@@ -9,6 +9,9 @@
 
 #import "FBSimulatorControlConfiguration.h"
 
+#import <CoreSimulator/CDStructures.h>
+#import <CoreSimulator/SimDeviceSet.h>
+
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControl+PrincipalClass.h"
 
@@ -99,6 +102,17 @@
     self.deviceSetPath,
     self.options
   ];
+}
+
+@end
+
+@implementation FBSimulatorControlConfiguration (Helpers)
+
++ (NSString *_Nonnull)defaultDeviceSetPath
+{
+  Class deviceSetClass = NSClassFromString(@"SimDeviceSet");
+  NSAssert(deviceSetClass, @"Expected SimDeviceSet to be loaded");
+  return [deviceSetClass defaultSetPath] ?: [[deviceSetClass defaultSet] setPath];
 }
 
 @end

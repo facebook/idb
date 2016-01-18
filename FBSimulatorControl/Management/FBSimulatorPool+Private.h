@@ -26,10 +26,19 @@
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBSimulatorLogger>)logger;
 
 /**
+ Deletes a Simulator in the Pool.
+
+ @param simulator the Simulator to delete.
+ @param error an error out for any error that occurs.
+ @return an array of the Simulators that this were killed if successful, nil otherwise.
+ */
+- (BOOL)deleteSimulator:(FBSimulator *)simulator withError:(NSError **)error;
+
+/**
  Kills all of the Simulators the reciever's Device Set.
 
  @param error an error out if any error occured.
- @returns an array of the Simulators that this were killed if successful, nil otherwise.
+ @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
 - (NSArray *)killAllWithError:(NSError **)error;
 
@@ -37,7 +46,7 @@
  Delete all of the Simulators Managed by this Pool, killing them first.
 
  @param error an error out if any error occured.
- @returns an Array of the names of the Simulators that were deleted if successful, nil otherwise.
+ @return an Array of the names of the Simulators that were deleted if successful, nil otherwise.
  */
 - (NSArray *)deleteAllWithError:(NSError **)error;
 

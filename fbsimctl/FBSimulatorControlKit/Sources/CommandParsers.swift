@@ -72,6 +72,38 @@ extension Parser {
   }
 }
 
+extension Configuration : Parsable {
+  public static func parser() -> Parser<Configuration> {
+    return Parser
+      .ofTwoSequenced(
+        self.optionsParser(),
+        self.controlConfigurationParser()
+      )
+      .fmap { (options, controlConfiguration) in
+        return Configuration(controlConfiguration: controlConfiguration, options: options)
+      }
+  }
+
+  public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
+    return Parser
+      .ofTwoSequenced(
+        Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
+        FBSimulatorManagementOptions.parser()
+      )
+      .fmap { setPath, options in
+        return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
+      }
+  }
+
+  static func optionsParser() -> Parser<Configuration.Options> {
+    return Parser<Configuration.Options>
+      .unionOptions([
+        Parser.ofString(Flags.DebugLogging, Configuration.Options.DebugLogging),
+        Parser.ofString("--json", Configuration.Options.JSONOutput)
+      ])
+  }
+}
+
 extension FBSimulatorState : Parsable {
   public static func parser() -> Parser<FBSimulatorState> {
     return Parser.alternative([
@@ -98,10 +130,10 @@ extension Command : Parsable {
     return Parser
       .ofTwoSequenced(
         Configuration.parser(),
-        Parser.manyCount(1, Action.parser())
+        Action.parser()
       )
-      .fmap { (configuration, actions) in
-        return Command.Perform(configuration, actions)
+      .fmap { (configuration, action) in
+        return Command.Perform(configuration, action)
       }
   }
 
@@ -109,10 +141,10 @@ extension Command : Parsable {
     return Parser
       .ofTwoSequenced(
         Configuration.parser(),
-        Parser.succeeded("interact", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+        Parser.succeeded("-i", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
       )
       .fmap { (configuration, port) in
-        return Command.Interact(configuration, port)
+        return Command.Interactive(configuration, port)
       }
   }
 
@@ -124,8 +156,8 @@ extension Command : Parsable {
 
 extension FBSimulatorAllocationOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser
-      .alternativeMany([
+    return Parser<FBSimulatorAllocationOptions>
+      .unionOptions([
         self.createParser(),
         self.reuseParser(),
         self.shutdownOnAllocateParser(),
@@ -134,13 +166,6 @@ extension FBSimulatorAllocationOptions : Parsable {
         self.eraseOnAllocateParser(),
         self.eraseOnFreeParser()
       ])
-      .fmap { options in
-        var set = FBSimulatorAllocationOptions()
-        for option in options {
-          set.unionInPlace(option)
-        }
-        return set
-      }
   }
 
   static func createParser() -> Parser<FBSimulatorAllocationOptions> {
@@ -170,8 +195,8 @@ extension FBSimulatorAllocationOptions : Parsable {
 
 extension FBSimulatorManagementOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser
-      .alternativeMany(1, [
+    return Parser<FBSimulatorManagementOptions>
+      .unionOptions([
         self.deleteAllOnFirstParser(),
         self.killAllOnFirstParser(),
         self.killSpuriousSimulatorsOnFirstStartParser(),
@@ -180,13 +205,6 @@ extension FBSimulatorManagementOptions : Parsable {
         self.useProcessKillingParser(),
         self.useSimDeviceTimeoutResilianceParser()
       ])
-      .fmap { options in
-        var set = FBSimulatorManagementOptions()
-        for option in options {
-          set.unionInPlace(option)
-        }
-        return set
-    }
   }
 
   static func deleteAllOnFirstParser() -> Parser<FBSimulatorManagementOptions> {
@@ -218,39 +236,18 @@ extension FBSimulatorManagementOptions : Parsable {
   }
 }
 
-extension Configuration : Parsable {
-  public static func parser() -> Parser<Configuration> {
-    return Parser
-      .ofTwoSequenced(
-        Parser<Bool>.ofFlag(Flags.DebugLogging),
-        self.controlConfigurationParser()
-      )
-      .fmap { (debugLogging, controlConfiguration) in
-        return Configuration(controlConfiguration: controlConfiguration, debugLogging: debugLogging)
-      }
-  }
-
-  public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
-    return Parser.ofTwoSequenced(
-        Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
-        FBSimulatorManagementOptions.parser().fallback(FBSimulatorManagementOptions.defaultValue())
-      )
-      .fmap { setPath, options in
-        return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
-      }
-  }
-}
-
 extension Interaction : Parsable {
   public static func parser() -> Parser<Interaction> {
-    return Parser.alternative([
-      Parser.ofString("list", Interaction.List),
-      Parser.ofString("boot", Interaction.Boot),
-      Parser.ofString("shutdown", Interaction.Shutdown),
-      Parser.ofString("diagnose", Interaction.Diagnose),
-      self.installParser(),
-      self.launchParser()
-    ])
+    return Parser
+      .alternative([
+        Parser.ofString("list", Interaction.List),
+        Parser.ofString("boot", Interaction.Boot),
+        Parser.ofString("shutdown", Interaction.Shutdown),
+        Parser.ofString("diagnose", Interaction.Diagnose),
+        Parser.ofString("delete", Interaction.Delete),
+        self.installParser(),
+        self.launchParser()
+      ])
   }
 
   private static func installParser() -> Parser<Interaction> {
@@ -303,44 +300,66 @@ extension Interaction : Parsable {
 extension Action : Parsable {
   public static func parser() -> Parser<Action> {
     return Parser
+      .alternative([
+        self.interactionParser(),
+        self.createParser()
+      ])
+  }
+
+  private static func interactionParser() -> Parser<Action> {
+    return Parser
       .ofThreeSequenced(
-        Query.parser().fallback(Query.defaultValue()),
-        Format.parser().fallback(Format.defaultValue()),
-        Interaction.parser()
+        Query.parser().optional(),
+        Format.parser().optional(),
+        Parser.manyCount(1, Interaction.parser())
       )
-      .fmap { (query, format, interaction) in
-        return Action(interaction: interaction, query: query, format: format)
+      .fmap { (query, format, interactions) in
+        return Action.Interact(interactions, query, format)
+      }
+  }
+
+  private static func createParser() -> Parser<Action> {
+    return Parser
+      .ofThreeSequenced(
+        Format.parser().optional(),
+        Parser.ofString("create", true),
+        FBSimulatorConfigurationParser.parser()
+      )
+      .fmap { (format, _, configuration) in
+        return Action.Create(configuration, format)
       }
   }
 }
 
 extension Query : Parsable {
   public static func parser() -> Parser<Query> {
-    return Parser
+    return Parser<Query>
       .alternativeMany(1, [
-        FBSimulatorState.parser().fmap { Query.State([$0]) },
-        Query.uuidParser(),
-        Query.nameParser()
+        self.simulatorStateParser(),
+        self.uuidParser(),
+        self.simulatorConfigurationParser()
       ])
       .fmap { Query.flatten($0) }
-  }
-
-  private static func nameParser() -> Parser<Query> {
-    return Parser.single("A Device Name") { token in
-      let deviceConfigurations = FBSimulatorConfiguration.deviceConfigurations() as! [FBSimulatorConfiguration_Device]
-      let deviceNames = Set(deviceConfigurations.map { $0.deviceName() })
-      if (!deviceNames.contains(token)) {
-        throw ParseError.Custom("\(token) is not a valid device name")
-      }
-      let configuration: FBSimulatorConfiguration! = FBSimulatorConfiguration.withDeviceNamed(token)
-      return Query.Configured([configuration])
-    }
   }
 
   private static func uuidParser() -> Parser<Query> {
     return Parser<Query>
       .ofUDID()
       .fmap { Query.UDID([$0.UUIDString]) }
+  }
+
+  private static func simulatorStateParser() -> Parser<Query> {
+    return FBSimulatorState
+      .parser()
+      .fmap { Query.State([$0]) }
+  }
+
+  private static func simulatorConfigurationParser() -> Parser<Query> {
+    return FBSimulatorConfigurationParser
+      .parser()
+      .fmap { configuration in
+        Query.Configured(Set([configuration]))
+      }
   }
 }
 
@@ -357,4 +376,51 @@ extension Format : Parsable {
       ])
       .fmap { Format.flatten($0) }
     }
+}
+
+/**
+ A separate struct for FBSimulatorConfiguration is needed as Parsable protcol conformance cannot be
+ applied to FBSimulatorConfiguration as it is a non-final.
+ */
+struct FBSimulatorConfigurationParser {
+  static func parser() -> Parser<FBSimulatorConfiguration> {
+    return Parser
+      .ofTwoSequenced(
+        self.deviceParser().optional(),
+        self.osVersionParser().optional()
+      )
+      .fmap { (device, os) in
+        if device == nil && os == nil {
+          throw ParseError.Custom("Simulator Configuration must contain at least a device name and os version")
+        }
+        let configuration = FBSimulatorConfiguration.defaultConfiguration().copy() as! FBSimulatorConfiguration
+        if let device = device {
+          configuration.device = device
+        }
+        if let os = os {
+          configuration.os = os
+        }
+        return configuration
+      }
+  }
+
+  static func deviceParser() -> Parser<FBSimulatorConfiguration_Device> {
+    return Parser.single("A Device Name") { token in
+      let nameToDevice = FBSimulatorConfiguration.nameToDevice() as! [String : FBSimulatorConfiguration_Device]
+      guard let device = nameToDevice[token] else {
+        throw ParseError.Custom("\(token) is not a valid device name")
+      }
+      return device
+    }
+  }
+
+  static func osVersionParser() -> Parser<FBSimulatorConfiguration_OS> {
+    return Parser.single("An OS Version") { token in
+      let nameToOSVersion = FBSimulatorConfiguration.nameToOSVersion() as! [String : FBSimulatorConfiguration_OS]
+      guard let osVersion = nameToOSVersion[token] else {
+        throw ParseError.Custom("\(token) is not a valid device name")
+      }
+      return osVersion
+    }
+  }
 }

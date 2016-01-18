@@ -10,34 +10,116 @@
 import Foundation
 import FBSimulatorControl
 
-public protocol Default {
-  static func defaultValue() -> Self
-}
+public enum DefaultsError : ErrorType, CustomStringConvertible {
+  case UnreadableRCFile(String)
 
-extension FBSimulatorManagementOptions : Default {
-  public static func defaultValue() -> FBSimulatorManagementOptions {
-    return FBSimulatorManagementOptions()
+  public var description: String {
+    get {
+      switch self {
+      case .UnreadableRCFile(let underlyingError):
+        return "Unreadable RC File " + underlyingError
+      }
+    }
   }
 }
 
-extension Configuration : Default {
-  public static func defaultValue() -> Configuration {
-    return Configuration(controlConfiguration: self.defaultControlConfiguration(), debugLogging: false)
-  }
+public protocol Defaultable {
+  static var defaultValue: Self { get }
+}
 
-  public static func defaultControlConfiguration() -> FBSimulatorControlConfiguration {
-    return FBSimulatorControlConfiguration(deviceSetPath: nil, options: FBSimulatorManagementOptions())
+extension Format : Defaultable {
+  public static var defaultValue: Format {
+    get {
+      return .Compound([ .UDID, .Name])
+    }
   }
 }
 
-extension Format : Default {
-  public static func defaultValue() -> Format {
-    return .Compound([ .UDID, .Name])
+extension Configuration : Defaultable {
+  public static var defaultValue: Configuration {
+    get {
+      return Configuration(
+        controlConfiguration: self.defaultControlConfiguration,
+        options: Configuration.Options()
+      )
+    }
+  }
+
+  public static var defaultControlConfiguration: FBSimulatorControlConfiguration {
+    get {
+      return FBSimulatorControlConfiguration(
+        deviceSetPath: nil,
+        options: FBSimulatorManagementOptions()
+      )
+    }
   }
 }
 
-extension Query : Default {
-  public static func defaultValue() -> Query {
-    return .And([])
+extension Configuration {
+  func updateIfNonDefault(configuration: Configuration) -> Configuration {
+    if self == Configuration.defaultValue {
+      return configuration
+    }
+    return self
   }
 }
+
+let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
+
+public class Defaults {
+  let logWriter: Writer
+  let format: Format
+  let configuration: Configuration
+  var query: Query? = nil {
+    willSet(newQuery) {
+      let _ = Defaults.queryHistoryLocation(configuration)
+    }
+  }
+
+  init(logWriter: Writer, format: Format, configuration: Configuration) {
+    self.logWriter = logWriter
+    self.format = format
+    self.configuration = configuration
+  }
+
+  static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
+    do {
+      var configuration: Configuration = configuration
+      var format: Format? = nil
+
+      if let rcContents = try? String(contentsOfURL: DefaultsRCFile) {
+        let rcTokens = Arguments.fromString(rcContents)
+        let (_, result) = try self.rcFileParser.parse(rcTokens)
+        if let rcConfiguration = result.0 {
+          configuration = configuration.updateIfNonDefault(rcConfiguration)
+        }
+        if let rcFormat = result.1 {
+          format = rcFormat
+        }
+      }
+
+      return Defaults(
+        logWriter: logWriter,
+        format: format ?? Format.defaultValue,
+        configuration: configuration
+      )
+    } catch let error as ParseError {
+      throw DefaultsError.UnreadableRCFile(error.description)
+    }
+  }
+
+  private static var rcFileParser: Parser<(Configuration?, Format?)> {
+    get {
+      return Parser.ofTwoSequenced(
+        Configuration.parser().optional(),
+        Format.parser().optional()
+      )
+    }
+  }
+
+  private static func queryHistoryLocation(configuration: Configuration) -> NSURL {
+    let setPath = configuration.controlConfiguration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
+    return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
+  }
+}
+

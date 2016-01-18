@@ -250,6 +250,18 @@ extension Parser {
   static func alternativeMany(count: Int, _ parsers: [Parser<A>]) -> Parser<[A]> {
     return Parser.manyCount(count, Parser.alternative(parsers))
   }
+
+  static func unionOptions<B : OptionSetType>(parsers: [Parser<B>]) -> Parser<B> {
+    return Parser<B>
+      .alternativeMany(parsers)
+      .fmap { options in
+        var set = B()
+        for option in options {
+          set.unionInPlace(option)
+        }
+        return set
+      }
+  }
 }
 
 public protocol Parsable {

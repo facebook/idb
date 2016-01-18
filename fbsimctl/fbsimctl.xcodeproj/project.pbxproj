@@ -22,12 +22,15 @@
 		AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
 		AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
 		AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
-		AA2AFD731C29412C000123BA /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA3ADDB91C2B19A4004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA54EF6F1C47E9FC006D5118 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF6E1C47E9FC006D5118 /* Constants.swift */; };
 		AA54EF701C47E9FC006D5118 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF6E1C47E9FC006D5118 /* Constants.swift */; };
+		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
+		AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
+		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
+		AA54EF761C48DE6F006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
 		AA6085BE1C287AC3009B500E /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA6085CF1C287DBD009B500E /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE35A7C1C2863EB0073CC70 /* main.swift */; };
 		AA6085D11C287E02009B500E /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */; };
@@ -45,6 +48,9 @@
 		AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AACF9F541C46E85800B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
+		AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
+		AAE0C5561C49214F005DE6D9 /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
+		AAE0C5571C492158005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
 		AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D34D1C32EA4D00434516 /* Writer.swift */; };
@@ -93,11 +99,14 @@
 		AA2AFD741C294158000123BA /* TestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		AA54EF6E1C47E9FC006D5118 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
+		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		AA6085BF1C287B36009B500E /* fbsimctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fbsimctl.h; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
 		AACF9F521C46E5C100B17E82 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		AAE0C5521C4904BC005DE6D9 /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
 		AAE35A7C1C2863EB0073CC70 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBSimulatorControlKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlKit.h; sourceTree = "<group>"; };
@@ -139,6 +148,7 @@
 		AA1B7F5A1C2867EE0038C6A5 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				AA54EF711C4814BA006D5118 /* Arguments.swift */,
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
@@ -148,8 +158,10 @@
 				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
 				AACF9F521C46E5C100B17E82 /* Environment.swift */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
+				AA54EF741C48275B006D5118 /* JSON.swift */,
 				AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */,
 				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
+				AAE0C5521C4904BC005DE6D9 /* Query.swift */,
 				AA1B7F651C2867EE0038C6A5 /* Relay.swift */,
 				AA1B7F661C2867EE0038C6A5 /* Runners.swift */,
 				AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */,
@@ -359,6 +371,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAE0C5571C492158005DE6D9 /* Query.swift in Sources */,
+				AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */,
 				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
 				AA54EF6F1C47E9FC006D5118 /* Constants.swift in Sources */,
 				AA6085D21C287E02009B500E /* Command.swift in Sources */,
@@ -366,6 +380,7 @@
 				AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */,
 				AA6085D41C287E02009B500E /* Constants.m in Sources */,
 				AA6085D51C287E02009B500E /* Help.swift in Sources */,
+				AA54EF761C48DE6F006D5118 /* JSON.swift in Sources */,
 				AA6085D61C287E02009B500E /* LineBuffer.swift in Sources */,
 				AA6085D71C287E02009B500E /* Parser.swift in Sources */,
 				AA6085D81C287E02009B500E /* Relay.swift in Sources */,
@@ -384,11 +399,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA1B7F711C2867EE0038C6A5 /* LineBuffer.swift in Sources */,
+				AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */,
 				AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */,
 				AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */,
 				AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */,
 				AA1B7F6F1C2867EE0038C6A5 /* Constants.m in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
+				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
+				AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */,
 				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
 				AA54EF701C47E9FC006D5118 /* Constants.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
@@ -406,9 +424,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA2AFD731C29412C000123BA /* CommandParsersTests.swift in Sources */,
 				AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */,
 				AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */,
+				AAE0C5561C49214F005DE6D9 /* CommandParsersTests.swift in Sources */,
 				AAF6DC801C466E7600C7E1E2 /* Fixtures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
