@@ -120,11 +120,21 @@
 
 + (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
-  if (!application || !arguments || !environment) {
+  return [self configurationWithBundleID:application.bundleID arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+}
+
++ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment
+{
+  return [self configurationWithBundleID:bundleID arguments:arguments environment:environment stdOutPath:nil stdErrPath:nil];
+}
+
++ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
+{
+  if (!bundleID || !arguments || !environment) {
     return nil;
   }
 
-  return [[self alloc] initWithBundleID:application.bundleID arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  return [[self alloc] initWithBundleID:bundleID arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
 }
 
 - (instancetype)initWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath

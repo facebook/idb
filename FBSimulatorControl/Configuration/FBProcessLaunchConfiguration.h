@@ -56,7 +56,7 @@
 @interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration
 
 /**
- Creates and returns a new Configuration with the provided parameters
+ Creates and returns a new Configuration with the provided parameters.
 
  @param application the Application to Launch.
  @param arguments an NSArray<NSString *> of arguments to the process.
@@ -66,7 +66,7 @@
 + (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment;
 
 /**
- Creates and returns a new Configuration with the provided parameters
+ Creates and returns a new Configuration with the provided parameters.
 
  @param application the Application to Launch.
  @param arguments an NSArray<NSString *> of arguments to the process.
@@ -76,6 +76,28 @@
  @returns a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;
+
+/**
+ Creates and returns a new Configuration with the provided parameters.
+
+ @param bundleID the Bundle ID of the App to Launch.
+ @param arguments an NSArray<NSString *> of arguments to the process.
+ @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process.
+ @returns a new Configuration Object with the arguments applied.
+ */
++ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment;
+
+/**
+ Creates and returns a new Configuration with the provided parameters.
+
+ @param bundleID the Bundle ID of the App to Launch.
+ @param arguments an NSArray<NSString *> of arguments to the process.
+ @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process.
+ @param stdOutPath the file path where the stderr of the launched process should be written. May be nil.
+ @param stdErrPath The file path where the stderr of the launched process should be written. May be nil.
+ @returns a new Configuration Object with the arguments applied.
+ */
++ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;
 
 /**
  The Bundle ID of the the Application to Launch.
