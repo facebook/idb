@@ -70,13 +70,16 @@ public class Defaults {
   let logWriter: Writer
   let format: Format
   let configuration: Configuration
-  var query: Query?
+  var query: Query? = nil {
+    willSet(newQuery) {
+      let _ = Defaults.queryHistoryLocation(configuration)
+    }
+  }
 
-  init(logWriter: Writer, format: Format, configuration: Configuration, query: Query?) {
+  init(logWriter: Writer, format: Format, configuration: Configuration) {
     self.logWriter = logWriter
     self.format = format
     self.configuration = configuration
-    self.query = query
   }
 
   static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
@@ -98,8 +101,7 @@ public class Defaults {
       return Defaults(
         logWriter: logWriter,
         format: format ?? Format.defaultValue,
-        configuration: configuration,
-        query: nil
+        configuration: configuration
       )
     } catch let error as ParseError {
       throw DefaultsError.UnreadableRCFile(error.description)
@@ -115,11 +117,9 @@ public class Defaults {
     }
   }
 
-  private var lastQueryLocation: NSURL {
-    get {
-      let setPath = self.configuration.controlConfiguration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
-      return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
-    }
+  private static func queryHistoryLocation(configuration: Configuration) -> NSURL {
+    let setPath = configuration.controlConfiguration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
+    return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
   }
 }
 

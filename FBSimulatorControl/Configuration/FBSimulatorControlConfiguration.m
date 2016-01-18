@@ -110,7 +110,9 @@
 
 + (NSString *_Nonnull)defaultDeviceSetPath
 {
-  return SimDeviceSet.defaultSetPath;
+  Class deviceSetClass = NSClassFromString(@"SimDeviceSet");
+  NSAssert(deviceSetClass, @"Expected SimDeviceSet to be loaded");
+  return [deviceSetClass defaultSetPath] ?: [[deviceSetClass defaultSet] setPath];
 }
 
 @end
