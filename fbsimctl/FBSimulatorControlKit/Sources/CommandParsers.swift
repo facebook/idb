@@ -300,7 +300,7 @@ extension Interaction : Parsable {
     return Parser<FBProcessLaunchConfiguration>
       .alternative([
         self.agentLaunchParser(),
-        self.appLaunchParser()
+        self.appLaunchParser(),
       ])
   }
 
@@ -318,13 +318,13 @@ extension Interaction : Parsable {
   private static func appLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
     return Parser
       .ofTwoSequenced(
-        Parser<FBSimulatorApplication>.ofApplication(),
+        Parser<FBSimulatorApplication>.ofBundleID(),
         self.argumentParser()
       )
-      .fmap { (application, arguments) in
-        return FBApplicationLaunchConfiguration(application: application, arguments: arguments, environment : [:])
+      .fmap { (bundleID, arguments) in
+        return FBApplicationLaunchConfiguration(bundleID: bundleID, arguments: arguments, environment : [:])
       }
-    }
+  }
 
   private static func argumentParser() -> Parser<[String]> {
     return Parser.many(Parser<String>.ofAny())
