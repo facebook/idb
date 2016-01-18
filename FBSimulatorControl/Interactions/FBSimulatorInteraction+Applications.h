@@ -30,22 +30,6 @@
 - (instancetype)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 /**
- Unix Signals the Application.
-
- @param signal the unix signo to send.
- @return the reciever, for chaining.
- */
-- (instancetype)signal:(int)signal application:(FBSimulatorApplication *)application;
-
-/**
- Kills the provided Application.
-
- @param application the Application to kill.
- @return the reciever, for chaining.
- */
-- (instancetype)killApplication:(FBSimulatorApplication *)application;
-
-/**
  Relaunches the last-launched Application:
  - If the Application is running, it will be killed first then launched.
  - If the Application has terminated, it will be launched.

@@ -15,7 +15,9 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Applications.h"
+#import "FBSimulatorInteraction+Lifecycle.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBAddVideoPolyfill ()
@@ -104,8 +106,19 @@
     previousCount:dcimPaths.count
     error:error];
 
-  if (![[simulator.interact killApplication:photosApp] performInteractionWithError:nil]) {
-    return [[[FBSimulatorError describe:@"Couldn't kill MobileSlideShow after uploading videos"] causedBy:innerError] failBool:error];
+  FBProcessInfo *photosAppProcess = simulator.history.lastLaunchedApplicationProcess;
+  if (![photosAppProcess.processName isEqualToString:@"MobileSlideshow"]) {
+    return [[[FBSimulatorError
+      describe:@"Couldn't find MobileSlideShow process after uploading video"]
+      causedBy:innerError]
+      failBool:error];
+  }
+
+  if (![[simulator.interact killProcess:photosAppProcess] performInteractionWithError:nil]) {
+    return [[[FBSimulatorError
+      describe:@"Couldn't kill MobileSlideShow after uploading videos"]
+      causedBy:innerError]
+      failBool:error];
   }
 
   return success;
