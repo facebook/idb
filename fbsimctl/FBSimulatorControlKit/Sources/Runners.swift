@@ -142,8 +142,8 @@ struct InteractionRunner : Runner {
       let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults)
       let format = self.format ?? defaults.format
       let runners: [Runner] = self.interactions.flatMap { interaction in
-        simulators.map { simulator in
-          SimulatorRunner(simulator: simulator, interaction: interaction, format: format)
+        return simulators.map { simulator in
+          SimulatorRunner(simulator: simulator, interaction: interaction.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
         }
       }
       return SequenceRunner(runners: runners).run(writer)
