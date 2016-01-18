@@ -29,11 +29,6 @@
 @property (nonatomic, copy, readonly) NSDictionary *environment;
 
 /**
- An NSString * representing the path to the launched binary.
- */
-@property (nonatomic, copy, readonly) NSString *launchPath;
-
-/**
  The file path where the stdout of the launched process should be written.
  */
 @property (nonatomic, copy, readonly) NSString *stdOutPath;
@@ -83,9 +78,9 @@
 + (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;
 
 /**
- The Application to Launch.
+ The Bundle ID of the the Application to Launch.
  */
-@property (nonatomic, copy, readonly) FBSimulatorApplication *application;
+@property (nonatomic, copy, readonly) NSString *bundleID;
 
 @end
 

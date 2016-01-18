@@ -61,10 +61,10 @@
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.application.bundleID error:&innerError];
+    FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
     if (!application) {
       return [[[[FBSimulatorError
-        describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.application.bundleID]
+        describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
         causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
@@ -81,7 +81,7 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    FBProcessInfo *process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
+    FBProcessInfo *process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.bundleID options:options error:&innerError];
     if (!process) {
       return [[[[FBSimulatorError describeFormat:@"Failed to launch application %@", appLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
     }

@@ -28,24 +28,6 @@
 
 @end
 
-@implementation FBApplicationLaunchConfiguration (SessionStateQueries)
-
-- (FBSimulatorBinary *)binary
-{
-  return self.application.binary;
-}
-
-@end
-
-@implementation FBAgentLaunchConfiguration (SessionStateQueries)
-
-- (FBSimulatorBinary *)binary
-{
-  return self.agentBinary;
-}
-
-@end
-
 @implementation FBSimulatorHistory (Queries)
 
 - (NSArray *)launchedApplicationProcesses

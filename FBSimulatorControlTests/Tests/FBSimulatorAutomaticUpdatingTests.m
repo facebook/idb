@@ -70,11 +70,10 @@
   }
 
   FBSimulatorSession *session = [self createSession];
-  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:self.safariAppLaunch]];
 
-  FBProcessInfo *process = [session.history runningProcessForApplication:appLaunch.application];
+  FBProcessInfo *process = [session.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -86,7 +85,7 @@
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification timeout:20];
   XCTAssertFalse([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
-  XCTAssertNil([session.history runningProcessForApplication:appLaunch.application]);
+  XCTAssertNil([session.history runningProcessForApplication:self.safariApplication]);
 }
 
 - (void)testNotifiedByExpectedApplicationTermination
@@ -100,7 +99,7 @@
 
   [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
 
-  FBProcessInfo *process = [session.history runningProcessForApplication:appLaunch.application];
+  FBProcessInfo *process = [session.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -112,7 +111,7 @@
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification timeout:20];
   XCTAssertTrue([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
-  XCTAssertNil([session.history runningProcessForApplication:appLaunch.application]);
+  XCTAssertNil([session.history runningProcessForApplication:self.safariApplication]);
 }
 
 @end

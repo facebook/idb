@@ -48,7 +48,7 @@
   FBSimulatorHistory *history = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 
   XCTAssertEqualObjects(history.lastLaunchedApplicationProcess, self.processInfo1);
-  XCTAssertEqualObjects([history diagnosticNamed:@"foo" forApplication:self.appLaunch1.application], @"bar");
+  XCTAssertEqualObjects([history diagnosticNamed:@"foo" forApplication:self.tableSearchApplication], @"bar");
 }
 
 @end

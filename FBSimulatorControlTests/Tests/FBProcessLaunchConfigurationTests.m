@@ -24,7 +24,7 @@
   FBApplicationLaunchConfiguration *appLaunch = self.appLaunch1;
   FBApplicationLaunchConfiguration *appLaunchCopy = [appLaunch copy];
 
-  XCTAssertEqualObjects(appLaunch.application, appLaunchCopy.application);
+  XCTAssertEqualObjects(appLaunch.bundleID, appLaunchCopy.bundleID);
   XCTAssertEqualObjects(appLaunch.arguments, appLaunchCopy.arguments);
   XCTAssertEqualObjects(appLaunch.environment, appLaunchCopy.environment);
   XCTAssertEqualObjects(appLaunch, appLaunchCopy);
@@ -44,7 +44,7 @@
   NSData *appLaunchData = [NSKeyedArchiver archivedDataWithRootObject:appLaunch];
   FBApplicationLaunchConfiguration *appLaunchUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:appLaunchData];
 
-  XCTAssertEqualObjects(appLaunch.application, appLaunchUnarchived.application);
+  XCTAssertEqualObjects(appLaunch.bundleID, appLaunchUnarchived.bundleID);
   XCTAssertEqualObjects(appLaunch.arguments, appLaunchUnarchived.arguments);
   XCTAssertEqualObjects(appLaunch.environment, appLaunchUnarchived.environment);
   XCTAssertEqualObjects(appLaunch, appLaunchUnarchived);
