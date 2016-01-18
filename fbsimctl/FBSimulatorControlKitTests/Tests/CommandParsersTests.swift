@@ -358,7 +358,7 @@ class ActionParserTests : XCTestCase {
 class CommandParserTests : XCTestCase {
   func testParsesSingleInteraction() {
     self.assertParses(
-      Command.parser(), 
+      Command.parser(),
       ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"],
       Command.Perform(
         Configuration.defaultValue,

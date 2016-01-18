@@ -122,4 +122,3 @@ public class Defaults {
     return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
   }
 }
-
