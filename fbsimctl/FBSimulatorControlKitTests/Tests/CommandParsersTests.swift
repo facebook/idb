@@ -342,8 +342,8 @@ class CommandParserTests : XCTestCase {
 
   func testParsesInteract() {
     self.assertParsesAll(Command.parser(), [
-      (["interact"], Command.Interact(Configuration.defaultValue, nil)),
-      (["interact", "--port", "42"], Command.Interact(Configuration.defaultValue, 42))
+      (["-i"], Command.Interactive(Configuration.defaultValue, nil)),
+      (["-i", "--port", "42"], Command.Interactive(Configuration.defaultValue, 42))
     ])
   }
 

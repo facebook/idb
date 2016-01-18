@@ -67,7 +67,7 @@ public struct Action {
  */
 public enum Command {
   case Perform(Configuration, Action)
-  case Interact(Configuration, Int?)
+  case Interactive(Configuration, Int?)
   case Help(Interaction?)
 }
 
@@ -91,7 +91,7 @@ public func == (left: Command, right: Command) -> Bool {
   switch (left, right) {
   case (.Perform(let leftConfiguration, let lefts), .Perform(let rightConfiguration, let rights)):
     return leftConfiguration == rightConfiguration && lefts == rights
-  case (.Interact(let leftConfiguration, let leftPort), .Interact(let rightConfiguration, let rightPort)):
+  case (.Interactive(let leftConfiguration, let leftPort), .Interactive(let rightConfiguration, let rightPort)):
     return leftConfiguration == rightConfiguration && leftPort == rightPort
   case (.Help(let left), .Help(let right)):
     return left == right

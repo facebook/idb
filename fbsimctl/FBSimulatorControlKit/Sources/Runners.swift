@@ -60,7 +60,7 @@ private struct BaseRunner : Runner {
       case .Help:
         writer.write(Command.getHelp())
         return .Success
-      case .Interact(let configuration, let port):
+      case .Interactive(let configuration, let port):
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
         let control = try defaults.configuration.buildSimulatorControl()
         return InteractiveRunner(control: control, defaults: defaults, portNumber: port).run(writer)

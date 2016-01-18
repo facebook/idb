@@ -139,10 +139,10 @@ extension Command : Parsable {
     return Parser
       .ofTwoSequenced(
         Configuration.parser(),
-        Parser.succeeded("interact", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+        Parser.succeeded("-i", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
       )
       .fmap { (configuration, port) in
-        return Command.Interact(configuration, port)
+        return Command.Interactive(configuration, port)
       }
   }
 
