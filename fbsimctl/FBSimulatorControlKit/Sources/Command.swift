@@ -20,8 +20,8 @@ public struct Configuration {
       self.rawValue = rawValue
     }
 
-    static let DebugLogging  = Options(rawValue: 1 << 0)
-    static let JSONOutput  = Options(rawValue: 1 << 1)
+    static let DebugLogging = Options(rawValue: 1 << 0)
+    static let JSONOutput = Options(rawValue: 1 << 1)
   }
 
   let controlConfiguration: FBSimulatorControlConfiguration

@@ -85,7 +85,8 @@ extension Configuration : Parsable {
   }
 
   public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
-    return Parser.ofTwoSequenced(
+    return Parser
+      .ofTwoSequenced(
         Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
         FBSimulatorManagementOptions.parser()
       )
@@ -95,10 +96,11 @@ extension Configuration : Parsable {
   }
 
   static func optionsParser() -> Parser<Configuration.Options> {
-    return Parser<Configuration.Options>.unionOptions([
-      Parser.ofString(Flags.DebugLogging, Configuration.Options.DebugLogging),
-      Parser.ofString("--json", Configuration.Options.JSONOutput)
-    ])
+    return Parser<Configuration.Options>
+      .unionOptions([
+        Parser.ofString(Flags.DebugLogging, Configuration.Options.DebugLogging),
+        Parser.ofString("--json", Configuration.Options.JSONOutput)
+      ])
   }
 }
 
@@ -154,15 +156,16 @@ extension Command : Parsable {
 
 extension FBSimulatorAllocationOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser<FBSimulatorAllocationOptions>.unionOptions([
-      self.createParser(),
-      self.reuseParser(),
-      self.shutdownOnAllocateParser(),
-      self.eraseOnAllocateParser(),
-      self.deleteOnFreeParser(),
-      self.eraseOnAllocateParser(),
-      self.eraseOnFreeParser()
-    ])
+    return Parser<FBSimulatorAllocationOptions>
+      .unionOptions([
+        self.createParser(),
+        self.reuseParser(),
+        self.shutdownOnAllocateParser(),
+        self.eraseOnAllocateParser(),
+        self.deleteOnFreeParser(),
+        self.eraseOnAllocateParser(),
+        self.eraseOnFreeParser()
+      ])
   }
 
   static func createParser() -> Parser<FBSimulatorAllocationOptions> {
@@ -192,15 +195,16 @@ extension FBSimulatorAllocationOptions : Parsable {
 
 extension FBSimulatorManagementOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser<FBSimulatorManagementOptions>.unionOptions([
-      self.deleteAllOnFirstParser(),
-      self.killAllOnFirstParser(),
-      self.killSpuriousSimulatorsOnFirstStartParser(),
-      self.ignoreSpuriousKillFailParser(),
-      self.killSpuriousCoreSimulatorServicesParser(),
-      self.useProcessKillingParser(),
-      self.useSimDeviceTimeoutResilianceParser()
-    ])
+    return Parser<FBSimulatorManagementOptions>
+      .unionOptions([
+        self.deleteAllOnFirstParser(),
+        self.killAllOnFirstParser(),
+        self.killSpuriousSimulatorsOnFirstStartParser(),
+        self.ignoreSpuriousKillFailParser(),
+        self.killSpuriousCoreSimulatorServicesParser(),
+        self.useProcessKillingParser(),
+        self.useSimDeviceTimeoutResilianceParser()
+      ])
   }
 
   static func deleteAllOnFirstParser() -> Parser<FBSimulatorManagementOptions> {
@@ -234,15 +238,16 @@ extension FBSimulatorManagementOptions : Parsable {
 
 extension Interaction : Parsable {
   public static func parser() -> Parser<Interaction> {
-    return Parser.alternative([
-      Parser.ofString("list", Interaction.List),
-      Parser.ofString("boot", Interaction.Boot),
-      Parser.ofString("shutdown", Interaction.Shutdown),
-      Parser.ofString("diagnose", Interaction.Diagnose),
-      Parser.ofString("delete", Interaction.Delete),
-      self.installParser(),
-      self.launchParser()
-    ])
+    return Parser
+      .alternative([
+        Parser.ofString("list", Interaction.List),
+        Parser.ofString("boot", Interaction.Boot),
+        Parser.ofString("shutdown", Interaction.Shutdown),
+        Parser.ofString("diagnose", Interaction.Diagnose),
+        Parser.ofString("delete", Interaction.Delete),
+        self.installParser(),
+        self.launchParser()
+      ])
   }
 
   private static func installParser() -> Parser<Interaction> {
@@ -294,10 +299,11 @@ extension Interaction : Parsable {
 
 extension Action : Parsable {
   public static func parser() -> Parser<Action> {
-    return Parser.alternative([
-      self.interactionParser(),
-      self.createParser()
-    ])
+    return Parser
+      .alternative([
+        self.interactionParser(),
+        self.createParser()
+      ])
   }
 
   private static func interactionParser() -> Parser<Action> {
