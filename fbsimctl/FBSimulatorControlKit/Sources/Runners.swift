@@ -179,54 +179,54 @@ private struct SimulatorRunner : Runner {
 
   func run(writer: Writer) -> ActionResult {
     do {
+      let event = HumanReadableEventReporter(simulator: self.simulator, writer: writer, format: self.format)
+      defer {
+        self.simulator.userEventSink = nil
+      }
+
       switch self.interaction {
       case .List:
-        writer.write(self.formattedSimulator)
+        event.simulatorEvent()
       case .Approve(let bundleIDs):
-        writer.write("Approving \(bundleIDs) in \(self.formattedSimulator)")
+        event.report(EventName.Approve, EventType.Started, [bundleIDs] as NSArray)
         try simulator.interact().authorizeLocationSettings(bundleIDs).performInteraction()
-        writer.write("Approved \(bundleIDs) in \(self.formattedSimulator)")
+        event.report(EventName.Approve, EventType.Ended, [bundleIDs] as NSArray)
       case .Boot(let maybeLaunchConfiguration):
         let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
-        writer.write("Booting \(self.formattedSimulator)")
+        event.report(EventName.Boot, EventType.Started, launchConfiguration)
         try simulator.interact().prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration).performInteraction()
-        writer.write("Booted \(self.formattedSimulator)")
+        event.report(EventName.Boot, EventType.Ended, launchConfiguration)
       case .Shutdown:
-        writer.write("Shutting Down \(self.formattedSimulator)")
+        event.report(EventName.Shutdown, EventType.Started, self.simulator)
         try simulator.interact().shutdownSimulator().performInteraction()
-        writer.write("Shutdown \(self.formattedSimulator)")
+        event.report(EventName.Shutdown, EventType.Ended, self.simulator)
       case .Diagnose:
-        writer.write(try JSON.serializeToString(simulator.logs.allLogs()))
+        let logs = simulator.logs.allLogs() as! [FBSimulatorLogs]
+        event.report(EventName.Diagnostic, EventType.Discrete, logs)
       case .Delete:
-        writer.write("Deleteing \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Started, self.simulator)
         try simulator.pool!.deleteSimulator(simulator)
-        writer.write("Deleted \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Ended, self.simulator)
       case .Install(let application):
-        writer.write("Installing \(application.path) on \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Started, application)
         try simulator.interact().installApplication(application).performInteraction()
-        writer.write("Installed \(application.path) on \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Started, application)
       case .Launch(let launch):
-        writer.write("Launching \(launch.shortDescription) on \(self.formattedSimulator)")
+        event.report(EventName.Launch, EventType.Started, launch)
         if let appLaunch = launch as? FBApplicationLaunchConfiguration {
           try simulator.interact().launchApplication(appLaunch).performInteraction()
         }
         else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
           try simulator.interact().launchAgent(agentLaunch).performInteraction()
         }
-        writer.write("Launched \(launch.shortDescription) on \(self.formattedSimulator)")
+        event.report(EventName.Launch, EventType.Ended, launch)
       }
     } catch let error as NSError {
       return .Failure(error.description)
-    } catch is JSONError {
-      return .Failure("Failed to encode to JSON")
+    } catch let error as JSON.Error {
+      return .Failure(error.description)
     }
     return .Success
-  }
-
-  private var formattedSimulator: String {
-    get {
-      return self.format.withSimulator(simulator)
-    }
   }
 }
 

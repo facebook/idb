@@ -10,23 +10,60 @@
 import Foundation
 import FBSimulatorControl
 
-public struct JSONError : ErrorType {
+extension NSString : FBJSONSerializationDescribeable {
+  public func jsonSerializableRepresentation() -> AnyObject! {
+    return self
+  }
+}
+extension NSString : FBDebugDescribeable {
+  override public var debugDescription: String {
+    get {
+      return self.description
+    }
+  }
 
+  public var shortDescription: String {
+    get {
+      return self.description
+    }
+  }
+}
+
+extension NSArray : FBJSONSerializationDescribeable {
+  public func jsonSerializableRepresentation() -> AnyObject! {
+    return self
+  }
+}
+extension NSArray : FBDebugDescribeable {
+  override public var debugDescription: String {
+    get {
+      return self.description
+    }
+  }
+
+  public var shortDescription: String {
+    get {
+      return self.description
+    }
+  }
+}
+
+extension NSDictionary : FBJSONSerializationDescribeable {
+  public func jsonSerializableRepresentation() -> AnyObject! {
+    return self
+  }
 }
 
 public struct JSON {
-  static func serializeToString(objects: [AnyObject]) throws -> String {
-    let descriptions: [AnyObject] = objects.flatMap { candidate in
-      guard let describable = candidate as? FBJSONSerializationDescribeable else {
-        return nil
+  static func serializeToString(object: FBJSONSerializationDescribeable) throws -> String {
+    do {
+      let data = try NSJSONSerialization.dataWithJSONObject(object, options: NSJSONWritingOptions.PrettyPrinted)
+      guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
+        throw Error.Stringifying(data)
       }
-      return describable.jsonSerializableRepresentation()
+      return string as String
+    } catch let error as NSError {
+      throw Error.Serialization(error)
     }
-
-    let data = try NSJSONSerialization.dataWithJSONObject(descriptions, options: NSJSONWritingOptions.PrettyPrinted)
-    guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
-      throw JSONError()
-    }
-    return string as String
   }
 }
