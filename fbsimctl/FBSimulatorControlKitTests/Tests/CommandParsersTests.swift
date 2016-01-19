@@ -254,6 +254,9 @@ class InteractionParserTests : XCTestCase {
     self.assertParsesAll(Interaction.parser(), [
       (["list"], Interaction.List),
       (["boot"], Interaction.Boot(nil)),
+      (["boot", "--locale", "fr_FR"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
+      (["boot", "--scale=50"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
+      (["boot", "--locale", "en_US", "--scale=75"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
       (["shutdown"], Interaction.Shutdown),
       (["diagnose"], Interaction.Diagnose),
       (["delete"], Interaction.Delete),

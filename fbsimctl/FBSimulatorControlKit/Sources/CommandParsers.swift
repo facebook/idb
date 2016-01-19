@@ -70,6 +70,13 @@ extension Parser {
       }
     }
   }
+
+  static func ofLocale() -> Parser<NSLocale> {
+    let expected = "A Locale"
+    return Parser<NSLocale>.single(expected) { token in
+      return NSLocale(localeIdentifier: token)
+    }
+  }
 }
 
 extension Configuration : Parsable {
@@ -241,13 +248,19 @@ extension Interaction : Parsable {
     return Parser
       .alternative([
         Parser.ofString("list", Interaction.List),
-        Parser.ofString("boot", Interaction.Boot(nil)),
+        self.bootParser(),
         Parser.ofString("shutdown", Interaction.Shutdown),
         Parser.ofString("diagnose", Interaction.Diagnose),
         Parser.ofString("delete", Interaction.Delete),
         self.installParser(),
         self.launchParser()
       ])
+  }
+
+  private static func bootParser() -> Parser<Interaction> {
+    return Parser
+      .succeeded("boot", FBSimulatorLaunchConfigurationParser.parser().optional())
+      .fmap { Interaction.Boot($0) }
   }
 
   private static func installParser() -> Parser<Interaction> {
@@ -391,7 +404,7 @@ struct FBSimulatorConfigurationParser {
       )
       .fmap { (device, os) in
         if device == nil && os == nil {
-          throw ParseError.Custom("Simulator Configuration must contain at least a device name and os version")
+          throw ParseError.Custom("Simulator Configuration must contain at least a device name or os version")
         }
         let configuration = FBSimulatorConfiguration.defaultConfiguration().copy() as! FBSimulatorConfiguration
         if let device = device {
@@ -424,3 +437,45 @@ struct FBSimulatorConfigurationParser {
     }
   }
 }
+
+/**
+ A separate struct for FBSimulatorLaunchConfigurationParser is needed as Parsable protcol conformance cannot be
+ applied to FBSimulatorLaunchConfigurationParser as it is a non-final.
+ */
+struct FBSimulatorLaunchConfigurationParser {
+  static func parser() -> Parser<FBSimulatorLaunchConfiguration> {
+    return Parser
+      .ofTwoSequenced(
+        self.localeParser().optional(),
+        self.scaleParser().optional()
+      )
+      .fmap { (locale, scale) in
+        if locale == nil && scale == nil {
+          throw ParseError.Custom("Simulator Launch Configuration must contain at least a locale or scale")
+        }
+        var configuration = FBSimulatorLaunchConfiguration.defaultConfiguration().copy() as! FBSimulatorLaunchConfiguration
+        if let locale = locale {
+          configuration = configuration.withLocale(locale)
+        }
+        if let scale = scale {
+          configuration = configuration.withScale(scale)
+        }
+        return configuration
+    }
+  }
+
+  static func localeParser() -> Parser<NSLocale> {
+    return Parser
+      .succeeded("--locale", Parser<NSLocale>.ofLocale())
+  }
+
+  static func scaleParser() -> Parser<FBSimulatorLaunchConfiguration_Scale> {
+    return Parser.alternative([
+      Parser.ofString("--scale=25", FBSimulatorLaunchConfiguration_Scale_25()),
+      Parser.ofString("--scale=50", FBSimulatorLaunchConfiguration_Scale_50()),
+      Parser.ofString("--scale=75", FBSimulatorLaunchConfiguration_Scale_75()),
+      Parser.ofString("--scale=100", FBSimulatorLaunchConfiguration_Scale_100())
+    ])
+  }
+}
+
