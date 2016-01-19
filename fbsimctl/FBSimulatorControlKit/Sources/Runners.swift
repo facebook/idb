@@ -182,6 +182,10 @@ private struct SimulatorRunner : Runner {
       switch self.interaction {
       case .List:
         writer.write(self.formattedSimulator)
+      case .Approve(let bundleIDs):
+        writer.write("Approving \(bundleIDs) in \(self.formattedSimulator)")
+        try simulator.interact().authorizeLocationSettings(bundleIDs).performInteraction()
+        writer.write("Approved \(bundleIDs) in \(self.formattedSimulator)")
       case .Boot(let maybeLaunchConfiguration):
         let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
         writer.write("Booting \(self.formattedSimulator)")

@@ -253,6 +253,8 @@ class InteractionParserTests : XCTestCase {
   func testParsesAllCases() {
     self.assertParsesAll(Interaction.parser(), [
       (["list"], Interaction.List),
+      (["approve", "com.foo.bar", "com.bing.bong"], Interaction.Approve(["com.foo.bar", "com.bing.bong"])),
+      (["approve", Fixtures.application().path], Interaction.Approve([Fixtures.application().bundleID])),
       (["boot"], Interaction.Boot(nil)),
       (["boot", "--locale", "fr_FR"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
       (["boot", "--scale=50"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
@@ -269,6 +271,8 @@ class InteractionParserTests : XCTestCase {
   func testDoesNotParseInvalidTokens() {
     self.assertFailsToParseAll(Interaction.parser(), [
       ["listaa"],
+      ["approve"],
+      ["approve", "dontadddotstome"],
       ["aboota"],
       ["ddshutdown"],
       ["install"],
@@ -280,6 +284,10 @@ class InteractionParserTests : XCTestCase {
 class ActionParserTests : XCTestCase {
   func testParsesList() {
     self.assertWithDefaultActions(Interaction.List, suffix: ["list"])
+  }
+
+  func testParsesApprove() {
+    self.assertWithDefaultActions(Interaction.Approve(["com.foo.bar", "com.bing.bong"]), suffix: ["approve", "com.foo.bar", "com.bing.bong"])
   }
 
   func testParsesBoot() {

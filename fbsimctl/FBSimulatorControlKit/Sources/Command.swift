@@ -46,6 +46,7 @@ public indirect enum Format {
  */
 public enum Interaction {
   case List
+  case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
   case Shutdown
   case Diagnose
@@ -119,6 +120,8 @@ public func == (left: Interaction, right: Interaction) -> Bool {
   switch (left, right) {
   case (.List, .List):
     return true
+  case (.Approve(let leftBundleIDs), .Approve(let rightBundleIDs)):
+    return leftBundleIDs == rightBundleIDs
   case (.Boot(let leftConfiguration), .Boot(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
   case (.Shutdown, .Shutdown):
