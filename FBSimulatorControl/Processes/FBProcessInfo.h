@@ -9,12 +9,14 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+
 @class FBProcessLaunchConfiguration;
 
 /**
  Concrete Value of Process Information.
  */
-@interface FBProcessInfo : NSObject <NSCopying, NSCoding>
+@interface FBProcessInfo : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable>
 
 /**
  The Designated Initializer.

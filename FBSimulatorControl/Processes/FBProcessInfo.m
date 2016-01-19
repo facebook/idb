@@ -22,6 +22,10 @@
 
 - (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath arguments:(NSArray *)arguments environment:(NSDictionary *)environment
 {
+  NSParameterAssert(launchPath);
+  NSParameterAssert(arguments);
+  NSParameterAssert(environment);
+
   self = [super init];
   if (!self) {
     return nil;
@@ -45,9 +49,9 @@
     return NO;
   }
   return self.processIdentifier == object.processIdentifier &&
-        [self.launchPath isEqual:object.launchPath] &&
-        [self.arguments isEqual:object.arguments] &&
-        [self.environment isEqual:object.environment];
+         [self.launchPath isEqual:object.launchPath] &&
+         [self.arguments isEqual:object.arguments] &&
+         [self.environment isEqual:object.environment];
 }
 
 #pragma mark Accessors
@@ -115,6 +119,18 @@
   [coder encodeObject:self.launchPath forKey:NSStringFromSelector(@selector(launchPath))];
   [coder encodeObject:self.arguments forKey:NSStringFromSelector(@selector(arguments))];
   [coder encodeObject:self.environment forKey:NSStringFromSelector(@selector(environment))];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return @{
+    @"launch_path" : self.launchPath,
+    @"arguments" : self.arguments,
+    @"name" : self.processName,
+    @"pid" : @(self.processIdentifier)
+  };
 }
 
 @end
