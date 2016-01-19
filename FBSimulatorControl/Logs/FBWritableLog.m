@@ -81,7 +81,7 @@
   return NO;
 }
 
-- (NSDictionary *)asDictionary
+- (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
   if (self.shortName) {
@@ -153,9 +153,9 @@
   return self.logPath;
 }
 
-- (NSDictionary *)asDictionary
+- (NSDictionary *)jsonSerializableRepresentation
 {
-  NSMutableDictionary *dictionary = [[super asDictionary] mutableCopy];
+  NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
   NSString *base64String = [self.logData base64EncodedStringWithOptions:0];
   if (base64String) {
     dictionary[@"data"] = base64String;
@@ -217,9 +217,9 @@
   return self.logPath;
 }
 
-- (NSDictionary *)asDictionary
+- (NSDictionary *)jsonSerializableRepresentation
 {
-  NSMutableDictionary *dictionary = [[super asDictionary] mutableCopy];
+  NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
   dictionary[@"contents"] = self.logString;
   return dictionary;
 }
@@ -276,9 +276,9 @@
   return self.logPath;
 }
 
-- (NSDictionary *)asDictionary
+- (NSDictionary *)jsonSerializableRepresentation
 {
-  NSMutableDictionary *dictionary = [[super asDictionary] mutableCopy];
+  NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
   dictionary[@"location"] = self.logPath;
   return dictionary;
 }

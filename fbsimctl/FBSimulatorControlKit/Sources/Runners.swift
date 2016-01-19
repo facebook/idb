@@ -196,14 +196,7 @@ private struct SimulatorRunner : Runner {
         try simulator.interact().shutdownSimulator().performInteraction()
         writer.write("Shutdown \(self.formattedSimulator)")
       case .Diagnose:
-        let logs: [NSDictionary] = simulator.logs.allLogs().flatMap { candidate in
-          guard let log = candidate as? FBWritableLog else {
-            return nil
-          }
-          return log.asDictionary
-        }
-        let string = try JSON.serializeToString(logs)
-        writer.write(string)
+        writer.write(try JSON.serializeToString(simulator.logs.allLogs()))
       case .Delete:
         writer.write("Deleteing \(self.formattedSimulator)")
         try simulator.pool!.deleteSimulator(simulator)
