@@ -54,13 +54,12 @@
   }];
 }
 
-- (instancetype)authorizeLocationSettingsForApplication:(FBSimulatorApplication *)application
+- (instancetype)authorizeLocationSettings:(NSArray *)bundleIDs
 {
-  NSParameterAssert(application);
+  NSParameterAssert(bundleIDs);
 
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSString *simulatorRoot = simulator.device.dataPath;
-    NSString *bundleID = application.bundleID;
 
     NSString *locationClientsDirectory = [simulatorRoot stringByAppendingPathComponent:@"Library/Caches/locationd"];
     NSError *innerError = nil;
@@ -70,15 +69,17 @@
 
     NSString *locationClientsPath = [locationClientsDirectory stringByAppendingPathComponent:@"clients.plist"];
     NSMutableDictionary *locationClients = [NSMutableDictionary dictionaryWithContentsOfFile:locationClientsPath] ?: [NSMutableDictionary dictionary];
-    locationClients[bundleID] = @{
-      @"Whitelisted": @NO,
-      @"BundleId": bundleID,
-      @"SupportedAuthorizationMask" : @3,
-      @"Authorization" : @2,
-      @"Authorized": @YES,
-      @"Executable": @"",
-      @"Registered": @"",
-    };
+    for (NSString *bundleID in bundleIDs) {
+      locationClients[bundleID] = @{
+        @"Whitelisted": @NO,
+        @"BundleId": bundleID,
+        @"SupportedAuthorizationMask" : @3,
+        @"Authorization" : @2,
+        @"Authorized": @YES,
+        @"Executable": @"",
+        @"Registered": @"",
+      };
+    }
 
     if (![locationClients writeToFile:locationClientsPath atomically:YES]) {
       return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write clients.plist" errorOut:error];
@@ -87,6 +88,11 @@
   }];
 }
 
+- (instancetype)authorizeLocationSettingForApplication:(FBSimulatorApplication *)application
+{
+  NSParameterAssert(application);
+  return [self authorizeLocationSettings:@[application.bundleID]];
+}
 
 - (instancetype)setupKeyboard
 {
