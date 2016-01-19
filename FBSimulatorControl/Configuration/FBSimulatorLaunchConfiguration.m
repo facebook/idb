@@ -8,26 +8,7 @@
  */
 
 #import "FBSimulatorLaunchConfiguration.h"
-
-#import "FBSimulatorConfiguration+Private.h"
-
-@protocol FBSimulatorLaunchConfiguration_Scale <NSObject>
-
-- (NSString *)scaleString;
-
-@end
-
-@interface FBSimulatorLaunchConfiguration_Scale_25 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
-@end
-
-@interface FBSimulatorLaunchConfiguration_Scale_50 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
-@end
-
-@interface FBSimulatorLaunchConfiguration_Scale_75 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
-@end
-
-@interface FBSimulatorLaunchConfiguration_Scale_100 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
-@end
+#import "FBSimulatorLaunchConfiguration+Private.h"
 
 #pragma mark Scales
 
@@ -64,12 +45,6 @@
 {
   return @"1.00";
 }
-
-@end
-
-@interface FBSimulatorLaunchConfiguration ()
-
-@property (nonatomic, strong, readonly) id<FBSimulatorLaunchConfiguration_Scale> scale;
 
 @end
 
@@ -174,7 +149,7 @@
 
 - (instancetype)scale25Percent
 {
-  return [self updateScale:FBSimulatorLaunchConfiguration_Scale_25.new];
+  return [self withScale:FBSimulatorLaunchConfiguration_Scale_25.new];
 }
 
 + (instancetype)scale50Percent
@@ -184,7 +159,7 @@
 
 - (instancetype)scale50Percent
 {
-  return [self updateScale:FBSimulatorLaunchConfiguration_Scale_50.new];
+  return [self withScale:FBSimulatorLaunchConfiguration_Scale_50.new];
 }
 
 + (instancetype)scale75Percent
@@ -194,7 +169,7 @@
 
 - (instancetype)scale75Percent
 {
-  return [self updateScale:FBSimulatorLaunchConfiguration_Scale_75.new];
+  return [self withScale:FBSimulatorLaunchConfiguration_Scale_75.new];
 }
 
 + (instancetype)scale100Percent
@@ -204,7 +179,7 @@
 
 - (instancetype)scale100Percent
 {
-  return [self updateScale:FBSimulatorLaunchConfiguration_Scale_100.new];
+  return [self withScale:FBSimulatorLaunchConfiguration_Scale_100.new];
 }
 
 #pragma mark Locale
@@ -231,7 +206,7 @@
 
 #pragma mark Private
 
-- (instancetype)updateScale:(id<FBSimulatorLaunchConfiguration_Scale>)scale
+- (instancetype)withScale:(id<FBSimulatorLaunchConfiguration_Scale>)scale
 {
   if (!scale) {
     return nil;
