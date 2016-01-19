@@ -10,6 +10,7 @@
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
+@class FBMutableSimulatorEventSink;
 @class FBProcessQuery;
 @class FBSimulatorEventRelay;
 @class FBSimulatorHistoryGenerator;
@@ -19,6 +20,7 @@
 
 @property (nonatomic, strong, readonly) FBSimulatorEventRelay *eventRelay;
 @property (nonatomic, strong, readonly) FBSimulatorHistoryGenerator *historyGenerator;
+@property (nonatomic, strong, readonly) FBMutableSimulatorEventSink *mutableSink;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;

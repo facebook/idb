@@ -18,6 +18,7 @@
 #import <CoreSimulator/SimDeviceType.h>
 
 #import "FBCompositeSimulatorEventSink.h"
+#import "FBMutableSimulatorEventSink.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
 #import "FBSimulator+Helpers.h"
@@ -71,11 +72,13 @@
   FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator forSimulator:self];
   FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink]];
+  FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink, mutableSink]];
   FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device processQuery:self.processQuery sink:compositeSink];
 
   _historyGenerator = historyGenerator;
   _eventRelay = relay;
+  _mutableSink = mutableSink;
 
   return self;
 }
@@ -155,6 +158,16 @@
 - (id<FBSimulatorEventSink>)eventSink
 {
   return self.eventRelay;
+}
+
+- (id<FBSimulatorEventSink>)userEventSink
+{
+  return self.mutableSink.eventSink;
+}
+
+- (void)setUserEventSink:(id<FBSimulatorEventSink>)userEventSink
+{
+  self.mutableSink.eventSink = userEventSink;
 }
 
 #pragma mark NSObject

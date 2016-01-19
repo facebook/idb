@@ -75,6 +75,13 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 /**
+ An Event Sink that can be updated to the user's choosing.
+ Will be called when sending events to `eventSink`.
+ Events should be sent to `eventSink` and not this property; events will propogate here automatically.
+ */
+@property (nonatomic, strong, readwrite) id<FBSimulatorEventSink> userEventSink;
+
+/**
  The Simulator's Logger.
  */
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
