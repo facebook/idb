@@ -128,19 +128,14 @@
 
 - (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
+  NSParameterAssert(bundleID);
+
   NSError *innerError = nil;
-  NSDictionary *installedApps = [self.device installedAppsWithError:&innerError];
-  if (!installedApps) {
-    return [[[[FBSimulatorError
-      describe:@"Failed to get installed apps"]
-      inSimulator:self]
-      causedBy:innerError]
-      fail:error];
-  }
-  NSDictionary *appInfo = installedApps[bundleID];
+  NSDictionary *appInfo = [self.device propertiesOfApplication:bundleID error:&innerError];
   if (!appInfo) {
+    NSDictionary *installedApps = [self.device installedAppsWithError:nil];
     return [[[[[FBSimulatorError
-      describeFormat:@"Failed to get app with bundle ID %@ from %@", bundleID, [FBCollectionDescriptions oneLineDescriptionFromArray:installedApps.allKeys]]
+      describeFormat:@"Application with bundle ID '%@' is not installed", bundleID]
       extraInfo:@"installed_apps" value:installedApps.allKeys]
       inSimulator:self]
       causedBy:innerError]
@@ -149,9 +144,8 @@
   NSString *appPath = appInfo[@"Path"];
   FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:appPath error:&innerError];
   if (!application) {
-    return [[[[[FBSimulatorError
-      describeFormat:@"Failed to get Application description of %@ at %@", bundleID, appPath]
-      extraInfo:@"installed_apps" value:installedApps.allKeys]
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to get App Path of %@ at %@", bundleID, appPath]
       inSimulator:self]
       causedBy:innerError]
       fail:error];
