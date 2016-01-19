@@ -253,7 +253,7 @@ class InteractionParserTests : XCTestCase {
   func testParsesAllCases() {
     self.assertParsesAll(Interaction.parser(), [
       (["list"], Interaction.List),
-      (["boot"], Interaction.Boot),
+      (["boot"], Interaction.Boot(nil)),
       (["shutdown"], Interaction.Shutdown),
       (["diagnose"], Interaction.Diagnose),
       (["delete"], Interaction.Delete),
@@ -280,7 +280,7 @@ class ActionParserTests : XCTestCase {
   }
 
   func testParsesBoot() {
-    self.assertWithDefaultActions(Interaction.Boot, suffix: ["boot"])
+    self.assertWithDefaultActions(Interaction.Boot(nil), suffix: ["boot"])
   }
 
   func testParsesShutdown() {
@@ -363,7 +363,7 @@ class CommandParserTests : XCTestCase {
       Command.Perform(
         Configuration.defaultValue,
         Action.Interact(
-          [.Boot],
+          [.Boot(nil)],
           .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
           nil
         )
@@ -378,7 +378,7 @@ class CommandParserTests : XCTestCase {
       Command.Perform(
         Configuration.defaultValue,
         Action.Interact(
-          [ .List, .Boot ],
+          [ .List, .Boot(nil) ],
           Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
           nil
         )

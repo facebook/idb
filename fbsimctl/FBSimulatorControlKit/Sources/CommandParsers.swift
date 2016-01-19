@@ -241,7 +241,7 @@ extension Interaction : Parsable {
     return Parser
       .alternative([
         Parser.ofString("list", Interaction.List),
-        Parser.ofString("boot", Interaction.Boot),
+        Parser.ofString("boot", Interaction.Boot(nil)),
         Parser.ofString("shutdown", Interaction.Shutdown),
         Parser.ofString("diagnose", Interaction.Diagnose),
         Parser.ofString("delete", Interaction.Delete),
