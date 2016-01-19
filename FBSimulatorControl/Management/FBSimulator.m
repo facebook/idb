@@ -196,4 +196,14 @@
   return [NSString stringWithFormat:@"Simulator %@", self.udid];
 }
 
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return @{
+    @"name" : self.device.name,
+    @"state" : self.device.stateString
+  };
+}
+
 @end
