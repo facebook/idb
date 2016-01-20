@@ -182,9 +182,10 @@ private struct SimulatorRunner : Runner {
       switch self.interaction {
       case .List:
         writer.write(self.formattedSimulator)
-      case .Boot:
+      case .Boot(let maybeLaunchConfiguration):
+        let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
         writer.write("Booting \(self.formattedSimulator)")
-        try simulator.interact().bootSimulator().performInteraction()
+        try simulator.interact().prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration).performInteraction()
         writer.write("Booted \(self.formattedSimulator)")
       case .Shutdown:
         writer.write("Shutting Down \(self.formattedSimulator)")

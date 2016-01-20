@@ -253,7 +253,10 @@ class InteractionParserTests : XCTestCase {
   func testParsesAllCases() {
     self.assertParsesAll(Interaction.parser(), [
       (["list"], Interaction.List),
-      (["boot"], Interaction.Boot),
+      (["boot"], Interaction.Boot(nil)),
+      (["boot", "--locale", "fr_FR"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
+      (["boot", "--scale=50"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
+      (["boot", "--locale", "en_US", "--scale=75"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
       (["shutdown"], Interaction.Shutdown),
       (["diagnose"], Interaction.Diagnose),
       (["delete"], Interaction.Delete),
@@ -280,7 +283,7 @@ class ActionParserTests : XCTestCase {
   }
 
   func testParsesBoot() {
-    self.assertWithDefaultActions(Interaction.Boot, suffix: ["boot"])
+    self.assertWithDefaultActions(Interaction.Boot(nil), suffix: ["boot"])
   }
 
   func testParsesShutdown() {
@@ -363,7 +366,7 @@ class CommandParserTests : XCTestCase {
       Command.Perform(
         Configuration.defaultValue,
         Action.Interact(
-          [.Boot],
+          [.Boot(nil)],
           .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
           nil
         )
@@ -378,7 +381,7 @@ class CommandParserTests : XCTestCase {
       Command.Perform(
         Configuration.defaultValue,
         Action.Interact(
-          [ .List, .Boot ],
+          [ .List, .Boot(nil) ],
           Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
           nil
         )
