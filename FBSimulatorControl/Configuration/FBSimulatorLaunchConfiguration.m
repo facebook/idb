@@ -124,6 +124,8 @@
   return self.scaleString.hash ^ self.locale.hash;
 }
 
+#pragma mark FBDebugDescribeable
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -131,6 +133,16 @@
     self.scaleString,
     self.locale
   ];
+}
+
+- (NSString *)shortDescription
+{
+  return [self description];
+}
+
+- (NSString *)debugDescription
+{
+  return [self description];
 }
 
 #pragma mark FBJSONSerializationDescribeable
