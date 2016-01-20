@@ -9,13 +9,14 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 
 /**
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
-@interface FBWritableLog : NSObject <NSCopying, FBJSONSerializationDescribeable>
+@interface FBWritableLog : NSObject <NSCopying, FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 /**
  The name of the Log for uniquely identifying the log.
@@ -58,16 +59,6 @@
  Whether the log has content or is missing/empty.
  */
 @property (nonatomic, readonly, assign) BOOL hasLogContent;
-
-/**
- A Full Description of the Log.
- */
-- (NSString *)debugDescription;
-
-/**
- A Partial Description of the Log.
- */
-- (NSString *)shortDescription;
 
 /**
  Writes the FBWritableLog out to a file path in the most efficient way for the backing store of the log.
