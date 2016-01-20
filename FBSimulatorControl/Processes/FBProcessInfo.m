@@ -62,7 +62,7 @@
   return self.launchPath.lastPathComponent;
 }
 
-#pragma mark Descriptions
+#pragma mark FBDebugDescribeable
 
 - (NSString *)debugDescription
 {
