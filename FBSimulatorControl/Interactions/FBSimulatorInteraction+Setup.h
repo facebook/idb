@@ -35,12 +35,20 @@
 - (instancetype)setLocale:(NSLocale *)locale;
 
 /**
+ Authorizes the Location Settings for the provided bundleIDs
+
+ @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
+ @return the reciever, for chaining.
+ */
+- (instancetype)authorizeLocationSettings:(NSArray *)bundleIDs;
+
+/**
  Authorizes the Location Settings for the provided application.
 
  @param application the Application to authorize settings for.
  @return the reciever, for chaining.
  */
-- (instancetype)authorizeLocationSettingsForApplication:(FBSimulatorApplication *)application;
+- (instancetype)authorizeLocationSettingForApplication:(FBSimulatorApplication *)application;
 
 /**
  Prepares the Simulator Keyboard, prior to launch.

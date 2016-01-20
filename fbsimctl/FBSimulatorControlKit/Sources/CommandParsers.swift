@@ -77,6 +77,20 @@ extension Parser {
       return NSLocale(localeIdentifier: token)
     }
   }
+
+  static func ofBundleID() -> Parser<String> {
+    return Parser<String>
+      .alternative([
+        Parser<FBSimulatorApplication>.ofApplication().fmap { $0.bundleID },
+        Parser<String>.single("A Bundle ID") { token in
+          let components = token.componentsSeparatedByCharactersInSet(NSCharacterSet(charactersInString: "."))
+          if components.count < 2 {
+            throw ParseError.Custom("Bundle ID must contain a '.'")
+          }
+          return token
+        }
+    ])
+  }
 }
 
 extension Configuration : Parsable {
@@ -248,6 +262,7 @@ extension Interaction : Parsable {
     return Parser
       .alternative([
         Parser.ofString("list", Interaction.List),
+        self.approveParser(),
         self.bootParser(),
         Parser.ofString("shutdown", Interaction.Shutdown),
         Parser.ofString("diagnose", Interaction.Diagnose),
@@ -255,6 +270,12 @@ extension Interaction : Parsable {
         self.installParser(),
         self.launchParser()
       ])
+  }
+
+  private static func approveParser() -> Parser<Interaction> {
+    return Parser
+      .succeeded("approve", Parser.manyCount(1, Parser<String>.ofBundleID()))
+      .fmap { Interaction.Approve($0) }
   }
 
   private static func bootParser() -> Parser<Interaction> {
