@@ -14,6 +14,7 @@
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Helpers.h"
 #import "FBProcessQuery.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLogger.h"
 
@@ -103,40 +104,71 @@
   FBProcessInfo *actualProcess = [self.processQuery processInfoFor:process.processIdentifier];
   if (![actualProcess isEqual:process]) {
     return [[[FBSimulatorError
-      describeFormat:@"Avoiding killing %@ as it differs from the actual process %@", process.debugDescription, actualProcess.debugDescription]
+      describeFormat:@"Avoiding killing %@ as it differs from the actual process %@", process.shortDescription, actualProcess.shortDescription]
       logger:self.logger]
       failBool:error];
   }
 
   // Kill the process with kill(2).
   [self.logger.debug logFormat:@"Killing %@", process.shortDescription];
-  if (kill(process.processIdentifier, self.signo) == 0) {
-    return YES;
-  }
-  int errorCode = errno;
-  if (errorCode == EPERM) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to kill process %@ as the sending process does not have the privelages", process]
-      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
-      logger:self.logger]
+  if (kill(process.processIdentifier, self.signo) != 0) {
+    // If the kill failed, then extract the error information and return.
+    int errorCode = errno;
+    if (errorCode == EPERM) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Failed to kill process %@ as the sending process does not have the privelages", process.shortDescription]
+        attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+        logger:self.logger]
+        failBool:error];
+    }
+    if (errorCode == ESRCH) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Failed to kill process %@ as the sending process does not exist", process.shortDescription]
+        attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+        logger:self.logger]
+        failBool:error];
+    }
+    if (errorCode == EINVAL) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Failed to kill process %@ as the signal %d was not a valid signal number", process.shortDescription, self.signo]
+        attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+        logger:self.logger]
+        failBool:error];
+    }
+    return [[FBSimulatorError
+      describeFormat:@"Failed to kill process %@ with unknown errno %d", process.shortDescription, errorCode]
       failBool:error];
   }
-  if (errorCode == ESRCH) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to kill process %@ as the sending process does not exist", process]
-      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
-      logger:self.logger]
-      failBool:error];
+
+  // It may take some time for the process to have truly died, so wait for it to be so.
+  [self.logger.debug logFormat:@"Waiting on %@ to dissappear from the process table", process.shortDescription];
+  if (![self.processQuery waitForProcessToDie:process timeout:FBSimulatorControlGlobalConfiguration.fastTimeout]) {
+    // If this is a SIGKILL and it's taken a while for the process to dissapear, perhaps the process isn't
+    // well behaved when responding to other terminating signals.
+    // There's nothing more than can be done with a SIGKILL.
+    if (self.signo == SIGKILL) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Timed out waiting for %@ to dissapear from the process table", process.shortDescription]
+        attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+        logger:self.logger]
+        failBool:error];
+    }
+
+    // Try with SIGKILL instead.
+    NSError *innerError = nil;
+    if (![[FBProcessTerminationStrategy withProcessKilling:self.processQuery signo:SIGKILL logger:self.logger] killProcess:process error:&innerError]) {
+      return [[[[[FBSimulatorError
+        describeFormat:@"Attempted to SIGKILL %@ after failed kill with signo %d", process.shortDescription, self.signo]
+        attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
+        logger:self.logger]
+        causedBy:innerError]
+        failBool:error];
+    }
+    // If we get here, then the process was killed.
   }
-  if (errorCode == EINVAL) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to kill process %@ as the signal was not a valid signal number", process]
-      attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
-      logger:self.logger]
-      failBool:error];
-  }
+
   [self.logger.debug logFormat:@"Killed %@", process.shortDescription];
-  return [[FBSimulatorError describeFormat:@"Failed to kill process %@ with unknown errno %d", process, errorCode] failBool:error];
+  return YES;
 }
 
 - (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
