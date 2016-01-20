@@ -117,9 +117,10 @@
     // Relaunch the Application
     NSError *innerError = nil;
     if (![[simulator.interact launchApplication:launchConfig] performInteractionWithError:&innerError]) {
-      return [[[FBSimulatorError
+      return [[[[FBSimulatorError
         describeFormat:@"Failed to re-launch %@", launchConfig]
         inSimulator:simulator]
+        causedBy:innerError]
         failBool:error];
     }
     return YES;
