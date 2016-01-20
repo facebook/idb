@@ -9,10 +9,12 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+
 /**
  A Value Object for defining how to launch a Simulator.
  */
-@interface FBSimulatorLaunchConfiguration : NSObject <NSCoding, NSCopying>
+@interface FBSimulatorLaunchConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializationDescribeable>
 
 /**
  The Locale in which to Simulate, may be nil.

@@ -133,6 +133,16 @@
   ];
 }
 
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return @{
+    NSStringFromSelector(@selector(scale)) : self.scaleString,
+    NSStringFromSelector(@selector(locale)) : self.locale.localeIdentifier ?: NSNull.null
+  };
+}
+
 #pragma mark Accessors
 
 - (NSString *)scaleString
