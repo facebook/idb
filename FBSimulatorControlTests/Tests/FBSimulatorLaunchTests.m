@@ -49,10 +49,8 @@
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:session.simulator];
 
-  [self assertInteractionSuccessful:session.interact.terminateLastLaunchedApplication];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
-
   [self assertInteractionSuccessful:session.interact.relaunchLastLaunchedApplication];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
 
   [self.assert noNotificationsToConsume];
