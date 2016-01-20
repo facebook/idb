@@ -97,7 +97,15 @@
 
 - (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error
 {
-  // The kill was successful, all is well.
+  FBProcessInfo *actualProcess = [self.processQuery processInfoFor:process.processIdentifier];
+  if (![actualProcess isEqual:process]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Avoiding killing %@ as it differs from the actual process %@", process.debugDescription, actualProcess.debugDescription]
+      logger:self.logger]
+      failBool:error];
+  }
+
+  // Kill the process with kill(2).
   [self.logger.debug logFormat:@"Killing %@", process.shortDescription];
   if (kill(process.processIdentifier, SIGTERM) == 0) {
     return YES;

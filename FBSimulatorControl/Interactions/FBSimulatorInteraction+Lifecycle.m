@@ -15,6 +15,7 @@
 #import "FBInteraction+Private.h"
 #import "FBProcessInfo.h"
 #import "FBProcessLaunchConfiguration.h"
+#import "FBProcessTerminationStrategy.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
@@ -187,12 +188,10 @@
       [simulator.eventSink agentDidTerminate:process expected:YES];
     }
 
-    int returnCode = kill(process.processIdentifier, signo);
-    if (returnCode != 0) {
-      return [[[FBSimulatorError describeFormat:@"SIGKILL of %@ failed", process] inSimulator:simulator] failBool:error];
-    }
-    if (![simulator.processQuery waitForProcessToDie:process timeout:20]) {
-      return [[[FBSimulatorError describeFormat:@"Termination of process %@ failed in waiting for process to dissappear", process] inSimulator:simulator] failBool:error];
+    // Use FBProcessTerminationStrategy to do the actual process killing.
+    NSError *innerError = nil;
+    if (![[FBProcessTerminationStrategy withProcessKilling:simulator.processQuery logger:simulator.logger] killProcess:process error:&innerError]) {
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
     return YES;
