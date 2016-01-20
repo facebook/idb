@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 
 @class FBSimulator;
@@ -18,7 +19,7 @@
 /**
  An abstract value object for launching both agents and applications
  */
-@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable>
+@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
@@ -39,16 +40,6 @@
  The file path where the stderr of the launched process should be written. May be nil.
  */
 @property (nonatomic, copy, readonly) NSString *stdErrPath;
-
-/**
- A Full Description of the reciever.
- */
-- (NSString *)debugDescription;
-
-/**
- A Partial Description of the reciever.
- */
-- (NSString *)shortDescription;
 
 @end
 
