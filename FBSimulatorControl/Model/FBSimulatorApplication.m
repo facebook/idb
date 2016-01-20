@@ -104,6 +104,17 @@
   ];
 }
 
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return [self dictionaryWithValuesForKeys:@[
+    NSStringFromSelector(@selector(name)),
+    NSStringFromSelector(@selector(path)),
+    NSStringFromSelector(@selector(architectures))
+  ]];
+}
+
 @end
 
 @implementation FBSimulatorApplication
@@ -198,6 +209,18 @@
     self.path,
     self.binary
   ];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return @{
+    @"name" : self.name,
+    @"bundle_id" : self.bundleID,
+    @"path" : self.path,
+    @"binary" : self.binary.jsonSerializableRepresentation
+  };
 }
 
 @end
