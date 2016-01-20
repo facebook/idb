@@ -152,6 +152,7 @@
 		AAD3051F1BD4D5B10047376E /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AAD3051D1BD4D5B10047376E /* photo0.png */; };
 		AAD305201BD4D5B10047376E /* photo1.png in Resources */ = {isa = PBXBuildFile; fileRef = AAD3051E1BD4D5B10047376E /* photo1.png */; };
 		AAD497851C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAD497871C50F0FD00ABC1A7 /* FBDebugDescribeable.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497861C50F0FD00ABC1A7 /* FBDebugDescribeable.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAD51E9F1C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD51E9D1C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAD51EA01C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AAD51E9E1C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.m */; };
 		AAD51EA31C3AEFEA00A763D0 /* FBSimulatorLaunchConfiguration+Helpers.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD51EA11C3AEFEA00A763D0 /* FBSimulatorLaunchConfiguration+Helpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -939,6 +940,7 @@
 		AAD3051D1BD4D5B10047376E /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
 		AAD3051E1BD4D5B10047376E /* photo1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo1.png; sourceTree = "<group>"; };
 		AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONSerializationDescribeable.h; sourceTree = "<group>"; };
+		AAD497861C50F0FD00ABC1A7 /* FBDebugDescribeable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDebugDescribeable.h; sourceTree = "<group>"; };
 		AAD51E9D1C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorLaunchConfiguration.h; sourceTree = "<group>"; };
 		AAD51E9E1C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorLaunchConfiguration.m; sourceTree = "<group>"; };
 		AAD51EA11C3AEFEA00A763D0 /* FBSimulatorLaunchConfiguration+Helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorLaunchConfiguration+Helpers.h"; sourceTree = "<group>"; };
@@ -1811,6 +1813,7 @@
 		AA95170A1C15F54600A89CAD /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				AAD497861C50F0FD00ABC1A7 /* FBDebugDescribeable.h */,
 				AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */,
 				AA95170E1C15F54600A89CAD /* FBSimulatorApplication.h */,
 				AA95170F1C15F54600A89CAD /* FBSimulatorApplication.m */,
@@ -2022,6 +2025,7 @@
 				AA9517741C15F54600A89CAD /* FBSimulatorInteraction.h in Headers */,
 				AA95174E1C15F54600A89CAD /* FBSimulatorConfiguration+CoreSimulator.h in Headers */,
 				AA95176E1C15F54600A89CAD /* FBSimulatorInteraction+Setup.h in Headers */,
+				AAD497871C50F0FD00ABC1A7 /* FBDebugDescribeable.h in Headers */,
 				AA9517531C15F54600A89CAD /* FBSimulatorControlConfiguration.h in Headers */,
 				AA1D653E1C21A9690069F90D /* FBCollectionDescriptions.h in Headers */,
 				AA95177F1C15F54600A89CAD /* FBSimulator.h in Headers */,
