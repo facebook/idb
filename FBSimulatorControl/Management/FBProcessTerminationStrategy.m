@@ -20,6 +20,7 @@
 @interface FBProcessTerminationStrategy ()
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
+@property (nonatomic, assign, readonly) int signo;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 
 @end
@@ -70,19 +71,20 @@
 
 @implementation FBProcessTerminationStrategy
 
-+ (instancetype)withProcessKilling:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withProcessKilling:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;
 {
-  return [[self alloc] initWithProcessQuery:processQuery logger:logger];
+  return [[self alloc] initWithProcessQuery:processQuery signo:signo logger:logger];
 }
 
-+ (instancetype)withRunningApplicationTermination:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withRunningApplicationTermination:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;
 {
-  return [[FBApplicationTerminationStrategy_WorkspaceQuit alloc] initWithProcessQuery:processQuery logger:logger];
+  return [[FBApplicationTerminationStrategy_WorkspaceQuit alloc] initWithProcessQuery:processQuery signo:signo logger:logger];
 }
 
-- (instancetype)initWithProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithProcessQuery:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger
 {
   NSParameterAssert(processQuery);
+  NSAssert(signo > 0 && signo < 32, @"Signal must be greater than 0 (SIGHUP) and less than 32 (SIGUSR2) was %d", signo);
 
   self = [super init];
   if (!self) {
@@ -90,6 +92,7 @@
   }
 
   _processQuery = processQuery;
+  _signo = signo;
   _logger = logger;
 
   return self;
@@ -107,7 +110,7 @@
 
   // Kill the process with kill(2).
   [self.logger.debug logFormat:@"Killing %@", process.shortDescription];
-  if (kill(process.processIdentifier, SIGTERM) == 0) {
+  if (kill(process.processIdentifier, self.signo) == 0) {
     return YES;
   }
   int errorCode = errno;

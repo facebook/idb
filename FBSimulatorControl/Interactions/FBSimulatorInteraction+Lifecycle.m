@@ -190,7 +190,7 @@
 
     // Use FBProcessTerminationStrategy to do the actual process killing.
     NSError *innerError = nil;
-    if (![[FBProcessTerminationStrategy withProcessKilling:simulator.processQuery logger:simulator.logger] killProcess:process error:&innerError]) {
+    if (![[FBProcessTerminationStrategy withProcessKilling:simulator.processQuery signo:signo logger:simulator.logger] killProcess:process error:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 

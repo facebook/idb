@@ -53,8 +53,8 @@
 {
   BOOL useKill = (configuration.options & FBSimulatorManagementOptionsUseProcessKilling) == FBSimulatorManagementOptionsUseProcessKilling;
   FBProcessTerminationStrategy *processTerminationStrategy = useKill
-    ? [FBProcessTerminationStrategy withProcessKilling:processQuery logger:logger]
-    : [FBProcessTerminationStrategy withRunningApplicationTermination:processQuery logger:logger];
+    ? [FBProcessTerminationStrategy withProcessKilling:processQuery signo:SIGKILL logger:logger]
+    : [FBProcessTerminationStrategy withRunningApplicationTermination:processQuery signo:SIGKILL logger:logger];
 
   return [[self alloc] initWithConfiguration:configuration processQuery:processQuery processTerminationStrategy:processTerminationStrategy logger:logger];
 

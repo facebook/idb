@@ -22,20 +22,22 @@
  Uses kill(2) to terminate Applications.
 
  @param processQuery the Process Query object to use.
+ @param signo the signal number to use when killing. See signal(3) for more info
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withProcessKilling:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withProcessKilling:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;
 
 /**
  Uses methods on NSRunningApplication to terminate Applications.
  Uses kill(2) otherwise
 
  @param processQuery the Process Query object to use.
+ @param signo the signal number to use when killing. See signal(3) for more info
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withRunningApplicationTermination:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;;
++ (instancetype)withRunningApplicationTermination:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;;
 
 /**
  Terminates a Process of the provided Process Info.
