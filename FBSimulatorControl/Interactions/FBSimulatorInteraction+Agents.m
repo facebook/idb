@@ -46,7 +46,7 @@
     }
 
     FBProcessInfo *process = [simulator.simDeviceWrapper
-      spawnWithPath:agentLaunch.agentBinary.path
+      spawnLongRunningWithPath:agentLaunch.agentBinary.path
       options:options
       terminationHandler:NULL
       error:&innerError];

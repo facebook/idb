@@ -16,7 +16,12 @@
 @class SimDevice;
 
 /**
- Mirrors the Method Signatures in SimDevice. Augmenting with:
+ A Typedef for a SimDevice Callback.
+ */
+typedef void (^FBSimDeviceWrapperCallback)(void);
+
+/**
+ Augments methods in CoreSimulator with:
  - More informative return values.
  - Implementations that are more resiliant to failure in CoreSimulator.
  */
@@ -75,16 +80,29 @@
 - (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error;
 
 /**
- Spawns a binary on the Simulator.
- Will time out with an error if CoreSimulator gets stuck in a semaphore and timeout resiliance is enabled.
+ Spawns an long-lived executable on the Simulator.
+ The Task should not terminate in less than a few seconds, as Process Info will be obtained.
 
  @param launchPath the path to the binary.
  @param options the Options to use in the launch.
- @param terminationHandler ?????
+ @param terminationHandler a Termination Handler for when the process dies.
  @param error an error out for any error that occured.
  @return the Process Identifier of the launched process, -1 otherwise.
  */
-- (FBProcessInfo *)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error;
+- (FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(FBSimDeviceWrapperCallback)terminationHandler error:(NSError **)error;
+
+/**
+ Spawns an short-lived executable on the Simulator.
+ The Process Identifier of the task will be returned, but will be invalid by the time it is returned if the process is short-lived.
+ Will block for timeout seconds to confirm that the process terminates
+
+ @param launchPath the path to the binary.
+ @param options the Options to use in the launch.
+ @param timeout the number of seconds to wait for the process to terminate.
+ @param error an error out for any error that occured.
+ @return the Process Identifier of the launched process, -1 otherwise.
+ */
+- (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(NSDictionary *)options timeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
  Adds a Video to the Camera Roll.
