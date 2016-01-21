@@ -72,7 +72,7 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    NSDictionary *options = [appLaunch agentLaunchOptionsWithStdOut:stdOut stdErr:stdErr error:error];
+    NSDictionary *options = [appLaunch simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
     if (!options) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }

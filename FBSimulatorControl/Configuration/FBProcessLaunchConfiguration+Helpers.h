@@ -54,9 +54,8 @@
 
  @param stdOut the stdout to use, may be nil.
  @param stdErr the stderr to use, may be nil.
- @param error an out param for any error that occurred.
  @return a Dictionary if successful, nil otherwise.
  */
-- (NSDictionary *)agentLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr error:(NSError **)error;
+- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
 
 @end
