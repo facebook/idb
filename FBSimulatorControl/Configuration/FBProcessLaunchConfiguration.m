@@ -117,24 +117,24 @@
 
 + (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
-  return [self configurationWithBundleID:application.bundleID arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  return [self configurationWithBundleID:application.bundleID bundleName:application.name arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
 }
 
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment
 {
-  return [self configurationWithBundleID:bundleID arguments:arguments environment:environment stdOutPath:nil stdErrPath:nil];
+  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment stdOutPath:nil stdErrPath:nil];
 }
 
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   if (!bundleID || !arguments || !environment) {
     return nil;
   }
 
-  return [[self alloc] initWithBundleID:bundleID arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
 }
 
-- (instancetype)initWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
+- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   self = [super initWithArguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
   if (!self) {
@@ -142,6 +142,7 @@
   }
 
   _bundleID = bundleID;
+  _bundleName = bundleName;
 
   return self;
 }
@@ -151,8 +152,8 @@
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"App Launch %@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",
-    self.bundleID,
+    @"%@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",
+    self.shortDescription,
     self.arguments,
     self.environment,
     self.stdOutPath,
@@ -162,7 +163,7 @@
 
 - (NSString *)shortDescription
 {
-  return [NSString stringWithFormat:@"App Launch %@", self.bundleID];
+  return [NSString stringWithFormat:@"App Launch %@ (%@)", self.bundleID, self.bundleName];
 }
 
 #pragma mark NSCopying
@@ -171,6 +172,7 @@
 {
   return [[self.class alloc]
     initWithBundleID:self.bundleID
+    bundleName:self.bundleName
     arguments:self.arguments
     environment:self.environment
     stdOutPath:self.stdOutPath
@@ -187,6 +189,7 @@
   }
 
   _bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
+  _bundleName = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleName))];
 
   return self;
 }
@@ -196,19 +199,21 @@
   [super encodeWithCoder:coder];
 
   [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
+  [coder encodeObject:self.bundleName forKey:NSStringFromSelector(@selector(bundleName))];
 }
 
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return [super hash] ^ self.bundleID.hash;
+  return [super hash] ^ self.bundleID.hash ^ self.bundleName.hash;
 }
 
 - (BOOL)isEqual:(FBApplicationLaunchConfiguration *)object
 {
   return [super isEqual:object] &&
-         [self.bundleID isEqualToString:object.bundleID];
+         [self.bundleID isEqualToString:object.bundleID] &&
+         (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]);
 }
 
 @end

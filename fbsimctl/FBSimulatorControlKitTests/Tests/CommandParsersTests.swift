@@ -263,7 +263,7 @@ class InteractionParserTests : XCTestCase {
       (["diagnose"], Interaction.Diagnose),
       (["delete"], Interaction.Delete),
       (["install", Fixtures.application().path], Interaction.Install(Fixtures.application())),
-      (["launch", Fixtures.application().path], Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: [], environment: [:]))),
+      (["launch", Fixtures.application().path], Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))),
       (["launch", Fixtures.binary().path], Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:])))
     ])
   }
@@ -325,25 +325,25 @@ class ActionParserTests : XCTestCase {
   }
 
   func testParsesAppLaunchByPath() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: [], environment: [:]))
+    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))
     let suffix: [String] = ["launch", Fixtures.application().path]
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
   func testParsesAppLaunchByPathWithArguments() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(application: Fixtures.application(), arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
     let suffix: [String] = ["launch", Fixtures.application().path, "--foo", "-b", "-a", "-r"]
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
   func testParsesAppLaunchByBundleID() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", arguments: [], environment: [:]))
+    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
     let suffix: [String] = ["launch", "com.foo.bar"]
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
   func testParsesAppLaunchByBundleIDArguments() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
     let suffix: [String] = ["launch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }

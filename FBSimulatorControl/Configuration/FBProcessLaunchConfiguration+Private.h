@@ -21,6 +21,7 @@
 @interface FBApplicationLaunchConfiguration ()
 
 @property (nonatomic, copy, readwrite) NSString *bundleID;
+@property (nonatomic, copy, readwrite) NSString *bundleName;
 
 @end
 
