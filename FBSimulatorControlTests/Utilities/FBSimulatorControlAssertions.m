@@ -73,6 +73,18 @@
   XCTAssertNil(simulator.containerApplication);
 }
 
+#pragma mark Processes
+
+- (void)assertLastLaunchedApplicationIsRunning:(FBSimulator *)simulator
+{
+  FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
+  XCTAssertTrue(process.processIdentifier);
+  NSError *error = nil;
+  BOOL isRunning = [simulator.launchctl processIsRunningOnSimulator:process error:nil];
+  XCTAssertTrue(isRunning);
+  XCTAssertNil(error);
+}
+
 @end
 
 @interface FBSimulatorControlNotificationAssertions ()

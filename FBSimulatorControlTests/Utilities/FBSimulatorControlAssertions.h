@@ -58,6 +58,13 @@
  */
 - (void)assertSimulatorShutdown:(FBSimulator *)simulator;
 
+#pragma mark Processes
+
+/**
+ Assertion failure if there isn't a last launched application or launchctl isn't aware of the process.
+ */
+- (void)assertLastLaunchedApplicationIsRunning:(FBSimulator *)simulator;
+
 @end
 
 /**
