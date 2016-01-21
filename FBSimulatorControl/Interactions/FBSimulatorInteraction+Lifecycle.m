@@ -30,6 +30,7 @@
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorTerminationStrategy.h"
@@ -188,11 +189,25 @@
       [simulator.eventSink agentDidTerminate:process expected:YES];
     }
 
-    // Use FBProcessTerminationStrategy to do the actual process killing.
+    // Use FBProcessTerminationStrategy to do the actual process killing
+    // as it has more intelligent backoff strategies and error messaging.
     NSError *innerError = nil;
     if (![[FBProcessTerminationStrategy withProcessKilling:simulator.processQuery signo:signo logger:simulator.logger] killProcess:process error:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
+
+    // Ensure that the Simulator's launchctl knows that the process is gone
+    // Killing the process should guarantee that tha Simulator knows that the process has terminated.
+    [simulator.logger.debug logFormat:@"Waiting for %@ to be removed from launchctl", process.shortDescription];
+    BOOL isGoneFromLaunchCtl = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
+      return ![simulator.launchctl processIsRunningOnSimulator:process error:nil];
+    }];
+    if (!isGoneFromLaunchCtl) {
+      return [[FBSimulatorError
+        describeFormat:@"Process %@ did not get removed from launchctl", process.shortDescription]
+        failBool:error];
+    }
+    [simulator.logger.debug logFormat:@"%@ has been removed from launchctl", process.shortDescription];
 
     return YES;
   }];

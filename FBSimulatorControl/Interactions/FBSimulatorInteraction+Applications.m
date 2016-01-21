@@ -21,12 +21,15 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Lifecycle.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
+#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorInteraction (Applications)
 
@@ -139,7 +142,7 @@
     NSError *innerError = nil;
     if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
       return [[[[FBSimulatorError
-        describeFormat:@"Failed to terminate app  %@", process.shortDescription]
+        describeFormat:@"Failed to terminate app %@", process.shortDescription]
         causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
