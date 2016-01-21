@@ -19,9 +19,6 @@
 
 - (instancetype)initWithArguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
-  NSParameterAssert(arguments);
-  NSParameterAssert(environment);
-
   self = [super init];
   if (!self) {
     return nil;
@@ -139,8 +136,6 @@
 
 - (instancetype)initWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
-  NSParameterAssert(bundleID);
-
   self = [super initWithArguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
   if (!self) {
     return nil;

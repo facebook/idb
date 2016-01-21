@@ -17,3 +17,15 @@
 @property (nonatomic, copy, readwrite) NSString *stdErrPath;
 
 @end
+
+@interface FBApplicationLaunchConfiguration ()
+
+@property (nonatomic, copy, readwrite) NSString *bundleID;
+
+@end
+
+@interface FBAgentLaunchConfiguration ()
+
+@property (nonatomic, copy, readwrite) FBSimulatorBinary *agentBinary;
+
+@end
