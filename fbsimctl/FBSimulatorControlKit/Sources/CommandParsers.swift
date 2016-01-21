@@ -322,7 +322,7 @@ extension Interaction : Parsable {
         self.argumentParser()
       )
       .fmap { (bundleID, arguments) in
-        return FBApplicationLaunchConfiguration(bundleID: bundleID, arguments: arguments, environment : [:])
+        return FBApplicationLaunchConfiguration(bundleID: bundleID, bundleName: nil, arguments: arguments, environment : [:])
       }
   }
 
