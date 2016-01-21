@@ -119,4 +119,8 @@
  */
 - (NSSet *)requiredProcessNamesToVerifyBooted;
 
+/**
+ Returns the home folder of the last application launched
+ */
+- (NSString *)homeDirectoryOfLastLaunchedApplication;
 @end

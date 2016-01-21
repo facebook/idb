@@ -19,6 +19,7 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
@@ -192,6 +193,13 @@
     ]];
   }
   return [NSSet set];
+}
+
+- (NSString *)homeDirectoryOfLastLaunchedApplication
+{
+  FBProcessInfo* processInfo = [self.history lastLaunchedApplicationProcess];
+  NSDictionary* environment = processInfo.environment;
+  return environment[@"HOME"];
 }
 
 @end
