@@ -47,4 +47,21 @@
  */
 - (instancetype)openURL:(NSURL *)url;
 
+/**
+ Sends a signal(3) to the Process, verifying that is is a subprocess of the Simulator.
+
+ @param signo the unix signo to send.
+ @param process the process to send a Signal to.
+ @return the reciever, for chaining.
+ */
+- (instancetype)signal:(int)signo process:(FBProcessInfo *)process;
+
+/**
+ SIGKILL's the provided Process, verifying that is is a subprocess of the Simulator.
+
+ @param process the Process to kill.
+ @return the reciever, for chaining.
+ */
+- (instancetype)killProcess:(FBProcessInfo *)process;
+
 @end

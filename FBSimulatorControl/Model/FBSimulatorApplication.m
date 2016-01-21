@@ -360,6 +360,12 @@
 + (instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
   NSError *innerError = nil;
+  if (![NSFileManager.defaultManager fileExistsAtPath:binaryPath]) {
+    return [[FBSimulatorError
+      describeFormat:@"Binary does not exist at path %@", binaryPath]
+      fail:error];
+  }
+
   NSSet *archs = [FBBinaryParser architecturesForBinaryAtPath:binaryPath error:&innerError];
   if (archs.count < 1) {
     return [FBSimulatorError failWithError:innerError errorOut:error];

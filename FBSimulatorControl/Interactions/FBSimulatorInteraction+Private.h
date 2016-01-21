@@ -19,6 +19,15 @@
 /**
  Chains an interaction on an process, for the given application.
 
+ @param process the process to interact with.
+ @param block the block to execute with the process.
+ @return the reciever, for chaining.
+ */
+- (instancetype)process:(FBProcessInfo *)process interact:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+
+/**
+ Chains an interaction on an process, for the given binary.
+
  @param binary the binary to interact with.
  @param block the block to execute with the process.
  @return the reciever, for chaining.

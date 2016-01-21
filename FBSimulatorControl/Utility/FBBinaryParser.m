@@ -166,6 +166,9 @@ static inline NSArray *ReadArchs(FILE *file, uint32_t magic)
 + (NSSet *)architecturesForBinaryAtPath:(NSString *)binaryPath error:(NSError **)error
 {
   FILE *file = fopen(binaryPath.UTF8String, "rb");
+  if (file == NULL) {
+    return [[FBSimulatorError describeFormat:@"Could not fopen file at path %@", binaryPath] fail:error];
+  }
 
   // Seek to and read the magic.
   rewind(file);

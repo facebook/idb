@@ -102,17 +102,16 @@
 {
   return [[FBProcessInfo alloc]
     initWithProcessIdentifier:42
-    launchPath:self.appLaunch1.application.binary.path
+    launchPath:self.tableSearchApplication.binary.path
     arguments:self.appLaunch1.arguments
     environment:self.appLaunch1.environment];
-
 }
 
 - (FBProcessInfo *)processInfo2
 {
   return [[FBProcessInfo alloc]
     initWithProcessIdentifier:20
-    launchPath:self.appLaunch2.application.binary.path
+    launchPath:self.safariApplication.binary.path
     arguments:self.appLaunch2.arguments
     environment:self.appLaunch2.environment];
 }
@@ -121,7 +120,7 @@
 {
   return [[FBProcessInfo alloc]
     initWithProcessIdentifier:30
-    launchPath:self.appLaunch2.application.binary.path
+    launchPath:self.safariApplication.binary.path
     arguments:self.appLaunch2.arguments
     environment:self.appLaunch2.environment];
 }

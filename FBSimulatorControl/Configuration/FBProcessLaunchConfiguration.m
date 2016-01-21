@@ -120,39 +120,44 @@
 
 + (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
-  if (!application || !arguments || !environment) {
+  return [self configurationWithBundleID:application.bundleID arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+}
+
++ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment
+{
+  return [self configurationWithBundleID:bundleID arguments:arguments environment:environment stdOutPath:nil stdErrPath:nil];
+}
+
++ (instancetype)configurationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
+{
+  if (!bundleID || !arguments || !environment) {
     return nil;
   }
 
-  return [[self alloc] initWithApplication:application arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  return [[self alloc] initWithBundleID:bundleID arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
 }
 
-- (instancetype)initWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
+- (instancetype)initWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
-  NSParameterAssert(application);
+  NSParameterAssert(bundleID);
 
   self = [super initWithArguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
   if (!self) {
     return nil;
   }
 
-  _application = application;
+  _bundleID = bundleID;
 
   return self;
 }
 
 #pragma mark Abstract Methods
 
-- (NSString *)launchPath
-{
-  return self.application.binary.path;
-}
-
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"App Launch | Application %@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",
-    self.application,
+    @"App Launch %@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",
+    self.bundleID,
     self.arguments,
     self.environment,
     self.stdOutPath,
@@ -162,7 +167,7 @@
 
 - (NSString *)shortDescription
 {
-  return [NSString stringWithFormat:@"App Launch %@", self.application.name];
+  return [NSString stringWithFormat:@"App Launch %@", self.bundleID];
 }
 
 #pragma mark NSCopying
@@ -170,7 +175,7 @@
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc]
-    initWithApplication:self.application
+    initWithBundleID:self.bundleID
     arguments:self.arguments
     environment:self.environment
     stdOutPath:self.stdOutPath
@@ -186,7 +191,7 @@
     return nil;
   }
 
-  _application = [coder decodeObjectForKey:NSStringFromSelector(@selector(application))];
+  _bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
 
   return self;
 }
@@ -195,19 +200,20 @@
 {
   [super encodeWithCoder:coder];
 
-  [coder encodeObject:self.application forKey:NSStringFromSelector(@selector(application))];
+  [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
 }
 
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return [super hash] | self.application.hash;
+  return [super hash] ^ self.bundleID.hash;
 }
 
 - (BOOL)isEqual:(FBApplicationLaunchConfiguration *)object
 {
-  return [super isEqual:object] && [self.application isEqual:object.application];
+  return [super isEqual:object] &&
+         [self.bundleID isEqualToString:object.bundleID];
 }
 
 @end

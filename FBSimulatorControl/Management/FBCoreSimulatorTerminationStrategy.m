@@ -40,7 +40,7 @@
 
   _processQuery = processQuery;
   _logger = logger;
-  _processTerminationStrategy = [FBProcessTerminationStrategy withProcessKilling:processQuery logger:logger];
+  _processTerminationStrategy = [FBProcessTerminationStrategy withProcessKilling:processQuery signo:SIGKILL logger:logger];
 
   return self;
 }

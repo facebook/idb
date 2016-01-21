@@ -72,6 +72,23 @@
   return [self interactWithSimulatorAtState:FBSimulatorStateBooted block:block];
 }
 
+- (instancetype)process:(FBProcessInfo *)process interact:(BOOL (^)(NSError **error, FBSimulator *simulator))block
+{
+  NSParameterAssert(process);
+  NSParameterAssert(block);
+
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess;
+    pid_t ppid = [simulator.processQuery parentOf:process.processIdentifier];
+    if (launchdSimProcess.processIdentifier != ppid) {
+      return [[FBSimulatorError
+        describeFormat:@"Process %@ has parent %d but should have parent %@", process.shortDescription, ppid, launchdSimProcess.shortDescription]
+        failBool:error];
+    }
+    return block(error, simulator);
+  }];
+}
+
 - (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
 {
   NSParameterAssert(binary);

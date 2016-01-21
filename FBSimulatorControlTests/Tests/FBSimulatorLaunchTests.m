@@ -49,10 +49,8 @@
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:session.simulator];
 
-  [self assertInteractionSuccessful:session.interact.terminateLastLaunchedApplication];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
-
   [self assertInteractionSuccessful:session.interact.relaunchLastLaunchedApplication];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
 
   [self.assert noNotificationsToConsume];
@@ -61,10 +59,11 @@
 - (void)testLaunchesSampleApplication
 {
   FBSimulatorSession *session = [self createSession];
+  FBSimulatorApplication *application = self.tableSearchApplication;
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
 
   [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[[[session.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:appLaunch.application] launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[[[session.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:application] launchApplication:appLaunch]];
   [self assertLastLaunchedApplicationIsRunning:session.simulator];
 
   [self.assert bootingNotificationsFired];

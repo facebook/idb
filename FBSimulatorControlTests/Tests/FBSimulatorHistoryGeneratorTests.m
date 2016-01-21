@@ -83,7 +83,7 @@
   [self.generator diagnosticInformationAvailable:@"SECRIT" process:self.processInfo1 value:diagnostic];
   FBSimulatorHistory *history = self.generator.history;
 
-  XCTAssertEqualObjects(diagnostic, [history diagnosticNamed:@"SECRIT" forApplication:self.appLaunch1.application]);
+  XCTAssertEqualObjects(diagnostic, [history diagnosticNamed:@"SECRIT" forApplication:self.tableSearchApplication]);
 }
 
 - (void)testDiagnosticInformationForTerminatedProcessIsAvailable
@@ -95,7 +95,7 @@
   [self.generator applicationDidTerminate:self.processInfo1 expected:NO];
   FBSimulatorHistory *history = self.generator.history;
 
-  XCTAssertEqualObjects(diagnostic, [history diagnosticNamed:@"SECRIT" forApplication:self.appLaunch1.application]);
+  XCTAssertEqualObjects(diagnostic, [history diagnosticNamed:@"SECRIT" forApplication:self.tableSearchApplication]);
 }
 
 - (void)testChangesToSimulatorState

@@ -21,11 +21,15 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
+#import "FBSimulatorInteraction+Lifecycle.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
+#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorInteraction (Applications)
 
@@ -57,10 +61,10 @@
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.application.bundleID error:&innerError];
+    FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
     if (!application) {
       return [[[[FBSimulatorError
-        describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.application.bundleID]
+        describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
         causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
@@ -77,7 +81,7 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    FBProcessInfo *process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.application.bundleID options:options error:&innerError];
+    FBProcessInfo *process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.bundleID options:options error:&innerError];
     if (!process) {
       return [[[[FBSimulatorError describeFormat:@"Failed to launch application %@", appLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
     }
@@ -86,50 +90,37 @@
   }];
 }
 
-- (instancetype)killApplication:(FBSimulatorApplication *)application
-{
-  return [self signal:SIGKILL application:application];
-}
-
-- (instancetype)signal:(int)signo application:(FBSimulatorApplication *)application
-{
-  NSParameterAssert(application);
-
-  return [self binary:application.binary interact:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
-    [simulator.eventSink applicationDidTerminate:process expected:YES];
-    int returnCode = kill(process.processIdentifier, signo);
-    if (returnCode != 0) {
-      return [[[FBSimulatorError describeFormat:@"SIGKILL of %@ failed", process] inSimulator:simulator] failBool:error];
-    }
-    if (![simulator.processQuery waitForProcessToDie:process timeout:20]) {
-      return [[[FBSimulatorError describeFormat:@"Termination of process %@ failed in waiting for process to dissappear", process] inSimulator:simulator] failBool:error];
-    }
-
-    return YES;
-  }];
-}
-
 - (instancetype)relaunchLastLaunchedApplication
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    // Obtain Application Launch info for the last launch.
-    FBApplicationLaunchConfiguration *launchConfig = simulator.history.lastLaunchedApplication;
-    if (!launchConfig) {
+    // Obtain Process Info for the last launch.
+    FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
+    if (!process) {
       return [[[FBSimulatorError
-        describe:@"Cannot re-launch an Application until one has been launched"]
+        describe:@"Cannot re-launch an Application until one has been launched; there's no process info"]
+        inSimulator:simulator]
+        failBool:error];
+    }
+
+    // Obtain the Launch Config for this launch.
+    FBApplicationLaunchConfiguration *launchConfig = simulator.history.processLaunchConfigurations[process];
+    if (!process) {
+      return [[[FBSimulatorError
+        describe:@"Cannot re-launch an Application until one has been launched; there's no process launch config"]
         inSimulator:simulator]
         failBool:error];
     }
 
     // Kill the Application if it exists. Failure can be ignored since the App may have allready been terminated.
-    [[[simulator.interact killApplication:launchConfig.application] ignoreFailure] performInteractionWithError:nil];
+    [[[simulator.interact killProcess:process] ignoreFailure] performInteractionWithError:nil];
 
     // Relaunch the Application
     NSError *innerError = nil;
     if (![[simulator.interact launchApplication:launchConfig] performInteractionWithError:&innerError]) {
-      return [[[FBSimulatorError
+      return [[[[FBSimulatorError
         describeFormat:@"Failed to re-launch %@", launchConfig]
         inSimulator:simulator]
+        causedBy:innerError]
         failBool:error];
     }
     return YES;
@@ -140,8 +131,8 @@
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     // Obtain Application Launch info for the last launch.
-    FBApplicationLaunchConfiguration *launchConfig = simulator.history.lastLaunchedApplication;
-    if (!launchConfig) {
+    FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
+    if (!process) {
       return [[[FBSimulatorError
         describe:@"Cannot re-launch an Application until one has been launched"]
         inSimulator:simulator]
@@ -150,9 +141,9 @@
 
     // Kill the Application
     NSError *innerError = nil;
-    if (![[simulator.interact killApplication:launchConfig.application] performInteractionWithError:&innerError]) {
+    if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
       return [[[[FBSimulatorError
-        describeFormat:@"Failed to terminate the app launched with %@", launchConfig]
+        describeFormat:@"Failed to terminate app %@", process.shortDescription]
         causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
