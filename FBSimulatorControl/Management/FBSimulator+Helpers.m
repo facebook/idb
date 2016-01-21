@@ -20,6 +20,7 @@
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
+#import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
@@ -156,6 +157,11 @@
 - (FBSimDeviceWrapper *)simDeviceWrapper
 {
   return [FBSimDeviceWrapper withSimulator:self configuration:self.pool.configuration processQuery:self.processQuery];
+}
+
+- (FBSimulatorLaunchCtl *)launchctl
+{
+  return [FBSimulatorLaunchCtl withSimulator:self];
 }
 
 - (NSArray *)launchdSimSubprocesses
