@@ -11,6 +11,8 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <libkern/OSAtomic.h>
+
 #import "FBAddVideoPolyfill.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Helpers.h"
@@ -224,9 +226,33 @@
   return [self.simulator.device installApplication:appURL withOptions:options error:error];
 }
 
-- (FBProcessInfo *)spawnWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(id)terminationHandler error:(NSError **)error
+- (FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(FBSimDeviceWrapperCallback)terminationHandler error:(NSError **)error
 {
   return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
+}
+
+- (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(NSDictionary *)options timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  __block volatile uint32_t hasTerminated = 0;
+  FBSimDeviceWrapperCallback terminationHandler = ^() {
+    OSAtomicOr32Barrier(1, &hasTerminated);
+  };
+
+  pid_t processIdentifier = [self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error];
+  if (processIdentifier <= 0) {
+    return processIdentifier;
+  }
+
+  BOOL successfulWait = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+    return hasTerminated == 1;
+  }];
+  if (!successfulWait) {
+    return [[FBSimulatorError
+      describeFormat:@"Short Live process of pid %d of launch %@ with options %@ did not terminate in '%f' seconds", processIdentifier, launchPath, options, timeout]
+      failBool:error];
+  }
+
+  return processIdentifier;
 }
 
 - (BOOL)addVideos:(NSArray *)paths error:(NSError **)error

@@ -12,6 +12,7 @@
 @class FBSimDeviceWrapper;
 @class FBSimulatorApplication;
 @class FBSimulatorInteraction;
+@class FBSimulatorLaunchCtl;
 
 @interface FBSimulator (Helpers)
 
@@ -95,8 +96,14 @@
  */
 - (FBSimDeviceWrapper *)simDeviceWrapper;
 
+/**
+ Creates a FBSimulatorLaunchCtl for the Simulator.
+ */
+- (FBSimulatorLaunchCtl *)launchctl;
+
 /*
  The Subprocesses of the launchd_sim process.
+ Constructs this information from the kernel's Process Table.
  */
 - (NSArray *)launchdSimSubprocesses;
 

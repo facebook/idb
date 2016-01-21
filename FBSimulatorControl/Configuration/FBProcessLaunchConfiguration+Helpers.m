@@ -94,7 +94,7 @@
   return YES;
 }
 
-- (NSDictionary *)agentLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr error:(NSError **)error
+- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
   NSMutableDictionary *options = [@{
     @"arguments" : self.arguments,

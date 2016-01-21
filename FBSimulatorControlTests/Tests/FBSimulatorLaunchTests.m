@@ -65,6 +65,11 @@
 
   [self.assert consumeAllNotifications];
   [self assertInteractionSuccessful:[[[session.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:appLaunch.application] launchApplication:appLaunch]];
+  [self assertLastLaunchedApplicationIsRunning:session.simulator];
+
+  FBProcessInfo *process = session.simulator.history.lastLaunchedApplicationProcess;
+  XCTAssertTrue(process.processIdentifier);
+  XCTAssertTrue([session.simulator.launchctl processIsRunningOnSimulator:process error:nil]);
 
   [self.assert bootingNotificationsFired];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];

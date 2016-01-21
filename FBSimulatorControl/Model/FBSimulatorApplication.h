@@ -113,7 +113,8 @@
 + (instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
 
 /**
- Returns the FBSimulatorApplication for the current version of Xcode's Simulator.app
+ Returns the FBSimulatorApplication for the current version of Xcode's Simulator.app.
+ Will assert if the FBSimulatorApplication instance could not be constructed.
 
  @return A FBSimulatorApplication instance for the Simulator.app.
  */
@@ -139,5 +140,13 @@
  Returns the FBSimulatorBinary for the given binary path
  */
 + (instancetype)binaryWithPath:(NSString *)path error:(NSError **)error;
+
+/**
+ Returns the launchctl for the current version of Xcode's of the Simulator Platform.
+ Will assert if the FBSimulatorBinary instance could not be constructed.
+
+ @return a FBSimulatorBinary instance launchctl.
+ */
++ (instancetype)launchCtl;
 
 @end

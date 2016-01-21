@@ -40,13 +40,13 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    NSDictionary *options = [agentLaunch agentLaunchOptionsWithStdOut:stdOut stdErr:stdErr error:error];
+    NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
     if (!options) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
     FBProcessInfo *process = [simulator.simDeviceWrapper
-      spawnWithPath:agentLaunch.agentBinary.path
+      spawnLongRunningWithPath:agentLaunch.agentBinary.path
       options:options
       terminationHandler:NULL
       error:&innerError];
