@@ -207,7 +207,7 @@
 
 - (NSUInteger)hash
 {
-  return [super hash] | self.bundleID.hash;
+  return [super hash] ^ self.bundleID.hash;
 }
 
 - (BOOL)isEqual:(FBApplicationLaunchConfiguration *)object
