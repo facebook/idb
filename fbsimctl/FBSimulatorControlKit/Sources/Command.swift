@@ -41,7 +41,7 @@ public enum Format {
   }
 
   case HumanReadable([Keywords])
-  case JSON
+  case JSON(Bool)
 }
 
 /**
@@ -135,8 +135,8 @@ public func == (left: Interaction, right: Interaction) -> Bool {
 extension Format : Equatable { }
 public func == (left: Format, right: Format) -> Bool {
   switch (left, right) {
-  case (.JSON, .JSON):
-    return true
+  case (.JSON(let leftPretty), .JSON(let rightPretty)):
+    return leftPretty == rightPretty
   case (.HumanReadable(let leftKeywords), .HumanReadable(let rightKeywords)):
     return leftKeywords == rightKeywords
   default:

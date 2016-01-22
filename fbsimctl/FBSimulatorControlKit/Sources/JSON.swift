@@ -71,16 +71,24 @@ public struct JSON {
     }
   }
 
-  static func serializeToString(object: FBJSONSerializationDescribeable) throws -> String {
+  let pretty: Bool
+
+  func serializeToString(object: FBJSONSerializationDescribeable) throws -> String {
     do {
       let jsonObject = object.jsonSerializableRepresentation()
-      let data = try NSJSONSerialization.dataWithJSONObject(jsonObject, options: NSJSONWritingOptions.PrettyPrinted)
+      let data = try NSJSONSerialization.dataWithJSONObject(jsonObject, options: self.writingOptions)
       guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
         throw Error.Stringifying(data)
       }
       return string as String
     } catch let error as NSError {
       throw Error.Serialization(error)
+    }
+  }
+
+  private var writingOptions: NSJSONWritingOptions {
+    get {
+      return self.pretty ? NSJSONWritingOptions.PrettyPrinted : NSJSONWritingOptions()
     }
   }
 }

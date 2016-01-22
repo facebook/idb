@@ -135,10 +135,12 @@ public class HumanReadableEventReporter : NSObject, EventReporter {
 public class JSONEventReporter : NSObject, EventReporter {
   unowned let simulator: FBSimulator
   let writer: Writer
+  let json: JSON
 
-  init(simulator: FBSimulator, writer: Writer) {
+  init(simulator: FBSimulator, writer: Writer, pretty: Bool) {
     self.simulator = simulator
     self.writer = writer
+    self.json = JSON(pretty: pretty)
     super.init()
     self.simulator.userEventSink = self
   }
@@ -190,7 +192,7 @@ public class JSONEventReporter : NSObject, EventReporter {
   public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     do {
       self.writer.write(
-        try JSON.serializeToString([
+        try self.json.serializeToString([
           "simulator" : self.simulator.jsonSerializableRepresentation(),
           "event_name" : eventName.rawValue,
           "event_type" : eventType.rawValue,
@@ -204,7 +206,7 @@ public class JSONEventReporter : NSObject, EventReporter {
 
   public func simulatorEvent() {
     do {
-      self.writer.write(try JSON.serializeToString(self.simulator))
+      self.writer.write(try self.json.serializeToString(self.simulator))
     } catch {
       
     }

@@ -406,7 +406,11 @@ extension Format : Parsable {
   }
 
   private static func jsonParser() -> Parser<Format> {
-    return Parser.ofString("--json", Format.JSON)
+    return Parser
+      .alternative([
+        Parser.ofString("--json", Format.JSON(false)),
+        Parser.ofString("--json-pretty", Format.JSON(true))
+      ])
   }
 
   private static func keywordsParser() -> Parser<Format> {

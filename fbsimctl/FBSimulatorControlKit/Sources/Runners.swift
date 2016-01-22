@@ -18,8 +18,8 @@ private func buildEventReporter(writer: Writer, format: Format, simulator: FBSim
   switch format {
   case .HumanReadable(let keywords):
     return HumanReadableEventReporter(simulator: simulator, writer: writer, keywords: keywords)
-  case .JSON:
-    return JSONEventReporter(simulator: simulator, writer: writer)
+  case .JSON(let pretty):
+    return JSONEventReporter(simulator: simulator, writer: writer, pretty: pretty)
   }
 }
 

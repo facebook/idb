@@ -70,7 +70,8 @@ class FormatParserTests : XCTestCase {
       (["--os"], .HumanReadable([.OSVersion])),
       (["--state"], .HumanReadable([.State])),
       (["--pid"], .HumanReadable([.ProcessIdentifier])),
-      (["--json"], .JSON),
+      (["--json"], .JSON(false)),
+      (["--json-pretty"], .JSON(true))
     ])
   }
 
@@ -78,7 +79,8 @@ class FormatParserTests : XCTestCase {
     self.assertParsesAll(Format.parser(), [
       (["--name", "--device-name", "--pid"], .HumanReadable([.Name, .DeviceName, .ProcessIdentifier])),
       (["--udid", "--name", "--state", "--device-name", "--os"], .HumanReadable([.UDID, .Name, .State, .DeviceName, .OSVersion])),
-      (["--json", "--name"], .JSON),
+      (["--json", "--name"], .JSON(false)),
+      (["--json-pretty", "--name"], .JSON(true)),
     ])
   }
 
