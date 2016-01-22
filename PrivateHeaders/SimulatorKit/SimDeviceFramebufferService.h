@@ -26,7 +26,6 @@
 + (id)framebufferServiceWithName:(id)arg1 device:(id)arg2 error:(id *)arg3;
 + (id)mainScreenFramebufferServiceForDevice:(id)arg1 error:(id *)arg2;
 @property(readonly, nonatomic) NSObject<OS_dispatch_queue> *executionQueue; // @synthesize executionQueue=_executionQueue;
-- (void).cxx_destruct;
 - (void)requestDeviceDimensions:(struct CGSize)arg1 scaledDimensions:(struct CGSize)arg2;
 - (void)_ON_EXECUTION_QUEUE_didRotateToAngle:(double)arg1;
 - (void)_ON_EXECUTION_QUEUE_didDirtyFramebufferRegion:(struct CGRect)arg1;
@@ -34,7 +33,7 @@
 - (void)_ON_EXECUTION_QUEUE_teardownFramebufferBackingStore;
 - (void)_ON_RECEIVE_QUEUE_didCancelReceiveSource;
 - (void)_ON_RECEIVE_QUEUE_processMachMessage:(void *)arg1;
-- (BOOL)_ON_RECEIVE_QUEUE_sendReplyToRenderServer:(struct PurpleFBMessage *)arg1 error:(id *)arg2;
+- (BOOL)_ON_RECEIVE_QUEUE_sendReplyToRenderServer:(void *)arg1 error:(id *)arg2;
 - (void)_ON_RECEIVE_QUEUE_processMachMessages;
 - (void)_ON_EXECUTION_QUEUE_suspend;
 - (void)suspend;

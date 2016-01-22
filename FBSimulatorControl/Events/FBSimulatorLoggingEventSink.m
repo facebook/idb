@@ -56,6 +56,16 @@
   [self.logger logFormat:@"%@Container Application Did Terminate => %@ Expected %d", self.prefix, applicationProcess.shortDescription, expected];
 }
 
+- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+{
+  [self.logger logFormat:@"%@Framebuffer Did Start => %@", self.prefix, framebuffer];
+}
+
+- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+{
+  [self.logger logFormat:@"%@Framebuffer Did Terminate => %@ Expected %d", self.prefix, framebuffer, expected];
+}
+
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
 {
   [self.logger logFormat:@"%@Simulator Did launch => %@", self.prefix, launchdSimProcess.shortDescription];

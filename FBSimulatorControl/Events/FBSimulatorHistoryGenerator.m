@@ -128,6 +128,15 @@
 {
 }
 
+- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+{
+}
+
+- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+{
+
+}
+
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
 {
 }

@@ -48,6 +48,20 @@
   }
 }
 
+- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+{
+  for (id<FBSimulatorEventSink> sink in self.sinks) {
+    [sink framebufferDidStart:framebuffer];
+  }
+}
+
+- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+{
+  for (id<FBSimulatorEventSink> sink in self.sinks) {
+    [sink framebufferDidTerminate:framebuffer expected:expected];
+  }
+}
+
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {

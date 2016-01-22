@@ -21,6 +21,16 @@
   [self.eventSink containerApplicationDidTerminate:applicationProcess expected:expected];
 }
 
+- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+{
+  [self.eventSink framebufferDidStart:framebuffer];
+}
+
+- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+{
+  [self.eventSink framebufferDidTerminate:framebuffer expected:expected];
+}
+
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
 {
   [self.eventSink simulatorDidLaunch:launchdSimProcess];
