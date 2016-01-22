@@ -16,6 +16,7 @@
 @property (nonatomic, copy, readwrite) NSString *shortName;
 @property (nonatomic, copy, readwrite) NSString *fileType;
 @property (nonatomic, copy, readwrite) NSString *humanReadableName;
+@property (nonatomic, copy, readwrite) NSString *storageDirectory;
 @property (nonatomic, copy, readwrite) NSString *destination;
 
 @property (nonatomic, copy, readwrite) NSData *logData;
@@ -54,27 +55,61 @@
 
 @implementation FBWritableLog
 
+#pragma mark Initializers
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _storageDirectory = [FBWritableLog defaultStorageDirectory];
+
+  return self;
+}
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _shortName = [coder decodeObjectForKey:NSStringFromSelector(@selector(shortName))];
+  _fileType = [coder decodeObjectForKey:NSStringFromSelector(@selector(fileType))];
+  _humanReadableName = [coder decodeObjectForKey:NSStringFromSelector(@selector(humanReadableName))];
+  _storageDirectory = [coder decodeObjectForKey:NSStringFromSelector(@selector(storageDirectory))];
+  _destination = [coder decodeObjectForKey:NSStringFromSelector(@selector(destination))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeObject:self.shortName forKey:NSStringFromSelector(@selector(shortName))];
+  [coder encodeObject:self.fileType forKey:NSStringFromSelector(@selector(fileType))];
+  [coder encodeObject:self.humanReadableName forKey:NSStringFromSelector(@selector(humanReadableName))];
+  [coder encodeObject:self.storageDirectory forKey:NSStringFromSelector(@selector(storageDirectory))];
+  [coder encodeObject:self.destination forKey:NSStringFromSelector(@selector(destination))];
+}
+
+#pragma mark NSCopying
+
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   FBWritableLog *log = [self.class new];
   log.shortName = self.shortName;
   log.fileType = self.fileType;
-  log.destination = self.destination;
   log.humanReadableName = self.humanReadableName;
-  log.logData = self.logData;
-  log.logString = self.logString;
-  log.logPath = self.logPath;
+  log.storageDirectory = self.storageDirectory;
+  log.destination = self.destination;
   return log;
 }
 
-- (NSString *)temporaryFilePath
-{
-  NSString *localUniqueID = self.shortName ?: [NSString stringWithFormat:@"%@_%@", NSUUID.UUID.UUIDString, @"unknown_log"];
-
-  return [[NSTemporaryDirectory()
-    stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@", NSProcessInfo.processInfo.globallyUniqueString, localUniqueID]]
-    stringByAppendingPathExtension:self.fileType ?: @"unknown_log"];
-}
+#pragma mark Public API
 
 - (BOOL)hasLogContent
 {
@@ -84,6 +119,19 @@
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
   return NO;
+}
+
+#pragma mark Private
+
++ (NSString *)defaultStorageDirectory
+{
+  NSString *uniqueDirectory = [NSString stringWithFormat:@"%@_%@", NSProcessInfo.processInfo.globallyUniqueString, NSUUID.UUID.UUIDString];
+  return [NSTemporaryDirectory() stringByAppendingPathComponent:uniqueDirectory];
+}
+
+- (NSString *)temporaryFilePath
+{
+  return [self.storageDirectory stringByAppendingPathExtension:self.fileType ?: @"unknown_log"];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -133,6 +181,37 @@
 
 @implementation FBWritableLog_Data
 
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super initWithCoder:coder];
+  if (!self) {
+    return nil;
+  }
+
+  self.logData = [coder decodeObjectForKey:NSStringFromSelector(@selector(logData))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [super encodeWithCoder:coder];
+  [coder encodeObject:self.logData forKey:NSStringFromSelector(@selector(logData))];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  FBWritableLog_Data *log = [super copyWithZone:zone];
+  log.logData = self.logData;
+  return log;
+}
+
+#pragma mark Public API
+
 - (NSData *)asData
 {
   return self.logData;
@@ -157,6 +236,18 @@
   return self.logPath;
 }
 
+- (BOOL)hasLogContent
+{
+  return self.logData.length >= 1;
+}
+
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  return [self.logData writeToFile:path options:0 error:error];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
@@ -167,10 +258,7 @@
   return dictionary;
 }
 
-- (BOOL)hasLogContent
-{
-  return self.logData.length >= 1;
-}
+#pragma mark FBDebugDescribable
 
 - (NSString *)shortDescription
 {
@@ -188,14 +276,40 @@
   ];
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
-{
-  return [self.logData writeToFile:path options:0 error:error];
-}
-
 @end
 
 @implementation FBWritableLog_String
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super initWithCoder:coder];
+  if (!self) {
+    return nil;
+  }
+
+  self.logString = [coder decodeObjectForKey:NSStringFromSelector(@selector(logString))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [super encodeWithCoder:coder];
+  [coder encodeObject:self.logString forKey:NSStringFromSelector(@selector(logString))];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  FBWritableLog_String *log = [super copyWithZone:zone];
+  log.logString = self.logString;
+  return log;
+}
+
+#pragma mark Public API
 
 - (NSData *)asData
 {
@@ -221,6 +335,18 @@
   return self.logPath;
 }
 
+- (BOOL)hasLogContent
+{
+  return self.logString.length >= 1;
+}
+
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  return [self.logString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
@@ -228,10 +354,7 @@
   return dictionary;
 }
 
-- (BOOL)hasLogContent
-{
-  return self.logString.length >= 1;
-}
+#pragma mark FBDebugDescribable
 
 - (NSString *)shortDescription
 {
@@ -250,14 +373,40 @@
   ];
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
-{
-  return [self.logString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
-}
-
 @end
 
 @implementation FBWritableLog_Path
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super initWithCoder:coder];
+  if (!self) {
+    return nil;
+  }
+
+  self.logPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(logPath))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [super encodeWithCoder:coder];
+  [coder encodeObject:self.logPath forKey:NSStringFromSelector(@selector(logPath))];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  FBWritableLog_Path *log = [super copyWithZone:zone];
+  log.logPath = self.logPath;
+  return log;
+}
+
+#pragma mark Public API
 
 - (NSData *)asData
 {
@@ -369,6 +518,21 @@
   return self;
 }
 
+- (instancetype)updateHumanReadableName:(NSString *)humanReadableName
+{
+  self.writableLog.humanReadableName = humanReadableName;
+  return self;
+}
+
+- (instancetype)updateStorageDirectory:(NSString *)storageDirectory
+{
+  if (![NSFileManager.defaultManager fileExistsAtPath:storageDirectory]) {
+    return self;
+  }
+  self.writableLog.storageDirectory = storageDirectory;
+  return self;
+}
+
 - (instancetype)updateDestination:(NSString *)destination
 {
   self.writableLog.destination = destination;
@@ -416,12 +580,6 @@
     [self flushLogs];
   }
   return [self updatePath:path];
-}
-
-- (instancetype)updateHumanReadableName:(NSString *)humanReadableName
-{
-  self.writableLog.humanReadableName = humanReadableName;
-  return self;
 }
 
 - (FBWritableLog *)build
