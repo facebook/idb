@@ -59,7 +59,7 @@ static void EnsureCGIsInitialized(void)
     return [pids containsObject:processIdentifier];
   }];
   // Each Simulator Process appears to have multiple Windows, with strange bounds.
-  // We just care about the named one, which is the Simulator.app window with the Simulator's canvas.
+  // We just care about the named one, which is the Simulator.app window with the Simulator's framebuffer.
   NSPredicate *namePredicate = [NSPredicate predicateWithBlock:^ BOOL (NSDictionary *window, NSDictionary *_) {
     NSString *windowName = window[(NSString *)kCGWindowName];
     return windowName.length > 0;
