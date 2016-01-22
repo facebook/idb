@@ -18,10 +18,13 @@
 #import "FBFramebufferCounter.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
+#import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorLogger.h"
+#import "FBSimulatorLogs.h"
+#import "FBWritableLog.h"
 
 /**
  Enumeration to keep track of internal state.
@@ -59,6 +62,13 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   if (useWindow) {
     [sinks addObject:[FBFramebufferDebugWindow withName:@"Simulator"]];
   }
+
+  BOOL recordVideo = (launchConfiguration.options & FBSimulatorLaunchOptionsRecordVideo) == FBSimulatorLaunchOptionsRecordVideo;
+  if (recordVideo) {
+    NSDecimalNumber *scaleNumber = [NSDecimalNumber decimalNumberWithString:launchConfiguration.scaleString];
+    [sinks addObject:[FBFramebufferVideo withWritableLog:simulator.logs.video scale:scaleNumber.floatValue logger:simulator.logger eventSink:simulator.eventSink]];
+  }
+
   FBFramebufferCounter *counter = [FBFramebufferCounter withLogFrequency:FBFramebufferLogFrameFrequency logger:simulator.logger];
   [sinks addObject:counter];
 
