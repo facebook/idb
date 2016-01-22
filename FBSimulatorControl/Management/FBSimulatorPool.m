@@ -265,6 +265,32 @@
   return [self deleteSimulators:self.allSimulators withError:error];
 }
 
+#pragma mark FBDebugDescribeable
+
+- (NSString *)description
+{
+  return [self shortDescription];
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Pool for %@",
+    self.deviceSet.setPath
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"%@\nAll Simulators: %@\nAllocated Simulators: %@ \n\nSimulator Processes: %@ \n\n",
+    self.shortDescription,
+    self.allSimulators.description,
+    self.allocatedSimulators.description,
+    self.processQuery.simulatorProcesses.description
+  ];
+}
+
 #pragma mark - Private
 
 - (BOOL)deleteSimulator:(FBSimulator *)simulator withError:(NSError **)error
@@ -526,19 +552,6 @@
 - (NSArray *)launchedSimulators
 {
   return [self.allSimulators filteredArrayUsingPredicate:FBSimulatorPredicates.launched];
-}
-
-@end
-
-@implementation FBSimulatorPool (Debug)
-
-- (NSString *)debugDescription
-{
-  NSMutableString *description = [NSMutableString string];
-  [description appendFormat:@"All Simulators: %@", [self.allSimulators description]];
-  [description appendFormat:@"\nAllocated Simulators: %@ \n\n", [self.allocatedSimulators description]];
-  [description appendFormat:@"\nSimulator Processes: %@ \n\n", [self.processQuery.simulatorProcesses description]];
-  return description;
 }
 
 @end

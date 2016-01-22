@@ -9,11 +9,12 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBDebugDescribeable.h>
+
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorPool;
-@class FBSimulatorTerminationStrategy;
 @class SimDevice;
 @class SimDeviceSet;
 
@@ -35,7 +36,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 /**
  A container for a collection of Simulators.
  */
-@interface FBSimulatorPool : NSObject
+@interface FBSimulatorPool : NSObject <FBDebugDescribeable>
 
 /**
  Creates and returns an FBSimulatorPool.
@@ -109,17 +110,5 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
  Is an NSOrderedSet<FBSimulator>
  */
 @property (nonatomic, copy, readonly) NSArray *launchedSimulators;
-
-@end
-
-/**
- Helpers to Debug what is going on with the state of the world, useful after-the-fact (CI)
- */
-@interface FBSimulatorPool (Debug)
-
-/**
- A Description of the Pool, with extended debug information
- */
-- (NSString *)debugDescription;
 
 @end

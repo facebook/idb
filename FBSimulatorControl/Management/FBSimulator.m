@@ -172,7 +172,7 @@
   return [self.device isEqual:simulator.device];
 }
 
-#pragma mark Descriptions
+#pragma mark FBDebugDescribeable
 
 - (NSString *)description
 {

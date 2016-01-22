@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 
 @class FBProcessLaunchConfiguration;
@@ -16,7 +17,7 @@
 /**
  Concrete Value of Process Information.
  */
-@interface FBProcessInfo : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable>
+@interface FBProcessInfo : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 /**
  The Designated Initializer.
@@ -52,15 +53,5 @@
  An NSDictionary<NSString *, NSString *> of the environment of the process.
  */
 @property (nonatomic, copy, readonly) NSDictionary *environment;
-
-/**
- A Full Description of the Process.
- */
-- (NSString *)debugDescription;
-
-/**
- A Partial Description of the Process.
- */
-- (NSString *)shortDescription;
 
 @end

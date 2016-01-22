@@ -16,6 +16,7 @@
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBCrashLogInfo.h>
+#import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
 #import <FBSimulatorControl/FBInteraction+Private.h>
 #import <FBSimulatorControl/FBInteraction.h>

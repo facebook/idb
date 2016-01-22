@@ -94,6 +94,8 @@
   return self.name.hash | self.path.hash | self.architectures.hash;
 }
 
+#pragma mark FBDebugDescribeable
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -102,6 +104,16 @@
     self.path,
     [FBCollectionDescriptions oneLineDescriptionFromArray:self.architectures.allObjects]
   ];
+}
+
+- (NSString *)shortDescription
+{
+  return [self description];
+}
+
+- (NSString *)debugDescription
+{
+  return [self description];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -200,12 +212,27 @@
   return self.name.hash | self.path.hash | self.bundleID.hash | self.binary.hash;
 }
 
+#pragma mark FBDebugDescribeable
+
 - (NSString *)description
 {
+  return [self shortDescription];
+}
+
+- (NSString *)shortDescription
+{
   return [NSString stringWithFormat:
-    @"Name: %@ | ID: %@ | Path: %@ | Binary (%@)",
+    @"Name: %@ | ID: %@",
     self.name,
-    self.bundleID,
+    self.bundleID
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return [NSString stringWithFormat:
+    @"%@ | Path: %@ | Binary (%@)",
+    self.shortDescription,
     self.path,
     self.binary
   ];

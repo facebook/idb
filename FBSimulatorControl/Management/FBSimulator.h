@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 
 @protocol FBSimulatorEventSink;
@@ -51,7 +52,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBJSONSerializationDescribeable>
+@interface FBSimulator : NSObject <FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 /**
  The Underlying SimDevice.
@@ -132,15 +133,5 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
  The FBSimulatorLogs instance for fetching logs for the Simulator.
  */
 @property (nonatomic, strong, readonly) FBSimulatorLogs *logs;
-
-/**
- A Full Description of the reciever.
- */
-- (NSString *)debugDescription;
-
-/**
- A Partial Description of the reciever.
- */
-- (NSString *)shortDescription;
 
 @end

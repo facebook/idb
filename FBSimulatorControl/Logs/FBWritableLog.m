@@ -81,6 +81,13 @@
   return NO;
 }
 
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  return NO;
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
@@ -95,6 +102,8 @@
   }
   return dictionary;
 }
+
+#pragma mark FBDebugDescribeable
 
 - (NSString *)description
 {
@@ -118,11 +127,6 @@
     self.shortName,
     self.hasLogContent
   ];
-}
-
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
-{
-  return NO;
 }
 
 @end

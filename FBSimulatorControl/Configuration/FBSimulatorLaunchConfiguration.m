@@ -124,6 +124,8 @@
   return self.scaleString.hash ^ self.locale.hash;
 }
 
+#pragma mark FBDebugDescribeable
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -131,6 +133,26 @@
     self.scaleString,
     self.locale
   ];
+}
+
+- (NSString *)shortDescription
+{
+  return [self description];
+}
+
+- (NSString *)debugDescription
+{
+  return [self description];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return @{
+    NSStringFromSelector(@selector(scale)) : self.scaleString,
+    NSStringFromSelector(@selector(locale)) : self.locale.localeIdentifier ?: NSNull.null
+  };
 }
 
 #pragma mark Accessors

@@ -83,6 +83,14 @@
          ((self.stdOutPath == nil && object.stdOutPath == nil)  || [self.stdOutPath isEqual:object.stdOutPath]);
 }
 
+- (NSString *)launchPath
+{
+  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark FBDebugDescribeable
+
 - (NSString *)shortDescription
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
@@ -90,12 +98,6 @@
 }
 
 - (NSString *)debugDescription
-{
-  NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSString *)launchPath
 {
   NSAssert(NO, @"%@ is abstract", NSStringFromSelector(_cmd));
   return nil;
