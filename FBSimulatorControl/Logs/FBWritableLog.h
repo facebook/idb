@@ -9,11 +9,13 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+
 /**
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
-@interface FBWritableLog : NSObject <NSCopying>
+@interface FBWritableLog : NSObject <NSCopying, FBJSONSerializationDescribeable>
 
 /**
  The name of the Log for uniquely identifying the log.
@@ -51,12 +53,6 @@
  The content of the log, as represented by a File Path.
  */
 @property (nonatomic, readonly, copy) NSString *asPath;
-
-/**
- The content and metadata of the log, as a NSDictionary.
- All keys and values are types allowable by NSJSONSerialization.
- */
-@property (nonatomic, readonly, copy) NSDictionary *asDictionary;
 
 /**
  Whether the log has content or is missing/empty.

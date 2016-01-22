@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+
 @class FBSimulator;
 @class FBSimulatorApplication;
 @class FBSimulatorBinary;
@@ -16,7 +18,7 @@
 /**
  An abstract value object for launching both agents and applications
  */
-@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding>
+@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable>
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.

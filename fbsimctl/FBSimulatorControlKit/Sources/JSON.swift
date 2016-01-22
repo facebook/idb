@@ -8,14 +8,22 @@
  */
 
 import Foundation
+import FBSimulatorControl
 
 public struct JSONError : ErrorType {
 
 }
 
 public struct JSON {
-  static func serializeToString(object: AnyObject) throws -> String {
-    let data = try NSJSONSerialization.dataWithJSONObject(object, options: NSJSONWritingOptions.PrettyPrinted)
+  static func serializeToString(objects: [AnyObject]) throws -> String {
+    let descriptions: [AnyObject] = objects.flatMap { candidate in
+      guard let describable = candidate as? FBJSONSerializationDescribeable else {
+        return nil
+      }
+      return describable.jsonSerializableRepresentation()
+    }
+
+    let data = try NSJSONSerialization.dataWithJSONObject(descriptions, options: NSJSONWritingOptions.PrettyPrinted)
     guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
       throw JSONError()
     }

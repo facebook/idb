@@ -106,6 +106,18 @@
   return [self debugDescription];
 }
 
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return @{
+    @"arguments" : self.arguments,
+    @"environment" : self.environment,
+    @"stdout_path" : self.stdOutPath ?: NSNull.null,
+    @"stderr_path" : self.stdErrPath ?: NSNull.null,
+  };
+}
+
 @end
 
 @implementation FBApplicationLaunchConfiguration
@@ -216,6 +228,16 @@
          (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]);
 }
 
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  NSMutableDictionary *representation = [[super jsonSerializableRepresentation] mutableCopy];
+  representation[@"bundle_id"] = self.bundleID;
+  representation[@"bundle_name"] = self.bundleName;
+  return [representation mutableCopy];
+}
+
 @end
 
 @implementation FBAgentLaunchConfiguration
@@ -317,6 +339,15 @@
   return [self.agentBinary isEqual:object.agentBinary] &&
   [self.arguments isEqual:object.arguments] &&
   [self.environment isEqual:object.environment];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  NSMutableDictionary *representation = [[super jsonSerializableRepresentation] mutableCopy];
+  representation[@"binary"] = [self.agentBinary jsonSerializableRepresentation];
+  return [representation mutableCopy];
 }
 
 @end
