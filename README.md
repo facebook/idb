@@ -90,10 +90,24 @@ To launch Safari on an iPhone 5, you can use the following:
 ```
 
 
-## Multisim
-`FBSimulatorControl` launches Xcode's Simulator Applications directly, allowing specific Simulators to be targeted by UDID. `Simulator.app` uses a default set of Simulators located at `~/Library/Developer/CoreSimulator/Devices`. By passing arguments to the `Simulator.app` binary, `FBSimulatorControl` can launch Simulators from Device Sets other than the default. This allows multiple sets of Simulators to be booted from separate host processes, without interference.
+`FBSimulatorControl` currently has two ways of launching Simulators that have tradeoffs for different use cases. Since Xcode 7.2, both these methods can be used:
 
-This is only supported on Xcode 7 or greater.
+## Multisim
+The `CoreSimulator` Framework that is used by the `Simulator.app` as well as Playgrounds & Interface Builder has long had the concept of custom 'Device Sets' which contain created Simulators. Multiple Device Sets can be used on the same host and are an effective way of ensuring that multiple processes using `CoreSimulator` don't collide into each other. 'Device Sets' are also beneficial for an automation use-case, as using a different set other than the 'Default' will ensure that these Simulators aren't polluted.
+
+`CoreSimulator` itself is also capable of running multiple Simulators on the same host concurrently. You can see this for yourself by using the `simctl` commandline. Booting Simulators this way can be of somewhat limited utility without the output of the screen. `FBSimulatorControl` solves this problem in two different ways:
+
+## Launching via `Simulator.app`
+`Simulator.app` is the Mac OS X Application bundle with Xcode that you are probably familiar with for viewing and interacting with a Simulator. This Mac Application is the part of the Xcode Toolchain that you will be used to.
+
+`FBSimulatorControl` can launch the Application Excutable directly, thereby allowing specific Simulators to be booted by UDID and Device Set. This can be done by overriding the `Simulator.app`s `NSUserDefaults` by [passing them as Arguments to the Application Process](https://www.bignerdranch.com/blog/by-your-command). Once the Simulator has booted, it can be interacted with via `CoreSimulator` with commands such as installing Apps and launch executables.
+
+There are however, a number of limitations to how much `FBSimulatorControl` can manipulate the Simulator, once it has been booted inside the `Simulator.app` process. In particular it's not [possible to execute custom code inside the Simulator Application process](https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f), which means that it's not possible to get video frames that the booted simulator passes back to the `Simulator.app` process.
+
+## Direct Launch
+`FBSimulatorControl` also supports 'Direct Launching'. This means that the Simulator is booted from the `FBSimulatorControl` Framework. This gives increasing control over the operation of the Simulator, including fetching frames from the Framebuffer. This means that pixel-perfect videos and screenshots can be constructed from the Framebuffer.
+
+Direct Launching does not currently support manipulation of the UI within the Simulator, so is much better suited to a use-case where the [UI is manipulated by other means](https://github.com/facebook/webdriveragent).
 
 ## `fbsimctl`
 [`fbsimctl` is a Command Line Interface](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md) for `FBSimulatorControl` API calls, so `FBSimulatorControl` functionality can be used without the need to integrate with the Framework. It is currently under development.
