@@ -94,9 +94,7 @@
 
 + (NSString *)pathForPerisistantHistory:(FBSimulator *)simulator
 {
-  return [[simulator.dataDirectory
-    stringByAppendingPathComponent:@"fbsimulatorcontrol"]
-    stringByAppendingPathExtension:@"history"];
+  return [simulator.auxillaryDirectory stringByAppendingPathExtension:@"history"];
 }
 
 + (FBSimulatorHistory *)freshHistoryForSimulator:(FBSimulator *)simulator
