@@ -16,6 +16,7 @@
 
 #import "FBFramebufferCompositeDelegate.h"
 #import "FBFramebufferCounter.h"
+#import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
 #import "FBSimulator.h"
 #import "FBSimulatorEventSink.h"
@@ -54,6 +55,10 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
 + (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator {
   NSMutableArray *sinks = [NSMutableArray array];
+  BOOL useWindow = (launchConfiguration.options & FBSimulatorLaunchOptionsShowDebugWindow) == FBSimulatorLaunchOptionsShowDebugWindow;
+  if (useWindow) {
+    [sinks addObject:[FBFramebufferDebugWindow withName:@"Simulator"]];
+  }
   FBFramebufferCounter *counter = [FBFramebufferCounter withLogFrequency:FBFramebufferLogFrameFrequency logger:simulator.logger];
   [sinks addObject:counter];
 

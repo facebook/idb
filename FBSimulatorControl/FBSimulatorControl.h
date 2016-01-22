@@ -18,6 +18,7 @@
 #import <FBSimulatorControl/FBCrashLogInfo.h>
 #import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
+#import <FBSimulatorControl/FBFramebufferDebugWindow.h>
 #import <FBSimulatorControl/FBFramebufferCompositeDelegate.h>
 #import <FBSimulatorControl/FBFramebufferCounter.h>
 #import <FBSimulatorControl/FBFramebufferDelegate.h>
