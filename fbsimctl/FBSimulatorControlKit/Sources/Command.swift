@@ -21,7 +21,6 @@ public struct Configuration {
     }
 
     static let DebugLogging = Options(rawValue: 1 << 0)
-    static let JSONOutput = Options(rawValue: 1 << 1)
   }
 
   let controlConfiguration: FBSimulatorControlConfiguration
@@ -31,14 +30,18 @@ public struct Configuration {
 /**
  Defines a Format for displaying Simulator Information
 */
-public indirect enum Format {
-  case UDID
-  case Name
-  case DeviceName
-  case OSVersion
-  case State
-  case ProcessIdentifier
-  case Compound([Format])
+public enum Format {
+  public enum Keywords: String {
+    case UDID = "--udid"
+    case Name = "--name"
+    case DeviceName = "--device-name"
+    case OSVersion = "--os"
+    case State = "--state"
+    case ProcessIdentifier = "--pid"
+  }
+
+  case HumanReadable([Keywords])
+  case JSON
 }
 
 /**
@@ -72,16 +75,6 @@ public enum Command {
   case Perform(Configuration, Action)
   case Interactive(Configuration, Int?)
   case Help(Interaction?)
-}
-
-public extension Format {
-  static func flatten(formats: [Format]) -> Format {
-    if (formats.count == 1) {
-      return formats.first!
-    }
-
-    return .Compound(formats)
-  }
 }
 
 extension Configuration : Equatable {}
@@ -142,38 +135,11 @@ public func == (left: Interaction, right: Interaction) -> Bool {
 extension Format : Equatable { }
 public func == (left: Format, right: Format) -> Bool {
   switch (left, right) {
-  case (.UDID, .UDID): return true
-  case (.OSVersion, .OSVersion): return true
-  case (.DeviceName, .DeviceName): return true
-  case (.Name, .Name): return true
-  case (.State, .State): return true
-  case (.ProcessIdentifier, .ProcessIdentifier): return true
-  case (.Compound(let leftComp), .Compound(let rightComp)): return leftComp == rightComp
-  default: return false
-  }
-}
-
-extension Format : Hashable {
-  public var hashValue: Int {
-    get {
-      switch self {
-      case .UDID:
-        return 1 << 0
-      case .OSVersion:
-        return 1 << 1
-      case .DeviceName:
-        return 1 << 2
-      case .Name:
-        return 1 << 3
-      case .State:
-        return 1 << 4
-      case .ProcessIdentifier:
-        return 1 << 5
-      case .Compound(let format):
-        return format.reduce("compound".hashValue) { previous, next in
-          return previous ^ next.hashValue
-        }
-      }
-    }
+  case (.JSON, .JSON):
+    return true
+  case (.HumanReadable(let leftKeywords), .HumanReadable(let rightKeywords)):
+    return leftKeywords == rightKeywords
+  default:
+    return false
   }
 }

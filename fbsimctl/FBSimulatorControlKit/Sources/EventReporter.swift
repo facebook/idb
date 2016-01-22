@@ -13,6 +13,7 @@ import FBSimulatorControl
 public typealias EventReporterSubject = protocol<FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 public enum EventName : String {
+  case Create
   case Boot
   case Shutdown
   case Diagnostic
@@ -29,7 +30,7 @@ public enum EventType : String {
   case Discrete = ""
 }
 
-protocol EventReporter : FBSimulatorEventSink {
+public protocol EventReporter : FBSimulatorEventSink {
   func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject)
   func simulatorEvent()
 }
@@ -37,12 +38,12 @@ protocol EventReporter : FBSimulatorEventSink {
 public class HumanReadableEventReporter : NSObject, EventReporter {
   unowned let simulator: FBSimulator
   let writer: Writer
-  let format: Format
+  let keywords: [Format.Keywords]
 
-  init(simulator: FBSimulator, writer: Writer, format: Format) {
+  init(simulator: FBSimulator, writer: Writer, keywords: [Format.Keywords]) {
     self.simulator = simulator
     self.writer = writer
-    self.format = format
+    self.keywords = keywords
     super.init()
     self.simulator.userEventSink = self
   }
@@ -91,7 +92,7 @@ public class HumanReadableEventReporter : NSObject, EventReporter {
 
   }
 
-  func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
+  public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     self.writer.write("\(self.formattedSimulator):  \(eventName.rawValue) with \(subject.shortDescription)")
   }
 
@@ -101,7 +102,32 @@ public class HumanReadableEventReporter : NSObject, EventReporter {
 
   private var formattedSimulator: String {
     get {
-      return self.format.withSimulator(simulator)
+      let tokens: [String] = self.keywords.map { keyword in
+        switch keyword {
+        case .UDID:
+          return simulator.udid
+        case .Name:
+          return simulator.name
+        case .DeviceName:
+          guard let configuration = simulator.configuration else {
+            return "unknown-name"
+          }
+          return configuration.deviceName
+        case .OSVersion:
+          guard let configuration = simulator.configuration else {
+            return "unknown-os"
+          }
+          return configuration.osVersionString
+        case .State:
+          return simulator.stateString
+        case .ProcessIdentifier:
+          guard let process = simulator.launchdSimProcess else {
+            return "no-process"
+          }
+          return process.processIdentifier.description
+        }
+      }
+      return tokens.joinWithSeparator(" ")
     }
   }
 }
@@ -169,7 +195,7 @@ public class JSONEventReporter : NSObject, EventReporter {
           "event_name" : eventName.rawValue,
           "event_type" : eventType.rawValue,
           "subject" : subject.jsonSerializableRepresentation()
-          ])
+        ])
       )
     } catch {
 

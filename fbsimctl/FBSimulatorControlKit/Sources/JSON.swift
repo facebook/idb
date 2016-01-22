@@ -55,9 +55,26 @@ extension NSDictionary : FBJSONSerializationDescribeable {
 }
 
 public struct JSON {
+  public enum Error : ErrorType, CustomStringConvertible {
+    case Serialization(NSError)
+    case Stringifying(NSData)
+
+    public var description: String {
+      get {
+        switch self {
+        case .Serialization(let error):
+          return "Serialization \(error.description)"
+        case .Stringifying(let data):
+          return "Stringifying \(data.description)"
+        }
+      }
+    }
+  }
+
   static func serializeToString(object: FBJSONSerializationDescribeable) throws -> String {
     do {
-      let data = try NSJSONSerialization.dataWithJSONObject(object, options: NSJSONWritingOptions.PrettyPrinted)
+      let jsonObject = object.jsonSerializableRepresentation()
+      let data = try NSJSONSerialization.dataWithJSONObject(jsonObject, options: NSJSONWritingOptions.PrettyPrinted)
       guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
         throw Error.Stringifying(data)
       }
