@@ -25,6 +25,7 @@
 @interface FBSimulatorLogs ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
+@property (nonatomic, copy, readonly) NSString *storageDirectory;
 
 @end
 
@@ -34,10 +35,11 @@
 
 + (instancetype)withSimulator:(FBSimulator *)simulator
 {
-  return [[self alloc] initWithSimulator:simulator];
+  NSString *storageDirectory = [FBSimulatorLogs storageDirectoryForSimulator:simulator];
+  return [[self alloc] initWithSimulator:simulator storageDirectory:storageDirectory];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator
+- (instancetype)initWithSimulator:(FBSimulator *)simulator storageDirectory:(NSString *)storageDirectory
 {
   self = [super init];
   if (!self) {
@@ -45,6 +47,7 @@
   }
 
   _simulator = simulator;
+  _storageDirectory = storageDirectory;
 
   return self;
 }
@@ -68,7 +71,7 @@
 
 - (FBWritableLog *)syslog
 {
-  return [[[[[FBWritableLogBuilder builder]
+  return [[[[self.builder
     updatePath:self.systemLogPath]
     updateShortName:@"system_log"]
     updateHumanReadableName:@"System Log"]
@@ -77,7 +80,7 @@
 
 - (FBWritableLog *)coreSimulator
 {
-  return [[[[FBWritableLogBuilder builder]
+  return [[[self.builder
     updatePath:self.coreSimulatorLogPath]
     updateHumanReadableName:@"Core Simulator Log"]
     build];
@@ -89,7 +92,7 @@
     stringByAppendingPathComponent:self.simulator.udid]
     stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
 
-  return [[[[[FBWritableLogBuilder builder]
+  return [[[[self.builder
     updatePath:expectedPath]
     updateShortName:@"launchd_bootstrap"]
     updateHumanReadableName:@"Launchd Bootstrap"]
@@ -150,6 +153,16 @@
 }
 
 #pragma mark Private
+
++ (NSString *)storageDirectoryForSimulator:(FBSimulator *)simulator
+{
+  return [simulator.auxillaryDirectory stringByAppendingPathComponent:@"logs"];
+}
+
+- (FBWritableLogBuilder *)builder
+{
+  return [FBWritableLogBuilder.builder updateStorageDirectory:self.storageDirectory];
+}
 
 - (NSString *)systemLogPath
 {

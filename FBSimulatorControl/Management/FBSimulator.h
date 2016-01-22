@@ -122,6 +122,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, copy, readonly) NSString *dataDirectory;
 
 /**
+ The Directory that FBSimulatorControl uses to store auxillary files.
+ */
+@property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
+
+/**
  The FBSimulatorConfiguration representing this Simulator.
  */
 @property (nonatomic, copy, readonly) FBSimulatorConfiguration *configuration;

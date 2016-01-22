@@ -127,6 +127,11 @@
   return self.device.dataPath;
 }
 
+- (NSString *)auxillaryDirectory
+{
+  return [self.dataDirectory stringByAppendingPathComponent:@"fbsimulatorcontrol"];
+}
+
 - (BOOL)isAllocated
 {
   if (!self.pool) {
