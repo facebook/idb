@@ -14,6 +14,8 @@
 #import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
+#import "FBFramebufferCompositeDelegate.h"
+#import "FBFramebufferCounter.h"
 #import "FBFramebufferDelegate.h"
 #import "FBSimulator.h"
 #import "FBSimulatorEventSink.h"
@@ -30,9 +32,12 @@ typedef NS_ENUM(NSInteger, FBSimulatorFramebufferState) {
   FBSimulatorFramebufferStateTerminated = 4, /** After the framebuffer has terminated. */
 };
 
+static const NSInteger FBFramebufferLogFrameFrequency = 100;
+
 @interface FBSimulatorFramebuffer () <FBFramebufferDelegate>
 
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
+@property (nonatomic, strong, readonly) FBFramebufferCounter *counter;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @property (nonatomic, strong, readonly) id<FBFramebufferDelegate> delegate;
@@ -47,12 +52,16 @@ typedef NS_ENUM(NSInteger, FBSimulatorFramebufferState) {
 
 #pragma mark Initializers
 
-+ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator
-{
-  return [[self alloc] initWithFramebufferService:framebufferService eventSink:simulator.eventSink delegate:nil];
++ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator {
+  NSMutableArray *sinks = [NSMutableArray array];
+  FBFramebufferCounter *counter = [FBFramebufferCounter withLogFrequency:FBFramebufferLogFrameFrequency logger:simulator.logger];
+  [sinks addObject:counter];
+
+  id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
+  return [[self alloc] initWithFramebufferService:framebufferService counter:counter eventSink:simulator.eventSink delegate:delegate];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService eventSink:(id<FBSimulatorEventSink>)eventSink delegate:(id<FBFramebufferDelegate>)delegate
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService counter:(FBFramebufferCounter *)counter eventSink:(id<FBSimulatorEventSink>)eventSink delegate:(id<FBFramebufferDelegate>)delegate
 {
   NSParameterAssert(framebufferService);
 
@@ -62,6 +71,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorFramebufferState) {
   }
 
   _framebufferService = framebufferService;
+  _counter = counter;
   _eventSink = eventSink;
   _delegate = delegate;
 
@@ -77,9 +87,10 @@ typedef NS_ENUM(NSInteger, FBSimulatorFramebufferState) {
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"%@ | Size %@",
+    @"%@ | Size %@ | Frame Counter %@",
     [FBSimulatorFramebuffer stringFromFramebufferState:self.state],
-    NSStringFromSize(self.size)
+    NSStringFromSize(self.size),
+    self.counter
   ];
 }
 
