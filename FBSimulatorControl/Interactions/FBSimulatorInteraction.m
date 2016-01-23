@@ -54,7 +54,7 @@
   return [self interactWithSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     if (simulator.state != state) {
       return [[[FBSimulatorError
-        describeFormat:@"Expected Simulator %@ to be %@, but it was '%@'", simulator.udid, simulator.stateString, [FBSimulator stateStringFromSimulatorState:simulator.state]]
+        describeFormat:@"Expected Simulator %@ to be %@, but it was '%@'", simulator.udid, [FBSimulator stateStringFromSimulatorState:state], simulator.stateString]
         inSimulator:simulator]
         failBool:error];
     }
