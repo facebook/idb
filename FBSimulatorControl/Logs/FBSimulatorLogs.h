@@ -49,25 +49,14 @@ extern NSString *const FBSimulatorLogNameVideo;
  Creates and returns a `FBSimulatorLogs` instance.
 
  @param simulator the Simulator to Fetch logs for.
- @return A new `FBSimulatorLogFetcher` instance.
+ @return A new `FBSimulatorLogs` instance for the provided Simulator.
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator;
 
 /**
- Returns an FBWritableLogBuilder suitable for writing diagnostic log information to.
- This builder is configured to serialize to the appropriate directories.
-
- @return A new `FBSimulatorLogFetcher` instance.
+ The FBWritableLog Instance from which all other logs are derived.
  */
-- (FBWritableLogBuilder *)logBuilder;
-
-/**
- All of the FBWritableLog instances for the Simulator.
- Prunes empty logs.
-
- @return an NSArray<FBWritableLog> of all the Writable Logs associated with the Simulator.
- */
-- (NSArray *)allLogs;
+- (FBWritableLog *)base;
 
 /**
  The syslog of the Simulator.
@@ -83,6 +72,11 @@ extern NSString *const FBSimulatorLogNameVideo;
  The Bootstrap of the Simulator's launchd_sim.
  */
 - (FBWritableLog *)simulatorBootstrap;
+
+/**
+ A Video of the Simulator
+ */
+- (FBWritableLog *)video;
 
 /**
  Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.
@@ -105,5 +99,13 @@ extern NSString *const FBSimulatorLogNameVideo;
  @return an NSDictionary<FBProcessInfo *, FBWritableLog> of the logs, filtered by launched process.
  */
 - (NSDictionary *)launchedProcessLogs;
+
+/**
+ All of the FBWritableLog instances for the Simulator.
+ Prunes empty logs.
+
+ @return an NSArray<FBWritableLog> of all the Writable Logs associated with the Simulator.
+ */
+- (NSArray *)allLogs;
 
 @end

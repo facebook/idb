@@ -93,7 +93,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
 
 + (void)writeDiagnosticForSimulator:(FBSimulator *)simulator process:(FBProcessInfo *)process name:(NSString *)name value:(NSString *)value
 {
-  FBWritableLog *log = [[[[simulator.logs.logBuilder
+  FBWritableLog *log = [[[[[FBWritableLogBuilder builderWithWritableLog:simulator.logs.base]
     updateString:value]
     updateShortName:[NSString stringWithFormat:@"%@_%@_%d", name, process.processName, process.processIdentifier]]
     updateFileType:@"txt"]

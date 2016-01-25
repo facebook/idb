@@ -44,10 +44,7 @@
 - (instancetype)recordVideo
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBWritableLogBuilder *logBuilder = [[self.simulator.logs.logBuilder
-      updateShortName:FBSimulatorLogNameVideo]
-      updateFileType:@"mp4"];
-
+    FBWritableLogBuilder *logBuilder = [FBWritableLogBuilder builderWithWritableLog:simulator.logs.video];
     NSString *path = [logBuilder createPath];
 
     FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:simulator logger:nil];

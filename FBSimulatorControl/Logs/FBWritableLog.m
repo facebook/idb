@@ -496,14 +496,21 @@
 
 + (instancetype)builder
 {
-  return [self builderWithWritableLog:[FBWritableLog_Empty new]];
+  return [self builderWithWritableLog:nil];
 }
 
 + (instancetype)builderWithWritableLog:(FBWritableLog *)writableLog
 {
-  FBWritableLogBuilder *builder = [FBWritableLogBuilder new];
-  builder.writableLog = [writableLog copy];
-  return builder;
+  return [[FBWritableLogBuilder new] updateWritableLog:[writableLog copy] ?: [FBWritableLog_Empty new]];
+}
+
+- (instancetype)updateWritableLog:(FBWritableLog *)writableLog
+{
+  if (!writableLog) {
+    return self;
+  }
+  self.writableLog = writableLog;
+  return self;
 }
 
 - (instancetype)updateShortName:(NSString *)shortName
