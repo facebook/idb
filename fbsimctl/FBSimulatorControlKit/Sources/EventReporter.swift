@@ -190,25 +190,16 @@ public class JSONEventReporter : NSObject, EventReporter {
   }
 
   public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    do {
-      self.writer.write(
-        try self.json.serializeToString([
-          "simulator" : self.simulator.jsonSerializableRepresentation(),
-          "event_name" : eventName.rawValue,
-          "event_type" : eventType.rawValue,
-          "subject" : subject.jsonSerializableRepresentation()
-        ])
-      )
-    } catch {
-
-    }
+    self.writer.write(try! self.json.serializeToString([
+        "simulator" : self.simulator.jsonSerializableRepresentation(),
+        "event_name" : eventName.rawValue,
+        "event_type" : eventType.rawValue,
+        "subject" : subject.jsonSerializableRepresentation()
+      ])
+    )
   }
 
   public func simulatorEvent() {
-    do {
-      self.writer.write(try self.json.serializeToString(self.simulator))
-    } catch {
-      
-    }
+    self.writer.write(try! self.json.serializeToString(self.simulator))
   }
 }
