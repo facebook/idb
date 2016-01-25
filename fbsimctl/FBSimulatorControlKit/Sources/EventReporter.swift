@@ -25,9 +25,9 @@ public enum EventName : String {
 }
 
 public enum EventType : String {
-  case Started = "Started"
-  case Ended = "Ended"
-  case Discrete = ""
+  case Started = "started"
+  case Ended = "ended"
+  case Discrete = "discrete"
 }
 
 public protocol EventReporter : FBSimulatorEventSink {
