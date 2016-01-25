@@ -51,9 +51,9 @@
   [self.eventSink applicationDidTerminate:applicationProcess expected:expected];
 }
 
-- (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value
+- (void)logAvailable:(FBWritableLog *)log
 {
-  [self.eventSink diagnosticInformationAvailable:name process:process value:value];
+  [self.eventSink logAvailable:log];
 }
 
 - (void)didChangeState:(FBSimulatorState)state

@@ -22,8 +22,7 @@ NSString *const FBSimulatorStateDidChange = @"FBSimulatorStateDidChange";
 
 NSString *const FBSimulatorExpectedTerminationKey = @"expected";
 NSString *const FBSimulatorProcessKey = @"process";
-NSString *const FBSimulatorDiagnosticName = @"diagnostic_name";
-NSString *const FBSimulatorDiagnosticValue = @"diagnostic_value";
+NSString *const FBSimulatorDiagnosticLog = @"diagnostic_log";
 NSString *const FBSimulatorStateKey = @"simulator_state";
 
 @interface FBSimulatorNotificationEventSink ()
@@ -103,17 +102,11 @@ NSString *const FBSimulatorStateKey = @"simulator_state";
   }];
 }
 
-- (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value
+- (void)logAvailable:(FBWritableLog *)log
 {
-  NSMutableDictionary *userInfo = [@{
-    FBSimulatorDiagnosticName : name,
-    FBSimulatorDiagnosticValue : value
-  } mutableCopy];
-  if (process) {
-    userInfo[FBSimulatorProcessKey] = process;
-  }
-
-  [self materializeNotification:FBSimulatorGainedDiagnosticInformation userInfo:userInfo];
+  [self materializeNotification:FBSimulatorGainedDiagnosticInformation userInfo:@{
+    FBSimulatorDiagnosticLog : log
+  }];
 }
 
 - (void)didChangeState:(FBSimulatorState)state

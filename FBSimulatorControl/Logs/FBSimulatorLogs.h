@@ -41,9 +41,9 @@ extern NSString *const FBSimulatorLogNameVideo;
 
  Instances of FBWritableLog exposed by this class are not nullable since FBWritableLog's can be empty:
  - This means that values do not have to be checked before storing in collections
- - Missing content can be inserted into the FBWritableLog instances, retaining the original metadata.
+ - Missing content can be inserted into the FBWritableLog instances, whilst retaining the original metadata.
  */
-@interface FBSimulatorLogs : NSObject
+@interface FBSimulatorLogs : NSObject <FBSimulatorEventSink>
 
 /**
  Creates and returns a `FBSimulatorLogs` instance.

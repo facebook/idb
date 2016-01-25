@@ -158,8 +158,9 @@
   [self updateProcess:applicationProcess withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
 }
 
-- (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value
+- (void)logAvailable:(FBWritableLog *)log
 {
+
 }
 
 - (void)didChangeState:(FBSimulatorState)state

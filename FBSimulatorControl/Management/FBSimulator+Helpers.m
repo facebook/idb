@@ -108,17 +108,6 @@
   return [self.pool freeSimulator:self error:error];
 }
 
-- (NSString *)pathForStorage:(NSString *)key ofExtension:(NSString *)extension
-{
-  NSString *filename = [NSString stringWithFormat:@"%@_storage", self.udid];
-  NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
-  path = extension ? [path stringByAppendingPathExtension:extension] : path;
-
-  BOOL success = [NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil];
-  NSAssert(success, @"Cannot create a path for storage at %@", path);
-  return path;
-}
-
 - (BOOL)eraseWithError:(NSError **)error
 {
   NSError *innerError = nil;

@@ -66,15 +66,6 @@
 - (BOOL)freeFromPoolWithError:(NSError **)error;
 
 /**
- Returns a location that can be used to store ephemeral information about a Simulator.
- Can be used to store large amounts of data for aggregation later.
-
- @param key a key to uniquely identify the file for this Session. If nil, files are guaranteed to be unique for the Session.
- @param extension the file extension of the returned file.
- */
-- (NSString *)pathForStorage:(NSString *)key ofExtension:(NSString *)extension;
-
-/**
  Erases the Simulator, with a descriptive message in the event of a failure.
 
  @param error a descriptive error for any error that occurred.

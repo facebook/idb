@@ -26,10 +26,12 @@ NSString *const FBSimulatorLogNameSyslog = @"system_log";
 NSString *const FBSimulatorLogNameCoreSimulator = @"coresimulator";
 NSString *const FBSimulatorLogNameSimulatorBootstrap = @"launchd_bootstrap";
 NSString *const FBSimulatorLogNameVideo = @"video";
+
 @interface FBSimulatorLogs ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
 @property (nonatomic, copy, readonly) NSString *storageDirectory;
+@property (nonatomic, strong, readonly) NSMutableDictionary *eventLogs;
 
 @end
 
@@ -52,6 +54,7 @@ NSString *const FBSimulatorLogNameVideo = @"video";
 
   _simulator = simulator;
   _storageDirectory = storageDirectory;
+  _eventLogs = [NSMutableDictionary dictionary];
 
   return self;
 }
@@ -70,9 +73,10 @@ NSString *const FBSimulatorLogNameVideo = @"video";
   }];
 
   NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
-    [self syslog],
-    [self coreSimulator],
-    [self simulatorBootstrap]
+    self.syslog,
+    self.coreSimulator,
+    self.simulatorBootstrap,
+    self.eventLogs.allValues
   ]];
   [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
   return [logs filteredArrayUsingPredicate:predicate];
@@ -156,10 +160,70 @@ NSString *const FBSimulatorLogNameVideo = @"video";
   NSArray *launchedProcesses = self.simulator.history.allUserLaunchedProcesses;
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
   for (FBProcessInfo *launchedProcess in launchedProcesses) {
-    logs[launchedProcess] = [aslParser writableLogForProcessInfo:launchedProcess];
+    logs[launchedProcess] = [aslParser writableLogForProcessInfo:launchedProcess logBuilder:self.logBuilder];
   }
 
   return [logs copy];
+}
+
+#pragma mark FBSimulatorEventSink Implementation
+
+- (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
+{
+
+}
+
+- (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+{
+
+}
+
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+{
+
+}
+
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+{
+
+}
+
+- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+{
+
+}
+
+- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+{
+
+}
+
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+{
+
+}
+
+- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+{
+
+}
+
+- (void)logAvailable:(FBWritableLog *)log
+{
+  if (!log.shortName) {
+    return;
+  }
+  self.eventLogs[log.shortName] = log;
+}
+
+- (void)didChangeState:(FBSimulatorState)state
+{
+
+}
+
+- (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle
+{
+
 }
 
 #pragma mark Private
@@ -167,9 +231,6 @@ NSString *const FBSimulatorLogNameVideo = @"video";
 + (NSString *)storageDirectoryForSimulator:(FBSimulator *)simulator
 {
   return [simulator.auxillaryDirectory stringByAppendingPathComponent:@"logs"];
-}
-
-{
 }
 
 - (NSString *)systemLogPath
@@ -246,4 +307,5 @@ NSString *const FBSimulatorLogNameVideo = @"video";
     return [pidSet containsObject:@(crashLog.processIdentifier)];
   }];
 }
+
 @end
