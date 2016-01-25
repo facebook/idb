@@ -14,6 +14,15 @@ protocol Runner {
   func run(writer: Writer) -> ActionResult
 }
 
+private func buildEventReporter(writer: Writer, format: Format, simulator: FBSimulator) -> EventReporter {
+  switch format {
+  case .HumanReadable(let keywords):
+    return HumanReadableEventReporter(simulator: simulator, writer: writer, keywords: keywords)
+  case .JSON(let pretty):
+    return JSONEventReporter(simulator: simulator, writer: writer, pretty: pretty)
+  }
+}
+
 extension Configuration {
   func buildSimulatorControl() throws -> FBSimulatorControl {
     let debugLogging = self.options.contains(Configuration.Options.DebugLogging)
@@ -164,7 +173,11 @@ struct CreationRunner : Runner {
     do {
       let options = FBSimulatorAllocationOptions.Create
       let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
-      writer.write("Created \(self.format.withSimulator(simulator))")
+      let reporter = buildEventReporter(writer, format: self.format, simulator: simulator)
+      defer {
+        simulator.userEventSink = nil
+      }
+      reporter.report(EventName.Create, EventType.Ended, simulator)
       return ActionResult.Success
     } catch let error as NSError {
       return ActionResult.Failure("Failed to Create Simulator \(error.description)")
@@ -179,86 +192,53 @@ private struct SimulatorRunner : Runner {
 
   func run(writer: Writer) -> ActionResult {
     do {
+      let event = buildEventReporter(writer, format: self.format, simulator: self.simulator)
+      defer {
+        self.simulator.userEventSink = nil
+      }
+
       switch self.interaction {
       case .List:
-        writer.write(self.formattedSimulator)
+        event.simulatorEvent()
       case .Approve(let bundleIDs):
-        writer.write("Approving \(bundleIDs) in \(self.formattedSimulator)")
+        event.report(EventName.Approve, EventType.Started, [bundleIDs] as NSArray)
         try simulator.interact().authorizeLocationSettings(bundleIDs).performInteraction()
-        writer.write("Approved \(bundleIDs) in \(self.formattedSimulator)")
+        event.report(EventName.Approve, EventType.Ended, [bundleIDs] as NSArray)
       case .Boot(let maybeLaunchConfiguration):
         let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
-        writer.write("Booting \(self.formattedSimulator)")
+        event.report(EventName.Boot, EventType.Started, launchConfiguration)
         try simulator.interact().prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration).performInteraction()
-        writer.write("Booted \(self.formattedSimulator)")
+        event.report(EventName.Boot, EventType.Ended, launchConfiguration)
       case .Shutdown:
-        writer.write("Shutting Down \(self.formattedSimulator)")
+        event.report(EventName.Shutdown, EventType.Started, self.simulator)
         try simulator.interact().shutdownSimulator().performInteraction()
-        writer.write("Shutdown \(self.formattedSimulator)")
+        event.report(EventName.Shutdown, EventType.Ended, self.simulator)
       case .Diagnose:
-        writer.write(try JSON.serializeToString(simulator.logs.allLogs()))
+        let logs = simulator.logs.allLogs() as! [FBSimulatorLogs]
+        event.report(EventName.Diagnostic, EventType.Discrete, logs)
       case .Delete:
-        writer.write("Deleteing \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Started, self.simulator)
         try simulator.pool!.deleteSimulator(simulator)
-        writer.write("Deleted \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Ended, self.simulator)
       case .Install(let application):
-        writer.write("Installing \(application.path) on \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Started, application)
         try simulator.interact().installApplication(application).performInteraction()
-        writer.write("Installed \(application.path) on \(self.formattedSimulator)")
+        event.report(EventName.Delete, EventType.Started, application)
       case .Launch(let launch):
-        writer.write("Launching \(launch.shortDescription) on \(self.formattedSimulator)")
+        event.report(EventName.Launch, EventType.Started, launch)
         if let appLaunch = launch as? FBApplicationLaunchConfiguration {
           try simulator.interact().launchApplication(appLaunch).performInteraction()
         }
         else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
           try simulator.interact().launchAgent(agentLaunch).performInteraction()
         }
-        writer.write("Launched \(launch.shortDescription) on \(self.formattedSimulator)")
+        event.report(EventName.Launch, EventType.Ended, launch)
       }
     } catch let error as NSError {
       return .Failure(error.description)
-    } catch is JSONError {
-      return .Failure("Failed to encode to JSON")
+    } catch let error as JSON.Error {
+      return .Failure(error.description)
     }
     return .Success
-  }
-
-  private var formattedSimulator: String {
-    get {
-      return self.format.withSimulator(simulator)
-    }
-  }
-}
-
-extension Format {
-  func withSimulator(simulator: FBSimulator) -> String {
-    switch (self) {
-    case .UDID:
-      return simulator.udid
-    case .Name:
-      return simulator.name
-    case .DeviceName:
-      guard let configuration = simulator.configuration else {
-        return "unknown-name"
-      }
-      return configuration.deviceName
-    case .OSVersion:
-      guard let configuration = simulator.configuration else {
-        return "unknown-os"
-      }
-      return configuration.osVersionString
-    case .State:
-      return simulator.stateString
-    case .ProcessIdentifier:
-      guard let process = simulator.launchdSimProcess else {
-        return "no-process"
-      }
-      return process.processIdentifier.description
-    case .Compound(let subformats):
-      let tokens: NSArray = subformats.map { format in
-        format.withSimulator(simulator)
-      }
-      return tokens.componentsJoinedByString(" ")
-    }
   }
 }

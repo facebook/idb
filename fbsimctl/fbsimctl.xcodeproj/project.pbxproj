@@ -45,6 +45,8 @@
 		AA6085DA1C287E02009B500E /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
 		AA6085DB1C287E02009B500E /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
 		AA6085DC1C287E02009B500E /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
+		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
+		AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
 		AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AACF9F541C46E85800B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
@@ -102,6 +104,7 @@
 		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		AA6085BF1C287B36009B500E /* fbsimctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fbsimctl.h; sourceTree = "<group>"; };
+		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
@@ -157,6 +160,7 @@
 				AA54EF6E1C47E9FC006D5118 /* Constants.swift */,
 				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
 				AACF9F521C46E5C100B17E82 /* Environment.swift */,
+				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
 				AA54EF741C48275B006D5118 /* JSON.swift */,
 				AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */,
@@ -373,6 +377,7 @@
 			files = (
 				AAE0C5571C492158005DE6D9 /* Query.swift in Sources */,
 				AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */,
+				AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */,
 				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
 				AA54EF6F1C47E9FC006D5118 /* Constants.swift in Sources */,
 				AA6085D21C287E02009B500E /* Command.swift in Sources */,
@@ -407,6 +412,7 @@
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
 				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
 				AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */,
+				AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */,
 				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
 				AA54EF701C47E9FC006D5118 /* Constants.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,

@@ -64,19 +64,23 @@ class QueryParserTests : XCTestCase {
 class FormatParserTests : XCTestCase {
   func testParsesSimpleFormats() {
     self.assertParsesAll(Format.parser(), [
-      (["--udid"], .UDID),
-      (["--name"], .Name),
-      (["--device-name"], .DeviceName),
-      (["--os"], .OSVersion),
-      (["--state"], .State),
-      (["--pid"], .ProcessIdentifier),
+      (["--udid"], .HumanReadable([.UDID])),
+      (["--name"], .HumanReadable([.Name])),
+      (["--device-name"], .HumanReadable([.DeviceName])),
+      (["--os"], .HumanReadable([.OSVersion])),
+      (["--state"], .HumanReadable([.State])),
+      (["--pid"], .HumanReadable([.ProcessIdentifier])),
+      (["--json"], .JSON(false)),
+      (["--json-pretty"], .JSON(true))
     ])
   }
 
   func testParsesCompoundFormats() {
     self.assertParsesAll(Format.parser(), [
-      (["--name", "--device-name", "--pid"], .Compound([.Name, .DeviceName, .ProcessIdentifier])),
-      (["--udid", "--name", "--state", "--device-name", "--os"], .Compound([.UDID, .Name, .State, .DeviceName, .OSVersion]))
+      (["--name", "--device-name", "--pid"], .HumanReadable([.Name, .DeviceName, .ProcessIdentifier])),
+      (["--udid", "--name", "--state", "--device-name", "--os"], .HumanReadable([.UDID, .Name, .State, .DeviceName, .OSVersion])),
+      (["--json", "--name"], .JSON(false)),
+      (["--json-pretty", "--name"], .JSON(true)),
     ])
   }
 
@@ -181,17 +185,6 @@ class ConfigurationParserTests : XCTestCase {
     )
   }
 
-  func testParsesWithJSONOutput() {
-    self.assertParses(
-      Configuration.parser(),
-      ["--json"],
-      Configuration(
-        controlConfiguration: Configuration.defaultValue.controlConfiguration,
-        options: Configuration.Options.JSONOutput
-      )
-    )
-  }
-
   func testParsesWithSetPath() {
     self.assertParses(
       Configuration.parser(),
@@ -237,13 +230,13 @@ class ConfigurationParserTests : XCTestCase {
   func testParsesWithAllTheAbove() {
     self.assertParses(
       Configuration.parser(),
-      ["--debug-logging", "--json", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
+      ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
         controlConfiguration: FBSimulatorControlConfiguration(
           deviceSetPath: "/usr/bin",
           options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
         ),
-        options: Configuration.Options.DebugLogging.union(Configuration.Options.JSONOutput)
+        options: Configuration.Options.DebugLogging
       )
     )
   }
@@ -366,7 +359,7 @@ class ActionParserTests : XCTestCase {
       (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), nil),
-      (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), Format.Compound([.DeviceName, .OSVersion]))
+      (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), Format.HumanReadable([.DeviceName, .OSVersion]))
     ])
   }
 

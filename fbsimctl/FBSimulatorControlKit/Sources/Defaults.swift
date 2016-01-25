@@ -30,7 +30,7 @@ public protocol Defaultable {
 extension Format : Defaultable {
   public static var defaultValue: Format {
     get {
-      return .Compound([ .UDID, .Name])
+      return .HumanReadable([ .UDID, .Name])
     }
   }
 }

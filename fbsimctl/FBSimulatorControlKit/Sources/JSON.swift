@@ -10,23 +10,85 @@
 import Foundation
 import FBSimulatorControl
 
-public struct JSONError : ErrorType {
+extension NSString : FBJSONSerializationDescribeable {
+  public func jsonSerializableRepresentation() -> AnyObject! {
+    return self
+  }
+}
+extension NSString : FBDebugDescribeable {
+  override public var debugDescription: String {
+    get {
+      return self.description
+    }
+  }
 
+  public var shortDescription: String {
+    get {
+      return self.description
+    }
+  }
+}
+
+extension NSArray : FBJSONSerializationDescribeable {
+  public func jsonSerializableRepresentation() -> AnyObject! {
+    return self
+  }
+}
+extension NSArray : FBDebugDescribeable {
+  override public var debugDescription: String {
+    get {
+      return self.description
+    }
+  }
+
+  public var shortDescription: String {
+    get {
+      return self.description
+    }
+  }
+}
+
+extension NSDictionary : FBJSONSerializationDescribeable {
+  public func jsonSerializableRepresentation() -> AnyObject! {
+    return self
+  }
 }
 
 public struct JSON {
-  static func serializeToString(objects: [AnyObject]) throws -> String {
-    let descriptions: [AnyObject] = objects.flatMap { candidate in
-      guard let describable = candidate as? FBJSONSerializationDescribeable else {
-        return nil
-      }
-      return describable.jsonSerializableRepresentation()
-    }
+  public enum Error : ErrorType, CustomStringConvertible {
+    case Serialization(NSError)
+    case Stringifying(NSData)
 
-    let data = try NSJSONSerialization.dataWithJSONObject(descriptions, options: NSJSONWritingOptions.PrettyPrinted)
-    guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
-      throw JSONError()
+    public var description: String {
+      get {
+        switch self {
+        case .Serialization(let error):
+          return "Serialization \(error.description)"
+        case .Stringifying(let data):
+          return "Stringifying \(data.description)"
+        }
+      }
     }
-    return string as String
+  }
+
+  let pretty: Bool
+
+  func serializeToString(object: FBJSONSerializationDescribeable) throws -> String {
+    do {
+      let jsonObject = object.jsonSerializableRepresentation()
+      let data = try NSJSONSerialization.dataWithJSONObject(jsonObject, options: self.writingOptions)
+      guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
+        throw Error.Stringifying(data)
+      }
+      return string as String
+    } catch let error as NSError {
+      throw Error.Serialization(error)
+    }
+  }
+
+  private var writingOptions: NSJSONWritingOptions {
+    get {
+      return self.pretty ? NSJSONWritingOptions.PrettyPrinted : NSJSONWritingOptions()
+    }
   }
 }
