@@ -41,7 +41,7 @@
 
 - (NSString *)lastScaleCommandLineSwitchForSimulator:(FBSimulator *)simulator
 {
-  return [NSString stringWithFormat:@"SimulatorWindowLastScale-%@", simulator.device.deviceTypeIdentifier];
+  return [NSString stringWithFormat:@"-SimulatorWindowLastScale-%@", simulator.device.deviceTypeIdentifier];
 }
 
 @end
