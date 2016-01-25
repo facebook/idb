@@ -42,13 +42,11 @@
 {
   [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2 stdOut:nil stdErr:nil];
   [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
-  [self.generator diagnosticInformationAvailable:@"foo" process:self.processInfo1 value:@"bar"];
 
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:self.generator.history];
   FBSimulatorHistory *history = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 
   XCTAssertEqualObjects(history.lastLaunchedApplicationProcess, self.processInfo1);
-  XCTAssertEqualObjects([history diagnosticNamed:@"foo" forApplication:self.tableSearchApplication], @"bar");
 }
 
 @end
