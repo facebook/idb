@@ -154,7 +154,7 @@
     if (self.inflatedSimulators[udid]) {
       continue;
     }
-    FBSimulator *simulator = [FBSimulator fromSimDevice:device configuration:nil pool:self query:self.processQuery logger:self.logger];
+    FBSimulator *simulator = [FBSimulator fromSimDevice:device configuration:nil pool:self ];
     self.inflatedSimulators[udid] = simulator;
   }
 

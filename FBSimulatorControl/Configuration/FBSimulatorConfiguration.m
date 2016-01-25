@@ -493,7 +493,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithNamedDevice:(id<FBSimulatorConfiguration_Device>)device os:(id<FBSimulatorConfiguration_OS>)os
+- (instancetype)initWithNamedDevice:(id<FBSimulatorConfiguration_Device>)device os:(id<FBSimulatorConfiguration_OS>)os auxillaryDirectory:(NSString *)auxillaryDirectory
 {
   NSParameterAssert(device);
   NSParameterAssert(os);
@@ -505,6 +505,7 @@
 
   _device = device;
   _os = os;
+  _auxillaryDirectory = auxillaryDirectory;
 
   return self;
 }
@@ -516,7 +517,7 @@
   dispatch_once(&onceToken, ^{
     id<FBSimulatorConfiguration_Device> device = FBSimulatorConfiguration_Device_iPhone5.new;
     id<FBSimulatorConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
-    configuration = [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os];
+    configuration = [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
   });
   return configuration;
 }
@@ -527,28 +528,25 @@
 {
   return [[self.class alloc]
     initWithNamedDevice:self.device
-    os:self.os];
+    os:self.os
+    auxillaryDirectory:self.auxillaryDirectory];
 }
 
 #pragma mark NSCoding
 
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
-  _os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
-
-  return self;
+  id<FBSimulatorConfiguration_Device> device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
+  id<FBSimulatorConfiguration_OS> os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
+  NSString *auxillaryDirectory = [coder decodeObjectForKey:NSStringFromSelector(@selector(auxillaryDirectory))];
+  return [self initWithNamedDevice:device os:os auxillaryDirectory:auxillaryDirectory];
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [coder encodeObject:self.device forKey:NSStringFromSelector(@selector(device))];
   [coder encodeObject:self.os forKey:NSStringFromSelector(@selector(os))];
+  [coder encodeObject:self.auxillaryDirectory forKey:NSStringFromSelector(@selector(auxillaryDirectory))];
 }
 
 #pragma mark Accessors
@@ -567,7 +565,7 @@
 
 - (NSUInteger)hash
 {
-  return self.deviceName.hash ^ self.osVersionString.hash;
+  return self.deviceName.hash ^ self.osVersionString.hash ^ self.auxillaryDirectory.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorConfiguration *)object
@@ -577,7 +575,8 @@
   }
 
   return [self.deviceName isEqualToString:object.deviceName] &&
-         [self.osVersionString isEqualToString:object.osVersionString];
+         [self.osVersionString isEqualToString:object.osVersionString] &&
+         (self.auxillaryDirectory == object.auxillaryDirectory || [self.auxillaryDirectory isEqualToString:object.auxillaryDirectory]);
 }
 
 #pragma mark Description
@@ -585,9 +584,10 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Device '%@' | OS Version '%@'",
+    @"Device '%@' | OS Version '%@' | Aux Directory %@",
     self.deviceName,
-    self.osVersionString
+    self.osVersionString,
+    self.auxillaryDirectory
   ];
 }
 
@@ -813,6 +813,15 @@
 - (instancetype)withOSNamed:(NSString *)osName
 {
   return [self updateOSVersion:self.class.nameToOSVersion[osName]];
+}
+
+#pragma mark Auxillary Directory
+
+- (instancetype)withAuxillaryDirectory:(NSString *)auxillaryDirectory
+{
+  FBSimulatorConfiguration *configuration = [self copy];
+  configuration.auxillaryDirectory = auxillaryDirectory;
+  return configuration;
 }
 
 #pragma mark Private

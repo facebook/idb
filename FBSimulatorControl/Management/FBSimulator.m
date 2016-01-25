@@ -33,6 +33,7 @@
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorLogs.h"
 #import "FBSimulatorNotificationEventSink.h"
+#import "FBSimulatorPool+Private.h"
 #import "FBSimulatorPool.h"
 #import "FBTaskExecutor.h"
 
@@ -40,18 +41,19 @@
 
 #pragma mark Lifecycle
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query logger:(id<FBSimulatorLogger>)logger
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool
 {
   return [[[FBSimulator alloc]
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDevice:device error:nil]
     pool:pool
-    query:query
-    logger:logger]
+    query:pool.processQuery
+    auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
+    logger:pool.logger]
     attachEventSinkComposition];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBSimulatorLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -62,6 +64,7 @@
   _configuration = configuration;
   _pool = pool;
   _processQuery = query;
+  _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;
 
   return self;
@@ -125,11 +128,6 @@
 - (NSString *)dataDirectory
 {
   return self.device.dataPath;
-}
-
-- (NSString *)auxillaryDirectory
-{
-  return [self.dataDirectory stringByAppendingPathComponent:@"fbsimulatorcontrol"];
 }
 
 - (BOOL)isAllocated
@@ -222,6 +220,16 @@
     @"name" : self.device.name,
     @"state" : self.device.stateString
   };
+}
+
+#pragma mark Private
+
++ (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration
+{
+  if (!configuration.auxillaryDirectory) {
+    return [device.dataPath stringByAppendingPathComponent:@"fbsimulatorcontrol"];
+  }
+  return [configuration.auxillaryDirectory stringByAppendingPathComponent:device.UDID.UUIDString];
 }
 
 @end
