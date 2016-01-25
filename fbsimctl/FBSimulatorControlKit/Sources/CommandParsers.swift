@@ -436,13 +436,14 @@ extension Format : Parsable {
 struct FBSimulatorConfigurationParser {
   static func parser() -> Parser<FBSimulatorConfiguration> {
     return Parser
-      .ofTwoSequenced(
+      .ofThreeSequenced(
         self.deviceParser().optional(),
-        self.osVersionParser().optional()
+        self.osVersionParser().optional(),
+        self.auxDirectoryParser().optional()
       )
-      .fmap { (device, os) in
-        if device == nil && os == nil {
-          throw ParseError.Custom("Simulator Configuration must contain at least a device name or os version")
+      .fmap { (device, os, auxDirectory) in
+        if device == nil && os == nil && auxDirectory == nil {
+          throw ParseError.Custom("Simulator Configuration must contain at least one of: Device Name, OS Version or Aux Directory")
         }
         let configuration = FBSimulatorConfiguration.defaultConfiguration().copy() as! FBSimulatorConfiguration
         if let device = device {
@@ -450,6 +451,9 @@ struct FBSimulatorConfigurationParser {
         }
         if let os = os {
           configuration.os = os
+        }
+        if let auxDirectory = auxDirectory {
+          configuration.auxillaryDirectory = auxDirectory
         }
         return configuration
       }
@@ -473,6 +477,10 @@ struct FBSimulatorConfigurationParser {
       }
       return osVersion
     }
+  }
+
+  static func auxDirectoryParser() -> Parser<String> {
+    return Parser.succeeded("--aux", Parser<String>.ofDirectory())
   }
 }
 
