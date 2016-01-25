@@ -11,6 +11,7 @@
 
 @class FBProcessInfo;
 @class FBWritableLog;
+@class FBWritableLogBuilder;
 
 /**
  Reads ASL Messages using asl(3).
@@ -26,7 +27,9 @@
  Returns a FBWritableLog for the log messages relevant to the provided process info.
 
  @param processInfo the Process Info to obtain filtered log information.
+ @param logBuilder the log builder to base the log off.
+ @return an FBWritableLog populated with log lines for the provided process.
  */
-- (FBWritableLog *)writableLogForProcessInfo:(FBProcessInfo *)processInfo;
+- (FBWritableLog *)writableLogForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBWritableLogBuilder *)logBuilder;
 
 @end

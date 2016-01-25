@@ -572,9 +572,14 @@
   return self;
 }
 
+- (NSString *)createPath
+{
+  return [self.writableLog temporaryFilePath];
+}
+
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block
 {
-  NSString *path = [self.writableLog temporaryFilePath];
+  NSString *path = [self createPath];
   if (!block(path)) {
     [NSFileManager.defaultManager removeItemAtPath:path error:nil];
     [self flushLogs];

@@ -79,11 +79,11 @@
 
 #pragma mark Public
 
-- (FBWritableLog *)toWritableLog
+- (FBWritableLog *)toWritableLog:(FBWritableLogBuilder *)builder
 {
-  return [[[[FBWritableLogBuilder builder]
+  return [[[builder
+    updateShortName:[NSString stringWithFormat:@"%@_crash", self.processName]]
     updatePath:self.path]
-    updateShortName:self.processName]
     build];
 }
 

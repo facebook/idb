@@ -86,9 +86,9 @@ static BOOL WriteOutputToFilePath(const char *filePath, asl_object_t aslFile, pi
 
 #pragma mark Public
 
-- (FBWritableLog *)writableLogForProcessInfo:(FBProcessInfo *)processInfo
+- (FBWritableLog *)writableLogForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBWritableLogBuilder *)logBuilder
 {
-  return [[[[[FBWritableLogBuilder builder]
+  return [[[[logBuilder
     updateShortName:processInfo.processName]
     updateFileType:@"log"]
     updatePathFromBlock:^ BOOL (NSString *outputPath) {

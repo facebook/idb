@@ -162,10 +162,23 @@
 - (instancetype)updatePath:(NSString *)path;
 
 /**
- Updates the underlying `FBWritableLog` with a Path, by applying the block.
- Will replace any `logData associated with the log.
+ Returns a File Path suitable for writing data into.
+ Once writing to the file has been successful, the builder should be updated with `updatePath`.
 
- @param block a block to populate the path with. Returning YES means the application was successful. NO otherwise.
+ @return a path to write data into.
+ */
+- (NSString *)createPath;
+
+/**
+ Updates the underlying `FBWritableLog` by applying a block that will write data into a file path.
+ The block should:
+ 1) Be non-null
+ 2) Write data into the path provided.
+ 3) If writing was successful, YES should be returned.
+ 4) If writing was not successful, NO should be returned.
+ If writing to the file was succesful, YES
+
+ @param block a block to populate a file path with.
  @return the reciever, for chaining.
  */
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block;

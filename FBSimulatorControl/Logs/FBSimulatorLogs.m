@@ -22,6 +22,10 @@
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
 
+NSString *const FBSimulatorLogNameSyslog = @"system_log";
+NSString *const FBSimulatorLogNameCoreSimulator = @"coresimulator";
+NSString *const FBSimulatorLogNameSimulatorBootstrap = @"launchd_bootstrap";
+NSString *const FBSimulatorLogNameVideo = @"video";
 @interface FBSimulatorLogs ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
@@ -54,6 +58,11 @@
 
 #pragma mark Accessors
 
+- (FBWritableLogBuilder *)logBuilder
+{
+  return [FBWritableLogBuilder.builder updateStorageDirectory:self.storageDirectory];
+}
+
 - (NSArray *)allLogs
 {
   NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBWritableLog *log, NSDictionary *_) {
@@ -71,17 +80,18 @@
 
 - (FBWritableLog *)syslog
 {
-  return [[[[self.builder
+  return [[[[self.logBuilder
     updatePath:self.systemLogPath]
-    updateShortName:@"system_log"]
+    updateShortName:FBSimulatorLogNameSyslog]
     updateHumanReadableName:@"System Log"]
     build];
 }
 
 - (FBWritableLog *)coreSimulator
 {
-  return [[[self.builder
+  return [[[[self.logBuilder
     updatePath:self.coreSimulatorLogPath]
+    updateShortName:FBSimulatorLogNameCoreSimulator]
     updateHumanReadableName:@"Core Simulator Log"]
     build];
 }
@@ -92,9 +102,9 @@
     stringByAppendingPathComponent:self.simulator.udid]
     stringByAppendingPathComponent:@"/data/var/run/launchd_bootstrap.plist"];
 
-  return [[[[self.builder
+  return [[[[self.logBuilder
     updatePath:expectedPath]
-    updateShortName:@"launchd_bootstrap"]
+    updateShortName:FBSimulatorLogNameSimulatorBootstrap]
     updateHumanReadableName:@"Launchd Bootstrap"]
     build];
 }
@@ -104,7 +114,7 @@
   return [FBConcurrentCollectionOperations
     map:[self launchdSimSubprocessCrashesPathsAfterDate:date]
     withBlock:^ FBWritableLog * (FBCrashLogInfo *logInfo) {
-      return [logInfo toWritableLog];
+      return [logInfo toWritableLog:self.logBuilder];
     }];
 }
 
@@ -127,7 +137,7 @@
     filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:lastLaunchDate]
     predicate:[FBSimulatorLogs predicateForUserLaunchedProcessesInHistory:self.simulator.history]
     map:^ FBWritableLog * (FBCrashLogInfo *logInfo) {
-      return [logInfo toWritableLog];
+      return [logInfo toWritableLog:self.logBuilder];
     }];
 }
 
@@ -159,9 +169,7 @@
   return [simulator.auxillaryDirectory stringByAppendingPathComponent:@"logs"];
 }
 
-- (FBWritableLogBuilder *)builder
 {
-  return [FBWritableLogBuilder.builder updateStorageDirectory:self.storageDirectory];
 }
 
 - (NSString *)systemLogPath

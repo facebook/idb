@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBWritableLog;
+@class FBWritableLogBuilder;
 
 /**
  Information about Crash Logs.
@@ -51,8 +52,10 @@
 + (instancetype)fromCrashLogAtPath:(NSString *)path;
 
 /**
- Constructs a FBWritableLog instance from the Crash Log info
+ Constructs a FBWritableLog instance from the Crash Log.
+ 
+ @param builder the builder to populate the Crash Log into.
  */
-- (FBWritableLog *)toWritableLog;
+- (FBWritableLog *)toWritableLog:(FBWritableLogBuilder *)builder;
 
 @end
