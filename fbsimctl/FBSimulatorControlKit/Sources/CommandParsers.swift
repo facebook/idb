@@ -470,12 +470,13 @@ struct FBSimulatorConfigurationParser {
 struct FBSimulatorLaunchConfigurationParser {
   static func parser() -> Parser<FBSimulatorLaunchConfiguration> {
     return Parser
-      .ofTwoSequenced(
+      .ofThreeSequenced(
         self.localeParser().optional(),
-        self.scaleParser().optional()
+        self.scaleParser().optional(),
+        self.optionsParser().optional()
       )
-      .fmap { (locale, scale) in
-        if locale == nil && scale == nil {
+      .fmap { (locale, scale, options) in
+        if locale == nil && scale == nil && options == nil {
           throw ParseError.Custom("Simulator Launch Configuration must contain at least a locale or scale")
         }
         var configuration = FBSimulatorLaunchConfiguration.defaultConfiguration().copy() as! FBSimulatorLaunchConfiguration
@@ -484,6 +485,9 @@ struct FBSimulatorLaunchConfigurationParser {
         }
         if let scale = scale {
           configuration = configuration.withScale(scale)
+        }
+        if let options = options {
+          configuration = configuration.withOptions(options)
         }
         return configuration
     }
@@ -501,6 +505,15 @@ struct FBSimulatorLaunchConfigurationParser {
       Parser.ofString("--scale=75", FBSimulatorLaunchConfiguration_Scale_75()),
       Parser.ofString("--scale=100", FBSimulatorLaunchConfiguration_Scale_100())
     ])
+  }
+
+  static func optionsParser() -> Parser<FBSimulatorLaunchOptions> {
+    return Parser<FBSimulatorLaunchOptions>
+      .unionOptions(1, [
+        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
+        Parser.ofString("--record-video", FBSimulatorLaunchOptions.RecordVideo),
+        Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
+      ])
   }
 }
 
