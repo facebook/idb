@@ -53,18 +53,11 @@ extern NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus;
 @property (nonatomic, copy, readonly) NSDictionary *processLaunchConfigurations;
 
 /**
- Per Simulator Diagnostic Information.
-
- Is an NSDictionary<NSString, id<NSCopying, NSCoding>>.
- */
-@property (nonatomic, copy, readonly) NSDictionary *simulatorDiagnostics;
-
-/**
- Per-process Diagnostic Information.
+ Per-Process Metadata. Is used to store small amounts of information about processes.
 
  Is an NSDictionary<FBProcessInfo, NSDictionary<NSString, id<NSCopying, NSCoding>>>.
  */
-@property (nonatomic, copy, readonly) NSDictionary *processDiagnostics;
+@property (nonatomic, copy, readonly) NSDictionary *processMetadata;
 
 /**
  The last state, may be nil if this is the first instance.

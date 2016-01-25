@@ -15,9 +15,11 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorLogs.h"
 #import "FBSimulatorSession+Private.h"
 #import "FBSimulatorSession.h"
 #import "FBTaskExecutor.h"
+#import "FBWritableLog.h"
 
 typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t processIdentifier);
 
@@ -61,7 +63,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
         return;
       }
 
-      [simulator.eventSink diagnosticInformationAvailable:name process:process value:innerTask.stdOut];
+      [FBSimulatorInteraction writeDiagnosticForSimulator:simulator process:process name:name value:innerTask.stdOut];
     }];
 
     if (task.error) {
@@ -84,9 +86,20 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
     if (task.error) {
       return [FBSimulatorError failBoolWithError:task.error errorOut:error];
     }
-    [simulator.eventSink diagnosticInformationAvailable:name process:process value:task.stdOut];
+    [FBSimulatorInteraction writeDiagnosticForSimulator:simulator process:process name:name value:task.stdOut];
     return YES;
   }];
+}
+
++ (void)writeDiagnosticForSimulator:(FBSimulator *)simulator process:(FBProcessInfo *)process name:(NSString *)name value:(NSString *)value
+{
+  FBWritableLog *log = [[[[simulator.logs.logBuilder
+    updateString:value]
+    updateShortName:[NSString stringWithFormat:@"%@_%@_%d", name, process.processName, process.processIdentifier]]
+    updateFileType:@"txt"]
+    build];
+
+  return [simulator.eventSink logAvailable:log];
 }
 
 @end

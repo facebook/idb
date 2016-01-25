@@ -94,9 +94,7 @@
 
 + (NSString *)pathForPerisistantHistory:(FBSimulator *)simulator
 {
-  return [[simulator.dataDirectory
-    stringByAppendingPathComponent:@"fbsimulatorcontrol"]
-    stringByAppendingPathExtension:@"history"];
+  return [simulator.auxillaryDirectory stringByAppendingPathExtension:@"history"];
 }
 
 + (FBSimulatorHistory *)freshHistoryForSimulator:(FBSimulator *)simulator
@@ -146,7 +144,7 @@
 - (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
 {
   [self processTerminated:agentProcess];
-  [self update:agentProcess withProcessDiagnosticNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
+  [self updateProcess:agentProcess withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
@@ -157,16 +155,12 @@
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
   [self processTerminated:applicationProcess];
-  [self update:applicationProcess withProcessDiagnosticNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
+  [self updateProcess:applicationProcess withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
 }
 
-- (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value
+- (void)logAvailable:(FBWritableLog *)log
 {
-  if (!process) {
-    [self updateWithSimulatorDiagnosticNamed:name value:value];
-    return;
-  }
-  [self update:process withProcessDiagnosticNamed:name value:value];
+
 }
 
 - (void)didChangeState:(FBSimulatorState)state
@@ -206,20 +200,12 @@
   }];
 }
 
-- (instancetype)update:(FBProcessInfo *)process withProcessDiagnosticNamed:(NSString *)diagnosticName value:(id<NSCopying, NSCoding>)value
+- (instancetype)updateProcess:(FBProcessInfo *)process withMetadataNamed:(NSString *)diagnosticName value:(id<NSCopying, NSCoding>)value
 {
   return [self updateCurrentState:^ FBSimulatorHistory * (FBSimulatorHistory *history) {
-    NSMutableDictionary *processDiagnostics = [history.mutableProcessDiagnostics[process] mutableCopy] ?: [NSMutableDictionary dictionary];
-    processDiagnostics[diagnosticName] = value;
-    history.mutableProcessDiagnostics[process] = processDiagnostics;
-    return history;
-  }];
-}
-
-- (instancetype)updateWithSimulatorDiagnosticNamed:(NSString *)diagnostic value:(id<NSCopying, NSCoding>)value
-{
-  return [self updateCurrentState:^ FBSimulatorHistory * (FBSimulatorHistory *history) {
-    history.mutableSimulatorDiagnostics[diagnostic] = value;
+    NSMutableDictionary *metadata = [history.mutableProcessMetadata[process] mutableCopy] ?: [NSMutableDictionary dictionary];
+    metadata[diagnosticName] = value;
+    history.mutableProcessMetadata[process] = metadata;
     return history;
   }];
 }

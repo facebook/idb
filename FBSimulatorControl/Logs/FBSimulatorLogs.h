@@ -9,18 +9,41 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBSimulatorEventSink.h>
+
 @class FBSimulator;
 @class FBSimulatorSession;
 @class FBWritableLog;
+@class FBWritableLogBuilder;
+
+/**
+ The Name of the Syslog.
+ */
+extern NSString *const FBSimulatorLogNameSyslog;
+
+/**
+ The Name of the Core Simulator Log.
+ */
+extern NSString *const FBSimulatorLogNameCoreSimulator;
+
+/**
+ The Name of the Simulator Bootstrap.
+ */
+extern NSString *const FBSimulatorLogNameSimulatorBootstrap;
+
+/**
+ The Name of the Video Log
+ */
+extern NSString *const FBSimulatorLogNameVideo;
 
 /**
  Exposes Simulator Logs & Diagnsotics as FBWritableLog instances.
 
  Instances of FBWritableLog exposed by this class are not nullable since FBWritableLog's can be empty:
  - This means that values do not have to be checked before storing in collections
- - Missing content can be inserted into the FBWritableLog instances, retaining the original metadata.
+ - Missing content can be inserted into the FBWritableLog instances, whilst retaining the original metadata.
  */
-@interface FBSimulatorLogs : NSObject
+@interface FBSimulatorLogs : NSObject <FBSimulatorEventSink>
 
 /**
  Creates and returns a `FBSimulatorLogs` instance.
@@ -29,6 +52,14 @@
  @return A new `FBSimulatorLogFetcher` instance.
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator;
+
+/**
+ Returns an FBWritableLogBuilder suitable for writing diagnostic log information to.
+ This builder is configured to serialize to the appropriate directories.
+
+ @return A new `FBSimulatorLogFetcher` instance.
+ */
+- (FBWritableLogBuilder *)logBuilder;
 
 /**
  All of the FBWritableLog instances for the Simulator.

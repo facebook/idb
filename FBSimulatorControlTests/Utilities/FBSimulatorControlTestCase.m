@@ -39,7 +39,9 @@ static NSString *const DeviceSetEnvCustom = @"custom";
 - (FBSimulatorControl *)control
 {
   if (!_control) {
-    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:self.deviceSetPath options:self.managementOptions];
+    FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration
+      configurationWithDeviceSetPath:self.deviceSetPath
+      options:self.managementOptions];
 
     NSError *error;
     FBSimulatorControl *control = [FBSimulatorControl withConfiguration:configuration error:&error];

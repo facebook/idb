@@ -90,10 +90,10 @@
   }
 }
 
-- (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value
+- (void)logAvailable:(FBWritableLog *)log
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink diagnosticInformationAvailable:name process:process value:value];
+    [sink logAvailable:log];
   }
 }
 

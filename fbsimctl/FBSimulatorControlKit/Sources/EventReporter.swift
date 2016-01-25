@@ -80,7 +80,7 @@ public class HumanReadableEventReporter : NSObject, EventReporter {
 
   }
 
-  public func diagnosticInformationAvailable(name: String!, process: FBProcessInfo!, value: protocol<NSCoding, NSCopying>!) {
+  public func logAvailable(log: FBWritableLog!) {
 
   }
 
@@ -185,7 +185,11 @@ public class JSONEventReporter : NSObject, EventReporter {
     self.simulatorEvent()
   }
 
-  public func diagnosticInformationAvailable(name: String!, process: FBProcessInfo!, value: protocol<NSCoding, NSCopying>!) {
+  public func logAvailable(log: FBWritableLog!) {
+    self.simulatorEvent()
+  }
+
+  public func diagnosticAvailable(name: String!, process: FBProcessInfo!, value: protocol<NSCoding, NSCopying>!) {
     self.simulatorEvent()
   }
 

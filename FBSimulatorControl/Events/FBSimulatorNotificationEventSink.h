@@ -72,14 +72,9 @@ extern NSString *const FBSimulatorExpectedTerminationKey;
 extern NSString *const FBSimulatorProcessKey;
 
 /**
- Notification UserInfo for the name of a diagnostic.
+ Notification UserInfo for a FBWritableLog Diagnostic Log.
  */
-extern NSString *const FBSimulatorDiagnosticName;
-
-/**
- Notification UserInfo for value of a diagnostic.
- */
-extern NSString *const FBSimulatorDiagnosticValue;
+extern NSString *const FBSimulatorDiagnosticLog;
 
 /**
  Notification UserInfo for Simulator State.

@@ -35,6 +35,13 @@
 @property (nonatomic, copy, readonly) NSString *osVersionString;
 
 /**
+ The Location to store auxillary files in.
+ Auxillary files are stored per-simulator, so will be nested inside directories for each Simulator.
+ If no path is provided, a default Auxillary directory inside the Simulator's data directory will be used.
+ */
+@property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
+
+/**
  Returns the Default Configuration.
  The OS Version is derived from the SDK Version.
  */
@@ -218,5 +225,12 @@
  watchOS 2.2
  */
 - (instancetype)watchOS_2_2;
+
+#pragma mark Auxillary Directory
+
+/**
+ Updates the Auxillary Directory.
+ */
+- (instancetype)withAuxillaryDirectory:(NSString *)auxillaryDirectory;
 
 @end

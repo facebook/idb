@@ -16,7 +16,7 @@
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
-@interface FBWritableLog : NSObject <NSCopying, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBWritableLog : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 /**
  The name of the Log for uniquely identifying the log.
@@ -32,6 +32,11 @@
  A String representing this log's human readable name, as shown in error reports
  */
 @property (nonatomic, readonly, copy) NSString *humanReadableName;
+
+/**
+ A File Path repesenting the location where files will be stored if they are when they are converted to be backed by a file.
+ */
+@property (nonatomic, readonly, copy) NSString *storageDirectory;
 
 /**
  A String used to define where the log has been persisted to.
@@ -106,6 +111,22 @@
 - (instancetype)updateFileType:(NSString *)fileType;
 
 /**
+ Updates the `humanReadableName` of the underlying `FBWritableLog`.
+
+ @param humanReadableName the Human Readable Name to update with.
+ @return the reciever, for chaining.
+ */
+- (instancetype)updateHumanReadableName:(NSString *)humanReadableName;
+
+/**
+ Updates the `storageDirectory` of the underlying `FBWritableLog`.
+
+ @param storageDirectory the Human Readable Name to update with.
+ @return the reciever, for chaining.
+ */
+- (instancetype)updateStorageDirectory:(NSString *)storageDirectory;
+
+/**
  Updates the `destination` of the underlying `FBWritableLog`.
 
  @param destination the Destination to update with.
@@ -141,21 +162,26 @@
 - (instancetype)updatePath:(NSString *)path;
 
 /**
- Updates the underlying `FBWritableLog` with a Path, by applying the block.
- Will replace any `logData associated with the log.
+ Returns a File Path suitable for writing data into.
+ Once writing to the file has been successful, the builder should be updated with `updatePath`.
 
- @param block a block to populate the path with. Returning YES means the application was successful. NO otherwise.
+ @return a path to write data into.
+ */
+- (NSString *)createPath;
+
+/**
+ Updates the underlying `FBWritableLog` by applying a block that will write data into a file path.
+ The block should:
+ 1) Be non-null
+ 2) Write data into the path provided.
+ 3) If writing was successful, YES should be returned.
+ 4) If writing was not successful, NO should be returned.
+ If writing to the file was succesful, YES
+
+ @param block a block to populate a file path with.
  @return the reciever, for chaining.
  */
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block;
-
-/**
- Updates the `humanReadableName` of the underlying `FBWritableLog`.
-
- @param humanReadableName the Human Readable Name to update with.
- @return the reciever, for chaining.
- */
-- (instancetype)updateHumanReadableName:(NSString *)humanReadableName;
 
 /**
  Returns a new `FBWritableLog` with the reciever's updates applied.

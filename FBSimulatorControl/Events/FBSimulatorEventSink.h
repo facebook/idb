@@ -14,7 +14,9 @@
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorApplication;
+@class FBWritableLog;
 @protocol FBTerminationHandle;
+@protocol FBJSONSerializationDescribeable;
 
 /**
  A reciever of Simulator Events
@@ -89,14 +91,11 @@
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected;
 
 /**
- Event for the the availablility of diagnostic information.
- Diagnostics can be keyed per-simulator or per-simulator-process.
+ Event for the availablilty of a new log.
 
- @param name the name of the diagnostic, must not be nil.
- @param process the process to key the diagnostic information for. If nil this is a simulator diagnostic.
- @param value the value of the diagnostic.
+ @param log the diagnostic log.
  */
-- (void)diagnosticInformationAvailable:(NSString *)name process:(FBProcessInfo *)process value:(id<NSCopying, NSCoding>)value;
+- (void)logAvailable:(FBWritableLog *)log;
 
 /**
  Event for the change in a Simulator's state.

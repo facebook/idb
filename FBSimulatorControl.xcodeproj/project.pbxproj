@@ -171,7 +171,6 @@
 		AAF005321C43CA4600508E26 /* FBSimulatorPoolAllocationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF0051E1C43CA4600508E26 /* FBSimulatorPoolAllocationTests.m */; };
 		AAF005331C43CA4600508E26 /* FBSimulatorPoolTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF0051F1C43CA4600508E26 /* FBSimulatorPoolTests.m */; };
 		AAF005351C43CA4600508E26 /* FBSimulatorTilingStrategyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF005211C43CA4600508E26 /* FBSimulatorTilingStrategyTests.m */; };
-		AAF005361C43CA4600508E26 /* FBSimulatorVideoRecorderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF005221C43CA4600508E26 /* FBSimulatorVideoRecorderTests.m */; };
 		AAF005371C43CA4600508E26 /* FBSimulatorWindowTilingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF005231C43CA4600508E26 /* FBSimulatorWindowTilingTests.m */; };
 		AAF005381C43CA4600508E26 /* FBWritableLogTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF005241C43CA4600508E26 /* FBWritableLogTests.m */; };
 		AAF2D3561C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF2D3541C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -961,7 +960,6 @@
 		AAF0051E1C43CA4600508E26 /* FBSimulatorPoolAllocationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorPoolAllocationTests.m; sourceTree = "<group>"; };
 		AAF0051F1C43CA4600508E26 /* FBSimulatorPoolTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorPoolTests.m; sourceTree = "<group>"; };
 		AAF005211C43CA4600508E26 /* FBSimulatorTilingStrategyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorTilingStrategyTests.m; sourceTree = "<group>"; };
-		AAF005221C43CA4600508E26 /* FBSimulatorVideoRecorderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorVideoRecorderTests.m; sourceTree = "<group>"; };
 		AAF005231C43CA4600508E26 /* FBSimulatorWindowTilingTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorWindowTilingTests.m; sourceTree = "<group>"; };
 		AAF005241C43CA4600508E26 /* FBWritableLogTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWritableLogTests.m; sourceTree = "<group>"; };
 		AAF2D3541C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorInteraction+Lifecycle.h"; sourceTree = "<group>"; };
@@ -1647,7 +1645,6 @@
 				AAF0051E1C43CA4600508E26 /* FBSimulatorPoolAllocationTests.m */,
 				AAF0051F1C43CA4600508E26 /* FBSimulatorPoolTests.m */,
 				AAF005211C43CA4600508E26 /* FBSimulatorTilingStrategyTests.m */,
-				AAF005221C43CA4600508E26 /* FBSimulatorVideoRecorderTests.m */,
 				AAF005231C43CA4600508E26 /* FBSimulatorWindowTilingTests.m */,
 				AAF005241C43CA4600508E26 /* FBWritableLogTests.m */,
 			);
@@ -2263,7 +2260,6 @@
 				AAF005351C43CA4600508E26 /* FBSimulatorTilingStrategyTests.m in Sources */,
 				AAB4AC271BBBC6880046F6A1 /* FBSimulatorControlTestCase.m in Sources */,
 				AAF005331C43CA4600508E26 /* FBSimulatorPoolTests.m in Sources */,
-				AAF005361C43CA4600508E26 /* FBSimulatorVideoRecorderTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

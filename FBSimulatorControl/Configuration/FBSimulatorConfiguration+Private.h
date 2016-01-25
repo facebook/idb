@@ -173,6 +173,7 @@
 
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfiguration_Device> device;
 @property (nonatomic, strong, readwrite) id<FBSimulatorConfiguration_OS> os;
+@property (nonatomic, copy, readwrite) NSString *auxillaryDirectory;
 
 - (instancetype)updateNamedDevice:(id<FBSimulatorConfiguration_Device>)device;
 - (instancetype)updateOSVersion:(id<FBSimulatorConfiguration_OS>)OS;

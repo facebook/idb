@@ -157,6 +157,14 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
     )
   }
 
+  func testParsesAuxDirectoryAlone() {
+    self.assertParses(
+      FBSimulatorConfigurationParser.parser(),
+      ["--aux", "/usr/bin"],
+      FBSimulatorConfiguration.defaultConfiguration().withAuxillaryDirectory("/usr/bin")
+    )
+  }
+
   func parsesOSAndDevice(){
     self.assertParsesAll(FBSimulatorConfigurationParser.parser(), [
       (["iPhone 6", "iOS 9.2"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2()),

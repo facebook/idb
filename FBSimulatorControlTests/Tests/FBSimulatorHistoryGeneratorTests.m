@@ -29,7 +29,7 @@
   device.UDID = [NSUUID UUID];
   device.name = @"iPhoneMega";
 
-  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:nil pool:nil query:nil logger:nil];
+  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:nil pool:nil query:nil auxillaryDirectory:NSTemporaryDirectory() logger:nil];
   self.generator = [FBSimulatorHistoryGenerator forSimulator:simulator];
 }
 
@@ -63,39 +63,6 @@
   [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2a stdOut:nil stdErr:nil];
 
   XCTAssertEqualObjects(self.generator.history.allApplicationLaunches, (@[self.appLaunch2, self.appLaunch2, self.appLaunch1]));
-}
-
-- (void)testAppendsDiagnosticInformationToState
-{
-  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
-  [self.generator diagnosticInformationAvailable:@"GOOD TIMES" process:nil value:@"YEP"];
-  FBSimulatorHistory *history = self.generator.history;
-
-  XCTAssertEqual(history.simulatorDiagnostics.count, 1u);
-  XCTAssertEqualObjects(@"YEP", history.simulatorDiagnostics[@"GOOD TIMES"]);
-}
-
-- (void)testDiagnosticInformationForRunningProcessIsAvailable
-{
-  NSString *diagnostic = @"I AM SOME SPOOKY INFO";
-
-  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
-  [self.generator diagnosticInformationAvailable:@"SECRIT" process:self.processInfo1 value:diagnostic];
-  FBSimulatorHistory *history = self.generator.history;
-
-  XCTAssertEqualObjects(diagnostic, [history diagnosticNamed:@"SECRIT" forApplication:self.tableSearchApplication]);
-}
-
-- (void)testDiagnosticInformationForTerminatedProcessIsAvailable
-{
-  NSString *diagnostic = @"I AM SOME SPOOKY INFO";
-
-  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
-  [self.generator diagnosticInformationAvailable:@"SECRIT" process:self.processInfo1 value:diagnostic];
-  [self.generator applicationDidTerminate:self.processInfo1 expected:NO];
-  FBSimulatorHistory *history = self.generator.history;
-
-  XCTAssertEqualObjects(diagnostic, [history diagnosticNamed:@"SECRIT" forApplication:self.tableSearchApplication]);
 }
 
 - (void)testChangesToSimulatorState
