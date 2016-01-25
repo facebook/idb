@@ -75,10 +75,10 @@ NSString *const FBSimulatorLogNameVideo = @"video";
   NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
     self.syslog,
     self.coreSimulator,
-    self.simulatorBootstrap,
-    self.eventLogs.allValues
+    self.simulatorBootstrap
   ]];
   [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
+  [logs addObjectsFromArray:self.eventLogs.allValues];
   return [logs filteredArrayUsingPredicate:predicate];
 }
 
