@@ -102,32 +102,40 @@ public class HumanReadableEventReporter : NSObject, EventReporter {
 
   private var formattedSimulator: String {
     get {
-      let tokens: [String] = self.keywords.map { keyword in
-        switch keyword {
-        case .UDID:
-          return simulator.udid
-        case .Name:
-          return simulator.name
-        case .DeviceName:
-          guard let configuration = simulator.configuration else {
-            return "unknown-name"
+      let tokens: [String] = self.keywords
+        .map { keyword in
+          switch keyword {
+          case .UDID:
+            return simulator.udid
+          case .Name:
+            return simulator.name
+          case .DeviceName:
+            guard let configuration = simulator.configuration else {
+              return "unknown-name"
+            }
+            return configuration.deviceName
+          case .OSVersion:
+            guard let configuration = simulator.configuration else {
+              return "unknown-os"
+            }
+            return configuration.osVersionString
+          case .State:
+            return simulator.stateString
+          case .ProcessIdentifier:
+            guard let process = simulator.launchdSimProcess else {
+              return "no-process"
+            }
+            return process.processIdentifier.description
           }
-          return configuration.deviceName
-        case .OSVersion:
-          guard let configuration = simulator.configuration else {
-            return "unknown-os"
-          }
-          return configuration.osVersionString
-        case .State:
-          return simulator.stateString
-        case .ProcessIdentifier:
-          guard let process = simulator.launchdSimProcess else {
-            return "no-process"
-          }
-          return process.processIdentifier.description
         }
-      }
-      return tokens.joinWithSeparator(" ")
+      return tokens
+        .map { token in
+          if token.rangeOfCharacterFromSet(NSCharacterSet.whitespaceCharacterSet(), options: NSStringCompareOptions(), range: nil) == nil {
+            return token
+          }
+          return "'\(token)'"
+        }
+        .joinWithSeparator(" ")
     }
   }
 }
