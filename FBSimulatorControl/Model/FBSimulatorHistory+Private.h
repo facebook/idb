@@ -18,7 +18,6 @@
 @property (nonatomic, assign, readwrite) FBSimulatorState simulatorState;
 @property (nonatomic, strong, readwrite) NSMutableOrderedSet *mutableLaunchedProcesses;
 @property (nonatomic, strong, readwrite) NSMutableDictionary *mutableProcessLaunchConfigurations;
-@property (nonatomic, strong, readwrite) NSMutableDictionary *mutableSimulatorDiagnostics;
-@property (nonatomic, strong, readwrite) NSMutableDictionary *mutableProcessDiagnostics;
+@property (nonatomic, strong, readwrite) NSMutableDictionary *mutableProcessMetadata;
 
 @end

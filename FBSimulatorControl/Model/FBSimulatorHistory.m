@@ -30,8 +30,7 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   _timestamp = [NSDate date];
   _mutableLaunchedProcesses = [NSMutableOrderedSet orderedSet];
   _mutableProcessLaunchConfigurations = [NSMutableDictionary dictionary];
-  _mutableSimulatorDiagnostics = [NSMutableDictionary dictionary];
-  _mutableProcessDiagnostics = [NSMutableDictionary dictionary];
+  _mutableProcessMetadata = [NSMutableDictionary dictionary];
 
   return self;
 }
@@ -46,8 +45,7 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   history.previousState = self.previousState;
   history.mutableLaunchedProcesses = [self.mutableLaunchedProcesses mutableCopy];
   history.mutableProcessLaunchConfigurations = [self.mutableProcessLaunchConfigurations mutableCopy];
-  history.mutableSimulatorDiagnostics = [self.mutableSimulatorDiagnostics mutableCopy];
-  history.mutableProcessDiagnostics = [self.mutableProcessDiagnostics mutableCopy];
+  history.mutableProcessMetadata = [self.mutableProcessMetadata mutableCopy];
   return history;
 }
 
@@ -65,8 +63,7 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   _previousState = [coder decodeObjectForKey:NSStringFromSelector(@selector(previousState))];
   _mutableLaunchedProcesses = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableLaunchedProcesses))] mutableCopy];
   _mutableProcessLaunchConfigurations = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableProcessLaunchConfigurations))] mutableCopy];
-  _mutableSimulatorDiagnostics = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableSimulatorDiagnostics))] mutableCopy];
-  _mutableProcessDiagnostics = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableProcessDiagnostics))] mutableCopy];
+  _mutableLaunchedProcesses = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableProcessMetadata))] mutableCopy];
 
   return self;
 }
@@ -78,8 +75,7 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   [coder encodeObject:self.previousState forKey:NSStringFromSelector(@selector(previousState))];
   [coder encodeObject:self.mutableLaunchedProcesses forKey:NSStringFromSelector(@selector(mutableLaunchedProcesses))];
   [coder encodeObject:self.mutableProcessLaunchConfigurations forKey:NSStringFromSelector(@selector(mutableProcessLaunchConfigurations))];
-  [coder encodeObject:self.mutableSimulatorDiagnostics forKey:NSStringFromSelector(@selector(mutableSimulatorDiagnostics))];
-  [coder encodeObject:self.mutableProcessDiagnostics forKey:NSStringFromSelector(@selector(mutableProcessDiagnostics))];
+  [coder encodeObject:self.mutableProcessMetadata forKey:NSStringFromSelector(@selector(mutableProcessMetadata))];
 }
 
 #pragma mark Accessors
@@ -94,14 +90,9 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   return [self.mutableProcessLaunchConfigurations copy];
 }
 
-- (NSDictionary *)simulatorDiagnostics
+- (NSDictionary *)processMetadata
 {
-  return [self.mutableSimulatorDiagnostics copy];
-}
-
-- (NSDictionary *)processDiagnostics
-{
-  return [self.mutableProcessDiagnostics copy];
+  return [self.mutableProcessMetadata copy];
 }
 
 #pragma mark NSObject
@@ -112,8 +103,7 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
          (unsigned long) self.simulatorState |
          self.mutableLaunchedProcesses.hash |
          self.mutableProcessLaunchConfigurations.hash ^
-         self.mutableSimulatorDiagnostics.hash ^
-         self.mutableProcessDiagnostics.hash;
+         self.mutableProcessMetadata.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorHistory *)object
@@ -126,8 +116,7 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
          self.simulatorState == object.simulatorState &&
          [self.mutableLaunchedProcesses isEqualToOrderedSet:object.mutableLaunchedProcesses] &&
          [self.mutableProcessLaunchConfigurations isEqualToDictionary:object.mutableProcessLaunchConfigurations] &&
-         [self.mutableSimulatorDiagnostics isEqualToDictionary:object.mutableProcessDiagnostics] &&
-         [self.mutableProcessDiagnostics isEqualToDictionary:object.mutableProcessDiagnostics];
+         [self.mutableProcessMetadata isEqualToDictionary:object.mutableProcessMetadata];
 }
 
 #pragma mark Description
@@ -175,16 +164,10 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
       [FBCollectionDescriptions oneLineDescriptionFromArray:to.mutableLaunchedProcesses.array atKeyPath:@"shortDescription"]
     ];
   }
-  if (![to.mutableSimulatorDiagnostics isEqualToDictionary:from.mutableSimulatorDiagnostics]) {
-    [string appendFormat:@"Simulator Diagnostics from %@ to %@ | ",
-      [FBCollectionDescriptions oneLineDescriptionFromDictionary:from.mutableSimulatorDiagnostics],
-      [FBCollectionDescriptions oneLineDescriptionFromDictionary:to.mutableSimulatorDiagnostics]
-    ];
-  }
-  if (![to.mutableProcessDiagnostics isEqualToDictionary:from.mutableProcessDiagnostics]) {
-    [string appendFormat:@"Process Diagnostics from %@ to %@ | ",
-      [FBCollectionDescriptions oneLineDescriptionFromDictionary:from.mutableProcessDiagnostics],
-      [FBCollectionDescriptions oneLineDescriptionFromDictionary:to.mutableProcessDiagnostics]
+  if (![to.mutableProcessMetadata isEqualToDictionary:from.mutableProcessMetadata]) {
+    [string appendFormat:@"Process Metadata from %@ to %@ | ",
+      [FBCollectionDescriptions oneLineDescriptionFromDictionary:from.mutableProcessMetadata],
+      [FBCollectionDescriptions oneLineDescriptionFromDictionary:to.mutableProcessMetadata]
     ];
   }
   if (string.length == 0) {

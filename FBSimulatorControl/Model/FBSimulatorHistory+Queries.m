@@ -117,10 +117,19 @@
   return [self runningProcessForApplication:application recursive:NO];
 }
 
-- (id)diagnosticNamed:(NSString *)name forApplication:(FBSimulatorApplication *)application
+- (NSDictionary *)processTerminationStatuses
 {
-  FBProcessInfo *processInfo = [self runningProcessForApplication:application recursive:YES];
-  return self.processDiagnostics[processInfo][name];
+  NSDictionary *processMetadata = self.processMetadata;
+  NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
+  for (FBProcessInfo *process in processMetadata) {
+    NSDictionary *diagnostics = processMetadata[process];
+    NSNumber *terminationStatus = diagnostics[FBSimulatorHistoryDiagnosticNameTerminationStatus];
+    if (![terminationStatus isKindOfClass:NSNumber.class]) {
+      continue;
+    }
+    statuses[process] = terminationStatus;
+  }
+  return [statuses copy];
 }
 
 - (instancetype)lastChangeOfState:(FBSimulatorState)state
@@ -172,21 +181,6 @@
   }
 
   return recursive ? [self.previousState runningProcessForApplication:application recursive:recursive] : nil;
-}
-
-- (NSDictionary *)processTerminationStatuses
-{
-  NSDictionary *processDiagnostics = self.processDiagnostics;
-  NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
-  for (FBProcessInfo *process in processDiagnostics) {
-    NSDictionary *diagnostics = processDiagnostics[process];
-    NSNumber *terminationStatus = diagnostics[FBSimulatorHistoryDiagnosticNameTerminationStatus];
-    if (![terminationStatus isKindOfClass:NSNumber.class]) {
-      continue;
-    }
-    statuses[process] = terminationStatus;
-  }
-  return [statuses copy];
 }
 
 - (instancetype)firstSessionState
