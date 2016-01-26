@@ -181,10 +181,10 @@ class SocketConnection {
 
   private let relayConnection: RelayConnection
 
-  init(readStream: NSInputStream, writeStream: NSOutputStream, delegate: SocketConnectionDelegate, transformer: RelayTransformer) {
+  init(readStream: NSInputStream, writeStream: NSOutputStream, configuration: Configuration, delegate: SocketConnectionDelegate, transformer: RelayTransformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(transformer: transformer, writer: self.writeStreamDelegate.successFailureWriter)
+    self.relayConnection = RelayConnection(configuration: configuration, transformer: transformer, writer: self.writeStreamDelegate.successFailureWriter)
     self.readStream = readStream
     self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
   }
@@ -219,11 +219,13 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     }
   }
 
+  let configuration: Configuration
   let options: SocketRelay.Options
   var transformer: RelayTransformer
   var registeredConnections: [SocketConnection] = []
 
-  init(portNumber: Int, transformer: RelayTransformer) {
+  init(configuration: Configuration, portNumber: Int, transformer: RelayTransformer) {
+    self.configuration = configuration
     self.transformer = transformer
     self.options = SocketRelay.Options(portNumber: portNumber, bindIPv4: false, bindIPv6: true)
   }
@@ -343,6 +345,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     let connection = SocketConnection(
       readStream: inputStream,
       writeStream: outputStream,
+      configuration: self.configuration,
       delegate: self,
       transformer: self.transformer
     )

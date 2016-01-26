@@ -45,14 +45,32 @@ public enum ActionResult {
   }
 }
 
+extension ActionResult : CustomStringConvertible, CustomDebugStringConvertible {
+  public var description: String {
+    get {
+      switch self {
+      case .Success: return "Success"
+      case .Failure(let string): return "Failure '\(string)'"
+      }
+    }
+  }
+
+  public var debugDescription: String {
+    get {
+      return self.description
+    }
+  }
+}
+
 /**
  A Protocol for writing an ActionResult.
  */
 public extension SuccessFailureWriter {
-  func writeActionResult(actionResult: ActionResult) {
+  func writeActionResult(configuration: Configuration, _ actionResult: ActionResult) {
     switch actionResult {
     case .Failure(let string):
-      self.failure.write(string)
+      let reporter = configuration.options.createReporter(self.failure)
+      reporter.report(FailureEvent(string: string))
     default:
       break
     }

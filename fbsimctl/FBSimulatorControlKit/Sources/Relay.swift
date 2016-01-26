@@ -30,15 +30,18 @@ protocol RelayTransformer {
 class RelayConnection : LineBufferDelegate {
   let transformer: RelayTransformer
   let writer: SuccessFailureWriter
+  let configuration: Configuration
   lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
 
-  init (transformer: RelayTransformer, writer: SuccessFailureWriter) {
+  init (configuration: Configuration, transformer: RelayTransformer, writer: SuccessFailureWriter) {
     self.transformer = transformer
     self.writer = writer
+    self.configuration = configuration
   }
 
   func buffer(lineAvailable: String) {
     self.writer.writeActionResult(
+      configuration,
       self.transformer.transform(lineAvailable, writer: self.writer.success)
     )
   }

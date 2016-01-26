@@ -109,11 +109,11 @@ class InteractiveRunner : Runner, RelayTransformer {
   func run(writer: Writer) -> ActionResult {
     if let portNumber = self.portNumber {
       writer.write("Starting Socket server on \(portNumber)")
-      SocketRelay(portNumber: portNumber, transformer: self).start()
+      SocketRelay(configuration: self.configuration, portNumber: portNumber, transformer: self).start()
       writer.write("Ending Socket Server")
     } else {
       writer.write("Starting local interactive mode, listening on stdin")
-      StdIORelay(transformer: self).start()
+      StdIORelay(configuration: self.configuration, transformer: self).start()
       writer.write("Ending local interactive mode")
     }
     return .Success

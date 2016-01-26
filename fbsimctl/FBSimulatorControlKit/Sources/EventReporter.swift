@@ -25,12 +25,35 @@ public enum EventName : String {
   case Approve = "approve"
   case StateChange = "state"
   case Log = "log"
+  case Failure = "failure"
 }
 
 public enum EventType : String {
   case Started = "started"
   case Ended = "ended"
   case Discrete = "discrete"
+}
+
+class FailureEvent : NSObject, EventReporterSubject {
+  let string: String
+
+  init(string: String) {
+    self.string = string
+  }
+
+  func jsonSerializableRepresentation() -> AnyObject! {
+    return [
+      "event_name" : EventName.Failure.rawValue,
+      "event_type" : EventType.Discrete.rawValue,
+      "subject" : self.string,
+    ]
+  }
+
+  var shortDescription: String {
+    get {
+      return self.string
+    }
+  }
 }
 
 @objc class LogEvent : NSObject, EventReporterSubject {
@@ -165,11 +188,7 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
   }
 
   public static func create(format: Format, options: Configuration.Options, writer: Writer, simulator: FBSimulator) -> EventSinkTranslator {
-    if options.contains(Configuration.Options.JSON) {
-      let pretty = options.contains(Configuration.Options.Pretty)
-      return EventSinkTranslator(simulator: simulator, format: format, reporter: JSONEventReporter(writer: writer, pretty: pretty))
-    }
-    return EventSinkTranslator(simulator: simulator, format: format, reporter: HumanReadableEventReporter(writer: writer))
+    return EventSinkTranslator(simulator: simulator, format: format, reporter: options.createReporter(writer))
   }
 
   public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {
@@ -254,5 +273,15 @@ public class HumanReadableEventReporter : EventReporter {
 
   public func report(subject: EventReporterSubject) {
     self.writer.write(try! self.json.serializeToString(subject))
+  }
+}
+
+public extension Configuration.Options {
+  public func createReporter(writer: Writer) -> EventReporter {
+    if self.contains(Configuration.Options.JSON) {
+      let pretty = self.contains(Configuration.Options.Pretty)
+      return JSONEventReporter(writer: writer, pretty: pretty)
+    }
+    return HumanReadableEventReporter(writer: writer)
   }
 }

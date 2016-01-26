@@ -52,8 +52,8 @@ class StdIORelay : Relay {
 
   private let stdIn: NSFileHandle
 
-  init(transformer: RelayTransformer) {
-    self.relayConnection = RelayConnection(transformer: transformer, writer: FileHandleWriter.stdIOWriter)
+  init(configuration: Configuration, transformer: RelayTransformer) {
+    self.relayConnection = RelayConnection(configuration: configuration, transformer: transformer, writer: FileHandleWriter.stdIOWriter)
     self.stdIn = NSFileHandle.fileHandleWithStandardInput()
   }
 
