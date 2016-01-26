@@ -168,7 +168,7 @@ struct CreationRunner : Runner {
       defer {
         simulator.userEventSink = nil
       }
-      reporter.report(EventName.Create, EventType.Ended, simulator)
+      reporter.report(EventName.Create, EventType.Discrete, simulator)
       return ActionResult.Success
     } catch let error as NSError {
       return ActionResult.Failure("Failed to Create Simulator \(error.description)")

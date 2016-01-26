@@ -215,7 +215,8 @@
 {
   return @{
     @"name" : self.device.name,
-    @"state" : self.device.stateString
+    @"state" : self.device.stateString,
+    @"udid" : self.udid
   };
 }
 
