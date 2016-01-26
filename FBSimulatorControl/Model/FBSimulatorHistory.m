@@ -63,7 +63,7 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   _previousState = [coder decodeObjectForKey:NSStringFromSelector(@selector(previousState))];
   _mutableLaunchedProcesses = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableLaunchedProcesses))] mutableCopy];
   _mutableProcessLaunchConfigurations = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableProcessLaunchConfigurations))] mutableCopy];
-  _mutableLaunchedProcesses = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableProcessMetadata))] mutableCopy];
+  _mutableProcessMetadata = [[coder decodeObjectForKey:NSStringFromSelector(@selector(mutableProcessMetadata))] mutableCopy];
 
   return self;
 }
