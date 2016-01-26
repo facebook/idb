@@ -13,15 +13,17 @@ import FBSimulatorControl
 public typealias EventReporterSubject = protocol<FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 public enum EventName : String {
-  case Create
-  case Boot
-  case Shutdown
-  case Diagnostic
-  case Delete
-  case Install
-  case Launch
-  case Approve
-  case StateChange
+  case List = "list"
+  case Create = "create"
+  case Boot = "boot"
+  case Shutdown = "shutdown"
+  case Diagnostic = "diagnose"
+  case Delete = "delete"
+  case Install = "install"
+  case Launch = "launch"
+  case Terminate = "terminate"
+  case Approve = "approve"
+  case StateChange = "state"
 }
 
 public enum EventType : String {
@@ -30,74 +32,34 @@ public enum EventType : String {
   case Discrete = "discrete"
 }
 
-public protocol EventReporter : FBSimulatorEventSink {
-  func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject)
-  func simulatorEvent()
-}
-
-public class HumanReadableEventReporter : NSObject, EventReporter {
-  unowned let simulator: FBSimulator
-  let writer: Writer
+class SimulatorEvent : NSObject, EventReporterSubject {
+  let simulator: FBSimulator
+  let eventName: EventName
+  let eventType: EventType
+  let subject: EventReporterSubject
   let keywords: [Format.Keywords]
 
-  init(simulator: FBSimulator, writer: Writer, keywords: [Format.Keywords]) {
+  init(simulator: FBSimulator, keywords: [Format.Keywords], eventName: EventName, eventType: EventType, subject: EventReporterSubject) {
     self.simulator = simulator
-    self.writer = writer
     self.keywords = keywords
-    super.init()
-    self.simulator.userEventSink = self
+    self.eventName = eventName
+    self.eventType = eventType
+    self.subject = subject
   }
 
-  public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {
-
+  func jsonSerializableRepresentation() -> AnyObject! {
+    return [
+      "simulator" : self.simulator.jsonSerializableRepresentation(),
+      "event_name" : eventName.rawValue,
+      "event_type" : eventType.rawValue,
+      "subject" : subject.jsonSerializableRepresentation()
+    ]
   }
 
-  public func containerApplicationDidTerminate(applicationProcess: FBProcessInfo!, expected: Bool) {
-
-  }
-
-  public func simulatorDidLaunch(launchdSimProcess: FBProcessInfo!) {
-
-  }
-
-  public func simulatorDidTerminate(launchdSimProcess: FBProcessInfo!, expected: Bool) {
-
-  }
-
-  public func agentDidLaunch(launchConfig: FBAgentLaunchConfiguration!, didStart agentProcess: FBProcessInfo!, stdOut: NSFileHandle!, stdErr: NSFileHandle!) {
-
-  }
-
-  public func agentDidTerminate(agentProcess: FBProcessInfo!, expected: Bool) {
-
-  }
-
-  public func applicationDidLaunch(launchConfig: FBApplicationLaunchConfiguration!, didStart applicationProcess: FBProcessInfo!, stdOut: NSFileHandle!, stdErr: NSFileHandle!) {
-
-  }
-
-  public func applicationDidTerminate(applicationProcess: FBProcessInfo!, expected: Bool) {
-
-  }
-
-  public func logAvailable(log: FBWritableLog!) {
-
-  }
-
-  public func didChangeState(state: FBSimulatorState) {
-    self.report(EventName.StateChange, EventType.Discrete, state.description)
-  }
-
-  public func terminationHandleAvailable(terminationHandle: FBTerminationHandleProtocol!) {
-
-  }
-
-  public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    self.writer.write("\(self.formattedSimulator):  \(eventName.rawValue) with \(subject.shortDescription)")
-  }
-
-  public func simulatorEvent() {
-    self.writer.write(self.formattedSimulator)
+  var shortDescription: String {
+    get {
+      return "\(self.formattedSimulator):  \(eventName.rawValue) with \(subject.shortDescription)"
+    }
   }
 
   private var formattedSimulator: String {
@@ -127,7 +89,7 @@ public class HumanReadableEventReporter : NSObject, EventReporter {
             }
             return process.processIdentifier.description
           }
-        }
+      }
       return tokens
         .map { token in
           if token.rangeOfCharacterFromSet(NSCharacterSet.whitespaceCharacterSet(), options: NSStringCompareOptions(), range: nil) == nil {
@@ -140,78 +102,113 @@ public class HumanReadableEventReporter : NSObject, EventReporter {
   }
 }
 
-public class JSONEventReporter : NSObject, EventReporter {
-  unowned let simulator: FBSimulator
-  let writer: Writer
-  let json: JSON
+public protocol EventReporter {
+  func report(subject: EventReporterSubject)
+}
 
-  init(simulator: FBSimulator, writer: Writer, pretty: Bool) {
+public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
+  unowned let simulator: FBSimulator
+  let reporter: EventReporter
+  let keywords: [Format.Keywords]
+
+  init(simulator: FBSimulator, reporter: EventReporter, keywords: [Format.Keywords]) {
     self.simulator = simulator
-    self.writer = writer
-    self.json = JSON(pretty: pretty)
+    self.reporter = reporter
+    self.keywords = keywords
     super.init()
     self.simulator.userEventSink = self
   }
 
+  public static func create(writer: Writer, format: Format, simulator: FBSimulator) -> EventSinkTranslator {
+    switch format {
+    case .HumanReadable(let keywords):
+      return EventSinkTranslator(simulator: simulator, reporter: HumanReadableEventReporter(writer: writer), keywords: keywords)
+    case .JSON(let pretty):
+      return EventSinkTranslator(simulator: simulator, reporter: JSONEventReporter(writer: writer, pretty: pretty), keywords: [])
+    }
+  }
+
   public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {
-    self.simulatorEvent()
+    self.report(EventName.Launch, applicationProcess)
   }
 
   public func containerApplicationDidTerminate(applicationProcess: FBProcessInfo!, expected: Bool) {
-    self.simulatorEvent()
+    self.report(EventName.Terminate, applicationProcess)
   }
 
   public func simulatorDidLaunch(launchdSimProcess: FBProcessInfo!) {
-    self.simulatorEvent()
+    self.report(EventName.Launch, launchdSimProcess)
   }
 
   public func simulatorDidTerminate(launchdSimProcess: FBProcessInfo!, expected: Bool) {
-    self.simulatorEvent()
+    self.report(EventName.Terminate, launchdSimProcess)
   }
 
   public func agentDidLaunch(launchConfig: FBAgentLaunchConfiguration!, didStart agentProcess: FBProcessInfo!, stdOut: NSFileHandle!, stdErr: NSFileHandle!) {
-    self.simulatorEvent()
+    self.report(EventName.Launch, agentProcess)
   }
 
   public func agentDidTerminate(agentProcess: FBProcessInfo!, expected: Bool) {
-    self.simulatorEvent()
+    self.report(EventName.Terminate, agentProcess)
   }
 
   public func applicationDidLaunch(launchConfig: FBApplicationLaunchConfiguration!, didStart applicationProcess: FBProcessInfo!, stdOut: NSFileHandle!, stdErr: NSFileHandle!) {
-    self.simulatorEvent()
+    self.report(EventName.Launch, applicationProcess)
   }
 
   public func applicationDidTerminate(applicationProcess: FBProcessInfo!, expected: Bool) {
-    self.simulatorEvent()
+    self.report(EventName.Terminate, applicationProcess)
   }
 
   public func logAvailable(log: FBWritableLog!) {
-    self.simulatorEvent()
-  }
-
-  public func diagnosticAvailable(name: String!, process: FBProcessInfo!, value: protocol<NSCoding, NSCopying>!) {
-    self.simulatorEvent()
+    self.report(EventName.Diagnostic, log)
   }
 
   public func didChangeState(state: FBSimulatorState) {
-    self.simulatorEvent()
+    self.report(EventName.StateChange, state.description)
   }
 
   public func terminationHandleAvailable(terminationHandle: FBTerminationHandleProtocol!) {
-    self.simulatorEvent()
+    
   }
 
   public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    self.writer.write(try! self.json.serializeToString([
-        "simulator" : self.simulator.jsonSerializableRepresentation(),
-        "event_name" : eventName.rawValue,
-        "event_type" : eventType.rawValue,
-        "subject" : subject.jsonSerializableRepresentation()
-      ])
-    )
+    self.reporter.report(SimulatorEvent(
+      simulator: self.simulator,
+      keywords: self.keywords,
+      eventName: eventName,
+      eventType: eventType,
+      subject: subject
+    ))
   }
 
-  public func simulatorEvent() {
-    self.writer.write(try! self.json.serializeToString(self.simulator))
+  public func report(eventName: EventName, _ subject: EventReporterSubject) {
+    self.report(eventName, EventType.Discrete, subject)
+  }
+}
+
+public class HumanReadableEventReporter : EventReporter {
+  let writer: Writer
+
+  init(writer: Writer) {
+    self.writer = writer
+  }
+
+  public func report(subject: EventReporterSubject) {
+    self.writer.write(subject.shortDescription)
+  }
+}
+
+public class JSONEventReporter : EventReporter {
+  let writer: Writer
+  let json: JSON
+
+  init(writer: Writer, pretty: Bool) {
+    self.writer = writer
+    self.json = JSON(pretty: pretty)
+  }
+
+  public func report(subject: EventReporterSubject) {
+    self.writer.write(try! self.json.serializeToString(subject))
   }
 }
