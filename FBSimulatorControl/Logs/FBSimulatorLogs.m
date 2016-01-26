@@ -61,25 +61,9 @@ NSString *const FBSimulatorLogNameVideo = @"video";
 
 #pragma mark Accessors
 
-- (FBWritableLogBuilder *)logBuilder
+- (FBWritableLog *)base
 {
-  return [FBWritableLogBuilder.builder updateStorageDirectory:self.storageDirectory];
-}
-
-- (NSArray *)allLogs
-{
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBWritableLog *log, NSDictionary *_) {
-    return log.hasLogContent;
-  }];
-
-  NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
-    self.syslog,
-    self.coreSimulator,
-    self.simulatorBootstrap
-  ]];
-  [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
-  [logs addObjectsFromArray:self.eventLogs.allValues];
-  return [logs filteredArrayUsingPredicate:predicate];
+  return [self.logBuilder build];
 }
 
 - (FBWritableLog *)syslog
@@ -110,6 +94,15 @@ NSString *const FBSimulatorLogNameVideo = @"video";
     updatePath:expectedPath]
     updateShortName:FBSimulatorLogNameSimulatorBootstrap]
     updateHumanReadableName:@"Launchd Bootstrap"]
+    build];
+}
+
+- (FBWritableLog *)video
+{
+  return [[[[self.logBuilder
+    updateShortName:FBSimulatorLogNameVideo]
+    updateFileType:@"mp4"]
+    updateWritableLog:self.eventLogs[FBSimulatorLogNameVideo]]
     build];
 }
 
@@ -164,6 +157,22 @@ NSString *const FBSimulatorLogNameVideo = @"video";
   }
 
   return [logs copy];
+}
+
+- (NSArray *)allLogs
+{
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBWritableLog *log, NSDictionary *_) {
+    return log.hasLogContent;
+  }];
+
+  NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
+    self.syslog,
+    self.coreSimulator,
+    self.simulatorBootstrap
+  ]];
+  [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
+  [logs addObjectsFromArray:self.eventLogs.allValues];
+  return [logs filteredArrayUsingPredicate:predicate];
 }
 
 #pragma mark FBSimulatorEventSink Implementation
@@ -227,6 +236,11 @@ NSString *const FBSimulatorLogNameVideo = @"video";
 }
 
 #pragma mark Private
+
+- (FBWritableLogBuilder *)logBuilder
+{
+  return [FBWritableLogBuilder.builder updateStorageDirectory:self.storageDirectory];
+}
 
 + (NSString *)storageDirectoryForSimulator:(FBSimulator *)simulator
 {

@@ -87,12 +87,20 @@
 + (instancetype)builder;
 
 /**
- Creates a new `FBWritableLogBuilder` taking the values from the passed throught `writableLog`.
+ Creates a new `FBWritableLogBuilder` copying all of the values from `writableLog`.
 
  @param writableLog the original Writable Log to copy values from.
  @return the reciever, for chaining.
  */
 + (instancetype)builderWithWritableLog:(FBWritableLog *)writableLog;
+
+/**
+ Updates the Writable Log in the builder.
+
+ @param writableLog the original Writable Log to copy values from.
+ @return the reciever, for chaining.
+ */
+- (instancetype)updateWritableLog:(FBWritableLog *)writableLog;
 
 /**
  Updates the `shortName` of the underlying `FBWritableLog`.

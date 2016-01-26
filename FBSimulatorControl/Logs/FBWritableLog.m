@@ -125,13 +125,18 @@
 
 + (NSString *)defaultStorageDirectory
 {
-  NSString *uniqueDirectory = [NSString stringWithFormat:@"%@_%@", NSProcessInfo.processInfo.globallyUniqueString, NSUUID.UUID.UUIDString];
-  return [NSTemporaryDirectory() stringByAppendingPathComponent:uniqueDirectory];
+  return [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
 }
 
 - (NSString *)temporaryFilePath
 {
-  return [self.storageDirectory stringByAppendingPathExtension:self.fileType ?: @"unknown_log"];
+  NSString *filename = self.shortName ?: NSUUID.UUID.UUIDString;
+  filename = [filename stringByAppendingPathExtension:self.fileType ?: @"unknown_log"];
+
+  NSString *storageDirectory = self.storageDirectory;
+  [NSFileManager.defaultManager createDirectoryAtPath:storageDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+
+  return [storageDirectory stringByAppendingPathComponent:filename];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -496,14 +501,21 @@
 
 + (instancetype)builder
 {
-  return [self builderWithWritableLog:[FBWritableLog_Empty new]];
+  return [self builderWithWritableLog:nil];
 }
 
 + (instancetype)builderWithWritableLog:(FBWritableLog *)writableLog
 {
-  FBWritableLogBuilder *builder = [FBWritableLogBuilder new];
-  builder.writableLog = [writableLog copy];
-  return builder;
+  return [[FBWritableLogBuilder new] updateWritableLog:[writableLog copy] ?: [FBWritableLog_Empty new]];
+}
+
+- (instancetype)updateWritableLog:(FBWritableLog *)writableLog
+{
+  if (!writableLog) {
+    return self;
+  }
+  self.writableLog = writableLog;
+  return self;
 }
 
 - (instancetype)updateShortName:(NSString *)shortName
@@ -527,7 +539,9 @@
 - (instancetype)updateStorageDirectory:(NSString *)storageDirectory
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:storageDirectory]) {
-    return self;
+    if (![NSFileManager.defaultManager createDirectoryAtPath:storageDirectory withIntermediateDirectories:YES attributes:nil error:nil]) {
+      return self;
+    }
   }
   self.writableLog.storageDirectory = storageDirectory;
   return self;
