@@ -33,7 +33,6 @@
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorLogs.h"
 #import "FBSimulatorNotificationEventSink.h"
-#import "FBSimulatorPool+Private.h"
 #import "FBSimulatorPool.h"
 #import "FBTaskExecutor.h"
 

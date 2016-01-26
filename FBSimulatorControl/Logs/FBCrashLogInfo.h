@@ -53,7 +53,7 @@
 
 /**
  Constructs a FBWritableLog instance from the Crash Log.
- 
+
  @param builder the builder to populate the Crash Log into.
  */
 - (FBWritableLog *)toWritableLog:(FBWritableLogBuilder *)builder;
