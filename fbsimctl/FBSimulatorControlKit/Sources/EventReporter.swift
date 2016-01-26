@@ -37,11 +37,11 @@ class SimulatorEvent : NSObject, EventReporterSubject {
   let eventName: EventName
   let eventType: EventType
   let subject: EventReporterSubject
-  let keywords: [Format.Keywords]
+  let format: Format
 
-  init(simulator: FBSimulator, keywords: [Format.Keywords], eventName: EventName, eventType: EventType, subject: EventReporterSubject) {
+  init(simulator: FBSimulator, format: Format, eventName: EventName, eventType: EventType, subject: EventReporterSubject) {
     self.simulator = simulator
-    self.keywords = keywords
+    self.format = format
     self.eventName = eventName
     self.eventType = eventType
     self.subject = subject
@@ -49,7 +49,7 @@ class SimulatorEvent : NSObject, EventReporterSubject {
 
   func jsonSerializableRepresentation() -> AnyObject! {
     return [
-      "simulator" : self.simulator.jsonSerializableRepresentation(),
+      "simulator" : self.simulatorJSON,
       "event_name" : eventName.rawValue,
       "event_type" : eventType.rawValue,
       "subject" : subject.jsonSerializableRepresentation()
@@ -58,46 +58,53 @@ class SimulatorEvent : NSObject, EventReporterSubject {
 
   var shortDescription: String {
     get {
-      return "\(self.formattedSimulator):  \(eventName.rawValue) with \(subject.shortDescription)"
+      return "\(self.formattedSimulator): \(eventName.rawValue) with \(subject.shortDescription)"
     }
   }
 
   private var formattedSimulator: String {
     get {
-      let tokens: [String] = self.keywords
-        .map { keyword in
-          switch keyword {
-          case .UDID:
-            return simulator.udid
-          case .Name:
-            return simulator.name
-          case .DeviceName:
-            guard let configuration = simulator.configuration else {
-              return "unknown-name"
-            }
-            return configuration.deviceName
-          case .OSVersion:
-            guard let configuration = simulator.configuration else {
-              return "unknown-os"
-            }
-            return configuration.osVersionString
-          case .State:
-            return simulator.stateString
-          case .ProcessIdentifier:
-            guard let process = simulator.launchdSimProcess else {
-              return "no-process"
-            }
-            return process.processIdentifier.description
-          }
-      }
-      return tokens
-        .map { token in
+      return self.simulatorNamePairs
+        .map { (_, token) in
           if token.rangeOfCharacterFromSet(NSCharacterSet.whitespaceCharacterSet(), options: NSStringCompareOptions(), range: nil) == nil {
             return token
           }
           return "'\(token)'"
         }
         .joinWithSeparator(" ")
+    }
+  }
+
+  private var simulatorJSON: FBJSONSerializationDescribeable {
+    get {
+      var dictionary: [String : String] = [:]
+      for (key, value) in self.simulatorNamePairs {
+        dictionary[key] = value
+      }
+      return dictionary
+    }
+  }
+
+  private var simulatorNamePairs: [(String, String)] {
+    get {
+      let simulator = self.simulator
+      return self.format
+        .map { keyword in
+          switch keyword {
+          case .UDID:
+            return ("udid", simulator.udid)
+          case .Name:
+            return ("name", simulator.name)
+          case .DeviceName:
+            return ("device", simulator.configuration?.deviceName ?? "unknown-name")
+          case .OSVersion:
+            return ("os", simulator.configuration?.osVersionString ?? "unknown-os")
+          case .State:
+            return ("state", simulator.stateString)
+          case .ProcessIdentifier:
+            return ("pid", simulator.launchdSimProcess?.description ?? "no-process")
+          }
+        }
     }
   }
 }
@@ -109,23 +116,22 @@ public protocol EventReporter {
 public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
   unowned let simulator: FBSimulator
   let reporter: EventReporter
-  let keywords: [Format.Keywords]
+  let format: Format
 
-  init(simulator: FBSimulator, reporter: EventReporter, keywords: [Format.Keywords]) {
+  init(simulator: FBSimulator, format: Format, reporter: EventReporter) {
     self.simulator = simulator
     self.reporter = reporter
-    self.keywords = keywords
+    self.format = format
     super.init()
     self.simulator.userEventSink = self
   }
 
-  public static func create(writer: Writer, format: Format, simulator: FBSimulator) -> EventSinkTranslator {
-    switch format {
-    case .HumanReadable(let keywords):
-      return EventSinkTranslator(simulator: simulator, reporter: HumanReadableEventReporter(writer: writer), keywords: keywords)
-    case .JSON(let pretty):
-      return EventSinkTranslator(simulator: simulator, reporter: JSONEventReporter(writer: writer, pretty: pretty), keywords: [])
+  public static func create(format: Format, options: Configuration.Options, writer: Writer, simulator: FBSimulator) -> EventSinkTranslator {
+    if options.contains(Configuration.Options.JSON) {
+      let pretty = options.contains(Configuration.Options.Pretty)
+      return EventSinkTranslator(simulator: simulator, format: format, reporter: JSONEventReporter(writer: writer, pretty: pretty))
     }
+    return EventSinkTranslator(simulator: simulator, format: format, reporter: HumanReadableEventReporter(writer: writer))
   }
 
   public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {
@@ -175,7 +181,7 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
   public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     self.reporter.report(SimulatorEvent(
       simulator: self.simulator,
-      keywords: self.keywords,
+      format: self.format,
       eventName: eventName,
       eventType: eventType,
       subject: subject

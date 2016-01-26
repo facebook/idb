@@ -26,14 +26,7 @@ public enum DefaultsError : ErrorType, CustomStringConvertible {
 public protocol Defaultable {
   static var defaultValue: Self { get }
 }
-
-extension Format : Defaultable {
-  public static var defaultValue: Format {
-    get {
-      return .HumanReadable([ .UDID, .Name])
-    }
-  }
-}
+private let defaultFormat: Format = [ .UDID, .Name]
 
 extension Configuration : Defaultable {
   public static var defaultValue: Configuration {
@@ -92,7 +85,7 @@ public class Defaults {
 
       return Defaults(
         logWriter: logWriter,
-        format: format ?? Format.defaultValue,
+        format: format ?? defaultFormat,
         configuration: configuration
       )
     } catch let error as ParseError {
@@ -102,10 +95,11 @@ public class Defaults {
 
   private static var rcFileParser: Parser<(Configuration?, Format?)> {
     get {
-      return Parser.ofTwoSequenced(
-        Configuration.parser().optional(),
-        Format.parser().optional()
-      )
+      return Parser
+        .ofTwoSequenced(
+          Configuration.parser().optional(),
+          Format.parser().optional()
+        )
     }
   }
 

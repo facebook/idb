@@ -63,11 +63,11 @@ private struct BaseRunner : Runner {
       case .Interactive(let configuration, let port):
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
         let control = try defaults.configuration.buildSimulatorControl()
-        return InteractiveRunner(control: control, defaults: defaults, portNumber: port).run(writer)
+        return InteractiveRunner(control: control, configuration: configuration, defaults: defaults, portNumber: port).run(writer)
       case .Perform(let configuration, let action):
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
         let control = try defaults.configuration.buildSimulatorControl()
-        return ActionRunner(control: control, defaults: defaults, action: action).run(writer)
+        return ActionRunner(control: control, configuration: configuration, defaults: defaults, action: action).run(writer)
       }
     } catch DefaultsError.UnreadableRCFile(let string) {
       return .Failure("Unreadable .rc file " + string)
@@ -79,26 +79,29 @@ private struct BaseRunner : Runner {
 
 private struct ActionRunner : Runner {
   let control: FBSimulatorControl
+  let configuration: Configuration
   let defaults: Defaults
   let action: Action
 
   func run(writer: Writer) -> ActionResult {
     switch self.action {
     case .Interact(let interactions, let query, let format):
-      return InteractionRunner(control: control, defaults: defaults, interactions: interactions, query: query, format: format).run(writer)
+      return InteractionRunner(control: control, configuration: self.configuration, defaults: defaults, interactions: interactions, query: query, format: format).run(writer)
     case .Create(let configuration, let format):
-      return CreationRunner(control: control, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(writer)
+      return CreationRunner(control: control, configuration: self.configuration, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(writer)
     }
   }
 }
 
 class InteractiveRunner : Runner, RelayTransformer {
   let control: FBSimulatorControl
+  let configuration: Configuration
   let defaults: Defaults
   let portNumber: Int?
 
-  init(control: FBSimulatorControl, defaults: Defaults, portNumber: Int?) {
+  init(control: FBSimulatorControl, configuration: Configuration, defaults: Defaults, portNumber: Int?) {
     self.control = control
+    self.configuration = configuration
     self.portNumber = portNumber
     self.defaults = defaults
   }
@@ -120,7 +123,7 @@ class InteractiveRunner : Runner, RelayTransformer {
     do {
       let arguments = Arguments.fromString(input)
       let (_, action) = try Action.parser().parse(arguments)
-      let runner = ActionRunner(control: self.control, defaults: self.defaults, action: action)
+      let runner = ActionRunner(control: self.control, configuration: self.configuration, defaults: self.defaults, action: action)
       return runner.run(writer)
     } catch let error as ParseError {
       return .Failure("Error: \(error.description)")
@@ -132,6 +135,7 @@ class InteractiveRunner : Runner, RelayTransformer {
 
 struct InteractionRunner : Runner {
   let control: FBSimulatorControl
+  let configuration: Configuration
   let defaults: Defaults
   let interactions: [Interaction]
   let query: Query?
@@ -143,7 +147,7 @@ struct InteractionRunner : Runner {
       let format = self.format ?? defaults.format
       let runners: [Runner] = self.interactions.flatMap { interaction in
         return simulators.map { simulator in
-          SimulatorRunner(simulator: simulator, interaction: interaction.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
+          SimulatorRunner(simulator: simulator, configuration: self.configuration, interaction: interaction.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
         }
       }
       return SequenceRunner(runners: runners).run(writer)
@@ -157,6 +161,7 @@ struct InteractionRunner : Runner {
 
 struct CreationRunner : Runner {
   let control: FBSimulatorControl
+  let configuration: Configuration
   let simulatorConfiguration: FBSimulatorConfiguration
   let format: Format
 
@@ -164,7 +169,7 @@ struct CreationRunner : Runner {
     do {
       let options = FBSimulatorAllocationOptions.Create
       let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
-      let reporter = EventSinkTranslator.create(writer, format: self.format, simulator: simulator)
+      let reporter = EventSinkTranslator.create(self.format, options: self.configuration.options, writer: writer, simulator: simulator)
       defer {
         simulator.userEventSink = nil
       }
@@ -178,12 +183,13 @@ struct CreationRunner : Runner {
 
 private struct SimulatorRunner : Runner {
   let simulator: FBSimulator
+  let configuration: Configuration
   let interaction: Interaction
   let format: Format
 
   func run(writer: Writer) -> ActionResult {
     do {
-      let reporter = EventSinkTranslator.create(writer, format: self.format, simulator: self.simulator)
+      let reporter = EventSinkTranslator.create(self.format, options: self.configuration.options, writer: writer, simulator: simulator)
       defer {
         self.simulator.userEventSink = nil
       }

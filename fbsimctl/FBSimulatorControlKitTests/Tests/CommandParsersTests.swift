@@ -61,34 +61,15 @@ class QueryParserTests : XCTestCase {
   }
 }
 
-class FormatParserTests : XCTestCase {
-  func testParsesSimpleFormats() {
-    self.assertParsesAll(Format.parser(), [
-      (["--udid"], .HumanReadable([.UDID])),
-      (["--name"], .HumanReadable([.Name])),
-      (["--device-name"], .HumanReadable([.DeviceName])),
-      (["--os"], .HumanReadable([.OSVersion])),
-      (["--state"], .HumanReadable([.State])),
-      (["--pid"], .HumanReadable([.ProcessIdentifier])),
-      (["--json"], .JSON(false)),
-      (["--json-pretty"], .JSON(true))
-    ])
-  }
-
-  func testParsesCompoundFormats() {
-    self.assertParsesAll(Format.parser(), [
-      (["--name", "--device-name", "--pid"], .HumanReadable([.Name, .DeviceName, .ProcessIdentifier])),
-      (["--udid", "--name", "--state", "--device-name", "--os"], .HumanReadable([.UDID, .Name, .State, .DeviceName, .OSVersion])),
-      (["--json", "--name"], .JSON(false)),
-      (["--json-pretty", "--name"], .JSON(true)),
-    ])
-  }
-
-  func testFailsToParse() {
-    self.assertFailsToParseAll(Format.parser(), [
-      ["--foo"],
-      ["--bar"],
-      ["--something-else"]
+class KeywordParserTests : XCTestCase {
+  func testParsesKeywords() {
+    self.assertParsesAll(Keyword.parser(), [
+      (["--udid"], Keyword.UDID),
+      (["--name"], Keyword.Name),
+      (["--device-name"], Keyword.DeviceName),
+      (["--os"], Keyword.OSVersion),
+      (["--state"], Keyword.State),
+      (["--pid"], Keyword.ProcessIdentifier)
     ])
   }
 }
@@ -360,7 +341,8 @@ class ActionParserTests : XCTestCase {
       (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), nil),
-      (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), Format.HumanReadable([.DeviceName, .OSVersion]))
+      (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), [.DeviceName, .OSVersion]),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }
 
