@@ -27,9 +27,21 @@ public class FileHandleWriter : Writer {
   public static var stdIOWriter: SuccessFailureWriter {
     get {
       return SuccessFailureWriter(
-        success: FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput()),
-        failure: FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
+        success: self.stdOutWriter,
+        failure: self.stdErrWriter
       )
+    }
+  }
+
+  public static var stdOutWriter: FileHandleWriter {
+    get {
+      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput())
+    }
+  }
+
+  public static var stdErrWriter: FileHandleWriter {
+    get {
+      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
     }
   }
 }

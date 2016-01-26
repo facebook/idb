@@ -10,13 +10,20 @@
 import Foundation
 import FBSimulatorControl
 
-// The Parsing of Logging Arguments needs to be processes first, so that the Privat Frameworks are not loaded
+// The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
 let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
 do {
   let (_, configuration) = try Configuration.parser().parse(arguments)
+  let jsonEnabled = configuration.options.contains(Configuration.Options.JSON)
   let debugEnabled = configuration.options.contains(Configuration.Options.DebugLogging)
-  FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(debugEnabled)
-  FBSimulatorControlGlobalConfiguration.setStderrLoggingEnabled(true)
+
+  if jsonEnabled {
+    let reporter = JSONEventReporter(writer: FileHandleWriter.stdOutWriter, pretty: false)
+    let logger = JSONLogger.withEventReporter(reporter, debug: debugEnabled)
+    FBSimulatorControlGlobalConfiguration.setDefaultLogger(logger)
+  } else {
+    FBSimulatorControlGlobalConfiguration.setDefaultLoggerToASLWithStderrLogging(true, debugLogging: debugEnabled)
+  }
 } catch {
   // Parse errors will be handled by the full parse
 }

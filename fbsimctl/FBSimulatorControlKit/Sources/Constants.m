@@ -9,6 +9,8 @@
 
 #import "Constants.h"
 
+#import <asl.h>
+
 #import <sys/socket.h>
 
 @implementation Constants
@@ -21,6 +23,21 @@
 + (int32_t)so_reuseaddr
 {
   return SO_REUSEADDR;
+}
+
++ (int32_t)asl_level_info
+{
+  return ASL_LEVEL_INFO;
+}
+
++ (int32_t)asl_level_debug
+{
+  return ASL_LEVEL_DEBUG;
+}
+
++ (int32_t)asl_level_err
+{
+  return ASL_LEVEL_ERR;
 }
 
 @end

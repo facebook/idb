@@ -24,12 +24,50 @@ public enum EventName : String {
   case Terminate = "terminate"
   case Approve = "approve"
   case StateChange = "state"
+  case Log = "log"
 }
 
 public enum EventType : String {
   case Started = "started"
   case Ended = "ended"
   case Discrete = "discrete"
+}
+
+@objc class LogEvent : NSObject, EventReporterSubject {
+  let logString: String
+  let level: Int32
+
+  init(logString: String, level: Int32) {
+    self.logString = logString
+    self.level = level
+  }
+
+  func jsonSerializableRepresentation() -> AnyObject! {
+    return [
+      "event_name" : EventName.Log.rawValue,
+      "event_type" : EventType.Discrete.rawValue,
+      "subject" : self.logString,
+      "level" : self.levelString,
+      "timestamp" : round(NSDate().timeIntervalSince1970),
+    ]
+  }
+
+  var shortDescription: String {
+    get {
+      return self.logString
+    }
+  }
+
+  var levelString: String {
+    get {
+      switch self.level {
+      case Constants.asl_level_debug(): return "debug"
+      case Constants.asl_level_err(): return "error"
+      case Constants.asl_level_info(): return "info"
+      default: return "unknown"
+      }
+    }
+  }
 }
 
 class SimulatorEvent : NSObject, EventReporterSubject {
@@ -205,7 +243,7 @@ public class HumanReadableEventReporter : EventReporter {
   }
 }
 
-public class JSONEventReporter : EventReporter {
+@objc public class JSONEventReporter : NSObject, EventReporter {
   let writer: Writer
   let json: JSON
 

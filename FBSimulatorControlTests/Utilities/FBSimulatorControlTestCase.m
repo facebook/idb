@@ -28,8 +28,7 @@ static NSString *const DeviceSetEnvCustom = @"custom";
 
 + (void)initialize
 {
-  [FBSimulatorControlGlobalConfiguration setStderrLoggingEnabled:YES];
-  [FBSimulatorControlGlobalConfiguration setDebugLoggingEnabled:NO];
+  [FBSimulatorControlGlobalConfiguration setDefaultLoggerToASLWithStderrLogging:YES debugLogging:NO];
   [FBSimulatorControlGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBSimulatorControlGlobalConfiguration.description];
   [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
