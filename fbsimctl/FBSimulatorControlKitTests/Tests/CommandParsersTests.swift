@@ -187,8 +187,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging"],
       Configuration(
-        controlConfiguration: Configuration.defaultValue.controlConfiguration,
-        options: Configuration.Options.DebugLogging
+        options: Configuration.Options.DebugLogging,
+        deviceSetPath: nil,
+        managementOptions: FBSimulatorManagementOptions()
       )
     )
   }
@@ -198,11 +199,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--set", "/usr/bin"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: "/usr/bin",
-          options: Configuration.defaultValue.controlConfiguration.options
-        ),
-        options: Configuration.Options()
+        options: Configuration.Options(),
+        deviceSetPath: "/usr/bin",
+        managementOptions: FBSimulatorManagementOptions()
       )
     )
   }
@@ -212,11 +211,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--kill-all", "--process-killing"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: nil,
-          options: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
-        ),
-        options: Configuration.Options()
+        options: Configuration.Options(),
+        deviceSetPath: nil,
+        managementOptions: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
       )
     )
   }
@@ -226,11 +223,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: "/usr/bin",
-          options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
-        ),
-        options: Configuration.Options()
+        options: Configuration.Options(),
+        deviceSetPath: "/usr/bin",
+        managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
     )
   }
@@ -240,11 +235,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: "/usr/bin",
-          options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
-        ),
-        options: Configuration.Options.DebugLogging
+        options: Configuration.Options.DebugLogging,
+        deviceSetPath: "/usr/bin",
+        managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
     )
   }

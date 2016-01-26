@@ -96,23 +96,13 @@ extension Parser {
 extension Configuration : Parsable {
   public static func parser() -> Parser<Configuration> {
     return Parser
-      .ofTwoSequenced(
+      .ofThreeSequenced(
         self.optionsParser(),
-        self.controlConfigurationParser()
-      )
-      .fmap { (options, controlConfiguration) in
-        return Configuration(controlConfiguration: controlConfiguration, options: options)
-      }
-  }
-
-  public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
-    return Parser
-      .ofTwoSequenced(
         Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
         FBSimulatorManagementOptions.parser()
       )
-      .fmap { setPath, options in
-        return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
+      .fmap { (options, deviceSetPath, managementOptions) in
+        return Configuration(options: options, deviceSetPath: deviceSetPath, managementOptions: managementOptions)
       }
   }
 

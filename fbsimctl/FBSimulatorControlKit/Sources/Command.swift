@@ -23,8 +23,9 @@ public struct Configuration {
     static let DebugLogging = Options(rawValue: 1 << 0)
   }
 
-  let controlConfiguration: FBSimulatorControlConfiguration
   let options: Options
+  let deviceSetPath: String?
+  let managementOptions: FBSimulatorManagementOptions
 }
 
 /**
@@ -79,7 +80,7 @@ public enum Command {
 
 extension Configuration : Equatable {}
 public func == (left: Configuration, right: Configuration) -> Bool {
-  return left.options == right.options && left.controlConfiguration == right.controlConfiguration
+  return left.options == right.options && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
 }
 
 extension Command : Equatable {}

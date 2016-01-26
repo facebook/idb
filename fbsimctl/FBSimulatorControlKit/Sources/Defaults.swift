@@ -39,17 +39,9 @@ extension Configuration : Defaultable {
   public static var defaultValue: Configuration {
     get {
       return Configuration(
-        controlConfiguration: self.defaultControlConfiguration,
-        options: Configuration.Options()
-      )
-    }
-  }
-
-  public static var defaultControlConfiguration: FBSimulatorControlConfiguration {
-    get {
-      return FBSimulatorControlConfiguration(
+        options: Configuration.Options(),
         deviceSetPath: nil,
-        options: FBSimulatorManagementOptions()
+        managementOptions: FBSimulatorManagementOptions()
       )
     }
   }
@@ -118,7 +110,7 @@ public class Defaults {
   }
 
   private static func queryHistoryLocation(configuration: Configuration) -> NSURL {
-    let setPath = configuration.controlConfiguration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
+    let setPath = configuration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
     return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
   }
 }

@@ -29,6 +29,7 @@ extern NSString *const FBSimulatorControlDebugLogging;
 
 /**
  Environment Globals & other derived constants.
+ These values can be accessed before the Private Frameworks are loaded.
  */
 @interface FBSimulatorControlGlobalConfiguration : NSObject
 

@@ -10,9 +10,16 @@
 import Foundation
 import FBSimulatorControl
 
+// The Parsing of Logging Arguments needs to be processes first, so that the Privat Frameworks are not loaded
 let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
-let argumentSet = Set(arguments)
-FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(argumentSet.contains(Flags.DebugLogging))
+do {
+  let (_, configuration) = try Configuration.parser().parse(arguments)
+  let debugEnabled = configuration.options.contains(Configuration.Options.DebugLogging)
+  FBSimulatorControlGlobalConfiguration.setDebugLoggingEnabled(debugEnabled)
+  FBSimulatorControlGlobalConfiguration.setStderrLoggingEnabled(true)
+} catch {
+  // Parse errors will be handled by the full parse
+}
 
 let environment = NSProcessInfo.processInfo().environment
 
