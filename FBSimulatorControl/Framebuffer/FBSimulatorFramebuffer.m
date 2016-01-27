@@ -18,6 +18,7 @@
 #import "FBFramebufferCounter.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
+#import "FBFramebufferImage.h"
 #import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorEventSink.h"
@@ -71,6 +72,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
   FBFramebufferCounter *counter = [FBFramebufferCounter withLogFrequency:FBFramebufferLogFrameFrequency logger:simulator.logger];
   [sinks addObject:counter];
+  [sinks addObject:[FBFramebufferImage withWritableLog:simulator.logs.screenshot eventSink:simulator.eventSink]];
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
   return [[self alloc] initWithFramebufferService:framebufferService counter:counter eventSink:simulator.eventSink delegate:delegate];
