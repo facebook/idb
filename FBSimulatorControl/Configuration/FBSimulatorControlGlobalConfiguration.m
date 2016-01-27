@@ -18,6 +18,8 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 NSString *const FBSimulatorControlStderrLogging = @"FBSIMULATORCONTROL_LOGGING";
 NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
 
+static id<FBSimulatorLogger> logger;
+
 @implementation FBSimulatorControlGlobalConfiguration
 
 + (NSString *)developerDirectory
@@ -110,23 +112,12 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
   return [self.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
 }
 
-+ (BOOL)stderrLoggingEnabled
-{
-  return [NSProcessInfo.processInfo.environment[FBSimulatorControlStderrLogging] boolValue] || self.debugLoggingEnabled;
-}
-
-+ (BOOL)debugLoggingEnabled
-{
-  return [NSProcessInfo.processInfo.environment[FBSimulatorControlDebugLogging] boolValue];
-}
-
 + (id<FBSimulatorLogger>)defaultLogger
 {
-  static dispatch_once_t onceToken;
-  static id<FBSimulatorLogger> logger;
-  dispatch_once(&onceToken, ^{
-    logger = [[FBSimulatorLogger aslLogger] writeToStderrr:self.stderrLoggingEnabled withDebugLogging:self.debugLoggingEnabled];
-  });
+  if (logger) {
+    return logger;
+  }
+  logger = [self createDefaultLogger];
   return logger;
 }
 
@@ -141,18 +132,43 @@ NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGG
   ];
 }
 
++ (BOOL)debugLoggingEnabled
+{
+  return [NSProcessInfo.processInfo.environment[FBSimulatorControlDebugLogging] boolValue];
+}
+
+
+#pragma mark Private
+
++ (id<FBSimulatorLogger>)createDefaultLogger
+{
+  return [FBSimulatorLogger aslLoggerWritingToStderrr:self.stderrLoggingEnabled withDebugLogging:self.debugLoggingEnabled];
+}
+
++ (BOOL)stderrLoggingEnabled
+{
+  return [NSProcessInfo.processInfo.environment[FBSimulatorControlStderrLogging] boolValue] || self.debugLoggingEnabled;
+}
+
 @end
 
 @implementation FBSimulatorControlGlobalConfiguration (Environment)
 
-+ (void)setStderrLoggingEnabled:(BOOL)enabled
++ (void)setDefaultLogger:(id<FBSimulatorLogger>)defaultLogger
 {
-  setenv(FBSimulatorControlStderrLogging.UTF8String, enabled ? "YES" : "NO", 1);
+  if (logger) {
+    [logger logFormat:@"The Default logger has already been set to %@, %@ will have no effect", logger, NSStringFromSelector(_cmd)];
+  }
+  logger = defaultLogger;
 }
 
-+ (void)setDebugLoggingEnabled:(BOOL)enabled
++ (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging
 {
-  setenv(FBSimulatorControlDebugLogging.UTF8String, enabled ? "YES" : "NO", 1);
+  if (logger) {
+    [logger logFormat:@"The Default logger has already been set to %@, %@ will have no effect", logger, NSStringFromSelector(_cmd)];
+  }
+  setenv(FBSimulatorControlStderrLogging.UTF8String, stderrLogging ? "YES" : "NO", 1);
+  setenv(FBSimulatorControlDebugLogging.UTF8String, debugLogging ? "YES" : "NO", 1);
 }
 
 @end

@@ -21,28 +21,27 @@ public struct Configuration {
     }
 
     static let DebugLogging = Options(rawValue: 1 << 0)
+    static let JSON = Options(rawValue: 1 << 1)
+    static let Pretty = Options(rawValue: 1 << 2)
   }
 
-  let controlConfiguration: FBSimulatorControlConfiguration
   let options: Options
+  let deviceSetPath: String?
+  let managementOptions: FBSimulatorManagementOptions
 }
 
 /**
- Defines a Format for displaying Simulator Information
+ Defines a the Keywords for specifying the formatting of the Simulator.
 */
-public enum Format {
-  public enum Keywords: String {
-    case UDID = "--udid"
-    case Name = "--name"
-    case DeviceName = "--device-name"
-    case OSVersion = "--os"
-    case State = "--state"
-    case ProcessIdentifier = "--pid"
-  }
-
-  case HumanReadable([Keywords])
-  case JSON(Bool)
+public enum Keyword : String {
+  case UDID = "--udid"
+  case Name = "--name"
+  case DeviceName = "--device-name"
+  case OSVersion = "--os"
+  case State = "--state"
+  case ProcessIdentifier = "--pid"
 }
+public typealias Format = [Keyword]
 
 /**
  An Interaction represents a Single, synchronous interaction with a Simulator.
@@ -79,7 +78,7 @@ public enum Command {
 
 extension Configuration : Equatable {}
 public func == (left: Configuration, right: Configuration) -> Bool {
-  return left.options == right.options && left.controlConfiguration == right.controlConfiguration
+  return left.options == right.options && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
 }
 
 extension Command : Equatable {}
@@ -98,11 +97,33 @@ public func == (left: Command, right: Command) -> Bool {
 
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
+  // The == function isn't as concise as it could be as Format? isn't automatically Equatable
+  // This is despite [Equatable] Equatable? and Format all being Equatable
   switch (left, right) {
-    case (.Interact(let leftInteractions, let leftQuery, let leftFormat), .Interact(let rightInteractions, let rightQuery, let rightFormat)):
-      return leftInteractions == rightInteractions && leftQuery == rightQuery && leftFormat == rightFormat
-    case (.Create(let leftConfiguration, let leftFormat), .Create(let rightConfiguration, let rightFormat)):
-      return leftConfiguration == rightConfiguration && leftFormat == rightFormat
+    case (.Interact(let leftInteractions, let leftQuery, let leftMaybeFormat), .Interact(let rightInteractions, let rightQuery, let rightMaybeFormat)):
+      if leftInteractions != rightInteractions || leftQuery != rightQuery {
+        return false
+      }
+      switch (leftMaybeFormat, rightMaybeFormat) {
+      case (.Some(let leftFormat), .Some(let rightFormat)):
+        return leftFormat == rightFormat
+      case (.None, .None):
+        return true
+      default:
+        return false
+      }
+    case (.Create(let leftConfiguration, let leftMaybeFormat), .Create(let rightConfiguration, let rightMaybeFormat)):
+      if leftConfiguration != rightConfiguration {
+        return false
+      }
+      switch (leftMaybeFormat, rightMaybeFormat) {
+      case (.Some(let leftFormat), .Some(let rightFormat)):
+        return leftFormat == rightFormat
+      case (.None, .None):
+        return true
+      default:
+        return false
+      }
     default:
       return true
   }
@@ -127,18 +148,6 @@ public func == (left: Interaction, right: Interaction) -> Bool {
     return leftApp == rightApp
   case (.Launch(let leftLaunch), .Launch(let rightLaunch)):
     return leftLaunch == rightLaunch
-  default:
-    return false
-  }
-}
-
-extension Format : Equatable { }
-public func == (left: Format, right: Format) -> Bool {
-  switch (left, right) {
-  case (.JSON(let leftPretty), .JSON(let rightPretty)):
-    return leftPretty == rightPretty
-  case (.HumanReadable(let leftKeywords), .HumanReadable(let rightKeywords)):
-    return leftKeywords == rightKeywords
   default:
     return false
   }

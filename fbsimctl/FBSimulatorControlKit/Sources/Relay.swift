@@ -21,25 +21,29 @@ protocol Relay {
  A Protocol for performing an Action producing an ActionResult.
  */
 protocol RelayTransformer {
-  func transform(input: String, writer: Writer) -> ActionResult
+  func transform(input: String, reporter: EventReporter) -> ActionResult
 }
 
 /**
- A Connection of Input-to-Output via a buffer.
+ A Connection of Reporter-to-Transformer, linebuffering an input
  */
 class RelayConnection : LineBufferDelegate {
   let transformer: RelayTransformer
-  let writer: SuccessFailureWriter
+  let reporter: EventReporter
   lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
 
-  init (transformer: RelayTransformer, writer: SuccessFailureWriter) {
+  init (transformer: RelayTransformer, reporter: EventReporter) {
     self.transformer = transformer
-    self.writer = writer
+    self.reporter = reporter
   }
 
   func buffer(lineAvailable: String) {
-    self.writer.writeActionResult(
-      self.transformer.transform(lineAvailable, writer: self.writer.success)
-    )
+    let result = self.transformer.transform(lineAvailable, reporter: self.reporter)
+    switch result {
+    case .Failure(let error):
+      self.reporter.reportSimple(EventName.Failure, EventType.Discrete, error as NSString)
+    default:
+      break
+    }
   }
 }

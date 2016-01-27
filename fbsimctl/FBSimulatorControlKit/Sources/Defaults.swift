@@ -26,30 +26,15 @@ public enum DefaultsError : ErrorType, CustomStringConvertible {
 public protocol Defaultable {
   static var defaultValue: Self { get }
 }
-
-extension Format : Defaultable {
-  public static var defaultValue: Format {
-    get {
-      return .HumanReadable([ .UDID, .Name])
-    }
-  }
-}
+private let defaultFormat: Format = [ .UDID, .Name]
 
 extension Configuration : Defaultable {
   public static var defaultValue: Configuration {
     get {
       return Configuration(
-        controlConfiguration: self.defaultControlConfiguration,
-        options: Configuration.Options()
-      )
-    }
-  }
-
-  public static var defaultControlConfiguration: FBSimulatorControlConfiguration {
-    get {
-      return FBSimulatorControlConfiguration(
+        options: Configuration.Options(),
         deviceSetPath: nil,
-        options: FBSimulatorManagementOptions()
+        managementOptions: FBSimulatorManagementOptions()
       )
     }
   }
@@ -100,7 +85,7 @@ public class Defaults {
 
       return Defaults(
         logWriter: logWriter,
-        format: format ?? Format.defaultValue,
+        format: format ?? defaultFormat,
         configuration: configuration
       )
     } catch let error as ParseError {
@@ -110,15 +95,16 @@ public class Defaults {
 
   private static var rcFileParser: Parser<(Configuration?, Format?)> {
     get {
-      return Parser.ofTwoSequenced(
-        Configuration.parser().optional(),
-        Format.parser().optional()
-      )
+      return Parser
+        .ofTwoSequenced(
+          Configuration.parser().optional(),
+          Format.parser().optional()
+        )
     }
   }
 
   private static func queryHistoryLocation(configuration: Configuration) -> NSURL {
-    let setPath = configuration.controlConfiguration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
+    let setPath = configuration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
     return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
   }
 }

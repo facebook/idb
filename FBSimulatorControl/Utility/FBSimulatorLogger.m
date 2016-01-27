@@ -63,13 +63,13 @@
   return self;
 }
 
-- (instancetype)log:(NSString *)string
+- (id<FBSimulatorLogger>)log:(NSString *)string
 {
   asl_log(self.aslContainer.asl, NULL, self.currentLevel, "%s", string.UTF8String);
   return self;
 }
 
-- (instancetype)logFormat:(NSString *)format, ...
+- (id<FBSimulatorLogger>)logFormat:(NSString *)format, ...
 {
   va_list args;
   va_start(args, format);
@@ -94,7 +94,7 @@
   return [[FBSimulatorLogger_ASL alloc] initWithASLClient:self.aslContainer currentLevel:ASL_LEVEL_ERR];
 }
 
-- (instancetype)writeToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
+- (instancetype)writingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
 {
   if (writeToStdErr) {
     int filterLimit = debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
@@ -109,14 +109,14 @@
 
 @implementation FBSimulatorLogger
 
-+ (id<FBSimulatorLogger>)aslLogger
++ (id<FBSimulatorLogger>)aslLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
 {
   static dispatch_once_t onceToken;
   static FBSimulatorLogger_ASL *logger;
   dispatch_once(&onceToken, ^{
     asl_object_t asl = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
     FBASLContainer *aslContainer = [[FBASLContainer alloc] initWithASLObject:asl];
-    logger = [[FBSimulatorLogger_ASL alloc] initWithASLClient:aslContainer currentLevel:ASL_LEVEL_INFO];
+    logger = [[[FBSimulatorLogger_ASL alloc] initWithASLClient:aslContainer currentLevel:ASL_LEVEL_INFO] writingToStderrr:writeToStdErr withDebugLogging:debugLogging];
   });
   return logger;
 }

@@ -47,6 +47,11 @@
 		AA6085DC1C287E02009B500E /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
 		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
 		AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
+		AA83D5E61C57E5FE003B253E /* JSONLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5E51C57E5FE003B253E /* JSONLogger.m */; };
+		AA83D5E81C58E332003B253E /* ActionResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5E71C58E332003B253E /* ActionResult.swift */; };
+		AA83D5E91C58E332003B253E /* ActionResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5E71C58E332003B253E /* ActionResult.swift */; };
+		AA83D5EB1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
+		AA83D5EC1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
 		AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AACF9F541C46E85800B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
@@ -105,6 +110,10 @@
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		AA6085BF1C287B36009B500E /* fbsimctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fbsimctl.h; sourceTree = "<group>"; };
 		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
+		AA83D5E41C57E5FE003B253E /* JSONLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSONLogger.h; sourceTree = "<group>"; };
+		AA83D5E51C57E5FE003B253E /* JSONLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JSONLogger.m; sourceTree = "<group>"; };
+		AA83D5E71C58E332003B253E /* ActionResult.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionResult.swift; sourceTree = "<group>"; };
+		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
@@ -151,6 +160,7 @@
 		AA1B7F5A1C2867EE0038C6A5 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				AA83D5E71C58E332003B253E /* ActionResult.swift */,
 				AA54EF711C4814BA006D5118 /* Arguments.swift */,
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
@@ -161,6 +171,7 @@
 				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
 				AACF9F521C46E5C100B17E82 /* Environment.swift */,
 				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
+				AA83D5EA1C58E368003B253E /* Events.swift */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
 				AA54EF741C48275B006D5118 /* JSON.swift */,
 				AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */,
@@ -227,6 +238,8 @@
 			isa = PBXGroup;
 			children = (
 				AA6085BF1C287B36009B500E /* fbsimctl.h */,
+				AA83D5E41C57E5FE003B253E /* JSONLogger.h */,
+				AA83D5E51C57E5FE003B253E /* JSONLogger.m */,
 				AAE35A7C1C2863EB0073CC70 /* main.swift */,
 			);
 			path = fbsimctl;
@@ -327,7 +340,7 @@
 			attributes = {
 				CLASSPREFIX = FB;
 				LastSwiftUpdateCheck = 0720;
-				LastUpgradeCheck = 0710;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
 					AA93B7AF1BE8351000CF6A56 = {
@@ -386,6 +399,8 @@
 				AA6085D41C287E02009B500E /* Constants.m in Sources */,
 				AA6085D51C287E02009B500E /* Help.swift in Sources */,
 				AA54EF761C48DE6F006D5118 /* JSON.swift in Sources */,
+				AA83D5E61C57E5FE003B253E /* JSONLogger.m in Sources */,
+				AA83D5EB1C58E368003B253E /* Events.swift in Sources */,
 				AA6085D61C287E02009B500E /* LineBuffer.swift in Sources */,
 				AA6085D71C287E02009B500E /* Parser.swift in Sources */,
 				AA6085D81C287E02009B500E /* Relay.swift in Sources */,
@@ -396,6 +411,7 @@
 				AA6085DC1C287E02009B500E /* StdIORelay.swift in Sources */,
 				AA6085CF1C287DBD009B500E /* main.swift in Sources */,
 				AACF9F541C46E85800B17E82 /* Environment.swift in Sources */,
+				AA83D5E81C58E332003B253E /* ActionResult.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -410,10 +426,12 @@
 				AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */,
 				AA1B7F6F1C2867EE0038C6A5 /* Constants.m in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
+				AA83D5E91C58E332003B253E /* ActionResult.swift in Sources */,
 				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
 				AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */,
 				AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */,
 				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
+				AA83D5EC1C58E368003B253E /* Events.swift in Sources */,
 				AA54EF701C47E9FC006D5118 /* Constants.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
 				AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */,

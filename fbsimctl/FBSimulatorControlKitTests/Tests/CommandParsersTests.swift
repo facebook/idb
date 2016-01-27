@@ -61,34 +61,15 @@ class QueryParserTests : XCTestCase {
   }
 }
 
-class FormatParserTests : XCTestCase {
-  func testParsesSimpleFormats() {
-    self.assertParsesAll(Format.parser(), [
-      (["--udid"], .HumanReadable([.UDID])),
-      (["--name"], .HumanReadable([.Name])),
-      (["--device-name"], .HumanReadable([.DeviceName])),
-      (["--os"], .HumanReadable([.OSVersion])),
-      (["--state"], .HumanReadable([.State])),
-      (["--pid"], .HumanReadable([.ProcessIdentifier])),
-      (["--json"], .JSON(false)),
-      (["--json-pretty"], .JSON(true))
-    ])
-  }
-
-  func testParsesCompoundFormats() {
-    self.assertParsesAll(Format.parser(), [
-      (["--name", "--device-name", "--pid"], .HumanReadable([.Name, .DeviceName, .ProcessIdentifier])),
-      (["--udid", "--name", "--state", "--device-name", "--os"], .HumanReadable([.UDID, .Name, .State, .DeviceName, .OSVersion])),
-      (["--json", "--name"], .JSON(false)),
-      (["--json-pretty", "--name"], .JSON(true)),
-    ])
-  }
-
-  func testFailsToParse() {
-    self.assertFailsToParseAll(Format.parser(), [
-      ["--foo"],
-      ["--bar"],
-      ["--something-else"]
+class KeywordParserTests : XCTestCase {
+  func testParsesKeywords() {
+    self.assertParsesAll(Keyword.parser(), [
+      (["--udid"], Keyword.UDID),
+      (["--name"], Keyword.Name),
+      (["--device-name"], Keyword.DeviceName),
+      (["--os"], Keyword.OSVersion),
+      (["--state"], Keyword.State),
+      (["--pid"], Keyword.ProcessIdentifier)
     ])
   }
 }
@@ -187,8 +168,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging"],
       Configuration(
-        controlConfiguration: Configuration.defaultValue.controlConfiguration,
-        options: Configuration.Options.DebugLogging
+        options: Configuration.Options.DebugLogging,
+        deviceSetPath: nil,
+        managementOptions: FBSimulatorManagementOptions()
       )
     )
   }
@@ -198,11 +180,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--set", "/usr/bin"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: "/usr/bin",
-          options: Configuration.defaultValue.controlConfiguration.options
-        ),
-        options: Configuration.Options()
+        options: Configuration.Options(),
+        deviceSetPath: "/usr/bin",
+        managementOptions: FBSimulatorManagementOptions()
       )
     )
   }
@@ -212,11 +192,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--kill-all", "--process-killing"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: nil,
-          options: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
-        ),
-        options: Configuration.Options()
+        options: Configuration.Options(),
+        deviceSetPath: nil,
+        managementOptions: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.UseProcessKilling)
       )
     )
   }
@@ -226,11 +204,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: "/usr/bin",
-          options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
-        ),
-        options: Configuration.Options()
+        options: Configuration.Options(),
+        deviceSetPath: "/usr/bin",
+        managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
     )
   }
@@ -240,11 +216,9 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
-        controlConfiguration: FBSimulatorControlConfiguration(
-          deviceSetPath: "/usr/bin",
-          options: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
-        ),
-        options: Configuration.Options.DebugLogging
+        options: Configuration.Options.DebugLogging,
+        deviceSetPath: "/usr/bin",
+        managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
     )
   }
@@ -367,7 +341,8 @@ class ActionParserTests : XCTestCase {
       (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), nil),
-      (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), Format.HumanReadable([.DeviceName, .OSVersion]))
+      (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), [.DeviceName, .OSVersion]),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }
 

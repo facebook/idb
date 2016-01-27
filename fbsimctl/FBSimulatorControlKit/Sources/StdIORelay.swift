@@ -24,24 +24,26 @@ public class FileHandleWriter : Writer {
     self.fileHandle.writeData(data)
   }
 
-  public static var stdIOWriter: SuccessFailureWriter {
+  public static var stdOutWriter: FileHandleWriter {
     get {
-      return SuccessFailureWriter(
-        success: FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput()),
-        failure: FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
-      )
+      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput())
+    }
+  }
+
+  public static var stdErrWriter: FileHandleWriter {
+    get {
+      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
     }
   }
 }
 
 
 class StdIORelay : Relay {
-  let relayConnection: RelayConnection
-
+  private let relayConnection: RelayConnection
   private let stdIn: NSFileHandle
 
-  init(transformer: RelayTransformer) {
-    self.relayConnection = RelayConnection(transformer: transformer, writer: FileHandleWriter.stdIOWriter)
+  init(configuration: Configuration, transformer: RelayTransformer) {
+    self.relayConnection = RelayConnection(transformer: transformer, reporter: configuration.options.createReporter(FileHandleWriter.stdOutWriter))
     self.stdIn = NSFileHandle.fileHandleWithStandardInput()
   }
 

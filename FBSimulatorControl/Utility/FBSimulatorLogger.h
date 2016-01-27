@@ -20,7 +20,7 @@
  @param string the string to log.
  @return the reciever, for chaining.
  */
-- (instancetype)log:(NSString *)string;
+- (id<FBSimulatorLogger>)log:(NSString *)string;
 
 /**
  Logs a Message with the provided Format String.
@@ -28,7 +28,7 @@
  @param format the Format String for the Logger.
  @return the reciever, for chaining.
  */
-- (instancetype)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+- (id<FBSimulatorLogger>)logFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
 
 /**
  Returns the Info Logger variant.
@@ -45,15 +45,6 @@
  */
 - (id<FBSimulatorLogger>)error;
 
-/**
- Updates the Logger to write to stderr.
-
- @param writeToStdErr YES if all future log messages should be written to stderr, NO otherwise.
- @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
- @return the reciever, for chaining.
- */
-- (instancetype)writeToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
-
 @end
 
 @interface FBSimulatorLogger : NSObject
@@ -61,8 +52,10 @@
 /**
  An implementation of `FBSimulatorLogger` that logs all events using ASL.
 
+ @param writeToStdErr YES if all future log messages should be written to stderr, NO otherwise.
+ @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
  @return an FBSimulatorLogger instance.
  */
-+ (id<FBSimulatorLogger>)aslLogger;
++ (id<FBSimulatorLogger>)aslLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 
 @end

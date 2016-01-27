@@ -96,30 +96,22 @@ extension Parser {
 extension Configuration : Parsable {
   public static func parser() -> Parser<Configuration> {
     return Parser
-      .ofTwoSequenced(
+      .ofThreeSequenced(
         self.optionsParser(),
-        self.controlConfigurationParser()
-      )
-      .fmap { (options, controlConfiguration) in
-        return Configuration(controlConfiguration: controlConfiguration, options: options)
-      }
-  }
-
-  public static func controlConfigurationParser() -> Parser<FBSimulatorControlConfiguration> {
-    return Parser
-      .ofTwoSequenced(
         Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
         FBSimulatorManagementOptions.parser()
       )
-      .fmap { setPath, options in
-        return FBSimulatorControlConfiguration(deviceSetPath: setPath, options: options)
+      .fmap { (options, deviceSetPath, managementOptions) in
+        return Configuration(options: options, deviceSetPath: deviceSetPath, managementOptions: managementOptions)
       }
   }
 
   static func optionsParser() -> Parser<Configuration.Options> {
     return Parser<Configuration.Options>
       .unionOptions([
-        Parser.ofString(Flags.DebugLogging, Configuration.Options.DebugLogging)
+        Parser.ofString(Flags.DebugLogging, Configuration.Options.DebugLogging),
+        Parser.ofString("--json", Configuration.Options.JSON),
+        Parser.ofString("---pretty", Configuration.Options.Pretty)
       ])
   }
 }
@@ -396,36 +388,23 @@ extension Query : Parsable {
   }
 }
 
-extension Format : Parsable {
+extension Keyword : Parsable {
+  public static func parser() -> Parser<Keyword> {
+    return Parser
+      .alternative([
+        Parser.ofString(Keyword.UDID.rawValue, Keyword.UDID),
+        Parser.ofString(Keyword.Name.rawValue, Keyword.Name),
+        Parser.ofString(Keyword.DeviceName.rawValue, Keyword.DeviceName),
+        Parser.ofString(Keyword.OSVersion.rawValue, Keyword.OSVersion),
+        Parser.ofString(Keyword.State.rawValue, Keyword.State),
+        Parser.ofString(Keyword.ProcessIdentifier.rawValue, Keyword.ProcessIdentifier)
+      ])
+  }
+}
+
+extension SequenceType where Generator.Element == Keyword {
   public static func parser() -> Parser<Format> {
-    return Parser
-      .alternative([
-        self.jsonParser(),
-        self.keywordsParser()
-      ])
-  }
-
-  private static func jsonParser() -> Parser<Format> {
-    return Parser
-      .alternative([
-        Parser.ofString("--json", Format.JSON(false)),
-        Parser.ofString("--json-pretty", Format.JSON(true))
-      ])
-  }
-
-  private static func keywordsParser() -> Parser<Format> {
-    return Parser
-      .alternativeMany(1, [
-        Parser.ofString(Format.Keywords.UDID.rawValue, Format.Keywords.UDID),
-        Parser.ofString(Format.Keywords.Name.rawValue, Format.Keywords.Name),
-        Parser.ofString(Format.Keywords.DeviceName.rawValue, Format.Keywords.DeviceName),
-        Parser.ofString(Format.Keywords.OSVersion.rawValue, Format.Keywords.OSVersion),
-        Parser.ofString(Format.Keywords.State.rawValue, Format.Keywords.State),
-        Parser.ofString(Format.Keywords.ProcessIdentifier.rawValue, Format.Keywords.ProcessIdentifier)
-      ])
-      .fmap { keywords in
-        return Format.HumanReadable(keywords)
-      }
+    return Parser.manyCount(1, Keyword.parser())
   }
 }
 

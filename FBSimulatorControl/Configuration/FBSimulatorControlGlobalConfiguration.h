@@ -29,6 +29,7 @@ extern NSString *const FBSimulatorControlDebugLogging;
 
 /**
  Environment Globals & other derived constants.
+ These values can be accessed before the Private Frameworks are loaded.
  */
 @interface FBSimulatorControlGlobalConfiguration : NSObject
 
@@ -73,12 +74,7 @@ extern NSString *const FBSimulatorControlDebugLogging;
 + (BOOL)supportsCustomDeviceSets;
 
 /**
- YES if informattional logging should be written to stderr, NO otherwise.
- */
-+ (BOOL)stderrLoggingEnabled;
-
-/**
- YES if Debug information should be written to stderr, NO otherwise.
+ YES if additional debug logging should be provided to the logger, NO otherwise.
  */
 + (BOOL)debugLoggingEnabled;
 
@@ -95,23 +91,24 @@ extern NSString *const FBSimulatorControlDebugLogging;
 @end
 
 /**
- Update the Global Configuration at (early) runtime by modifying the Environment.
+ Updates the Global Configuration.
  These Methods should typically be called *before any other* method in FBSimulatorControl.
  */
-@interface FBSimulatorControlGlobalConfiguration (Environment)
+@interface FBSimulatorControlGlobalConfiguration (Setters)
+
+/**
+ This is provided as a global so that a custom logger can be provided to the Private Framework loader.
+
+ @param logger the new default logger
+ */
++ (void)setDefaultLogger:(id<FBSimulatorLogger>)logger;
 
 /**
  Update the current process environment to enable logging to stderr.
 
- @param enabled YES if stderr logging should be enabled, NO otherwise.
+ @param stderrLogging YES if stderr logging should be enabled, NO otherwise.
+ @param debugLogging YES if stdout logging should be enabled, NO otherwise.
  */
-+ (void)setStderrLoggingEnabled:(BOOL)enabled;
-
-/**
- Update the current process environment to enable debug logging to stderr.
-
- @param enabled YES if stderr debuglogging should be enabled, NO otherwise.
- */
-+ (void)setDebugLoggingEnabled:(BOOL)enabled;
++ (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging;
 
 @end

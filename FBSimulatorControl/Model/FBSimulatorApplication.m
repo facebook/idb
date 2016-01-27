@@ -120,11 +120,11 @@
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
-  return [self dictionaryWithValuesForKeys:@[
-    NSStringFromSelector(@selector(name)),
-    NSStringFromSelector(@selector(path)),
-    NSStringFromSelector(@selector(architectures))
-  ]];
+  return @{
+    @"name" : self.name,
+    @"path" : self.path,
+    @"architectures" : self.architectures.allObjects
+  };
 }
 
 @end
