@@ -226,7 +226,7 @@ extension Parser {
       do {
         while (runningArgs.count > 0) {
           let output = try parser.parse(runningArgs)
-          parseCount++
+          parseCount += 1
           runningArgs = output.0
           values.append(output.1)
         }
