@@ -171,9 +171,9 @@ struct CreationRunner : Runner {
   func run(reporter: EventReporter) -> ActionResult {
     do {
       let options = FBSimulatorAllocationOptions.Create
-      reporter.report(SimpleEvent(EventName.Create, EventType.Started, self.simulatorConfiguration))
+      reporter.reportSimple(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
-      reporter.report(SimpleEvent(EventName.Create, EventType.Started, simulator))
+      reporter.reportSimple(EventName.Create, EventType.Ended, simulator)
       return ActionResult.Success
     } catch let error as NSError {
       return ActionResult.Failure("Failed to Create Simulator \(error.description)")
@@ -189,51 +189,51 @@ private struct SimulatorRunner : Runner {
 
   func run(reporter: EventReporter) -> ActionResult {
     do {
-      let reporter = EventSinkTranslator(simulator: self.simulator, format: self.format, reporter: reporter)
+      let translator = EventSinkTranslator(simulator: self.simulator, format: self.format, reporter: reporter)
       defer {
-        self.simulator.userEventSink = nil
+        translator.simulator.userEventSink = nil
       }
 
       switch self.interaction {
       case .List:
-        reporter.report(EventName.List, simulator)
+        translator.reportSimulator(EventName.List, simulator)
       case .Approve(let bundleIDs):
-        reporter.report(EventName.Approve, EventType.Started, [bundleIDs] as NSArray)
+        translator.reportSimulator(EventName.Approve, EventType.Started, [bundleIDs] as NSArray)
         try simulator.interact().authorizeLocationSettings(bundleIDs).performInteraction()
-        reporter.report(EventName.Approve, EventType.Ended, [bundleIDs] as NSArray)
+        translator.reportSimulator(EventName.Approve, EventType.Ended, [bundleIDs] as NSArray)
       case .Boot(let maybeLaunchConfiguration):
         let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
-        reporter.report(EventName.Boot, EventType.Started, launchConfiguration)
+        translator.reportSimulator(EventName.Boot, EventType.Started, launchConfiguration)
         try simulator.interact().prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration).performInteraction()
-        reporter.report(EventName.Boot, EventType.Ended, launchConfiguration)
+        translator.reportSimulator(EventName.Boot, EventType.Ended, launchConfiguration)
       case .Shutdown:
-        reporter.report(EventName.Shutdown, EventType.Started, self.simulator)
+        translator.reportSimulator(EventName.Shutdown, EventType.Started, self.simulator)
         try simulator.interact().shutdownSimulator().performInteraction()
-        reporter.report(EventName.Shutdown, EventType.Ended, self.simulator)
+        translator.reportSimulator(EventName.Shutdown, EventType.Ended, self.simulator)
       case .Diagnose:
         let logs = simulator.logs.allLogs() as! [FBSimulatorLogs]
-        reporter.report(EventName.Diagnostic, EventType.Discrete, logs)
+        translator.reportSimulator(EventName.Diagnostic, EventType.Discrete, logs)
       case .Delete:
-        reporter.report(EventName.Delete, EventType.Started, self.simulator)
+        translator.reportSimulator(EventName.Delete, EventType.Started, self.simulator)
         try simulator.pool!.deleteSimulator(simulator)
-        reporter.report(EventName.Delete, EventType.Ended, self.simulator)
+        translator.reportSimulator(EventName.Delete, EventType.Ended, self.simulator)
       case .Install(let application):
-        reporter.report(EventName.Install, EventType.Started, application)
+        translator.reportSimulator(EventName.Install, EventType.Started, application)
         try simulator.interact().installApplication(application).performInteraction()
-        reporter.report(EventName.Install, EventType.Ended, application)
+        translator.reportSimulator(EventName.Install, EventType.Ended, application)
       case .Launch(let launch):
-        reporter.report(EventName.Launch, EventType.Started, launch)
+        translator.reportSimulator(EventName.Launch, EventType.Started, launch)
         if let appLaunch = launch as? FBApplicationLaunchConfiguration {
           try simulator.interact().launchApplication(appLaunch).performInteraction()
         }
         else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
           try simulator.interact().launchAgent(agentLaunch).performInteraction()
         }
-        reporter.report(EventName.Launch, EventType.Ended, launch)
+        translator.reportSimulator(EventName.Launch, EventType.Ended, launch)
       }
     } catch let error as NSError {
       return .Failure(error.description)
-    } catch let error as JSON.Error {
+    } catch let error as JSONError {
       return .Failure(error.description)
     }
     return .Success

@@ -10,111 +10,98 @@
 import Foundation
 import FBSimulatorControl
 
-extension NSString : FBJSONSerializationDescribeable {
-  public func jsonSerializableRepresentation() -> AnyObject! {
-    return self
-  }
-}
-extension NSString : FBDebugDescribeable {
-  override public var debugDescription: String {
+public enum JSONError : ErrorType {
+  case NonEncodable(AnyObject)
+  case Serialization(NSError)
+  case Stringifying(NSData)
+
+  public var description: String {
     get {
-      return self.description
-    }
-  }
-
-  public var shortDescription: String {
-    get {
-      return self.description
-    }
-  }
-}
-
-extension NSArray : FBJSONSerializationDescribeable {
-  public func jsonSerializableRepresentation() -> AnyObject! {
-    return self
-  }
-}
-extension NSArray : FBDebugDescribeable {
-  override public var debugDescription: String {
-    get {
-      return self.description
-    }
-  }
-
-  public var shortDescription: String {
-    get {
-      return self.description
-    }
-  }
-}
-
-extension NSDictionary : FBJSONSerializationDescribeable {
-  public func jsonSerializableRepresentation() -> AnyObject! {
-    return self
-  }
-}
-
-public struct JSON {
-  public enum Error : ErrorType, CustomStringConvertible {
-    case NonEncodable(AnyObject)
-    case Serialization(NSError)
-    case Stringifying(NSData)
-
-    public var description: String {
-      get {
-        switch self {
-        case .NonEncodable(let object):
-          return "\(object) is not JSON Encodable"
-        case .Serialization(let error):
-          return "Serialization \(error.description)"
-        case .Stringifying(let data):
-          return "Stringifying \(data.description)"
-        }
+      switch self {
+      case .NonEncodable(let object):
+        return "\(object) is not JSON Encodable"
+      case .Serialization(let error):
+        return "Serialization \(error.description)"
+      case .Stringifying(let data):
+        return "Stringifying \(data.description)"
       }
     }
   }
+}
 
-  let pretty: Bool
+public indirect enum JSON {
+  case Dictionary([NSString : JSON])
+  case Array([JSON])
+  case String(NSString)
+  case Number(NSNumber)
+  case Null
 
-  func serializeToString(object: FBJSONSerializationDescribeable) throws -> String {
-    do {
-      let jsonObject = object.jsonSerializableRepresentation()
-      try JSON.validateAsJSON(jsonObject)
-      let data = try NSJSONSerialization.dataWithJSONObject(jsonObject, options: self.writingOptions)
-      guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
-        throw Error.Stringifying(data)
-      }
-      return string as String
-    } catch let error as NSError {
-      throw Error.Serialization(error)
-    }
-  }
-
-  private static func validateAsJSON(object: AnyObject) throws {
+  static func encode(object: AnyObject) throws -> JSON {
     switch object {
     case let array as NSArray:
+      var encoded: [JSON] = []
       for element in array {
-        try self.validateAsJSON(element)
+        encoded.append(try encode(element))
       }
+      return JSON.Array(encoded)
     case let dictionary as NSDictionary:
+      var encoded: [NSString : JSON] = [:]
       for (key, value) in dictionary {
-        try self.validateAsJSON(key)
-        try self.validateAsJSON(value)
+        guard let key = key as? NSString else {
+          throw JSONError.NonEncodable(object)
+        }
+        encoded[key] = try encode(value)
       }
-    case is NSString:
-      return
-    case is NSNumber:
-      return
+      return JSON.Dictionary(encoded)
+    case let string as NSString:
+      return JSON.String(string)
+    case let number as NSNumber:
+      return JSON.Number(number)
     case is NSNull:
-      return
+      return JSON.Null
     default:
-      throw JSON.Error.NonEncodable(object)
+      throw JSONError.NonEncodable(object)
     }
   }
 
-  private var writingOptions: NSJSONWritingOptions {
-    get {
-      return self.pretty ? NSJSONWritingOptions.PrettyPrinted : NSJSONWritingOptions()
+  func decode() -> AnyObject {
+    switch self {
+    case .Dictionary(let dictionary):
+      let decoded = NSMutableDictionary()
+      for (key, value) in dictionary {
+        decoded[key] = value.decode()
+      }
+      return decoded.copy()
+    case .Array(let array):
+      let decoded = NSMutableArray()
+      for value in array {
+        decoded.addObject(value.decode())
+      }
+      return decoded.copy()
+    case .String(let string):
+      return string
+    case .Number(let number):
+      return number
+    case .Null:
+      return NSNull()
     }
   }
+
+  func serializeToString(pretty: Bool) throws -> NSString {
+    do {
+      let writingOptions = pretty ? NSJSONWritingOptions.PrettyPrinted : NSJSONWritingOptions()
+      let jsonObject = self.decode()
+      let data = try NSJSONSerialization.dataWithJSONObject(jsonObject, options: writingOptions)
+      guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
+        throw JSONError.Stringifying(data)
+      }
+      return string
+    } catch let error as NSError {
+      throw JSONError.Serialization(error)
+    }
+  }
+}
+
+public protocol JSONDescribeable {
+  var jsonDescription: JSON { get }
 }

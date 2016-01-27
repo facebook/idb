@@ -53,7 +53,7 @@
   }
 
   LogEvent *event = [[LogEvent alloc] init:string level:self.currentLevel];
-  [self.reporter report:event];
+  [self.reporter reportLogBridge:event];
   return self;
 }
 
