@@ -245,7 +245,7 @@
 
 - (void)fetchLaunchdSimInfoFromBoot
 {
-  // We allready have launchd_sim info, don't bother fetching.
+  // We already have launchd_sim info, don't bother fetching.
   if (self.launchdSimProcess) {
     return;
   }

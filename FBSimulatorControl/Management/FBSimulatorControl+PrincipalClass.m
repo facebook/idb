@@ -90,7 +90,7 @@
 
     // The Class exists, therefore has been loaded
     if (NSClassFromString(className)) {
-      [logger logFormat:@"%@ is allready loaded, skipping load of framework %@", className, path];
+      [logger logFormat:@"%@ is already loaded, skipping load of framework %@", className, path];
       NSError *innerError = nil;
       if (![self verifyDeveloperDirectoryForPrivateClass:className developerDirectory:developerDirectory logger:logger error:&innerError]) {
         return [FBSimulatorError failBoolWithError:innerError errorOut:error];

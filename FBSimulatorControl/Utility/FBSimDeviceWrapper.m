@@ -154,7 +154,7 @@
 
   // Calling shutdown when already shutdown should be avoided (if detected).
   if (simulator.state == FBSimulatorStateShutdown) {
-    [logger.debug logFormat:@"Shutdown of %@ succeeded as it is allready shutdown", simulator.udid];
+    [logger.debug logFormat:@"Shutdown of %@ succeeded as it is already shutdown", simulator.udid];
     return YES;
   }
 

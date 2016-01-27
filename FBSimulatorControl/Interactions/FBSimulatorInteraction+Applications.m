@@ -111,7 +111,7 @@
         failBool:error];
     }
 
-    // Kill the Application if it exists. Failure can be ignored since the App may have allready been terminated.
+    // Kill the Application if it exists. Failure can be ignored since the App may have already been terminated.
     [[[simulator.interact killProcess:process] ignoreFailure] performInteractionWithError:nil];
 
     // Relaunch the Application
