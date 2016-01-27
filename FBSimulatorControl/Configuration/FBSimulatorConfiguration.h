@@ -9,6 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBDebugDescribeable.h>
+#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+
 /**
  A Value object that represents the Configuration of a iPhone, iPad, Watch or TV Simulator.
 
@@ -20,7 +23,7 @@
  This is helpful when creating a device from something specified in an Environment Variable:
  `[FBSimulatorConfiguration.iPhone5 iOS:NSProcessInfo.processInfo.environment[@"TARGET_OS"]]`
  */
-@interface FBSimulatorConfiguration : NSObject <NSCopying, NSCoding>
+@interface FBSimulatorConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 #pragma mark Properties
 

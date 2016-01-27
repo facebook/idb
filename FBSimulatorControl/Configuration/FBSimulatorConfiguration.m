@@ -579,7 +579,7 @@
          (self.auxillaryDirectory == object.auxillaryDirectory || [self.auxillaryDirectory isEqualToString:object.auxillaryDirectory]);
 }
 
-#pragma mark Description
+#pragma mark FBDebugDescribeable
 
 - (NSString *)description
 {
@@ -589,6 +589,27 @@
     self.osVersionString,
     self.auxillaryDirectory
   ];
+}
+
+- (NSString *)shortDescription
+{
+  return [self description];
+}
+
+- (NSString *)debugDescription
+{
+  return [self description];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return @{
+    @"device" : self.deviceName,
+    @"os" : self.os,
+    @"aux_directory" : self.auxillaryDirectory ?: NSNull.null
+  };
 }
 
 #pragma mark Devices
