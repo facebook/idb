@@ -70,7 +70,7 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
   }
 
   public func didChangeState(state: FBSimulatorState) {
-    self.reportSimulator(EventName.StateChange, state.description)
+    self.reportSimulator(EventName.StateChange, state.description as NSString)
   }
 
   public func terminationHandleAvailable(terminationHandle: FBTerminationHandleProtocol!) {
@@ -102,7 +102,7 @@ public class HumanReadableEventReporter : EventReporter {
   }
 
   public func report(subject: EventReporterSubject) {
-    self.writer.write(subject.shortDescription)
+    self.writer.write(subject.description)
   }
 }
 

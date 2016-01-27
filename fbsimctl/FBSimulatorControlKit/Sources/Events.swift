@@ -10,8 +10,8 @@
 import Foundation
 import FBSimulatorControl
 
-public typealias EventReporterSubject = protocol<JSONDescribeable, FBDebugDescribeable>
-public typealias SimulatorControlSubject = protocol<FBJSONSerializationDescribeable, FBDebugDescribeable>
+public typealias EventReporterSubject = protocol<JSONDescribeable, CustomStringConvertible>
+public typealias SimulatorControlSubject = protocol<FBJSONSerializationDescribeable, CustomStringConvertible>
 
 public enum EventName : String {
   case Approve = "approve"
@@ -42,36 +42,9 @@ extension NSString : FBJSONSerializationDescribeable {
   }
 }
 
-extension NSString : FBDebugDescribeable {
-  override public var debugDescription: String {
-    get {
-      return self.description
-    }
-  }
-
-  public var shortDescription: String {
-    get {
-      return self.description
-    }
-  }
-}
-
 extension NSArray : FBJSONSerializationDescribeable {
   public func jsonSerializableRepresentation() -> AnyObject! {
     return self
-  }
-}
-extension NSArray : FBDebugDescribeable {
-  override public var debugDescription: String {
-    get {
-      return self.description
-    }
-  }
-
-  public var shortDescription: String {
-    get {
-      return self.description
-    }
   }
 }
 
@@ -81,7 +54,7 @@ extension NSDictionary : FBJSONSerializationDescribeable {
   }
 }
 
-@objc class SimulatorControlSubjectBridge : NSObject, JSONDescribeable, FBDebugDescribeable {
+@objc class SimulatorControlSubjectBridge : NSObject, JSONDescribeable {
   let subject: SimulatorControlSubject
 
   init(_ subject: SimulatorControlSubject) {
@@ -94,14 +67,14 @@ extension NSDictionary : FBJSONSerializationDescribeable {
     }
   }
 
-  @objc var shortDescription: String! {
+  override var description: String {
     get {
-      return self.subject.shortDescription
+      return self.subject.description
     }
   }
 }
 
-class SimpleEvent : NSObject, EventReporterSubject {
+class SimpleEvent : NSObject, JSONDescribeable {
   let eventName: EventName
   let eventType: EventType
   let subject: EventReporterSubject
@@ -130,7 +103,7 @@ class SimpleEvent : NSObject, EventReporterSubject {
   }
 }
 
-@objc class LogEvent : NSObject, EventReporterSubject {
+@objc class LogEvent : NSObject, JSONDescribeable {
   let logString: String
   let level: Int32
 
@@ -151,7 +124,7 @@ class SimpleEvent : NSObject, EventReporterSubject {
     }
   }
 
-  var shortDescription: String {
+  override var description: String {
     get {
       return self.logString
     }
@@ -169,7 +142,7 @@ class SimpleEvent : NSObject, EventReporterSubject {
   }
 }
 
-class SimulatorEvent : NSObject, EventReporterSubject {
+class SimulatorEvent : NSObject, JSONDescribeable {
   let simulator: FBSimulator
   let eventName: EventName
   let eventType: EventType
@@ -196,9 +169,9 @@ class SimulatorEvent : NSObject, EventReporterSubject {
     }
   }
 
-  var shortDescription: String {
+  override var description: String {
     get {
-      return "\(self.formattedSimulator): \(eventName.rawValue) with \(subject.shortDescription)"
+      return "\(self.formattedSimulator): \(eventName.rawValue) with \(subject.description)"
     }
   }
 
