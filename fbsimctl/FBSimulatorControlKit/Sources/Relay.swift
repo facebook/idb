@@ -21,7 +21,7 @@ protocol Relay {
  A Protocol for performing an Action producing an ActionResult.
  */
 protocol RelayTransformer {
-  func transform(input: String, writer: Writer) -> ActionResult
+  func transform(input: String, reporter: EventReporter) -> ActionResult
 }
 
 /**
@@ -42,7 +42,7 @@ class RelayConnection : LineBufferDelegate {
   func buffer(lineAvailable: String) {
     self.writer.writeActionResult(
       configuration,
-      self.transformer.transform(lineAvailable, writer: self.writer.success)
+      self.transformer.transform(lineAvailable, reporter: configuration.options.createReporter(self.writer.failure))
     )
   }
 }

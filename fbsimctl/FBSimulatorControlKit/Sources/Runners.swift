@@ -11,7 +11,7 @@ import Foundation
 import FBSimulatorControl
 
 protocol Runner {
-  func run(writer: Writer) -> ActionResult
+  func run(reporter: EventReporter) -> ActionResult
 }
 
 extension Configuration {
@@ -25,7 +25,7 @@ extension Configuration {
 public extension Command {
   func runFromCLI() -> Int32 {
     let writer = FileHandleWriter.stdIOWriter
-    switch BaseRunner(command: self).run(writer.success) {
+    switch CommandBootstrap(command: self, writer: writer.success).bootstrap() {
     case .Success:
       return 0
     case .Failure(let string):
@@ -35,39 +35,26 @@ public extension Command {
   }
 }
 
-private struct SequenceRunner : Runner {
-  let runners: [Runner]
-
-  func run(writer: Writer) -> ActionResult {
-    var output = ActionResult.Success
-    for runner in runners {
-      output = output.append(runner.run(writer))
-      switch output {
-        case .Failure: return output
-        default: continue
-      }
-    }
-    return output
-  }
-}
-
-private struct BaseRunner : Runner {
+private struct CommandBootstrap {
   let command: Command
+  let writer: Writer
 
-  func run(writer: Writer) -> ActionResult {
+  func bootstrap() -> ActionResult {
     do {
       switch (self.command) {
       case .Help:
-        writer.write(Command.getHelp())
+        self.writer.write(Command.getHelp())
         return .Success
       case .Interactive(let configuration, let port):
+        let reporter = configuration.options.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
         let control = try defaults.configuration.buildSimulatorControl()
-        return InteractiveRunner(control: control, configuration: configuration, defaults: defaults, portNumber: port).run(writer)
+        return InteractiveRunner(control: control, configuration: configuration, defaults: defaults, portNumber: port).run(reporter)
       case .Perform(let configuration, let action):
+        let reporter = configuration.options.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
         let control = try defaults.configuration.buildSimulatorControl()
-        return ActionRunner(control: control, configuration: configuration, defaults: defaults, action: action).run(writer)
+        return ActionRunner(control: control, configuration: configuration, defaults: defaults, action: action).run(reporter)
       }
     } catch DefaultsError.UnreadableRCFile(let string) {
       return .Failure("Unreadable .rc file " + string)
@@ -77,18 +64,34 @@ private struct BaseRunner : Runner {
   }
 }
 
+private struct SequenceRunner : Runner {
+  let runners: [Runner]
+
+  func run(reporter: EventReporter) -> ActionResult {
+    var output = ActionResult.Success
+    for runner in runners {
+      output = output.append(runner.run(reporter))
+      switch output {
+      case .Failure: return output
+      default: continue
+      }
+    }
+    return output
+  }
+}
+
 private struct ActionRunner : Runner {
   let control: FBSimulatorControl
   let configuration: Configuration
   let defaults: Defaults
   let action: Action
 
-  func run(writer: Writer) -> ActionResult {
+  func run(reporter: EventReporter) -> ActionResult {
     switch self.action {
     case .Interact(let interactions, let query, let format):
-      return InteractionRunner(control: control, configuration: self.configuration, defaults: defaults, interactions: interactions, query: query, format: format).run(writer)
+      return InteractionRunner(control: control, configuration: self.configuration, defaults: defaults, interactions: interactions, query: query, format: format).run(reporter)
     case .Create(let configuration, let format):
-      return CreationRunner(control: control, configuration: self.configuration, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(writer)
+      return CreationRunner(control: control, configuration: self.configuration, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(reporter)
     }
   }
 }
@@ -106,25 +109,25 @@ class InteractiveRunner : Runner, RelayTransformer {
     self.defaults = defaults
   }
 
-  func run(writer: Writer) -> ActionResult {
+  func run(reporter: EventReporter) -> ActionResult {
     if let portNumber = self.portNumber {
-      writer.write("Starting Socket server on \(portNumber)")
+      reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
       SocketRelay(configuration: self.configuration, portNumber: portNumber, transformer: self).start()
-      writer.write("Ending Socket Server")
+      reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
     } else {
-      writer.write("Starting local interactive mode, listening on stdin")
+      reporter.report(LogEvent("Starting local interactive mode, listening on stdin", level: Constants.asl_level_info()))
       StdIORelay(configuration: self.configuration, transformer: self).start()
-      writer.write("Ending local interactive mode")
+      reporter.report(LogEvent("Ending local interactive mode", level: Constants.asl_level_info()))
     }
     return .Success
   }
 
-  func transform(input: String, writer: Writer) -> ActionResult {
+  func transform(input: String, reporter: EventReporter) -> ActionResult {
     do {
       let arguments = Arguments.fromString(input)
       let (_, action) = try Action.parser().parse(arguments)
       let runner = ActionRunner(control: self.control, configuration: self.configuration, defaults: self.defaults, action: action)
-      return runner.run(writer)
+      return runner.run(reporter)
     } catch let error as ParseError {
       return .Failure("Error: \(error.description)")
     } catch let error as NSError {
@@ -141,7 +144,7 @@ struct InteractionRunner : Runner {
   let query: Query?
   let format: Format?
 
-  func run(writer: Writer) -> ActionResult {
+  func run(reporter: EventReporter) -> ActionResult {
     do {
       let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults)
       let format = self.format ?? defaults.format
@@ -150,7 +153,7 @@ struct InteractionRunner : Runner {
           SimulatorRunner(simulator: simulator, configuration: self.configuration, interaction: interaction.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
         }
       }
-      return SequenceRunner(runners: runners).run(writer)
+      return SequenceRunner(runners: runners).run(reporter)
     } catch let error as QueryError {
       return ActionResult.Failure(error.description)
     } catch {
@@ -165,15 +168,12 @@ struct CreationRunner : Runner {
   let simulatorConfiguration: FBSimulatorConfiguration
   let format: Format
 
-  func run(writer: Writer) -> ActionResult {
+  func run(reporter: EventReporter) -> ActionResult {
     do {
       let options = FBSimulatorAllocationOptions.Create
+      reporter.report(SimpleEvent(EventName.Create, EventType.Started, self.simulatorConfiguration))
       let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
-      let reporter = EventSinkTranslator.create(self.format, options: self.configuration.options, writer: writer, simulator: simulator)
-      defer {
-        simulator.userEventSink = nil
-      }
-      reporter.report(EventName.Create, EventType.Discrete, simulator)
+      reporter.report(SimpleEvent(EventName.Create, EventType.Started, simulator))
       return ActionResult.Success
     } catch let error as NSError {
       return ActionResult.Failure("Failed to Create Simulator \(error.description)")
@@ -187,9 +187,9 @@ private struct SimulatorRunner : Runner {
   let interaction: Interaction
   let format: Format
 
-  func run(writer: Writer) -> ActionResult {
+  func run(reporter: EventReporter) -> ActionResult {
     do {
-      let reporter = EventSinkTranslator.create(self.format, options: self.configuration.options, writer: writer, simulator: simulator)
+      let reporter = EventSinkTranslator(simulator: self.simulator, format: self.format, reporter: reporter)
       defer {
         self.simulator.userEventSink = nil
       }

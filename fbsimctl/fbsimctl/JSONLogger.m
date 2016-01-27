@@ -52,7 +52,7 @@
     return self;
   }
 
-  LogEvent *event = [[LogEvent alloc] initWithLogString:string level:self.currentLevel];
+  LogEvent *event = [[LogEvent alloc] init:string level:self.currentLevel];
   [self.reporter report:event];
   return self;
 }

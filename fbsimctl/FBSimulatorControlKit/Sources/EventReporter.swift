@@ -13,19 +13,20 @@ import FBSimulatorControl
 public typealias EventReporterSubject = protocol<FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 public enum EventName : String {
-  case List = "list"
-  case Create = "create"
+  case Approve = "approve"
   case Boot = "boot"
-  case Shutdown = "shutdown"
-  case Diagnostic = "diagnose"
+  case Create = "create"
   case Delete = "delete"
+  case Diagnostic = "diagnose"
+  case Failure = "failure"
+  case Help = "help"
   case Install = "install"
   case Launch = "launch"
-  case Terminate = "terminate"
-  case Approve = "approve"
-  case StateChange = "state"
+  case List = "list"
   case Log = "log"
-  case Failure = "failure"
+  case Shutdown = "shutdown"
+  case StateChange = "state"
+  case Terminate = "terminate"
 }
 
 public enum EventType : String {
@@ -34,24 +35,28 @@ public enum EventType : String {
   case Discrete = "discrete"
 }
 
-class FailureEvent : NSObject, EventReporterSubject {
-  let string: String
+class SimpleEvent : NSObject, EventReporterSubject {
+  let eventName: EventName
+  let eventType: EventType
+  let subject: EventReporterSubject
 
-  init(string: String) {
-    self.string = string
+  init(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
+    self.eventName = eventName
+    self.eventType = eventType
+    self.subject = subject
   }
 
   func jsonSerializableRepresentation() -> AnyObject! {
     return [
-      "event_name" : EventName.Failure.rawValue,
-      "event_type" : EventType.Discrete.rawValue,
-      "subject" : self.string,
+      "event_name" : self.eventName.rawValue,
+      "event_type" : self.eventType.rawValue,
+      "subject" : self.subject.jsonSerializableRepresentation(),
     ]
   }
 
   var shortDescription: String {
     get {
-      return self.string
+      return "\(self.eventName) \(self.eventType): \(self.subject)"
     }
   }
 }
@@ -60,7 +65,7 @@ class FailureEvent : NSObject, EventReporterSubject {
   let logString: String
   let level: Int32
 
-  init(logString: String, level: Int32) {
+  init(_ logString: String, level: Int32) {
     self.logString = logString
     self.level = level
   }
@@ -185,10 +190,6 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
     self.format = format
     super.init()
     self.simulator.userEventSink = self
-  }
-
-  public static func create(format: Format, options: Configuration.Options, writer: Writer, simulator: FBSimulator) -> EventSinkTranslator {
-    return EventSinkTranslator(simulator: simulator, format: format, reporter: options.createReporter(writer))
   }
 
   public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {

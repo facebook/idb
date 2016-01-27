@@ -70,7 +70,7 @@ public extension SuccessFailureWriter {
     switch actionResult {
     case .Failure(let string):
       let reporter = configuration.options.createReporter(self.failure)
-      reporter.report(FailureEvent(string: string))
+      reporter.report(SimpleEvent(EventName.Failure, EventType.Ended, string))
     default:
       break
     }
