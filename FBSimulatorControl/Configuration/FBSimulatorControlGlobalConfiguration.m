@@ -157,7 +157,7 @@ static id<FBSimulatorLogger> logger;
 + (void)setDefaultLogger:(id<FBSimulatorLogger>)defaultLogger
 {
   if (logger) {
-    [logger logFormat:@"The Default logger has allready been set to %@, %@ will have no effect", logger, NSStringFromSelector(_cmd)];
+    [logger logFormat:@"The Default logger has already been set to %@, %@ will have no effect", logger, NSStringFromSelector(_cmd)];
   }
   logger = defaultLogger;
 }
@@ -165,7 +165,7 @@ static id<FBSimulatorLogger> logger;
 + (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging
 {
   if (logger) {
-    [logger logFormat:@"The Default logger has allready been set to %@, %@ will have no effect", logger, NSStringFromSelector(_cmd)];
+    [logger logFormat:@"The Default logger has already been set to %@, %@ will have no effect", logger, NSStringFromSelector(_cmd)];
   }
   setenv(FBSimulatorControlStderrLogging.UTF8String, stderrLogging ? "YES" : "NO", 1);
   setenv(FBSimulatorControlDebugLogging.UTF8String, debugLogging ? "YES" : "NO", 1);
