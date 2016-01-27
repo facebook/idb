@@ -25,24 +25,25 @@ protocol RelayTransformer {
 }
 
 /**
- A Connection of Input-to-Output via a buffer.
+ A Connection of Reporter-to-Transformer, linebuffering an input
  */
 class RelayConnection : LineBufferDelegate {
   let transformer: RelayTransformer
-  let writer: SuccessFailureWriter
-  let configuration: Configuration
+  let reporter: EventReporter
   lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
 
-  init (configuration: Configuration, transformer: RelayTransformer, writer: SuccessFailureWriter) {
+  init (transformer: RelayTransformer, reporter: EventReporter) {
     self.transformer = transformer
-    self.writer = writer
-    self.configuration = configuration
+    self.reporter = reporter
   }
 
   func buffer(lineAvailable: String) {
-    self.writer.writeActionResult(
-      configuration,
-      self.transformer.transform(lineAvailable, reporter: configuration.options.createReporter(self.writer.failure))
-    )
+    let result = self.transformer.transform(lineAvailable, reporter: self.reporter)
+    switch result {
+    case .Failure(let error):
+      self.reporter.reportSimple(EventName.Failure, EventType.Discrete, error)
+    default:
+      break
+    }
   }
 }

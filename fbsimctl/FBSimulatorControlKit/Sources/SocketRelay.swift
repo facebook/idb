@@ -162,15 +162,6 @@ class SocketConnection {
         cData.destroy()
       }
     }
-
-    var successFailureWriter: SuccessFailureWriter {
-      get {
-        return SuccessFailureWriter(
-          success: self,
-          failure: self
-        )
-      }
-    }
   }
 
   private let readStream: NSInputStream
@@ -184,7 +175,7 @@ class SocketConnection {
   init(readStream: NSInputStream, writeStream: NSOutputStream, configuration: Configuration, delegate: SocketConnectionDelegate, transformer: RelayTransformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(configuration: configuration, transformer: transformer, writer: self.writeStreamDelegate.successFailureWriter)
+    self.relayConnection = RelayConnection(transformer: transformer, reporter: configuration.options.createReporter(self.writeStreamDelegate))
     self.readStream = readStream
     self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
   }

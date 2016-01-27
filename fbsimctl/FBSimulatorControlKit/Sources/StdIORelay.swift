@@ -24,15 +24,6 @@ public class FileHandleWriter : Writer {
     self.fileHandle.writeData(data)
   }
 
-  public static var stdIOWriter: SuccessFailureWriter {
-    get {
-      return SuccessFailureWriter(
-        success: self.stdOutWriter,
-        failure: self.stdErrWriter
-      )
-    }
-  }
-
   public static var stdOutWriter: FileHandleWriter {
     get {
       return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput())
@@ -48,12 +39,11 @@ public class FileHandleWriter : Writer {
 
 
 class StdIORelay : Relay {
-  let relayConnection: RelayConnection
-
+  private let relayConnection: RelayConnection
   private let stdIn: NSFileHandle
 
   init(configuration: Configuration, transformer: RelayTransformer) {
-    self.relayConnection = RelayConnection(configuration: configuration, transformer: transformer, writer: FileHandleWriter.stdIOWriter)
+    self.relayConnection = RelayConnection(transformer: transformer, reporter: configuration.options.createReporter(FileHandleWriter.stdOutWriter))
     self.stdIn = NSFileHandle.fileHandleWithStandardInput()
   }
 

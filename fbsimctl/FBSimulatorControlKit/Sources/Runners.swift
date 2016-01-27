@@ -24,12 +24,12 @@ extension Configuration {
 
 public extension Command {
   func runFromCLI() -> Int32 {
-    let writer = FileHandleWriter.stdIOWriter
-    switch CommandBootstrap(command: self, writer: writer.success).bootstrap() {
+    let writer = FileHandleWriter.stdOutWriter
+    switch CommandBootstrap(command: self, writer: writer).bootstrap() {
     case .Success:
       return 0
     case .Failure(let string):
-      writer.failure.write(string)
+      writer.write(string)
       return 1
     }
   }
@@ -47,12 +47,12 @@ private struct CommandBootstrap {
         return .Success
       case .Interactive(let configuration, let port):
         let reporter = configuration.options.createReporter(self.writer)
-        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
+        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
         let control = try defaults.configuration.buildSimulatorControl()
         return InteractiveRunner(control: control, configuration: configuration, defaults: defaults, portNumber: port).run(reporter)
       case .Perform(let configuration, let action):
         let reporter = configuration.options.createReporter(self.writer)
-        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdIOWriter.failure)
+        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
         let control = try defaults.configuration.buildSimulatorControl()
         return ActionRunner(control: control, configuration: configuration, defaults: defaults, action: action).run(reporter)
       }

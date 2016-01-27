@@ -17,14 +17,6 @@ public protocol Writer {
 }
 
 /**
- A Protocol for writing Strings out.
- */
-public struct SuccessFailureWriter {
-  let success: Writer
-  let failure: Writer
-}
-
-/**
  Enum for defining the result of a translation.
  */
 public enum ActionResult {
@@ -58,21 +50,6 @@ extension ActionResult : CustomStringConvertible, CustomDebugStringConvertible {
   public var debugDescription: String {
     get {
       return self.description
-    }
-  }
-}
-
-/**
- A Protocol for writing an ActionResult.
- */
-public extension SuccessFailureWriter {
-  func writeActionResult(configuration: Configuration, _ actionResult: ActionResult) {
-    switch actionResult {
-    case .Failure(let string):
-      let reporter = configuration.options.createReporter(self.failure)
-      reporter.report(SimpleEvent(EventName.Failure, EventType.Ended, string))
-    default:
-      break
     }
   }
 }
