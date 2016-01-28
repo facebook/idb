@@ -125,7 +125,7 @@
 
 - (NSUInteger)hash
 {
-  return self.scaleString.hash ^ self.locale.hash | self.options;
+  return self.scaleString.hash ^ self.locale.hash ^ self.options;
 }
 
 #pragma mark FBDebugDescribeable

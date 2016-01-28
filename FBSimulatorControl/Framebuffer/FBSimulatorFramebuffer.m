@@ -33,8 +33,8 @@
 typedef NS_ENUM(NSInteger, FBSimulatorFramebufferState) {
   FBSimulatorFramebufferStateNotStarted = 0, /** Before the framebuffer is 'listening'. */
   FBSimulatorFramebufferStateStarting = 1, /** After the framebuffer has started, but before the first frame. */
-  FBSimulatorFramebufferStateRunning = 3, /** After the framebuffer has started, but before the first frame. */
-  FBSimulatorFramebufferStateTerminated = 4, /** After the framebuffer has terminated. */
+  FBSimulatorFramebufferStateRunning = 2, /** After the framebuffer has started, but before the first frame. */
+  FBSimulatorFramebufferStateTerminated = 3, /** After the framebuffer has terminated. */
 };
 
 static const NSInteger FBFramebufferLogFrameFrequency = 100;
