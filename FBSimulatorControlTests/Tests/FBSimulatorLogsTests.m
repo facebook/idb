@@ -42,15 +42,15 @@
     return;
   }
 
-  FBSimulatorSession *session = [self createBootedSession];
+  FBSimulator *simulator = [self obtainBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
-  [self assertInteractionSuccessful:[[session.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
 
   // Shimulator sends an unrecognized selector to NSFileManager to cause a crash.
   // The CrashReporter service is a background service as it will symbolicate in a separate process.
   [self assertFindsNeedle:@"-[NSFileManager stringWithFormat:]" fromHaystackBlock:^ NSString * {
-    return [[session.simulator.logs.userLaunchedProcessCrashesSinceLastLaunch firstObject] asString];
+    return [[simulator.logs.userLaunchedProcessCrashesSinceLastLaunch firstObject] asString];
   }];
 }
 
@@ -60,10 +60,10 @@
     return;
   }
 
-  FBSimulatorSession *session = [self createBootedSession];
+  FBSimulator *simulator = [self obtainBootedSimulator];
 
   [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
-    return session.simulator.logs.syslog.asString;
+    return simulator.logs.syslog.asString;
   }];
 }
 
@@ -73,12 +73,12 @@
     return;
   }
 
-  FBSimulatorSession *session = [self createBootedSession];
+  FBSimulator *simulator = [self obtainBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
-  [self assertInteractionSuccessful:[[session.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
 
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
-    return [[session.simulator.logs.launchedProcessLogs.allValues firstObject] asString];
+    return [[simulator.logs.launchedProcessLogs.allValues firstObject] asString];
   }];
 }
 

@@ -66,34 +66,25 @@ static NSString *const DirectLaunchEnableVideoRecording = @"FBSIMULATORCONTROL_R
 
 #pragma mark Helper Actions
 
-- (FBSimulator *)allocateSimulator
+- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
   NSError *error = nil;
-  FBSimulator *simulator = [self.control.simulatorPool allocateSimulatorWithConfiguration:self.simulatorConfiguration options:self.allocationOptions error:&error];
+  FBSimulator *simulator = [self.control obtainSimulatorWithConfiguration:configuration options:self.allocationOptions error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(simulator);
   return simulator;
 }
 
-- (FBSimulatorSession *)createSessionWithConfiguration:(FBSimulatorConfiguration *)configuration
+- (FBSimulator *)obtainSimulator
 {
-  NSError *error = nil;
-  FBSimulatorSession *session = [self.control createSessionForSimulatorConfiguration:configuration options:self.allocationOptions error:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(session);
-  return session;
+  return [self obtainSimulatorWithConfiguration:self.simulatorConfiguration];
 }
 
-- (FBSimulatorSession *)createSession
+- (FBSimulator *)obtainBootedSimulator
 {
-  return [self createSessionWithConfiguration:self.simulatorConfiguration];
-}
-
-- (FBSimulatorSession *)createBootedSession
-{
-  FBSimulatorSession *session = [self createSession];
-  [self assertInteractionSuccessful:session.interact.bootSimulator];
-  return session;
+  FBSimulator *simulator = [self obtainSimulator];
+  [self assertInteractionSuccessful:simulator.interact.bootSimulator];
+  return simulator;
 }
 
 + (BOOL)isRunningOnTravis

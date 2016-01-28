@@ -47,12 +47,12 @@
   FBSimulatorAllocationOptions options = self.allocationOptions;
   self.allocationOptions = options | FBSimulatorAllocationOptionsEraseOnFree;
 
-  FBSimulator *simulator = [self createSession].simulator;
+  FBSimulator *simulator = [self obtainSimulator];
   NSString *simulatorUUID = simulator.udid;
   [self addTemporaryFileToSimulator:simulator];
   [self assertFreesSimulator:simulator];
 
-  simulator = [self createSession].simulator;
+  simulator = [self obtainSimulator];
   XCTAssertEqualObjects(simulatorUUID, simulator.udid);
   [self assertTemporaryFileForSimulator:simulator exists:NO];
   [self assertFreesSimulator:simulator];
@@ -63,11 +63,11 @@
   FBSimulatorAllocationOptions options = self.allocationOptions;
   self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
 
-  FBSimulator *simulator = [self createSession].simulator;
+  FBSimulator *simulator = [self obtainSimulator];
   NSString *simulatorUUID = simulator.udid;
   [self assertFreesSimulator:simulator];
 
-  simulator = [self createSession].simulator;
+  simulator = [self obtainSimulator];
   XCTAssertNotEqualObjects(simulatorUUID, simulator.udid);
   [self assertFreesSimulator:simulator];
 }
@@ -77,7 +77,7 @@
   FBSimulatorAllocationOptions options = self.allocationOptions;
   self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
 
-  FBSimulator *simulator = [self createSession].simulator;
+  FBSimulator *simulator = [self obtainSimulator];
   NSString *simulatorUUID = simulator.udid;
   [self assertFreesSimulator:simulator];
 
@@ -91,7 +91,7 @@
   NSMutableSet *simulatorUUIDs = [NSMutableSet set];
 
   for (NSInteger index = 0; index < 4; index++) {
-    FBSimulator *simulator = [self createSession].simulator;
+    FBSimulator *simulator = [self obtainSimulator];
     [simulators addObject:simulator];
     [simulatorUUIDs addObject:simulator.udid];
   }

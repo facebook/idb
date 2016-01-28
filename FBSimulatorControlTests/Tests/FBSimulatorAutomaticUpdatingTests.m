@@ -30,20 +30,18 @@
 
 - (void)testGetsArgumentsOfSimulatorContainerProcess
 {
-  FBSimulatorSession *session = [self createBootedSession];
-  FBSimulator *simulator = session.simulator;
+  FBSimulator *simulator = [self obtainBootedSimulator];
 
   FBProcessInfo *containerProcess = simulator.containerApplication;
   XCTAssertNotNil(containerProcess);
 
   NSSet *arguments = [NSSet setWithArray:containerProcess.arguments];
-  XCTAssertTrue([arguments containsObject:session.simulator.udid]);
+  XCTAssertTrue([arguments containsObject:simulator.udid]);
 }
 
 - (void)testUpdatesContainerProcessOnTermination
 {
-  FBSimulatorSession *session = [self createBootedSession];
-  FBSimulator *simulator = session.simulator;
+  FBSimulator *simulator = [self obtainBootedSimulator];
 
   [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^{
     return NO;
@@ -69,11 +67,11 @@
     return;
   }
 
-  FBSimulatorSession *session = [self createSession];
+  FBSimulator *simulator = [self obtainBootedSimulator];
 
-  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:self.safariAppLaunch]];
+  [self assertInteractionSuccessful:[simulator.interact.bootSimulator launchApplication:self.safariAppLaunch]];
 
-  FBProcessInfo *process = [session.history runningProcessForApplication:self.safariApplication];
+  FBProcessInfo *process = [simulator.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -85,7 +83,7 @@
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification timeout:20];
   XCTAssertFalse([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
-  XCTAssertNil([session.history runningProcessForApplication:self.safariApplication]);
+  XCTAssertNil([simulator.history runningProcessForApplication:self.safariApplication]);
 }
 
 - (void)testNotifiedByExpectedApplicationTermination
@@ -94,12 +92,12 @@
     return;
   }
 
-  FBSimulatorSession *session = [self createSession];
+  FBSimulator *simulator = [self obtainSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
 
-  [self assertInteractionSuccessful:[session.interact.bootSimulator launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[simulator.interact.bootSimulator launchApplication:appLaunch]];
 
-  FBProcessInfo *process = [session.history runningProcessForApplication:self.safariApplication];
+  FBProcessInfo *process = [simulator.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
   if (!process) {
     // Need to guard against continuing the test in case the PID is 0 or -1 to avoid nuking the machine.
@@ -107,11 +105,11 @@
   }
 
   [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[session.interact killProcess:process]];
+  [self assertInteractionSuccessful:[simulator.interact killProcess:process]];
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification timeout:20];
   XCTAssertTrue([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
-  XCTAssertNil([session.history runningProcessForApplication:self.safariApplication]);
+  XCTAssertNil([simulator.history runningProcessForApplication:self.safariApplication]);
 }
 
 @end

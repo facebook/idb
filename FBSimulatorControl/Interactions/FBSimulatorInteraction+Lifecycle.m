@@ -35,7 +35,6 @@
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
-#import "FBSimulatorSession+Private.h"
 #import "FBSimulatorTerminationStrategy.h"
 #import "FBTaskExecutor.h"
 

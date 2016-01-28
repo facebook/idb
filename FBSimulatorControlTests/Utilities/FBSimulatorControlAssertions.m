@@ -35,16 +35,15 @@
 
 #pragma mark Sessions
 
-- (void)assertShutdownSimulatorAndTerminateSession:(FBSimulatorSession *)session
+- (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator
 {
-  [self assertInteractionSuccessful:session.interact.shutdownSimulator];
+  [self assertInteractionSuccessful:simulator.interact.shutdownSimulator];
 
   NSError *error = nil;
-  BOOL success = [session terminateWithError:&error];
+  BOOL success = [simulator.pool freeSimulator:simulator error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-
-  [self assertSimulatorShutdown:session.simulator];
+  [self assertSimulatorShutdown:simulator];
 }
 
 #pragma mark Strings
