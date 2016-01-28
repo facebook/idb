@@ -37,6 +37,11 @@ extern NSString *const FBSimulatorLogNameSimulatorBootstrap;
 extern NSString *const FBSimulatorLogNameVideo;
 
 /**
+ The Name of the Screenshot Log.
+ */
+extern NSString *const FBSimulatorLogNameScreenshot;
+
+/**
  Exposes Simulator Logs & Diagnsotics as FBWritableLog instances.
 
  Instances of FBWritableLog exposed by this class are not nullable since FBWritableLog's can be empty:
@@ -77,6 +82,11 @@ extern NSString *const FBSimulatorLogNameVideo;
  A Video of the Simulator
  */
 - (FBWritableLog *)video;
+
+/**
+ A Screenshot of the Simulator.
+ */
+- (FBWritableLog *)screenshot;
 
 /**
  Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.

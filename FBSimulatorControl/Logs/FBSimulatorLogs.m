@@ -26,6 +26,7 @@ NSString *const FBSimulatorLogNameSyslog = @"system_log";
 NSString *const FBSimulatorLogNameCoreSimulator = @"coresimulator";
 NSString *const FBSimulatorLogNameSimulatorBootstrap = @"launchd_bootstrap";
 NSString *const FBSimulatorLogNameVideo = @"video";
+NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 @interface FBSimulatorLogs ()
 
@@ -102,6 +103,15 @@ NSString *const FBSimulatorLogNameVideo = @"video";
   return [[[[self.logBuilder
     updateShortName:FBSimulatorLogNameVideo]
     updateFileType:@"mp4"]
+    updateWritableLog:self.eventLogs[FBSimulatorLogNameVideo]]
+    build];
+}
+
+- (FBWritableLog *)screenshot
+{
+  return [[[[self.logBuilder
+    updateShortName:FBSimulatorLogNameScreenshot]
+    updateFileType:@"png"]
     updateWritableLog:self.eventLogs[FBSimulatorLogNameVideo]]
     build];
 }
@@ -185,6 +195,16 @@ NSString *const FBSimulatorLogNameVideo = @"video";
 - (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
 
+}
+
+- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+{
+
+}
+
+- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+{
+  
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess

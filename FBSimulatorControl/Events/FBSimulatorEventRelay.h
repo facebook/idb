@@ -39,4 +39,9 @@
  */
 @property (nonatomic, copy, readonly) FBProcessInfo *containerApplication;
 
+/**
+ The current Framebuffer.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
+
 @end

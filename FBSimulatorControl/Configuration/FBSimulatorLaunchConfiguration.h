@@ -13,6 +13,15 @@
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 
 /**
+ An Option Set for Direct Launching.
+ */
+typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
+  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 0, /** Launches Simulators directly with a Framebuffer instead of with Simulator.app */
+  FBSimulatorLaunchOptionsRecordVideo = 1 << 1, /** Records the Framebuffer to a video */
+  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 2, /** Relays the Simulator Framebuffer to a window */
+};
+
+/**
  A Value Object for defining how to launch a Simulator.
  */
 @interface FBSimulatorLaunchConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializationDescribeable, FBDebugDescribeable>
@@ -26,6 +35,11 @@
  A String representing the Scale at which to launch the Simulator.
  */
 @property (nonatomic, copy, readonly) NSString *scaleString;
+
+/**
+ Options for using a useFramebuffer App instead of Xcode's Simulator.app
+ */
+@property (nonatomic, assign, readonly) FBSimulatorLaunchOptions options;
 
 #pragma mark Default Instance
 
@@ -66,5 +80,13 @@
 - (instancetype)withLocaleNamed:(NSString *)localeName;
 + (instancetype)withLocale:(NSLocale *)locale;
 - (instancetype)withLocale:(NSLocale *)locale;
+
+#pragma mark Launch Options
+
+/**
+ Set Direct Launch Options
+ */
++ (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
+- (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
 
 @end

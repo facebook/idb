@@ -18,6 +18,7 @@
 @class FBProcessInfo;
 @class FBProcessQuery;
 @class FBSimulatorConfiguration;
+@class FBSimulatorFramebuffer;
 @class FBSimulatorHistory;
 @class FBSimulatorLogger;
 @class FBSimulatorLogs;
@@ -140,6 +141,11 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
  The FBProcessInfo associated with the Container Application that launched the Simulator.
  */
 @property (nonatomic, copy, readonly) FBProcessInfo *containerApplication;
+
+/**
+ The Framebuffer of the Simulator.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
 
 /**
  The FBSimulatorLogs instance for fetching logs for the Simulator.

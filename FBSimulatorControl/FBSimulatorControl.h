@@ -10,6 +10,7 @@
 #import <FBSimulatorControl/FBASLParser.h>
 #import <FBSimulatorControl/FBAddVideoPolyfill.h>
 #import <FBSimulatorControl/FBBinaryParser.h>
+#import <FBSimulatorControl/FBCapacityQueue.h>
 #import <FBSimulatorControl/FBCollectionDescriptions.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
@@ -18,6 +19,11 @@
 #import <FBSimulatorControl/FBCrashLogInfo.h>
 #import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
+#import <FBSimulatorControl/FBFramebufferCompositeDelegate.h>
+#import <FBSimulatorControl/FBFramebufferCounter.h>
+#import <FBSimulatorControl/FBFramebufferDebugWindow.h>
+#import <FBSimulatorControl/FBFramebufferDelegate.h>
+#import <FBSimulatorControl/FBFramebufferVideo.h>
 #import <FBSimulatorControl/FBInteraction+Private.h>
 #import <FBSimulatorControl/FBInteraction.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
@@ -46,6 +52,7 @@
 #import <FBSimulatorControl/FBSimulatorError.h>
 #import <FBSimulatorControl/FBSimulatorEventRelay.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
+#import <FBSimulatorControl/FBSimulatorFramebuffer.h>
 #import <FBSimulatorControl/FBSimulatorHistory+Private.h>
 #import <FBSimulatorControl/FBSimulatorHistory+Queries.h>
 #import <FBSimulatorControl/FBSimulatorHistory.h>

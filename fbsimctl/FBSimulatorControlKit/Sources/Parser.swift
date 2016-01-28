@@ -252,8 +252,12 @@ extension Parser {
   }
 
   static func unionOptions<B : OptionSetType>(parsers: [Parser<B>]) -> Parser<B> {
+    return Parser.unionOptions(0, parsers)
+  }
+
+  static func unionOptions<B : OptionSetType>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
     return Parser<B>
-      .alternativeMany(parsers)
+      .alternativeMany(count, parsers)
       .fmap { options in
         var set = B()
         for option in options {

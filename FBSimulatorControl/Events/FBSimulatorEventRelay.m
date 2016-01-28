@@ -19,11 +19,13 @@
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
+#import "FBSimulatorFramebuffer.h"
 
 @interface FBSimulatorEventRelay ()
 
 @property (nonatomic, copy, readwrite) FBProcessInfo *launchdSimProcess;
 @property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
+@property (nonatomic, strong, readwrite) FBSimulatorFramebuffer *framebuffer;
 
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
@@ -93,6 +95,24 @@
   }
   self.containerApplication = nil;
   [self.sink containerApplicationDidTerminate:applicationProcess expected:expected];
+}
+
+- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+{
+  NSParameterAssert(framebuffer);
+  NSParameterAssert(self.framebuffer == nil);
+
+  self.framebuffer = framebuffer;
+  [self.sink framebufferDidStart:framebuffer];
+}
+
+- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+{
+  NSParameterAssert(framebuffer);
+  NSParameterAssert(self.framebuffer);
+
+  self.framebuffer = nil;
+  [self.sink framebufferDidTerminate:framebuffer expected:expected];
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess

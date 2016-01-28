@@ -14,6 +14,7 @@
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorApplication;
+@class FBSimulatorFramebuffer;
 @class FBWritableLog;
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializationDescribeable;
@@ -39,6 +40,21 @@
  @param expected whether the termination was expected or not.
  */
 - (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected;
+
+/**
+ Event for the creation and validity of a Simulator Framebuffer.
+
+ @param framebuffer the Framebuffer of the Simulator.
+ */
+- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer;
+
+/**
+ Event for the termination of a Simulator Framebuffer.
+
+ @param framebuffer the Framebuffer of the Simulator.
+ @param expected whether the termination was expected or not.
+ */
+- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected;
 
 /**
  Event for the launch of a Simulator's launchd_sim.

@@ -11,6 +11,8 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+#import "FBSimulatorControlTestCase.h"
+
 @implementation XCTestCase (FBSimulatorControlAssertions)
 
 #pragma mark Interactions
@@ -63,7 +65,13 @@
 {
   XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
   XCTAssertNotNil(simulator.launchdSimProcess);
-  XCTAssertNotNil(simulator.containerApplication);
+  if (self.expectContainerProcesses) {
+    XCTAssertNotNil(simulator.containerApplication);
+    XCTAssertNil(simulator.framebuffer);
+  } else {
+    XCTAssertNil(simulator.containerApplication);
+    XCTAssertNotNil(simulator.framebuffer);
+  }
 }
 
 - (void)assertSimulatorShutdown:(FBSimulator *)simulator
@@ -83,6 +91,13 @@
   BOOL isRunning = [simulator.launchctl processIsRunningOnSimulator:process error:nil];
   XCTAssertTrue(isRunning);
   XCTAssertNil(error);
+}
+
+#pragma mark Private
+
+- (BOOL)expectContainerProcesses
+{
+  return !FBSimulatorControlTestCase.useDirectLaunching;
 }
 
 @end
@@ -122,6 +137,8 @@
   NSArray *notificationNames = @[
     FBSimulatorDidLaunchNotification,
     FBSimulatorDidTerminateNotification,
+    FBSimulatorFramebufferDidStartNotification,
+    FBSimulatorFramebufferDidTerminateNotification,
     FBSimulatorContainerDidLaunchNotification,
     FBSimulatorContainerDidTerminateNotification,
     FBSimulatorApplicationProcessDidLaunchNotification,
@@ -263,11 +280,17 @@
 
 - (NSArray *)expectedBootNotificationNames
 {
+  if (FBSimulatorControlTestCase.useDirectLaunching) {
+    return @[FBSimulatorDidLaunchNotification, FBSimulatorFramebufferDidStartNotification];
+  }
   return @[FBSimulatorDidLaunchNotification, FBSimulatorContainerDidLaunchNotification];
 }
 
 - (NSArray *)expectedShutdownNotificationNames
 {
+  if (FBSimulatorControlTestCase.useDirectLaunching) {
+    return @[FBSimulatorDidTerminateNotification, FBSimulatorFramebufferDidTerminateNotification];
+  }
   return @[FBSimulatorDidTerminateNotification, FBSimulatorContainerDidTerminateNotification];
 }
 

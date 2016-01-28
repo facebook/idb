@@ -20,6 +20,13 @@
 @class FBSimulatorSession;
 
 /**
+ Environment Keys and Values for how the Simulator should be launched.
+ */
+extern NSString *const FBSimulatorControlTestsLaunchTypeEnvKey;
+extern NSString *const FBSimulatorControlTestsLaunchTypeSimulatorApp;
+extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
+
+/**
  A Test Case that boostraps a FBSimulatorControl instance.
  Should be overridden to provide Integration tests for Simulators.
  */
@@ -84,5 +91,10 @@
  Some tests are flakier on travis, this is a temporary way of disabling them until they are improved.
  */
 + (BOOL)isRunningOnTravis;
+
+/**
+ Whether or not Simulators should be launched directly or via the Simulator.app.
+ */
++ (BOOL)useDirectLaunching;
 
 @end

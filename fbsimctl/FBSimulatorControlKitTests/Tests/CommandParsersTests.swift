@@ -154,6 +154,40 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
   }
 }
 
+class FBSimulatorLaunchConfigurationTests : XCTestCase {
+  func testParsesLocale() {
+    self.assertParses(
+      FBSimulatorLaunchConfigurationParser.parser(),
+      ["--locale", "fr_FR"],
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("fr_FR")
+    )
+  }
+
+  func testParsesScale() {
+    self.assertParses(
+      FBSimulatorLaunchConfigurationParser.parser(),
+      ["--scale=50"],
+      FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent()
+    )
+  }
+
+  func testParsesOptions() {
+    self.assertParses(
+      FBSimulatorLaunchConfigurationParser.parser(),
+      ["--record-video", "--direct-launch"],
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withOptions(FBSimulatorLaunchOptions.RecordVideo.union(FBSimulatorLaunchOptions.EnableDirectLaunch))
+    )
+  }
+
+  func testParsesAllTheAbove() {
+    self.assertParses(
+      FBSimulatorLaunchConfigurationParser.parser(),
+      ["--locale", "en_GB", "--scale=75", "--direct-launch","--record-video"],
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("en_GB").scale75Percent().withOptions(FBSimulatorLaunchOptions.RecordVideo.union(FBSimulatorLaunchOptions.EnableDirectLaunch))
+    )
+  }
+}
+
 class ConfigurationParserTests : XCTestCase {
   func testParsesEmptyAsDefaultValue() {
     self.assertParses(

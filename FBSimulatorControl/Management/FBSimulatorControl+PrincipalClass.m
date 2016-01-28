@@ -9,6 +9,8 @@
 
 #import "FBSimulatorControl+PrincipalClass.h"
 
+#import <AppKit/AppKit.h>
+
 #import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
@@ -79,6 +81,7 @@
   // 5) Provide a sanity check that any preloaded Private Frameworks match the current xcode-select version
   NSDictionary *classMapping = @{
     @"SimDevice" : @"Library/PrivateFrameworks/CoreSimulator.framework",
+    @"SimDeviceFramebufferService" : @"Library/PrivateFrameworks/SimulatorKit.framework",
     @"DVTDevice" : @"../SharedFrameworks/DVTFoundation.framework",
     @"DTiPhoneSimulatorApplicationSpecifier" : @"../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework"
   };

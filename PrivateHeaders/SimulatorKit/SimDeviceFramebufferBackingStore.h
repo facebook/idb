@@ -26,11 +26,11 @@
 @property(readonly, nonatomic) unsigned long long rowByteSize; // @synthesize rowByteSize=_rowByteSize;
 @property(readonly, nonatomic) unsigned long long pixelsHigh; // @synthesize pixelsHigh=_pixelsHigh;
 @property(readonly, nonatomic) unsigned long long pixelsWide; // @synthesize pixelsWide=_pixelsWide;
-- (void).cxx_destruct;
+//- (void).cxx_destruct;
 @property(readonly, nonatomic) struct CGImage *image;
 - (void)flushDamageRegion:(struct CGRect)arg1;
 - (void)flushEntireLiveBuffer;
-- (void)accessBackingStoreDuring:(CDUnknownBlockType)arg1;
+- (void)accessBackingStoreDuring:(id)arg1;
 - (void)invalidate;
 - (id)initWithData:(void *)arg1 port:(unsigned int)arg2 size:(unsigned long long)arg3 rowByteSize:(unsigned long long)arg4 pixelsWide:(unsigned long long)arg5 pixelsHigh:(unsigned long long)arg6;
 

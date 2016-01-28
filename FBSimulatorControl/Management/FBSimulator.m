@@ -145,6 +145,11 @@
   return self.eventRelay.launchdSimProcess;
 }
 
+- (FBSimulatorFramebuffer *)framebuffer
+{
+  return self.eventRelay.framebuffer;
+}
+
 - (FBProcessInfo *)containerApplication
 {
   return self.eventRelay.containerApplication;
