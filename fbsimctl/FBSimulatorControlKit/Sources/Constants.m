@@ -10,7 +10,6 @@
 #import "Constants.h"
 
 #import <asl.h>
-
 #import <sys/socket.h>
 
 @implementation Constants

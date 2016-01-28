@@ -20,7 +20,7 @@
 
 /**
  Constructs a new JSONLogger instance with the provided reporter
- 
+
  @param reporter the the Reporter to report to.
  @param debug YES if debug messages should be reported, NO otherwise.
  @return a new JSONLogger instance.

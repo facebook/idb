@@ -74,7 +74,7 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
   }
 
   public func terminationHandleAvailable(terminationHandle: FBTerminationHandleProtocol!) {
-    
+
   }
 }
 
