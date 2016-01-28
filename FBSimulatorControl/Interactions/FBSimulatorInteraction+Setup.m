@@ -94,6 +94,36 @@
   return [self authorizeLocationSettings:@[application.bundleID]];
 }
 
+- (instancetype)overrideWatchDogTimerForApplications:(NSArray *)bundleIDs withTimeout:(NSTimeInterval)timeout
+{
+  NSParameterAssert(bundleIDs);
+  NSParameterAssert(timeout);
+
+  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    NSString *simulatorRoot = simulator.device.dataPath;
+
+    NSString *preferencesDirectory = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences"];
+    NSError *innerError = nil;
+    if (![NSFileManager.defaultManager createDirectoryAtPath:preferencesDirectory withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to create preferences dir" errorOut:error];
+    }
+
+    NSString *springboardSettingsPath = [preferencesDirectory stringByAppendingPathComponent:@"com.apple.springboard.plist"];
+    NSMutableDictionary *springboardSettings = [NSMutableDictionary dictionaryWithContentsOfFile:springboardSettingsPath] ?: [NSMutableDictionary dictionary];
+    for (NSString *bundleID in bundleIDs) {
+      springboardSettings[@"FBLaunchWatchdogExceptions"] =
+      @{
+        bundleID: @(timeout),
+        };
+    }
+
+    if (![springboardSettings writeToFile:springboardSettingsPath atomically:YES]) {
+      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write SpringBoard plist" errorOut:error];
+    }
+    return YES;
+  }];
+}
+
 - (instancetype)setupKeyboard
 {
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {

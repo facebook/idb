@@ -51,6 +51,16 @@
 - (instancetype)authorizeLocationSettingForApplication:(FBSimulatorApplication *)application;
 
 /**
+ Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
+ time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
+ 
+ @param bundleIDs The bundle IDs of the applications to override.
+ @param timeout The new startup timeout.
+ @return the receiver, for chaining.
+ */
+- (instancetype)overrideWatchDogTimerForApplications:(NSArray *)bundleIDs withTimeout:(NSTimeInterval)timeout;
+
+/**
  Prepares the Simulator Keyboard, prior to launch.
  1) Disables Caps Lock
  2) Disables Auto Capitalize
