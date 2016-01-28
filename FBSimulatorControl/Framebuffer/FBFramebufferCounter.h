@@ -20,7 +20,7 @@
 
 /**
  Creates a new Framebuffer counter.
- 
+
  @param logFrequency the frequency with which to log frame counts
  @param logger the logger to log to
  */

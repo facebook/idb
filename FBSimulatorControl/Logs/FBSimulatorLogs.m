@@ -204,7 +204,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
 {
-  
+
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess

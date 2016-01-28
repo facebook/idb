@@ -9,8 +9,8 @@
 
 #import "FBFramebufferImage.h"
 
-#import "FBWritableLog.h"
 #import "FBSimulatorEventSink.h"
+#import "FBWritableLog.h"
 
 @interface FBFramebufferImage ()
 
