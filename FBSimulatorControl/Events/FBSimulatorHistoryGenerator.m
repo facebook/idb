@@ -227,21 +227,21 @@
   return self;
 }
 
-+ (FBSimulatorHistory *)updateState:(FBSimulatorHistory *)sessionState withBlock:( FBSimulatorHistory *(^)(FBSimulatorHistory *history) )block
++ (FBSimulatorHistory *)updateState:(FBSimulatorHistory *)history withBlock:( FBSimulatorHistory *(^)(FBSimulatorHistory *history) )block
 {
-  NSParameterAssert(sessionState);
+  NSParameterAssert(history);
   NSParameterAssert(block);
 
-  FBSimulatorHistory *nextSessionState = block([sessionState copy]);
-  if (!nextSessionState) {
-    return sessionState;
+  FBSimulatorHistory *nextHistory = block([history copy]);
+  if (!nextHistory) {
+    return history;
   }
-  if ([nextSessionState isEqual:sessionState]) {
-    return sessionState;
+  if ([nextHistory isEqual:history]) {
+    return history;
   }
-  nextSessionState.timestamp = [NSDate date];
-  nextSessionState.previousState = sessionState;
-  return nextSessionState;
+  nextHistory.timestamp = [NSDate date];
+  nextHistory.previousState = history;
+  return nextHistory;
 }
 
 @end

@@ -14,7 +14,6 @@
 @class FBProcessLaunchConfiguration;
 @class FBSimulatorApplication;
 @class FBSimulatorBinary;
-@class FBSimulatorSession;
 
 /**
  A Diagnostic key for the Termination Status.

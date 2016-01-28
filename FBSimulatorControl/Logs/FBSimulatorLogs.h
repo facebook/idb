@@ -12,7 +12,6 @@
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
 @class FBSimulator;
-@class FBSimulatorSession;
 @class FBWritableLog;
 @class FBWritableLogBuilder;
 
@@ -104,7 +103,7 @@ extern NSString *const FBSimulatorLogNameScreenshot;
 - (NSArray *)userLaunchedProcessCrashesSinceLastLaunch;
 
 /**
- The System Log, filtered and bucketed by Processes that were launched during the Session.
+ The System Log, filtered and bucketed for each process that was launched by the user.
 
  @return an NSDictionary<FBProcessInfo *, FBWritableLog> of the logs, filtered by launched process.
  */

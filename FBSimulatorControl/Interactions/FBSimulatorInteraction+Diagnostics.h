@@ -15,7 +15,7 @@
 
 /**
  Uses sample(1) see what is going on in the Application. This is done asynchronously.
- The result is attached to the Session State. If an error occurs during the run of the sample(1), no result will be attached.
+ The result is attached to the Simulator History. If an error occurs during the run of the sample(1), no result will be attached.
 
  @param application the Application to sample. Must be running, otherwise the interaction will error.
  @param durationInSeconds the duration for which to sample the Application.
@@ -26,7 +26,7 @@
 
 /**
  Executes a command with lldb(1). This is done asynchronously.
- The result is attached to the Session State. If an error occurs during the run of the lldb command, no result will be returned.
+ The result is attached to the Simulator History. If an error occurs during the run of the lldb command, no result will be returned.
 
  @param application the Application to sample. Must be running, otherwise the interaction will fail.
  @param command to execute.

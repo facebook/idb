@@ -130,7 +130,7 @@
   abort();
 }
 
-#pragma mark Sessions
+#pragma mark Simulators
 
 - (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 {

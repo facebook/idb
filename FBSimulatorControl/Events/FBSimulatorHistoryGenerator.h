@@ -15,7 +15,6 @@
 
 @class FBProcessLaunchConfiguration;
 @class FBSimulatorBinary;
-@class FBSimulatorSession;
 
 /**
  An Object responsible for building `FBSimulatorHistory` be converting events into state.

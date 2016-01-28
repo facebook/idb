@@ -12,13 +12,13 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorApplication.h"
 
-@interface FBProcessLaunchConfiguration (SessionStateQueries)
+@interface FBProcessLaunchConfiguration (HistoryQueries)
 
 - (FBSimulatorBinary *)binary;
 
 @end
 
-@implementation FBProcessLaunchConfiguration (SessionStateQueries)
+@implementation FBProcessLaunchConfiguration (HistoryQueries)
 
 - (FBSimulatorBinary *)binary
 {
@@ -149,7 +149,7 @@
 
 - (NSDate *)startDate
 {
-  return self.firstSessionState.timestamp;
+  return self.firstHistoryItem.timestamp;
 }
 
 #pragma mark - Private
@@ -183,12 +183,12 @@
   return recursive ? [self.previousState runningProcessForApplication:application recursive:recursive] : nil;
 }
 
-- (instancetype)firstSessionState
+- (instancetype)firstHistoryItem
 {
   if (self.previousState == nil) {
     return self;
   }
-  return self.previousState.firstSessionState;
+  return self.previousState.firstHistoryItem;
 }
 
 #pragma mark Predicates
