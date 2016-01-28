@@ -36,21 +36,20 @@
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSString *localeIdentifier = [locale localeIdentifier];
     NSString *languageIdentifier = [NSLocale canonicalLanguageIdentifierFromString:localeIdentifier];
-    NSDictionary *preferencesDict = @{
-      @"AppleLocale": localeIdentifier,
-      @"AppleLanguages": @[ languageIdentifier ],
-      // We force the simulator to have a US keyboard for automation's sake.
-      @"AppleKeyboards": @[ @"en_US@hw=US;sw=QWERTY" ],
-      @"AppleKeyboardsExpanded": @1,
-    };
 
-    NSString *simulatorRoot = simulator.device.dataPath;
-    NSString *path = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences/.GlobalPreferences.plist"];
-    if (![preferencesDict writeToFile:path atomically:YES]) {
-      return [FBSimulatorError failBoolWithError:nil description:@"Failed to write .GlobalPreferences.plist" errorOut:error];
-    }
-
-    return YES;
+    return [FBSimulatorInteraction
+      forSimulator:simulator
+      relativeFromRootPath:@"Library/Preferences/.GlobalPreferences.plist"
+      error:error
+      amendWithBlock:^(NSMutableDictionary *dictionary) {
+        [dictionary addEntriesFromDictionary:@{
+          @"AppleLocale": localeIdentifier,
+          @"AppleLanguages": @[ languageIdentifier ],
+          // We force the simulator to have a US keyboard for automation's sake.
+          @"AppleKeyboards": @[ @"en_US@hw=US;sw=QWERTY" ],
+          @"AppleKeyboardsExpanded": @1,
+        }];
+      }];
   }];
 }
 
@@ -59,32 +58,23 @@
   NSParameterAssert(bundleIDs);
 
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    NSString *simulatorRoot = simulator.device.dataPath;
-
-    NSString *locationClientsDirectory = [simulatorRoot stringByAppendingPathComponent:@"Library/Caches/locationd"];
-    NSError *innerError = nil;
-    if (![NSFileManager.defaultManager createDirectoryAtPath:locationClientsDirectory withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to create locationd" errorOut:error];
-    }
-
-    NSString *locationClientsPath = [locationClientsDirectory stringByAppendingPathComponent:@"clients.plist"];
-    NSMutableDictionary *locationClients = [NSMutableDictionary dictionaryWithContentsOfFile:locationClientsPath] ?: [NSMutableDictionary dictionary];
-    for (NSString *bundleID in bundleIDs) {
-      locationClients[bundleID] = @{
-        @"Whitelisted": @NO,
-        @"BundleId": bundleID,
-        @"SupportedAuthorizationMask" : @3,
-        @"Authorization" : @2,
-        @"Authorized": @YES,
-        @"Executable": @"",
-        @"Registered": @"",
-      };
-    }
-
-    if (![locationClients writeToFile:locationClientsPath atomically:YES]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write clients.plist" errorOut:error];
-    }
-    return YES;
+    return [FBSimulatorInteraction
+      forSimulator:simulator
+      relativeFromRootPath:@"Library/Caches/locationd/clients.plist"
+      error:error
+      amendWithBlock:^(NSMutableDictionary *dictionary) {
+        for (NSString *bundleID in bundleIDs) {
+          dictionary[bundleID] = @{
+            @"Whitelisted": @NO,
+            @"BundleId": bundleID,
+            @"SupportedAuthorizationMask" : @3,
+            @"Authorization" : @2,
+            @"Authorized": @YES,
+            @"Executable": @"",
+            @"Registered": @"",
+          };
+        }
+      }];
   }];
 }
 
@@ -100,45 +90,60 @@
   NSParameterAssert(timeout);
 
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    NSString *simulatorRoot = simulator.device.dataPath;
-
-    NSString *preferencesDirectory = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences"];
-    NSError *innerError = nil;
-    if (![NSFileManager.defaultManager createDirectoryAtPath:preferencesDirectory withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to create preferences dir" errorOut:error];
-    }
-
-    NSString *springboardSettingsPath = [preferencesDirectory stringByAppendingPathComponent:@"com.apple.springboard.plist"];
-    NSMutableDictionary *springboardSettings = [NSMutableDictionary dictionaryWithContentsOfFile:springboardSettingsPath] ?: [NSMutableDictionary dictionary];
-    for (NSString *bundleID in bundleIDs) {
-      springboardSettings[@"FBLaunchWatchdogExceptions"] =
-      @{
-        bundleID: @(timeout),
-        };
-    }
-
-    if (![springboardSettings writeToFile:springboardSettingsPath atomically:YES]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write SpringBoard plist" errorOut:error];
-    }
-    return YES;
+    return [FBSimulatorInteraction
+      forSimulator:simulator
+      relativeFromRootPath:@"Library/Preferences/com.apple.springboard.plist"
+      error:error
+      amendWithBlock:^(NSMutableDictionary *dictionary) {
+        NSMutableDictionary *exceptions = [NSMutableDictionary dictionary];
+        for (NSString *bundleID in bundleIDs) {
+          exceptions[bundleID] = @(timeout);
+        }
+        dictionary[@"FBLaunchWatchdogExceptions"] = exceptions;
+      }];
   }];
 }
 
 - (instancetype)setupKeyboard
 {
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    NSString *simulatorRoot = simulator.device.dataPath;
-    NSString *preferencesPath = [simulatorRoot stringByAppendingPathComponent:@"Library/Preferences/com.apple.Preferences.plist"];
-    NSError *innerError = nil;
-    NSMutableDictionary *preferences = [NSMutableDictionary dictionaryWithContentsOfFile:preferencesPath] ?: [NSMutableDictionary dictionary];
-    preferences[@"KeyboardCapsLock"] = @NO;
-    preferences[@"KeyboardAutocapitalization"] = @NO;
-    preferences[@"KeyboardAutocorrection"] = @NO;
-    if (![preferences writeToFile:preferencesPath atomically:YES]) {
-      return [FBSimulatorError failBoolWithError:innerError description:@"Failed to write com.apple.Preferences.plist" errorOut:error];
-    }
-    return YES;
+    return [FBSimulatorInteraction
+      forSimulator:simulator
+      relativeFromRootPath:@"Library/Preferences/com.apple.Preferences.plist"
+      error:error
+      amendWithBlock:^(NSMutableDictionary *dictionary) {
+        dictionary[@"KeyboardCapsLock"] = @NO;
+        dictionary[@"KeyboardAutocapitalization"] = @NO;
+        dictionary[@"KeyboardAutocorrection"] = @NO;
+      }];
   }];
+}
+
+#pragma mark Private
+
++ (BOOL)forSimulator:(FBSimulator *)simulator relativeFromRootPath:(NSString *)relativePath error:(NSError **)error amendWithBlock:( void(^)(NSMutableDictionary *) )block
+{
+  NSString *simulatorRoot = simulator.device.dataPath;
+  NSString *path = [simulatorRoot stringByAppendingPathComponent:relativePath];
+
+  NSError *innerError = nil;
+  if (![NSFileManager.defaultManager createDirectoryAtPath:[path stringByDeletingLastPathComponent] withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Could not create intermediate directories for plist modification at %@", path]
+      inSimulator:simulator]
+      causedBy:innerError]
+      failBool:error];
+  }
+  NSMutableDictionary *dictionary = [NSMutableDictionary dictionaryWithContentsOfFile:path] ?: [NSMutableDictionary dictionary];
+  block(dictionary);
+
+  if (![dictionary writeToFile:path atomically:YES]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to write plist at path %@", path]
+      inSimulator:simulator]
+      failBool:error];
+  }
+  return YES;
 }
 
 @end
