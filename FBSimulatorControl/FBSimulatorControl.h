@@ -64,7 +64,6 @@
 #import <FBSimulatorControl/FBSimulatorInteraction+Private.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Setup.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Upload.h>
-#import <FBSimulatorControl/FBSimulatorInteraction+Video.h>
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration+Private.h>
@@ -79,9 +78,6 @@
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorResourceManager.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
-#import <FBSimulatorControl/FBSimulatorWindowHelpers.h>
-#import <FBSimulatorControl/FBSimulatorWindowTiler.h>
-#import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>
 #import <FBSimulatorControl/FBTask+Private.h>
 #import <FBSimulatorControl/FBTask.h>
 #import <FBSimulatorControl/FBTaskExecutor+Convenience.h>
