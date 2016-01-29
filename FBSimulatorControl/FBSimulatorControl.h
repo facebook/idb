@@ -79,7 +79,6 @@
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorResourceManager.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
-#import <FBSimulatorControl/FBSimulatorVideoRecorder.h>
 #import <FBSimulatorControl/FBSimulatorWindowHelpers.h>
 #import <FBSimulatorControl/FBSimulatorWindowTiler.h>
 #import <FBSimulatorControl/FBSimulatorWindowTilingStrategy.h>

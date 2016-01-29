@@ -15,7 +15,6 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLogs.h"
-#import "FBSimulatorVideoRecorder.h"
 #import "FBSimulatorWindowTiler.h"
 #import "FBSimulatorWindowTilingStrategy.h"
 #import "FBWritableLog.h"
@@ -39,25 +38,6 @@
 - (instancetype)tileSimulator
 {
   return [self tileSimulator:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:self.simulator]];
-}
-
-- (instancetype)recordVideo
-{
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBWritableLogBuilder *logBuilder = [FBWritableLogBuilder builderWithWritableLog:simulator.logs.video];
-    NSString *path = [logBuilder createPath];
-
-    FBSimulatorVideoRecorder *recorder = [FBSimulatorVideoRecorder forSimulator:simulator logger:nil];
-    NSError *innerError = nil;
-    if (![recorder startRecordingToFilePath:path error:&innerError]) {
-      return [[[FBSimulatorError describe:@"Failed to start recording video"] inSimulator:simulator] failBool:error];
-    }
-
-    [simulator.eventSink logAvailable:[[logBuilder updatePath:path] build]];
-    [simulator.eventSink terminationHandleAvailable:recorder];
-
-    return YES;
-  }];
 }
 
 @end
