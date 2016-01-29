@@ -43,10 +43,9 @@ For a high level overview:
 - `FBSimulatorControl` is the Principal Class. It is the first object that you should create with `+[FBSimulatorControl withConfiguration:error:]`. It creates a `FBSimulatorPool` upon creation.
 - `FBSimulatorPool` is responsible for managing the allocation and freeing of Simulators. It will also ensure that the running environment is in a clean state before attempting to manipulate Simulators.
 - `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator.
-- `FBSimulatorInteraction` and it's categories forms the API of possible interactions with a Simulator. These range from booting Simulators, installing & running Applications, uploading photos & videos and more.
+- `FBSimulatorInteraction` and it's categories forms the API of possible ways of interacting with a Simulator. These range from booting Simulators, installing & running Applications, uploading photos & videos and more.
 - `FBSimulatorHistory` is a record of all the events that happen to a Simulator. It can be queried in a variety of ways and serialized to file.
-- `FBSimulatorLogs` is a facade around available logs for a Simulator.
-- `FBSimulatorLaunchInfo` describes the launch environment of a Simulator and it's subprocesses.
+- `FBSimulatorLogs` is a facade around available logs for a Simulator. It fetches static logs such as the System Log on-demand and receives new logs from components such as `FBFramebufferVideo`.
 - Configuration objects: `FBApplicationLaunchConfiguration`, `FBAgentLaunchConfiguration`, `FBSimulatorApplication`, `FBSimulatorControlConfiguration` & `FBSimulatorConfiguration`.
 
 To launch Safari on an iPhone 5, you can use the following:
