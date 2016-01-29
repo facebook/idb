@@ -56,13 +56,16 @@
 
 - (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size
 {
+  // Extract the current value of the frame count to ensure that the when the block on the main queue
+  // is dequeued, it won't be a strange frame count.
   self.frameCount++;
-  if (self.frameCount % self.logFrequency != 0) {
+  NSUInteger frameCount = self.frameCount;
+  if (frameCount % self.logFrequency != 0) {
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [self.logger.info logFormat:@"Frame Count %lu", self.frameCount];
+    [self.logger.info logFormat:@"Frame Count %lu", frameCount];
   });
 }
 
