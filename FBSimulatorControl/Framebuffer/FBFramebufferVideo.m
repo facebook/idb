@@ -27,6 +27,7 @@ typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 static const CMTimeScale FBFramebufferTimescale = 1000000000;
+static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 @interface FBFramebufferVideoItem : NSObject
 
@@ -249,6 +250,9 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
       causedBy:innerError]
       failBool:error];
   }
+  // Setting a Fragment interval will ensure there is a video if the process crashes.
+  // However, setting this appears to make the output fail if the fragment interval is too low.
+  writer.movieFragmentInterval = CMTimeMakeWithSeconds(FBFramebufferFragmentIntervalSeconds, FBFramebufferTimescale);
 
   // Create an Input for the Writer
   NSDictionary *outputSettings = @{
@@ -263,10 +267,6 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
       describeFormat:@"Not permitted to add writer input at %@", input]
       failBool:error];
   }
-  // Setting a Fragment interval will ensure there is a video if the process crashes.
-  // However, setting this appears to make the output fail after a period of time.
-  // This can be set with:
-  // writer.movieFragmentInterval = CMTimeMakeWithSeconds(5, FBFramebufferTimescale);
   [writer addInput:input];
 
   // Create an adaptor for writing to the input via concrete pixel buffers
