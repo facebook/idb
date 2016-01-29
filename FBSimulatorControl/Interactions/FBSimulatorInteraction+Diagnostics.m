@@ -16,8 +16,6 @@
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLogs.h"
-#import "FBSimulatorSession+Private.h"
-#import "FBSimulatorSession.h"
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
 

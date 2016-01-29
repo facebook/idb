@@ -17,7 +17,6 @@
 @class FBSimulatorControl;
 @class FBSimulatorControlNotificationAssertions;
 @class FBSimulatorLaunchConfiguration;
-@class FBSimulatorSession;
 
 /**
  Environment Keys and Values for how the Simulator should be launched.
@@ -33,24 +32,19 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 @interface FBSimulatorControlTestCase : XCTestCase
 
 /**
- Allocates a Simulator with a default configuration.
- */
-- (FBSimulator *)allocateSimulator;
-
-/**
  Creates a Session with the provided configuration.
  */
-- (FBSimulatorSession *)createSessionWithConfiguration:(FBSimulatorConfiguration *)configuration;
+- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
 
 /**
  Creates a Session with the default configuration.
  */
-- (FBSimulatorSession *)createSession;
+- (FBSimulator *)obtainSimulator;
 
 /**
  Create a Session with a booted Simulator of the default configuration.
  */
-- (FBSimulatorSession *)createBootedSession;
+- (FBSimulator *)obtainBootedSimulator;
 
 /**
  The Per-TestCase Management Options for created FBSimulatorControl instances.

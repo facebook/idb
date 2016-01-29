@@ -40,7 +40,7 @@ Since the Frameworks upon which `FBSimulatorControl` depends are loaded laziliy,
 [The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API. `FBSimulatorControl` has an umbrella that can be imported to give access to the entire API.
 
 For a high level overview:
-- `FBSimulatorControl` is the principal class. It is the first object that you should create with `+[FBSimulatorControl withConfiguration:error:]`. It creates a `FBSimulatorPool` upon creation.
+- `FBSimulatorControl` is the Principal Class. It is the first object that you should create with `+[FBSimulatorControl withConfiguration:error:]`. It creates a `FBSimulatorPool` upon creation.
 - `FBSimulatorPool` is responsible for managing the allocation and freeing of Simulators. It will also ensure that the running environment is in a clean state before attempting to manipulate Simulators.
 - `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator.
 - `FBSimulatorInteraction` and it's categories forms the API of possible interactions with a Simulator. These range from booting Simulators, installing & running Applications, uploading photos & videos and more.
@@ -72,8 +72,8 @@ To launch Safari on an iPhone 5, you can use the following:
     FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
     FBSimulatorAllocationOptions allocationOptions = FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsEraseOnAllocate;
     
-    // Allocate the Simulator. If anything goes wrong, nil will be returned along with a descriptive error.
-    FBSimulator *simulator = [control.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration simulatorConfiguration options:options error];
+    // Obtain a Simulator from the Principal Class. If anything goes wrong, nil will be returned along with a descriptive error.
+    FBSimulator *simulator = [control obtainSimulatorWithConfiguration:simulatorConfiguration options:allocationOptions error:&error];
     
     // Build a Launch Configuration.
     FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration

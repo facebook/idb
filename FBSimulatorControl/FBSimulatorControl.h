@@ -78,8 +78,6 @@
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorResourceManager.h>
-#import <FBSimulatorControl/FBSimulatorSession+Private.h>
-#import <FBSimulatorControl/FBSimulatorSession.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecorder.h>
 #import <FBSimulatorControl/FBSimulatorWindowHelpers.h>

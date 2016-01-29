@@ -14,7 +14,6 @@
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
-@class FBSimulatorSession;
 @protocol FBSimulatorLogger;
 
 /**
@@ -61,17 +60,17 @@
  */
 + (void)loadPrivateFrameworksOrAbort;
 
-#pragma mark Session
+#pragma mark Simulators
 
 /**
- Creates and returns a new FBSimulatorSession instance. Does not launch the Simulator or any Applications.
+ Obtains a Simulator for the given configuration and allocation options from the pool.
 
  @param simulatorConfiguration the Configuration of the Simulator to Launch.
  @param options the options to for the allocation/freeing of the Simulator.
- @param error an outparam for describing any error that occured during the creation of the Session.
- @returns A new `FBSimulatorSession` instance, or nil if an error occured.
+ @param error an outparam for describing any error that occured during the allocation of the Simulator.
+ @returns A FBSimulator instance, or nil if an error occured.
  */
-- (FBSimulatorSession *)createSessionForSimulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
+- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 
 #pragma mark Properties
 

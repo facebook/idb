@@ -29,10 +29,10 @@
     return;
   }
 
-  FBSimulatorSession *session = [self createBootedSession];
+  FBSimulator *simulator = [self obtainBootedSimulator];
   FBSimulatorWindowTiler *tiler = [FBSimulatorWindowTiler
-    withSimulator:session.simulator
-    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:session.simulator]];
+    withSimulator:simulator
+    strategy:[FBSimulatorWindowTilingStrategy horizontalOcclusionStrategy:simulator]];
 
   NSError *error = nil;
   CGRect position = [tiler placeInForegroundWithError:&error];

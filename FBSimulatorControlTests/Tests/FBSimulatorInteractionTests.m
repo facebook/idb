@@ -23,20 +23,20 @@
 
 - (void)testPhotoUpload
 {
-  FBSimulatorSession *session = [self createBootedSession];
-  [self assertInteractionSuccessful:[session.interact uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path]]];
+  FBSimulator *simulator = [self obtainBootedSimulator];
+  [self assertInteractionSuccessful:[simulator.interact uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path]]];
 }
 
 - (void)testVideoUploadSuccess
 {
-  FBSimulatorSession *session = [self createBootedSession];
-  [self assertInteractionSuccessful:[session.interact uploadVideos:@[FBSimulatorControlFixtures.video0Path]]];
+  FBSimulator *simulator = [self obtainBootedSimulator];
+  [self assertInteractionSuccessful:[simulator.interact uploadVideos:@[FBSimulatorControlFixtures.video0Path]]];
 }
 
 - (void)testVideoUploadFailure
 {
-  FBSimulatorSession *session = [self createBootedSession];
-  [self assertInteractionFailed:[session.interact uploadVideos:@[FBSimulatorControlFixtures.photo0Path]]];
+  FBSimulator *simulator = [self obtainBootedSimulator];
+  [self assertInteractionFailed:[simulator.interact uploadVideos:@[FBSimulatorControlFixtures.photo0Path]]];
 }
 
 @end

@@ -27,7 +27,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorPool.h"
-#import "FBSimulatorSession+Private.h"
 #import "FBSimulatorTerminationStrategy.h"
 #import "FBTaskExecutor.h"
 

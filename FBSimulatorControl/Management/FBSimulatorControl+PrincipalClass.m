@@ -26,7 +26,6 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
-#import "FBSimulatorSession.h"
 
 @implementation FBSimulatorControl
 
@@ -131,9 +130,9 @@
   abort();
 }
 
-#pragma mark Sessions
+#pragma mark Simulators
 
-- (FBSimulatorSession *)createSessionForSimulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
+- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 {
   NSParameterAssert(simulatorConfiguration);
 
@@ -142,7 +141,7 @@
   if (!simulator) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  return [FBSimulatorSession sessionWithSimulator:simulator];
+  return simulator;
 }
 
 #pragma mark Private Methods

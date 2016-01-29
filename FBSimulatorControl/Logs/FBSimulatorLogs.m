@@ -18,7 +18,6 @@
 #import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBSimulatorSession.h"
 #import "FBTaskExecutor.h"
 #import "FBWritableLog.h"
 

@@ -12,7 +12,6 @@
 @class FBSimulator;
 @class FBSimulatorControl;
 @class FBSimulatorPool;
-@class FBSimulatorSession;
 @protocol FBInteraction;
 
 /**
@@ -37,7 +36,7 @@
 /**
  Assertion failure if the Session fails to terminate
  */
-- (void)assertShutdownSimulatorAndTerminateSession:(FBSimulatorSession *)session;
+- (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator;
 
 #pragma mark Strings
 

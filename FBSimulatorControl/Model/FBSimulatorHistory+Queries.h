@@ -14,7 +14,7 @@
 @class FBApplicationLaunchConfiguration;
 
 /**
- Queries for obtaining information from Session State
+ Queries for obtain specific information from the Simulator's History.
  */
 @interface FBSimulatorHistory (Queries)
 
