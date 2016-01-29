@@ -10,9 +10,10 @@
 #import "FBSimulatorFramebuffer.h"
 
 #import <AppKit/AppKit.h>
-
 #import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
 #import <SimulatorKit/SimDeviceFramebufferService.h>
+#import <mach/exc.h>
+#import <mach/mig.h>
 
 #import "FBFramebufferCompositeDelegate.h"
 #import "FBFramebufferCounter.h"
@@ -42,6 +43,8 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 @interface FBSimulatorFramebuffer () <FBFramebufferDelegate>
 
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
+@property (nonatomic, assign, readonly) mach_port_t hidPort;
+
 @property (nonatomic, strong, readonly) FBFramebufferCounter *counter;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
@@ -57,7 +60,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
 #pragma mark Initializers
 
-+ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator {
++ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator {
   NSMutableArray *sinks = [NSMutableArray array];
   BOOL useWindow = (launchConfiguration.options & FBSimulatorLaunchOptionsShowDebugWindow) == FBSimulatorLaunchOptionsShowDebugWindow;
   if (useWindow) {
@@ -75,12 +78,13 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   [sinks addObject:[FBFramebufferImage withWritableLog:simulator.logs.screenshot eventSink:simulator.eventSink]];
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
-  return [[self alloc] initWithFramebufferService:framebufferService counter:counter eventSink:simulator.eventSink delegate:delegate];
+  return [[self alloc] initWithFramebufferService:framebufferService hidPort:hidPort counter:counter eventSink:simulator.eventSink delegate:delegate];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService counter:(FBFramebufferCounter *)counter eventSink:(id<FBSimulatorEventSink>)eventSink delegate:(id<FBFramebufferDelegate>)delegate
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort counter:(FBFramebufferCounter *)counter eventSink:(id<FBSimulatorEventSink>)eventSink delegate:(id<FBFramebufferDelegate>)delegate
 {
   NSParameterAssert(framebufferService);
+  NSParameterAssert(hidPort > 0);
 
   self = [super init];
   if (!self) {
@@ -88,6 +92,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   }
 
   _framebufferService = framebufferService;
+  _hidPort = hidPort;
   _counter = counter;
   _eventSink = eventSink;
   _delegate = delegate;
@@ -185,6 +190,8 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
   [self.framebufferService unregisterClient:self];
   [self.framebufferService suspend];
+  mach_port_destroy(mach_task_self(), self.hidPort);
+
   [self.delegate framebufferDidBecomeInvalid:self error:error];
   [self.eventSink framebufferDidTerminate:self expected:(error != nil)];
 }
