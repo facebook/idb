@@ -21,7 +21,7 @@ static NSString *const LaunchTypeEnvKey = @"FBSIMULATORCONTROL_LAUNCH_TYPE";
 static NSString *const LaunchTypeSimulatorApp = @"simulator_app";
 static NSString *const LaunchTypeDirect = @"direct";
 
-static NSString *const DirectLaunchEnableVideoRecording = @"FBSIMULATORCONTROL_RECORD_VIDEO";
+static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 @interface FBSimulatorControlTestCase ()
 
@@ -104,6 +104,15 @@ static NSString *const DirectLaunchEnableVideoRecording = @"FBSIMULATORCONTROL_R
   return YES;
 }
 
++ (BOOL)recordVideo
+{
+  NSString *value = NSProcessInfo.processInfo.environment[DirectLaunchRecordVideoKey];
+  if (value && value.boolValue == NO) {
+    return NO;
+  }
+  return YES;
+}
+
 + (NSString *)defaultDeviceSetPath
 {
   NSString *value = NSProcessInfo.processInfo.environment[DeviceSetEnvKey];
@@ -117,7 +126,7 @@ static NSString *const DirectLaunchEnableVideoRecording = @"FBSIMULATORCONTROL_R
 {
   if (self.useDirectLaunching) {
     FBSimulatorLaunchOptions options = FBSimulatorLaunchOptionsEnableDirectLaunch;
-    if (NSProcessInfo.processInfo.environment[DirectLaunchEnableVideoRecording]) {
+    if (self.recordVideo) {
       options = (options | FBSimulatorLaunchOptionsRecordVideo);
     }
     return [FBSimulatorLaunchConfiguration withOptions:options];
