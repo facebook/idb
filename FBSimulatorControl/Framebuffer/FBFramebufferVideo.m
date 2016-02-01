@@ -130,29 +130,16 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 - (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
 {
   dispatch_async(self.mediaQueue, ^{
-    // Start the Session on the First Frame.
+    // First frame means that the Video Session should be started.
+    // The Frame will be enqueued with the time of the session start time.
     if (count == 0) {
-      NSParameterAssert(CGSizeEqualToSize(self.size, CGSizeZero));
-      self.size = CGSizeMake(ceil(size.width * self.scale), ceil(size.height * self.scale));
-      if (![self startRecordingWithError:nil]) {
-        return;
-      }
-    }
-
-    // Don't append frames if the writer hasn't been constructed yet.
-    if (!self.writer) {
+      [self startRecordingWithImage:image size:size error:nil];
       return;
     }
 
     // Create an item and place it in the queue.
     CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_RoundTowardNegativeInfinity);
-    FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image];
-    FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
-    if (evictedItem) {
-      [self.logger.debug logFormat:@"Evicted frame at time %f, frame dropped", CMTimeGetSeconds(item.time)];
-    }
-
-    [self drainQueue];
+    [self pushImage:image time:time];
   });
 }
 
@@ -163,7 +150,9 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   });
 }
 
-#pragma mark Private
+#pragma mark - Private
+
+#pragma mark KVO
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
@@ -177,16 +166,16 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   });
 }
 
-- (NSDictionary *)pixelBufferAttributes
+#pragma mark Queueing
+
+- (void)pushImage:(CGImageRef)image time:(CMTime)time
 {
-  CGSize size = self.size;
-  return @{
-    (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferWidthKey : @(size.width),
-    (NSString *) kCVPixelBufferHeightKey : @(size.height),
-    (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
-  };
+  FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image];
+  FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
+  if (evictedItem) {
+    [self.logger.debug logFormat:@"Evicted frame at time %f, frame dropped", CMTimeGetSeconds(item.time)];
+  }
+  [self drainQueue];
 }
 
 - (void)drainQueue
@@ -200,6 +189,14 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     if (!pixelBuffer) {
       return;
     }
+
+    // It's important that a number of conditions are met to ensure that this call is reliable as possible.
+    // Setting -[AVAssetWriter movieFragmentInterval] usually exacerbates any problems in the input.
+    // Much of the information here comes from the AVFoundation guru @rfistman.
+    //
+    // 1) The time used in -[AVAssetWriter startSessionAtSourceTime:] should have the same value as the first call to -[AVAssetWriterInputPixelBufferAdaptor appendPixelBuffer:withPresentationTime:]
+    // 2) The ordering of frames should always mean that each frame is sequential in it's presentation time. kCMTimeRoundingMethod_Default can result in strange values from rounding so kCMTimeRoundingMethod_RoundTowardNegativeInfinity is used.
+    //
     if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
       [self.logger.error logFormat:@"Failed to append frame at time %f seconds of pixel buffer with error %@", CMTimeGetSeconds(item.time), self.writer.error];
     }
@@ -207,14 +204,13 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   }
 }
 
-- (BOOL)startRecordingWithError:(NSError **)error
-{
-  // Confirm that framebuffer size info is available
-  if (CGSizeEqualToSize(CGSizeZero, self.size)) {
-    return [[[FBSimulatorError describe:@"Video size not yet available, cannot record"] logger:self.logger] failBool:error];
-  }
+#pragma mark Writer Lifecycle
 
-  // Create a timebase that has now as the start.
+- (BOOL)startRecordingWithImage:(CGImageRef)image size:(CGSize)size error:(NSError **)error
+{
+  self.size = CGSizeMake(ceil(size.width * self.scale), ceil(size.height * self.scale));
+
+  // Create a Timebase to construct the time of the first frame.
   CMTimebaseRef timebase = NULL;
   CMTimebaseCreateWithMasterClock(
     kCFAllocatorDefault,
@@ -225,12 +221,18 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   CMTimebaseSetRate(timebase, 1.0);
   self.timebase = timebase;
 
+  // Construct time for the enqueing of the first frame as well as the session start.
+  CMTime time = CMTimeMakeWithSeconds(0, FBFramebufferTimescale);
+
   // Create the asset writer.
   FBWritableLogBuilder *logBuilder = [FBWritableLogBuilder builderWithWritableLog:self.writableLog];
   NSString *path = logBuilder.createPath;
-  if (![self createAssetWriterAtPath:path size:self.size error:error]) {
+  if (![self createAssetWriterAtPath:path size:self.size startTime:time error:error]) {
     return NO;
   }
+
+  // Enqueue the first frame
+  [self pushImage:image time:time];
 
   // Report the availability of the video
   [self.eventSink logAvailable:[[logBuilder updatePath:path] build]];
@@ -238,7 +240,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   return YES;
 }
 
-- (BOOL)createAssetWriterAtPath:(NSString *)videoPath size:(CGSize)size error:(NSError **)error
+- (BOOL)createAssetWriterAtPath:(NSString *)videoPath size:(CGSize)size startTime:(CMTime)startTime error:(NSError **)error
 {
   // Create an Asset Writer to a file
   NSError *innerError = nil;
@@ -250,8 +252,6 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
       causedBy:innerError]
       failBool:error];
   }
-  // Setting a Fragment interval will ensure there is a video if the process crashes.
-  // However, setting this appears to make the output fail if the fragment interval is too low.
   writer.movieFragmentInterval = CMTimeMakeWithSeconds(FBFramebufferFragmentIntervalSeconds, FBFramebufferTimescale);
 
   // Create an Input for the Writer
@@ -290,7 +290,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
       causedBy:writer.error]
       failBool:error];
   }
-  [writer startSessionAtSourceTime:kCMTimeZero];
+  [writer startSessionAtSourceTime:startTime];
 
   // Success means the state needs to be set.
   self.writer = writer;
@@ -319,6 +319,20 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
       [self.logger.info log:@"Finished Recording"];
     });
   }];
+}
+
+#pragma mark Pixel Buffers
+
+- (NSDictionary *)pixelBufferAttributes
+{
+  CGSize size = self.size;
+  return @{
+    (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
+    (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
+    (NSString *) kCVPixelBufferWidthKey : @(size.width),
+    (NSString *) kCVPixelBufferHeightKey : @(size.height),
+    (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
+  };
 }
 
 + (CVPixelBufferRef)createPixelBufferOfSize:(CGSize)size attributes:(NSDictionary *)attributes ofImage:(CGImageRef)image
