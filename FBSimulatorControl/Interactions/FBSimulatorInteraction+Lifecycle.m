@@ -9,12 +9,14 @@
 
 #import "FBSimulatorInteraction+Lifecycle.h"
 
+#import <mach/exc.h>
+#import <mach/mig.h>
+
 #import <AppKit/AppKit.h>
 
 #import <CoreSimulator/SimDevice.h>
+
 #import <SimulatorKit/SimDeviceFramebufferService.h>
-#import <mach/exc.h>
-#import <mach/mig.h>
 
 #import "FBCollectionDescriptions.h"
 #import "FBInteraction+Private.h"
