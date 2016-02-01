@@ -28,11 +28,4 @@
  */
 - (instancetype)tileSimulator;
 
-/**
- Records Video of the Simulator, until the Simulator is terminated.
-
- @return the reciever, for chaining.
- */
-- (instancetype)recordVideo;
-
 @end
