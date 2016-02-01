@@ -26,20 +26,22 @@ typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
 };
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
-static const CMTimeScale FBFramebufferTimescale = 1000000000;
+static const CMTimeScale FBFramebufferTimescale = 1000;
+static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 @interface FBFramebufferVideoItem : NSObject
 
 @property (nonatomic, assign, readonly) CMTime time;
+@property (nonatomic, assign, readonly) NSUInteger frameCount;
 @property (nonatomic, assign, readonly) CGImageRef image;
 
-- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image;
+- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image frameCount:(NSUInteger)frameCount;
 
 @end
 
 @implementation FBFramebufferVideoItem
 
-- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image
+- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image frameCount:(NSUInteger)frameCount
 {
   self = [super init];
   if (!self) {
@@ -47,6 +49,7 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
   }
 
   _time = time;
+  _frameCount = frameCount;
   _image = CGImageRetain(image);
 
   return self;
@@ -70,6 +73,7 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
 @property (nonatomic, strong, readonly) FBCapacityQueue *itemQueue;
 
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
+@property (nonatomic, assign, readwrite) CMTime lastAppendedTimestamp;
 @property (nonatomic, assign, readwrite) CGSize size;
 
 @property (nonatomic, strong, readwrite) AVAssetWriter *writer;
@@ -98,10 +102,13 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
   _scale = scale;
   _logger = logger;
   _eventSink = eventSink;
+
   _mediaQueue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
   _itemQueue = [FBCapacityQueue withCapacity:20];
 
+  _timebase = NULL;
   _size = CGSizeZero;
+  _lastAppendedTimestamp = kCMTimeNegativeInfinity;
 
   return self;
 }
@@ -126,32 +133,19 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didGetSize:(CGSize)size
+- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
 {
   dispatch_async(self.mediaQueue, ^{
-    NSParameterAssert(CGSizeEqualToSize(self.size, CGSizeZero));
-    self.size = CGSizeMake(ceil(size.width * self.scale), ceil(size.height * self.scale));
-    [self startRecordingWithError:nil];
-  });
-}
-
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size
-{
-  dispatch_async(self.mediaQueue, ^{
-    // Don't append frames if the writer hasn't been constructed yet.s
-    if (!self.writer) {
+    // First frame means that the Video Session should be started.
+    // The Frame will be enqueued with the time of the session start time.
+    if (count == 0) {
+      [self startRecordingWithImage:image size:size error:nil];
       return;
     }
 
     // Create an item and place it in the queue.
-    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_Default);
-    FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image];
-    FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
-    if (evictedItem) {
-      [self.logger.debug logFormat:@"Evicted frame at time %f, frame dropped", CMTimeGetSeconds(item.time)];
-    }
-
-    [self drainQueue];
+    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
+    [self pushImage:image time:time frameCount:count];
   });
 }
 
@@ -162,7 +156,9 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
   });
 }
 
-#pragma mark Private
+#pragma mark - Private
+
+#pragma mark KVO
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
@@ -176,16 +172,16 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
   });
 }
 
-- (NSDictionary *)pixelBufferAttributes
+#pragma mark Queueing
+
+- (void)pushImage:(CGImageRef)image time:(CMTime)time frameCount:(NSUInteger)frameCount
 {
-  CGSize size = self.size;
-  return @{
-    (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferWidthKey : @(size.width),
-    (NSString *) kCVPixelBufferHeightKey : @(size.height),
-    (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
-  };
+  FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image frameCount:frameCount];
+  FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
+  if (evictedItem) {
+    [self.logger.debug logFormat:@"Evicted frame at time %f, frame dropped", CMTimeGetSeconds(item.time)];
+  }
+  [self drainQueue];
 }
 
 - (void)drainQueue
@@ -195,25 +191,38 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
     if (!item) {
       return;
     }
-    CVPixelBufferRef pixelBuffer = [FBFramebufferVideo createPixelBufferOfSize:self.size attributes:self.pixelBufferAttributes ofImage:item.image];
+    CVPixelBufferRef pixelBuffer = [FBFramebufferVideo createPixelBufferOfSize:self.size fromPool:self.adaptor.pixelBufferPool ofImage:item.image];
     if (!pixelBuffer) {
-      return;
+      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame number %lu", item.frameCount];
     }
-    if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
+
+    // It's important that a number of conditions are met to ensure that this call is reliable as possible.
+    // Setting -[AVAssetWriter movieFragmentInterval] usually exacerbates any problems in the input.
+    // Much of the information here comes from the AVFoundation guru @rfistman.
+    //
+    // 1) The time used in -[AVAssetWriter startSessionAtSourceTime:] should have the same value as the first call to -[AVAssetWriterInputPixelBufferAdaptor appendPixelBuffer:withPresentationTime:]
+    // 2) The ordering of frames should always mean that each frame is sequential in it's presentation time. kCMTimeRoundingMethod_Default can result in strange values from rounding so kCMTimeRoundingMethod_RoundTowardNegativeInfinity is used.
+    //
+    // "The operation couldn't be completed. (OSStatus error -12633.)" is 'InvalidTimestamp': http://stackoverflow.com/a/23252239
+    // "An unknown error occurred (-16341)" is 'kMediaSampleTimingGeneratorError_InvalidTimeStamp': @rfistman
+
+    if (CMTimeCompare(item.time, self.lastAppendedTimestamp) != 1) {
+      [self.logger.info logFormat:@"Dropping Frame %lu as it has a timestamp of %f which is not greater than a previous frame of %f", item.frameCount, CMTimeGetSeconds(item.time), CMTimeGetSeconds(self.lastAppendedTimestamp)];
+    } else if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
       [self.logger.error logFormat:@"Failed to append frame at time %f seconds of pixel buffer with error %@", CMTimeGetSeconds(item.time), self.writer.error];
     }
+    self.lastAppendedTimestamp = item.time;
     CVPixelBufferRelease(pixelBuffer);
   }
 }
 
-- (BOOL)startRecordingWithError:(NSError **)error
-{
-  // Confirm that framebuffer size info is available
-  if (CGSizeEqualToSize(CGSizeZero, self.size)) {
-    return [[[FBSimulatorError describe:@"Video size not yet available, cannot record"] logger:self.logger] failBool:error];
-  }
+#pragma mark Writer Lifecycle
 
-  // Create a timebase that has now as the start.
+- (BOOL)startRecordingWithImage:(CGImageRef)image size:(CGSize)size error:(NSError **)error
+{
+  self.size = CGSizeMake(ceil(size.width * self.scale), ceil(size.height * self.scale));
+
+  // Create a Timebase to construct the time of the first frame.
   CMTimebaseRef timebase = NULL;
   CMTimebaseCreateWithMasterClock(
     kCFAllocatorDefault,
@@ -224,12 +233,18 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
   CMTimebaseSetRate(timebase, 1.0);
   self.timebase = timebase;
 
+  // Construct time for the enqueing of the first frame as well as the session start.
+  CMTime time = CMTimeMakeWithSeconds(0, FBFramebufferTimescale);
+
   // Create the asset writer.
   FBWritableLogBuilder *logBuilder = [FBWritableLogBuilder builderWithWritableLog:self.writableLog];
   NSString *path = logBuilder.createPath;
-  if (![self createAssetWriterAtPath:path size:self.size error:error]) {
+  if (![self createAssetWriterAtPath:path size:self.size startTime:time error:error]) {
     return NO;
   }
+
+  // Enqueue the first frame
+  [self pushImage:image time:time frameCount:0];
 
   // Report the availability of the video
   [self.eventSink logAvailable:[[logBuilder updatePath:path] build]];
@@ -237,18 +252,21 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
   return YES;
 }
 
-- (BOOL)createAssetWriterAtPath:(NSString *)videoPath size:(CGSize)size error:(NSError **)error
+- (BOOL)createAssetWriterAtPath:(NSString *)videoPath size:(CGSize)size startTime:(CMTime)startTime error:(NSError **)error
 {
-  // Create an Asset Writer to a file
+  // Create an Asset Writer to a file.
+  // For some reason AVFileTypeQuickTimeMovie is much more reliable AVFileTypeMPEG4.
+  // Others have found this out too: http://stackoverflow.com/a/22872979
   NSError *innerError = nil;
   NSURL *url = [NSURL fileURLWithPath:videoPath];
-  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeMPEG4 error:&innerError];
+  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeQuickTimeMovie error:&innerError];
   if (!writer) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create an asset writer at %@", videoPath]
       causedBy:innerError]
       failBool:error];
   }
+  writer.movieFragmentInterval = CMTimeMakeWithSeconds(FBFramebufferFragmentIntervalSeconds, FBFramebufferTimescale);
 
   // Create an Input for the Writer
   NSDictionary *outputSettings = @{
@@ -263,16 +281,12 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
       describeFormat:@"Not permitted to add writer input at %@", input]
       failBool:error];
   }
-  // Setting a Fragment interval will ensure there is a video if the process crashes.
-  // However, setting this appears to make the output fail after a period of time.
-  // This can be set with:
-  // writer.movieFragmentInterval = CMTimeMakeWithSeconds(5, FBFramebufferTimescale);
   [writer addInput:input];
 
   // Create an adaptor for writing to the input via concrete pixel buffers
   AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor
    assetWriterInputPixelBufferAdaptorWithAssetWriterInput:input
-   sourcePixelBufferAttributes:nil];
+   sourcePixelBufferAttributes:self.pixelBufferAttributes];
 
   // If the file exists at the path it must be removed first.
   NSFileManager *fileManager = NSFileManager.defaultManager;
@@ -290,7 +304,7 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
       causedBy:writer.error]
       failBool:error];
   }
-  [writer startSessionAtSourceTime:kCMTimeZero];
+  [writer startSessionAtSourceTime:startTime];
 
   // Success means the state needs to be set.
   self.writer = writer;
@@ -319,6 +333,20 @@ static const CMTimeScale FBFramebufferTimescale = 1000000000;
       [self.logger.info log:@"Finished Recording"];
     });
   }];
+}
+
+#pragma mark Pixel Buffers
+
+- (NSDictionary *)pixelBufferAttributes
+{
+  CGSize size = self.size;
+  return @{
+    (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
+    (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
+    (NSString *) kCVPixelBufferWidthKey : @(size.width),
+    (NSString *) kCVPixelBufferHeightKey : @(size.height),
+    (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
+  };
 }
 
 + (CVPixelBufferRef)createPixelBufferOfSize:(CGSize)size attributes:(NSDictionary *)attributes ofImage:(CGImageRef)image

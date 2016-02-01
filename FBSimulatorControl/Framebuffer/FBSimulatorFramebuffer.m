@@ -16,7 +16,6 @@
 #import <mach/mig.h>
 
 #import "FBFramebufferCompositeDelegate.h"
-#import "FBFramebufferCounter.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
 #import "FBFramebufferImage.h"
@@ -45,14 +44,15 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, assign, readonly) mach_port_t hidPort;
 
-@property (nonatomic, strong, readonly) FBFramebufferCounter *counter;
+@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @property (nonatomic, strong, readonly) id<FBFramebufferDelegate> delegate;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
 @property (nonatomic, assign, readwrite) FBSimulatorFramebufferState state;
-@property (nonatomic, assign, readwrite) CGSize size;
+@property (atomic, assign, readwrite) NSUInteger frameCount;
+@property (atomic, assign, readwrite) CGSize size;
 
 @end
 
@@ -72,16 +72,13 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
     NSDecimalNumber *scaleNumber = [NSDecimalNumber decimalNumberWithString:launchConfiguration.scaleString];
     [sinks addObject:[FBFramebufferVideo withWritableLog:simulator.logs.video scale:scaleNumber.floatValue logger:simulator.logger eventSink:simulator.eventSink]];
   }
-
-  FBFramebufferCounter *counter = [FBFramebufferCounter withLogFrequency:FBFramebufferLogFrameFrequency logger:simulator.logger];
-  [sinks addObject:counter];
   [sinks addObject:[FBFramebufferImage withWritableLog:simulator.logs.screenshot eventSink:simulator.eventSink]];
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
-  return [[self alloc] initWithFramebufferService:framebufferService hidPort:hidPort counter:counter eventSink:simulator.eventSink delegate:delegate];
+  return [[self alloc] initWithFramebufferService:framebufferService hidPort:hidPort eventSink:simulator.eventSink logger:simulator.logger delegate:delegate];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort counter:(FBFramebufferCounter *)counter eventSink:(id<FBSimulatorEventSink>)eventSink delegate:(id<FBFramebufferDelegate>)delegate
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort eventSink:(id<FBSimulatorEventSink>)eventSink logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
 {
   NSParameterAssert(framebufferService);
   NSParameterAssert(hidPort > 0);
@@ -93,12 +90,13 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
   _framebufferService = framebufferService;
   _hidPort = hidPort;
-  _counter = counter;
   _eventSink = eventSink;
+  _logger = logger;
   _delegate = delegate;
 
   _queue = dispatch_queue_create("com.facebook.FBSimulatorControl.simulatorframebuffer", DISPATCH_QUEUE_SERIAL);
   _state = FBSimulatorFramebufferStateNotStarted;
+  _frameCount = 0;
   _size = CGSizeZero;
 
   return self;
@@ -109,10 +107,10 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"%@ | Size %@ | Frame Counter %@",
+    @"%@ | Size %@ | Frame Count %ld",
     [FBSimulatorFramebuffer stringFromFramebufferState:self.state],
     NSStringFromSize(self.size),
-    self.counter
+    self.frameCount
   ];
 }
 
@@ -148,7 +146,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
 - (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
 {
-  [self.delegate framebufferDidBecomeInvalid:self error:error];
+  [self framebufferDidBecomeInvalid:self error:error];
 }
 
 - (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
@@ -157,29 +155,32 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
 - (void)framebufferService:(SimDeviceFramebufferService *)service didUpdateRegion:(CGRect)region ofBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
 {
-  [self framebuffer:self didGetSize:CGSizeMake(backingStore.pixelsWide, backingStore.pixelsHigh)];
-  [self.delegate framebufferDidUpdate:self withImage:backingStore.image size:NSMakeSize(backingStore.pixelsWide, backingStore.pixelsHigh)];
+  [self framebufferDidUpdate:self withImage:backingStore.image count:self.frameCount size:NSMakeSize(backingStore.pixelsWide, backingStore.pixelsHigh)];
+  self.frameCount++;
 }
 
 #pragma mark Internal Delegate Forwarding
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didGetSize:(CGSize)size
+- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)frameCount size:(CGSize)size
 {
-  if (self.state != FBSimulatorFramebufferStateStarting) {
-    return;
+  if (self.state == FBSimulatorFramebufferStateStarting) {
+    self.state = FBSimulatorFramebufferStateRunning;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [self.logger.info log:@"First Frame"];
+    });
   }
-
-  self.state = FBSimulatorFramebufferStateRunning;
-  [self.delegate framebuffer:framebuffer didGetSize:size];
-}
-
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size
-{
   if (self.state != FBSimulatorFramebufferStateRunning) {
     return;
   }
 
-  [self.delegate framebufferDidUpdate:framebuffer withImage:image size:size];
+  [self.delegate framebufferDidUpdate:framebuffer withImage:image count:frameCount size:size];
+
+  if (frameCount % FBFramebufferLogFrameFrequency != 0) {
+    return;
+  }
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self.logger.info logFormat:@"Frame Count %lu", frameCount];
+  });
 }
 
 - (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error

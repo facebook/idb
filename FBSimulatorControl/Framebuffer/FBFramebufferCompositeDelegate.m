@@ -36,17 +36,10 @@
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didGetSize:(CGSize)size
+- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
 {
   for (id<FBFramebufferDelegate> delegate in self.delegates) {
-    [delegate framebuffer:framebuffer didGetSize:size];
-  }
-}
-
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size
-{
-  for (id<FBFramebufferDelegate> delegate in self.delegates) {
-    [delegate framebufferDidUpdate:framebuffer withImage:image size:size];
+    [delegate framebufferDidUpdate:framebuffer withImage:image count:count size:size];
   }
 }
 
