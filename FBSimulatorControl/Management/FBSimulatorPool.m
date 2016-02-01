@@ -224,7 +224,7 @@
     return YES;
   }
 
-  BOOL eraseOnFree = (self.configuration.options & FBSimulatorAllocationOptionsEraseOnFree) == FBSimulatorAllocationOptionsEraseOnFree;
+  BOOL eraseOnFree = (options & FBSimulatorAllocationOptionsEraseOnFree) == FBSimulatorAllocationOptionsEraseOnFree;
   if (eraseOnFree) {
     if (![simulator eraseWithError:&innerError]) {
       return [[[[[FBSimulatorError
