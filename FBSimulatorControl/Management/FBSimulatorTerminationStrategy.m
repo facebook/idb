@@ -52,13 +52,8 @@
 
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
 {
-  BOOL useKill = (configuration.options & FBSimulatorManagementOptionsUseProcessKilling) == FBSimulatorManagementOptionsUseProcessKilling;
-  FBProcessTerminationStrategy *processTerminationStrategy = useKill
-    ? [FBProcessTerminationStrategy withProcessKilling:processQuery signo:SIGKILL logger:logger]
-    : [FBProcessTerminationStrategy withRunningApplicationTermination:processQuery signo:SIGKILL logger:logger];
-
+  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessQuery:processQuery logger:logger];
   return [[self alloc] initWithConfiguration:configuration processQuery:processQuery processTerminationStrategy:processTerminationStrategy logger:logger];
-
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBSimulatorLogger>)logger

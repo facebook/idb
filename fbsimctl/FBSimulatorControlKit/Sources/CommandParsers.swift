@@ -214,7 +214,6 @@ extension FBSimulatorManagementOptions : Parsable {
         self.killSpuriousSimulatorsOnFirstStartParser(),
         self.ignoreSpuriousKillFailParser(),
         self.killSpuriousCoreSimulatorServicesParser(),
-        self.useProcessKillingParser(),
         self.useSimDeviceTimeoutResilianceParser()
       ])
   }
@@ -237,10 +236,6 @@ extension FBSimulatorManagementOptions : Parsable {
 
   static func killSpuriousCoreSimulatorServicesParser() -> Parser<FBSimulatorManagementOptions> {
     return Parser.ofString("--kill-spurious-services", .KillSpuriousCoreSimulatorServices)
-  }
-
-  static func useProcessKillingParser() -> Parser<FBSimulatorManagementOptions> {
-    return Parser.ofString("--process-killing", .UseProcessKilling)
   }
 
   static func useSimDeviceTimeoutResilianceParser() -> Parser<FBSimulatorManagementOptions> {

@@ -14,30 +14,46 @@
 @class FBProcessQuery;
 
 /**
+ An Option Set for Process Termination.
+ */
+typedef NS_ENUM(NSUInteger, FBProcessTerminationStrategyOptions) {
+  FBProcessTerminationStrategyOptionsUseNSRunningApplication = 1 << 1, /** Use -[NSRunningApplication terminate] where relevant **/
+  FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal = 1 << 2, /** Checks for the process to exist before signalling **/
+  FBProcessTerminationStrategyOptionsCheckDeathAfterSignal = 1 << 3, /** Waits for the process to die before returning **/
+  FBProcessTerminationStrategyOptionsBackoffToSIGKILL = 1 << 4, /** Whether to backoff to SIGKILL if a less severe signal fails **/
+};
+
+/**
+ A Configuration for the Strategy.
+ */
+typedef struct {
+  int signo;
+  FBProcessTerminationStrategyOptions options;
+} FBProcessTerminationStrategyConfiguration;
+
+/**
  A Strategy that defines how to terminate Processes.
  */
 @interface FBProcessTerminationStrategy : NSObject
 
 /**
- Uses kill(2) to terminate Applications.
+ Creates and returns a strategy for the given configuration.
 
+ @param configuration the configuration to use in the strategy.
  @param processQuery the Process Query object to use.
- @param signo the signal number to use when killing. See signal(3) for more info
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withProcessKilling:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
 
 /**
- Uses methods on NSRunningApplication to terminate Applications.
- Uses kill(2) otherwise
+ Creates and returns a strategy with the default configuration.
 
  @param processQuery the Process Query object to use.
- @param signo the signal number to use when killing. See signal(3) for more info
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withRunningApplicationTermination:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;;
++ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
 
 /**
  Terminates a Process of the provided Process Info.
