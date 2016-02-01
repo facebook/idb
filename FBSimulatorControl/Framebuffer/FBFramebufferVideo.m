@@ -145,7 +145,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     }
 
     // Create an item and place it in the queue.
-    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_Default);
+    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_RoundTowardNegativeInfinity);
     FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image];
     FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
     if (evictedItem) {
