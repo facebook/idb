@@ -127,19 +127,19 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didGetSize:(CGSize)size
+- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
 {
   dispatch_async(self.mediaQueue, ^{
-    NSParameterAssert(CGSizeEqualToSize(self.size, CGSizeZero));
-    self.size = CGSizeMake(ceil(size.width * self.scale), ceil(size.height * self.scale));
-    [self startRecordingWithError:nil];
-  });
-}
+    // Start the Session on the First Frame.
+    if (count == 0) {
+      NSParameterAssert(CGSizeEqualToSize(self.size, CGSizeZero));
+      self.size = CGSizeMake(ceil(size.width * self.scale), ceil(size.height * self.scale));
+      if (![self startRecordingWithError:nil]) {
+        return;
+      }
+    }
 
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size
-{
-  dispatch_async(self.mediaQueue, ^{
-    // Don't append frames if the writer hasn't been constructed yet.s
+    // Don't append frames if the writer hasn't been constructed yet.
     if (!self.writer) {
       return;
     }

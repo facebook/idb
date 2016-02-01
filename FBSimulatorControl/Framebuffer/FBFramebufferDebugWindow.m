@@ -50,16 +50,12 @@
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didGetSize:(CGSize)size
+- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
 {
   dispatch_async(dispatch_get_main_queue(), ^{
-    self.window = [self createWindowWithSize:size];
-  });
-}
-
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size
-{
-  dispatch_async(dispatch_get_main_queue(), ^{
+    if (count == 0) {
+      self.window = [self createWindowWithSize:size];
+    }
     [self updateWindowWithImage:image];
   });
 }

@@ -12,27 +12,19 @@
 @class FBSimulatorFramebuffer;
 
 /**
- A Delegate for Framebuffer related activity.
+ A Delegate for updates from a Simulator's Framebuffer.
  */
 @protocol FBFramebufferDelegate <NSObject>
 
 /**
- Called when the Size of the Framebuffer becomes available.
- Will be called before frames are sent.
-
- @param framebuffer the framebuffer that was updated.
- @param size the size of the framebuffer.
- */
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didGetSize:(CGSize)size;
-
-/**
- Called when a new image frame is available.
+ Called when an Image Frame is available.
 
  @param framebuffer the framebuffer that was updated.
  @param size the size of the image.
+ @param count the frame count.
  @param image the updated image.
  */
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size;
+- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size;
 
 /**
  Called when the framebuffer is no longer valid, typically when the Simulator shuts down.

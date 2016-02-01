@@ -73,12 +73,7 @@
 
 #pragma mark FBFramebufferCounterDelegate Implementation
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didGetSize:(CGSize)size
-{
-
-}
-
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image size:(CGSize)size
+- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
 {
   CGImageRef oldImage = self.image;
   self.image = CGImageRetain(image);
