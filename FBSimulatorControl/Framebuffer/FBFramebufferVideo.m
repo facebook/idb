@@ -32,15 +32,16 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 @interface FBFramebufferVideoItem : NSObject
 
 @property (nonatomic, assign, readonly) CMTime time;
+@property (nonatomic, assign, readonly) NSUInteger frameCount;
 @property (nonatomic, assign, readonly) CGImageRef image;
 
-- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image;
+- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image frameCount:(NSUInteger)frameCount;
 
 @end
 
 @implementation FBFramebufferVideoItem
 
-- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image
+- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image frameCount:(NSUInteger)frameCount
 {
   self = [super init];
   if (!self) {
@@ -48,6 +49,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   }
 
   _time = time;
+  _frameCount = frameCount;
   _image = CGImageRetain(image);
 
   return self;
@@ -71,6 +73,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 @property (nonatomic, strong, readonly) FBCapacityQueue *itemQueue;
 
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
+@property (nonatomic, assign, readwrite) CMTime lastAppendedTimestamp;
 @property (nonatomic, assign, readwrite) CGSize size;
 
 @property (nonatomic, strong, readwrite) AVAssetWriter *writer;
@@ -99,10 +102,13 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   _scale = scale;
   _logger = logger;
   _eventSink = eventSink;
+
   _mediaQueue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
   _itemQueue = [FBCapacityQueue withCapacity:20];
 
+  _timebase = NULL;
   _size = CGSizeZero;
+  _lastAppendedTimestamp = kCMTimeNegativeInfinity;
 
   return self;
 }
@@ -138,8 +144,8 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     }
 
     // Create an item and place it in the queue.
-    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_RoundTowardNegativeInfinity);
-    [self pushImage:image time:time];
+    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
+    [self pushImage:image time:time frameCount:count];
   });
 }
 
@@ -168,9 +174,9 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 #pragma mark Queueing
 
-- (void)pushImage:(CGImageRef)image time:(CMTime)time
+- (void)pushImage:(CGImageRef)image time:(CMTime)time frameCount:(NSUInteger)frameCount
 {
-  FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image];
+  FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image frameCount:frameCount];
   FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
   if (evictedItem) {
     [self.logger.debug logFormat:@"Evicted frame at time %f, frame dropped", CMTimeGetSeconds(item.time)];
@@ -197,9 +203,15 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     // 1) The time used in -[AVAssetWriter startSessionAtSourceTime:] should have the same value as the first call to -[AVAssetWriterInputPixelBufferAdaptor appendPixelBuffer:withPresentationTime:]
     // 2) The ordering of frames should always mean that each frame is sequential in it's presentation time. kCMTimeRoundingMethod_Default can result in strange values from rounding so kCMTimeRoundingMethod_RoundTowardNegativeInfinity is used.
     //
-    if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
+    // "The operation couldn't be completed. (OSStatus error -12633.)" is 'InvalidTimestamp': http://stackoverflow.com/a/23252239
+    // "An unknown error occurred (-16341)" is 'kMediaSampleTimingGeneratorError_InvalidTimeStamp': @rfistman
+
+    if (CMTimeCompare(item.time, self.lastAppendedTimestamp) != 1) {
+      [self.logger logFormat:@"Dropping Frame %lu as it has a timestamp of %f which is not greater than a previous frame of %f", item.frameCount, CMTimeGetSeconds(item.time), CMTimeGetSeconds(self.lastAppendedTimestamp)];
+    } else if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
       [self.logger.error logFormat:@"Failed to append frame at time %f seconds of pixel buffer with error %@", CMTimeGetSeconds(item.time), self.writer.error];
     }
+    self.lastAppendedTimestamp = item.time;
     CVPixelBufferRelease(pixelBuffer);
   }
 }
@@ -232,7 +244,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   }
 
   // Enqueue the first frame
-  [self pushImage:image time:time];
+  [self pushImage:image time:time frameCount:0];
 
   // Report the availability of the video
   [self.eventSink logAvailable:[[logBuilder updatePath:path] build]];
