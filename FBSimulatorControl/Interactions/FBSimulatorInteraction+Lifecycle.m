@@ -9,6 +9,8 @@
 
 #import "FBSimulatorInteraction+Lifecycle.h"
 
+#import <AppKit/AppKit.h>
+
 #import <CoreSimulator/SimDevice.h>
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 #import <mach/exc.h>
