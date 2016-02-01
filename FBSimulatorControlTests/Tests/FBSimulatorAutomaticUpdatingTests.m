@@ -68,6 +68,9 @@
   }
 
   FBSimulator *simulator = [self obtainBootedSimulator];
+  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
+  [self assertInteractionSuccessful:[simulator.interact launchApplication:appLaunch]];
+
   FBProcessInfo *process = [simulator.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
   if (!process) {
