@@ -191,9 +191,9 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     if (!item) {
       return;
     }
-    CVPixelBufferRef pixelBuffer = [FBFramebufferVideo createPixelBufferOfSize:self.size attributes:self.pixelBufferAttributes ofImage:item.image];
+    CVPixelBufferRef pixelBuffer = [FBFramebufferVideo createPixelBufferOfSize:self.size fromPool:self.adaptor.pixelBufferPool ofImage:item.image];
     if (!pixelBuffer) {
-      return;
+      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame number %lu", item.frameCount];
     }
 
     // It's important that a number of conditions are met to ensure that this call is reliable as possible.
@@ -207,7 +207,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     // "An unknown error occurred (-16341)" is 'kMediaSampleTimingGeneratorError_InvalidTimeStamp': @rfistman
 
     if (CMTimeCompare(item.time, self.lastAppendedTimestamp) != 1) {
-      [self.logger logFormat:@"Dropping Frame %lu as it has a timestamp of %f which is not greater than a previous frame of %f", item.frameCount, CMTimeGetSeconds(item.time), CMTimeGetSeconds(self.lastAppendedTimestamp)];
+      [self.logger.info logFormat:@"Dropping Frame %lu as it has a timestamp of %f which is not greater than a previous frame of %f", item.frameCount, CMTimeGetSeconds(item.time), CMTimeGetSeconds(self.lastAppendedTimestamp)];
     } else if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
       [self.logger.error logFormat:@"Failed to append frame at time %f seconds of pixel buffer with error %@", CMTimeGetSeconds(item.time), self.writer.error];
     }
@@ -286,7 +286,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   // Create an adaptor for writing to the input via concrete pixel buffers
   AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor
    assetWriterInputPixelBufferAdaptorWithAssetWriterInput:input
-   sourcePixelBufferAttributes:nil];
+   sourcePixelBufferAttributes:self.pixelBufferAttributes];
 
   // If the file exists at the path it must be removed first.
   NSFileManager *fileManager = NSFileManager.defaultManager;
