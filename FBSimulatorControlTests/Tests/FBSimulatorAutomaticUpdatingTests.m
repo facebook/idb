@@ -68,9 +68,6 @@
   }
 
   FBSimulator *simulator = [self obtainBootedSimulator];
-
-  [self assertInteractionSuccessful:[simulator.interact.bootSimulator launchApplication:self.safariAppLaunch]];
-
   FBProcessInfo *process = [simulator.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
   if (!process) {
@@ -92,10 +89,9 @@
     return;
   }
 
-  FBSimulator *simulator = [self obtainSimulator];
+  FBSimulator *simulator = [self obtainBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
-
-  [self assertInteractionSuccessful:[simulator.interact.bootSimulator launchApplication:appLaunch]];
+  [self assertInteractionSuccessful:[simulator.interact launchApplication:appLaunch]];
 
   FBProcessInfo *process = [simulator.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
