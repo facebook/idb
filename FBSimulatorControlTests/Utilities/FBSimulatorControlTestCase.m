@@ -83,7 +83,7 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 - (FBSimulator *)obtainBootedSimulator
 {
   FBSimulator *simulator = [self obtainSimulator];
-  [self assertInteractionSuccessful:simulator.interact.bootSimulator];
+  [self assertInteractionSuccessful:[simulator.interact bootSimulator:self.simulatorLaunchConfiguration]];
   return simulator;
 }
 
