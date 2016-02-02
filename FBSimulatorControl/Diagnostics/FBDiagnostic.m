@@ -19,9 +19,9 @@
 @property (nonatomic, copy, readwrite) NSString *storageDirectory;
 @property (nonatomic, copy, readwrite) NSString *destination;
 
-@property (nonatomic, copy, readwrite) NSData *logData;
-@property (nonatomic, copy, readwrite) NSString *logString;
-@property (nonatomic, copy, readwrite) NSString *logPath;
+@property (nonatomic, copy, readwrite) NSData *backingData;
+@property (nonatomic, copy, readwrite) NSString *backingString;
+@property (nonatomic, copy, readwrite) NSString *backingFilePath;
 
 @end
 
@@ -195,7 +195,7 @@
     return nil;
   }
 
-  self.logData = [coder decodeObjectForKey:NSStringFromSelector(@selector(logData))];
+  self.backingData = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingData))];
 
   return self;
 }
@@ -203,7 +203,7 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [super encodeWithCoder:coder];
-  [coder encodeObject:self.logData forKey:NSStringFromSelector(@selector(logData))];
+  [coder encodeObject:self.backingData forKey:NSStringFromSelector(@selector(backingData))];
 }
 
 #pragma mark NSCopying
@@ -211,7 +211,7 @@
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   FBDiagnostic_Data *log = [super copyWithZone:zone];
-  log.logData = self.logData;
+  log.backingData = self.backingData;
   return log;
 }
 
@@ -219,36 +219,36 @@
 
 - (NSData *)asData
 {
-  return self.logData;
+  return self.backingData;
 }
 
 - (NSString *)asString
 {
-  if (!self.logString) {
-    self.logString = [[NSString alloc] initWithData:self.logData encoding:NSUTF8StringEncoding];
+  if (!self.backingString) {
+    self.backingString = [[NSString alloc] initWithData:self.backingData encoding:NSUTF8StringEncoding];
   }
-  return self.logString;
+  return self.backingString;
 }
 
 - (NSString *)asPath
 {
-  if (!self.logPath) {
+  if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if ([self.logData writeToFile:path atomically:YES]) {
-      self.logPath = path;
+    if ([self.backingData writeToFile:path atomically:YES]) {
+      self.backingFilePath = path;
     }
   }
-  return self.logPath;
+  return self.backingFilePath;
 }
 
 - (BOOL)hasLogContent
 {
-  return self.logData.length >= 1;
+  return self.backingData.length >= 1;
 }
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  return [self.logData writeToFile:path options:0 error:error];
+  return [self.backingData writeToFile:path options:0 error:error];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -256,7 +256,7 @@
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
-  NSString *base64String = [self.logData base64EncodedStringWithOptions:0];
+  NSString *base64String = [self.backingData base64EncodedStringWithOptions:0];
   if (base64String) {
     dictionary[@"data"] = base64String;
   }
@@ -294,7 +294,7 @@
     return nil;
   }
 
-  self.logString = [coder decodeObjectForKey:NSStringFromSelector(@selector(logString))];
+  self.backingString = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingString))];
 
   return self;
 }
@@ -302,7 +302,7 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [super encodeWithCoder:coder];
-  [coder encodeObject:self.logString forKey:NSStringFromSelector(@selector(logString))];
+  [coder encodeObject:self.backingString forKey:NSStringFromSelector(@selector(backingString))];
 }
 
 #pragma mark NSCopying
@@ -310,7 +310,7 @@
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   FBDiagnostic_String *log = [super copyWithZone:zone];
-  log.logString = self.logString;
+  log.backingString = self.backingString;
   return log;
 }
 
@@ -318,36 +318,36 @@
 
 - (NSData *)asData
 {
-  if (!self.logData) {
-    self.logData = [self.logString dataUsingEncoding:NSUTF8StringEncoding];
+  if (!self.backingData) {
+    self.backingData = [self.backingString dataUsingEncoding:NSUTF8StringEncoding];
   }
-  return self.logData;
+  return self.backingData;
 }
 
 - (NSString *)asString
 {
-  return self.logString;
+  return self.backingString;
 }
 
 - (NSString *)asPath
 {
-  if (!self.logPath) {
+  if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if ([self.logString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil]) {
-      self.logPath = path;
+    if ([self.backingString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil]) {
+      self.backingFilePath = path;
     }
   }
-  return self.logPath;
+  return self.backingFilePath;
 }
 
 - (BOOL)hasLogContent
 {
-  return self.logString.length >= 1;
+  return self.backingString.length >= 1;
 }
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  return [self.logString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
+  return [self.backingString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -355,7 +355,7 @@
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
-  dictionary[@"contents"] = self.logString;
+  dictionary[@"contents"] = self.backingString;
   return dictionary;
 }
 
@@ -391,7 +391,7 @@
     return nil;
   }
 
-  self.logPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(logPath))];
+  self.backingFilePath = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingFilePath))];
 
   return self;
 }
@@ -399,7 +399,7 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [super encodeWithCoder:coder];
-  [coder encodeObject:self.logPath forKey:NSStringFromSelector(@selector(logPath))];
+  [coder encodeObject:self.backingFilePath forKey:NSStringFromSelector(@selector(backingFilePath))];
 }
 
 #pragma mark NSCopying
@@ -407,7 +407,7 @@
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   FBDiagnostic_Path *log = [super copyWithZone:zone];
-  log.logPath = self.logPath;
+  log.backingFilePath = self.backingFilePath;
   return log;
 }
 
@@ -415,35 +415,35 @@
 
 - (NSData *)asData
 {
-  if (!self.logData) {
-    self.logData = [[NSData alloc] initWithContentsOfFile:self.logPath];
+  if (!self.backingData) {
+    self.backingData = [[NSData alloc] initWithContentsOfFile:self.backingFilePath];
   }
-  return self.logData;
+  return self.backingData;
 }
 
 - (NSString *)asString
 {
-  if (!self.logString) {
-    self.logString = [[NSString alloc] initWithContentsOfFile:self.logPath usedEncoding:nil error:nil];
+  if (!self.backingString) {
+    self.backingString = [[NSString alloc] initWithContentsOfFile:self.backingFilePath usedEncoding:nil error:nil];
   }
-  return self.logString;
+  return self.backingString;
 }
 
 - (NSString *)asPath
 {
-  return self.logPath;
+  return self.backingFilePath;
 }
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
-  dictionary[@"location"] = self.logPath;
+  dictionary[@"location"] = self.backingFilePath;
   return dictionary;
 }
 
 - (BOOL)hasLogContent
 {
-  NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.logPath error:nil];
+  NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.backingFilePath error:nil];
   return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
 }
 
@@ -467,7 +467,7 @@
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  return [NSFileManager.defaultManager copyItemAtPath:self.logPath toPath:path error:error];
+  return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
 }
 
 @end
@@ -555,34 +555,34 @@
 
 - (instancetype)updateData:(NSData *)data
 {
-  [self flushLogs];
+  [self flushBackingStore];
   if (!data) {
     return self;
   }
   object_setClass(self.diagnostic, FBDiagnostic_Data.class);
-  self.diagnostic.logData = data;
+  self.diagnostic.backingData = data;
   return self;
 }
 
 - (instancetype)updateString:(NSString *)string
 {
-  [self flushLogs];
+  [self flushBackingStore];
   if (!string) {
     return self;
   }
   object_setClass(self.diagnostic, FBDiagnostic_String.class);
-  self.diagnostic.logString = string;
+  self.diagnostic.backingString = string;
   return self;
 }
 
 - (instancetype)updatePath:(NSString *)path
 {
-  [self flushLogs];
+  [self flushBackingStore];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return self;
   }
   object_setClass(self.diagnostic, FBDiagnostic_Path.class);
-  self.diagnostic.logPath = path;
+  self.diagnostic.backingFilePath = path;
   return self;
 }
 
@@ -596,7 +596,7 @@
   NSString *path = [self createPath];
   if (!block(path)) {
     [NSFileManager.defaultManager removeItemAtPath:path error:nil];
-    [self flushLogs];
+    [self flushBackingStore];
   }
   return [self updatePath:path];
 }
@@ -608,11 +608,11 @@
 
 #pragma mark Private
 
-- (void)flushLogs
+- (void)flushBackingStore
 {
-  self.diagnostic.logData = nil;
-  self.diagnostic.logString = nil;
-  self.diagnostic.logPath = nil;
+  self.diagnostic.backingData = nil;
+  self.diagnostic.backingString = nil;
+  self.diagnostic.backingFilePath = nil;
   object_setClass(self.diagnostic, FBDiagnostic_Empty.class);
 }
 
