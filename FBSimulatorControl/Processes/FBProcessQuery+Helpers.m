@@ -12,6 +12,7 @@
 #import <AppKit/AppKit.h>
 
 #import "FBProcessInfo.h"
+#import "FBSimulatorError.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBProcessQuery (Helpers)
@@ -21,6 +22,22 @@
   return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^ FBProcessInfo * {
     return [self processInfoFor:processIdentifier];
   }];
+}
+
+- (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error
+{
+  FBProcessInfo *actual = [self processInfoFor:process.processIdentifier];
+  if (!actual) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not find the processs for %@ with pid %d", process.shortDescription, process.processIdentifier]
+      failBool:error];
+  }
+  if (![process.launchPath isEqualToString:process.launchPath]) {
+    return [[FBSimulatorError
+      describeFormat:@"Processes '%@' and '%@' do not have the same launch path '%@' and '%@' ", process.shortDescription, actual.shortDescription, process.launchPath, actual.launchPath]
+      failBool:error];
+  }
+  return YES;
 }
 
 - (BOOL)waitForProcessToDie:(FBProcessInfo *)process timeout:(NSTimeInterval)timeout

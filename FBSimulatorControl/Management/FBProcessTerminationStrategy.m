@@ -18,19 +18,27 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorLogger.h"
 
+static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrategyConfigurationDefault = {
+  .signo = SIGKILL,
+  .options =
+    FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal |
+    FBProcessTerminationStrategyOptionsCheckDeathAfterSignal |
+    FBProcessTerminationStrategyOptionsBackoffToSIGKILL,
+};
+
 @interface FBProcessTerminationStrategy ()
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
-@property (nonatomic, assign, readonly) int signo;
+@property (nonatomic, assign, readonly) FBProcessTerminationStrategyConfiguration configuration;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 
 @end
 
-@interface FBApplicationTerminationStrategy_WorkspaceQuit : FBProcessTerminationStrategy
+@interface FBProcessTerminationStrategy_WorkspaceQuit : FBProcessTerminationStrategy
 
 @end
 
-@implementation FBApplicationTerminationStrategy_WorkspaceQuit
+@implementation FBProcessTerminationStrategy_WorkspaceQuit
 
 - (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error
 {
@@ -72,20 +80,23 @@
 
 @implementation FBProcessTerminationStrategy
 
-+ (instancetype)withProcessKilling:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
 {
-  return [[self alloc] initWithProcessQuery:processQuery signo:signo logger:logger];
+  BOOL useWorkspaceKilling = (configuration.options & FBProcessTerminationStrategyOptionsUseNSRunningApplication) == FBProcessTerminationStrategyOptionsUseNSRunningApplication;
+  return useWorkspaceKilling
+    ? [[FBProcessTerminationStrategy_WorkspaceQuit alloc] initWithConfiguration:configuration processQuery:processQuery logger:logger]
+    : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processQuery:processQuery logger:logger];
 }
 
-+ (instancetype)withRunningApplicationTermination:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
 {
-  return [[FBApplicationTerminationStrategy_WorkspaceQuit alloc] initWithProcessQuery:processQuery signo:signo logger:logger];
+  return [self withConfiguration:FBProcessTerminationStrategyConfigurationDefault processQuery:processQuery logger:logger];
 }
 
-- (instancetype)initWithProcessQuery:(FBProcessQuery *)processQuery signo:(int)signo logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
 {
   NSParameterAssert(processQuery);
-  NSAssert(signo > 0 && signo < 32, @"Signal must be greater than 0 (SIGHUP) and less than 32 (SIGUSR2) was %d", signo);
+  NSAssert(configuration.signo > 0 && configuration.signo < 32, @"Signal must be greater than 0 (SIGHUP) and less than 32 (SIGUSR2) was %d", configuration.signo);
 
   self = [super init];
   if (!self) {
@@ -93,7 +104,7 @@
   }
 
   _processQuery = processQuery;
-  _signo = signo;
+  _configuration = configuration;
   _logger = logger;
 
   return self;
@@ -101,17 +112,19 @@
 
 - (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error
 {
-  FBProcessInfo *actualProcess = [self.processQuery processInfoFor:process.processIdentifier];
-  if (![actualProcess isEqual:process]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Avoiding killing %@ as it differs from the actual process %@", process.shortDescription, actualProcess.shortDescription]
+  BOOL checkExists = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal) == FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal;
+  NSError *innerError = nil;
+  if (checkExists && ![self.processQuery processExists:process error:&innerError]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Could not find that process %@ exists", process]
       logger:self.logger]
+      causedBy:innerError]
       failBool:error];
   }
 
   // Kill the process with kill(2).
   [self.logger.debug logFormat:@"Killing %@", process.shortDescription];
-  if (kill(process.processIdentifier, self.signo) != 0) {
+  if (kill(process.processIdentifier, self.configuration.signo) != 0) {
     // If the kill failed, then extract the error information and return.
     int errorCode = errno;
     if (errorCode == EPERM) {
@@ -130,7 +143,7 @@
     }
     if (errorCode == EINVAL) {
       return [[[[FBSimulatorError
-        describeFormat:@"Failed to kill process %@ as the signal %d was not a valid signal number", process.shortDescription, self.signo]
+        describeFormat:@"Failed to kill process %@ as the signal %d was not a valid signal number", process.shortDescription, self.configuration.signo]
         attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
         logger:self.logger]
         failBool:error];
@@ -140,13 +153,20 @@
       failBool:error];
   }
 
+  BOOL checkDeath = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckDeathAfterSignal) == FBProcessTerminationStrategyOptionsCheckDeathAfterSignal;
+  if (!checkDeath) {
+    [self.logger.debug logFormat:@"Killed %@", process.shortDescription];
+    return YES;
+  }
+
   // It may take some time for the process to have truly died, so wait for it to be so.
   [self.logger.debug logFormat:@"Waiting on %@ to dissappear from the process table", process.shortDescription];
   if (![self.processQuery waitForProcessToDie:process timeout:FBSimulatorControlGlobalConfiguration.fastTimeout]) {
     // If this is a SIGKILL and it's taken a while for the process to dissapear, perhaps the process isn't
     // well behaved when responding to other terminating signals.
     // There's nothing more than can be done with a SIGKILL.
-    if (self.signo == SIGKILL) {
+    BOOL backoff = (self.configuration.options & FBProcessTerminationStrategyOptionsBackoffToSIGKILL) == FBProcessTerminationStrategyOptionsBackoffToSIGKILL;
+    if (self.configuration.signo == SIGKILL || !backoff) {
       return [[[[FBSimulatorError
         describeFormat:@"Timed out waiting for %@ to dissapear from the process table", process.shortDescription]
         attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
@@ -155,16 +175,17 @@
     }
 
     // Try with SIGKILL instead.
-    NSError *innerError = nil;
-    if (![[FBProcessTerminationStrategy withProcessKilling:self.processQuery signo:SIGKILL logger:self.logger] killProcess:process error:&innerError]) {
+    FBProcessTerminationStrategyConfiguration configuration = self.configuration;
+    configuration.signo = SIGKILL;
+    [self.logger.debug logFormat:@"Backing off kill of %@ to SIGKILL", process.shortDescription];
+    if (![[FBProcessTerminationStrategy withConfiguration:configuration processQuery:self.processQuery logger:self.logger] killProcess:process error:&innerError]) {
       return [[[[[FBSimulatorError
-        describeFormat:@"Attempted to SIGKILL %@ after failed kill with signo %d", process.shortDescription, self.signo]
+        describeFormat:@"Attempted to SIGKILL %@ after failed kill with signo %d", process.shortDescription, self.configuration.signo]
         attachProcessInfoForIdentifier:process.processIdentifier query:self.processQuery]
         logger:self.logger]
         causedBy:innerError]
         failBool:error];
     }
-    // If we get here, then the process was killed.
   }
 
   [self.logger.debug logFormat:@"Killed %@", process.shortDescription];

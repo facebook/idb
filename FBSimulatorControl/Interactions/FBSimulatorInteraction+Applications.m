@@ -111,8 +111,13 @@
         failBool:error];
     }
 
-    // Kill the Application if it exists. Failure can be ignored since the App may have already been terminated.
-    [[[simulator.interact killProcess:process] ignoreFailure] performInteractionWithError:nil];
+    // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
+    if ([simulator.processQuery processExists:process error:nil]) {
+      NSError *innerError = nil;
+      if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
+        return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+      }
+    }
 
     // Relaunch the Application
     NSError *innerError = nil;

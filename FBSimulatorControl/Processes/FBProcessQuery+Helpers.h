@@ -27,6 +27,15 @@
 - (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
 
 /**
+ A that determines if the provided process is currently running.
+
+ @param process the Process to look for
+ @param error an error out for any error that occurs
+ @return YES if a matching process is found, NO otherwise.
+ */
+- (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error;
+
+/**
  Uses the reciever to poll for the termination of a process.
 
  @param process the process that is expected to terminate.
