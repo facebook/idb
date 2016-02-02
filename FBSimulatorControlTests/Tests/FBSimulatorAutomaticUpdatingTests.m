@@ -30,8 +30,12 @@
 
 - (void)testGetsArgumentsOfSimulatorContainerProcess
 {
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  // Test only relevant for Simulator.app Launching
+  if (FBSimulatorControlTestCase.useDirectLaunching) {
+    return;
+  }
 
+  FBSimulator *simulator = [self obtainBootedSimulator];
   FBProcessInfo *containerProcess = simulator.containerApplication;
   XCTAssertNotNil(containerProcess);
 
@@ -41,12 +45,12 @@
 
 - (void)testUpdatesContainerProcessOnTermination
 {
+  // Test only relevant for Simulator.app Launching
+  if (FBSimulatorControlTestCase.useDirectLaunching) {
+    return;
+  }
+
   FBSimulator *simulator = [self obtainBootedSimulator];
-
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^{
-    return NO;
-  }];
-
   FBProcessInfo *containerApplication = simulator.containerApplication;
   XCTAssertNotNil(containerApplication);
 
