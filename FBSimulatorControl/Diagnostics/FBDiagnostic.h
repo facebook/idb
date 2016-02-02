@@ -82,25 +82,25 @@
 @interface FBDiagnosticBuilder : NSObject
 
 /**
- Creates a new `FBDiagnosticBuilder` with an empty `writableLog`.
+ Creates a new `FBDiagnosticBuilder` with an empty `diagnostic`.
  */
 + (instancetype)builder;
 
 /**
- Creates a new `FBDiagnosticBuilder` copying all of the values from `writableLog`.
+ Creates a new `FBDiagnosticBuilder` copying all of the values from `diagnostic`.
 
- @param writableLog the original Writable Log to copy values from.
+ @param diagnostic the original Writable Log to copy values from.
  @return the reciever, for chaining.
  */
-+ (instancetype)builderWithWritableLog:(FBDiagnostic *)writableLog;
++ (instancetype)builderWithWritableLog:(FBDiagnostic *)diagnostic;
 
 /**
  Updates the Writable Log in the builder.
 
- @param writableLog the original Writable Log to copy values from.
+ @param diagnostic the original Writable Log to copy values from.
  @return the reciever, for chaining.
  */
-- (instancetype)updateWritableLog:(FBDiagnostic *)writableLog;
+- (instancetype)updateWritableLog:(FBDiagnostic *)diagnostic;
 
 /**
  Updates the `shortName` of the underlying `FBDiagnostic`.

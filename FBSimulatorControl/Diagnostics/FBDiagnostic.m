@@ -493,7 +493,7 @@
 
 @interface FBDiagnosticBuilder ()
 
-@property (nonatomic, copy) FBDiagnostic *writableLog;
+@property (nonatomic, copy) FBDiagnostic *diagnostic;
 
 @end
 
@@ -504,35 +504,35 @@
   return [self builderWithWritableLog:nil];
 }
 
-+ (instancetype)builderWithWritableLog:(FBDiagnostic *)writableLog
++ (instancetype)builderWithWritableLog:(FBDiagnostic *)diagnostic
 {
-  return [[FBDiagnosticBuilder new] updateWritableLog:[writableLog copy] ?: [FBDiagnostic_Empty new]];
+  return [[FBDiagnosticBuilder new] updateWritableLog:[diagnostic copy] ?: [FBDiagnostic_Empty new]];
 }
 
-- (instancetype)updateWritableLog:(FBDiagnostic *)writableLog
+- (instancetype)updateWritableLog:(FBDiagnostic *)diagnostic
 {
-  if (!writableLog) {
+  if (!diagnostic) {
     return self;
   }
-  self.writableLog = writableLog;
+  self.diagnostic = diagnostic;
   return self;
 }
 
 - (instancetype)updateShortName:(NSString *)shortName
 {
-  self.writableLog.shortName = shortName;
+  self.diagnostic.shortName = shortName;
   return self;
 }
 
 - (instancetype)updateFileType:(NSString *)fileType
 {
-  self.writableLog.fileType = fileType;
+  self.diagnostic.fileType = fileType;
   return self;
 }
 
 - (instancetype)updateHumanReadableName:(NSString *)humanReadableName
 {
-  self.writableLog.humanReadableName = humanReadableName;
+  self.diagnostic.humanReadableName = humanReadableName;
   return self;
 }
 
@@ -543,13 +543,13 @@
       return self;
     }
   }
-  self.writableLog.storageDirectory = storageDirectory;
+  self.diagnostic.storageDirectory = storageDirectory;
   return self;
 }
 
 - (instancetype)updateDestination:(NSString *)destination
 {
-  self.writableLog.destination = destination;
+  self.diagnostic.destination = destination;
   return self;
 }
 
@@ -559,8 +559,8 @@
   if (!data) {
     return self;
   }
-  object_setClass(self.writableLog, FBDiagnostic_Data.class);
-  self.writableLog.logData = data;
+  object_setClass(self.diagnostic, FBDiagnostic_Data.class);
+  self.diagnostic.logData = data;
   return self;
 }
 
@@ -570,8 +570,8 @@
   if (!string) {
     return self;
   }
-  object_setClass(self.writableLog, FBDiagnostic_String.class);
-  self.writableLog.logString = string;
+  object_setClass(self.diagnostic, FBDiagnostic_String.class);
+  self.diagnostic.logString = string;
   return self;
 }
 
@@ -581,14 +581,14 @@
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return self;
   }
-  object_setClass(self.writableLog, FBDiagnostic_Path.class);
-  self.writableLog.logPath = path;
+  object_setClass(self.diagnostic, FBDiagnostic_Path.class);
+  self.diagnostic.logPath = path;
   return self;
 }
 
 - (NSString *)createPath
 {
-  return [self.writableLog temporaryFilePath];
+  return [self.diagnostic temporaryFilePath];
 }
 
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block
@@ -603,17 +603,17 @@
 
 - (FBDiagnostic *)build
 {
-  return self.writableLog;
+  return self.diagnostic;
 }
 
 #pragma mark Private
 
 - (void)flushLogs
 {
-  self.writableLog.logData = nil;
-  self.writableLog.logString = nil;
-  self.writableLog.logPath = nil;
-  object_setClass(self.writableLog, FBDiagnostic_Empty.class);
+  self.diagnostic.logData = nil;
+  self.diagnostic.logString = nil;
+  self.diagnostic.logPath = nil;
+  object_setClass(self.diagnostic, FBDiagnostic_Empty.class);
 }
 
 + (NSSet *)defaultStringBackedPathExtensions

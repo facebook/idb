@@ -64,7 +64,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 @interface FBFramebufferVideo ()
 
-@property (nonatomic, strong, readonly) FBDiagnostic *writableLog;
+@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
 @property (nonatomic, assign, readonly) CGFloat scale;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
@@ -86,19 +86,19 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 #pragma mark Initializers
 
-+ (instancetype)withWritableLog:(FBDiagnostic *)writableLog scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withWritableLog:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithWritableLog:writableLog scale:scale logger:logger eventSink:eventSink];
+  return [[self alloc] initWithWritableLog:diagnostic scale:scale logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithWritableLog:(FBDiagnostic *)writableLog scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithWritableLog:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _writableLog = writableLog;
+  _diagnostic = diagnostic;
   _scale = scale;
   _logger = logger;
   _eventSink = eventSink;
@@ -247,7 +247,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   CMTime time = CMTimeMakeWithSeconds(0, FBFramebufferTimescale);
 
   // Create the asset writer.
-  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithWritableLog:self.writableLog];
+  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithWritableLog:self.diagnostic];
   NSString *path = logBuilder.createPath;
   if (![self createAssetWriterAtPath:path size:self.size startTime:time error:error]) {
     return NO;

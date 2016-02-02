@@ -30,6 +30,6 @@
  @param logBuilder the log builder to base the log off.
  @return an FBDiagnostic populated with log lines for the provided process.
  */
-- (FBDiagnostic *)writableLogForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBDiagnosticBuilder *)logBuilder;
+- (FBDiagnostic *)diagnosticForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBDiagnosticBuilder *)logBuilder;
 
 @end

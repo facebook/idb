@@ -162,7 +162,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   NSArray *launchedProcesses = self.simulator.history.allUserLaunchedProcesses;
   NSMutableDictionary *logs = [NSMutableDictionary dictionary];
   for (FBProcessInfo *launchedProcess in launchedProcesses) {
-    logs[launchedProcess] = [aslParser writableLogForProcessInfo:launchedProcess logBuilder:self.logBuilder];
+    logs[launchedProcess] = [aslParser diagnosticForProcessInfo:launchedProcess logBuilder:self.logBuilder];
   }
 
   return [logs copy];

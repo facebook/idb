@@ -86,7 +86,7 @@ static BOOL WriteOutputToFilePath(const char *filePath, asl_object_t aslFile, pi
 
 #pragma mark Public
 
-- (FBDiagnostic *)writableLogForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBDiagnosticBuilder *)logBuilder
+- (FBDiagnostic *)diagnosticForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBDiagnosticBuilder *)logBuilder
 {
   return [[[[logBuilder
     updateShortName:processInfo.processName]
