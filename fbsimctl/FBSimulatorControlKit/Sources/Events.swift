@@ -18,7 +18,7 @@ public enum EventName : String {
   case Boot = "boot"
   case Create = "create"
   case Delete = "delete"
-  case Diagnostic = "diagnose"
+  case Diagnose = "diagnose"
   case Failure = "failure"
   case Help = "help"
   case Install = "install"
