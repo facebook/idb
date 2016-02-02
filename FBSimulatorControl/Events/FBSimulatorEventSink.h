@@ -109,9 +109,9 @@
 /**
  Event for the availablilty of a new log.
 
- @param log the diagnostic log.
+ @param diagnostic the diagnostic log.
  */
-- (void)diagnosticAvailable:(FBDiagnostic *)log;
+- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic;
 
 /**
  Event for the change in a Simulator's state.

@@ -96,9 +96,9 @@
   [self.logger logFormat:@"%@Application Did Terminate => Expected %d %@", self.prefix, expected, applicationProcess.shortDescription];
 }
 
-- (void)diagnosticAvailable:(FBDiagnostic *)log
+- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
-  [self.logger logFormat:@"%@Log Available => %@", self.prefix, log.shortDescription];
+  [self.logger logFormat:@"%@Log Available => %@", self.prefix, diagnostic.shortDescription];
 }
 
 - (void)didChangeState:(FBSimulatorState)state

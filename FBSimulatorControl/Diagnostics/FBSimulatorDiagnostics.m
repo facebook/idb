@@ -236,12 +236,12 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 }
 
-- (void)diagnosticAvailable:(FBDiagnostic *)log
+- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
-  if (!log.shortName) {
+  if (!diagnostic.shortName) {
     return;
   }
-  self.eventLogs[log.shortName] = log;
+  self.eventLogs[diagnostic.shortName] = diagnostic;
 }
 
 - (void)didChangeState:(FBSimulatorState)state

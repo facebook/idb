@@ -104,10 +104,10 @@
   }
 }
 
-- (void)diagnosticAvailable:(FBDiagnostic *)log
+- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink diagnosticAvailable:log];
+    [sink diagnosticAvailable:diagnostic];
   }
 }
 
