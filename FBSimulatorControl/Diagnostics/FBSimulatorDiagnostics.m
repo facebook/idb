@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorLogs.h"
+#import "FBSimulatorDiagnostics.h"
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
@@ -27,7 +27,7 @@ NSString *const FBSimulatorLogNameSimulatorBootstrap = @"launchd_bootstrap";
 NSString *const FBSimulatorLogNameVideo = @"video";
 NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
-@interface FBSimulatorLogs ()
+@interface FBSimulatorDiagnostics ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
 @property (nonatomic, copy, readonly) NSString *storageDirectory;
@@ -35,13 +35,13 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 @end
 
-@implementation FBSimulatorLogs
+@implementation FBSimulatorDiagnostics
 
 #pragma mark Initializers
 
 + (instancetype)withSimulator:(FBSimulator *)simulator
 {
-  NSString *storageDirectory = [FBSimulatorLogs storageDirectoryForSimulator:simulator];
+  NSString *storageDirectory = [FBSimulatorDiagnostics storageDirectoryForSimulator:simulator];
   return [[self alloc] initWithSimulator:simulator storageDirectory:storageDirectory];
 }
 
@@ -141,7 +141,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
   return [FBConcurrentCollectionOperations
     filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:lastLaunchDate]
-    predicate:[FBSimulatorLogs predicateForUserLaunchedProcessesInHistory:self.simulator.history]
+    predicate:[FBSimulatorDiagnostics predicateForUserLaunchedProcessesInHistory:self.simulator.history]
     map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
       return [logInfo toDiagnostic:self.logBuilder];
     }];
@@ -295,7 +295,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
   return [FBConcurrentCollectionOperations
     filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
-    predicate:[FBSimulatorLogs predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
+    predicate:[FBSimulatorDiagnostics predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
     map:^ FBCrashLogInfo * (NSString *fileName) {
       NSString *path = [basePath stringByAppendingPathComponent:fileName];
       return [FBCrashLogInfo fromCrashLogAtPath:path];

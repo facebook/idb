@@ -15,11 +15,11 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorLogsTests : FBSimulatorControlTestCase
+@interface FBSimulatorDiagnosticsTests : FBSimulatorControlTestCase
 
 @end
 
-@implementation FBSimulatorLogsTests
+@implementation FBSimulatorDiagnosticsTests
 
 - (void)assertFindsNeedle:(NSString *)needle fromHaystackBlock:( NSString *(^)(void) )block
 {

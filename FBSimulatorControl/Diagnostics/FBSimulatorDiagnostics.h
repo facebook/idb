@@ -47,13 +47,13 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  - This means that values do not have to be checked before storing in collections
  - Missing content can be inserted into the FBDiagnostic instances, whilst retaining the original metadata.
  */
-@interface FBSimulatorLogs : NSObject <FBSimulatorEventSink>
+@interface FBSimulatorDiagnostics : NSObject <FBSimulatorEventSink>
 
 /**
- Creates and returns a `FBSimulatorLogs` instance.
+ Creates and returns a `FBSimulatorDiagnostics` instance.
 
  @param simulator the Simulator to Fetch logs for.
- @return A new `FBSimulatorLogs` instance for the provided Simulator.
+ @return A new `FBSimulatorDiagnostics` instance for the provided Simulator.
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator;
 

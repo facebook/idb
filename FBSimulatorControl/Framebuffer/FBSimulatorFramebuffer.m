@@ -24,7 +24,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorLogger.h"
-#import "FBSimulatorLogs.h"
+#import "FBSimulatorDiagnostics.h"
 #import "FBDiagnostic.h"
 
 /**

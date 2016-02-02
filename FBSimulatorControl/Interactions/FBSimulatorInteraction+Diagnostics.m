@@ -15,7 +15,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Private.h"
-#import "FBSimulatorLogs.h"
+#import "FBSimulatorDiagnostics.h"
 #import "FBTaskExecutor.h"
 #import "FBDiagnostic.h"
 
