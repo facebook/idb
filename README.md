@@ -76,7 +76,7 @@ To launch Safari on an iPhone 5, you can use the following:
     
     // Build a Launch Configuration.
     FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-      configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari"]
+      configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:&error]
       arguments:@[]
       environment:@{}];
     
