@@ -74,7 +74,7 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
   }
 
   public func diagnosticAvailable(log: FBDiagnostic!) {
-    self.reportSimulator(EventName.Diagnose, log)
+    self.reportSimulator(EventName.Diagnostic, log)
   }
 
   public func didChangeState(state: FBSimulatorState) {
