@@ -1690,7 +1690,7 @@
 				AA9516D21C15F54600A89CAD /* Events */,
 				AA4242D81C528338008ABD80 /* Framebuffer */,
 				AA9516DE1C15F54600A89CAD /* Interactions */,
-				AA9516F31C15F54600A89CAD /* Logs */,
+				AA9516F31C15F54600A89CAD /* Diagnostics */,
 				AA9516FA1C15F54600A89CAD /* Management */,
 				AA95170A1C15F54600A89CAD /* Model */,
 				AA9517171C15F54600A89CAD /* Notifiers */,
@@ -1787,7 +1787,7 @@
 			path = Interactions;
 			sourceTree = "<group>";
 		};
-		AA9516F31C15F54600A89CAD /* Logs */ = {
+		AA9516F31C15F54600A89CAD /* Diagnostics */ = {
 			isa = PBXGroup;
 			children = (
 				AA1D65441C21CD2A0069F90D /* FBASLParser.h */,
@@ -1799,7 +1799,7 @@
 				AA9516F81C15F54600A89CAD /* FBWritableLog.h */,
 				AA9516F91C15F54600A89CAD /* FBWritableLog.m */,
 			);
-			path = Logs;
+			path = Diagnostics;
 			sourceTree = "<group>";
 		};
 		AA9516FA1C15F54600A89CAD /* Management */ = {
