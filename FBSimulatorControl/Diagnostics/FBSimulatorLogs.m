@@ -19,7 +19,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBTaskExecutor.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 NSString *const FBSimulatorLogNameSyslog = @"system_log";
 NSString *const FBSimulatorLogNameCoreSimulator = @"coresimulator";
@@ -61,12 +61,12 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 #pragma mark Accessors
 
-- (FBWritableLog *)base
+- (FBDiagnostic *)base
 {
   return [self.logBuilder build];
 }
 
-- (FBWritableLog *)syslog
+- (FBDiagnostic *)syslog
 {
   return [[[[self.logBuilder
     updatePath:self.systemLogPath]
@@ -75,7 +75,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     build];
 }
 
-- (FBWritableLog *)coreSimulator
+- (FBDiagnostic *)coreSimulator
 {
   return [[[[self.logBuilder
     updatePath:self.coreSimulatorLogPath]
@@ -84,7 +84,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     build];
 }
 
-- (FBWritableLog *)simulatorBootstrap
+- (FBDiagnostic *)simulatorBootstrap
 {
   NSString *expectedPath = [[self.simulator.device.deviceSet.setPath
     stringByAppendingPathComponent:self.simulator.udid]
@@ -97,7 +97,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     build];
 }
 
-- (FBWritableLog *)video
+- (FBDiagnostic *)video
 {
   return [[[[self.logBuilder
     updateShortName:FBSimulatorLogNameVideo]
@@ -106,7 +106,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     build];
 }
 
-- (FBWritableLog *)screenshot
+- (FBDiagnostic *)screenshot
 {
   return [[[[self.logBuilder
     updateShortName:FBSimulatorLogNameScreenshot]
@@ -119,7 +119,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 {
   return [FBConcurrentCollectionOperations
     map:[self launchdSimSubprocessCrashesPathsAfterDate:date]
-    withBlock:^ FBWritableLog * (FBCrashLogInfo *logInfo) {
+    withBlock:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
       return [logInfo toWritableLog:self.logBuilder];
     }];
 }
@@ -142,7 +142,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [FBConcurrentCollectionOperations
     filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:lastLaunchDate]
     predicate:[FBSimulatorLogs predicateForUserLaunchedProcessesInHistory:self.simulator.history]
-    map:^ FBWritableLog * (FBCrashLogInfo *logInfo) {
+    map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
       return [logInfo toWritableLog:self.logBuilder];
     }];
 }
@@ -170,7 +170,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (NSArray *)allLogs
 {
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBWritableLog *log, NSDictionary *_) {
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *log, NSDictionary *_) {
     return log.hasLogContent;
   }];
 
@@ -236,7 +236,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 }
 
-- (void)logAvailable:(FBWritableLog *)log
+- (void)logAvailable:(FBDiagnostic *)log
 {
   if (!log.shortName) {
     return;
@@ -256,9 +256,9 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 #pragma mark Private
 
-- (FBWritableLogBuilder *)logBuilder
+- (FBDiagnosticBuilder *)logBuilder
 {
-  return [FBWritableLogBuilder.builder updateStorageDirectory:self.storageDirectory];
+  return [FBDiagnosticBuilder.builder updateStorageDirectory:self.storageDirectory];
 }
 
 + (NSString *)storageDirectoryForSimulator:(FBSimulator *)simulator

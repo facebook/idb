@@ -10,25 +10,25 @@
 #import "FBFramebufferImage.h"
 
 #import "FBSimulatorEventSink.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 @interface FBFramebufferImage ()
 
 @property (atomic, assign, readwrite) CGImageRef image;
 
-@property (nonatomic, strong, readonly) FBWritableLog *writableLog;
+@property (nonatomic, strong, readonly) FBDiagnostic *writableLog;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @end
 
 @implementation FBFramebufferImage
 
-+ (instancetype)withWritableLog:(FBWritableLog *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withWritableLog:(FBDiagnostic *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   return [[self alloc] initWithWritableLog:writableLog eventSink:eventSink];
 }
 
-- (instancetype)initWithWritableLog:(FBWritableLog *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithWritableLog:(FBDiagnostic *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -48,9 +48,9 @@
 
 #pragma mark Public
 
-+ (FBWritableLog *)appendImage:(CGImageRef)image toWritableLog:(FBWritableLog *)writableLog
++ (FBDiagnostic *)appendImage:(CGImageRef)image toWritableLog:(FBDiagnostic *)writableLog
 {
-  FBWritableLogBuilder *builder = [FBWritableLogBuilder builderWithWritableLog:writableLog];
+  FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithWritableLog:writableLog];
   NSString *filePath = [builder createPath];
   NSURL *url = [NSURL fileURLWithPath:filePath];
   CGImageDestinationRef destination = CGImageDestinationCreateWithURL(
@@ -82,7 +82,7 @@
 
 - (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
 {
-  FBWritableLog *log = [FBFramebufferImage appendImage:self.image toWritableLog:self.writableLog];
+  FBDiagnostic *log = [FBFramebufferImage appendImage:self.image toWritableLog:self.writableLog];
   id<FBSimulatorEventSink> eventSink = self.eventSink;
 
   dispatch_async(dispatch_get_main_queue(), ^{

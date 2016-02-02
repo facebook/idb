@@ -11,17 +11,17 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-@interface FBWritableLogTests : XCTestCase
+@interface FBDiagnosticTests : XCTestCase
 
 @end
 
-@implementation FBWritableLogTests
+@implementation FBDiagnosticTests
 
 - (void)testBuilderBuilds
 {
   NSData *data = [@"SOME DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBWritableLog *writableLog = [[[[[[FBWritableLogBuilder builder]
+  FBDiagnostic *writableLog = [[[[[[FBDiagnosticBuilder builder]
     updateShortName:@"shortname"]
     updateFileType:@"filetype"]
     updateHumanReadableName:@"human"]
@@ -38,7 +38,7 @@
 {
   NSData *firstData = [@"SOME DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBWritableLog *writableLog = [[[[[[FBWritableLogBuilder builder]
+  FBDiagnostic *writableLog = [[[[[[FBDiagnosticBuilder builder]
     updateShortName:@"shortname"]
     updateFileType:@"filetype"]
     updateHumanReadableName:@"human"]
@@ -47,7 +47,7 @@
 
   NSData *secondData = [@"SOME NEW DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  writableLog = [[[[[[FBWritableLogBuilder builderWithWritableLog:writableLog]
+  writableLog = [[[[[[FBDiagnosticBuilder builderWithWritableLog:writableLog]
     updateShortName:@"newshortname"]
     updateFileType:@"newfiletype"]
     updateHumanReadableName:@"newhuman"]
@@ -64,18 +64,18 @@
 {
   NSData *firstData = [@"SOME DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBWritableLog *writableLog = [[[FBWritableLogBuilder builder]
+  FBDiagnostic *writableLog = [[[FBDiagnosticBuilder builder]
     updateData:firstData]
     build];
 
-  writableLog = [[[FBWritableLogBuilder builderWithWritableLog:writableLog]
+  writableLog = [[[FBDiagnosticBuilder builderWithWritableLog:writableLog]
     updateString:@"A String"]
     build];
 
   XCTAssertEqualObjects(writableLog.asData, [@"A String" dataUsingEncoding:NSUTF8StringEncoding]);
   XCTAssertEqualObjects(writableLog.asString, @"A String");
 
-  writableLog = [[[[FBWritableLogBuilder builderWithWritableLog:writableLog]
+  writableLog = [[[[FBDiagnosticBuilder builderWithWritableLog:writableLog]
     updateString:@"Not me ever"]
     updateData:[@"I am now over here" dataUsingEncoding:NSUTF8StringEncoding]]
     build];
@@ -90,7 +90,7 @@
   NSString *logPath = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"testBuilderReadsFromFile"] stringByAppendingPathExtension:@"txt"];
   [logString writeToFile:logString atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
-  FBWritableLog *writableLog = [[[FBWritableLogBuilder builder]
+  FBDiagnostic *writableLog = [[[FBDiagnosticBuilder builder]
     updatePath:logPath]
     build];
 
@@ -101,7 +101,7 @@
 {
   NSString *logString = @"FOO BAR BAZ";
 
-  FBWritableLog *writableLog = [[[[FBWritableLogBuilder builder]
+  FBDiagnostic *writableLog = [[[[FBDiagnosticBuilder builder]
     updateString:logString]
     updateShortName:@"ballooon"]
     build];

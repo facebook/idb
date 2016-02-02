@@ -83,5 +83,5 @@
 #import <FBSimulatorControl/FBTaskExecutor+Private.h>
 #import <FBSimulatorControl/FBTaskExecutor.h>
 #import <FBSimulatorControl/FBTerminationHandle.h>
-#import <FBSimulatorControl/FBWritableLog.h>
+#import <FBSimulatorControl/FBDiagnostic.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>

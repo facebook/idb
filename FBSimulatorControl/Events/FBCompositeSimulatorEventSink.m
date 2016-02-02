@@ -104,7 +104,7 @@
   }
 }
 
-- (void)logAvailable:(FBWritableLog *)log
+- (void)logAvailable:(FBDiagnostic *)log
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
     [sink logAvailable:log];

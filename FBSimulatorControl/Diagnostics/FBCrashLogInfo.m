@@ -11,7 +11,7 @@
 
 #import <stdio.h>
 
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 @implementation FBCrashLogInfo
 
@@ -79,7 +79,7 @@
 
 #pragma mark Public
 
-- (FBWritableLog *)toWritableLog:(FBWritableLogBuilder *)builder
+- (FBDiagnostic *)toWritableLog:(FBDiagnosticBuilder *)builder
 {
   return [[[builder
     updateShortName:[NSString stringWithFormat:@"%@_crash", self.processName]]

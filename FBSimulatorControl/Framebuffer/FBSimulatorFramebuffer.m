@@ -25,7 +25,7 @@
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorLogs.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 /**
  Enumeration to keep track of internal state.

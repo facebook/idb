@@ -17,7 +17,7 @@
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLogs.h"
 #import "FBTaskExecutor.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t processIdentifier);
 
@@ -91,7 +91,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
 
 + (void)writeDiagnosticForSimulator:(FBSimulator *)simulator process:(FBProcessInfo *)process name:(NSString *)name value:(NSString *)value
 {
-  FBWritableLog *log = [[[[[FBWritableLogBuilder builderWithWritableLog:simulator.logs.base]
+  FBDiagnostic *log = [[[[[FBDiagnosticBuilder builderWithWritableLog:simulator.logs.base]
     updateString:value]
     updateShortName:[NSString stringWithFormat:@"%@_%@_%d", name, process.processName, process.processIdentifier]]
     updateFileType:@"txt"]

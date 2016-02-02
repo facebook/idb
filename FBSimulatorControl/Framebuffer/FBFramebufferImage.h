@@ -11,7 +11,7 @@
 
 #import <FBSimulatorControl/FBFramebufferDelegate.h>
 
-@class FBWritableLog;
+@class FBDiagnostic;
 @protocol FBSimulatorEventSink;
 
 /**
@@ -30,16 +30,16 @@
  @param eventSink the Event Sink to report Image Logs to.
  @return a new FBFramebufferImage instance.
  */
-+ (instancetype)withWritableLog:(FBWritableLog *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withWritableLog:(FBDiagnostic *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  Writes a PNG to file and updates the Writable Log.
 
  @param image the image to update the log with.
  @param writableLog the log to base the new log off.
- @return a new FBWritableLog with a path to the image on succcess, the original log on failure.
+ @return a new FBDiagnostic with a path to the image on succcess, the original log on failure.
  */
-+ (FBWritableLog *)appendImage:(CGImageRef)image toWritableLog:(FBWritableLog *)writableLog;
++ (FBDiagnostic *)appendImage:(CGImageRef)image toWritableLog:(FBDiagnostic *)writableLog;
 
 /**
  The Latest Image from the Framebuffer.

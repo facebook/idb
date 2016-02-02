@@ -188,7 +188,7 @@
   [self.sink applicationDidTerminate:applicationProcess expected:expected];
 }
 
-- (void)logAvailable:(FBWritableLog *)log
+- (void)logAvailable:(FBDiagnostic *)log
 {
   [self.sink logAvailable:log];
 }

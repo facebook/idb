@@ -11,7 +11,7 @@
 
 #import <FBSimulatorControl/FBFramebufferDelegate.h>
 
-@class FBWritableLog;
+@class FBDiagnostic;
 @protocol FBSimulatorLogger;
 @protocol FBSimulatorEventSink;
 
@@ -32,7 +32,7 @@
  @param eventSink an event sink to report video output to.
  @return a new FBFramebufferVideo instance.
  */
-+ (instancetype)withWritableLog:(FBWritableLog *)writableLog scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withWritableLog:(FBDiagnostic *)writableLog scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  Stops the recording recording of the video framebuffer.

@@ -12,8 +12,8 @@
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
 @class FBSimulator;
-@class FBWritableLog;
-@class FBWritableLogBuilder;
+@class FBDiagnostic;
+@class FBDiagnosticBuilder;
 
 /**
  The Name of the Syslog.
@@ -41,11 +41,11 @@ extern NSString *const FBSimulatorLogNameVideo;
 extern NSString *const FBSimulatorLogNameScreenshot;
 
 /**
- Exposes Simulator Logs & Diagnsotics as FBWritableLog instances.
+ Exposes Simulator Logs & Diagnsotics as FBDiagnostic instances.
 
- Instances of FBWritableLog exposed by this class are not nullable since FBWritableLog's can be empty:
+ Instances of FBDiagnostic exposed by this class are not nullable since FBDiagnostic's can be empty:
  - This means that values do not have to be checked before storing in collections
- - Missing content can be inserted into the FBWritableLog instances, whilst retaining the original metadata.
+ - Missing content can be inserted into the FBDiagnostic instances, whilst retaining the original metadata.
  */
 @interface FBSimulatorLogs : NSObject <FBSimulatorEventSink>
 
@@ -58,62 +58,62 @@ extern NSString *const FBSimulatorLogNameScreenshot;
 + (instancetype)withSimulator:(FBSimulator *)simulator;
 
 /**
- The FBWritableLog Instance from which all other logs are derived.
+ The FBDiagnostic Instance from which all other logs are derived.
  */
-- (FBWritableLog *)base;
+- (FBDiagnostic *)base;
 
 /**
  The syslog of the Simulator.
  */
-- (FBWritableLog *)syslog;
+- (FBDiagnostic *)syslog;
 
 /**
  The Log for CoreSimulator.
  */
-- (FBWritableLog *)coreSimulator;
+- (FBDiagnostic *)coreSimulator;
 
 /**
  The Bootstrap of the Simulator's launchd_sim.
  */
-- (FBWritableLog *)simulatorBootstrap;
+- (FBDiagnostic *)simulatorBootstrap;
 
 /**
  A Video of the Simulator
  */
-- (FBWritableLog *)video;
+- (FBDiagnostic *)video;
 
 /**
  A Screenshot of the Simulator.
  */
-- (FBWritableLog *)screenshot;
+- (FBDiagnostic *)screenshot;
 
 /**
  Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.
 
  @param date the earliest to search for crash reports. If nil will find reports regardless of date.
- @return an NSArray<FBWritableLog *> of all the applicable crash reports.
+ @return an NSArray<FBDiagnostic *> of all the applicable crash reports.
  */
 - (NSArray *)subprocessCrashesAfterDate:(NSDate *)date;
 
 /**
  Crashes that occured in the Simulator since the last booting of the Simulator.
 
- @return an NSArray<FBWritableLog *> of crashes that occured for user processes since the last boot.
+ @return an NSArray<FBDiagnostic *> of crashes that occured for user processes since the last boot.
  */
 - (NSArray *)userLaunchedProcessCrashesSinceLastLaunch;
 
 /**
  The System Log, filtered and bucketed for each process that was launched by the user.
 
- @return an NSDictionary<FBProcessInfo *, FBWritableLog> of the logs, filtered by launched process.
+ @return an NSDictionary<FBProcessInfo *, FBDiagnostic> of the logs, filtered by launched process.
  */
 - (NSDictionary *)launchedProcessLogs;
 
 /**
- All of the FBWritableLog instances for the Simulator.
+ All of the FBDiagnostic instances for the Simulator.
  Prunes empty logs.
 
- @return an NSArray<FBWritableLog> of all the Writable Logs associated with the Simulator.
+ @return an NSArray<FBDiagnostic> of all the Writable Logs associated with the Simulator.
  */
 - (NSArray *)allLogs;
 

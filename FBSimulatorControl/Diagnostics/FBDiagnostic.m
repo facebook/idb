@@ -7,11 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 #import <objc/runtime.h>
 
-@interface FBWritableLog ()
+@interface FBDiagnostic ()
 
 @property (nonatomic, copy, readwrite) NSString *shortName;
 @property (nonatomic, copy, readwrite) NSString *fileType;
@@ -28,32 +28,32 @@
 /**
  A representation of a Writable Log, backed by NSData.
  */
-@interface FBWritableLog_Data : FBWritableLog
+@interface FBDiagnostic_Data : FBDiagnostic
 
 @end
 
 /**
  A representation of a Writable Log, backed by an NSString.
  */
-@interface FBWritableLog_String : FBWritableLog
+@interface FBDiagnostic_String : FBDiagnostic
 
 @end
 
 /**
  A representation of a Writable Log, backed by a File Path.
  */
-@interface FBWritableLog_Path : FBWritableLog
+@interface FBDiagnostic_Path : FBDiagnostic
 
 @end
 
 /**
  A representation of a Writable Log, where the log is known to not exist.
  */
-@interface FBWritableLog_Empty : FBWritableLog
+@interface FBDiagnostic_Empty : FBDiagnostic
 
 @end
 
-@implementation FBWritableLog
+@implementation FBDiagnostic
 
 #pragma mark Initializers
 
@@ -64,7 +64,7 @@
     return nil;
   }
 
-  _storageDirectory = [FBWritableLog defaultStorageDirectory];
+  _storageDirectory = [FBDiagnostic defaultStorageDirectory];
 
   return self;
 }
@@ -100,7 +100,7 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog *log = [self.class new];
+  FBDiagnostic *log = [self.class new];
   log.shortName = self.shortName;
   log.fileType = self.fileType;
   log.humanReadableName = self.humanReadableName;
@@ -184,7 +184,7 @@
 
 @end
 
-@implementation FBWritableLog_Data
+@implementation FBDiagnostic_Data
 
 #pragma mark NSCoding
 
@@ -210,7 +210,7 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog_Data *log = [super copyWithZone:zone];
+  FBDiagnostic_Data *log = [super copyWithZone:zone];
   log.logData = self.logData;
   return log;
 }
@@ -283,7 +283,7 @@
 
 @end
 
-@implementation FBWritableLog_String
+@implementation FBDiagnostic_String
 
 #pragma mark NSCoding
 
@@ -309,7 +309,7 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog_String *log = [super copyWithZone:zone];
+  FBDiagnostic_String *log = [super copyWithZone:zone];
   log.logString = self.logString;
   return log;
 }
@@ -380,7 +380,7 @@
 
 @end
 
-@implementation FBWritableLog_Path
+@implementation FBDiagnostic_Path
 
 #pragma mark NSCoding
 
@@ -406,7 +406,7 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog_Path *log = [super copyWithZone:zone];
+  FBDiagnostic_Path *log = [super copyWithZone:zone];
   log.logPath = self.logPath;
   return log;
 }
@@ -472,7 +472,7 @@
 
 @end
 
-@implementation FBWritableLog_Empty
+@implementation FBDiagnostic_Empty
 
 - (NSData *)asData
 {
@@ -491,25 +491,25 @@
 
 @end
 
-@interface FBWritableLogBuilder ()
+@interface FBDiagnosticBuilder ()
 
-@property (nonatomic, copy) FBWritableLog *writableLog;
+@property (nonatomic, copy) FBDiagnostic *writableLog;
 
 @end
 
-@implementation FBWritableLogBuilder : NSObject
+@implementation FBDiagnosticBuilder : NSObject
 
 + (instancetype)builder
 {
   return [self builderWithWritableLog:nil];
 }
 
-+ (instancetype)builderWithWritableLog:(FBWritableLog *)writableLog
++ (instancetype)builderWithWritableLog:(FBDiagnostic *)writableLog
 {
-  return [[FBWritableLogBuilder new] updateWritableLog:[writableLog copy] ?: [FBWritableLog_Empty new]];
+  return [[FBDiagnosticBuilder new] updateWritableLog:[writableLog copy] ?: [FBDiagnostic_Empty new]];
 }
 
-- (instancetype)updateWritableLog:(FBWritableLog *)writableLog
+- (instancetype)updateWritableLog:(FBDiagnostic *)writableLog
 {
   if (!writableLog) {
     return self;
@@ -559,7 +559,7 @@
   if (!data) {
     return self;
   }
-  object_setClass(self.writableLog, FBWritableLog_Data.class);
+  object_setClass(self.writableLog, FBDiagnostic_Data.class);
   self.writableLog.logData = data;
   return self;
 }
@@ -570,7 +570,7 @@
   if (!string) {
     return self;
   }
-  object_setClass(self.writableLog, FBWritableLog_String.class);
+  object_setClass(self.writableLog, FBDiagnostic_String.class);
   self.writableLog.logString = string;
   return self;
 }
@@ -581,7 +581,7 @@
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return self;
   }
-  object_setClass(self.writableLog, FBWritableLog_Path.class);
+  object_setClass(self.writableLog, FBDiagnostic_Path.class);
   self.writableLog.logPath = path;
   return self;
 }
@@ -601,7 +601,7 @@
   return [self updatePath:path];
 }
 
-- (FBWritableLog *)build
+- (FBDiagnostic *)build
 {
   return self.writableLog;
 }
@@ -613,7 +613,7 @@
   self.writableLog.logData = nil;
   self.writableLog.logString = nil;
   self.writableLog.logPath = nil;
-  object_setClass(self.writableLog, FBWritableLog_Empty.class);
+  object_setClass(self.writableLog, FBDiagnostic_Empty.class);
 }
 
 + (NSSet *)defaultStringBackedPathExtensions

@@ -167,7 +167,7 @@
   [self updateProcess:applicationProcess withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
 }
 
-- (void)logAvailable:(FBWritableLog *)log
+- (void)logAvailable:(FBDiagnostic *)log
 {
 
 }

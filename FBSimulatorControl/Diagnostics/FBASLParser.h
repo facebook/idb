@@ -10,8 +10,8 @@
 #import <Foundation/Foundation.h>
 
 @class FBProcessInfo;
-@class FBWritableLog;
-@class FBWritableLogBuilder;
+@class FBDiagnostic;
+@class FBDiagnosticBuilder;
 
 /**
  Reads ASL Messages using asl(3).
@@ -24,12 +24,12 @@
 + (instancetype)parserForPath:(NSString *)path;
 
 /**
- Returns a FBWritableLog for the log messages relevant to the provided process info.
+ Returns a FBDiagnostic for the log messages relevant to the provided process info.
 
  @param processInfo the Process Info to obtain filtered log information.
  @param logBuilder the log builder to base the log off.
- @return an FBWritableLog populated with log lines for the provided process.
+ @return an FBDiagnostic populated with log lines for the provided process.
  */
-- (FBWritableLog *)writableLogForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBWritableLogBuilder *)logBuilder;
+- (FBDiagnostic *)writableLogForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBDiagnosticBuilder *)logBuilder;
 
 @end

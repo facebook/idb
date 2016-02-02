@@ -15,7 +15,7 @@
 @class FBSimulator;
 @class FBSimulatorApplication;
 @class FBSimulatorFramebuffer;
-@class FBWritableLog;
+@class FBDiagnostic;
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializationDescribeable;
 
@@ -111,7 +111,7 @@
 
  @param log the diagnostic log.
  */
-- (void)logAvailable:(FBWritableLog *)log;
+- (void)logAvailable:(FBDiagnostic *)log;
 
 /**
  Event for the change in a Simulator's state.

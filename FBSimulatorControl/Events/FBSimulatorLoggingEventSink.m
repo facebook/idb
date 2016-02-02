@@ -13,7 +13,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 @interface FBSimulatorLoggingEventSink ()
 
@@ -96,7 +96,7 @@
   [self.logger logFormat:@"%@Application Did Terminate => Expected %d %@", self.prefix, expected, applicationProcess.shortDescription];
 }
 
-- (void)logAvailable:(FBWritableLog *)log
+- (void)logAvailable:(FBDiagnostic *)log
 {
   [self.logger logFormat:@"%@Log Available => %@", self.prefix, log.shortDescription];
 }

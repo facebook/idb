@@ -112,7 +112,7 @@
   [self terminateHandlesAssociatedWithProcess:applicationProcess];
 }
 
-- (void)logAvailable:(FBWritableLog *)log
+- (void)logAvailable:(FBDiagnostic *)log
 {
 
 }
