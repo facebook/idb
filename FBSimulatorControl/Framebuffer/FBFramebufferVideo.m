@@ -73,8 +73,8 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 @property (nonatomic, strong, readonly) FBCapacityQueue *itemQueue;
 
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
-@property (nonatomic, assign, readwrite) CMTime lastAppendedTimestamp;
 @property (nonatomic, assign, readwrite) CGSize size;
+@property (nonatomic, strong, readwrite) FBFramebufferVideoItem *lastItem;
 
 @property (nonatomic, strong, readwrite) AVAssetWriter *writer;
 @property (nonatomic, strong, readwrite) AVAssetWriterInput *input;
@@ -108,7 +108,6 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
   _timebase = NULL;
   _size = CGSizeZero;
-  _lastAppendedTimestamp = kCMTimeNegativeInfinity;
 
   return self;
 }
@@ -143,20 +142,31 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
       return;
     }
 
-    // Create an item and place it in the queue.
-    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
-    [self pushImage:image time:time frameCount:count];
+    // Push the image at the current time.
+    [self pushImage:image time:[self currentTime] frameCount:count];
   });
 }
 
 - (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
 {
   dispatch_barrier_async(self.mediaQueue, ^{
+    if (self.lastItem) {
+      CMTime time = [self currentTime];
+      [self.logger.info logFormat:@"Pushing frame at %f again at time %f as this is the final frame", CMTimeGetSeconds(self.lastItem.time), CMTimeGetSeconds(time)];
+      [self pushImage:self.lastItem.image time:time frameCount:self.lastItem.frameCount + 1];
+    }
     [self teardownWriter];
   });
 }
 
 #pragma mark - Private
+
+#pragma mark CMTime
+
+- (CMTime)currentTime
+{
+  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
+}
 
 #pragma mark KVO
 
@@ -206,12 +216,12 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     // "The operation couldn't be completed. (OSStatus error -12633.)" is 'InvalidTimestamp': http://stackoverflow.com/a/23252239
     // "An unknown error occurred (-16341)" is 'kMediaSampleTimingGeneratorError_InvalidTimeStamp': @rfistman
 
-    if (CMTimeCompare(item.time, self.lastAppendedTimestamp) != 1) {
-      [self.logger.info logFormat:@"Dropping Frame %lu as it has a timestamp of %f which is not greater than a previous frame of %f", item.frameCount, CMTimeGetSeconds(item.time), CMTimeGetSeconds(self.lastAppendedTimestamp)];
+    if (self.lastItem && CMTimeCompare(item.time, self.lastItem.time) != 1) {
+      [self.logger.error logFormat:@"Dropping Frame %lu as it has a timestamp of %f which is not greater than a previous frame of %f", item.frameCount, CMTimeGetSeconds(item.time), CMTimeGetSeconds(self.lastItem.time)];
     } else if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
       [self.logger.error logFormat:@"Failed to append frame at time %f seconds of pixel buffer with error %@", CMTimeGetSeconds(item.time), self.writer.error];
     }
-    self.lastAppendedTimestamp = item.time;
+    self.lastItem = item;
     CVPixelBufferRelease(pixelBuffer);
   }
 }
