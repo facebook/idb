@@ -82,11 +82,11 @@
 
 - (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
 {
-  FBDiagnostic *log = [FBFramebufferImage appendImage:self.image toDiagnostic:self.diagnostic];
+  FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.image toDiagnostic:self.diagnostic];
   id<FBSimulatorEventSink> eventSink = self.eventSink;
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [eventSink diagnosticAvailable:log];
+    [eventSink diagnosticAvailable:diagnostic];
   });
 }
 

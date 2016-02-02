@@ -170,8 +170,8 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (NSArray *)allDiagnostics
 {
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *log, NSDictionary *_) {
-    return log.hasLogContent;
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
+    return diagnostic.hasLogContent;
   }];
 
   NSMutableArray *logs = [NSMutableArray arrayWithArray:@[

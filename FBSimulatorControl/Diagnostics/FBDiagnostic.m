@@ -100,13 +100,13 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBDiagnostic *log = [self.class new];
-  log.shortName = self.shortName;
-  log.fileType = self.fileType;
-  log.humanReadableName = self.humanReadableName;
-  log.storageDirectory = self.storageDirectory;
-  log.destination = self.destination;
-  return log;
+  FBDiagnostic *diagnostic = [self.class new];
+  diagnostic.shortName = self.shortName;
+  diagnostic.fileType = self.fileType;
+  diagnostic.humanReadableName = self.humanReadableName;
+  diagnostic.storageDirectory = self.storageDirectory;
+  diagnostic.destination = self.destination;
+  return diagnostic;
 }
 
 #pragma mark Public API
