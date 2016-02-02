@@ -86,12 +86,12 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 #pragma mark Initializers
 
-+ (instancetype)withWritableLog:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithWritableLog:diagnostic scale:scale logger:logger eventSink:eventSink];
+  return [[self alloc] initWithDiagnostic:diagnostic scale:scale logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithWritableLog:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -247,7 +247,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   CMTime time = CMTimeMakeWithSeconds(0, FBFramebufferTimescale);
 
   // Create the asset writer.
-  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithWritableLog:self.diagnostic];
+  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.diagnostic];
   NSString *path = logBuilder.createPath;
   if (![self createAssetWriterAtPath:path size:self.size startTime:time error:error]) {
     return NO;

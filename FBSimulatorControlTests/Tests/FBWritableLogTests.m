@@ -47,7 +47,7 @@
 
   NSData *secondData = [@"SOME NEW DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  diagnostic = [[[[[[FBDiagnosticBuilder builderWithWritableLog:diagnostic]
+  diagnostic = [[[[[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
     updateShortName:@"newshortname"]
     updateFileType:@"newfiletype"]
     updateHumanReadableName:@"newhuman"]
@@ -68,14 +68,14 @@
     updateData:firstData]
     build];
 
-  diagnostic = [[[FBDiagnosticBuilder builderWithWritableLog:diagnostic]
+  diagnostic = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
     updateString:@"A String"]
     build];
 
   XCTAssertEqualObjects(diagnostic.asData, [@"A String" dataUsingEncoding:NSUTF8StringEncoding]);
   XCTAssertEqualObjects(diagnostic.asString, @"A String");
 
-  diagnostic = [[[[FBDiagnosticBuilder builderWithWritableLog:diagnostic]
+  diagnostic = [[[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
     updateString:@"Not me ever"]
     updateData:[@"I am now over here" dataUsingEncoding:NSUTF8StringEncoding]]
     build];

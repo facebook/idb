@@ -70,9 +70,9 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   BOOL recordVideo = (launchConfiguration.options & FBSimulatorLaunchOptionsRecordVideo) == FBSimulatorLaunchOptionsRecordVideo;
   if (recordVideo) {
     NSDecimalNumber *scaleNumber = [NSDecimalNumber decimalNumberWithString:launchConfiguration.scaleString];
-    [sinks addObject:[FBFramebufferVideo withWritableLog:simulator.logs.video scale:scaleNumber.floatValue logger:simulator.logger eventSink:simulator.eventSink]];
+    [sinks addObject:[FBFramebufferVideo withDiagnostic:simulator.logs.video scale:scaleNumber.floatValue logger:simulator.logger eventSink:simulator.eventSink]];
   }
-  [sinks addObject:[FBFramebufferImage withWritableLog:simulator.logs.screenshot eventSink:simulator.eventSink]];
+  [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.logs.screenshot eventSink:simulator.eventSink]];
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
   return [[self alloc] initWithFramebufferService:framebufferService hidPort:hidPort eventSink:simulator.eventSink logger:simulator.logger delegate:delegate];

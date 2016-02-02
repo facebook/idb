@@ -89,18 +89,18 @@
 /**
  Creates a new `FBDiagnosticBuilder` copying all of the values from `diagnostic`.
 
- @param diagnostic the original Writable Log to copy values from.
+ @param diagnostic the original Diagnostic to copy values from.
  @return the reciever, for chaining.
  */
-+ (instancetype)builderWithWritableLog:(FBDiagnostic *)diagnostic;
++ (instancetype)builderWithDiagnostic:(FBDiagnostic *)diagnostic;
 
 /**
- Updates the Writable Log in the builder.
+ Updates the Diagnostic in the builder.
 
- @param diagnostic the original Writable Log to copy values from.
+ @param diagnostic the original Diagnostic to copy values from.
  @return the reciever, for chaining.
  */
-- (instancetype)updateWritableLog:(FBDiagnostic *)diagnostic;
+- (instancetype)updateDiagnostic:(FBDiagnostic *)diagnostic;
 
 /**
  Updates the `shortName` of the underlying `FBDiagnostic`.

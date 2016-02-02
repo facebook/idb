@@ -79,7 +79,7 @@
 
 #pragma mark Public
 
-- (FBDiagnostic *)toWritableLog:(FBDiagnosticBuilder *)builder
+- (FBDiagnostic *)toDiagnostic:(FBDiagnosticBuilder *)builder
 {
   return [[[builder
     updateShortName:[NSString stringWithFormat:@"%@_crash", self.processName]]

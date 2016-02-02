@@ -56,6 +56,6 @@
 
  @param builder the builder to populate the Crash Log into.
  */
-- (FBDiagnostic *)toWritableLog:(FBDiagnosticBuilder *)builder;
+- (FBDiagnostic *)toDiagnostic:(FBDiagnosticBuilder *)builder;
 
 @end

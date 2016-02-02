@@ -26,28 +26,28 @@
 @end
 
 /**
- A representation of a Writable Log, backed by NSData.
+ A representation of a Diagnostic, backed by NSData.
  */
 @interface FBDiagnostic_Data : FBDiagnostic
 
 @end
 
 /**
- A representation of a Writable Log, backed by an NSString.
+ A representation of a Diagnostic, backed by an NSString.
  */
 @interface FBDiagnostic_String : FBDiagnostic
 
 @end
 
 /**
- A representation of a Writable Log, backed by a File Path.
+ A representation of a Diagnostic, backed by a File Path.
  */
 @interface FBDiagnostic_Path : FBDiagnostic
 
 @end
 
 /**
- A representation of a Writable Log, where the log is known to not exist.
+ A representation of a Diagnostic, where the log is known to not exist.
  */
 @interface FBDiagnostic_Empty : FBDiagnostic
 
@@ -501,15 +501,15 @@
 
 + (instancetype)builder
 {
-  return [self builderWithWritableLog:nil];
+  return [self builderWithDiagnostic:nil];
 }
 
-+ (instancetype)builderWithWritableLog:(FBDiagnostic *)diagnostic
++ (instancetype)builderWithDiagnostic:(FBDiagnostic *)diagnostic
 {
-  return [[FBDiagnosticBuilder new] updateWritableLog:[diagnostic copy] ?: [FBDiagnostic_Empty new]];
+  return [[FBDiagnosticBuilder new] updateDiagnostic:[diagnostic copy] ?: [FBDiagnostic_Empty new]];
 }
 
-- (instancetype)updateWritableLog:(FBDiagnostic *)diagnostic
+- (instancetype)updateDiagnostic:(FBDiagnostic *)diagnostic
 {
   if (!diagnostic) {
     return self;

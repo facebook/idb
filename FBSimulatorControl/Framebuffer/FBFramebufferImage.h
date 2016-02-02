@@ -26,20 +26,20 @@
 /**
  Creates a new FBFramebufferImage instance.
 
- @param diagnostic the Writable Log to base image reporting off.
+ @param diagnostic the Diagnostic to base image reporting off.
  @param eventSink the Event Sink to report Image Logs to.
  @return a new FBFramebufferImage instance.
  */
-+ (instancetype)withWritableLog:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
- Writes a PNG to file and updates the Writable Log.
+ Writes a PNG to file and updates the Diagnostic.
 
  @param image the image to update the log with.
  @param diagnostic the log to base the new log off.
  @return a new FBDiagnostic with a path to the image on succcess, the original log on failure.
  */
-+ (FBDiagnostic *)appendImage:(CGImageRef)image toWritableLog:(FBDiagnostic *)diagnostic;
++ (FBDiagnostic *)appendImage:(CGImageRef)image toDiagnostic:(FBDiagnostic *)diagnostic;
 
 /**
  The Latest Image from the Framebuffer.

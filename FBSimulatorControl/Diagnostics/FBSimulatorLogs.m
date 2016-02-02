@@ -102,7 +102,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [[[[self.logBuilder
     updateShortName:FBSimulatorLogNameVideo]
     updateFileType:@"mp4"]
-    updateWritableLog:self.eventLogs[FBSimulatorLogNameVideo]]
+    updateDiagnostic:self.eventLogs[FBSimulatorLogNameVideo]]
     build];
 }
 
@@ -111,7 +111,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [[[[self.logBuilder
     updateShortName:FBSimulatorLogNameScreenshot]
     updateFileType:@"png"]
-    updateWritableLog:self.eventLogs[FBSimulatorLogNameVideo]]
+    updateDiagnostic:self.eventLogs[FBSimulatorLogNameVideo]]
     build];
 }
 
@@ -120,7 +120,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [FBConcurrentCollectionOperations
     map:[self launchdSimSubprocessCrashesPathsAfterDate:date]
     withBlock:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
-      return [logInfo toWritableLog:self.logBuilder];
+      return [logInfo toDiagnostic:self.logBuilder];
     }];
 }
 
@@ -143,7 +143,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:lastLaunchDate]
     predicate:[FBSimulatorLogs predicateForUserLaunchedProcessesInHistory:self.simulator.history]
     map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
-      return [logInfo toWritableLog:self.logBuilder];
+      return [logInfo toDiagnostic:self.logBuilder];
     }];
 }
 

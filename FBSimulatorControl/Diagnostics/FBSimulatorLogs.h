@@ -113,7 +113,7 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  All of the FBDiagnostic instances for the Simulator.
  Prunes empty logs.
 
- @return an NSArray<FBDiagnostic> of all the Writable Logs associated with the Simulator.
+ @return an NSArray<FBDiagnostic> of all the Diagnostics associated with the Simulator.
  */
 - (NSArray *)allLogs;
 

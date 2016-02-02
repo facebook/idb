@@ -32,7 +32,7 @@
  @param eventSink an event sink to report video output to.
  @return a new FBFramebufferVideo instance.
  */
-+ (instancetype)withWritableLog:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  Stops the recording recording of the video framebuffer.
