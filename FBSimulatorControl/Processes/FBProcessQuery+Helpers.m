@@ -32,9 +32,9 @@
       describeFormat:@"Could not find the processs for %@ with pid %d", process.shortDescription, process.processIdentifier]
       failBool:error];
   }
-  if (![process.launchPath isEqualToString:process.launchPath]) {
+  if (![process.launchPath isEqualToString:actual.launchPath]) {
     return [[FBSimulatorError
-      describeFormat:@"Processes '%@' and '%@' do not have the same launch path '%@' and '%@' ", process.shortDescription, actual.shortDescription, process.launchPath, actual.launchPath]
+      describeFormat:@"Processes '%@' and '%@' do not have the same launch path '%@' and '%@'", process.shortDescription, actual.shortDescription, process.launchPath, actual.launchPath]
       failBool:error];
   }
   return YES;
