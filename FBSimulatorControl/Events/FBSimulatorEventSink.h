@@ -111,7 +111,7 @@
 
  @param log the diagnostic log.
  */
-- (void)logAvailable:(FBDiagnostic *)log;
+- (void)diagnosticAvailable:(FBDiagnostic *)log;
 
 /**
  Event for the change in a Simulator's state.

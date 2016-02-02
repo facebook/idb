@@ -257,7 +257,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   [self pushImage:image time:time frameCount:0];
 
   // Report the availability of the video
-  [self.eventSink logAvailable:[[logBuilder updatePath:path] build]];
+  [self.eventSink diagnosticAvailable:[[logBuilder updatePath:path] build]];
 
   return YES;
 }

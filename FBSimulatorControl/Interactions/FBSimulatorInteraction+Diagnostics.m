@@ -97,7 +97,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
     updateFileType:@"txt"]
     build];
 
-  return [simulator.eventSink logAvailable:log];
+  return [simulator.eventSink diagnosticAvailable:log];
 }
 
 @end

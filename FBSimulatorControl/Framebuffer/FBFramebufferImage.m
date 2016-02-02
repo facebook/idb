@@ -86,7 +86,7 @@
   id<FBSimulatorEventSink> eventSink = self.eventSink;
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [eventSink logAvailable:log];
+    [eventSink diagnosticAvailable:log];
   });
 }
 
