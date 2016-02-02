@@ -148,8 +148,8 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
 
 /**
- The FBSimulatorDiagnostics instance for fetching logs for the Simulator.
+ The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
  */
-@property (nonatomic, strong, readonly) FBSimulatorDiagnostics *logs;
+@property (nonatomic, strong, readonly) FBSimulatorDiagnostics *diagnostics;
 
 @end

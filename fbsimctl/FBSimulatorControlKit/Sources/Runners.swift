@@ -211,7 +211,7 @@ private struct SimulatorRunner : Runner {
         try simulator.interact().shutdownSimulator().performInteraction()
         translator.reportSimulator(EventName.Shutdown, EventType.Ended, self.simulator)
       case .Diagnose:
-        let logs = simulator.logs.allDiagnostics() as! [FBSimulatorDiagnostics]
+        let logs = simulator.diagnostics.allDiagnostics() as! [FBSimulatorDiagnostics]
         translator.reportSimulator(EventName.Diagnose, EventType.Discrete, logs as NSArray)
       case .Delete:
         translator.reportSimulator(EventName.Delete, EventType.Started, self.simulator)

@@ -75,15 +75,15 @@
   FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
   FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
-  FBSimulatorDiagnostics *logsSink = [FBSimulatorDiagnostics withSimulator:self];
+  FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
 
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink, logsSink, mutableSink]];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink, diagnosticsSink, mutableSink]];
   FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device processQuery:self.processQuery sink:compositeSink];
 
   _historyGenerator = historyGenerator;
   _eventRelay = relay;
   _mutableSink = mutableSink;
-  _logs = logsSink;
+  _diagnostics = diagnosticsSink;
 
   return self;
 }

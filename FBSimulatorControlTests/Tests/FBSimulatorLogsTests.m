@@ -50,7 +50,7 @@
   // Shimulator sends an unrecognized selector to NSFileManager to cause a crash.
   // The CrashReporter service is a background service as it will symbolicate in a separate process.
   [self assertFindsNeedle:@"-[NSFileManager stringWithFormat:]" fromHaystackBlock:^ NSString * {
-    return [[simulator.logs.userLaunchedProcessCrashesSinceLastLaunch firstObject] asString];
+    return [[simulator.diagnostics.userLaunchedProcessCrashesSinceLastLaunch firstObject] asString];
   }];
 }
 
@@ -63,7 +63,7 @@
   FBSimulator *simulator = [self obtainBootedSimulator];
 
   [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
-    return simulator.logs.syslog.asString;
+    return simulator.diagnostics.syslog.asString;
   }];
 }
 
@@ -78,7 +78,7 @@
   [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
 
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
-    return [[simulator.logs.launchedProcessLogs.allValues firstObject] asString];
+    return [[simulator.diagnostics.launchedProcessLogs.allValues firstObject] asString];
   }];
 }
 
