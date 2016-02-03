@@ -24,6 +24,7 @@
 @interface FBSimulatorBridge ()
 
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+@property (nonatomic, strong, readonly) dispatch_group_t teardownGroup;
 
 @property (nonatomic, strong, readwrite) FBSimulatorFramebuffer *framebuffer;
 @property (nonatomic, assign, readwrite) mach_port_t hidPort;
@@ -138,6 +139,8 @@
   }
 
   _eventSink = eventSink;
+  _teardownGroup = dispatch_group_create();
+
   _framebuffer = framebuffer;
   _hidPort = hidPort;
   _bridge = bridge;
@@ -169,22 +172,32 @@
 
 #pragma mark Lifecycle
 
-- (void)terminate
+- (BOOL)terminateWithTimeout:(NSTimeInterval)timeout
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
 
-  [self.framebuffer stopListening];
-
+  // First stop the Framebuffer
+  [self.framebuffer stopListeningWithTeardownGroup:self.teardownGroup];
+  // Disconnect the HID Port
   if (self.hidPort != 0) {
     mach_port_destroy(mach_task_self(), self.hidPort);
     self.hidPort = 0;
   }
-
+  // Close the connection with the SimulatorBridge and nullify
   NSDistantObject *distantObject = (NSDistantObject *) self.bridge;
   self.bridge = nil;
   [[distantObject connectionForProxy] invalidate];
-
+  // Notify the eventSink
   [self.eventSink bridgeDidDisconnect:self expected:YES];
+
+  // Don't wait if there's no timeout
+  if (timeout <= 0) {
+    return YES;
+  }
+
+  int64_t timeoutInt = ((int64_t) timeout) * ((int64_t) NSEC_PER_SEC);
+  long status = dispatch_group_wait(self.teardownGroup, dispatch_time(DISPATCH_TIME_NOW, timeoutInt));
+  return status == 0l;
 }
 
 #pragma mark Interacting with the Simulator

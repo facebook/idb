@@ -29,6 +29,7 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLogger.h"
@@ -122,7 +123,15 @@
     if (bridge) {
       [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, terminating it now", simulator.shortDescription, bridge];
       // Stopping listening will notify the event sink.
-      [bridge terminate];
+      NSTimeInterval timeout = FBSimulatorControlGlobalConfiguration.regularTimeout;
+      [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, stopping & wait with timeout %f", simulator.shortDescription, bridge, timeout];
+      NSDate *date = NSDate.date;
+      BOOL success = [bridge terminateWithTimeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
+      if (success) {
+        [self.logger.debug logFormat:@"Simulator Bridge %@ torn down in %f seconds", bridge, [NSDate.date timeIntervalSinceDate:date]];
+      } else {
+        [self.logger.debug logFormat:@"Simulator Bridge %@ did not teardown in less than %f seconds", bridge, timeout];
+      }
     } else {
       [self.logger.debug logFormat:@"Simulator %@ does not have a running bridge", simulator.shortDescription];
     }

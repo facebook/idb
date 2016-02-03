@@ -48,7 +48,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 @property (nonatomic, strong, readonly) id<FBFramebufferDelegate> delegate;
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
 
-@property (nonatomic, assign, readwrite) FBSimulatorFramebufferState state;
+@property (atomic, assign, readwrite) FBSimulatorFramebufferState state;
 @property (atomic, assign, readwrite) NSUInteger frameCount;
 @property (atomic, assign, readwrite) CGSize size;
 
@@ -135,15 +135,23 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   [self.framebufferService resume];
 }
 
-- (void)stopListening
+- (void)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
   NSParameterAssert(self.state != FBSimulatorFramebufferStateNotStarted);
   NSParameterAssert(self.state != FBSimulatorFramebufferStateTerminated);
 
+  // Preserve the contract that the delegate methods are called on the client queue.
+  // Use dispatch_sync so that adding entries to the group has occurred before this method returns.
   dispatch_sync(self.clientQueue, ^{
-    [self framebufferDidBecomeInvalid:self error:nil];
+    [self framebufferDidBecomeInvalid:self error:nil teardownGroup:teardownGroup];
   });
+}
+
+- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
+{
+  dispatch_group_t teardownGroup = dispatch_group_create();
+  [self framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
 }
 
 #pragma mark Client Callbacks from SimDeviceFramebufferService
@@ -159,7 +167,9 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
 - (void)framebufferService:(SimDeviceFramebufferService *)service didUpdateRegion:(CGRect)region ofBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
 {
-  [self framebufferDidUpdate:self withImage:backingStore.image count:self.frameCount size:NSMakeSize(backingStore.pixelsWide, backingStore.pixelsHigh)];
+  CGSize size = NSMakeSize(backingStore.pixelsWide, backingStore.pixelsHigh);
+  self.size = size;
+  [self framebufferDidUpdate:self withImage:backingStore.image count:self.frameCount size:size];
   self.frameCount++;
 }
 
@@ -183,16 +193,17 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   [self.logger.info logFormat:@"Frame Count %lu", frameCount];
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
+- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   if (self.state != FBSimulatorFramebufferStateStarting && self.state != FBSimulatorFramebufferStateRunning) {
     return;
   }
 
+  self.state = FBSimulatorFramebufferStateTerminated;
   [self.framebufferService unregisterClient:self];
   [self.framebufferService suspend];
 
-  [self.delegate framebufferDidBecomeInvalid:self error:error];
+  [self.delegate framebufferDidBecomeInvalid:self error:error teardownGroup:teardownGroup];
 }
 
 #pragma mark Private

@@ -45,7 +45,11 @@
 /**
  Stops listening for Framebuffer Events from SimDeviceFramebufferService.
  Must only be called from the main queue.
+ A dispatch_group is provided to allow for delegates to append any asychronous operations that may need cleanup.
+ For example in the case of the Video Recorder, this means completing the writing to file.
+
+ @param teardownGroup the dispatch_group to append asynchronous operations to.
  */
-- (void)stopListening;
+- (void)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup;
 
 @end
