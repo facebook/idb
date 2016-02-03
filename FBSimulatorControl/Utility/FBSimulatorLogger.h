@@ -45,6 +45,14 @@
  */
 - (id<FBSimulatorLogger>)error;
 
+/**
+ Returns a Logger that will accept log values on the given queue.
+
+ @param queue the queue to accept log messages on.
+ @return a new Logger that will allows logging of messages on the provided queue.
+ */
+- (id<FBSimulatorLogger>)onQueue:(dispatch_queue_t)queue;
+
 @end
 
 @interface FBSimulatorLogger : NSObject

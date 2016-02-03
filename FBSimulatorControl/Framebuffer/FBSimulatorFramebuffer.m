@@ -74,11 +74,15 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   }
   [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.diagnostics.screenshot eventSink:simulator.eventSink]];
 
+
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
-  return [[self alloc] initWithFramebufferService:framebufferService hidPort:hidPort eventSink:simulator.eventSink logger:simulator.logger delegate:delegate];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.simulatorframebuffer", DISPATCH_QUEUE_SERIAL);
+  id<FBSimulatorLogger> logger = [simulator.logger onQueue:queue];
+
+  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue hidPort:hidPort eventSink:simulator.eventSink logger:logger delegate:delegate];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort eventSink:(id<FBSimulatorEventSink>)eventSink logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService onQueue:(dispatch_queue_t)queue hidPort:(mach_port_t)hidPort eventSink:(id<FBSimulatorEventSink>)eventSink logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
 {
   NSParameterAssert(framebufferService);
   NSParameterAssert(hidPort > 0);
@@ -94,7 +98,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   _logger = logger;
   _delegate = delegate;
 
-  _queue = dispatch_queue_create("com.facebook.FBSimulatorControl.simulatorframebuffer", DISPATCH_QUEUE_SERIAL);
+  _queue = queue;
   _state = FBSimulatorFramebufferStateNotStarted;
   _frameCount = 0;
   _size = CGSizeZero;
@@ -165,9 +169,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 {
   if (self.state == FBSimulatorFramebufferStateStarting) {
     self.state = FBSimulatorFramebufferStateRunning;
-    dispatch_async(dispatch_get_main_queue(), ^{
-      [self.logger.info log:@"First Frame"];
-    });
+    [self.logger.info log:@"First Frame"];
   }
   if (self.state != FBSimulatorFramebufferStateRunning) {
     return;
@@ -178,9 +180,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   if (frameCount % FBFramebufferLogFrameFrequency != 0) {
     return;
   }
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self.logger.info logFormat:@"Frame Count %lu", frameCount];
-  });
+  [self.logger.info logFormat:@"Frame Count %lu", frameCount];
 }
 
 - (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error

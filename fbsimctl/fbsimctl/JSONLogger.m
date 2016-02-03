@@ -18,6 +18,7 @@
 @property (nonatomic, strong, readonly) JSONEventReporter *reporter;
 @property (nonatomic, assign, readonly) int32_t currentLevel;
 @property (nonatomic, assign, readonly) int32_t maxLevel;
+@property (nonatomic, assign, readonly) BOOL dispatchToMain;
 
 @end
 
@@ -27,10 +28,10 @@
 
 + (instancetype)withEventReporter:(JSONEventReporter *)reporter debug:(BOOL)debug
 {
-  return [[self alloc] initWithEventReporter:reporter currentLevel:ASL_LEVEL_INFO maxLevel:(debug ? ASL_LEVEL_DEBUG : ASL_LEVEL_INFO)];
+  return [[self alloc] initWithEventReporter:reporter currentLevel:ASL_LEVEL_INFO maxLevel:(debug ? ASL_LEVEL_DEBUG : ASL_LEVEL_INFO) dispatchToMain:NO];
 }
 
-- (instancetype)initWithEventReporter:(JSONEventReporter *)reporter currentLevel:(int32_t)currentLevel maxLevel:(int32_t)maxLevel
+- (instancetype)initWithEventReporter:(JSONEventReporter *)reporter currentLevel:(int32_t)currentLevel maxLevel:(int32_t)maxLevel dispatchToMain:(BOOL)dispatchToMain;
 {
   self = [super init];
   if (!self) {
@@ -40,6 +41,7 @@
   _reporter = reporter;
   _currentLevel = currentLevel;
   _maxLevel = maxLevel;
+  _dispatchToMain = dispatchToMain;
 
   return self;
 }
@@ -53,7 +55,14 @@
   }
 
   LogEvent *event = [[LogEvent alloc] init:string level:self.currentLevel];
-  [self.reporter reportLogBridge:event];
+  if (self.dispatchToMain) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [self.reporter reportLogBridge:event];
+    });
+  } else {
+    [self.reporter reportLogBridge:event];
+  }
+
   return self;
 }
 
@@ -73,18 +82,23 @@
 
 - (id<FBSimulatorLogger>)info
 {
-  return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_INFO maxLevel:self.maxLevel];
+  return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_INFO maxLevel:self.maxLevel dispatchToMain:self.dispatchToMain];
 }
 
 - (id<FBSimulatorLogger>)debug
 {
-  return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_DEBUG maxLevel:self.maxLevel];
+  return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_DEBUG maxLevel:self.maxLevel dispatchToMain:self.dispatchToMain];
 }
 
 - (id<FBSimulatorLogger>)error
 {
-  return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_ERR maxLevel:self.maxLevel];
+  return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_ERR maxLevel:self.maxLevel dispatchToMain:self.dispatchToMain];
 }
 
+- (id<FBSimulatorLogger>)onQueue:(dispatch_queue_t)queue
+{
+  BOOL dispatchToMain = queue != dispatch_get_main_queue();
+  return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_ERR maxLevel:self.maxLevel dispatchToMain:dispatchToMain];
+}
 
 @end
