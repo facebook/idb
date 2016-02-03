@@ -86,7 +86,7 @@ static const char *FBASLClientDispatchLocal = "fbsimulatorcontrol_asl_client";
 
 - (id<FBSimulatorLogger>)log:(NSString *)string
 {
-  asl_log(self.client, NULL, self.currentLevel, "%s", string.UTF8String);
+  asl_log(self.client, NULL, self.currentLevel, string.UTF8String, NULL);
   return self;
 }
 
