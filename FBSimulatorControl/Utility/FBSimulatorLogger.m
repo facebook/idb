@@ -18,21 +18,21 @@ static const char *FBASLClientDispatchLocal = "fbsimulatorcontrol_asl_client";
  */
 @interface FBASLClientManager : NSObject
 
-@property (nonatomic, assign, readonly) BOOL writeToStdErr;
+@property (nonatomic, assign, readonly) int fileDescriptor;
 @property (nonatomic, assign, readonly) BOOL debugLogging;
 
 @end
 
 @implementation FBASLClientManager
 
-- (instancetype)initWithWritingToStderr:(BOOL)writeToStdErr debugLogging:(BOOL)debugLogging
+- (instancetype)initWithWritingToFileDescriptor:(int)fileDescriptor debugLogging:(BOOL)debugLogging
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _writeToStdErr = writeToStdErr;
+  _fileDescriptor = fileDescriptor;
   _debugLogging = debugLogging;
 
   return self;
@@ -46,15 +46,15 @@ static const char *FBASLClientDispatchLocal = "fbsimulatorcontrol_asl_client";
   }
 
   client = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
+  int filterLimit = self.debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
 
-  if (self.writeToStdErr) {
-    int filterLimit = self.debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
-    asl_add_output_file(client, STDERR_FILENO, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
+  if (self.fileDescriptor >= STDIN_FILENO) {
+    asl_add_output_file(client, self.fileDescriptor, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
   } else {
-    asl_remove_log_file(client, STDERR_FILENO);
+    asl_remove_log_file(client, self.fileDescriptor);
   }
 
-  dispatch_queue_set_specific(queue, FBASLClientDispatchLocal, client, (void *)(void *) asl_close);
+  dispatch_queue_set_specific(queue, FBASLClientDispatchLocal,  client, (void *)(void *) asl_close);
   return client;
 }
 
@@ -130,7 +130,8 @@ static const char *FBASLClientDispatchLocal = "fbsimulatorcontrol_asl_client";
   static dispatch_once_t onceToken;
   static FBSimulatorLogger_ASL *logger;
   dispatch_once(&onceToken, ^{
-    FBASLClientManager *clientManager = [[FBASLClientManager alloc] initWithWritingToStderr:writeToStdErr debugLogging:debugLogging];
+    int fileDescriptor = writeToStdErr ? STDERR_FILENO : 0;
+    FBASLClientManager *clientManager = [[FBASLClientManager alloc] initWithWritingToFileDescriptor:fileDescriptor debugLogging:debugLogging];
     asl_object_t client = [clientManager clientHandleForQueue:dispatch_get_main_queue()];
     logger = [[FBSimulatorLogger_ASL alloc] initWithClientManager:clientManager client:client currentLevel:ASL_LEVEL_INFO];
   });
