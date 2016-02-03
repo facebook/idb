@@ -11,61 +11,116 @@
 
 #import <asl.h>
 
-/**
- Wraps asl_object_t in an NSObject, so that is becomes reference-counted
- */
-@interface FBASLContainer : NSObject
+@interface FBASLClientWrapper : NSObject
 
-@property (nonatomic, assign, readonly) asl_object_t asl;
+@property (nonatomic, assign, readonly) asl_object_t client;
 
 @end
 
-@implementation FBASLContainer
+@implementation FBASLClientWrapper
 
-- (instancetype)initWithASLObject:(asl_object_t)asl
+- (instancetype)initWithClient:(asl_object_t)client
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _asl = asl;
+  _client = client;
   return self;
 }
 
 - (void)dealloc
 {
-  asl_close(_asl);
-  _asl = NULL;
+  asl_free(self.client);
+}
+
+@end
+
+/**
+ Manages asl client handles.
+ */
+@interface FBASLClientManager : NSObject
+
+@property (nonatomic, assign, readonly) int fileDescriptor;
+@property (nonatomic, assign, readonly) BOOL debugLogging;
+@property (nonatomic, strong, readonly) NSMapTable *queueTable;
+
+@end
+
+@implementation FBASLClientManager
+
+- (instancetype)initWithWritingToFileDescriptor:(int)fileDescriptor debugLogging:(BOOL)debugLogging
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _fileDescriptor = fileDescriptor;
+  _debugLogging = debugLogging;
+  _queueTable = [NSMapTable mapTableWithKeyOptions:NSMapTableWeakMemory valueOptions:NSMapTableObjectPointerPersonality];
+
+  return self;
+}
+
+- (asl_object_t)clientHandleForQueue:(dispatch_queue_t)queue
+{
+  @synchronized (self)
+  {
+    FBASLClientWrapper *clientWrapper = [self.queueTable objectForKey:queue];
+    if (clientWrapper.client) {
+      return clientWrapper.client;
+    }
+
+    asl_object_t client = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
+    int filterLimit = self.debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
+
+    if (self.fileDescriptor >= STDIN_FILENO) {
+      int result = asl_add_output_file(client, self.fileDescriptor, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
+      if (result != 0) {
+        asl_log(client, NULL, ASL_LEVEL_ERR, "Failed to add File Descriptor %d to client with error %d", self.fileDescriptor, result);
+      }
+    }
+
+    clientWrapper = [[FBASLClientWrapper alloc] initWithClient:client];
+    [self.queueTable setObject:clientWrapper forKey:queue];
+    return client;
+  }
 }
 
 @end
 
 @interface FBSimulatorLogger_ASL : NSObject <FBSimulatorLogger>
 
-@property (nonatomic, strong, readonly) FBASLContainer *aslContainer;
+@property (nonatomic, strong, readonly) FBASLClientManager *clientManager;
+@property (nonatomic, assign, readonly) asl_object_t client;
 @property (nonatomic, assign, readonly) int currentLevel;
+@property (nonatomic, copy, readonly) NSString *prefix;
 
 @end
 
 @implementation FBSimulatorLogger_ASL
 
-- (instancetype)initWithASLClient:(FBASLContainer *)aslContainer currentLevel:(int)currentLevel
+- (instancetype)initWithClientManager:(FBASLClientManager *)clientManager client:(asl_object_t)client currentLevel:(int)currentLevel prefix:(NSString *)prefix
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _aslContainer = aslContainer;
+  _clientManager = clientManager;
+  _client = client;
   _currentLevel = currentLevel;
+  _prefix = prefix;
 
   return self;
 }
 
 - (id<FBSimulatorLogger>)log:(NSString *)string
 {
-  asl_log(self.aslContainer.asl, NULL, self.currentLevel, "%s", string.UTF8String);
+  string = self.prefix ? [self.prefix stringByAppendingFormat:@" %@", string] : string;
+  asl_log(self.client, NULL, self.currentLevel, string.UTF8String, NULL);
   return self;
 }
 
@@ -81,28 +136,28 @@
 
 - (id<FBSimulatorLogger>)info
 {
-  return [[FBSimulatorLogger_ASL alloc] initWithASLClient:self.aslContainer currentLevel:ASL_LEVEL_INFO];
+  return [[FBSimulatorLogger_ASL alloc] initWithClientManager:self.clientManager client:self.client currentLevel:ASL_LEVEL_INFO prefix:self.prefix];
 }
 
 - (id<FBSimulatorLogger>)debug
 {
-  return [[FBSimulatorLogger_ASL alloc] initWithASLClient:self.aslContainer currentLevel:ASL_LEVEL_DEBUG];
+  return [[FBSimulatorLogger_ASL alloc] initWithClientManager:self.clientManager client:self.client currentLevel:ASL_LEVEL_DEBUG prefix:self.prefix];
 }
 
 - (id<FBSimulatorLogger>)error
 {
-  return [[FBSimulatorLogger_ASL alloc] initWithASLClient:self.aslContainer currentLevel:ASL_LEVEL_ERR];
+  return [[FBSimulatorLogger_ASL alloc] initWithClientManager:self.clientManager client:self.client currentLevel:ASL_LEVEL_ERR prefix:self.prefix];
 }
 
-- (instancetype)writingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
+- (id<FBSimulatorLogger>)onQueue:(dispatch_queue_t)queue
 {
-  if (writeToStdErr) {
-    int filterLimit = debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
-    asl_add_output_file(self.aslContainer.asl, STDERR_FILENO, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
-  } else {
-    asl_remove_log_file(self.aslContainer.asl, STDERR_FILENO);
-  }
-  return self;
+  asl_object_t client = [self.clientManager clientHandleForQueue:queue];
+  return [[FBSimulatorLogger_ASL alloc] initWithClientManager:self.clientManager client:client currentLevel:self.currentLevel prefix:self.prefix];
+}
+
+- (id<FBSimulatorLogger>)withPrefix:(NSString *)prefix
+{
+  return [[FBSimulatorLogger_ASL alloc] initWithClientManager:self.clientManager client:self.client currentLevel:self.currentLevel prefix:prefix];
 }
 
 @end
@@ -111,13 +166,15 @@
 
 + (id<FBSimulatorLogger>)aslLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
 {
-  static dispatch_once_t onceToken;
-  static FBSimulatorLogger_ASL *logger;
-  dispatch_once(&onceToken, ^{
-    asl_object_t asl = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
-    FBASLContainer *aslContainer = [[FBASLContainer alloc] initWithASLObject:asl];
-    logger = [[[FBSimulatorLogger_ASL alloc] initWithASLClient:aslContainer currentLevel:ASL_LEVEL_INFO] writingToStderrr:writeToStdErr withDebugLogging:debugLogging];
-  });
+  int fileDescriptor = writeToStdErr ? STDERR_FILENO : 0;
+  return [self aslLoggerWritingToFileDescriptor:fileDescriptor withDebugLogging:debugLogging];
+}
+
++ (id<FBSimulatorLogger>)aslLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging
+{
+  FBASLClientManager *clientManager = [[FBASLClientManager alloc] initWithWritingToFileDescriptor:fileDescriptor debugLogging:debugLogging];
+  asl_object_t client = [clientManager clientHandleForQueue:dispatch_get_main_queue()];
+  FBSimulatorLogger_ASL *logger = [[FBSimulatorLogger_ASL alloc] initWithClientManager:clientManager client:client currentLevel:ASL_LEVEL_INFO prefix:nil];
   return logger;
 }
 

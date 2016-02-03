@@ -45,6 +45,22 @@
  */
 - (id<FBSimulatorLogger>)error;
 
+/**
+ Returns a Logger that will accept log values on the given queue.
+
+ @param queue the queue to accept log messages on.
+ @return a new Logger that will allows logging of messages on the provided queue.
+ */
+- (id<FBSimulatorLogger>)onQueue:(dispatch_queue_t)queue;
+
+/**
+ Returns a Logger that will prefix all messages with the given string
+
+ @param prefix the prefix to prepend to all messages.
+ @return a new Logger that will allows logging of messages on the provided queue.
+ */
+- (id<FBSimulatorLogger>)withPrefix:(NSString *)prefix;
+
 @end
 
 @interface FBSimulatorLogger : NSObject
@@ -57,5 +73,14 @@
  @return an FBSimulatorLogger instance.
  */
 + (id<FBSimulatorLogger>)aslLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
+
+/**
+ An implementation of `FBSimulatorLogger` that logs all to a file descriptor using ASL.
+
+ @param fileDescriptor the file descriptor to log to, if 0 no file descriptor logging will occur.
+ @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
+ @return an FBSimulatorLogger instance.
+ */
++ (id<FBSimulatorLogger>)aslLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging;
 
 @end

@@ -88,10 +88,11 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 + (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithDiagnostic:diagnostic scale:scale logger:logger eventSink:eventSink];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
+  return [[self alloc] initWithDiagnostic:diagnostic scale:scale onQueue:queue logger:[logger onQueue:queue] eventSink:eventSink];
 }
 
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale onQueue:(dispatch_queue_t)queue logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -103,7 +104,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   _logger = logger;
   _eventSink = eventSink;
 
-  _mediaQueue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
+  _mediaQueue = queue;
   _itemQueue = [FBCapacityQueue withCapacity:20];
 
   _timebase = NULL;
@@ -332,15 +333,19 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 {
   AVAssetWriter *writer = self.writer;
   AVAssetWriterInput *input = self.input;
+  NSURL *videoFile = writer.outputURL;
   self.writer = nil;
   self.adaptor = nil;
   self.input = nil;
 
+  [self.logger.info logFormat:@"Marking video at '%@ as finished", videoFile];
   [input markAsFinished];
   [writer removeObserver:self forKeyPath:@"readyForMoreMediaData"];
+
+  [self.logger.info logFormat:@"Finishing Writing '%@'", videoFile];
   [writer finishWritingWithCompletionHandler:^{
-    dispatch_async(dispatch_get_main_queue(), ^{
-      [self.logger.info log:@"Finished Recording"];
+    dispatch_async(self.mediaQueue, ^{
+      [self.logger.info logFormat:@"Finished Writing '%@'", videoFile];
     });
   }];
 }

@@ -38,7 +38,6 @@
 
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
 {
-  logger = logger ?: FBSimulatorControlGlobalConfiguration.defaultLogger;
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }
 
@@ -121,12 +120,13 @@
 
 + (void)loadPrivateFrameworksOrAbort
 {
+  id<FBSimulatorLogger> logger = FBSimulatorControlGlobalConfiguration.defaultLogger;
   NSError *error = nil;
-  BOOL success = [FBSimulatorControl loadPrivateFrameworks:FBSimulatorControlGlobalConfiguration.defaultLogger.debug error:&error];
+  BOOL success = [FBSimulatorControl loadPrivateFrameworks:logger.debug error:&error];
   if (success) {
     return;
   }
-  NSLog(@"Failed to load Frameworks with error %@", error);
+  [logger.error logFormat:@"Failed to load Frameworks with error %@", error];
   abort();
 }
 
