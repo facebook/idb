@@ -333,18 +333,19 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 {
   AVAssetWriter *writer = self.writer;
   AVAssetWriterInput *input = self.input;
+  NSURL *videoFile = writer.outputURL;
   self.writer = nil;
   self.adaptor = nil;
   self.input = nil;
 
-  [self.logger.info log:@"Marking video as finished"];
+  [self.logger.info logFormat:@"Marking video at '%@ as finished", videoFile];
   [input markAsFinished];
   [writer removeObserver:self forKeyPath:@"readyForMoreMediaData"];
 
-  [self.logger.info log:@"Finishing Writing"];
+  [self.logger.info logFormat:@"Finishing Writing '%@'", videoFile];
   [writer finishWritingWithCompletionHandler:^{
     dispatch_async(self.mediaQueue, ^{
-      [self.logger.info log:@"Finished Writing"];
+      [self.logger.info logFormat:@"Finished Writing '%@'", videoFile];
     });
   }];
 }
