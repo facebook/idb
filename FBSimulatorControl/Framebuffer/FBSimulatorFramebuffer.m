@@ -9,23 +9,25 @@
 
 #import "FBSimulatorFramebuffer.h"
 
-#import <AppKit/AppKit.h>
-#import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
-#import <SimulatorKit/SimDeviceFramebufferService.h>
 #import <mach/exc.h>
 #import <mach/mig.h>
 
+#import <AppKit/AppKit.h>
+
+#import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
+#import <SimulatorKit/SimDeviceFramebufferService.h>
+
+#import "FBDiagnostic.h"
 #import "FBFramebufferCompositeDelegate.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
 #import "FBFramebufferImage.h"
 #import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
+#import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorLogger.h"
-#import "FBSimulatorDiagnostics.h"
-#import "FBDiagnostic.h"
 
 /**
  Enumeration to keep track of internal state.

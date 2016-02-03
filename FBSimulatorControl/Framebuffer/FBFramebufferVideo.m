@@ -14,10 +14,10 @@
 #import <CoreVideo/CoreVideo.h>
 
 #import "FBCapacityQueue.h"
+#import "FBDiagnostic.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLogger.h"
-#import "FBDiagnostic.h"
 
 typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
   FBFramebufferVideoStateNotStarted = 0,

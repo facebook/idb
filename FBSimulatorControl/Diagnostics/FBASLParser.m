@@ -11,8 +11,8 @@
 
 #include <asl.h>
 
-#import "FBProcessInfo.h"
 #import "FBDiagnostic.h"
+#import "FBProcessInfo.h"
 
 static BOOL WriteOutputToFilePath(const char *filePath, asl_object_t aslFile, pid_t processIdentifier)
 {

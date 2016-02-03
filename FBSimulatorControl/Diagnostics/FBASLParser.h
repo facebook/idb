@@ -9,9 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessInfo;
 @class FBDiagnostic;
 @class FBDiagnosticBuilder;
+@class FBProcessInfo;
 
 /**
  Reads ASL Messages using asl(3).

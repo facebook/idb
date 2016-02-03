@@ -11,9 +11,9 @@
 
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
-@class FBSimulator;
 @class FBDiagnostic;
 @class FBDiagnosticBuilder;
+@class FBSimulator;
 
 /**
  The Name of the Syslog.

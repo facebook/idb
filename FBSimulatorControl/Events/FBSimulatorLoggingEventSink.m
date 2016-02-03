@@ -9,11 +9,11 @@
 
 #import "FBSimulatorLoggingEventSink.h"
 
+#import "FBDiagnostic.h"
 #import "FBProcessInfo.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
-#import "FBDiagnostic.h"
 
 @interface FBSimulatorLoggingEventSink ()
 

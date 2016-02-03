@@ -11,11 +11,11 @@
 
 @class FBAgentLaunchConfiguration;
 @class FBApplicationLaunchConfiguration;
+@class FBDiagnostic;
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorApplication;
 @class FBSimulatorFramebuffer;
-@class FBDiagnostic;
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializationDescribeable;
 

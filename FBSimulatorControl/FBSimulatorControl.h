@@ -18,6 +18,7 @@
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBCrashLogInfo.h>
 #import <FBSimulatorControl/FBDebugDescribeable.h>
+#import <FBSimulatorControl/FBDiagnostic.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
 #import <FBSimulatorControl/FBFramebufferCompositeDelegate.h>
 #import <FBSimulatorControl/FBFramebufferDebugWindow.h>
@@ -48,6 +49,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorControlGlobalConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorDiagnostics.h>
 #import <FBSimulatorControl/FBSimulatorError.h>
 #import <FBSimulatorControl/FBSimulatorEventRelay.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
@@ -70,7 +72,6 @@
 #import <FBSimulatorControl/FBSimulatorLaunchCtl.h>
 #import <FBSimulatorControl/FBSimulatorLogger.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
-#import <FBSimulatorControl/FBSimulatorDiagnostics.h>
 #import <FBSimulatorControl/FBSimulatorNotificationEventSink.h>
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
@@ -83,5 +84,4 @@
 #import <FBSimulatorControl/FBTaskExecutor+Private.h>
 #import <FBSimulatorControl/FBTaskExecutor.h>
 #import <FBSimulatorControl/FBTerminationHandle.h>
-#import <FBSimulatorControl/FBDiagnostic.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>

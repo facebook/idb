@@ -9,15 +9,15 @@
 
 #import "FBSimulatorInteraction+Diagnostics.h"
 
+#import "FBDiagnostic.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
+#import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Private.h"
-#import "FBSimulatorDiagnostics.h"
 #import "FBTaskExecutor.h"
-#import "FBDiagnostic.h"
 
 typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t processIdentifier);
 

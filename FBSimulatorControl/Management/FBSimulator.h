@@ -18,10 +18,10 @@
 @class FBProcessInfo;
 @class FBProcessQuery;
 @class FBSimulatorConfiguration;
+@class FBSimulatorDiagnostics;
 @class FBSimulatorFramebuffer;
 @class FBSimulatorHistory;
 @class FBSimulatorLogger;
-@class FBSimulatorDiagnostics;
 @class FBSimulatorPool;
 @class SimDevice;
 
