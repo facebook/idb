@@ -467,6 +467,9 @@
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
+  if ([self.backingFilePath.stringByStandardizingPath isEqualToString:self.backingFilePath.stringByStandardizingPath]) {
+    return YES;
+  }
   return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
 }
 
