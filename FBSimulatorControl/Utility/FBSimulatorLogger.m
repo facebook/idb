@@ -11,7 +11,31 @@
 
 #import <asl.h>
 
-static const char *FBASLClientDispatchLocal = "fbsimulatorcontrol_asl_client";
+@interface FBASLClientWrapper : NSObject
+
+@property (nonatomic, assign, readonly) asl_object_t client;
+
+@end
+
+@implementation FBASLClientWrapper
+
+- (instancetype)initWithClient:(asl_object_t)client
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _client = client;
+  return self;
+}
+
+- (void)dealloc
+{
+  asl_free(self.client);
+}
+
+@end
 
 /**
  Manages asl client handles.
@@ -20,6 +44,7 @@ static const char *FBASLClientDispatchLocal = "fbsimulatorcontrol_asl_client";
 
 @property (nonatomic, assign, readonly) int fileDescriptor;
 @property (nonatomic, assign, readonly) BOOL debugLogging;
+@property (nonatomic, strong, readonly) NSMapTable *queueTable;
 
 @end
 
@@ -34,28 +59,34 @@ static const char *FBASLClientDispatchLocal = "fbsimulatorcontrol_asl_client";
 
   _fileDescriptor = fileDescriptor;
   _debugLogging = debugLogging;
+  _queueTable = [NSMapTable mapTableWithKeyOptions:NSMapTableWeakMemory valueOptions:NSMapTableObjectPointerPersonality];
 
   return self;
 }
 
 - (asl_object_t)clientHandleForQueue:(dispatch_queue_t)queue
 {
-  asl_object_t client = dispatch_queue_get_specific(queue, FBASLClientDispatchLocal);
-  if (client) {
+  @synchronized (self)
+  {
+    FBASLClientWrapper *clientWrapper = [self.queueTable objectForKey:queue];
+    if (clientWrapper.client) {
+      return clientWrapper.client;
+    }
+
+    asl_object_t client = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
+    int filterLimit = self.debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
+
+    if (self.fileDescriptor >= STDIN_FILENO) {
+      int result = asl_add_output_file(client, self.fileDescriptor, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
+      if (result != 0) {
+        asl_log(client, NULL, ASL_LEVEL_ERR, "Failed to add File Descriptor %d to client with error %d", self.fileDescriptor, result);
+      }
+    }
+
+    clientWrapper = [[FBASLClientWrapper alloc] initWithClient:client];
+    [self.queueTable setObject:clientWrapper forKey:queue];
     return client;
   }
-
-  client = asl_open("FBSimulatorControl", "com.facebook.fbsimulatorcontrol", 0);
-  int filterLimit = self.debugLogging ? ASL_FILTER_MASK_UPTO(ASL_LEVEL_DEBUG) : ASL_FILTER_MASK_UPTO(ASL_LEVEL_INFO);
-
-  if (self.fileDescriptor >= STDIN_FILENO) {
-    asl_add_output_file(client, self.fileDescriptor, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
-  } else {
-    asl_remove_log_file(client, self.fileDescriptor);
-  }
-
-  dispatch_queue_set_specific(queue, FBASLClientDispatchLocal,  client, (void *)(void *) asl_close);
-  return client;
 }
 
 @end
