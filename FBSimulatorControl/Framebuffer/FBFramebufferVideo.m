@@ -60,6 +60,11 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   CGImageRelease(_image);
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Time %f | Count %lu", CMTimeGetSeconds(self.time), self.frameCount];
+}
+
 @end
 
 @interface FBFramebufferVideo ()
@@ -153,7 +158,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   dispatch_barrier_async(self.mediaQueue, ^{
     if (self.lastItem) {
       CMTime time = [self currentTime];
-      [self.logger.info logFormat:@"Pushing frame at %f again at time %f as this is the final frame", CMTimeGetSeconds(self.lastItem.time), CMTimeGetSeconds(time)];
+      [self.logger.info logFormat:@"Pushing frame (%@) again at time %f as this is the final frame", self.lastItem, CMTimeGetSeconds(time)];
       [self pushImage:self.lastItem.image time:time frameCount:self.lastItem.frameCount + 1];
     }
     [self teardownWriter];
@@ -197,14 +202,17 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 - (void)drainQueue
 {
+  NSInteger drainCount = 0;
   while (self.input.readyForMoreMediaData) {
     FBFramebufferVideoItem *item = [self.itemQueue pop];
     if (!item) {
       return;
     }
+    drainCount++;
     CVPixelBufferRef pixelBuffer = [FBFramebufferVideo createPixelBufferOfSize:self.size fromPool:self.adaptor.pixelBufferPool ofImage:item.image];
     if (!pixelBuffer) {
       [self.logger.error logFormat:@"Could not construct a pixel buffer for frame number %lu", item.frameCount];
+      continue;
     }
 
     // It's important that a number of conditions are met to ensure that this call is reliable as possible.
@@ -224,6 +232,9 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     }
     self.lastItem = item;
     CVPixelBufferRelease(pixelBuffer);
+  }
+  if (drainCount == 0 && self.itemQueue.count > 0) {
+    [self.logger.debug logFormat:@"Failed to drain any frames with a queue of length %lu", drainCount];
   }
 }
 
