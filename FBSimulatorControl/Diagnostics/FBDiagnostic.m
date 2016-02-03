@@ -7,11 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 #import <objc/runtime.h>
 
-@interface FBWritableLog ()
+@interface FBDiagnostic ()
 
 @property (nonatomic, copy, readwrite) NSString *shortName;
 @property (nonatomic, copy, readwrite) NSString *fileType;
@@ -19,41 +19,41 @@
 @property (nonatomic, copy, readwrite) NSString *storageDirectory;
 @property (nonatomic, copy, readwrite) NSString *destination;
 
-@property (nonatomic, copy, readwrite) NSData *logData;
-@property (nonatomic, copy, readwrite) NSString *logString;
-@property (nonatomic, copy, readwrite) NSString *logPath;
+@property (nonatomic, copy, readwrite) NSData *backingData;
+@property (nonatomic, copy, readwrite) NSString *backingString;
+@property (nonatomic, copy, readwrite) NSString *backingFilePath;
 
 @end
 
 /**
- A representation of a Writable Log, backed by NSData.
+ A representation of a Diagnostic, backed by NSData.
  */
-@interface FBWritableLog_Data : FBWritableLog
+@interface FBDiagnostic_Data : FBDiagnostic
 
 @end
 
 /**
- A representation of a Writable Log, backed by an NSString.
+ A representation of a Diagnostic, backed by an NSString.
  */
-@interface FBWritableLog_String : FBWritableLog
+@interface FBDiagnostic_String : FBDiagnostic
 
 @end
 
 /**
- A representation of a Writable Log, backed by a File Path.
+ A representation of a Diagnostic, backed by a File Path.
  */
-@interface FBWritableLog_Path : FBWritableLog
+@interface FBDiagnostic_Path : FBDiagnostic
 
 @end
 
 /**
- A representation of a Writable Log, where the log is known to not exist.
+ A representation of a Diagnostic, where the log is known to not exist.
  */
-@interface FBWritableLog_Empty : FBWritableLog
+@interface FBDiagnostic_Empty : FBDiagnostic
 
 @end
 
-@implementation FBWritableLog
+@implementation FBDiagnostic
 
 #pragma mark Initializers
 
@@ -64,7 +64,7 @@
     return nil;
   }
 
-  _storageDirectory = [FBWritableLog defaultStorageDirectory];
+  _storageDirectory = [FBDiagnostic defaultStorageDirectory];
 
   return self;
 }
@@ -100,13 +100,13 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog *log = [self.class new];
-  log.shortName = self.shortName;
-  log.fileType = self.fileType;
-  log.humanReadableName = self.humanReadableName;
-  log.storageDirectory = self.storageDirectory;
-  log.destination = self.destination;
-  return log;
+  FBDiagnostic *diagnostic = [self.class new];
+  diagnostic.shortName = self.shortName;
+  diagnostic.fileType = self.fileType;
+  diagnostic.humanReadableName = self.humanReadableName;
+  diagnostic.storageDirectory = self.storageDirectory;
+  diagnostic.destination = self.destination;
+  return diagnostic;
 }
 
 #pragma mark Public API
@@ -184,7 +184,7 @@
 
 @end
 
-@implementation FBWritableLog_Data
+@implementation FBDiagnostic_Data
 
 #pragma mark NSCoding
 
@@ -195,7 +195,7 @@
     return nil;
   }
 
-  self.logData = [coder decodeObjectForKey:NSStringFromSelector(@selector(logData))];
+  self.backingData = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingData))];
 
   return self;
 }
@@ -203,15 +203,15 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [super encodeWithCoder:coder];
-  [coder encodeObject:self.logData forKey:NSStringFromSelector(@selector(logData))];
+  [coder encodeObject:self.backingData forKey:NSStringFromSelector(@selector(backingData))];
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog_Data *log = [super copyWithZone:zone];
-  log.logData = self.logData;
+  FBDiagnostic_Data *log = [super copyWithZone:zone];
+  log.backingData = self.backingData;
   return log;
 }
 
@@ -219,36 +219,36 @@
 
 - (NSData *)asData
 {
-  return self.logData;
+  return self.backingData;
 }
 
 - (NSString *)asString
 {
-  if (!self.logString) {
-    self.logString = [[NSString alloc] initWithData:self.logData encoding:NSUTF8StringEncoding];
+  if (!self.backingString) {
+    self.backingString = [[NSString alloc] initWithData:self.backingData encoding:NSUTF8StringEncoding];
   }
-  return self.logString;
+  return self.backingString;
 }
 
 - (NSString *)asPath
 {
-  if (!self.logPath) {
+  if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if ([self.logData writeToFile:path atomically:YES]) {
-      self.logPath = path;
+    if ([self.backingData writeToFile:path atomically:YES]) {
+      self.backingFilePath = path;
     }
   }
-  return self.logPath;
+  return self.backingFilePath;
 }
 
 - (BOOL)hasLogContent
 {
-  return self.logData.length >= 1;
+  return self.backingData.length >= 1;
 }
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  return [self.logData writeToFile:path options:0 error:error];
+  return [self.backingData writeToFile:path options:0 error:error];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -256,7 +256,7 @@
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
-  NSString *base64String = [self.logData base64EncodedStringWithOptions:0];
+  NSString *base64String = [self.backingData base64EncodedStringWithOptions:0];
   if (base64String) {
     dictionary[@"data"] = base64String;
   }
@@ -283,7 +283,7 @@
 
 @end
 
-@implementation FBWritableLog_String
+@implementation FBDiagnostic_String
 
 #pragma mark NSCoding
 
@@ -294,7 +294,7 @@
     return nil;
   }
 
-  self.logString = [coder decodeObjectForKey:NSStringFromSelector(@selector(logString))];
+  self.backingString = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingString))];
 
   return self;
 }
@@ -302,15 +302,15 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [super encodeWithCoder:coder];
-  [coder encodeObject:self.logString forKey:NSStringFromSelector(@selector(logString))];
+  [coder encodeObject:self.backingString forKey:NSStringFromSelector(@selector(backingString))];
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog_String *log = [super copyWithZone:zone];
-  log.logString = self.logString;
+  FBDiagnostic_String *log = [super copyWithZone:zone];
+  log.backingString = self.backingString;
   return log;
 }
 
@@ -318,36 +318,36 @@
 
 - (NSData *)asData
 {
-  if (!self.logData) {
-    self.logData = [self.logString dataUsingEncoding:NSUTF8StringEncoding];
+  if (!self.backingData) {
+    self.backingData = [self.backingString dataUsingEncoding:NSUTF8StringEncoding];
   }
-  return self.logData;
+  return self.backingData;
 }
 
 - (NSString *)asString
 {
-  return self.logString;
+  return self.backingString;
 }
 
 - (NSString *)asPath
 {
-  if (!self.logPath) {
+  if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if ([self.logString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil]) {
-      self.logPath = path;
+    if ([self.backingString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil]) {
+      self.backingFilePath = path;
     }
   }
-  return self.logPath;
+  return self.backingFilePath;
 }
 
 - (BOOL)hasLogContent
 {
-  return self.logString.length >= 1;
+  return self.backingString.length >= 1;
 }
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  return [self.logString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
+  return [self.backingString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -355,7 +355,7 @@
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
-  dictionary[@"contents"] = self.logString;
+  dictionary[@"contents"] = self.backingString;
   return dictionary;
 }
 
@@ -380,7 +380,7 @@
 
 @end
 
-@implementation FBWritableLog_Path
+@implementation FBDiagnostic_Path
 
 #pragma mark NSCoding
 
@@ -391,7 +391,7 @@
     return nil;
   }
 
-  self.logPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(logPath))];
+  self.backingFilePath = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingFilePath))];
 
   return self;
 }
@@ -399,15 +399,15 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [super encodeWithCoder:coder];
-  [coder encodeObject:self.logPath forKey:NSStringFromSelector(@selector(logPath))];
+  [coder encodeObject:self.backingFilePath forKey:NSStringFromSelector(@selector(backingFilePath))];
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  FBWritableLog_Path *log = [super copyWithZone:zone];
-  log.logPath = self.logPath;
+  FBDiagnostic_Path *log = [super copyWithZone:zone];
+  log.backingFilePath = self.backingFilePath;
   return log;
 }
 
@@ -415,35 +415,35 @@
 
 - (NSData *)asData
 {
-  if (!self.logData) {
-    self.logData = [[NSData alloc] initWithContentsOfFile:self.logPath];
+  if (!self.backingData) {
+    self.backingData = [[NSData alloc] initWithContentsOfFile:self.backingFilePath];
   }
-  return self.logData;
+  return self.backingData;
 }
 
 - (NSString *)asString
 {
-  if (!self.logString) {
-    self.logString = [[NSString alloc] initWithContentsOfFile:self.logPath usedEncoding:nil error:nil];
+  if (!self.backingString) {
+    self.backingString = [[NSString alloc] initWithContentsOfFile:self.backingFilePath usedEncoding:nil error:nil];
   }
-  return self.logString;
+  return self.backingString;
 }
 
 - (NSString *)asPath
 {
-  return self.logPath;
+  return self.backingFilePath;
 }
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
-  dictionary[@"location"] = self.logPath;
+  dictionary[@"location"] = self.backingFilePath;
   return dictionary;
 }
 
 - (BOOL)hasLogContent
 {
-  NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.logPath error:nil];
+  NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.backingFilePath error:nil];
   return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
 }
 
@@ -467,12 +467,12 @@
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  return [NSFileManager.defaultManager copyItemAtPath:self.logPath toPath:path error:error];
+  return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
 }
 
 @end
 
-@implementation FBWritableLog_Empty
+@implementation FBDiagnostic_Empty
 
 - (NSData *)asData
 {
@@ -491,48 +491,48 @@
 
 @end
 
-@interface FBWritableLogBuilder ()
+@interface FBDiagnosticBuilder ()
 
-@property (nonatomic, copy) FBWritableLog *writableLog;
+@property (nonatomic, copy) FBDiagnostic *diagnostic;
 
 @end
 
-@implementation FBWritableLogBuilder : NSObject
+@implementation FBDiagnosticBuilder : NSObject
 
 + (instancetype)builder
 {
-  return [self builderWithWritableLog:nil];
+  return [self builderWithDiagnostic:nil];
 }
 
-+ (instancetype)builderWithWritableLog:(FBWritableLog *)writableLog
++ (instancetype)builderWithDiagnostic:(FBDiagnostic *)diagnostic
 {
-  return [[FBWritableLogBuilder new] updateWritableLog:[writableLog copy] ?: [FBWritableLog_Empty new]];
+  return [[FBDiagnosticBuilder new] updateDiagnostic:[diagnostic copy] ?: [FBDiagnostic_Empty new]];
 }
 
-- (instancetype)updateWritableLog:(FBWritableLog *)writableLog
+- (instancetype)updateDiagnostic:(FBDiagnostic *)diagnostic
 {
-  if (!writableLog) {
+  if (!diagnostic) {
     return self;
   }
-  self.writableLog = writableLog;
+  self.diagnostic = diagnostic;
   return self;
 }
 
 - (instancetype)updateShortName:(NSString *)shortName
 {
-  self.writableLog.shortName = shortName;
+  self.diagnostic.shortName = shortName;
   return self;
 }
 
 - (instancetype)updateFileType:(NSString *)fileType
 {
-  self.writableLog.fileType = fileType;
+  self.diagnostic.fileType = fileType;
   return self;
 }
 
 - (instancetype)updateHumanReadableName:(NSString *)humanReadableName
 {
-  self.writableLog.humanReadableName = humanReadableName;
+  self.diagnostic.humanReadableName = humanReadableName;
   return self;
 }
 
@@ -543,52 +543,52 @@
       return self;
     }
   }
-  self.writableLog.storageDirectory = storageDirectory;
+  self.diagnostic.storageDirectory = storageDirectory;
   return self;
 }
 
 - (instancetype)updateDestination:(NSString *)destination
 {
-  self.writableLog.destination = destination;
+  self.diagnostic.destination = destination;
   return self;
 }
 
 - (instancetype)updateData:(NSData *)data
 {
-  [self flushLogs];
+  [self flushBackingStore];
   if (!data) {
     return self;
   }
-  object_setClass(self.writableLog, FBWritableLog_Data.class);
-  self.writableLog.logData = data;
+  object_setClass(self.diagnostic, FBDiagnostic_Data.class);
+  self.diagnostic.backingData = data;
   return self;
 }
 
 - (instancetype)updateString:(NSString *)string
 {
-  [self flushLogs];
+  [self flushBackingStore];
   if (!string) {
     return self;
   }
-  object_setClass(self.writableLog, FBWritableLog_String.class);
-  self.writableLog.logString = string;
+  object_setClass(self.diagnostic, FBDiagnostic_String.class);
+  self.diagnostic.backingString = string;
   return self;
 }
 
 - (instancetype)updatePath:(NSString *)path
 {
-  [self flushLogs];
+  [self flushBackingStore];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return self;
   }
-  object_setClass(self.writableLog, FBWritableLog_Path.class);
-  self.writableLog.logPath = path;
+  object_setClass(self.diagnostic, FBDiagnostic_Path.class);
+  self.diagnostic.backingFilePath = path;
   return self;
 }
 
 - (NSString *)createPath
 {
-  return [self.writableLog temporaryFilePath];
+  return [self.diagnostic temporaryFilePath];
 }
 
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block
@@ -596,24 +596,24 @@
   NSString *path = [self createPath];
   if (!block(path)) {
     [NSFileManager.defaultManager removeItemAtPath:path error:nil];
-    [self flushLogs];
+    [self flushBackingStore];
   }
   return [self updatePath:path];
 }
 
-- (FBWritableLog *)build
+- (FBDiagnostic *)build
 {
-  return self.writableLog;
+  return self.diagnostic;
 }
 
 #pragma mark Private
 
-- (void)flushLogs
+- (void)flushBackingStore
 {
-  self.writableLog.logData = nil;
-  self.writableLog.logString = nil;
-  self.writableLog.logPath = nil;
-  object_setClass(self.writableLog, FBWritableLog_Empty.class);
+  self.diagnostic.backingData = nil;
+  self.diagnostic.backingString = nil;
+  self.diagnostic.backingFilePath = nil;
+  object_setClass(self.diagnostic, FBDiagnostic_Empty.class);
 }
 
 + (NSSet *)defaultStringBackedPathExtensions

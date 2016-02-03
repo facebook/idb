@@ -18,13 +18,13 @@ public enum EventName : String {
   case Boot = "boot"
   case Create = "create"
   case Delete = "delete"
-  case Diagnostic = "diagnose"
+  case Diagnose = "diagnose"
   case Failure = "failure"
   case Help = "help"
   case Install = "install"
   case Launch = "launch"
   case List = "list"
-  case Log = "log"
+  case Diagnostic = "diagnostic"
   case Shutdown = "shutdown"
   case StateChange = "state"
   case Terminate = "terminate"
@@ -115,7 +115,7 @@ class SimpleEvent : NSObject, JSONDescribeable {
   var jsonDescription: JSON {
     get {
       return JSON.Dictionary([
-        "event_name" : JSON.String(EventName.Log.rawValue),
+        "event_name" : JSON.String(EventName.Diagnostic.rawValue),
         "event_type" : JSON.String(EventType.Discrete.rawValue),
         "subject" : JSON.String(self.logString),
         "level" : JSON.String(self.levelString),

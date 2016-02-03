@@ -70,7 +70,7 @@
 #import <FBSimulatorControl/FBSimulatorLaunchCtl.h>
 #import <FBSimulatorControl/FBSimulatorLogger.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
-#import <FBSimulatorControl/FBSimulatorLogs.h>
+#import <FBSimulatorControl/FBSimulatorDiagnostics.h>
 #import <FBSimulatorControl/FBSimulatorNotificationEventSink.h>
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
@@ -83,5 +83,5 @@
 #import <FBSimulatorControl/FBTaskExecutor+Private.h>
 #import <FBSimulatorControl/FBTaskExecutor.h>
 #import <FBSimulatorControl/FBTerminationHandle.h>
-#import <FBSimulatorControl/FBWritableLog.h>
+#import <FBSimulatorControl/FBDiagnostic.h>
 #import <FBSimulatorControl/NSRunLoop+SimulatorControlAdditions.h>

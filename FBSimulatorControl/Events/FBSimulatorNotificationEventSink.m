@@ -120,10 +120,10 @@ NSString *const FBSimulatorStateKey = @"simulator_state";
   }];
 }
 
-- (void)logAvailable:(FBWritableLog *)log
+- (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   [self materializeNotification:FBSimulatorGainedDiagnosticInformation userInfo:@{
-    FBSimulatorDiagnosticLog : log
+    FBSimulatorDiagnosticLog : diagnostic
   }];
 }
 

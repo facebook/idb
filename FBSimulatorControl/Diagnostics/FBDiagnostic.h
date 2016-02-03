@@ -16,7 +16,7 @@
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
-@interface FBWritableLog : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBDiagnostic : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
 
 /**
  The name of the Log for uniquely identifying the log.
@@ -66,7 +66,7 @@
 @property (nonatomic, readonly, assign) BOOL hasLogContent;
 
 /**
- Writes the FBWritableLog out to a file path in the most efficient way for the backing store of the log.
+ Writes the FBDiagnostic out to a file path in the most efficient way for the backing store of the log.
 
  @param path the File Path write to.
  @param error an error out for any error that occurs.
@@ -77,33 +77,33 @@
 @end
 
 /**
- The Builder for a `FBWritableLog` as `FBWritableLog` is immutable.
+ The Builder for a `FBDiagnostic` as `FBDiagnostic` is immutable.
  */
-@interface FBWritableLogBuilder : NSObject
+@interface FBDiagnosticBuilder : NSObject
 
 /**
- Creates a new `FBWritableLogBuilder` with an empty `writableLog`.
+ Creates a new `FBDiagnosticBuilder` with an empty `diagnostic`.
  */
 + (instancetype)builder;
 
 /**
- Creates a new `FBWritableLogBuilder` copying all of the values from `writableLog`.
+ Creates a new `FBDiagnosticBuilder` copying all of the values from `diagnostic`.
 
- @param writableLog the original Writable Log to copy values from.
+ @param diagnostic the original Diagnostic to copy values from.
  @return the reciever, for chaining.
  */
-+ (instancetype)builderWithWritableLog:(FBWritableLog *)writableLog;
++ (instancetype)builderWithDiagnostic:(FBDiagnostic *)diagnostic;
 
 /**
- Updates the Writable Log in the builder.
+ Updates the Diagnostic in the builder.
 
- @param writableLog the original Writable Log to copy values from.
+ @param diagnostic the original Diagnostic to copy values from.
  @return the reciever, for chaining.
  */
-- (instancetype)updateWritableLog:(FBWritableLog *)writableLog;
+- (instancetype)updateDiagnostic:(FBDiagnostic *)diagnostic;
 
 /**
- Updates the `shortName` of the underlying `FBWritableLog`.
+ Updates the `shortName` of the underlying `FBDiagnostic`.
 
  @param shortName the Short Name to update with.
  @return the reciever, for chaining.
@@ -111,7 +111,7 @@
 - (instancetype)updateShortName:(NSString *)shortName;
 
 /**
- Updates the `fileType` of the underlying `FBWritableLog`.
+ Updates the `fileType` of the underlying `FBDiagnostic`.
 
  @param fileType the File Type to update with.
  @return the reciever, for chaining.
@@ -119,7 +119,7 @@
 - (instancetype)updateFileType:(NSString *)fileType;
 
 /**
- Updates the `humanReadableName` of the underlying `FBWritableLog`.
+ Updates the `humanReadableName` of the underlying `FBDiagnostic`.
 
  @param humanReadableName the Human Readable Name to update with.
  @return the reciever, for chaining.
@@ -127,7 +127,7 @@
 - (instancetype)updateHumanReadableName:(NSString *)humanReadableName;
 
 /**
- Updates the `storageDirectory` of the underlying `FBWritableLog`.
+ Updates the `storageDirectory` of the underlying `FBDiagnostic`.
 
  @param storageDirectory the Human Readable Name to update with.
  @return the reciever, for chaining.
@@ -135,7 +135,7 @@
 - (instancetype)updateStorageDirectory:(NSString *)storageDirectory;
 
 /**
- Updates the `destination` of the underlying `FBWritableLog`.
+ Updates the `destination` of the underlying `FBDiagnostic`.
 
  @param destination the Destination to update with.
  @return the reciever, for chaining.
@@ -143,7 +143,7 @@
 - (instancetype)updateDestination:(NSString *)destination;
 
 /**
- Updates the underlying `FBWritableLog` with Data.
+ Updates the underlying `FBDiagnostic` with Data.
  Will replace any previous path or string that represent the log.
 
  @param data the Date to update with.
@@ -152,7 +152,7 @@
 - (instancetype)updateData:(NSData *)data;
 
 /**
- Updates the underlying `FBWritableLog` with a String.
+ Updates the underlying `FBDiagnostic` with a String.
  Will replace any previous data or path that represent the log.
 
  @param string the String to update with.
@@ -161,7 +161,7 @@
 - (instancetype)updateString:(NSString *)string;
 
 /**
- Updates the underlying `FBWritableLog` with a File Path.
+ Updates the underlying `FBDiagnostic` with a File Path.
  Will replace any data or string associated with the log.
 
  @param path the File Path to update with.
@@ -178,7 +178,7 @@
 - (NSString *)createPath;
 
 /**
- Updates the underlying `FBWritableLog` by applying a block that will write data into a file path.
+ Updates the underlying `FBDiagnostic` by applying a block that will write data into a file path.
  The block should:
  1) Be non-null
  2) Write data into the path provided.
@@ -192,8 +192,8 @@
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block;
 
 /**
- Returns a new `FBWritableLog` with the reciever's updates applied.
+ Returns a new `FBDiagnostic` with the reciever's updates applied.
  */
-- (FBWritableLog *)build;
+- (FBDiagnostic *)build;
 
 @end

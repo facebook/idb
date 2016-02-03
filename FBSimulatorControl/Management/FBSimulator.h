@@ -21,7 +21,7 @@
 @class FBSimulatorFramebuffer;
 @class FBSimulatorHistory;
 @class FBSimulatorLogger;
-@class FBSimulatorLogs;
+@class FBSimulatorDiagnostics;
 @class FBSimulatorPool;
 @class SimDevice;
 
@@ -148,8 +148,8 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
 
 /**
- The FBSimulatorLogs instance for fetching logs for the Simulator.
+ The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
  */
-@property (nonatomic, strong, readonly) FBSimulatorLogs *logs;
+@property (nonatomic, strong, readonly) FBSimulatorDiagnostics *diagnostics;
 
 @end

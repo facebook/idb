@@ -11,34 +11,34 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-@interface FBWritableLogTests : XCTestCase
+@interface FBDiagnosticTests : XCTestCase
 
 @end
 
-@implementation FBWritableLogTests
+@implementation FBDiagnosticTests
 
 - (void)testBuilderBuilds
 {
   NSData *data = [@"SOME DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBWritableLog *writableLog = [[[[[[FBWritableLogBuilder builder]
+  FBDiagnostic *diagnostic = [[[[[[FBDiagnosticBuilder builder]
     updateShortName:@"shortname"]
     updateFileType:@"filetype"]
     updateHumanReadableName:@"human"]
     updateData:data]
     build];
 
-  XCTAssertEqualObjects(writableLog.shortName, @"shortname");
-  XCTAssertEqualObjects(writableLog.fileType, @"filetype");
-  XCTAssertEqualObjects(writableLog.humanReadableName, @"human");
-  XCTAssertEqualObjects(writableLog.asData, data);
+  XCTAssertEqualObjects(diagnostic.shortName, @"shortname");
+  XCTAssertEqualObjects(diagnostic.fileType, @"filetype");
+  XCTAssertEqualObjects(diagnostic.humanReadableName, @"human");
+  XCTAssertEqualObjects(diagnostic.asData, data);
 }
 
 - (void)testBuilderReplacesExistingProperties
 {
   NSData *firstData = [@"SOME DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBWritableLog *writableLog = [[[[[[FBWritableLogBuilder builder]
+  FBDiagnostic *diagnostic = [[[[[[FBDiagnosticBuilder builder]
     updateShortName:@"shortname"]
     updateFileType:@"filetype"]
     updateHumanReadableName:@"human"]
@@ -47,41 +47,41 @@
 
   NSData *secondData = [@"SOME NEW DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  writableLog = [[[[[[FBWritableLogBuilder builderWithWritableLog:writableLog]
+  diagnostic = [[[[[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
     updateShortName:@"newshortname"]
     updateFileType:@"newfiletype"]
     updateHumanReadableName:@"newhuman"]
     updateData:secondData]
     build];
 
-  XCTAssertEqualObjects(writableLog.shortName, @"newshortname");
-  XCTAssertEqualObjects(writableLog.fileType, @"newfiletype");
-  XCTAssertEqualObjects(writableLog.humanReadableName, @"newhuman");
-  XCTAssertEqualObjects(writableLog.asData, secondData);
+  XCTAssertEqualObjects(diagnostic.shortName, @"newshortname");
+  XCTAssertEqualObjects(diagnostic.fileType, @"newfiletype");
+  XCTAssertEqualObjects(diagnostic.humanReadableName, @"newhuman");
+  XCTAssertEqualObjects(diagnostic.asData, secondData);
 }
 
 - (void)testBuilderReplacesStringsAndData
 {
   NSData *firstData = [@"SOME DATA" dataUsingEncoding:NSUTF8StringEncoding];
 
-  FBWritableLog *writableLog = [[[FBWritableLogBuilder builder]
+  FBDiagnostic *diagnostic = [[[FBDiagnosticBuilder builder]
     updateData:firstData]
     build];
 
-  writableLog = [[[FBWritableLogBuilder builderWithWritableLog:writableLog]
+  diagnostic = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
     updateString:@"A String"]
     build];
 
-  XCTAssertEqualObjects(writableLog.asData, [@"A String" dataUsingEncoding:NSUTF8StringEncoding]);
-  XCTAssertEqualObjects(writableLog.asString, @"A String");
+  XCTAssertEqualObjects(diagnostic.asData, [@"A String" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertEqualObjects(diagnostic.asString, @"A String");
 
-  writableLog = [[[[FBWritableLogBuilder builderWithWritableLog:writableLog]
+  diagnostic = [[[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
     updateString:@"Not me ever"]
     updateData:[@"I am now over here" dataUsingEncoding:NSUTF8StringEncoding]]
     build];
 
-  XCTAssertEqualObjects(writableLog.asData, [@"I am now over here" dataUsingEncoding:NSUTF8StringEncoding]);
-  XCTAssertEqualObjects(writableLog.asString, @"I am now over here");
+  XCTAssertEqualObjects(diagnostic.asData, [@"I am now over here" dataUsingEncoding:NSUTF8StringEncoding]);
+  XCTAssertEqualObjects(diagnostic.asString, @"I am now over here");
 }
 
 - (void)testStringAccessorReadsFromFile
@@ -90,23 +90,23 @@
   NSString *logPath = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"testBuilderReadsFromFile"] stringByAppendingPathExtension:@"txt"];
   [logString writeToFile:logString atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
-  FBWritableLog *writableLog = [[[FBWritableLogBuilder builder]
+  FBDiagnostic *diagnostic = [[[FBDiagnosticBuilder builder]
     updatePath:logPath]
     build];
 
-  XCTAssertEqualObjects(writableLog.asString, writableLog.asString);
+  XCTAssertEqualObjects(diagnostic.asString, diagnostic.asString);
 }
 
 - (void)testReadingPathWritesToFile
 {
   NSString *logString = @"FOO BAR BAZ";
 
-  FBWritableLog *writableLog = [[[[FBWritableLogBuilder builder]
+  FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
     updateString:logString]
     updateShortName:@"ballooon"]
     build];
 
-  NSString *writeOutString = [NSString stringWithContentsOfFile:writableLog.asPath usedEncoding:nil error:nil];
+  NSString *writeOutString = [NSString stringWithContentsOfFile:diagnostic.asPath usedEncoding:nil error:nil];
 
   XCTAssertEqualObjects(writeOutString, logString);
 }

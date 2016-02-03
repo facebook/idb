@@ -17,7 +17,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLogger.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
   FBFramebufferVideoStateNotStarted = 0,
@@ -64,7 +64,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 @interface FBFramebufferVideo ()
 
-@property (nonatomic, strong, readonly) FBWritableLog *writableLog;
+@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
 @property (nonatomic, assign, readonly) CGFloat scale;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
@@ -86,19 +86,19 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 #pragma mark Initializers
 
-+ (instancetype)withWritableLog:(FBWritableLog *)writableLog scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithWritableLog:writableLog scale:scale logger:logger eventSink:eventSink];
+  return [[self alloc] initWithDiagnostic:diagnostic scale:scale logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithWritableLog:(FBWritableLog *)writableLog scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _writableLog = writableLog;
+  _diagnostic = diagnostic;
   _scale = scale;
   _logger = logger;
   _eventSink = eventSink;
@@ -247,7 +247,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   CMTime time = CMTimeMakeWithSeconds(0, FBFramebufferTimescale);
 
   // Create the asset writer.
-  FBWritableLogBuilder *logBuilder = [FBWritableLogBuilder builderWithWritableLog:self.writableLog];
+  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.diagnostic];
   NSString *path = logBuilder.createPath;
   if (![self createAssetWriterAtPath:path size:self.size startTime:time error:error]) {
     return NO;
@@ -257,7 +257,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   [self pushImage:image time:time frameCount:0];
 
   // Report the availability of the video
-  [self.eventSink logAvailable:[[logBuilder updatePath:path] build]];
+  [self.eventSink diagnosticAvailable:[[logBuilder updatePath:path] build]];
 
   return YES;
 }

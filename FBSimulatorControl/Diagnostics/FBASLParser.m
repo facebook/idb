@@ -12,7 +12,7 @@
 #include <asl.h>
 
 #import "FBProcessInfo.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 static BOOL WriteOutputToFilePath(const char *filePath, asl_object_t aslFile, pid_t processIdentifier)
 {
@@ -86,7 +86,7 @@ static BOOL WriteOutputToFilePath(const char *filePath, asl_object_t aslFile, pi
 
 #pragma mark Public
 
-- (FBWritableLog *)writableLogForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBWritableLogBuilder *)logBuilder
+- (FBDiagnostic *)diagnosticForProcessInfo:(FBProcessInfo *)processInfo logBuilder:(FBDiagnosticBuilder *)logBuilder
 {
   return [[[[logBuilder
     updateShortName:processInfo.processName]

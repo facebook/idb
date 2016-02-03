@@ -73,7 +73,7 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
     self.reportSimulator(EventName.Terminate, applicationProcess)
   }
 
-  public func logAvailable(log: FBWritableLog!) {
+  public func diagnosticAvailable(log: FBDiagnostic!) {
     self.reportSimulator(EventName.Diagnostic, log)
   }
 

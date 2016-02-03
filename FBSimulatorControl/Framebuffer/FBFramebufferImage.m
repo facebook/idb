@@ -10,32 +10,32 @@
 #import "FBFramebufferImage.h"
 
 #import "FBSimulatorEventSink.h"
-#import "FBWritableLog.h"
+#import "FBDiagnostic.h"
 
 @interface FBFramebufferImage ()
 
 @property (atomic, assign, readwrite) CGImageRef image;
 
-@property (nonatomic, strong, readonly) FBWritableLog *writableLog;
+@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @end
 
 @implementation FBFramebufferImage
 
-+ (instancetype)withWritableLog:(FBWritableLog *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithWritableLog:writableLog eventSink:eventSink];
+  return [[self alloc] initWithDiagnostic:diagnostic eventSink:eventSink];
 }
 
-- (instancetype)initWithWritableLog:(FBWritableLog *)writableLog eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _writableLog = [writableLog copy];
+  _diagnostic = [diagnostic copy];
   _eventSink = eventSink;
 
   return self;
@@ -48,9 +48,9 @@
 
 #pragma mark Public
 
-+ (FBWritableLog *)appendImage:(CGImageRef)image toWritableLog:(FBWritableLog *)writableLog
++ (FBDiagnostic *)appendImage:(CGImageRef)image toDiagnostic:(FBDiagnostic *)diagnostic
 {
-  FBWritableLogBuilder *builder = [FBWritableLogBuilder builderWithWritableLog:writableLog];
+  FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
   NSString *filePath = [builder createPath];
   NSURL *url = [NSURL fileURLWithPath:filePath];
   CGImageDestinationRef destination = CGImageDestinationCreateWithURL(
@@ -60,11 +60,11 @@
     NULL
   );
   if (!url) {
-    return writableLog;
+    return diagnostic;
   }
   CGImageDestinationAddImage(destination, image, NULL);
   if (!CGImageDestinationFinalize(destination)) {
-    return writableLog;
+    return diagnostic;
   }
   CFRelease(destination);
 
@@ -82,11 +82,11 @@
 
 - (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
 {
-  FBWritableLog *log = [FBFramebufferImage appendImage:self.image toWritableLog:self.writableLog];
+  FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.image toDiagnostic:self.diagnostic];
   id<FBSimulatorEventSink> eventSink = self.eventSink;
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [eventSink logAvailable:log];
+    [eventSink diagnosticAvailable:diagnostic];
   });
 }
 
