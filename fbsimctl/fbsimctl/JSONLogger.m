@@ -101,4 +101,10 @@
   return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_ERR maxLevel:self.maxLevel dispatchToMain:dispatchToMain];
 }
 
+- (id<FBSimulatorLogger>)withPrefix:(NSString *)prefix
+{
+  // Ignore prefixing as 'subject' will be included instead.
+  return self;
+}
+
 @end

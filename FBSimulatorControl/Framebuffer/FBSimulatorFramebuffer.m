@@ -61,6 +61,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 #pragma mark Initializers
 
 + (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator {
+  id<FBSimulatorLogger> logger = [simulator.logger withPrefix:[NSString stringWithFormat:@"%@:", simulator.udid]];
   NSMutableArray *sinks = [NSMutableArray array];
   BOOL useWindow = (launchConfiguration.options & FBSimulatorLaunchOptionsShowDebugWindow) == FBSimulatorLaunchOptionsShowDebugWindow;
   if (useWindow) {
@@ -77,9 +78,8 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.simulatorframebuffer", DISPATCH_QUEUE_SERIAL);
-  id<FBSimulatorLogger> logger = [simulator.logger onQueue:queue];
 
-  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue hidPort:hidPort eventSink:simulator.eventSink logger:logger delegate:delegate];
+  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue hidPort:hidPort eventSink:simulator.eventSink logger:[logger onQueue:queue] delegate:delegate];
 }
 
 - (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService onQueue:(dispatch_queue_t)queue hidPort:(mach_port_t)hidPort eventSink:(id<FBSimulatorEventSink>)eventSink logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate

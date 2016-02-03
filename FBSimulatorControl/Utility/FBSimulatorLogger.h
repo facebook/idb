@@ -53,6 +53,14 @@
  */
 - (id<FBSimulatorLogger>)onQueue:(dispatch_queue_t)queue;
 
+/**
+ Returns a Logger that will prefix all messages with the given string
+
+ @param prefix the prefix to prepend to all messages.
+ @return a new Logger that will allows logging of messages on the provided queue.
+ */
+- (id<FBSimulatorLogger>)withPrefix:(NSString *)prefix;
+
 @end
 
 @interface FBSimulatorLogger : NSObject
