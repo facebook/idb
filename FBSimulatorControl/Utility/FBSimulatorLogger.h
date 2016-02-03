@@ -74,4 +74,13 @@
  */
 + (id<FBSimulatorLogger>)aslLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 
+/**
+ An implementation of `FBSimulatorLogger` that logs all to a file descriptor using ASL.
+
+ @param fileDescriptor the file descriptor to log to, if 0 no file descriptor logging will occur.
+ @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
+ @return an FBSimulatorLogger instance.
+ */
++ (id<FBSimulatorLogger>)aslLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging;
+
 @end
