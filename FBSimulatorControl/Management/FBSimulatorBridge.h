@@ -21,6 +21,8 @@
  */
 @interface FBSimulatorBridge : NSObject  <FBJSONSerializationDescribeable>
 
+#pragma mark Lifecycle
+
 /**
  Creates a Simulator Bridge by booting the provided Simulator.
 
@@ -32,20 +34,20 @@
 + (instancetype)bootSimulator:(FBSimulator *)simulator withConfiguration:(FBSimulatorLaunchConfiguration *)configuration andAttachBridgeWithError:(NSError **)error;
 
 /**
- The Framebuffer of the Bridge.
- */
-@property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
-
-/**
  Tears down the bridge and it's resources.
- Must only ever be called from the main thread.
  */
 - (void)terminate;
 
+#pragma mark Interacting with the Simulator
+
 /**
- Sets the first available Location Scenario on the Simulator.
- Must only ever be called from the main thread.
+ Sets latitude and longitude of the Simulator.
+ The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
+ Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.
+
+ @param latitude the latitude of the location.
+ @param longitude the longitude of the location.
  */
-- (void)enableLocationScenario;
+- (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
 
 @end

@@ -23,9 +23,11 @@
 
 @interface FBSimulatorBridge ()
 
+@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+
+@property (nonatomic, strong, readwrite) FBSimulatorFramebuffer *framebuffer;
 @property (nonatomic, assign, readwrite) mach_port_t hidPort;
 @property (nonatomic, strong, readwrite) id<SimulatorBridge> bridge;
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @end
 
@@ -135,10 +137,10 @@
     return nil;
   }
 
+  _eventSink = eventSink;
   _framebuffer = framebuffer;
   _hidPort = hidPort;
   _bridge = bridge;
-  _eventSink = eventSink;
 
   return self;
 }
@@ -185,12 +187,11 @@
   [self.eventSink bridgeDidDisconnect:self expected:YES];
 }
 
-#pragma mark Bridge Methods
+#pragma mark Interacting with the Simulator
 
-- (void)enableLocationScenario
+- (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude
 {
-  NSString *scenario = [[self.bridge availableLocationScenarios] firstObject];
-  [self.bridge setLocationScenario:scenario];
+  [self.bridge setLocationWithLatitude:latitude andLongitude:longitude];
 }
 
 @end
