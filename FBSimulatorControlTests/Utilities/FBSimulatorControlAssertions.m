@@ -66,10 +66,10 @@
   XCTAssertNotNil(simulator.launchdSimProcess);
   if (self.expectContainerProcesses) {
     XCTAssertNotNil(simulator.containerApplication);
-    XCTAssertNil(simulator.framebuffer);
+    XCTAssertNil(simulator.bridge);
   } else {
     XCTAssertNil(simulator.containerApplication);
-    XCTAssertNotNil(simulator.framebuffer);
+    XCTAssertNotNil(simulator.bridge);
   }
 }
 
@@ -136,8 +136,8 @@
   NSArray *notificationNames = @[
     FBSimulatorDidLaunchNotification,
     FBSimulatorDidTerminateNotification,
-    FBSimulatorFramebufferDidStartNotification,
-    FBSimulatorFramebufferDidTerminateNotification,
+    FBSimulatorBridgeDidConnectNotification,
+    FBSimulatorBridgeDidDisconnectNotification,
     FBSimulatorContainerDidLaunchNotification,
     FBSimulatorContainerDidTerminateNotification,
     FBSimulatorApplicationProcessDidLaunchNotification,
@@ -280,7 +280,7 @@
 - (NSArray *)expectedBootNotificationNames
 {
   if (FBSimulatorControlTestCase.useDirectLaunching) {
-    return @[FBSimulatorDidLaunchNotification, FBSimulatorFramebufferDidStartNotification];
+    return @[FBSimulatorDidLaunchNotification, FBSimulatorBridgeDidConnectNotification];
   }
   return @[FBSimulatorDidLaunchNotification, FBSimulatorContainerDidLaunchNotification];
 }
@@ -288,7 +288,7 @@
 - (NSArray *)expectedShutdownNotificationNames
 {
   if (FBSimulatorControlTestCase.useDirectLaunching) {
-    return @[FBSimulatorDidTerminateNotification, FBSimulatorFramebufferDidTerminateNotification];
+    return @[FBSimulatorDidTerminateNotification, FBSimulatorBridgeDidDisconnectNotification];
   }
   return @[FBSimulatorDidTerminateNotification, FBSimulatorContainerDidTerminateNotification];
 }

@@ -33,4 +33,3 @@
 - (void)setHardwareKeyboardEnabled:(_Bool)arg1 keyboardType:(unsigned int)arg2;
 - (out bycopy NSDictionary *)basicLaunchApplicationPid:(int)arg1 options:(in bycopy NSDictionary *)arg2;
 @end
-

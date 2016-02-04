@@ -17,9 +17,9 @@
 @class FBProcessInfo;
 @class FBProcessInfo;
 @class FBProcessQuery;
+@class FBSimulatorBridge;
 @class FBSimulatorConfiguration;
 @class FBSimulatorDiagnostics;
-@class FBSimulatorFramebuffer;
 @class FBSimulatorHistory;
 @class FBSimulatorLogger;
 @class FBSimulatorPool;
@@ -143,9 +143,9 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, copy, readonly) FBProcessInfo *containerApplication;
 
 /**
- The Framebuffer of the Simulator.
+ The Bridge of the Simulator.
  */
-@property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
+@property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
 
 /**
  The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.

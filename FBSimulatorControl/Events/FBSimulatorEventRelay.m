@@ -18,14 +18,14 @@
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessQuery.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
-#import "FBSimulatorFramebuffer.h"
 
 @interface FBSimulatorEventRelay ()
 
 @property (nonatomic, copy, readwrite) FBProcessInfo *launchdSimProcess;
 @property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
-@property (nonatomic, strong, readwrite) FBSimulatorFramebuffer *framebuffer;
+@property (nonatomic, strong, readwrite) FBSimulatorBridge *bridge;
 
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
@@ -97,22 +97,22 @@
   [self.sink containerApplicationDidTerminate:applicationProcess expected:expected];
 }
 
-- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
 {
-  NSParameterAssert(framebuffer);
-  NSParameterAssert(self.framebuffer == nil);
+  NSParameterAssert(bridge);
+  NSParameterAssert(self.bridge == nil);
 
-  self.framebuffer = framebuffer;
-  [self.sink framebufferDidStart:framebuffer];
+  self.bridge = bridge;
+  [self.sink bridgeDidConnect:bridge];
 }
 
-- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
 {
-  NSParameterAssert(framebuffer);
-  NSParameterAssert(self.framebuffer);
+  NSParameterAssert(bridge);
+  NSParameterAssert(self.bridge);
 
-  self.framebuffer = nil;
-  [self.sink framebufferDidTerminate:framebuffer expected:expected];
+  self.bridge = nil;
+  [self.sink bridgeDidDisconnect:bridge expected:expected];
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess

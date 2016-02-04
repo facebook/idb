@@ -196,12 +196,12 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 }
 
-- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
 {
 
 }
 
-- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
 {
 
 }

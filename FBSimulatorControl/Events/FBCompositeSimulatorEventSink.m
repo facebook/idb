@@ -48,17 +48,17 @@
   }
 }
 
-- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink framebufferDidStart:framebuffer];
+    [sink bridgeDidConnect:bridge];
   }
 }
 
-- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink framebufferDidTerminate:framebuffer expected:expected];
+    [sink bridgeDidDisconnect:bridge expected:expected];
   }
 }
 

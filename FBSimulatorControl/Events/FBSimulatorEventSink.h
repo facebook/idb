@@ -15,7 +15,7 @@
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorApplication;
-@class FBSimulatorFramebuffer;
+@class FBSimulatorBridge;
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializationDescribeable;
 
@@ -42,19 +42,19 @@
 - (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected;
 
 /**
- Event for the creation and validity of a Simulator Framebuffer.
+ Event for the Direct Launch of a Simulator Bridge.
 
- @param framebuffer the Framebuffer of the Simulator.
+ @param bridge the Simulator Bridge of the Simulator.
  */
-- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer;
+- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge;
 
 /**
  Event for the termination of a Simulator Framebuffer.
 
- @param framebuffer the Framebuffer of the Simulator.
+ @param bridge the Simulator Bridge of the Simulator.
  @param expected whether the termination was expected or not.
  */
-- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected;
+- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected;
 
 /**
  Event for the launch of a Simulator's launchd_sim.
