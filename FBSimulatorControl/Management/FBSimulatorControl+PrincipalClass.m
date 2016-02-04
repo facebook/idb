@@ -43,7 +43,7 @@
 
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
-  return [self withConfiguration:configuration logger:nil error:error];
+  return [self withConfiguration:configuration logger:FBSimulatorControlGlobalConfiguration.defaultLogger error:error];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
