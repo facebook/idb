@@ -34,7 +34,13 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 
 + (void)initialize
 {
-  [FBSimulatorControlGlobalConfiguration setDefaultLoggerToASLWithStderrLogging:YES debugLogging:NO];
+  if (!NSProcessInfo.processInfo.environment[FBSimulatorControlStderrLogging]) {
+    setenv(FBSimulatorControlStderrLogging.UTF8String, "YES", 1);
+  }
+  if (!NSProcessInfo.processInfo.environment[FBSimulatorControlDebugLogging]) {
+    setenv(FBSimulatorControlDebugLogging.UTF8String, "NO", 1);
+  }
+
   [FBSimulatorControlGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBSimulatorControlGlobalConfiguration.description];
   [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
