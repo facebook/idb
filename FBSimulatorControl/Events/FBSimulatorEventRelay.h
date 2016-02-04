@@ -42,6 +42,6 @@
 /**
  The current Framebuffer.
  */
-@property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
+@property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
 
 @end

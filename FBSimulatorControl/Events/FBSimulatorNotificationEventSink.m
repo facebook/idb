@@ -13,8 +13,8 @@ NSString *const FBSimulatorDidLaunchNotification = @"FBSimulatorDidLaunchNotific
 NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateNotification";
 NSString *const FBSimulatorContainerDidLaunchNotification = @"FBSimulatorContainerDidLaunchNotification";
 NSString *const FBSimulatorContainerDidTerminateNotification = @"FBSimulatorContainerDidTerminateNotification";
-NSString *const FBSimulatorFramebufferDidStartNotification = @"FBSimulatorFramebufferDidStartNotification";
-NSString *const FBSimulatorFramebufferDidTerminateNotification = @"FBSimulatorFramebufferDidTerminateNotification";
+NSString *const FBSimulatorBridgeDidConnectNotification = @"FBSimulatorBridgeDidConnectNotification";
+NSString *const FBSimulatorBridgeDidDisconnectNotification = @"FBSimulatorBridgeDidDisconnectNotification";
 NSString *const FBSimulatorApplicationProcessDidLaunchNotification = @"FBSimulatorApplicationProcessDidLaunchNotification";
 NSString *const FBSimulatorApplicationProcessDidTerminateNotification = @"FBSimulatorApplicationProcessDidTerminateNotification";
 NSString *const FBSimulatorAgentProcessDidLaunchNotification = @"FBSimulatorAgentProcessDidLaunchNotification";
@@ -25,7 +25,7 @@ NSString *const FBSimulatorStateDidChange = @"FBSimulatorStateDidChange";
 NSString *const FBSimulatorExpectedTerminationKey = @"expected";
 NSString *const FBSimulatorProcessKey = @"process";
 NSString *const FBSimulatorDiagnosticLog = @"diagnostic_log";
-NSString *const FBSimulatorFramebufferKey = @"framebuffer";
+NSString *const FBSimulatorBridgeKey = @"bridge";
 NSString *const FBSimulatorStateKey = @"simulator_state";
 
 @interface FBSimulatorNotificationEventSink ()
@@ -60,18 +60,18 @@ NSString *const FBSimulatorStateKey = @"simulator_state";
   }];
 }
 
-- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
 {
-  [self materializeNotification:FBSimulatorFramebufferDidStartNotification userInfo:@{
-    FBSimulatorFramebufferKey : framebuffer,
+  [self materializeNotification:FBSimulatorBridgeDidConnectNotification userInfo:@{
+    FBSimulatorBridgeKey : bridge,
   }];
 }
 
-- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
 {
-  [self materializeNotification:FBSimulatorFramebufferDidTerminateNotification userInfo:@{
+  [self materializeNotification:FBSimulatorBridgeDidDisconnectNotification userInfo:@{
     FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorFramebufferKey : framebuffer,
+    FBSimulatorBridgeKey : bridge,
   }];
 }
 

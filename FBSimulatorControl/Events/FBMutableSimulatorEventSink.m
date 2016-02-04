@@ -21,14 +21,14 @@
   [self.eventSink containerApplicationDidTerminate:applicationProcess expected:expected];
 }
 
-- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
 {
-  [self.eventSink framebufferDidStart:framebuffer];
+  [self.eventSink bridgeDidConnect:bridge];
 }
 
-- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
 {
-  [self.eventSink framebufferDidTerminate:framebuffer expected:expected];
+  [self.eventSink bridgeDidDisconnect:bridge expected:expected];
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess

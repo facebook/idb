@@ -54,14 +54,14 @@
   [self.logger logFormat:@"Container Application Did Terminate => %@ Expected %d", applicationProcess.shortDescription, expected];
 }
 
-- (void)framebufferDidStart:(FBSimulatorFramebuffer *)framebuffer
+- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
 {
-  [self.logger logFormat:@"Framebuffer Did Start => %@", framebuffer];
+  [self.logger logFormat:@"Bridge Did Connect => %@", bridge];
 }
 
-- (void)framebufferDidTerminate:(FBSimulatorFramebuffer *)framebuffer expected:(BOOL)expected
+- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
 {
-  [self.logger logFormat:@"Framebuffer Did Terminate => %@ Expected %d", framebuffer, expected];
+  [self.logger logFormat:@"Bridge Did Disconnect => %@ Expected %d", bridge, expected];
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess

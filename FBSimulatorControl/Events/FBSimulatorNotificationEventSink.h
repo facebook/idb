@@ -34,12 +34,12 @@ extern NSString *const FBSimulatorContainerDidTerminateNotification;
 /**
  Notification that is fired when a Simulator Framebuffer Starts.
  */
-extern NSString *const FBSimulatorFramebufferDidStartNotification;
+extern NSString *const FBSimulatorBridgeDidConnectNotification;
 
 /**
  Notification that is fired when a Simulator Framebuffer Terminates.
  */
-extern NSString *const FBSimulatorFramebufferDidTerminateNotification;
+extern NSString *const FBSimulatorBridgeDidDisconnectNotification;
 
 /**
  Notification that is fired when a Application Process Launches.
@@ -82,9 +82,9 @@ extern NSString *const FBSimulatorExpectedTerminationKey;
 extern NSString *const FBSimulatorProcessKey;
 
 /**
- Notification UserInfo for the Framebuffer.
+ Notification UserInfo for the Simulator Bridge.
  */
-extern NSString *const FBSimulatorFramebufferKey;
+extern NSString *const FBSimulatorBridgeKey;
 
 /**
  Notification UserInfo for the name of a diagnostic.

@@ -28,22 +28,23 @@
  Creates and returns a new FBSimulatorDirectLaunch object for the provided SimDeviceFramebufferService.
 
  @param framebufferService the SimDeviceFramebufferService to connect to.
- @param hidPort the Mach Port for the 'IndigoHIDRegistrationPort'.
  @param launchConfiguration the launch configuration to create the service for.
  @param simulator the Simulator to which the Framebuffer belongs.
  @return a new FBSimulatorDirectLaunch instance. Must not be nil.
  */
-+ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator;
++ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator;
 
 /**
- Starts listening for Framebuffer events on a background queue.
- Events are delivered to the Event Sink on this same background queue.
+ Starts listening for Framebuffer events from the SimDeviceFramebufferService on an internal background queue.
+ Events are delivered to the Framebuffer's Delegate on this queue.
+ Delegates can do work on the queue on which they recieve events, but any heavy work should be dispatched to other queues.
+ Must only be called from the main queue.
  */
 - (void)startListeningInBackground;
 
 /**
- Stops listening for Framebuffer envents on the background queue.
- Events are delivered to the Event Sink on this same background queue.
+ Stops listening for Framebuffer Events from SimDeviceFramebufferService.
+ Must only be called from the main queue.
  */
 - (void)stopListening;
 

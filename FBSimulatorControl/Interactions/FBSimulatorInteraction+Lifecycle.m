@@ -27,6 +27,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
@@ -150,73 +151,11 @@
 
 + (BOOL)launchSimulatorDirectly:(FBSimulator *)simulator configuration:(FBSimulatorLaunchConfiguration *)configuration error:(NSError **)error
 {
-  // If you're curious about where the knowledege for these parts of the CoreSimulator.framework comes from, take a look at:
-  // $DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS [VERSION].simruntime/Contents/Resources/profile.plist
-  // as well as the dissasembly for CoreSimulator.framework, SimulatorKit.Framework & the Simulator.app Executable.
-
-  // Creating the Framebuffer with the 'mainScreen' constructor will return a 'PurpleFBServer' and attach it to the '_registeredServices' ivar.
-  // This is the Framebuffer for the Simulator's main screen, which is distinct from 'PurpleFBTVOut' and 'Stark' Framebuffers for External Displays and CarPlay.
   NSError *innerError = nil;
-  SimDeviceFramebufferService *framebufferService = [NSClassFromString(@"SimDeviceFramebufferService") mainScreenFramebufferServiceForDevice:simulator.device error:&innerError];
-  if (!framebufferService) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to create the Main Screen Framebuffer for device %@", simulator.device]
-      causedBy:innerError]
-      failBool:error];
+  FBSimulatorBridge *bridge = [FBSimulatorBridge bootSimulator:simulator withConfiguration:configuration andAttachBridgeWithError:&innerError];
+  if (!bridge) {
+    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
-
-  // As above with the 'PurpleFBServer', a 'IndigoHIDRegistrationPort' is needed in order for the synthesis of touch events to work appropriately.
-  // If this is not set you will see the following logger message in the System log upon booting the simulator
-  // 'backboardd[10667]: BKHID: Unable to open Indigo HID system'
-  // The dissasembly for backboardd shows that this will happen when the call to 'IndigoHIDSystemSpawnLoopback' fails.
-  // Simulator.app creates a Mach Port for the 'IndigoHIDRegistrationPort' and therefore succeeds in the above call.
-  // As with 'PurpleFBServer' this can be registered with 'register-head-services'
-  // The first step is to create the mach port
-  mach_port_t hidPort = 0;
-  mach_port_t machTask = mach_task_self();
-  kern_return_t result = mach_port_allocate(machTask, MACH_PORT_RIGHT_RECEIVE, &hidPort);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to create a Mach Port for IndigoHIDRegistrationPort with code %d", result]
-      failBool:error];
-  }
-  result = mach_port_insert_right(machTask, hidPort, hidPort, MACH_MSG_TYPE_MAKE_SEND);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to 'insert_right' the mach port with code %d", result]
-      failBool:error];
-  }
-  // Then register it as the 'IndigoHIDRegistrationPort'
-  if (![simulator.device registerPort:hidPort service:@"IndigoHIDRegistrationPort" error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to register %d as the IndigoHIDRegistrationPort", hidPort]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
-  // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
-  // Prior to Xcode 6 it was possible to shim into the Simulator process but codesigning now prevents this https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f
-  NSDictionary *options = @{
-    @"register-head-services" : @YES
-  };
-
-  // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
-  // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-  BOOL success = [simulator.device bootWithOptions:options error:&innerError];
-  if (!success) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to boot Simulator with options %@", options]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  // Create and start the consumer of the Framebuffer Service.
-  // The launch configuration will define the way that the Framebuffer is consumed.
-  // Then the simulator's event sink should be notified with the created framebuffer object.
-  FBSimulatorFramebuffer *framebuffer = [FBSimulatorFramebuffer withFramebufferService:framebufferService hidPort:hidPort configuration:configuration simulator:simulator];
-  [framebuffer startListeningInBackground];
-  [simulator.eventSink framebufferDidStart:framebuffer];
 
   // Expect the launchd_sim process to be updated.
   if (![self launchdSimWithAllRequiredProcessesForSimulator:simulator error:&innerError]) {

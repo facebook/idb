@@ -44,13 +44,9 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 @interface FBSimulatorFramebuffer () <FBFramebufferDelegate>
 
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
-@property (nonatomic, assign, readonly) mach_port_t hidPort;
-
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
-
 @property (nonatomic, strong, readonly) id<FBFramebufferDelegate> delegate;
-@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
 
 @property (nonatomic, assign, readwrite) FBSimulatorFramebufferState state;
 @property (atomic, assign, readwrite) NSUInteger frameCount;
@@ -62,7 +58,8 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
 #pragma mark Initializers
 
-+ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService hidPort:(mach_port_t)hidPort configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator {
++ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator
+{
   id<FBSimulatorLogger> logger = [simulator.logger withPrefix:[NSString stringWithFormat:@"%@:", simulator.udid]];
   NSMutableArray *sinks = [NSMutableArray array];
   BOOL useWindow = (launchConfiguration.options & FBSimulatorLaunchOptionsShowDebugWindow) == FBSimulatorLaunchOptionsShowDebugWindow;
@@ -81,13 +78,12 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.simulatorframebuffer", DISPATCH_QUEUE_SERIAL);
 
-  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue hidPort:hidPort eventSink:simulator.eventSink logger:[logger onQueue:queue] delegate:delegate];
+  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue logger:[logger onQueue:queue] delegate:delegate];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService onQueue:(dispatch_queue_t)queue hidPort:(mach_port_t)hidPort eventSink:(id<FBSimulatorEventSink>)eventSink logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService onQueue:(dispatch_queue_t)clientQueue logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
 {
   NSParameterAssert(framebufferService);
-  NSParameterAssert(hidPort > 0);
 
   self = [super init];
   if (!self) {
@@ -95,12 +91,10 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
   }
 
   _framebufferService = framebufferService;
-  _hidPort = hidPort;
-  _eventSink = eventSink;
   _logger = logger;
   _delegate = delegate;
 
-  _queue = queue;
+  _clientQueue = clientQueue;
   _state = FBSimulatorFramebufferStateNotStarted;
   _frameCount = 0;
   _size = CGSizeZero;
@@ -133,19 +127,23 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
 - (void)startListeningInBackground;
 {
+  NSParameterAssert(NSThread.currentThread.isMainThread);
   NSParameterAssert(self.state == FBSimulatorFramebufferStateNotStarted);
 
   self.state = FBSimulatorFramebufferStateStarting;
-  [self.framebufferService registerClient:self onQueue:self.queue];
+  [self.framebufferService registerClient:self onQueue:self.clientQueue];
   [self.framebufferService resume];
 }
 
 - (void)stopListening
 {
+  NSParameterAssert(NSThread.currentThread.isMainThread);
   NSParameterAssert(self.state != FBSimulatorFramebufferStateNotStarted);
   NSParameterAssert(self.state != FBSimulatorFramebufferStateTerminated);
 
-  [self framebufferDidBecomeInvalid:self error:nil];
+  dispatch_sync(self.clientQueue, ^{
+    [self framebufferDidBecomeInvalid:self error:nil];
+  });
 }
 
 #pragma mark Client Callbacks from SimDeviceFramebufferService
@@ -193,10 +191,8 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 
   [self.framebufferService unregisterClient:self];
   [self.framebufferService suspend];
-  mach_port_destroy(mach_task_self(), self.hidPort);
 
   [self.delegate framebufferDidBecomeInvalid:self error:error];
-  [self.eventSink framebufferDidTerminate:self expected:(error != nil)];
 }
 
 #pragma mark Private

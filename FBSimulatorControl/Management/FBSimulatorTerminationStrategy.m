@@ -24,12 +24,12 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorFramebuffer.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPredicates.h"
@@ -117,14 +117,14 @@
       [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
     }
 
-    // The Framebuffer should also be tidied up if one exists.
-    FBSimulatorFramebuffer *framebuffer = simulator.framebuffer;
-    if (framebuffer) {
-      [self.logger.debug logFormat:@"Simulator %@ has a framebuffer %@, stopping now", simulator.shortDescription, framebuffer];
+    // The Bridge should also be tidied up if one exists.
+    FBSimulatorBridge *bridge = simulator.bridge;
+    if (bridge) {
+      [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, terminating it now", simulator.shortDescription, bridge];
       // Stopping listening will notify the event sink.
-      [framebuffer stopListening];
+      [bridge terminate];
     } else {
-      [self.logger.debug logFormat:@"Simulator %@ does not have a running Framebuffer", simulator.shortDescription];
+      [self.logger.debug logFormat:@"Simulator %@ does not have a running bridge", simulator.shortDescription];
     }
 
     // Shutdown will:

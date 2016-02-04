@@ -41,12 +41,12 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
     self.reportSimulator(EventName.Terminate, applicationProcess)
   }
 
-  public func framebufferDidStart(framebuffer: FBSimulatorFramebuffer!) {
-    self.reportSimulator(EventName.Launch, framebuffer)
+  public func bridgeDidConnect(bridge: FBSimulatorBridge!) {
+    self.reportSimulator(EventName.Launch, bridge)
   }
 
-  public func framebufferDidTerminate(framebuffer: FBSimulatorFramebuffer!, expected: Bool) {
-    self.reportSimulator(EventName.Terminate, framebuffer)
+  public func bridgeDidDisconnect(bridge: FBSimulatorBridge!, expected: Bool) {
+    self.reportSimulator(EventName.Terminate, bridge)
   }
 
   public func simulatorDidLaunch(launchdSimProcess: FBProcessInfo!) {
