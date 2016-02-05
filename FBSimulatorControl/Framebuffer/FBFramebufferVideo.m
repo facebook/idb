@@ -26,7 +26,7 @@ typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
 };
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
-static const CMTimeScale FBFramebufferTimescale = 1000000;
+static const CMTimeScale FBFramebufferTimescale = 1000;
 
 @interface FBFramebufferVideoItem : NSObject
 
@@ -154,7 +154,7 @@ static const CMTimeScale FBFramebufferTimescale = 1000000;
 
 - (CMTime)currentTime
 {
-  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_RoundTowardNegativeInfinity);
+  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
 }
 
 #pragma mark KVO
@@ -266,7 +266,7 @@ static const CMTimeScale FBFramebufferTimescale = 1000000;
 {
   NSError *innerError = nil;
   NSURL *url = [NSURL fileURLWithPath:videoPath];
-  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeMPEG4 error:&innerError];
+  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeQuickTimeMovie error:&innerError];
   if (!writer) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create an asset writer at %@", videoPath]
