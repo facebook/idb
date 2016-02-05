@@ -26,8 +26,7 @@ typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
 };
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
-static const CMTimeScale FBFramebufferTimescale = 1000;
-static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
+static const CMTimeScale FBFramebufferTimescale = 1000000;
 
 @interface FBFramebufferVideoItem : NSObject
 
@@ -155,7 +154,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 - (CMTime)currentTime
 {
-  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
+  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_RoundTowardNegativeInfinity);
 }
 
 #pragma mark KVO
@@ -265,19 +264,15 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 - (BOOL)createAssetWriterAtPath:(NSString *)videoPath size:(CGSize)size startTime:(CMTime)startTime error:(NSError **)error
 {
-  // Create an Asset Writer to a file.
-  // For some reason AVFileTypeQuickTimeMovie is much more reliable AVFileTypeMPEG4.
-  // Others have found this out too: http://stackoverflow.com/a/22872979
   NSError *innerError = nil;
   NSURL *url = [NSURL fileURLWithPath:videoPath];
-  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeQuickTimeMovie error:&innerError];
+  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeMPEG4 error:&innerError];
   if (!writer) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create an asset writer at %@", videoPath]
       causedBy:innerError]
       failBool:error];
   }
-  writer.movieFragmentInterval = CMTimeMakeWithSeconds(FBFramebufferFragmentIntervalSeconds, FBFramebufferTimescale);
 
   // Create an Input for the Writer
   NSDictionary *outputSettings = @{
