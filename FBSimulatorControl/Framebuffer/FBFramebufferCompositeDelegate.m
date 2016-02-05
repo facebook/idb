@@ -43,10 +43,10 @@
   }
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
+- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   for (id<FBFramebufferDelegate> delegate in self.delegates) {
-    [delegate framebufferDidBecomeInvalid:framebuffer error:error];
+    [delegate framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
   }
 }
 

@@ -34,12 +34,4 @@
  */
 + (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
-/**
- Stops the recording recording of the video framebuffer.
-
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)stopRecordingWithError:(NSError **)error;
-
 @end

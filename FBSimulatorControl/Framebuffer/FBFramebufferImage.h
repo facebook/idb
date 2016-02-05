@@ -17,7 +17,7 @@
 /**
  A Simulator Framebuffer Delegate that stores an image of the most recent image.
 
- When a Framebuffer is teared down, all it's delegates will be too.
+ When a Framebuffer is torn down, all it's delegates will be too.
  Just as this occurs, this class will report the image to the Event Sink.
  This means that the final frame will be captured.
  */

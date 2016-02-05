@@ -34,9 +34,13 @@
 + (instancetype)bootSimulator:(FBSimulator *)simulator withConfiguration:(FBSimulatorLaunchConfiguration *)configuration andAttachBridgeWithError:(NSError **)error;
 
 /**
- Tears down the bridge and it's resources.
+ Tears down the bridge and it's resources, waiting for any asynchronous teardown to occur before returning.
+ Must only ever be called from the main thread.
+
+ @param timeout the number of seconds to wait for termination to occur in. If 0 or fewer, the reciever won't wait.
+ @return YES if the termination occurred within timeout seconds, NO otherwise.
  */
-- (void)terminate;
+- (BOOL)terminateWithTimeout:(NSTimeInterval)timeout;
 
 #pragma mark Interacting with the Simulator
 

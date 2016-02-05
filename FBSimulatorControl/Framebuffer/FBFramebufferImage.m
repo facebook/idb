@@ -80,7 +80,7 @@
   CGImageRelease(oldImage);
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
+- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.image toDiagnostic:self.diagnostic];
   id<FBSimulatorEventSink> eventSink = self.eventSink;

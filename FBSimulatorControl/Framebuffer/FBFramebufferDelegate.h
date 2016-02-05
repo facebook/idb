@@ -30,7 +30,9 @@
  Called when the framebuffer is no longer valid, typically when the Simulator shuts down.
 
  @param framebuffer the framebuffer that was updated.
+ @param error an error, if any occured in the teardown of the simulator.
+ @param teardownGroup a dispatch_group to add asynchronous tasks to that should be performed in the teardown of the Framebuffer.
  */
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error;
+- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
 
 @end

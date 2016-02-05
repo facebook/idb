@@ -82,7 +82,6 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 @property (nonatomic, strong, readwrite) FBFramebufferVideoItem *lastItem;
 
 @property (nonatomic, strong, readwrite) AVAssetWriter *writer;
-@property (nonatomic, strong, readwrite) AVAssetWriterInput *input;
 @property (nonatomic, strong, readwrite) AVAssetWriterInputPixelBufferAdaptor *adaptor;
 
 @end
@@ -118,24 +117,6 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   return self;
 }
 
-#pragma mark Public Methods
-
-- (BOOL)stopRecordingWithError:(NSError **)error
-{
-  __block BOOL success = NO;
-  // A barrier is used to ensure the contract of finishWritingWithCompletionHandler: is fulfilled:
-  // "To guarantee that all sample buffers are successfully written, you must ensure that all calls to appendSampleBuffer: and appendPixelBuffer:withPresentationTime: have returned"
-  dispatch_barrier_sync(self.mediaQueue, ^{
-    if (!self.writer) {
-      success = [[FBSimulatorError describe:@"Cannot stop recording when it hasn't started"] failBool:error];
-      return;
-    }
-    [self teardownWriter];
-    success = YES;
-  });
-  return success;
-}
-
 #pragma mark FBFramebufferDelegate Implementation
 
 - (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
@@ -153,15 +134,17 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   });
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
+- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
+  dispatch_group_enter(teardownGroup);
   dispatch_barrier_async(self.mediaQueue, ^{
     if (self.lastItem) {
       CMTime time = [self currentTime];
       [self.logger.info logFormat:@"Pushing frame (%@) again at time %f as this is the final frame", self.lastItem, CMTimeGetSeconds(time)];
       [self pushImage:self.lastItem.image time:time frameCount:self.lastItem.frameCount + 1];
     }
-    [self teardownWriter];
+    [self teardownWriterWithGroup:teardownGroup];
+    dispatch_group_leave(teardownGroup);
   });
 }
 
@@ -195,7 +178,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image frameCount:frameCount];
   FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
   if (evictedItem) {
-    [self.logger.debug logFormat:@"Evicted frame at time %f, frame dropped", CMTimeGetSeconds(item.time)];
+    [self.logger.debug logFormat:@"Evicted Frame (%@), frame dropped", item];
   }
   [self drainQueue];
 }
@@ -203,7 +186,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 - (void)drainQueue
 {
   NSInteger drainCount = 0;
-  while (self.input.readyForMoreMediaData) {
+  while (self.adaptor.assetWriterInput.readyForMoreMediaData) {
     FBFramebufferVideoItem *item = [self.itemQueue pop];
     if (!item) {
       return;
@@ -211,7 +194,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     drainCount++;
     CVPixelBufferRef pixelBuffer = [FBFramebufferVideo createPixelBufferOfSize:self.size fromPool:self.adaptor.pixelBufferPool ofImage:item.image];
     if (!pixelBuffer) {
-      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame number %lu", item.frameCount];
+      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame (%@)", item];
       continue;
     }
 
@@ -226,9 +209,9 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     // "An unknown error occurred (-16341)" is 'kMediaSampleTimingGeneratorError_InvalidTimeStamp': @rfistman
 
     if (self.lastItem && CMTimeCompare(item.time, self.lastItem.time) != 1) {
-      [self.logger.error logFormat:@"Dropping Frame %lu as it has a timestamp of %f which is not greater than a previous frame of %f", item.frameCount, CMTimeGetSeconds(item.time), CMTimeGetSeconds(self.lastItem.time)];
+      [self.logger.error logFormat:@"Dropping Frame (%@) as it's timestamp is not greater than a previous frame (%@)", item, self.lastItem];
     } else if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
-      [self.logger.error logFormat:@"Failed to append frame at time %f seconds of pixel buffer with error %@", CMTimeGetSeconds(item.time), self.writer.error];
+      [self.logger.error logFormat:@"Failed to append pixel buffer of frame (%@) with error %@", item, self.writer.error];
     }
     self.lastItem = item;
     CVPixelBufferRelease(pixelBuffer);
@@ -330,7 +313,6 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
   // Success means the state needs to be set.
   self.writer = writer;
-  self.input = input;
   self.adaptor = adaptor;
   [writer addObserver:self forKeyPath:@"readyForMoreMediaData" options:NSKeyValueObservingOptionNew context:NULL];
 
@@ -340,24 +322,17 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   return YES;
 }
 
-- (void)teardownWriter
+- (void)teardownWriterWithGroup:(dispatch_group_t)teardownGroup
 {
-  AVAssetWriter *writer = self.writer;
-  AVAssetWriterInput *input = self.input;
-  NSURL *videoFile = writer.outputURL;
-  self.writer = nil;
-  self.adaptor = nil;
-  self.input = nil;
+  [self.logger.info logFormat:@"Marking video at '%@ as finished", self.writer.outputURL];
+  [self.adaptor.assetWriterInput markAsFinished];
+  [self.writer removeObserver:self forKeyPath:@"readyForMoreMediaData"];
 
-  [self.logger.info logFormat:@"Marking video at '%@ as finished", videoFile];
-  [input markAsFinished];
-  [writer removeObserver:self forKeyPath:@"readyForMoreMediaData"];
-
-  [self.logger.info logFormat:@"Finishing Writing '%@'", videoFile];
-  [writer finishWritingWithCompletionHandler:^{
-    dispatch_async(self.mediaQueue, ^{
-      [self.logger.info logFormat:@"Finished Writing '%@'", videoFile];
-    });
+  [self.logger.info logFormat:@"Finishing Writing '%@'", self.writer.outputURL];
+  dispatch_group_enter(teardownGroup);
+  [self.writer finishWritingWithCompletionHandler:^{
+    [self.logger.info logFormat:@"Finished Writing '%@'", self.writer.outputURL];
+    dispatch_group_leave(teardownGroup);
   }];
 }
 
