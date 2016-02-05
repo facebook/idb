@@ -26,8 +26,7 @@ typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
 };
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
-static const CMTimeScale FBFramebufferTimescale = 1000;
-static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
+static const CMTimeScale FBFramebufferTimescale = 1000000;
 
 @interface FBFramebufferVideoItem : NSObject
 
@@ -83,6 +82,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 @property (nonatomic, strong, readwrite) AVAssetWriter *writer;
 @property (nonatomic, strong, readwrite) AVAssetWriterInputPixelBufferAdaptor *adaptor;
+@property (nonatomic, copy, readwrite) NSDictionary *pixelBufferAttributes;
 
 @end
 
@@ -154,7 +154,7 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 - (CMTime)currentTime
 {
-  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
+  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_RoundTowardNegativeInfinity);
 }
 
 #pragma mark KVO
@@ -192,9 +192,14 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
       return;
     }
     drainCount++;
-    CVPixelBufferRef pixelBuffer = [FBFramebufferVideo createPixelBufferOfSize:self.size fromPool:self.adaptor.pixelBufferPool ofImage:item.image];
+
+    // Create the pixel buffer from the buffer pool if the pool exists, otherwise create one.
+    NSError *error = nil;
+    CVPixelBufferRef pixelBuffer = self.adaptor.pixelBufferPool
+      ? [FBFramebufferVideo createPixelBufferFromAdaptor:self.adaptor ofImage:item.image error:&error]
+      : [FBFramebufferVideo createPixelBufferFromAttributes:self.pixelBufferAttributes ofImage:item.image error:&error];
     if (!pixelBuffer) {
-      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame (%@)", item];
+      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame (%@): %@", item, error];
       continue;
     }
 
@@ -259,19 +264,15 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 - (BOOL)createAssetWriterAtPath:(NSString *)videoPath size:(CGSize)size startTime:(CMTime)startTime error:(NSError **)error
 {
-  // Create an Asset Writer to a file.
-  // For some reason AVFileTypeQuickTimeMovie is much more reliable AVFileTypeMPEG4.
-  // Others have found this out too: http://stackoverflow.com/a/22872979
   NSError *innerError = nil;
   NSURL *url = [NSURL fileURLWithPath:videoPath];
-  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeQuickTimeMovie error:&innerError];
+  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeMPEG4 error:&innerError];
   if (!writer) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create an asset writer at %@", videoPath]
       causedBy:innerError]
       failBool:error];
   }
-  writer.movieFragmentInterval = CMTimeMakeWithSeconds(FBFramebufferFragmentIntervalSeconds, FBFramebufferTimescale);
 
   // Create an Input for the Writer
   NSDictionary *outputSettings = @{
@@ -289,6 +290,13 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
   [writer addInput:input];
 
   // Create an adaptor for writing to the input via concrete pixel buffers
+  self.pixelBufferAttributes =  @{
+    (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
+    (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
+    (NSString *) kCVPixelBufferWidthKey : @(self.size.width),
+    (NSString *) kCVPixelBufferHeightKey : @(self.size.height),
+    (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
+  };
   AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor
    assetWriterInputPixelBufferAdaptorWithAssetWriterInput:input
    sourcePixelBufferAttributes:self.pixelBufferAttributes];
@@ -338,23 +346,11 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
 
 #pragma mark Pixel Buffers
 
-- (NSDictionary *)pixelBufferAttributes
++ (CVPixelBufferRef)createPixelBufferFromAttributes:(NSDictionary *)attributes ofImage:(CGImageRef)image error:(NSError **)error
 {
-  CGSize size = self.size;
-  return @{
-    (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferWidthKey : @(size.width),
-    (NSString *) kCVPixelBufferHeightKey : @(size.height),
-    (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
-  };
-}
-
-+ (CVPixelBufferRef)createPixelBufferOfSize:(CGSize)size attributes:(NSDictionary *)attributes ofImage:(CGImageRef)image
-{
-  size_t width = (size_t) size.width;
-  size_t height = (size_t) size.height;
-  OSType pixelFormat = FBFramebufferPixelFormat;
+  size_t width = (size_t) [attributes[(NSString *) kCVPixelBufferWidthKey] unsignedLongValue];
+  size_t height = (size_t) [attributes[(NSString *) kCVPixelBufferHeightKey] unsignedLongValue];
+  OSType pixelFormat = [attributes[(NSString *) kCVPixelBufferPixelFormatTypeKey] unsignedIntValue];
 
   // Create the Pixel Buffer, caller will release.
   CVPixelBufferRef pixelBuffer = NULL;
@@ -367,26 +363,35 @@ static const Float64 FBFramebufferFragmentIntervalSeconds = 5;
     &pixelBuffer
   );
   if (status != kCVReturnSuccess) {
+    [[FBSimulatorError describeFormat:@"CVPixelBufferCreate returned non-success status %d", status] fail:error];
     return NULL;
   }
 
-  return [self writeImage:image ofSize:size intoPixelBuffer:pixelBuffer];
+  return [self writeImage:image ofSize:CGSizeMake(width, height) intoPixelBuffer:pixelBuffer];
 }
 
-+ (CVPixelBufferRef)createPixelBufferOfSize:(CGSize)size fromPool:(CVPixelBufferPoolRef)pool ofImage:(CGImageRef)image
++ (CVPixelBufferRef)createPixelBufferFromAdaptor:(AVAssetWriterInputPixelBufferAdaptor *)adaptor ofImage:(CGImageRef)image error:(NSError **)error
 {
+  if (!adaptor.pixelBufferPool) {
+    [[FBSimulatorError describe:@"-[AVAssetWriterInputPixelBufferAdaptor pixelBufferPool] is nil"] fail:error];
+    return NULL;
+  }
+
   // Get the pixel buffer from the pool
   CVPixelBufferRef pixelBuffer = NULL;
   CVReturn status = CVPixelBufferPoolCreatePixelBuffer(
     NULL,
-    pool,
+    adaptor.pixelBufferPool,
     &pixelBuffer
   );
   if (status != kCVReturnSuccess) {
+    [[FBSimulatorError describeFormat:@"CVPixelBufferPoolCreatePixelBuffer returned non-success status %d", status] fail:error];
     return NULL;
   }
 
-  return [self writeImage:image ofSize:size intoPixelBuffer:pixelBuffer];
+  size_t width = (size_t) [adaptor.sourcePixelBufferAttributes[(NSString *) kCVPixelBufferWidthKey] unsignedLongValue];
+  size_t height = (size_t) [adaptor.sourcePixelBufferAttributes[(NSString *) kCVPixelBufferHeightKey] unsignedLongValue];
+  return [self writeImage:image ofSize:CGSizeMake(width, height) intoPixelBuffer:pixelBuffer];
 }
 
 + (CVPixelBufferRef)writeImage:(CGImageRef)image ofSize:(CGSize)size intoPixelBuffer:(CVPixelBufferRef)pixelBuffer
