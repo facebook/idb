@@ -126,7 +126,7 @@
       NSTimeInterval timeout = FBSimulatorControlGlobalConfiguration.regularTimeout;
       [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, stopping & wait with timeout %f", simulator.shortDescription, bridge, timeout];
       NSDate *date = NSDate.date;
-      BOOL success = [bridge terminateWithTimeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
+      BOOL success = [bridge terminateWithTimeout:timeout];
       if (success) {
         [self.logger.debug logFormat:@"Simulator Bridge %@ torn down in %f seconds", bridge, [NSDate.date timeIntervalSinceDate:date]];
       } else {
