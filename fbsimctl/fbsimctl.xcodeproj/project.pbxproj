@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA0DE44D1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
+		AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
 		AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */; };
@@ -89,6 +91,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpRelay.swift; sourceTree = "<group>"; };
 		AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
 		AA1B7F5D1C2867EE0038C6A5 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
 		AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsers.swift; sourceTree = "<group>"; };
@@ -173,6 +176,7 @@
 				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
 				AA83D5EA1C58E368003B253E /* Events.swift */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
+				AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */,
 				AA54EF741C48275B006D5118 /* JSON.swift */,
 				AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */,
 				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
@@ -396,6 +400,7 @@
 				AA6085D21C287E02009B500E /* Command.swift in Sources */,
 				AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */,
 				AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */,
+				AA0DE44D1C68894000B4D2AF /* HttpRelay.swift in Sources */,
 				AA6085D41C287E02009B500E /* Constants.m in Sources */,
 				AA6085D51C287E02009B500E /* Help.swift in Sources */,
 				AA54EF761C48DE6F006D5118 /* JSON.swift in Sources */,
@@ -439,6 +444,7 @@
 				AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */,
 				AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */,
 				AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */,
+				AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */,
 				AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */,
 				AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */,
 			);

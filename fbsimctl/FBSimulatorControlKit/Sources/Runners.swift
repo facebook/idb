@@ -119,6 +119,10 @@ class ServerRunner : Runner, RelayTransformer {
       reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
       SocketRelay(configuration: self.configuration, portNumber: portNumber, transformer: self).start()
       reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
+    case .Http(let portNumber):
+      reporter.report(LogEvent("Starting HTTP server on \(portNumber)", level: Constants.asl_level_info()))
+      HttpRelay().start()
+      reporter.report(LogEvent("Ending HTTP Server", level: Constants.asl_level_info()))
     }
     return .Success
   }

@@ -246,12 +246,24 @@ extension FBSimulatorManagementOptions : Parsable {
 extension Server : Parsable {
   public static func parser() -> Parser<Server> {
     return Parser
-      .succeeded("listen", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+    .succeeded("listen", Parser
+      .alternative([self.socketParser(), self.httpParser()]).fallback(Server.StdIO)
+    )
+  }
+
+  public static func socketParser() -> Parser<Server> {
+    return Parser
+      .succeeded("--socket", Parser<Int>.ofInt())
       .fmap { portNumber in
-        guard let portNumber = portNumber else {
-          return Server.StdIO
-        }
         return Server.Socket(UInt16(portNumber))
+      }
+  }
+
+  public static func httpParser() -> Parser<Server> {
+    return Parser
+      .succeeded("--http", Parser<Int>.ofInt())
+      .fmap { portNumber in
+        return Server.Http(UInt16(portNumber))
       }
   }
 }

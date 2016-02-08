@@ -75,6 +75,7 @@ public enum Action {
 public enum Server {
   case StdIO
   case Socket(in_port_t)
+  case Http(in_port_t)
 }
 
 /**
@@ -145,6 +146,8 @@ public func == (left: Server, right: Server) -> Bool {
   case (.StdIO, .StdIO):
     return true
   case (.Socket(let leftPort), .Socket(let rightPort)):
+    return leftPort == rightPort
+  case (.Http(let leftPort), .Http(let rightPort)):
     return leftPort == rightPort
   default:
     return false

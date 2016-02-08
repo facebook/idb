@@ -437,7 +437,8 @@ class CommandParserTests : XCTestCase {
   func testParsesListen() {
     self.assertParsesAll(Command.parser(), [
       (["listen"], Command.Listen(Configuration.defaultValue, Server.StdIO)),
-      (["listen", "--port", "42"], Command.Listen(Configuration.defaultValue, Server.Socket(42)))
+      (["listen", "--socket", "42"], Command.Listen(Configuration.defaultValue, Server.Socket(42))),
+      (["listen", "--http", "43"], Command.Listen(Configuration.defaultValue, Server.Http(43)))
     ])
   }
 
