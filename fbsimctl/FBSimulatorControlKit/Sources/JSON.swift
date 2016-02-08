@@ -30,11 +30,11 @@ public enum JSONError : ErrorType {
 }
 
 public indirect enum JSON {
-  case Dictionary([NSString : JSON])
-  case Array([JSON])
-  case String(NSString)
-  case Number(NSNumber)
-  case Null
+  case JDictionary([String : JSON])
+  case JArray([JSON])
+  case JString(String)
+  case JNumber(NSNumber)
+  case JNull
 
   static func encode(object: AnyObject) throws -> JSON {
     switch object {
@@ -43,22 +43,22 @@ public indirect enum JSON {
       for element in array {
         encoded.append(try encode(element))
       }
-      return JSON.Array(encoded)
+      return JSON.JArray(encoded)
     case let dictionary as NSDictionary:
-      var encoded: [NSString : JSON] = [:]
+      var encoded: [String : JSON] = [:]
       for (key, value) in dictionary {
         guard let key = key as? NSString else {
           throw JSONError.NonEncodable(object)
         }
-        encoded[key] = try encode(value)
+        encoded[key as String] = try encode(value)
       }
-      return JSON.Dictionary(encoded)
+      return JSON.JDictionary(encoded)
     case let string as NSString:
-      return JSON.String(string)
+      return JSON.JString(string as String)
     case let number as NSNumber:
-      return JSON.Number(number)
+      return JSON.JNumber(number)
     case is NSNull:
-      return JSON.Null
+      return JSON.JNull
     default:
       throw JSONError.NonEncodable(object)
     }
@@ -66,23 +66,23 @@ public indirect enum JSON {
 
   func decode() -> AnyObject {
     switch self {
-    case .Dictionary(let dictionary):
+    case .JDictionary(let dictionary):
       let decoded = NSMutableDictionary()
       for (key, value) in dictionary {
         decoded[key] = value.decode()
       }
       return decoded.copy()
-    case .Array(let array):
+    case .JArray(let array):
       let decoded = NSMutableArray()
       for value in array {
         decoded.addObject(value.decode())
       }
       return decoded.copy()
-    case .String(let string):
+    case .JString(let string):
       return string
-    case .Number(let number):
+    case .JNumber(let number):
       return number
-    case .Null:
+    case .JNull:
       return NSNull()
     }
   }

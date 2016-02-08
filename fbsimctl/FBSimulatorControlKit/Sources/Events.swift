@@ -88,11 +88,11 @@ class SimpleEvent : NSObject, JSONDescribeable {
 
   var jsonDescription: JSON {
     get {
-      return JSON.Dictionary([
-        "event_name" : JSON.String(self.eventName.rawValue),
-        "event_type" : JSON.String(self.eventType.rawValue),
+      return JSON.JDictionary([
+        "event_name" : JSON.JString(self.eventName.rawValue),
+        "event_type" : JSON.JString(self.eventType.rawValue),
         "subject" : self.subject.jsonDescription,
-        "timestamp" : JSON.Number(NSNumber(double: round(NSDate().timeIntervalSince1970))),
+        "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
       ])
     }
   }
@@ -115,12 +115,12 @@ class SimpleEvent : NSObject, JSONDescribeable {
 
   var jsonDescription: JSON {
     get {
-      return JSON.Dictionary([
-        "event_name" : JSON.String(EventName.Diagnostic.rawValue),
-        "event_type" : JSON.String(EventType.Discrete.rawValue),
-        "subject" : JSON.String(self.logString),
-        "level" : JSON.String(self.levelString),
-        "timestamp" : JSON.Number(NSNumber(double: round(NSDate().timeIntervalSince1970))),
+      return JSON.JDictionary([
+        "event_name" : JSON.JString(EventName.Diagnostic.rawValue),
+        "event_type" : JSON.JString(EventType.Discrete.rawValue),
+        "subject" : JSON.JString(self.logString),
+        "level" : JSON.JString(self.levelString),
+        "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
       ])
     }
   }
@@ -160,12 +160,12 @@ class SimulatorEvent : NSObject, JSONDescribeable {
 
   var jsonDescription: JSON {
     get {
-      return JSON.Dictionary([
+      return JSON.JDictionary([
         "simulator" : SimulatorControlSubjectBridge(self.simulator).jsonDescription,
-        "event_name" : JSON.String(self.eventName.rawValue),
-        "event_type" : JSON.String(self.eventType.rawValue),
+        "event_name" : JSON.JString(self.eventName.rawValue),
+        "event_type" : JSON.JString(self.eventType.rawValue),
         "subject" : SimulatorControlSubjectBridge(self.subject).jsonDescription,
-        "timestamp" : JSON.Number(NSNumber(double: round(NSDate().timeIntervalSince1970))),
+        "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
       ])
     }
   }
@@ -191,11 +191,11 @@ class SimulatorEvent : NSObject, JSONDescribeable {
 
   private var simulatorJSON: JSON {
     get {
-      var dictionary: [NSString : JSON] = [:]
+      var dictionary: [String : JSON] = [:]
       for (key, value) in self.simulatorNamePairs {
-        dictionary[key] = JSON.String(value)
+        dictionary[key] = JSON.JString(value)
       }
-      return JSON.Dictionary(dictionary)
+      return JSON.JDictionary(dictionary)
     }
   }
 
