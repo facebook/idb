@@ -13,7 +13,6 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBCollectionDescriptions.h"
-#import "FBInteraction+Private.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBSimulator+Helpers.h"
@@ -32,11 +31,31 @@
 
 @implementation FBSimulatorInteraction
 
+#pragma mark Initializers
+
 + (instancetype)withSimulator:(FBSimulator *)simulator
 {
-  FBSimulatorInteraction *interaction = [self new];
-  interaction.simulator = simulator;
-  return interaction;
+  return [[self alloc] initWithInteraction:nil simulator:simulator];
+}
+
+- (instancetype)initWithInteraction:(id<FBInteraction>)interaction simulator:(FBSimulator *)simulator
+{
+  self = [super initWithInteraction:interaction];
+  if (!self) {
+    return nil;
+  }
+
+  _simulator = simulator;
+  return self;
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  FBSimulatorInteraction *interaction = [super copyWithZone:zone];
+  interaction->_simulator = self.simulator;
+  return self;
 }
 
 #pragma mark Private

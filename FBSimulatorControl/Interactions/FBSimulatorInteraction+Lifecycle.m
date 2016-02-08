@@ -19,7 +19,6 @@
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
 #import "FBCollectionDescriptions.h"
-#import "FBInteraction+Private.h"
 #import "FBProcessInfo.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessQuery+Simulators.h"

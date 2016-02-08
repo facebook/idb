@@ -8,131 +8,91 @@
  */
 
 #import "FBInteraction.h"
-#import "FBInteraction+Private.h"
 
 #import "FBSimulatorError.h"
 
-@implementation FBInteraction
+@interface FBInteraction ()
 
-- (instancetype)init
+#pragma mark Primitives
+
+/**
+ Chains an interaction using the provided block
+
+ @param block the block to perform the interaction with. Passes an NSError to return error information and the interaction for further chaining.
+ @return the reciever, for chaining.
+ */
++ (id<FBInteraction>)interact:(BOOL (^)(NSError **error))block;
+
+/**
+ Creates an Interaction that allways Fails.
+
+ @param error the error to fail the interaction with.
+ @return an Interaction that allways Fails.
+ */
++ (id<FBInteraction>)fail:(NSError *)error;
+
+/**
+ Creates an Interaction that always Succeeds.
+
+ @return an Interaction that always Succeeds.
+ */
++ (id<FBInteraction>)succeed;
+
+/**
+ Creates an Interaction that will retry a base interaction a number of times, before failing.
+
+ @param retries the number of retries, must be 1 or greater.
+ @param interaction the base interaction to retry.
+ @return a retrying interaction.
+ */
++ (id<FBInteraction>)retry:(NSUInteger)retries interaction:(id<FBInteraction>)interaction;
+
+/**
+ Ignores any failure that occurs to the base interaction.
+
+ @param interaction the interaction to attempt.
+ @return an interaction that allways succeds.
+ */
++ (id<FBInteraction>)ignoreFailure:(id<FBInteraction>)interaction;
+
+/**
+ Takes an NSArray<id<FBInteraction>> and returns an id<FBInteracton>.
+ Any failing interaction will terminate the chain.
+
+ @param interactions the interactions to chain together.
+ */
++ (id<FBInteraction>)sequence:(NSArray *)interactions;
+
+/**
+ Joins to interactions together.
+ Equivalent to [FBInteraction sequence:@[first, second]]
+
+ @param first the interaction to perform first.
+ @param second the interaction to perform second.
+ @return a chained interaction.
+ */
++ (id<FBInteraction>)first:(id<FBInteraction>)first second:(id<FBInteraction>)second;
+
+@end
+
+@interface FBInteraction_Block : NSObject <FBInteraction>
+
+@property (nonatomic, copy, readonly) BOOL (^block)(NSError **error);
+
+@end
+
+@implementation FBInteraction_Block
+
+- (instancetype)initWithBlock:( BOOL(^)(NSError **error) )block
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _interactions = [NSMutableArray array];
+  _block = block;
+
   return self;
-}
-
-+ (id<FBInteraction>)chainInteractions:(NSArray *)interactions
-{
-  return [FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
-    for (id<FBInteraction> interaction in interactions) {
-      NSError *innerError = nil;
-      if (![interaction performInteractionWithError:&innerError]) {
-        return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-      }
-    }
-    return YES;
-  }];
-}
-
-- (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block
-{
-  NSParameterAssert(block);
-
-  __weak id weakInteraction = self;
-  return [self addInteraction:[FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
-    __strong id interaction = weakInteraction;
-    return block(error, interaction);
-  }]];
-}
-
-- (instancetype)failWith:(NSError *)error
-{
-  NSParameterAssert(error);
-  return [self interact:^ BOOL (NSError **errorPtr, id _) {
-    NSCParameterAssert(errorPtr);
-    *errorPtr = error;
-    return NO;
-  }];
-}
-
-- (instancetype)succeed
-{
-  return [self interact:^ BOOL (NSError **_, id __) {
-    return YES;
-  }];
-}
-
-- (instancetype)addInteraction:(id<FBInteraction>)interaction
-{
-  [self.interactions addObject:interaction];
-  return self;
-}
-
-- (instancetype)retry:(NSUInteger)retries
-{
-  NSParameterAssert(retries > 1);
-
-  return [self replaceLastInteraction:^ id<FBInteraction> (id<FBInteraction> interaction) {
-    return [FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
-      NSError *innerError = nil;
-      for (NSUInteger index = 0; index < retries; index++) {
-        if ([interaction performInteractionWithError:&innerError]) {
-          return YES;
-        }
-      }
-      return [[[FBSimulatorError describeFormat:@"Failed interaction after %ld retries", retries] causedBy:innerError] failBool:error];
-    }];
-  }];
-}
-
-- (instancetype)ignoreFailure
-{
-  return [self replaceLastInteraction:^ id<FBInteraction> (id<FBInteraction> interaction) {
-    return [FBInteraction_Block interactionWithBlock:^ BOOL (NSError **error) {
-      NSError *innerError = nil;
-      [interaction performInteractionWithError:&innerError];
-      return YES;
-    }];
-  }];
-}
-
-- (id<FBInteraction>)build
-{
-  return [FBInteraction chainInteractions:[self.interactions copy]];
-}
-
-- (BOOL)performInteractionWithError:(NSError **)error
-{
-  return [[self build] performInteractionWithError:error];
-}
-
-#pragma mark Private
-
-- (instancetype)replaceLastInteraction:( id<FBInteraction>(^)(id<FBInteraction> interaction) )block
-{
-  NSParameterAssert(self.interactions.count > 0);
-
-  NSUInteger interactionIndex = self.interactions.count - 1;
-  id<FBInteraction> interaction = self.interactions[interactionIndex];
-  id<FBInteraction> nextInteraction = block(interaction);
-
-  [self.interactions replaceObjectAtIndex:interactionIndex withObject:nextInteraction];
-  return self;
-}
-
-@end
-
-@implementation FBInteraction_Block
-
-+ (id<FBInteraction>)interactionWithBlock:( BOOL(^)(NSError **error) )block
-{
-  FBInteraction_Block *interaction = [self new];
-  interaction.block = block;
-  return interaction;
 }
 
 - (BOOL)performInteractionWithError:(NSError **)error
@@ -146,3 +106,222 @@
 }
 
 @end
+
+@interface FBInteraction_Sequence : NSObject <FBInteraction>
+
+@property (nonatomic, copy, readonly) NSArray *interactions;
+
+@end
+
+@implementation FBInteraction_Sequence
+
+- (instancetype)initWithInteractions:(NSArray *)interactions
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _interactions = interactions;
+
+  return self;
+}
+
+- (BOOL)performInteractionWithError:(NSError **)error
+{
+  for (id<FBInteraction> interaction in self.interactions) {
+    NSError *innerError = nil;
+    if (![interaction performInteractionWithError:&innerError]) {
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    }
+  }
+  return YES;
+}
+
+@end
+
+@interface FBInteraction_Success : NSObject <FBInteraction>
+
+@end
+
+@implementation FBInteraction_Success
+
+- (BOOL)performInteractionWithError:(NSError **)error
+{
+  return YES;
+}
+
+@end
+
+@interface FBInteraction_Failure : NSObject <FBInteraction>
+
+@property (nonnull, strong, readonly) NSError *error;
+
+@end
+
+@implementation FBInteraction_Failure
+
+- (instancetype)initWithError:(NSError *)error
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _error = error;
+
+  return self;
+}
+
+- (BOOL)performInteractionWithError:(NSError **)errorPtr
+{
+  if (errorPtr) {
+    *errorPtr = self.error;
+  }
+  return NO;
+}
+
+@end
+
+@interface FBInteraction_Retrying : NSObject <FBInteraction>
+
+@property (nonatomic, strong, readonly) id<FBInteraction> interaction;
+@property (nonatomic, assign, readonly) NSUInteger retries;
+
+@end
+
+@implementation FBInteraction_Retrying
+
+- (instancetype)initWithInteraction:(id<FBInteraction>)interaction retries:(NSUInteger)retries
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _interaction = interaction;
+  _retries = retries;
+
+  return self;
+}
+
+- (BOOL)performInteractionWithError:(NSError **)error
+{
+  NSError *innerError = nil;
+  for (NSUInteger index = 0; index < self.retries; index++) {
+    if ([self.interaction performInteractionWithError:&innerError]) {
+      return YES;
+    }
+  }
+  return [[[FBSimulatorError
+    describeFormat:@"Failed interaction after %ld retries", self.retries]
+    causedBy:innerError]
+    failBool:error];
+}
+
+@end
+
+@implementation FBInteraction
+
+#pragma mark Initializers
+
+- (instancetype)init
+{
+  return [self initWithInteraction:nil];
+}
+
+- (instancetype)initWithInteraction:(id<FBInteraction>)interaction
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _interaction = interaction ?: FBInteraction.succeed;
+
+  return self;
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return [[self.class alloc] initWithInteraction:self.interaction];
+}
+
+#pragma mark Primitives
+
++ (id<FBInteraction>)interact:(BOOL (^)(NSError **error))block
+{
+  NSParameterAssert(block);
+  return [[FBInteraction_Block alloc] initWithBlock:block];
+}
+
++ (id<FBInteraction>)fail:(NSError *)error
+{
+  NSParameterAssert(error);
+  return [[FBInteraction_Failure alloc] initWithError:error];
+}
+
++ (id<FBInteraction>)succeed
+{
+  return [FBInteraction_Success new];
+}
+
++ (id<FBInteraction>)retry:(NSUInteger)retries interaction:(id<FBInteraction>)interaction;
+{
+  NSParameterAssert(retries > 1);
+  NSParameterAssert(interaction);
+  return [[FBInteraction_Retrying alloc] initWithInteraction:interaction retries:retries];
+}
+
++ (id<FBInteraction>)ignoreFailure:(id<FBInteraction>)interaction
+{
+  NSParameterAssert(interaction);
+
+  return [self interact:^ BOOL (NSError **error) {
+    NSError *innerError = nil;
+    [interaction performInteractionWithError:&innerError];
+    return YES;
+  }];
+}
+
++ (id<FBInteraction>)sequence:(NSArray *)interactions
+{
+  return [[FBInteraction_Sequence alloc] initWithInteractions:interactions];
+}
+
++ (id<FBInteraction>)first:(id<FBInteraction>)first second:(id<FBInteraction>)second
+{
+  NSParameterAssert(first);
+  NSParameterAssert(second);
+  return [self sequence:@[first, second]];
+}
+
+#pragma mark Chainable Interactions
+
+- (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block
+{
+  id<FBInteraction> next = [FBInteraction interact:^ BOOL (NSError **error) {
+    return block(error, self);
+  }];
+
+  FBInteraction *interaction = [self copy];
+  interaction->_interaction = [FBInteraction first:self.interaction second:next];
+  return interaction;
+}
+
+- (instancetype)succeed
+{
+  return self;
+}
+
+#pragma mark FBInteraction
+
+- (BOOL)performInteractionWithError:(NSError **)error
+{
+  return [self.interaction performInteractionWithError:error];
+}
+
+@end
+
