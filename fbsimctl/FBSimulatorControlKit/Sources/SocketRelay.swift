@@ -201,7 +201,7 @@ class SocketConnection {
 
 class SocketRelay : Relay, SocketConnectionDelegate {
   struct Options {
-    let portNumber: Int
+    let portNumber: in_port_t
     let bindIPv4: Bool
     let bindIPv6: Bool
 
@@ -215,7 +215,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
   var transformer: RelayTransformer
   var registeredConnections: [SocketConnection] = []
 
-  init(configuration: Configuration, portNumber: Int, transformer: RelayTransformer) {
+  init(configuration: Configuration, portNumber: in_port_t, transformer: RelayTransformer) {
     self.configuration = configuration
     self.transformer = transformer
     self.options = SocketRelay.Options(portNumber: portNumber, bindIPv4: false, bindIPv6: true)

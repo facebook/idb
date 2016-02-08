@@ -70,11 +70,19 @@ public enum Action {
 }
 
 /**
+ Options for Creating a Server for listening to commands on.
+ */
+public enum Server {
+  case StdIO
+  case Socket(in_port_t)
+}
+
+/**
  The entry point for all commands.
  */
 public enum Command {
   case Perform(Configuration, Action)
-  case Interactive(Configuration, Int?)
+  case Listen(Configuration, Server)
   case Help(Interaction?)
 }
 
@@ -88,8 +96,8 @@ public func == (left: Command, right: Command) -> Bool {
   switch (left, right) {
   case (.Perform(let leftConfiguration, let lefts), .Perform(let rightConfiguration, let rights)):
     return leftConfiguration == rightConfiguration && lefts == rights
-  case (.Interactive(let leftConfiguration, let leftPort), .Interactive(let rightConfiguration, let rightPort)):
-    return leftConfiguration == rightConfiguration && leftPort == rightPort
+  case (.Listen(let leftConfiguration, let leftServer), .Listen(let rightConfiguration, let rightServer)):
+    return leftConfiguration == rightConfiguration && leftServer == rightServer
   case (.Help(let left), .Help(let right)):
     return left == right
   default:
@@ -128,6 +136,18 @@ public func == (left: Action, right: Action) -> Bool {
       }
     default:
       return true
+  }
+}
+
+extension Server : Equatable { }
+public func == (left: Server, right: Server) -> Bool {
+  switch (left, right) {
+  case (.StdIO, .StdIO):
+    return true
+  case (.Socket(let leftPort), .Socket(let rightPort)):
+    return leftPort == rightPort
+  default:
+    return false
   }
 }
 

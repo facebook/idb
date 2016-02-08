@@ -133,7 +133,7 @@ extension Command : Parsable {
     return Parser
       .alternative([
         self.helpParser(),
-        self.interactParser(),
+        self.listenParser(),
         self.actionParser()
       ])
   }
@@ -149,14 +149,14 @@ extension Command : Parsable {
       }
   }
 
-  static func interactParser() -> Parser<Command> {
+  static func listenParser() -> Parser<Command> {
     return Parser
       .ofTwoSequenced(
         Configuration.parser(),
-        Parser.succeeded("-i", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+        Server.parser()
       )
-      .fmap { (configuration, port) in
-        return Command.Interactive(configuration, port)
+      .fmap { (configuration, serverConfiguration) in
+        return Command.Listen(configuration, serverConfiguration)
       }
   }
 
@@ -240,6 +240,19 @@ extension FBSimulatorManagementOptions : Parsable {
 
   static func useSimDeviceTimeoutResilianceParser() -> Parser<FBSimulatorManagementOptions> {
     return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
+  }
+}
+
+extension Server : Parsable {
+  public static func parser() -> Parser<Server> {
+    return Parser
+      .succeeded("listen", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+      .fmap { portNumber in
+        guard let portNumber = portNumber else {
+          return Server.StdIO
+        }
+        return Server.Socket(UInt16(portNumber))
+      }
   }
 }
 

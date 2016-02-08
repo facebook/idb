@@ -434,10 +434,10 @@ class CommandParserTests : XCTestCase {
     )
   }
 
-  func testParsesInteract() {
+  func testParsesListen() {
     self.assertParsesAll(Command.parser(), [
-      (["-i"], Command.Interactive(Configuration.defaultValue, nil)),
-      (["-i", "--port", "42"], Command.Interactive(Configuration.defaultValue, 42))
+      (["listen"], Command.Listen(Configuration.defaultValue, Server.StdIO)),
+      (["listen", "--port", "42"], Command.Listen(Configuration.defaultValue, Server.Socket(42)))
     ])
   }
 

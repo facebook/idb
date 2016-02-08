@@ -45,11 +45,11 @@ private struct CommandBootstrap {
       case .Help:
         self.writer.write(Command.getHelp())
         return .Success
-      case .Interactive(let configuration, let port):
+      case .Listen(let configuration, let serverConfiguration):
         let reporter = configuration.options.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
         let control = try defaults.configuration.buildSimulatorControl()
-        return InteractiveRunner(control: control, configuration: configuration, defaults: defaults, portNumber: port).run(reporter)
+        return ServerRunner(control: control, configuration: configuration, defaults: defaults, serverConfiguration: serverConfiguration).run(reporter)
       case .Perform(let configuration, let action):
         let reporter = configuration.options.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
@@ -96,28 +96,29 @@ private struct ActionRunner : Runner {
   }
 }
 
-class InteractiveRunner : Runner, RelayTransformer {
+class ServerRunner : Runner, RelayTransformer {
   let control: FBSimulatorControl
   let configuration: Configuration
   let defaults: Defaults
-  let portNumber: Int?
+  let serverConfiguration: Server
 
-  init(control: FBSimulatorControl, configuration: Configuration, defaults: Defaults, portNumber: Int?) {
+  init(control: FBSimulatorControl, configuration: Configuration, defaults: Defaults, serverConfiguration: Server) {
     self.control = control
     self.configuration = configuration
-    self.portNumber = portNumber
     self.defaults = defaults
+    self.serverConfiguration = serverConfiguration
   }
 
   func run(reporter: EventReporter) -> ActionResult {
-    if let portNumber = self.portNumber {
-      reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
-      SocketRelay(configuration: self.configuration, portNumber: portNumber, transformer: self).start()
-      reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
-    } else {
+    switch serverConfiguration {
+    case .StdIO:
       reporter.report(LogEvent("Starting local interactive mode, listening on stdin", level: Constants.asl_level_info()))
       StdIORelay(configuration: self.configuration, transformer: self).start()
       reporter.report(LogEvent("Ending local interactive mode", level: Constants.asl_level_info()))
+    case .Socket(let portNumber):
+      reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
+      SocketRelay(configuration: self.configuration, portNumber: portNumber, transformer: self).start()
+      reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
     }
     return .Success
   }
