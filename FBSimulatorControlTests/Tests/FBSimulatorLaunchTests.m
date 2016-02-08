@@ -22,45 +22,9 @@
 
 @implementation FBSimulatorLaunchTests
 
-- (void)testLaunchesSafariApplication
+- (FBSimulator *)testApplication:(FBSimulatorApplication *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = [self obtainSimulator];
-  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
-
-  [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[[simulator.interact bootSimulator:self.simulatorLaunchConfiguration] launchApplication:appLaunch]];
-
-  [self.assert bootingNotificationsFired];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
-  [self.assert noNotificationsToConsume];
-  [self assertSimulatorBooted:simulator];
-}
-
-- (void)testRelaunchesSafariApplication
-{
-  FBSimulator *simulator = [self obtainSimulator];
-  FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
-
-  [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[[simulator.interact bootSimulator:self.simulatorLaunchConfiguration] launchApplication:appLaunch]];
-
-  [self.assert bootingNotificationsFired];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
-  [self.assert noNotificationsToConsume];
-  [self assertSimulatorBooted:simulator];
-
-  [self assertInteractionSuccessful:simulator.interact.relaunchLastLaunchedApplication];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
-
-  [self.assert noNotificationsToConsume];
-}
-
-- (void)testLaunchesSampleApplication
-{
-  FBSimulator *simulator = [self obtainSimulator];
-  FBSimulatorApplication *application = self.tableSearchApplication;
-  FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch;
 
   [self.assert consumeAllNotifications];
   [self assertInteractionSuccessful:[[[simulator.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:application] launchApplication:appLaunch]];
@@ -70,6 +34,18 @@
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:simulator];
+
+  return simulator;
+}
+
+- (void)testApplication:(FBSimulatorApplication *)application relaunches:(FBApplicationLaunchConfiguration *)appLaunch
+{
+  FBSimulator *simulator = [self testApplication:application launches:appLaunch];
+
+  [self assertInteractionSuccessful:simulator.interact.relaunchLastLaunchedApplication];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
 }
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
@@ -146,6 +122,26 @@
   }
 
   XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0u);
+}
+
+- (void)testLaunchesSafariApplication
+{
+  [self testApplication:self.safariApplication launches:self.safariAppLaunch];
+}
+
+- (void)testRelaunchesSafariApplication
+{
+  [self testApplication:self.safariApplication relaunches:self.safariAppLaunch];
+}
+
+- (void)testLaunchesSampleApplication
+{
+  [self testApplication:self.tableSearchApplication launches:self.tableSearchAppLaunch];
+}
+
+- (void)testRelaunchesSampleApplication
+{
+  [self testApplication:self.tableSearchApplication relaunches:self.tableSearchAppLaunch];
 }
 
 @end
