@@ -96,7 +96,7 @@ private struct ActionRunner : Runner {
   }
 }
 
-class ServerRunner : Runner, RelayTransformer {
+class ServerRunner : Runner, ActionPerformer {
   let control: FBSimulatorControl
   let configuration: Configuration
   let defaults: Defaults
@@ -113,11 +113,11 @@ class ServerRunner : Runner, RelayTransformer {
     switch serverConfiguration {
     case .StdIO:
       reporter.report(LogEvent("Starting local interactive mode, listening on stdin", level: Constants.asl_level_info()))
-      StdIORelay(configuration: self.configuration, transformer: self).start()
+      StdIORelay(configuration: self.configuration, performer: self).start()
       reporter.report(LogEvent("Ending local interactive mode", level: Constants.asl_level_info()))
     case .Socket(let portNumber):
       reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
-      SocketRelay(configuration: self.configuration, portNumber: portNumber, transformer: self).start()
+      SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self).start()
       reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
     case .Http(let portNumber):
       reporter.report(LogEvent("Starting HTTP server on \(portNumber)", level: Constants.asl_level_info()))
@@ -127,17 +127,8 @@ class ServerRunner : Runner, RelayTransformer {
     return .Success
   }
 
-  func transform(input: String, reporter: EventReporter) -> ActionResult {
-    do {
-      let arguments = Arguments.fromString(input)
-      let (_, action) = try Action.parser().parse(arguments)
-      let runner = ActionRunner(control: self.control, configuration: self.configuration, defaults: self.defaults, action: action)
-      return runner.run(reporter)
-    } catch let error as ParseError {
-      return .Failure("Error: \(error.description)")
-    } catch let error as NSError {
-      return .Failure(error.description)
-    }
+  func perform(action: Action, reporter: EventReporter) -> ActionResult {
+    return ActionRunner(control: self.control, configuration: self.configuration, defaults: self.defaults, action: action).run(reporter)
   }
 }
 

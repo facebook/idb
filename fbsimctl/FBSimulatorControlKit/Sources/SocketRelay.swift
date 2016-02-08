@@ -172,10 +172,10 @@ class SocketConnection {
 
   private let relayConnection: RelayConnection
 
-  init(readStream: NSInputStream, writeStream: NSOutputStream, configuration: Configuration, delegate: SocketConnectionDelegate, transformer: RelayTransformer) {
+  init(readStream: NSInputStream, writeStream: NSOutputStream, configuration: Configuration, delegate: SocketConnectionDelegate, performer: ActionPerformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(transformer: transformer, reporter: configuration.options.createReporter(self.writeStreamDelegate))
+    self.relayConnection = RelayConnection(performer: performer, reporter: configuration.options.createReporter(self.writeStreamDelegate))
     self.readStream = readStream
     self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
   }
@@ -212,12 +212,12 @@ class SocketRelay : Relay, SocketConnectionDelegate {
 
   let configuration: Configuration
   let options: SocketRelay.Options
-  var transformer: RelayTransformer
+  let performer: ActionPerformer
   var registeredConnections: [SocketConnection] = []
 
-  init(configuration: Configuration, portNumber: in_port_t, transformer: RelayTransformer) {
+  init(configuration: Configuration, portNumber: in_port_t, performer: ActionPerformer) {
     self.configuration = configuration
-    self.transformer = transformer
+    self.performer = performer
     self.options = SocketRelay.Options(portNumber: portNumber, bindIPv4: false, bindIPv6: true)
   }
 
@@ -338,7 +338,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
       writeStream: outputStream,
       configuration: self.configuration,
       delegate: self,
-      transformer: self.transformer
+      performer: self.performer
     )
 
     registeredConnections.append(connection)

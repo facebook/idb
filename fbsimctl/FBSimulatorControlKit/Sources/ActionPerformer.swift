@@ -10,6 +10,27 @@
 import Foundation
 
 /**
+ A Protocol for performing an Action producing an ActionResult.
+ */
+protocol ActionPerformer {
+  func perform(action: Action, reporter: EventReporter) -> ActionResult
+}
+
+extension ActionPerformer {
+  func perform(input: String, reporter: EventReporter) -> ActionResult {
+    do {
+      let arguments = Arguments.fromString(input)
+      let (_, action) = try Action.parser().parse(arguments)
+      return self.perform(action, reporter: reporter)
+    } catch let error as ParseError {
+      return .Failure("Error: \(error.description)")
+    } catch let error as NSError {
+      return .Failure(error.description)
+    }
+  }
+}
+
+/**
  Enum for defining the result of a translation.
  */
 public enum ActionResult {
