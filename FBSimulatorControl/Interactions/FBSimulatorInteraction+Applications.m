@@ -38,6 +38,10 @@
   NSParameterAssert(application);
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    if ([simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
+      return YES;
+    }
+
     NSError *innerError = nil;
     NSDictionary *options = @{
       @"CFBundleIdentifier" : application.bundleID

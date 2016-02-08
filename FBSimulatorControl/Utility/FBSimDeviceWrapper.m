@@ -223,6 +223,7 @@
 
 - (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error
 {
+  // Calling -[SimDevice installApplication:withOptions:error:] will result in the Application unexpectedly terminating.
   return [self.simulator.device installApplication:appURL withOptions:options error:error];
 }
 

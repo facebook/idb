@@ -83,6 +83,15 @@
 - (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
+ Determinates whether a provided Bundle ID represents a System Application
+ 
+ @param bundleID the Bundle ID to fetch an installed application for.
+ @param error an error out for any error that occurs.
+ @return YES if the Application with the provided is a System Application, NO otherwise.
+*/
+- (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
  Creates a FBSimDeviceWrapper for the Simulator.
  */
 - (FBSimDeviceWrapper *)simDeviceWrapper;
@@ -114,4 +123,5 @@
  Returns the home folder of the last application launched
  */
 - (NSString *)homeDirectoryOfLastLaunchedApplication;
+
 @end

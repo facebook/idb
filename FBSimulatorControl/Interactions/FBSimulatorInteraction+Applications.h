@@ -15,6 +15,7 @@
 
 /**
  Installs the given Application.
+ Will Allways Succeed if the Application is a System Application.
 
  @param application the Application to Install.
  @return the reciever, for chaining.
