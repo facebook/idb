@@ -4,26 +4,28 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 [![Build Status](https://travis-ci.org/facebook/FBSimulatorControl.svg?branch=master)](https://travis-ci.org/facebook/FBSimulatorControl)
 
 ## Features
-- Boots multiple iOS Simulators within the same host process or across processes.
-- Does not have to be run from Xcode/`xcodebuild`. Simulators can be launched by a process that has not been spawned by Xcode.
+- Enables 'Multisim' for iOS: Booting of multiple Simulators on the same host OS.
+- Runs independently of Xcode and `xcodebuild`. Uses the toolchain defined by `xcode-select`. 
 - Boots iPhone & iPad Simulators for iOS 7, 8 & 9.
 - Boots watchOS Simulators since watchOS 2.0.
 - Boots tvOS Simulators since tvOS 9.0.
-- Launching and switching between multiple Apps.
-- Convenient and fast fetching of System, App & Crash logs.
-- Persistent and Queryable history of all Simulator events.
-- Detailed logging covering lifecycle events including booting, launching Apps and unexpected termination.
-- `NSNotification`s for many events in the lifecycle of Simulators and their processes.
-- Knowledge about the state of all Simulators can be re-built when `FBSimulatorControl` is launched.
-- No external dependencies.
-- Launch Applications and Agents with [Command Line Arguments](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L24) and [Environment Variables](FBSimulatorControl/Configuration/FBProcessLaunchConfiguration.h#L29).
-- APIs for [launching diagnostic utilities](FBSimulatorControl/Session/FBSimulatorSessionInteraction%2BDiagnostics.h) and attaching output to a Simulator session.
+- Launches both 'Agent' and 'Application' processes, with Arguments and Environment.
+- Can boot Simulators via Xcode's `Simulator.app` or by launching 'Directly' in `CoreSimulator`.
+- 'Direct Launch' supports video recording, screenshot fetching & interfacing with the `SimulatorBridge`.
+- 'Diagnostic' API for fetching System, App & Crash logs as well as Screenshots & Video.
+- An 'Event Bus' that exposes the details of a Simulator's lifecycle including Applications, Agents & the Simulator itself.
+- Persistent and Queryable history of all events in Simulator's lifecycle.
+- `NSNotification`s interface for the 'Event Bus'.
+- Stateless by Default: Knowledge the current state of Simulators can be re-built when `FBSimulatorControl` is launched.
 - BFFs with [`WebDriverAgent`](https://github.com/facebook/webdriveragent).
+- No external dependencies.
 
 ## About
 The original use-case for `FBSimulatorControl` was to boot Simulators to run End-to-End tests with `WebDriverAgent`. As `FBSimulatorControl` is a Mac OS X framework, it can be linked to from inside any Mac OS Library, Application, or `xctest` target. There may be additional use-cases that you may find beyond UI Test Automation.
 
 `FBSimulatorControl` works by linking with the private `DVTFoundation`, `CoreSimulator` and `DVTiPhoneSimulatorRemoteClient` frameworks that are present inside the Xcode bundle. Doing this allows  `FBSimulatorControl` to talk directly to the same APIs that Xcode and `simctl` do. This, combined with launching the Simulator binaries directly, means that multiple Simulators can be launched simultaneously. Test targets can be made that don't depend on any Application targets, or that launch multiple Application targets. This enables running against pre-built and archived Application binaries, rather than a binary that is built by a Test Target.
+
+As `FBSimulatorControl` nears a stable version, the API may change but can be considered mostly stable.
 
 ## Installation
 The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControlTests.xctest` bundles without any additional dependencies. The Project File is checked into the repo and the Framework can be build from this project.
@@ -45,8 +47,8 @@ For a high level overview:
 - `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator.
 - `FBSimulatorInteraction` and it's categories forms the API of possible ways of interacting with a Simulator. These range from booting Simulators, installing & running Applications, uploading photos & videos and more.
 - `FBSimulatorHistory` is a record of all the events that happen to a Simulator. It can be queried in a variety of ways and serialized to file.
-- `FBSimulatorLogs` is a facade around available logs for a Simulator. It fetches static logs such as the System Log on-demand and receives new logs from components such as `FBFramebufferVideo`.
-- Configuration objects: `FBApplicationLaunchConfiguration`, `FBAgentLaunchConfiguration`, `FBSimulatorApplication`, `FBSimulatorControlConfiguration` & `FBSimulatorConfiguration`.
+- `FBSimulatorDiagnositcs` is a facade around available diagnostics for a Simulator. It fetches static logs such as the System Log on-demand and receives new logs from components such as `FBFramebufferVideo`.
+- Configuration objects: `FBApplicationLaunchConfiguration`, `FBAgentLaunchConfiguration`, `FBSimulatorApplication`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorLaunchConfiguration`.
 
 To launch Safari on an iPhone 5, you can use the following:
 
@@ -101,15 +103,15 @@ The `CoreSimulator` Framework that is used by the `Simulator.app` as well as Pla
 
 `FBSimulatorControl` can launch the Application Excutable directly, thereby allowing specific Simulators to be booted by UDID and Device Set. This can be done by overriding the `Simulator.app`s `NSUserDefaults` by [passing them as Arguments to the Application Process](https://www.bignerdranch.com/blog/by-your-command). Once the Simulator has booted, it can be interacted with via `CoreSimulator` with commands such as installing Apps and launch executables.
 
-There are however, a number of limitations to how much `FBSimulatorControl` can manipulate the Simulator, once it has been booted inside the `Simulator.app` process. In particular it's not [possible to execute custom code inside the Simulator Application process](https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f), which means that it's not possible to get video frames that the booted simulator passes back to the `Simulator.app` process.
+However, this mode of operation does limit the amount that `FBSimulatorControl` can manipulate the Simulator, once the `Simulator.app` process has been launched. In particular it's not [possible to execute custom code inside the Simulator Application process](https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f), which means that it's not possible to get video frames that the booted simulator passes back to the `Simulator.app` process.
 
 ## Direct Launch
-`FBSimulatorControl` also supports 'Direct Launching'. This means that the Simulator is booted from the `FBSimulatorControl` Framework. This gives increasing control over the operation of the Simulator, including fetching frames from the Framebuffer. This means that pixel-perfect videos and screenshots can be constructed from the Framebuffer.
+`FBSimulatorControl` also supports 'Direct Launching'. This means that the Simulator is booted from the `FBSimulatorControl` Framework. This gives increasing control over the operation of the Simulator, including fetching frames from the Framebuffer. This means that pixel-perfect videos and screenshots can be constructed from the Framebuffer. In addition, `FBSimulatorControl` can [communicate to the `SimulatorBridge`](https://github.com/facebook/FBSimulatorControl/blob/master/FBSimulatorControl/Management/FBSimulatorBridge.h) process running on the Simulator over XPC.
 
 Direct Launching does not currently support manipulation of the UI within the Simulator, so is much better suited to a use-case where the [UI is manipulated by other means](https://github.com/facebook/webdriveragent).
 
 ## `fbsimctl`
-[`fbsimctl` is a Command Line Interface](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md) for `FBSimulatorControl` API calls, so `FBSimulatorControl` functionality can be used without the need to integrate with the Framework. It is currently under development.
+[`fbsimctl` is a Command Line Interface](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md) for `FBSimulatorControl` API calls, so `FBSimulatorControl` functionality can be used without the need to integrate with the Framework. It is currently under development. As `fbsimctl` is under active development, the User Interface will be prone to change.
 
 ## Contributing
 See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to work on the issues!
