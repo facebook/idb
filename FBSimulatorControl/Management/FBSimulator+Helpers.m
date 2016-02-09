@@ -164,7 +164,7 @@
 
   return [[[self
     launchdSimSubprocesses]
-    filteredArrayUsingPredicate:[FBProcessQuery processesWithLaunchPath:application.binary.path]]
+    filteredArrayUsingPredicate:[FBSimulator predicateForApplicationProcessOfApplication:application]]
     firstObject];
 }
 
@@ -231,6 +231,19 @@
       fail:error];
   }
   return appInfo;
+}
+
++ (NSPredicate *)predicateForApplicationProcessOfApplication:(FBSimulatorApplication *)application
+{
+  NSPredicate *launchPathPredicate = [FBProcessQuery processesWithLaunchPath:application.binary.path];
+  NSPredicate *environmentPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSProcessInfo *processInfo, NSDictionary *_) {
+    return [processInfo.environment[@"XPC_SERVICE_NAME"] containsString:application.bundleID];
+  }];
+
+  return [NSCompoundPredicate orPredicateWithSubpredicates:@[
+    launchPathPredicate,
+    environmentPredicate
+  ]];
 }
 
 @end
