@@ -32,6 +32,15 @@
 - (instancetype)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 /**
+ Launches the Application with the given Configuration, or Re-Launches it.
+ A Relaunch is a kill of the currently launched application, followed by a launch.
+
+ @param appLaunch the Application Launch Configuration to Launch.
+ @return the reciever, for chaining.
+ */
+- (instancetype)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
+
+/**
  Relaunches the last-launched Application:
  - If the Application is running, it will be killed first then launched.
  - If the Application has terminated, it will be launched.
