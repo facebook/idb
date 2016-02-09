@@ -13,8 +13,8 @@
 
 #import "FBCollectionDescriptions.h"
 #import "FBProcessInfo.h"
-#import "FBProcessQuery.h"
 #import "FBProcessQuery+Simulators.h"
+#import "FBProcessQuery.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"

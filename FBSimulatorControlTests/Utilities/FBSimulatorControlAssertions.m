@@ -21,7 +21,6 @@
 {
   NSError *error = nil;
   BOOL success = [interaction performInteractionWithError:&error];
-
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -30,6 +29,7 @@
 {
   NSError *error = nil;
   BOOL success = [interaction performInteractionWithError:&error];
+  XCTAssertNotNil(error);
   XCTAssertFalse(success);
 }
 

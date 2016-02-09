@@ -84,7 +84,7 @@
 
 /**
  Determinates whether a provided Bundle ID represents a System Application
- 
+
  @param bundleID the Bundle ID to fetch an installed application for.
  @param error an error out for any error that occurs.
  @return YES if the Application with the provided is a System Application, NO otherwise.
