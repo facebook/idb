@@ -15,6 +15,7 @@
 
 /**
  Installs the given Application.
+ Will Allways Succeed if the Application is a System Application.
 
  @param application the Application to Install.
  @return the reciever, for chaining.
@@ -23,11 +24,21 @@
 
 /**
  Launches the Application with the given Configuration.
+ If the Application is determined to allready be running, the interaction will fail.
 
  @param appLaunch the Application Launch Configuration to Launch.
  @return the reciever, for chaining.
  */
 - (instancetype)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
+
+/**
+ Launches the Application with the given Configuration, or Re-Launches it.
+ A Relaunch is a kill of the currently launched application, followed by a launch.
+
+ @param appLaunch the Application Launch Configuration to Launch.
+ @return the reciever, for chaining.
+ */
+- (instancetype)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 /**
  Relaunches the last-launched Application:

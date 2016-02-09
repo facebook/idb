@@ -356,6 +356,18 @@ class ActionParserTests : XCTestCase {
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
+  func testParsesRelaunchByBundleID() {
+    let interaction = Interaction.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
+    let suffix: [String] = ["relaunch", "com.foo.bar"]
+    self.assertWithDefaultActions(interaction, suffix: suffix)
+  }
+
+  func testParsesRelaunchByBundleIDArguments() {
+    let interaction = Interaction.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
+    self.assertWithDefaultActions(interaction, suffix: suffix)
+  }
+
   func testFailsToParseCreate() {
     self.assertParseFails(Action.parser(), ["create"])
   }

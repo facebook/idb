@@ -83,6 +83,29 @@
 - (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
+ Determinates whether a provided Bundle ID represents a System Application
+
+ @param bundleID the Bundle ID to fetch an installed application for.
+ @param error an error out for any error that occurs.
+ @return YES if the Application with the provided is a System Application, NO otherwise.
+*/
+- (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Returns the Process Info for a Application by Bundle ID.
+
+ @param bundleID the Bundle ID to fetch an installed application for.
+ @param error an error out for any error that occurs.
+ @return An FBProcessInfo for the Application if one is running, nil otherwise.
+ */
+- (FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/*
+ Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
+ */
+- (NSArray *)launchdSimSubprocesses;
+
+/**
  Creates a FBSimDeviceWrapper for the Simulator.
  */
 - (FBSimDeviceWrapper *)simDeviceWrapper;
@@ -91,12 +114,6 @@
  Creates a FBSimulatorLaunchCtl for the Simulator.
  */
 - (FBSimulatorLaunchCtl *)launchctl;
-
-/*
- The Subprocesses of the launchd_sim process.
- Constructs this information from the kernel's Process Table.
- */
-- (NSArray *)launchdSimSubprocesses;
 
 /*
  A Set of process names that are used to determine whether all the Simulator OS services
@@ -114,4 +131,5 @@
  Returns the home folder of the last application launched
  */
 - (NSString *)homeDirectoryOfLastLaunchedApplication;
+
 @end

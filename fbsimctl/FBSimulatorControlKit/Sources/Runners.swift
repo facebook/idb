@@ -230,6 +230,10 @@ private struct SimulatorRunner : Runner {
           try simulator.interact().launchAgent(agentLaunch).performInteraction()
         }
         translator.reportSimulator(EventName.Launch, EventType.Ended, launch)
+      case .Relaunch(let appLaunch):
+        translator.reportSimulator(EventName.Relaunch, EventType.Started, appLaunch)
+        try simulator.interact().launchOrRelaunchApplication(appLaunch).performInteraction()
+        translator.reportSimulator(EventName.Relaunch, EventType.Ended, appLaunch)
       }
     } catch let error as NSError {
       return .Failure(error.description)
