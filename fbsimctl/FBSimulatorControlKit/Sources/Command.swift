@@ -55,6 +55,7 @@ public enum Interaction {
   case Delete
   case Install(FBSimulatorApplication)
   case Launch(FBProcessLaunchConfiguration)
+  case Relaunch(FBApplicationLaunchConfiguration)
 }
 
 /**
@@ -147,6 +148,8 @@ public func == (left: Interaction, right: Interaction) -> Bool {
   case (.Install(let leftApp), .Install(let rightApp)):
     return leftApp == rightApp
   case (.Launch(let leftLaunch), .Launch(let rightLaunch)):
+    return leftLaunch == rightLaunch
+  case (.Relaunch(let leftLaunch), .Relaunch(let rightLaunch)):
     return leftLaunch == rightLaunch
   default:
     return false

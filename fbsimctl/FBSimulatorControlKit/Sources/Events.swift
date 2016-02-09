@@ -23,6 +23,7 @@ public enum EventName : String {
   case Help = "help"
   case Install = "install"
   case Launch = "launch"
+  case Relaunch = "relaunch"
   case List = "list"
   case Diagnostic = "diagnostic"
   case Shutdown = "shutdown"
