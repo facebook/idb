@@ -198,9 +198,9 @@ private struct SimulatorRunner : Runner {
       case .List:
         translator.reportSimulator(EventName.List, simulator)
       case .Approve(let bundleIDs):
-        translator.reportSimulator(EventName.Approve, EventType.Started, [bundleIDs] as NSArray)
+        translator.reportSimulator(EventName.Approve, EventType.Started, bundleIDs as NSArray)
         try simulator.interact().authorizeLocationSettings(bundleIDs).performInteraction()
-        translator.reportSimulator(EventName.Approve, EventType.Ended, [bundleIDs] as NSArray)
+        translator.reportSimulator(EventName.Approve, EventType.Ended, bundleIDs as NSArray)
       case .Boot(let maybeLaunchConfiguration):
         let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
         translator.reportSimulator(EventName.Boot, EventType.Started, launchConfiguration)
