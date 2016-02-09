@@ -28,7 +28,6 @@
 #import <FBSimulatorControl/FBInteraction.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
-#import <FBSimulatorControl/FBProcessInfo+Helpers.h>
 #import <FBSimulatorControl/FBProcessInfo.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Private.h>
