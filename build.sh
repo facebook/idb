@@ -20,6 +20,11 @@ fi
 
 set -eu
 
+function build_deps() {
+  pushd fbsimctl
+  carthage bootstrap
+  popd
+}
 
 function framework() {
   NAME='FBSimulatorControl'
@@ -56,8 +61,10 @@ if [[ "$MODE" = "all" ]]; then
 elif [[ "$MODE" = "framework" ]]; then
   framework test
 elif [[ "$MODE" = "cli" ]]; then
+  build_deps
   cli build
 elif [[ "$MODE" = "cli_framework" ]]; then
+  build_deps
   cli_framework test
 else
   echo "Invalid mode $MODE"

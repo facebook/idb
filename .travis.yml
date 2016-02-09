@@ -1,5 +1,7 @@
 language: objective-c
 osx_image: xcode7.2
+before_install:
+  brew install carthage
 env:
 - MODE=framework FBSIMULATORCONTROL_DEVICE_SET=default FBSIMULATORCONTROL_LAUNCH_TYPE=simulator_app
 - MODE=framework FBSIMULATORCONTROL_DEVICE_SET=custom FBSIMULATORCONTROL_LAUNCH_TYPE=simulator_app
@@ -7,7 +9,6 @@ env:
 - MODE=cli
 - MODE=cli_framework
 script: ./build.sh
-
 branches:
   only:
     - master

@@ -8,6 +8,7 @@
  */
 
 import Foundation
+import Swifter
 
 class HttpRelay : Relay {
   init() {
