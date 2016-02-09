@@ -34,6 +34,7 @@
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:simulator];
+  [self assertInteractionFailed:[simulator.interact launchApplication:appLaunch]];
 
   return simulator;
 }
@@ -41,11 +42,15 @@
 - (void)testApplication:(FBSimulatorApplication *)application relaunches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = [self testApplication:application launches:appLaunch];
+  FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
 
   [self assertInteractionSuccessful:simulator.interact.relaunchLastLaunchedApplication];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
   [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
   [self.assert noNotificationsToConsume];
+  FBProcessInfo *secondLaunch = simulator.history.lastLaunchedApplicationProcess;
+
+  XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
 }
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration

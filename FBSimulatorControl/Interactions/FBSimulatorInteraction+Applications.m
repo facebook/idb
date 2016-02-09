@@ -74,6 +74,15 @@
         failBool:error];
     }
 
+    FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+    if (process) {
+      return [[[[FBSimulatorError
+        describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
+        causedBy:innerError]
+        inSimulator:simulator]
+        failBool:error];
+    }
+
     NSFileHandle *stdOut = nil;
     NSFileHandle *stdErr = nil;
     if (![appLaunch createFileHandlesWithStdOut:&stdOut stdErr:&stdErr error:&innerError]) {
@@ -85,7 +94,7 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
 
-    FBProcessInfo *process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.bundleID options:options error:&innerError];
+    process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.bundleID options:options error:&innerError];
     if (!process) {
       return [[[[FBSimulatorError describeFormat:@"Failed to launch application %@", appLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
     }

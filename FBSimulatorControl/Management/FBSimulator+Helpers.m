@@ -14,6 +14,7 @@
 #import "FBCollectionDescriptions.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery.h"
+#import "FBProcessQuery+Simulators.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
@@ -149,6 +150,22 @@
   }
 
   return [appInfo[@"ApplicationType"] isEqualToString:@"System"];
+}
+
+- (FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSParameterAssert(bundleID);
+
+  NSError *innerError = nil;
+  FBSimulatorApplication *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
+  if (!application) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+
+  return [[[self
+    launchdSimSubprocesses]
+    filteredArrayUsingPredicate:[FBProcessQuery processesWithLaunchPath:application.binary.path]]
+    firstObject];
 }
 
 - (FBSimDeviceWrapper *)simDeviceWrapper

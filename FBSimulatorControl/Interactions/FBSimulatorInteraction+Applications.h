@@ -24,6 +24,7 @@
 
 /**
  Launches the Application with the given Configuration.
+ If the Application is determined to allready be running, the interaction will fail.
 
  @param appLaunch the Application Launch Configuration to Launch.
  @return the reciever, for chaining.
