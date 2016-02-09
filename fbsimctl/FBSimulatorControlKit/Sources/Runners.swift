@@ -234,6 +234,10 @@ private struct SimulatorRunner : Runner {
         translator.reportSimulator(EventName.Relaunch, EventType.Started, appLaunch)
         try simulator.interact().launchOrRelaunchApplication(appLaunch).performInteraction()
         translator.reportSimulator(EventName.Relaunch, EventType.Ended, appLaunch)
+      case .Terminate(let bundleID):
+        translator.reportSimulator(EventName.Terminate, EventType.Started, bundleID as NSString)
+        try simulator.interact().terminateApplicationWithBundleID(bundleID).performInteraction()
+        translator.reportSimulator(EventName.Terminate, EventType.Ended, bundleID as NSString)
       }
     } catch let error as NSError {
       return .Failure(error.description)

@@ -368,6 +368,10 @@ class ActionParserTests : XCTestCase {
     self.assertWithDefaultActions(interaction, suffix: suffix)
   }
 
+  func testParsesTerminateByBundleID() {
+    self.assertWithDefaultActions(Interaction.Terminate("com.foo.bar"), suffix: ["terminate", "com.foo.bar"])
+  }
+
   func testFailsToParseCreate() {
     self.assertParseFails(Action.parser(), ["create"])
   }
