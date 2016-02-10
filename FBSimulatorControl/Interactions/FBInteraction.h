@@ -12,7 +12,7 @@
 #import <FBSimulatorControl/FBInteraction.h>
 
 /**
- Represents a failable transaction involving a Simulator.
+ Represents a Synchronous Action that can Succed or Fail.
  */
 @protocol FBInteraction <NSObject>
 
@@ -27,23 +27,42 @@
 @end
 
 /**
- Overridable class for providing an interaction-based API.
+ A Concrete FBInteraction that can be subclassed to provide a chainable API.
  */
-@interface FBInteraction : NSObject <FBInteraction>
+@interface FBInteraction : NSObject <FBInteraction, NSCopying>
+
+#pragma mark Initializer
 
 /**
- Retries the last chained interaction by `retries`, if it fails.
-
- @param retries the number of times to retry if the prior interaction fails.
- @return the reciever, for chaining.
+ Creates a Subclassable Interaction
+ 
+ @param interaction the underlying interaction.
+ @return a subclassable FBInteraction Instance.
  */
-- (instancetype)retry:(NSUInteger)retries;
+- (instancetype)initWithInteraction:(id<FBInteraction>)interaction;
+
+#pragma mark Properties
 
 /**
- Ignores any failure that occurs in the last interaction if any occured.
+ The Base Interaction.
+ */
+@property (nonatomic, strong, readonly) id<FBInteraction> interaction;
+
+#pragma mark Chaining
+
+/**
+ Chains an interaction using the provided block.
+
+ @param block the block to perform the interaction with. Passes an NSError to return error information and the Interaction Subclass for further chaining.
+ @return the reciever, for chaining.
+ */
+- (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block;
+
+/**
+ Chains an interaction that will allways succeed.
 
  @return the reciever, for chaining.
  */
-- (instancetype)ignoreFailure;
+- (instancetype)succeed;
 
 @end

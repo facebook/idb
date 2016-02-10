@@ -11,7 +11,6 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBInteraction+Private.h"
 #import "FBProcessInfo.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBProcessLaunchConfiguration.h"

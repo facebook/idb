@@ -11,7 +11,6 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBInteraction+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"

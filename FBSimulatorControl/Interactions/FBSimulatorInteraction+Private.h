@@ -14,7 +14,10 @@
 
 @interface FBSimulatorInteraction ()
 
-@property (nonatomic, strong) FBSimulator *simulator;
+/**
+ The Simulator belonging to the Interaction.
+ */
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
 
 /**
  Chains an interaction on an process, for the given application.
@@ -33,6 +36,23 @@
  @return the reciever, for chaining.
  */
 - (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block;
+
+/**
+ Interact with the Simulator.
+
+ @param block the block to execute with the Simulator.
+ @return the reciever, for chaining.
+ */
+- (instancetype)interactWithSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+
+/**
+ Interact with the Simulator. Will ensure that the Simulator is in the appropriate state.
+
+ @param state the state to verify.
+ @param block the block to execute with the Simulator.
+ @return the reciever, for chaining.
+ */
+- (instancetype)interactWithSimulatorAtState:(FBSimulatorState)state block:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
 
 /**
  Interact with a Shutdown Simulator. Will ensure that the Simulator is in the appropriate state.
