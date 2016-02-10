@@ -129,6 +129,33 @@
   }];
 }
 
+- (instancetype)terminateApplication:(FBSimulatorApplication *)application
+{
+  NSParameterAssert(application);
+  return [self terminateApplicationWithBundleID:application.bundleID];
+}
+
+- (instancetype)terminateApplicationWithBundleID:(NSString *)bundleID
+{
+  NSParameterAssert(bundleID);
+
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    NSError *innerError = nil;
+    FBProcessInfo *process = [simulator runningApplicationWithBundleID:bundleID error:&innerError];
+    if (!process) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Could not find a running application for '%@'", bundleID]
+        inSimulator:simulator]
+        causedBy:innerError]
+        failBool:error];
+    }
+    if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    }
+    return YES;
+  }];
+}
+
 - (instancetype)relaunchLastLaunchedApplication
 {
   return [self interactWithLastLaunchedApplicationProcess:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
