@@ -131,17 +131,8 @@
 
 - (instancetype)relaunchLastLaunchedApplication
 {
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    // Obtain Process Info for the last launch.
-    FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
-    if (!process) {
-      return [[[FBSimulatorError
-        describe:@"Cannot re-launch an Application until one has been launched; there's no prior process info"]
-        inSimulator:simulator]
-        failBool:error];
-    }
-
-    // Obtain the Launch Config for this launch.
+  return [self interactWithLastLaunchedApplicationProcess:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
+    // Obtain the Launch Config for the process.
     FBApplicationLaunchConfiguration *launchConfig = simulator.history.processLaunchConfigurations[process];
     if (!process) {
       return [[[FBSimulatorError
@@ -156,17 +147,8 @@
 
 - (instancetype)terminateLastLaunchedApplication
 {
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    // Obtain Application Launch info for the last launch.
-    FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
-    if (!process) {
-      return [[[FBSimulatorError
-        describe:@"Cannot re-launch an Application until one has been launched"]
-        inSimulator:simulator]
-        failBool:error];
-    }
-
-    // Kill the Application
+  return [self interactWithLastLaunchedApplicationProcess:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
+    // Kill the Application Process
     NSError *innerError = nil;
     if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
       return [[[[FBSimulatorError
@@ -176,6 +158,24 @@
         failBool:error];
     }
     return YES;
+  }];
+}
+
+#pragma mark Private
+
+- (instancetype)interactWithLastLaunchedApplicationProcess:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
+{
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    // Obtain Application Launch info for the last launch.
+    FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
+    if (!process) {
+      return [[[FBSimulatorError
+        describe:@"Cannot re-launch an find the last-launched process"]
+        inSimulator:simulator]
+        failBool:error];
+    }
+
+    return block(error, simulator, process);
   }];
 }
 
