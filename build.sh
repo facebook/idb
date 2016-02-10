@@ -18,6 +18,8 @@ else
   exit 1
 fi
 
+BUILD_DIRECTORY=build
+
 set -eu
 
 function build_deps() {
@@ -27,31 +29,31 @@ function build_deps() {
 }
 
 function framework() {
-  NAME='FBSimulatorControl'
+  NAME=FBSimulatorControl
   xctool \
       -project $NAME.xcodeproj \
       -scheme $NAME \
       -sdk macosx \
+      -derivedDataPath $BUILD_DIRECTORY \
       $1
+}
+
+function fbsimctl() {
+  SCHEME=$1
+  xctool \
+      -workspace fbsimctl/fbsimctl.xcworkspace \
+      -scheme $SCHEME \
+      -sdk macosx \
+      -derivedDataPath $BUILD_DIRECTORY \
+      $2
 }
 
 function cli() {
-  NAME='fbsimctl'
-  xctool \
-      -workspace $NAME/$NAME.xcworkspace \
-      -scheme $NAME \
-      -sdk macosx \
-      $1
+  fbsimctl fbsimctl $1
 }
 
 function cli_framework() {
-  NAME='fbsimctl'
-  SCHEME='FBSimulatorControlKit'
-  xctool \
-      -workspace $NAME/$NAME.xcworkspace \
-      -scheme $SCHEME \
-      -sdk macosx \
-      $1
+  fbsimctl FBSimulatorControlKit $1
 }
 
 if [[ "$MODE" = "all" ]]; then
