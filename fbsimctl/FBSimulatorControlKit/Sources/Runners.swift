@@ -198,18 +198,18 @@ private struct SimulatorRunner : Runner {
       case .List:
         translator.reportSimulator(EventName.List, simulator)
       case .Approve(let bundleIDs):
-        translator.reportSimulator(EventName.Approve, EventType.Started, [bundleIDs] as NSArray)
-        try simulator.interact().authorizeLocationSettings(bundleIDs).performInteraction()
-        translator.reportSimulator(EventName.Approve, EventType.Ended, [bundleIDs] as NSArray)
+        try interactWithSimulator(translator, EventName.Approve, bundleIDs as NSArray) { interaction in
+          interaction.authorizeLocationSettings(bundleIDs)
+        }
       case .Boot(let maybeLaunchConfiguration):
         let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
-        translator.reportSimulator(EventName.Boot, EventType.Started, launchConfiguration)
-        try simulator.interact().prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration).performInteraction()
-        translator.reportSimulator(EventName.Boot, EventType.Ended, launchConfiguration)
+        try interactWithSimulator(translator, EventName.Boot, launchConfiguration) { interaction in
+          interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
+        }
       case .Shutdown:
-        translator.reportSimulator(EventName.Shutdown, EventType.Started, self.simulator)
-        try simulator.interact().shutdownSimulator().performInteraction()
-        translator.reportSimulator(EventName.Shutdown, EventType.Ended, self.simulator)
+        try interactWithSimulator(translator, EventName.Shutdown, self.simulator) { interaction in
+          interaction.shutdownSimulator()
+        }
       case .Diagnose:
         let logs = simulator.diagnostics.allDiagnostics() as! [FBSimulatorDiagnostics]
         translator.reportSimulator(EventName.Diagnose, EventType.Discrete, logs as NSArray)
@@ -218,22 +218,26 @@ private struct SimulatorRunner : Runner {
         try simulator.pool!.deleteSimulator(simulator)
         translator.reportSimulator(EventName.Delete, EventType.Ended, self.simulator)
       case .Install(let application):
-        translator.reportSimulator(EventName.Install, EventType.Started, application)
-        try simulator.interact().installApplication(application).performInteraction()
-        translator.reportSimulator(EventName.Install, EventType.Ended, application)
+        try interactWithSimulator(translator, EventName.Install, application) { interaction in
+          interaction.installApplication(application)
+        }
       case .Launch(let launch):
-        translator.reportSimulator(EventName.Launch, EventType.Started, launch)
-        if let appLaunch = launch as? FBApplicationLaunchConfiguration {
-          try simulator.interact().launchApplication(appLaunch).performInteraction()
+        try interactWithSimulator(translator, EventName.Launch, launch) { interaction in
+          if let appLaunch = launch as? FBApplicationLaunchConfiguration {
+            interaction.launchApplication(appLaunch)
+          }
+          else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
+            interaction.launchAgent(agentLaunch)
+          }
         }
-        else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
-          try simulator.interact().launchAgent(agentLaunch).performInteraction()
-        }
-        translator.reportSimulator(EventName.Launch, EventType.Ended, launch)
       case .Relaunch(let appLaunch):
-        translator.reportSimulator(EventName.Relaunch, EventType.Started, appLaunch)
-        try simulator.interact().launchOrRelaunchApplication(appLaunch).performInteraction()
-        translator.reportSimulator(EventName.Relaunch, EventType.Ended, appLaunch)
+        try interactWithSimulator(translator, EventName.Relaunch, appLaunch) { interaction in
+          interaction.launchOrRelaunchApplication(appLaunch)
+        }
+      case .Terminate(let bundleID):
+        try interactWithSimulator(translator, EventName.Relaunch, bundleID as NSString) { interaction in
+          interaction.terminateApplicationWithBundleID(bundleID)
+        }
       }
     } catch let error as NSError {
       return .Failure(error.description)
@@ -241,5 +245,13 @@ private struct SimulatorRunner : Runner {
       return .Failure(error.description)
     }
     return .Success
+  }
+
+  func interactWithSimulator(translator: EventSinkTranslator, _ eventName: EventName, _ subject: SimulatorControlSubject, interact: FBSimulatorInteraction -> Void) throws {
+    translator.reportSimulator(eventName, EventType.Started, subject)
+    let interaction = translator.simulator.interact()
+    interact(interaction)
+    try interaction.performInteraction()
+    translator.reportSimulator(eventName, EventType.Ended, subject)
   }
 }

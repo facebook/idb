@@ -255,7 +255,8 @@ extension Interaction : Parsable {
         Parser.ofString("delete", Interaction.Delete),
         self.installParser(),
         self.launchParser(),
-        self.relaunchParser()
+        self.relaunchParser(),
+        self.terminateParser()
       ])
   }
 
@@ -287,6 +288,12 @@ extension Interaction : Parsable {
     return Parser
       .succeeded(EventName.Relaunch.rawValue, self.appLaunchParser())
       .fmap { Interaction.Relaunch($0 as! FBApplicationLaunchConfiguration) }
+  }
+
+  private static func terminateParser() -> Parser<Interaction> {
+    return Parser
+      .succeeded(EventName.Terminate.rawValue, Parser<String>.ofBundleID())
+      .fmap { Interaction.Terminate($0) }
   }
 
   private static func processLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
