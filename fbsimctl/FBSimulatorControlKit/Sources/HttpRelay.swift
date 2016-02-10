@@ -12,11 +12,13 @@ import FBSimulatorControl
 import Swifter
 
 class HttpRelay : Relay {
+  let query: Query
   let portNumber: in_port_t
   let httpServer: Swifter.HttpServer
   let performer: ActionPerformer
 
-  init(portNumber: in_port_t, performer: ActionPerformer) {
+  init(query: Query, portNumber: in_port_t, performer: ActionPerformer) {
+    self.query = query
     self.portNumber = portNumber
     self.performer = performer
     self.httpServer = Swifter.HttpServer()
@@ -85,7 +87,7 @@ class HttpRelay : Relay {
     let reporter = HttpEventReporter()
     var result = ActionResult.Success
     dispatch_sync(dispatch_get_main_queue()) {
-      result = self.performer.perform(Action.Interact([interaction], nil, nil), reporter: reporter)
+      result = self.performer.perform(Action.Interact([interaction], self.query, nil), reporter: reporter)
     }
 
     return self.interactionResultResponse(reporter, result: result)

@@ -119,9 +119,9 @@ class ServerRunner : Runner, ActionPerformer {
       reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
       SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self).start()
       reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
-    case .Http(let portNumber):
+    case .Http(let query, let portNumber):
       reporter.report(LogEvent("Starting HTTP server on \(portNumber)", level: Constants.asl_level_info()))
-      HttpRelay(portNumber: portNumber, performer: self).start()
+      HttpRelay(query: query, portNumber: portNumber, performer: self).start()
       reporter.report(LogEvent("Ending HTTP Server", level: Constants.asl_level_info()))
     }
     return .Success

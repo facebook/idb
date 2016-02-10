@@ -438,7 +438,7 @@ class CommandParserTests : XCTestCase {
     self.assertParsesAll(Command.parser(), [
       (["listen"], Command.Listen(Configuration.defaultValue, Server.StdIO)),
       (["listen", "--socket", "42"], Command.Listen(Configuration.defaultValue, Server.Socket(42))),
-      (["listen", "--http", "43"], Command.Listen(Configuration.defaultValue, Server.Http(43)))
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "listen", "--http", "43"], Command.Listen(Configuration.defaultValue, Server.Http(Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), 43)))
     ])
   }
 
