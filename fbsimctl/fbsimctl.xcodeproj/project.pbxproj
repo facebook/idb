@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA0DE44D1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
+		AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
 		AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */; };
@@ -48,13 +50,17 @@
 		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
 		AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
 		AA83D5E61C57E5FE003B253E /* JSONLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5E51C57E5FE003B253E /* JSONLogger.m */; };
-		AA83D5E81C58E332003B253E /* ActionResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5E71C58E332003B253E /* ActionResult.swift */; };
-		AA83D5E91C58E332003B253E /* ActionResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5E71C58E332003B253E /* ActionResult.swift */; };
 		AA83D5EB1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
 		AA83D5EC1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
 		AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */; };
+		AABDEDF41C68D0A200DBA9D8 /* ActionPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABDEDF31C68D0A200DBA9D8 /* ActionPerformer.swift */; };
+		AABDEDF51C68D0A200DBA9D8 /* ActionPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABDEDF31C68D0A200DBA9D8 /* ActionPerformer.swift */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AACF9F541C46E85800B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
+		AAD999551C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
+		AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
+		AAD999571C68D80B0014D61F /* Swifter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AAD9995A1C68D8680014D61F /* Swifter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
 		AAE0C5561C49214F005DE6D9 /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
 		AAE0C5571C492158005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
@@ -82,13 +88,25 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				AAD999571C68D80B0014D61F /* Swifter.framework in CopyFiles */,
 				AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAD999581C68D84F0014D61F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 16;
+			files = (
+				AAD9995A1C68D8680014D61F /* Swifter.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpRelay.swift; sourceTree = "<group>"; };
 		AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
 		AA1B7F5D1C2867EE0038C6A5 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
 		AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsers.swift; sourceTree = "<group>"; };
@@ -112,12 +130,13 @@
 		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
 		AA83D5E41C57E5FE003B253E /* JSONLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSONLogger.h; sourceTree = "<group>"; };
 		AA83D5E51C57E5FE003B253E /* JSONLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JSONLogger.m; sourceTree = "<group>"; };
-		AA83D5E71C58E332003B253E /* ActionResult.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionResult.swift; sourceTree = "<group>"; };
 		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
+		AABDEDF31C68D0A200DBA9D8 /* ActionPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionPerformer.swift; sourceTree = "<group>"; };
 		AACF9F521C46E5C100B17E82 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		AAD999541C68D1460014D61F /* Swifter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Swifter.framework; path = Carthage/Build/Mac/Swifter.framework; sourceTree = "<group>"; };
 		AAE0C5521C4904BC005DE6D9 /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
 		AAE35A7C1C2863EB0073CC70 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBSimulatorControlKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -135,6 +154,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA6085BE1C287AC3009B500E /* FBSimulatorControl.framework in Frameworks */,
+				AAD999551C68D1460014D61F /* Swifter.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -143,6 +163,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */,
+				AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -160,7 +181,7 @@
 		AA1B7F5A1C2867EE0038C6A5 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				AA83D5E71C58E332003B253E /* ActionResult.swift */,
+				AABDEDF31C68D0A200DBA9D8 /* ActionPerformer.swift */,
 				AA54EF711C4814BA006D5118 /* Arguments.swift */,
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
@@ -173,6 +194,7 @@
 				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
 				AA83D5EA1C58E368003B253E /* Events.swift */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
+				AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */,
 				AA54EF741C48275B006D5118 /* JSON.swift */,
 				AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */,
 				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
@@ -230,6 +252,7 @@
 			isa = PBXGroup;
 			children = (
 				AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */,
+				AAD999541C68D1460014D61F /* Swifter.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -286,6 +309,7 @@
 			buildPhases = (
 				AA93B7AC1BE8351000CF6A56 /* Sources */,
 				AAE35A521C285F150073CC70 /* Frameworks */,
+				AAD999581C68D84F0014D61F /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -389,6 +413,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAE0C5571C492158005DE6D9 /* Query.swift in Sources */,
+				AABDEDF41C68D0A200DBA9D8 /* ActionPerformer.swift in Sources */,
 				AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */,
 				AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */,
 				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
@@ -396,6 +421,7 @@
 				AA6085D21C287E02009B500E /* Command.swift in Sources */,
 				AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */,
 				AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */,
+				AA0DE44D1C68894000B4D2AF /* HttpRelay.swift in Sources */,
 				AA6085D41C287E02009B500E /* Constants.m in Sources */,
 				AA6085D51C287E02009B500E /* Help.swift in Sources */,
 				AA54EF761C48DE6F006D5118 /* JSON.swift in Sources */,
@@ -411,7 +437,6 @@
 				AA6085DC1C287E02009B500E /* StdIORelay.swift in Sources */,
 				AA6085CF1C287DBD009B500E /* main.swift in Sources */,
 				AACF9F541C46E85800B17E82 /* Environment.swift in Sources */,
-				AA83D5E81C58E332003B253E /* ActionResult.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,10 +451,10 @@
 				AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */,
 				AA1B7F6F1C2867EE0038C6A5 /* Constants.m in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
-				AA83D5E91C58E332003B253E /* ActionResult.swift in Sources */,
 				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
 				AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */,
 				AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */,
+				AABDEDF51C68D0A200DBA9D8 /* ActionPerformer.swift in Sources */,
 				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
 				AA83D5EC1C58E368003B253E /* Events.swift in Sources */,
 				AA54EF701C47E9FC006D5118 /* Constants.swift in Sources */,
@@ -439,6 +464,7 @@
 				AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */,
 				AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */,
 				AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */,
+				AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */,
 				AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */,
 				AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */,
 			);
@@ -548,6 +574,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = fbsimctl/fbsimctl.h;
@@ -559,6 +589,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = fbsimctl/fbsimctl.h;
@@ -574,6 +608,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = FBSimulatorControlKit/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -595,6 +633,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = FBSimulatorControlKit/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";

@@ -133,7 +133,7 @@ extension Command : Parsable {
     return Parser
       .alternative([
         self.helpParser(),
-        self.interactParser(),
+        self.listenParser(),
         self.actionParser()
       ])
   }
@@ -149,14 +149,14 @@ extension Command : Parsable {
       }
   }
 
-  static func interactParser() -> Parser<Command> {
+  static func listenParser() -> Parser<Command> {
     return Parser
       .ofTwoSequenced(
         Configuration.parser(),
-        Parser.succeeded("-i", Parser.succeeded("--port", Parser<Int>.ofInt()).optional())
+        Server.parser()
       )
-      .fmap { (configuration, port) in
-        return Command.Interactive(configuration, port)
+      .fmap { (configuration, serverConfiguration) in
+        return Command.Listen(configuration, serverConfiguration)
       }
   }
 
@@ -240,6 +240,35 @@ extension FBSimulatorManagementOptions : Parsable {
 
   static func useSimDeviceTimeoutResilianceParser() -> Parser<FBSimulatorManagementOptions> {
     return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
+  }
+}
+
+extension Server : Parsable {
+  public static func parser() -> Parser<Server> {
+    return Parser.alternative([
+      self.httpParser(),
+      Parser.succeeded(EventName.Listen.rawValue, self.socketParser().fallback(Server.StdIO))
+    ])
+  }
+
+  public static func socketParser() -> Parser<Server> {
+    return Parser
+      .succeeded("--socket", Parser<Int>.ofInt())
+      .fmap { portNumber in
+        return Server.Socket(UInt16(portNumber))
+      }
+  }
+
+  public static func httpParser() -> Parser<Server> {
+    return Parser
+      .ofThreeSequenced(
+        Query.parser(),
+        Parser.ofString(EventName.Listen.rawValue, EventName.Listen),
+        Parser.succeeded("--http", Parser<Int>.ofInt())
+      )
+      .fmap { (query, _, portNumber) in
+        return Server.Http(query, UInt16(portNumber))
+      }
   }
 }
 

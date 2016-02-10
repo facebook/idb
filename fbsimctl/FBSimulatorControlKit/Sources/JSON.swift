@@ -14,6 +14,7 @@ public enum JSONError : ErrorType {
   case NonEncodable(AnyObject)
   case Serialization(NSError)
   case Stringifying(NSData)
+  case Parse(String)
 
   public var description: String {
     get {
@@ -24,17 +25,19 @@ public enum JSONError : ErrorType {
         return "Serialization \(error.description)"
       case .Stringifying(let data):
         return "Stringifying \(data.description)"
+      case .Parse(let string):
+        return "Parsing \(string)"
       }
     }
   }
 }
 
 public indirect enum JSON {
-  case Dictionary([NSString : JSON])
-  case Array([JSON])
-  case String(NSString)
-  case Number(NSNumber)
-  case Null
+  case JDictionary([String : JSON])
+  case JArray([JSON])
+  case JString(String)
+  case JNumber(NSNumber)
+  case JNull
 
   static func encode(object: AnyObject) throws -> JSON {
     switch object {
@@ -43,46 +46,51 @@ public indirect enum JSON {
       for element in array {
         encoded.append(try encode(element))
       }
-      return JSON.Array(encoded)
+      return JSON.JArray(encoded)
     case let dictionary as NSDictionary:
-      var encoded: [NSString : JSON] = [:]
+      var encoded: [String : JSON] = [:]
       for (key, value) in dictionary {
         guard let key = key as? NSString else {
           throw JSONError.NonEncodable(object)
         }
-        encoded[key] = try encode(value)
+        encoded[key as String] = try encode(value)
       }
-      return JSON.Dictionary(encoded)
+      return JSON.JDictionary(encoded)
     case let string as NSString:
-      return JSON.String(string)
+      return JSON.JString(string as String)
     case let number as NSNumber:
-      return JSON.Number(number)
+      return JSON.JNumber(number)
     case is NSNull:
-      return JSON.Null
+      return JSON.JNull
     default:
       throw JSONError.NonEncodable(object)
     }
   }
 
+  static func fromData(data: NSData) throws -> JSON {
+    let object = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
+    return try JSON.encode(object)
+  }
+
   func decode() -> AnyObject {
     switch self {
-    case .Dictionary(let dictionary):
+    case .JDictionary(let dictionary):
       let decoded = NSMutableDictionary()
       for (key, value) in dictionary {
         decoded[key] = value.decode()
       }
       return decoded.copy()
-    case .Array(let array):
+    case .JArray(let array):
       let decoded = NSMutableArray()
       for value in array {
         decoded.addObject(value.decode())
       }
       return decoded.copy()
-    case .String(let string):
+    case .JString(let string):
       return string
-    case .Number(let number):
+    case .JNumber(let number):
       return number
-    case .Null:
+    case .JNull:
       return NSNull()
     }
   }
@@ -104,4 +112,57 @@ public indirect enum JSON {
 
 public protocol JSONDescribeable {
   var jsonDescription: JSON { get }
+}
+
+extension JSON {
+  func getValue(key: String) throws -> JSON {
+    switch self {
+    case .JDictionary(let dictionary):
+      guard let value = dictionary[key] else {
+        throw JSONError.Parse("Could not find \(key) in dictionary \(dictionary)")
+      }
+      return value
+    default:
+      throw JSONError.Parse("\(self) not a dictionary")
+    }
+  }
+
+  func getArray() throws -> [JSON] {
+    switch self {
+    case .JArray(let array):
+      return array
+    default:
+      throw JSONError.Parse("\(self) not an array")
+    }
+  }
+
+  func getDictionary() throws -> [String : JSON] {
+    switch self {
+    case .JDictionary(let dictionary):
+      return dictionary
+    default:
+      throw JSONError.Parse("\(self) not a dictionary")
+    }
+  }
+
+  func getString() throws -> String {
+    switch self {
+    case .JString(let string):
+      return string
+    default:
+      throw JSONError.Parse("\(self) not a string")
+    }
+  }
+
+  func getArrayOfStrings() throws -> [String] {
+    return try self.getArray().map { try $0.getString() }
+  }
+
+  func getDictionaryOfStrings() throws -> [String : String] {
+    var dictionary: [String : String] = [:]
+    for (key, value) in try self.getDictionary() {
+      dictionary[key] = try value.getString()
+    }
+    return dictionary
+  }
 }

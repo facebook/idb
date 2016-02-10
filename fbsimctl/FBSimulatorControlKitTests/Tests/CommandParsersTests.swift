@@ -434,10 +434,11 @@ class CommandParserTests : XCTestCase {
     )
   }
 
-  func testParsesInteract() {
+  func testParsesListen() {
     self.assertParsesAll(Command.parser(), [
-      (["-i"], Command.Interactive(Configuration.defaultValue, nil)),
-      (["-i", "--port", "42"], Command.Interactive(Configuration.defaultValue, 42))
+      (["listen"], Command.Listen(Configuration.defaultValue, Server.StdIO)),
+      (["listen", "--socket", "42"], Command.Listen(Configuration.defaultValue, Server.Socket(42))),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "listen", "--http", "43"], Command.Listen(Configuration.defaultValue, Server.Http(Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), 43)))
     ])
   }
 
