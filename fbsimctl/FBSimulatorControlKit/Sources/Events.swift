@@ -103,6 +103,12 @@ class SimpleEvent : NSObject, JSONDescribeable {
       return "\(self.eventName) \(self.eventType): \(self.subject)"
     }
   }
+
+  override var description: String {
+    get {
+      return self.shortDescription
+    }
+  }
 }
 
 @objc class LogEvent : NSObject, JSONDescribeable {
