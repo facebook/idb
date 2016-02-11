@@ -110,16 +110,15 @@ class ServerRunner : Runner, ActionPerformer {
   }
 
   func run(reporter: EventReporter) -> ActionResult {
-    reporter.reportSimple(EventName.Listen, EventType.Started, self.serverConfiguration)
+    let relayReporter = RelayReporter(reporter: reporter, subject: self.serverConfiguration)
     switch serverConfiguration {
     case .StdIO:
-      StdIORelay(configuration: self.configuration, performer: self).start()
+      StdIORelay(configuration: self.configuration, performer: self, reporter: relayReporter).start()
     case .Socket(let portNumber):
-      SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self).start()
+      SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self, reporter: relayReporter).start()
     case .Http(let query, let portNumber):
-      HttpRelay(query: query, portNumber: portNumber, performer: self).start()
+      HttpRelay(query: query, portNumber: portNumber, performer: self, reporter: relayReporter).start()
     }
-    reporter.reportSimple(EventName.Listen, EventType.Ended, self.serverConfiguration)
     return .Success
   }
 
