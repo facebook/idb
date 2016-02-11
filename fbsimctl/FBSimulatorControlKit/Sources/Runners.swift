@@ -110,20 +110,16 @@ class ServerRunner : Runner, ActionPerformer {
   }
 
   func run(reporter: EventReporter) -> ActionResult {
+    reporter.reportSimple(EventName.Listen, EventType.Started, self.serverConfiguration)
     switch serverConfiguration {
     case .StdIO:
-      reporter.report(LogEvent("Starting local interactive mode, listening on stdin", level: Constants.asl_level_info()))
       StdIORelay(configuration: self.configuration, performer: self).start()
-      reporter.report(LogEvent("Ending local interactive mode", level: Constants.asl_level_info()))
     case .Socket(let portNumber):
-      reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
       SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self).start()
-      reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
     case .Http(let query, let portNumber):
-      reporter.report(LogEvent("Starting HTTP server on \(portNumber)", level: Constants.asl_level_info()))
       HttpRelay(query: query, portNumber: portNumber, performer: self).start()
-      reporter.report(LogEvent("Ending HTTP Server", level: Constants.asl_level_info()))
     }
+    reporter.reportSimple(EventName.Listen, EventType.Ended, self.serverConfiguration)
     return .Success
   }
 

@@ -10,6 +10,9 @@
 import Foundation
 import FBSimulatorControl
 
+/**
+ Errors for the JSON Type
+*/
 public enum JSONError : ErrorType {
   case NonEncodable(AnyObject)
   case Serialization(NSError)
@@ -32,6 +35,9 @@ public enum JSONError : ErrorType {
   }
 }
 
+/**
+ The JSON Type.
+ */
 public indirect enum JSON {
   case JDictionary([String : JSON])
   case JArray([JSON])
@@ -110,10 +116,16 @@ public indirect enum JSON {
   }
 }
 
+/**
+  Protocol for opting-in objects for being describeable in terms of the JSON Type.
+*/
 public protocol JSONDescribeable {
   var jsonDescription: JSON { get }
 }
 
+/**
+ Simple, Chainable Parsers for the JSON Type
+*/
 extension JSON {
   func getValue(key: String) throws -> JSON {
     switch self {

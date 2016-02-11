@@ -181,3 +181,36 @@ public func == (left: Interaction, right: Interaction) -> Bool {
     return false
   }
 }
+
+extension Server : JSONDescribeable, CustomStringConvertible {
+  public var jsonDescription: JSON {
+    get {
+      switch self {
+      case .StdIO:
+        return JSON.JDictionary([
+          "type" : JSON.JString("stdio")
+        ])
+      case .Socket(let port):
+        return JSON.JDictionary([
+          "type" : JSON.JString("socket"),
+          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+        ])
+      case .Http(_, let port):
+        return JSON.JDictionary([
+          "type" : JSON.JString("http"),
+          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+        ])
+      }
+    }
+  }
+
+  public var description: String {
+    get {
+      switch self {
+      case .StdIO: return "stdio"
+      case .Socket(let port): return "Socket: Port \(port)"
+      case .Http(_, let port): return "HTTP: Port \(port)"
+      }
+    }
+  }
+}
