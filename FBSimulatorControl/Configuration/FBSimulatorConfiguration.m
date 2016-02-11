@@ -607,7 +607,7 @@
 {
   return @{
     @"device" : self.deviceName,
-    @"os" : self.os,
+    @"os" : self.osVersionString,
     @"aux_directory" : self.auxillaryDirectory ?: NSNull.null
   };
 }
