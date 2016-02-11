@@ -56,7 +56,7 @@ class StdIORelay : Relay {
       lineBuffer.appendData(data)
     }
     self.reporter.started()
-    SignalHandler.runUntilSignalled()
+    SignalHandler.runUntilSignalled(self.reporter.reporter)
     self.reporter.ended(nil)
   }
 

@@ -226,7 +226,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
   func start() {
     self.reporter.started()
     createSocketsAndRunInRunLoop()
-    SignalHandler.runUntilSignalled()
+    SignalHandler.runUntilSignalled(self.reporter.reporter)
     self.reporter.ended(nil)
   }
 
