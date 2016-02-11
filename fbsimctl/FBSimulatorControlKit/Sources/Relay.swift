@@ -34,7 +34,7 @@ class RelayConnection : LineBufferDelegate {
     let result = self.performer.perform(lineAvailable, reporter: self.reporter)
     switch result {
     case .Failure(let error):
-      self.reporter.reportSimple(EventName.Failure, EventType.Discrete, error as NSString)
+      self.reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, error as NSString)
     default:
       break
     }

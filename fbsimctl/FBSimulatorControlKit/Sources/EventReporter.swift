@@ -15,8 +15,12 @@ public protocol EventReporter {
 }
 
 extension EventReporter {
-  func reportSimple(eventName: EventName, _ eventType: EventType, _ subject: SimulatorControlSubject) {
-    self.report(SimpleEvent(eventName, eventType, SimulatorControlSubjectBridge(subject)))
+  func reportSimpleBridge(eventName: EventName, _ eventType: EventType, _ subject: SimulatorControlSubject) {
+    self.reportSimple(eventName, eventType, SimulatorControlSubjectBridge(subject))
+  }
+
+  func reportSimple(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
+    self.report(SimpleEvent(eventName, eventType, subject))
   }
 }
 

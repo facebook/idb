@@ -167,9 +167,9 @@ struct CreationRunner : Runner {
   func run(reporter: EventReporter) -> ActionResult {
     do {
       let options = FBSimulatorAllocationOptions.Create
-      reporter.reportSimple(EventName.Create, EventType.Started, self.simulatorConfiguration)
+      reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
-      reporter.reportSimple(EventName.Create, EventType.Ended, simulator)
+      reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return ActionResult.Success
     } catch let error as NSError {
       return ActionResult.Failure("Failed to Create Simulator \(error.description)")
