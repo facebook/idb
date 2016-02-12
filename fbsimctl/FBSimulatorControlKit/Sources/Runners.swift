@@ -42,9 +42,13 @@ private struct CommandBootstrap {
   func bootstrap() -> ActionResult {
     do {
       switch (self.command) {
-      case .Help:
+      case .Help(let userSpecified, _):
         self.writer.write(Command.getHelp())
-        return .Success
+        if userSpecified {
+          return .Success
+        } else {
+          return .Failure("")
+        }
       case .Listen(let configuration, let serverConfiguration):
         let reporter = configuration.options.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)

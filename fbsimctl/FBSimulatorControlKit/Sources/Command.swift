@@ -84,7 +84,7 @@ public enum Server {
 public enum Command {
   case Perform(Configuration, Action)
   case Listen(Configuration, Server)
-  case Help(Interaction?)
+  case Help(Bool, Interaction?)
 }
 
 extension Configuration : Equatable {}
@@ -99,8 +99,8 @@ public func == (left: Command, right: Command) -> Bool {
     return leftConfiguration == rightConfiguration && lefts == rights
   case (.Listen(let leftConfiguration, let leftServer), .Listen(let rightConfiguration, let rightServer)):
     return leftConfiguration == rightConfiguration && leftServer == rightServer
-  case (.Help(let left), .Help(let right)):
-    return left == right
+  case (.Help(let leftSuccess, let leftCommand), .Help(let rightSuccess, let rightCommand)):
+    return leftSuccess == rightSuccess && leftCommand == rightCommand
   default:
     return false
   }

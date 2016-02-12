@@ -162,7 +162,7 @@ extension Command : Parsable {
 
   static func helpParser() -> Parser<Command> {
     return Parser
-      .ofString("help", .Help(nil))
+      .ofString("help", .Help(true, nil))
   }
 }
 
