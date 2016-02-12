@@ -33,8 +33,8 @@ class HttpRelay : Relay {
       self.reporter.started()
       SignalHandler.runUntilSignalled(self.reporter.reporter)
       self.reporter.ended(nil)
-    } catch let error as NSError {
-      self.reporter.ended(error.description)
+    } catch {
+      self.reporter.ended("An Error occurred starting the HTTP Server on Port \(self.portNumber)")
     }
   }
 
