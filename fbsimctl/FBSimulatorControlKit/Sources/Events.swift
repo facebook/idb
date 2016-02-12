@@ -28,6 +28,7 @@ public enum EventName : String {
   case Listen = "listen"
   case Relaunch = "relaunch"
   case Shutdown = "shutdown"
+  case Signalled = "signalled"
   case StateChange = "state"
   case Terminate = "terminate"
 }
@@ -101,6 +102,12 @@ class SimpleEvent : NSObject, JSONDescribeable {
   var shortDescription: String {
     get {
       return "\(self.eventName) \(self.eventType): \(self.subject)"
+    }
+  }
+
+  override var description: String {
+    get {
+      return self.shortDescription
     }
   }
 }

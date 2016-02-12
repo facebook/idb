@@ -39,22 +39,25 @@ public class FileHandleWriter : Writer {
 
 
 class StdIORelay : Relay {
-  private let relayConnection: RelayConnection
-  private let stdIn: NSFileHandle
+  let relayConnection: RelayConnection
+  let stdIn: NSFileHandle
+  let reporter: RelayReporter
 
-  init(configuration: Configuration, performer: ActionPerformer) {
+  init(configuration: Configuration, performer: ActionPerformer, reporter: RelayReporter) {
     self.relayConnection = RelayConnection(performer: performer, reporter: configuration.options.createReporter(FileHandleWriter.stdOutWriter))
     self.stdIn = NSFileHandle.fileHandleWithStandardInput()
+    self.reporter = reporter
   }
 
   func start() {
     let lineBuffer = self.relayConnection.lineBuffer
-
     self.stdIn.readabilityHandler = { handle in
       let data = handle.availableData
       lineBuffer.appendData(data)
     }
-    SignalHandler.runUntilSignalled()
+    self.reporter.started()
+    SignalHandler.runUntilSignalled(self.reporter.reporter)
+    self.reporter.ended(nil)
   }
 
   func stop() {

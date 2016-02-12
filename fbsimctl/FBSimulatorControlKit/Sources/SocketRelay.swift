@@ -213,17 +213,21 @@ class SocketRelay : Relay, SocketConnectionDelegate {
   let configuration: Configuration
   let options: SocketRelay.Options
   let performer: ActionPerformer
+  let reporter: RelayReporter
   var registeredConnections: [SocketConnection] = []
 
-  init(configuration: Configuration, portNumber: in_port_t, performer: ActionPerformer) {
+  init(configuration: Configuration, portNumber: in_port_t, performer: ActionPerformer, reporter: RelayReporter) {
     self.configuration = configuration
     self.performer = performer
     self.options = SocketRelay.Options(portNumber: portNumber, bindIPv4: false, bindIPv6: true)
+    self.reporter = reporter
   }
 
   func start() {
+    self.reporter.started()
     createSocketsAndRunInRunLoop()
-    SignalHandler.runUntilSignalled()
+    SignalHandler.runUntilSignalled(self.reporter.reporter)
+    self.reporter.ended(nil)
   }
 
   func stop() {

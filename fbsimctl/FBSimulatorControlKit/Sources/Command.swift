@@ -84,7 +84,7 @@ public enum Server {
 public enum Command {
   case Perform(Configuration, Action)
   case Listen(Configuration, Server)
-  case Help(Interaction?)
+  case Help(Bool, Interaction?)
 }
 
 extension Configuration : Equatable {}
@@ -99,8 +99,8 @@ public func == (left: Command, right: Command) -> Bool {
     return leftConfiguration == rightConfiguration && lefts == rights
   case (.Listen(let leftConfiguration, let leftServer), .Listen(let rightConfiguration, let rightServer)):
     return leftConfiguration == rightConfiguration && leftServer == rightServer
-  case (.Help(let left), .Help(let right)):
-    return left == right
+  case (.Help(let leftSuccess, let leftCommand), .Help(let rightSuccess, let rightCommand)):
+    return leftSuccess == rightSuccess && leftCommand == rightCommand
   default:
     return false
   }
@@ -179,5 +179,38 @@ public func == (left: Interaction, right: Interaction) -> Bool {
     return leftBundleID == rightBundleID
   default:
     return false
+  }
+}
+
+extension Server : JSONDescribeable, CustomStringConvertible {
+  public var jsonDescription: JSON {
+    get {
+      switch self {
+      case .StdIO:
+        return JSON.JDictionary([
+          "type" : JSON.JString("stdio")
+        ])
+      case .Socket(let port):
+        return JSON.JDictionary([
+          "type" : JSON.JString("socket"),
+          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+        ])
+      case .Http(_, let port):
+        return JSON.JDictionary([
+          "type" : JSON.JString("http"),
+          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+        ])
+      }
+    }
+  }
+
+  public var description: String {
+    get {
+      switch self {
+      case .StdIO: return "stdio"
+      case .Socket(let port): return "Socket: Port \(port)"
+      case .Http(_, let port): return "HTTP: Port \(port)"
+      }
+    }
   }
 }

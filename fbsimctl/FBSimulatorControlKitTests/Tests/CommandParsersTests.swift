@@ -444,7 +444,7 @@ class CommandParserTests : XCTestCase {
 
   func testParsesHelp() {
     self.assertParsesAll(Command.parser(), [
-      (["help"], Command.Help(nil))
+      (["help"], Command.Help(true, nil))
     ])
   }
 }

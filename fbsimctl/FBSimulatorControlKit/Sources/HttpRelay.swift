@@ -16,21 +16,25 @@ class HttpRelay : Relay {
   let portNumber: in_port_t
   let httpServer: Swifter.HttpServer
   let performer: ActionPerformer
+  let reporter: RelayReporter
 
-  init(query: Query, portNumber: in_port_t, performer: ActionPerformer) {
+  init(query: Query, portNumber: in_port_t, performer: ActionPerformer, reporter: RelayReporter) {
     self.query = query
     self.portNumber = portNumber
     self.performer = performer
     self.httpServer = Swifter.HttpServer()
+    self.reporter = reporter
     self.registerRoutes()
   }
 
   func start() {
     do {
       try self.httpServer.start(self.portNumber)
-       SignalHandler.runUntilSignalled()
-    } catch _ as NSError {
-      print("Error Starting Server")
+      self.reporter.started()
+      SignalHandler.runUntilSignalled(self.reporter.reporter)
+      self.reporter.ended(nil)
+    } catch {
+      self.reporter.ended("An Error occurred starting the HTTP Server on Port \(self.portNumber)")
     }
   }
 

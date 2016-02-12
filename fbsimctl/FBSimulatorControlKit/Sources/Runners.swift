@@ -42,9 +42,13 @@ private struct CommandBootstrap {
   func bootstrap() -> ActionResult {
     do {
       switch (self.command) {
-      case .Help:
+      case .Help(let userSpecified, _):
         self.writer.write(Command.getHelp())
-        return .Success
+        if userSpecified {
+          return .Success
+        } else {
+          return .Failure("")
+        }
       case .Listen(let configuration, let serverConfiguration):
         let reporter = configuration.options.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
@@ -110,19 +114,14 @@ class ServerRunner : Runner, ActionPerformer {
   }
 
   func run(reporter: EventReporter) -> ActionResult {
+    let relayReporter = RelayReporter(reporter: reporter, subject: self.serverConfiguration)
     switch serverConfiguration {
     case .StdIO:
-      reporter.report(LogEvent("Starting local interactive mode, listening on stdin", level: Constants.asl_level_info()))
-      StdIORelay(configuration: self.configuration, performer: self).start()
-      reporter.report(LogEvent("Ending local interactive mode", level: Constants.asl_level_info()))
+      StdIORelay(configuration: self.configuration, performer: self, reporter: relayReporter).start()
     case .Socket(let portNumber):
-      reporter.report(LogEvent("Starting Socket server on \(portNumber)", level: Constants.asl_level_info()))
-      SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self).start()
-      reporter.report(LogEvent("Ending Socket Server", level: Constants.asl_level_info()))
+      SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self, reporter: relayReporter).start()
     case .Http(let query, let portNumber):
-      reporter.report(LogEvent("Starting HTTP server on \(portNumber)", level: Constants.asl_level_info()))
-      HttpRelay(query: query, portNumber: portNumber, performer: self).start()
-      reporter.report(LogEvent("Ending HTTP Server", level: Constants.asl_level_info()))
+      HttpRelay(query: query, portNumber: portNumber, performer: self, reporter: relayReporter).start()
     }
     return .Success
   }
@@ -167,9 +166,9 @@ struct CreationRunner : Runner {
   func run(reporter: EventReporter) -> ActionResult {
     do {
       let options = FBSimulatorAllocationOptions.Create
-      reporter.reportSimple(EventName.Create, EventType.Started, self.simulatorConfiguration)
+      reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
-      reporter.reportSimple(EventName.Create, EventType.Ended, simulator)
+      reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return ActionResult.Success
     } catch let error as NSError {
       return ActionResult.Failure("Failed to Create Simulator \(error.description)")

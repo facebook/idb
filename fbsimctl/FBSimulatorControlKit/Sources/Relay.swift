@@ -18,6 +18,25 @@ protocol Relay {
 }
 
 /**
+  A Class to report the Relay Lifecycle to.
+*/
+struct RelayReporter {
+  let reporter: EventReporter
+  let subject: EventReporterSubject
+
+  func started() {
+    self.reporter.reportSimple(EventName.Listen, EventType.Started, self.subject)
+  }
+
+  func ended(error: String?) {
+    if let error = error {
+      self.reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, error as NSString)
+    }
+    self.reporter.reportSimple(EventName.Listen, EventType.Ended, self.subject)
+  }
+}
+
+/**
  A Connection of Reporter-to-Transformer, linebuffering an input
  */
 class RelayConnection : LineBufferDelegate {
@@ -34,7 +53,7 @@ class RelayConnection : LineBufferDelegate {
     let result = self.performer.perform(lineAvailable, reporter: self.reporter)
     switch result {
     case .Failure(let error):
-      self.reporter.reportSimple(EventName.Failure, EventType.Discrete, error as NSString)
+      self.reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, error as NSString)
     default:
       break
     }
