@@ -35,6 +35,8 @@ let signalPairs: [SignalInfo] = [
   SignalInfo(signo: SIGINT, name: "SIGINT")
 ]
 
+func ignoreSignal(_: Int32) {}
+
 class SignalHandler {
   let callback: SignalInfo -> Void
   var sources: [dispatch_source_t] = []
@@ -45,6 +47,7 @@ class SignalHandler {
 
   private func register() {
     self.sources = signalPairs.map { info in
+      signal(info.signo, ignoreSignal)
       let source = dispatch_source_create(
         DISPATCH_SOURCE_TYPE_SIGNAL,
         UInt(info.signo),
