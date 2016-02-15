@@ -85,10 +85,10 @@ EOF
 if [[ -n $TARGET ]]; then
   echo "using target $TARGET"
 elif [[ -n $1 ]]; then
-  echo "using target $1"
   TARGET=$1
+  echo "using target $TARGET"
 else
-  echo 'No target argument or $TARGET provided'
+  echo "No target argument or $TARGET provided"
   print_usage
   exit 1
 fi
@@ -96,10 +96,10 @@ fi
 if [[ -n $COMMAND ]]; then
   echo "using command $COMMAND"
 elif [[ -n $2 ]]; then
-  echo "using target $2"
   COMMAND=$2
+  echo "using command $COMMAND"
 else 
-  echo 'No command argument or $COMMAND provided'
+  echo "No command argument or $COMMAND provided"
   print_usage
   exit 1
 fi
