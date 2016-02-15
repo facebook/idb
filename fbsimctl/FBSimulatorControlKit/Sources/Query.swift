@@ -42,8 +42,8 @@ public indirect enum Query {
  Given a Query and a Pool, obtain a list of the Simulators
 */
 extension Query {
-  static func perform(pool: FBSimulatorPool, query: Query?, defaults: Defaults) throws -> [FBSimulator] {
-    guard let query = query ?? defaults.query else {
+  static func perform(pool: FBSimulatorPool, query: Query?, defaults: Defaults, interaction: Interaction) throws -> [FBSimulator] {
+    guard let query = query ?? defaults.queryForInteraction(interaction)  else {
       throw QueryError.NoQueryProvided
     }
     if pool.allSimulators.count == 0 {
@@ -54,7 +54,7 @@ extension Query {
     if matching.count == 0 {
       throw QueryError.NoMatches
     }
-    defaults.query = query
+    defaults.updateLastQuery(query)
     return matching
   }
 
