@@ -12,14 +12,12 @@ import FBSimulatorControl
 import Swifter
 
 class HttpRelay : Relay {
-  let query: Query
   let portNumber: in_port_t
   let httpServer: Swifter.HttpServer
   let performer: ActionPerformer
   let reporter: RelayReporter
 
-  init(query: Query, portNumber: in_port_t, performer: ActionPerformer, reporter: RelayReporter) {
-    self.query = query
+  init(portNumber: in_port_t, performer: ActionPerformer, reporter: RelayReporter) {
     self.portNumber = portNumber
     self.performer = performer
     self.httpServer = Swifter.HttpServer()
@@ -52,26 +50,26 @@ class HttpRelay : Relay {
         let launchConfiguration = FBApplicationLaunchConfiguration(
           bundleID: bundleID, bundleName: bundleName, arguments: arguments, environment: environment
         )
-        return Interaction.Relaunch(launchConfiguration)
+        return Action.Relaunch(launchConfiguration)
       }),
       ("terminate", { json in
         let bundleID = try json.getValue("bundle_id").getString()
-        return Interaction.Terminate(bundleID)
+        return Action.Terminate(bundleID)
       })
     ])
   }
 
-  private func registerRoutes(routes: [(String, JSON throws -> Interaction)]) {
+  private func registerRoutes(routes: [(String, JSON throws -> Action)]) {
     for (endpoint, parser) in routes {
       self.registerActionMapping(endpoint, parser: parser)
     }
   }
 
-  private func registerActionMapping(endpoint: String, parser: JSON throws -> Interaction) {
+  private func registerActionMapping(endpoint: String, parser: JSON throws -> Action) {
     self.httpServer.POST["/" + endpoint] = { [unowned self] request in
       do {
         let action = try HttpRelay.actionFromRequest(request, parser: parser)
-        return self.dispatchInteraction(action)
+        return self.dispatchAction(action)
       } catch let error as JSONError {
         return self.errorResponse(error.description)
       } catch {
@@ -80,18 +78,18 @@ class HttpRelay : Relay {
     }
   }
 
-  private static func actionFromRequest(request: HttpRequest, parser: JSON throws -> Interaction) throws -> Interaction {
+  private static func actionFromRequest(request: HttpRequest, parser: JSON throws -> Action) throws -> Action {
     let body = request.body
     let data = NSData(bytes: body, length: body.count)
     let json = try JSON.fromData(data)
     return try parser(json)
   }
 
-  private func dispatchInteraction(interaction: Interaction) -> HttpResponse {
+  private func dispatchAction(action: Action) -> HttpResponse {
     let reporter = HttpEventReporter()
     var result = ActionResult.Success
     dispatch_sync(dispatch_get_main_queue()) {
-      result = self.performer.perform(Action.Interact([interaction], self.query, nil), reporter: reporter)
+      result = self.performer.perform(action, reporter: reporter)
     }
 
     return self.interactionResultResponse(reporter, result: result)

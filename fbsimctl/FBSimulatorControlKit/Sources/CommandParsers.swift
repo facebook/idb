@@ -133,30 +133,20 @@ extension Command : Parsable {
     return Parser
       .alternative([
         self.helpParser(),
-        self.listenParser(),
-        self.actionParser()
+        self.performParser(),
       ])
   }
 
-  static func actionParser() -> Parser<Command> {
+  static func performParser() -> Parser<Command> {
     return Parser
-      .ofTwoSequenced(
+      .ofFourSequenced(
         Configuration.parser(),
-        Action.parser()
+        Query.parser().optional(),
+        Format.parser().optional(),
+        Parser.manyCount(1, Action.parser())
       )
-      .fmap { (configuration, action) in
-        return Command.Perform(configuration, action)
-      }
-  }
-
-  static func listenParser() -> Parser<Command> {
-    return Parser
-      .ofTwoSequenced(
-        Configuration.parser(),
-        Server.parser()
-      )
-      .fmap { (configuration, serverConfiguration) in
-        return Command.Listen(configuration, serverConfiguration)
+      .fmap { (configuration, query, format, actions) in
+        return Command.Perform(configuration, actions, query, format)
       }
   }
 
@@ -245,10 +235,12 @@ extension FBSimulatorManagementOptions : Parsable {
 
 extension Server : Parsable {
   public static func parser() -> Parser<Server> {
-    return Parser.alternative([
-      self.httpParser(),
-      Parser.succeeded(EventName.Listen.rawValue, self.socketParser().fallback(Server.StdIO))
-    ])
+    return Parser
+      .alternative([
+        self.socketParser(),
+        self.httpParser()
+      ])
+      .fallback(Server.StdIO)
   }
 
   public static func socketParser() -> Parser<Server> {
@@ -261,68 +253,96 @@ extension Server : Parsable {
 
   public static func httpParser() -> Parser<Server> {
     return Parser
-      .ofThreeSequenced(
-        Query.parser(),
-        Parser.ofString(EventName.Listen.rawValue, EventName.Listen),
-        Parser.succeeded("--http", Parser<Int>.ofInt())
-      )
-      .fmap { (query, _, portNumber) in
-        return Server.Http(query, UInt16(portNumber))
+      .succeeded("--http", Parser<Int>.ofInt())
+      .fmap { portNumber in
+        return Server.Http(UInt16(portNumber))
       }
   }
 }
 
-extension Interaction : Parsable {
-  public static func parser() -> Parser<Interaction> {
+extension Action : Parsable {
+  public static func parser() -> Parser<Action> {
     return Parser
       .alternative([
-        Parser.ofString("list", Interaction.List),
         self.approveParser(),
         self.bootParser(),
-        Parser.ofString("shutdown", Interaction.Shutdown),
-        Parser.ofString("diagnose", Interaction.Diagnose),
-        Parser.ofString("delete", Interaction.Delete),
+        self.createParser(),
+        self.deleteParser(),
+        self.diagnoseParser(),
         self.installParser(),
         self.launchParser(),
+        self.listenParser(),
+        self.listParser(),
         self.relaunchParser(),
+        self.shutdownParser(),
         self.terminateParser()
       ])
   }
 
-  private static func approveParser() -> Parser<Interaction> {
+  private static func approveParser() -> Parser<Action> {
     return Parser
-      .succeeded("approve", Parser.manyCount(1, Parser<String>.ofBundleID()))
-      .fmap { Interaction.Approve($0) }
+      .succeeded(EventName.Approve.rawValue, Parser.manyCount(1, Parser<String>.ofBundleID()))
+      .fmap { Action.Approve($0) }
   }
 
-  private static func bootParser() -> Parser<Interaction> {
+  private static func bootParser() -> Parser<Action> {
     return Parser
-      .succeeded("boot", FBSimulatorLaunchConfigurationParser.parser().optional())
-      .fmap { Interaction.Boot($0) }
+      .succeeded(EventName.Boot.rawValue, FBSimulatorLaunchConfigurationParser.parser().optional())
+      .fmap { Action.Boot($0) }
   }
 
-  private static func installParser() -> Parser<Interaction> {
+  private static func createParser() -> Parser<Action> {
     return Parser
-      .succeeded("install", Parser<FBSimulatorApplication>.ofApplication())
-      .fmap { Interaction.Install($0) }
+      .succeeded("create", FBSimulatorConfigurationParser.parser())
+      .fmap { configuration in
+        return Action.Create(configuration)
+    }
   }
 
-  private static func launchParser() -> Parser<Interaction> {
-    return Parser
-      .succeeded("launch", self.processLaunchParser())
-      .fmap { Interaction.Launch($0) }
+  private static func deleteParser() -> Parser<Action> {
+    return Parser.ofString(EventName.Delete.rawValue, Action.Delete)
   }
 
-  private static func relaunchParser() -> Parser<Interaction> {
+  private static func diagnoseParser() -> Parser<Action> {
+    return Parser.ofString(EventName.Diagnose.rawValue, Action.Diagnose)
+  }
+
+  private static func launchParser() -> Parser<Action> {
+    return Parser
+      .succeeded(EventName.Launch.rawValue, self.processLaunchParser())
+      .fmap { Action.Launch($0) }
+  }
+
+  private static func listenParser() -> Parser<Action> {
+    return Parser
+      .succeeded(EventName.Listen.rawValue, Server.parser())
+      .fmap { return Action.Listen($0) }
+  }
+
+  private static func listParser() -> Parser<Action> {
+    return Parser.ofString(EventName.List.rawValue, Action.List)
+  }
+
+  private static func installParser() -> Parser<Action> {
+    return Parser
+      .succeeded(EventName.Install.rawValue, Parser<FBSimulatorApplication>.ofApplication())
+      .fmap { Action.Install($0) }
+  }
+
+  private static func relaunchParser() -> Parser<Action> {
     return Parser
       .succeeded(EventName.Relaunch.rawValue, self.appLaunchParser())
-      .fmap { Interaction.Relaunch($0 as! FBApplicationLaunchConfiguration) }
+      .fmap { Action.Relaunch($0 as! FBApplicationLaunchConfiguration) }
   }
 
-  private static func terminateParser() -> Parser<Interaction> {
+  private static func shutdownParser() -> Parser<Action> {
+    return Parser.ofString(EventName.Shutdown.rawValue, Action.Shutdown)
+  }
+
+  private static func terminateParser() -> Parser<Action> {
     return Parser
       .succeeded(EventName.Terminate.rawValue, Parser<String>.ofBundleID())
-      .fmap { Interaction.Terminate($0) }
+      .fmap { Action.Terminate($0) }
   }
 
   private static func processLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
@@ -357,40 +377,6 @@ extension Interaction : Parsable {
 
   private static func argumentParser() -> Parser<[String]> {
     return Parser.many(Parser<String>.ofAny())
-  }
-}
-
-extension Action : Parsable {
-  public static func parser() -> Parser<Action> {
-    return Parser
-      .alternative([
-        self.interactionParser(),
-        self.createParser()
-      ])
-  }
-
-  private static func interactionParser() -> Parser<Action> {
-    return Parser
-      .ofThreeSequenced(
-        Query.parser().optional(),
-        Format.parser().optional(),
-        Parser.manyCount(1, Interaction.parser())
-      )
-      .fmap { (query, format, interactions) in
-        return Action.Interact(interactions, query, format)
-      }
-  }
-
-  private static func createParser() -> Parser<Action> {
-    return Parser
-      .ofThreeSequenced(
-        Format.parser().optional(),
-        Parser.ofString("create", true),
-        FBSimulatorConfigurationParser.parser()
-      )
-      .fmap { (format, _, configuration) in
-        return Action.Create(configuration, format)
-      }
   }
 }
 

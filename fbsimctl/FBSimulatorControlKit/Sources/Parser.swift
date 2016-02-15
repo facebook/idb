@@ -205,6 +205,20 @@ extension Parser {
       .describe("\(a) followed by \(b) followed by \(c)")
   }
 
+  static func ofFourSequenced<B, C, D>(a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>, _ d: Parser<D>) -> Parser<(A, B, C, D)> {
+    return
+      a.bind({ valueA in
+        return b.bind { valueB in
+          return c.bind { valueC in
+            return d.fmap { valueD in
+              return (valueA, valueB, valueC, valueD)
+            }
+          }
+        }
+      })
+      .describe("\(a) followed by \(b) followed by \(c) followed by \(d)")
+  }
+
   static func alternative(parsers: [Parser<A>]) -> Parser<A> {
     return Parser<A>("Any of \(parsers)") { tokens in
       for parser in parsers {

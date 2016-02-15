@@ -258,27 +258,27 @@ class ConfigurationParserTests : XCTestCase {
   }
 }
 
-class InteractionParserTests : XCTestCase {
+class ActionParserTests : XCTestCase {
   func testParsesAllCases() {
-    self.assertParsesAll(Interaction.parser(), [
-      (["list"], Interaction.List),
-      (["approve", "com.foo.bar", "com.bing.bong"], Interaction.Approve(["com.foo.bar", "com.bing.bong"])),
-      (["approve", Fixtures.application().path], Interaction.Approve([Fixtures.application().bundleID])),
-      (["boot"], Interaction.Boot(nil)),
-      (["boot", "--locale", "fr_FR"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
-      (["boot", "--scale=50"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
-      (["boot", "--locale", "en_US", "--scale=75"], Interaction.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
-      (["shutdown"], Interaction.Shutdown),
-      (["diagnose"], Interaction.Diagnose),
-      (["delete"], Interaction.Delete),
-      (["install", Fixtures.application().path], Interaction.Install(Fixtures.application())),
-      (["launch", Fixtures.application().path], Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))),
-      (["launch", Fixtures.binary().path], Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:])))
+    self.assertParsesAll(Action.parser(), [
+      (["list"], Action.List),
+      (["approve", "com.foo.bar", "com.bing.bong"], Action.Approve(["com.foo.bar", "com.bing.bong"])),
+      (["approve", Fixtures.application().path], Action.Approve([Fixtures.application().bundleID])),
+      (["boot"], Action.Boot(nil)),
+      (["boot", "--locale", "fr_FR"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
+      (["boot", "--scale=50"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
+      (["boot", "--locale", "en_US", "--scale=75"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
+      (["shutdown"], Action.Shutdown),
+      (["diagnose"], Action.Diagnose),
+      (["delete"], Action.Delete),
+      (["install", Fixtures.application().path], Action.Install(Fixtures.application())),
+      (["launch", Fixtures.application().path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))),
+      (["launch", Fixtures.binary().path], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:])))
     ])
   }
 
   func testDoesNotParseInvalidTokens() {
-    self.assertFailsToParseAll(Interaction.parser(), [
+    self.assertFailsToParseAll(Action.parser(), [
       ["listaa"],
       ["approve"],
       ["approve", "dontadddotstome"],
@@ -290,103 +290,139 @@ class InteractionParserTests : XCTestCase {
   }
 }
 
-class ActionParserTests : XCTestCase {
-  func testParsesList() {
-    self.assertWithDefaultActions(Interaction.List, suffix: ["list"])
+class CommandParserTests : XCTestCase {
+  func testParsesHelp() {
+    self.assertParsesAll(Command.parser(), [
+      (["help"], Command.Help(true, nil))
+    ])
   }
 
   func testParsesApprove() {
-    self.assertWithDefaultActions(Interaction.Approve(["com.foo.bar", "com.bing.bong"]), suffix: ["approve", "com.foo.bar", "com.bing.bong"])
+    self.assertWithDefaultAction(Action.Approve(["com.foo.bar", "com.bing.bong"]), suffix: ["approve", "com.foo.bar", "com.bing.bong"])
   }
 
   func testParsesBoot() {
-    self.assertWithDefaultActions(Interaction.Boot(nil), suffix: ["boot"])
-  }
-
-  func testParsesShutdown() {
-    self.assertWithDefaultActions(Interaction.Shutdown, suffix: ["shutdown"])
-  }
-
-  func testParsesDiagnose() {
-    self.assertWithDefaultActions(Interaction.Diagnose, suffix: ["diagnose"])
-  }
-
-  func testParsesDelete() {
-    self.assertWithDefaultActions(Interaction.Delete, suffix: ["delete"])
-  }
-
-  func testParsesInstall() {
-    let interaction = Interaction.Install(Fixtures.application())
-    let suffix: [String] = ["install", Fixtures.application().path]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesAgentLaunch() {
-    let interaction = Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.binary().path]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesAgentLaunchWithArguments() {
-    let interaction = Interaction.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.binary().path, "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesAppLaunchByPath() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.application().path]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesAppLaunchByPathWithArguments() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.application().path, "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesAppLaunchByBundleID() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", "com.foo.bar"]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesAppLaunchByBundleIDArguments() {
-    let interaction = Interaction.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesRelaunchByBundleID() {
-    let interaction = Interaction.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
-    let suffix: [String] = ["relaunch", "com.foo.bar"]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesRelaunchByBundleIDArguments() {
-    let interaction = Interaction.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultActions(interaction, suffix: suffix)
-  }
-
-  func testParsesTerminateByBundleID() {
-    self.assertWithDefaultActions(Interaction.Terminate("com.foo.bar"), suffix: ["terminate", "com.foo.bar"])
+    self.assertWithDefaultAction(Action.Boot(nil), suffix: ["boot"])
   }
 
   func testFailsToParseCreate() {
     self.assertParseFails(Action.parser(), ["create"])
   }
 
+  func testParsesDelete() {
+    self.assertWithDefaultAction(Action.Delete, suffix: ["delete"])
+  }
+
+  func testParsesDiagnose() {
+    self.assertWithDefaultAction(Action.Diagnose, suffix: ["diagnose"])
+  }
+
+  func testParsesInstall() {
+    let action = Action.Install(Fixtures.application())
+    let suffix: [String] = ["install", Fixtures.application().path]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesList() {
+    self.assertWithDefaultAction(Action.List, suffix: ["list"])
+  }
+
+  func testParsesListenSTDIO() {
+    self.assertWithDefaultAction(Action.Listen(Server.StdIO), suffix: ["listen"])
+  }
+
+  func testParsesListenWithSocket() {
+    self.assertWithDefaultAction(Action.Listen(Server.Socket(42)), suffix: ["listen", "--socket", "42"])
+  }
+
+  func testParsesListenWithHttp() {
+    self.assertWithDefaultAction(Action.Listen(Server.Http(43)), suffix: ["listen", "--http", "43"])
+  }
+
+  func testParsesLaunchAgent() {
+    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.binary().path]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesLaunchAgentWithArguments() {
+    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.binary().path, "--foo", "-b", "-a", "-r"]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParseLaunchAppByPath() {
+    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.application().path]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesLaunchAppByPathWithArguments() {
+    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.application().path, "--foo", "-b", "-a", "-r"]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesLaunchAppByBundleID() {
+    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
+    let suffix: [String] = ["launch", "com.foo.bar"]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesLaunchAppByBundleIDWithArguments() {
+    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["launch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesRelaunchAppByBundleID() {
+    let action = Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
+    let suffix: [String] = ["relaunch", "com.foo.bar"]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesRelaunchAppByBundleIDArguments() {
+    let action = Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
+    self.assertWithDefaultAction(action, suffix: suffix)
+  }
+
+  func testParsesShutdown() {
+    self.assertWithDefaultAction(Action.Shutdown, suffix: ["shutdown"])
+  }
+
+  func testParsesTerminateByBundleID() {
+    self.assertWithDefaultAction(Action.Terminate("com.foo.bar"), suffix: ["terminate", "com.foo.bar"])
+  }
+
+  func testParsesListBootListenShutdown() {
+    let actions: [Action] = [Action.List, Action.Boot(nil), Action.Listen(Server.Http(1000)), Action.Shutdown]
+    let suffix: [String] = ["list", "boot", "listen", "--http", "1000", "shutdown"]
+    self.assertWithDefaultActions(actions, suffix: suffix)
+  }
+
+  func testParsesListBootListenShutdownDiagnose() {
+    let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(FBSimulatorLaunchOptions.RecordVideo))
+    let simulatorConfiguration = FBSimulatorConfiguration.iPhone5()
+    let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, Action.Diagnose]
+    let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "--record-video", "listen", "--http", "8090", "shutdown", "diagnose"]
+    self.assertWithDefaultActions(actions, suffix: suffix)
+  }
+
   func testParsesCreate() {
     self.assertParsesAll(Action.parser(), [
-      (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6(), nil)),
-      (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2(), nil)),
-      (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2(), nil)),
+      (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
+      (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
+      (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
     ])
   }
 
-  func assertWithDefaultActions(interaction: Interaction, suffix: [String]) {
-    return self.unzipAndAssert([interaction], suffix: suffix, extras: [
+  func assertWithDefaultAction(action: Action, suffix: [String]) {
+    assertWithDefaultActions([action], suffix: suffix)
+  }
+
+  func assertWithDefaultActions(actions: [Action], suffix: [String]) {
+    return self.unzipAndAssert(actions, suffix: suffix, extras: [
       ([], nil, nil),
       (["all"], Query.And([]), nil),
       (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
@@ -397,56 +433,10 @@ class ActionParserTests : XCTestCase {
     ])
   }
 
-  func unzipAndAssert(interactions: [Interaction], suffix: [String], extras: [([String], Query?, Format?)]) {
+  func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], Query?, Format?)]) {
     let pairs = extras.map { (tokens, query, format) in
-      return (tokens + suffix, Action.Interact(interactions, query, format))
+      return (tokens + suffix, Command.Perform(Configuration.defaultValue, actions, query, format))
     }
-    self.assertParsesAll(Action.parser(), pairs)
-  }
-}
-
-class CommandParserTests : XCTestCase {
-  func testParsesSingleInteraction() {
-    self.assertParses(
-      Command.parser(),
-      ["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "boot"],
-      Command.Perform(
-        Configuration.defaultValue,
-        Action.Interact(
-          [.Boot(nil)],
-          .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]),
-          nil
-        )
-      )
-    )
-  }
-
-  func testParsesMultipleInteractions() {
-    self.assertParses(
-      Command.parser(),
-      ["--state=booted", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "list", "boot"],
-      Command.Perform(
-        Configuration.defaultValue,
-        Action.Interact(
-          [ .List, .Boot(nil) ],
-          Query.And([.State([.Booted]), .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])]),
-          nil
-        )
-      )
-    )
-  }
-
-  func testParsesListen() {
-    self.assertParsesAll(Command.parser(), [
-      (["listen"], Command.Listen(Configuration.defaultValue, Server.StdIO)),
-      (["listen", "--socket", "42"], Command.Listen(Configuration.defaultValue, Server.Socket(42))),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "listen", "--http", "43"], Command.Listen(Configuration.defaultValue, Server.Http(Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), 43)))
-    ])
-  }
-
-  func testParsesHelp() {
-    self.assertParsesAll(Command.parser(), [
-      (["help"], Command.Help(true, nil))
-    ])
+    self.assertParsesAll(Command.parser(), pairs)
   }
 }

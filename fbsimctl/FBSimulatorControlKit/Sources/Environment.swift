@@ -15,8 +15,13 @@ let EnvironmentPrefix = "FBSIMCTL_CHILD_"
 public extension Command {
   func appendEnvironment(environment: [String : String]) -> Command {
     switch self {
-    case .Perform(let config, let action):
-      return .Perform(config, action.appendEnvironment(environment))
+    case .Perform(let configuration, let actions, let query, let format):
+      return .Perform(
+        configuration,
+        actions.map { $0.appendEnvironment(environment) },
+        query,
+        format
+      )
     default:
       return self
     }
@@ -26,21 +31,10 @@ public extension Command {
 public extension Action {
   func appendEnvironment(environment: [String : String]) -> Action {
     switch self {
-    case .Interact(let interactions, let query, let format):
-      return .Interact(interactions.map { $0.appendEnvironment(environment) }, query, format)
-    default:
-      return self
-    }
-  }
-}
-
-public extension Interaction {
-  func appendEnvironment(environment: [String : String]) -> Interaction {
-    switch self {
     case .Launch(let configuration):
       return .Launch(
         configuration.withEnvironmentAdditions(
-          Interaction.subprocessEnvironment(environment)
+          Action.subprocessEnvironment(environment)
         )
       )
     default:
