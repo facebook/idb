@@ -38,6 +38,9 @@ public indirect enum Query {
   case And(Set<Query>)
 }
 
+/**
+ Given a Query and a Pool, obtain a list of the Simulators
+*/
 extension Query {
   static func perform(pool: FBSimulatorPool, query: Query?, defaults: Defaults) throws -> [FBSimulator] {
     guard let query = query ?? defaults.query else {
@@ -75,6 +78,10 @@ extension Query {
   }
 }
 
+/**
+ Extracts values for each of the cases in the enumeration,
+ performing a union along each of these cases.
+*/
 public extension Query {
   static func flatten(queries: [Query]) -> Query {
     if (queries.count == 1) {

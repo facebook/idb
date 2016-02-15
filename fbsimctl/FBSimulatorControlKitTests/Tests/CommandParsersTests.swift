@@ -14,6 +14,7 @@ import FBSimulatorControl
 class QueryParserTests : XCTestCase {
   func testParsesSimpleQueries() {
     self.assertParsesAll(Query.parser(), [
+      (["all"], .And([])),
       (["iPhone 5"], .Configured([FBSimulatorConfiguration.iPhone5()])),
       (["iPad 2"], .Configured([FBSimulatorConfiguration.iPad2()])),
       (["--state=creating"], .State([.Creating])),
@@ -387,6 +388,7 @@ class ActionParserTests : XCTestCase {
   func assertWithDefaultActions(interaction: Interaction, suffix: [String]) {
     return self.unzipAndAssert([interaction], suffix: suffix, extras: [
       ([], nil, nil),
+      (["all"], Query.And([]), nil),
       (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), nil),
