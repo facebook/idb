@@ -73,11 +73,19 @@ public class Defaults {
     self.query = query
   }
 
-  func queryForInteraction(interaction: Interaction) -> Query? {
+  func queryForInteraction(interactions: [Interaction]) -> Query? {
+    // Always use the last query, if present
     if let query = self.query {
       return query
     }
-    switch interaction {
+    // Otherwise only allow [.List]
+    if interactions.count != 1 {
+      return nil
+    }
+    guard let first = interactions.first else {
+      return nil
+    }
+    switch first {
       case .List: return .And([])
       default: return nil
     }

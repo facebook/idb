@@ -141,7 +141,7 @@ struct InteractionRunner : Runner {
 
   func run(reporter: EventReporter) -> ActionResult {
     do {
-      let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults, interaction: )
+      let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults, interactions: self.interactions)
       let format = self.format ?? defaults.format
       let runners: [Runner] = self.interactions.flatMap { interaction in
         return simulators.map { simulator in
