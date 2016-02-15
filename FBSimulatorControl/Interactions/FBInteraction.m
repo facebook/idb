@@ -302,8 +302,10 @@
 
 - (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block
 {
+  __weak id weakInteraction = self;
   id<FBInteraction> next = [FBInteraction interact:^ BOOL (NSError **error) {
-    return block(error, self);
+    __strong id strongInteraction = weakInteraction;
+    return block(error, strongInteraction);
   }];
 
   FBInteraction *interaction = [self copy];
