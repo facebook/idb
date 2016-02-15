@@ -10,7 +10,7 @@
 import Foundation
 import FBSimulatorControl
 
-extension FBSimulatorState : CustomStringConvertible {
+extension FBSimulatorState {
   public var description: String {
     get {
       return FBSimulator.stateStringFromSimulatorState(self)

@@ -40,7 +40,7 @@ func acceptCallback(socket: CFSocket!, callback: CFSocketCallBackType, address: 
   socketRelay.registerConnection(readStream!, outputStream: writeStream!)
 }
 
-extension sockaddr_in6 : CustomStringConvertible {
+extension sockaddr_in6 {
   static func fromData(data: NSData) -> sockaddr_in6 {
     var addr = sockaddr_in6()
     data.getBytes(&addr, length: strideof(sockaddr_in6))
@@ -52,7 +52,7 @@ extension sockaddr_in6 : CustomStringConvertible {
   }
 }
 
-extension sockaddr_in : CustomStringConvertible {
+extension sockaddr_in {
   static func fromData(data: NSData) -> sockaddr_in {
     var addr = sockaddr_in()
     data.getBytes(&addr, length: strideof(sockaddr_in))
@@ -64,7 +64,7 @@ extension sockaddr_in : CustomStringConvertible {
   }
 }
 
-extension NSStreamStatus : CustomStringConvertible {
+extension NSStreamStatus {
   public var description: String {
     switch (self) {
     case NotOpen: return "None"
@@ -79,7 +79,7 @@ extension NSStreamStatus : CustomStringConvertible {
   }
 }
 
-extension NSStreamEvent : CustomStringConvertible {
+extension NSStreamEvent {
   public var description: String {
     switch (self.rawValue) {
     case NSStreamEvent.None.rawValue: return "None"
