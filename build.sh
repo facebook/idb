@@ -1,6 +1,8 @@
 # vim: set tabstop=2 shiftwidth=2 filetype=sh:
 #!/bin/sh
 
+set -e
+
 BUILD_DIRECTORY=build
 
 function build_deps() {
