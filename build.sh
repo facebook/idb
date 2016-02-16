@@ -5,7 +5,7 @@ BUILD_DIRECTORY=build
 
 function build_deps() {
   pushd fbsimctl
-  carthage bootstrap
+  carthage bootstrap --platform Mac
   popd
 }
 
