@@ -95,7 +95,7 @@ private struct ActionRunner : Runner {
     case .Interact(let interactions, let query, let format):
       return InteractionRunner(control: control, configuration: self.configuration, defaults: defaults, interactions: interactions, query: query, format: format).run(reporter)
     case .Create(let configuration, let format):
-      return CreationRunner(control: control, configuration: self.configuration, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(reporter)
+      return CreationRunner(control: control, configuration: self.configuration, defaults: defaults, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(reporter)
     }
   }
 }
@@ -141,7 +141,7 @@ struct InteractionRunner : Runner {
 
   func run(reporter: EventReporter) -> ActionResult {
     do {
-      let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults)
+      let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults, interactions: self.interactions)
       let format = self.format ?? defaults.format
       let runners: [Runner] = self.interactions.flatMap { interaction in
         return simulators.map { simulator in
@@ -160,6 +160,7 @@ struct InteractionRunner : Runner {
 struct CreationRunner : Runner {
   let control: FBSimulatorControl
   let configuration: Configuration
+  let defaults: Defaults
   let simulatorConfiguration: FBSimulatorConfiguration
   let format: Format
 
@@ -168,6 +169,7 @@ struct CreationRunner : Runner {
       let options = FBSimulatorAllocationOptions.Create
       reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
+      self.defaults.updateLastQuery(Query.UDID([simulator.udid]))
       reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return ActionResult.Success
     } catch let error as NSError {

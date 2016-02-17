@@ -396,6 +396,18 @@ extension Action : Parsable {
 
 extension Query : Parsable {
   public static func parser() -> Parser<Query> {
+    return Parser.alternative([
+      self.allParser(),
+      self.specificParser()
+    ])
+  }
+
+  private static func allParser() -> Parser<Query> {
+    return Parser<Query>
+      .ofString("all", Query.And([]))
+  }
+
+  private static func specificParser() -> Parser<Query> {
     return Parser<Query>
       .alternativeMany(1, [
         self.simulatorStateParser(),

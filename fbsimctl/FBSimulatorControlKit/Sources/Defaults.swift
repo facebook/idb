@@ -51,20 +51,44 @@ extension Configuration {
 
 let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
 
+/**
+ Provides Default Values, with overrides from a .rc file
+ as well as updates to defaults to avoid repetitious commands.
+*/
 public class Defaults {
   let logWriter: Writer
   let format: Format
   let configuration: Configuration
-  var query: Query? = nil {
-    willSet(newQuery) {
-      let _ = Defaults.queryHistoryLocation(configuration)
-    }
-  }
+  private var query: Query?
 
   init(logWriter: Writer, format: Format, configuration: Configuration) {
     self.logWriter = logWriter
     self.format = format
     self.configuration = configuration
+  }
+
+  func updateLastQuery(query: Query) {
+    // TODO: Create the CLI equivalent of the configuration and save.
+    let _ = Defaults.queryHistoryLocation(configuration)
+    self.query = query
+  }
+
+  func queryForInteraction(interactions: [Interaction]) -> Query? {
+    // Always use the last query, if present
+    if let query = self.query {
+      return query
+    }
+    // Otherwise only allow [.List]
+    if interactions.count != 1 {
+      return nil
+    }
+    guard let first = interactions.first else {
+      return nil
+    }
+    switch first {
+      case .List: return .And([])
+      default: return nil
+    }
   }
 
   static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
@@ -93,15 +117,13 @@ public class Defaults {
     }
   }
 
-  private static var rcFileParser: Parser<(Configuration?, Format?)> {
-    get {
-      return Parser
-        .ofTwoSequenced(
-          Configuration.parser().optional(),
-          Format.parser().optional()
-        )
-    }
-  }
+  private static var rcFileParser: Parser<(Configuration?, Format?)> { get {
+    return Parser
+      .ofTwoSequenced(
+        Configuration.parser().optional(),
+        Format.parser().optional()
+      )
+  }}
 
   private static func queryHistoryLocation(configuration: Configuration) -> NSURL {
     let setPath = configuration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
