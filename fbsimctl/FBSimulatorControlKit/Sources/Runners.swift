@@ -49,16 +49,15 @@ private struct CommandBootstrap {
         } else {
           return .Failure("")
         }
-      case .Listen(let configuration, let serverConfiguration):
+      case .Perform(let configuration, let actions, let query, let format):
         let reporter = configuration.options.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
         let control = try defaults.configuration.buildSimulatorControl()
-        return ServerRunner(control: control, configuration: configuration, defaults: defaults, serverConfiguration: serverConfiguration).run(reporter)
-      case .Perform(let configuration, let action):
-        let reporter = configuration.options.createReporter(self.writer)
-        let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
-        let control = try defaults.configuration.buildSimulatorControl()
-        return ActionRunner(control: control, configuration: configuration, defaults: defaults, action: action).run(reporter)
+        return SequenceRunner(runners:
+          actions.map { action in
+            return ActionRunner(action: action, configuration: configuration, control: control, defaults: defaults, format: format, query: query)
+          }
+        ).run(reporter)
       }
     } catch DefaultsError.UnreadableRCFile(let string) {
       return .Failure("Unreadable .rc file " + string)
@@ -84,34 +83,44 @@ private struct SequenceRunner : Runner {
   }
 }
 
-private struct ActionRunner : Runner {
-  let control: FBSimulatorControl
-  let configuration: Configuration
-  let defaults: Defaults
+struct ActionRunner : Runner {
   let action: Action
+  let configuration: Configuration
+  let control: FBSimulatorControl
+  let defaults: Defaults
+  let format: Format?
+  let query: Query?
 
   func run(reporter: EventReporter) -> ActionResult {
     switch self.action {
-    case .Interact(let interactions, let query, let format):
-      return InteractionRunner(control: control, configuration: self.configuration, defaults: defaults, interactions: interactions, query: query, format: format).run(reporter)
-    case .Create(let configuration, let format):
-      return CreationRunner(control: control, configuration: self.configuration, defaults: defaults, simulatorConfiguration: configuration, format: format ?? self.defaults.format).run(reporter)
+    case .Listen(let server):
+      return ServerRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, query: self.query, serverConfiguration: server).run(reporter)
+    case .Create(let configuration):
+      return CreationRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, simulatorConfiguration: configuration).run(reporter)
+    default:
+      do {
+        let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults, action: self.action)
+        let format = self.format ?? defaults.format
+        let runners: [Runner] = simulators.map { simulator in
+          SimulatorRunner(simulator: simulator, configuration: self.configuration, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
+        }
+        return SequenceRunner(runners: runners).run(reporter)
+      } catch let error as QueryError {
+        return ActionResult.Failure(error.description)
+      } catch {
+        return ActionResult.Failure("Unknown Query Error")
+      }
     }
   }
 }
 
-class ServerRunner : Runner, ActionPerformer {
-  let control: FBSimulatorControl
+struct ServerRunner : Runner, ActionPerformer {
   let configuration: Configuration
+  let control: FBSimulatorControl
   let defaults: Defaults
+  let format: Format?
+  let query: Query?
   let serverConfiguration: Server
-
-  init(control: FBSimulatorControl, configuration: Configuration, defaults: Defaults, serverConfiguration: Server) {
-    self.control = control
-    self.configuration = configuration
-    self.defaults = defaults
-    self.serverConfiguration = serverConfiguration
-  }
 
   func run(reporter: EventReporter) -> ActionResult {
     let relayReporter = RelayReporter(reporter: reporter, subject: self.serverConfiguration)
@@ -120,49 +129,23 @@ class ServerRunner : Runner, ActionPerformer {
       StdIORelay(configuration: self.configuration, performer: self, reporter: relayReporter).start()
     case .Socket(let portNumber):
       SocketRelay(configuration: self.configuration, portNumber: portNumber, performer: self, reporter: relayReporter).start()
-    case .Http(let query, let portNumber):
-      HttpRelay(query: query, portNumber: portNumber, performer: self, reporter: relayReporter).start()
+    case .Http(let portNumber):
+      HttpRelay(portNumber: portNumber, performer: self, reporter: relayReporter).start()
     }
     return .Success
   }
 
   func perform(action: Action, reporter: EventReporter) -> ActionResult {
-    return ActionRunner(control: self.control, configuration: self.configuration, defaults: self.defaults, action: action).run(reporter)
-  }
-}
-
-struct InteractionRunner : Runner {
-  let control: FBSimulatorControl
-  let configuration: Configuration
-  let defaults: Defaults
-  let interactions: [Interaction]
-  let query: Query?
-  let format: Format?
-
-  func run(reporter: EventReporter) -> ActionResult {
-    do {
-      let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults, interactions: self.interactions)
-      let format = self.format ?? defaults.format
-      let runners: [Runner] = self.interactions.flatMap { interaction in
-        return simulators.map { simulator in
-          SimulatorRunner(simulator: simulator, configuration: self.configuration, interaction: interaction.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
-        }
-      }
-      return SequenceRunner(runners: runners).run(reporter)
-    } catch let error as QueryError {
-      return ActionResult.Failure(error.description)
-    } catch {
-      return ActionResult.Failure("Unknown Query Error")
-    }
+    return ActionRunner(action: action, configuration: self.configuration, control: self.control, defaults: self.defaults, format: self.format, query: self.query).run(reporter)
   }
 }
 
 struct CreationRunner : Runner {
-  let control: FBSimulatorControl
   let configuration: Configuration
+  let control: FBSimulatorControl
   let defaults: Defaults
+  let format: Format?
   let simulatorConfiguration: FBSimulatorConfiguration
-  let format: Format
 
   func run(reporter: EventReporter) -> ActionResult {
     do {
@@ -181,7 +164,7 @@ struct CreationRunner : Runner {
 private struct SimulatorRunner : Runner {
   let simulator: FBSimulator
   let configuration: Configuration
-  let interaction: Interaction
+  let action: Action
   let format: Format
 
   func run(reporter: EventReporter) -> ActionResult {
@@ -191,7 +174,7 @@ private struct SimulatorRunner : Runner {
         translator.simulator.userEventSink = nil
       }
 
-      switch self.interaction {
+      switch self.action {
       case .List:
         translator.reportSimulator(EventName.List, simulator)
       case .Approve(let bundleIDs):
@@ -235,6 +218,8 @@ private struct SimulatorRunner : Runner {
         try interactWithSimulator(translator, EventName.Relaunch, bundleID as NSString) { interaction in
           interaction.terminateApplicationWithBundleID(bundleID)
         }
+      default:
+        assertionFailure("Unhandled")
       }
     } catch let error as NSError {
       return .Failure(error.description)
