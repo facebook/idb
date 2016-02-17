@@ -191,7 +191,7 @@ private struct SimulatorRunner : Runner {
           interaction.shutdownSimulator()
         }
       case .Diagnose:
-        let logs = simulator.diagnostics.allDiagnostics() as! [FBSimulatorDiagnostics]
+        let logs = simulator.diagnostics.allDiagnostics().map{ $0.jsonSerializableRepresentation() }
         translator.reportSimulator(EventName.Diagnose, EventType.Discrete, logs as NSArray)
       case .Delete:
         translator.reportSimulator(EventName.Delete, EventType.Started, self.simulator)
