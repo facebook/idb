@@ -112,3 +112,24 @@
 }
 
 @end
+
+@implementation FBAgentLaunchConfiguration (Helpers)
+
+- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+{
+  // If arguments are passed to launched processes, then then the first argument needs to be the executable path.
+  // Providing no arguments will do this automatically, but when custom arguments are, the first argument must be manually set.
+  NSDictionary *options = [super simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
+  NSArray *arguments = options[@"arguments"];
+  if (arguments.count == 0 || [arguments.firstObject isEqualToString:self.agentBinary.path]) {
+    return options;
+  }
+
+  NSMutableArray *modifiedArguments = [arguments mutableCopy];
+  [modifiedArguments insertObject:self.agentBinary.path atIndex:0];
+  NSMutableDictionary *modifiedOptions = [options mutableCopy];
+  modifiedOptions[@"arguments"] = [modifiedArguments copy];
+  return [modifiedOptions copy];
+}
+
+@end
