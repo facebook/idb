@@ -42,15 +42,15 @@ public indirect enum Query {
  Given a Query and a Pool, obtain a list of the Simulators
 */
 extension Query {
-  static func perform(pool: FBSimulatorPool, query: Query?, defaults: Defaults, action: Action) throws -> [FBSimulator] {
+  static func perform(set: FBSimulatorSet, query: Query?, defaults: Defaults, action: Action) throws -> [FBSimulator] {
     guard let query = query ?? defaults.queryForAction(action) else {
       throw QueryError.NoQueryProvided
     }
-    if pool.allSimulators.count == 0 {
+    if set.allSimulators.count == 0 {
       throw QueryError.PoolIsEmpty
     }
-    let array: NSArray = pool.allSimulators
-    let matching = array.filteredArrayUsingPredicate(query.get(pool)) as! [FBSimulator]
+    let array: NSArray = set.allSimulators
+    let matching = array.filteredArrayUsingPredicate(query.get(set)) as! [FBSimulator]
     if matching.count == 0 {
       throw QueryError.NoMatches
     }
@@ -58,7 +58,7 @@ extension Query {
     return matching
   }
 
-  func get(pool: FBSimulatorPool) -> NSPredicate {
+  func get(set: FBSimulatorSet) -> NSPredicate {
     switch (self) {
     case .UDID(let udids):
       return FBSimulatorPredicates.udids(Array(udids))
@@ -72,7 +72,7 @@ extension Query {
       )
     case .And(let subqueries):
       return NSCompoundPredicate(
-        andPredicateWithSubpredicates: subqueries.map { $0.get(pool) }
+        andPredicateWithSubpredicates: subqueries.map { $0.get(set) }
       )
     }
   }

@@ -18,7 +18,6 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorPool+Private.h"
 #import "FBSimulatorPool.h"
 
 @implementation FBSimulatorPredicates
@@ -28,7 +27,7 @@
 + (NSPredicate *)allocatedByPool:(FBSimulatorPool *)pool
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
-    return [pool.allocatedUDIDs containsObject:simulator.udid];
+    return [pool simulatorIsAllocated:simulator];
   }];
 }
 

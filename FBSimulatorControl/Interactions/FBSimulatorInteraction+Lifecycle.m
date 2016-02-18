@@ -65,9 +65,9 @@
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBSimulatorTerminationStrategy *terminationStrategy = [FBSimulatorTerminationStrategy
-      withConfiguration:simulator.pool.configuration
+      withConfiguration:simulator.set.configuration
       processQuery:simulator.processQuery
-      logger:simulator.pool.logger];
+      logger:simulator.set.logger];
 
     NSError *innerError = nil;
     if (![terminationStrategy killSimulators:@[simulator] withError:&innerError]) {

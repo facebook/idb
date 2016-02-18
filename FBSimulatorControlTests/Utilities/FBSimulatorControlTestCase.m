@@ -153,7 +153,7 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 
 - (void)tearDown
 {
-  [self.control.simulatorPool killAllWithError:nil];
+  [self.control.simulatorPool.set killAllWithError:nil];
   _control = nil;
   _assert = nil;
 }

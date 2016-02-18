@@ -99,7 +99,7 @@ struct ActionRunner : Runner {
       return CreationRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, simulatorConfiguration: configuration).run(reporter)
     default:
       do {
-        let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults, action: self.action)
+        let simulators = try Query.perform(self.control.simulatorPool.set, query: self.query, defaults: self.defaults, action: self.action)
         let format = self.format ?? defaults.format
         let runners: [Runner] = simulators.map { simulator in
           SimulatorRunner(simulator: simulator, configuration: self.configuration, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
@@ -149,9 +149,8 @@ struct CreationRunner : Runner {
 
   func run(reporter: EventReporter) -> ActionResult {
     do {
-      let options = FBSimulatorAllocationOptions.Create
       reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
-      let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
+      let simulator = try self.control.simulatorPool.set.createSimulatorWithConfiguration(simulatorConfiguration)
       self.defaults.updateLastQuery(Query.UDID([simulator.udid]))
       reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return ActionResult.Success
@@ -195,7 +194,7 @@ private struct SimulatorRunner : Runner {
         translator.reportSimulator(EventName.Diagnose, EventType.Discrete, logs as NSArray)
       case .Delete:
         translator.reportSimulator(EventName.Delete, EventType.Started, self.simulator)
-        try simulator.pool!.deleteSimulator(simulator)
+        try simulator.set!.deleteSimulator(simulator)
         translator.reportSimulator(EventName.Delete, EventType.Ended, self.simulator)
       case .Install(let application):
         try interactWithSimulator(translator, EventName.Install, application) { interaction in

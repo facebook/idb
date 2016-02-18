@@ -9,6 +9,8 @@
 
 #import "CoreSimulatorDoubles.h"
 
+#import <FBSimulatorControl/FBSimulatorControl.h>
+
 @implementation FBSimulatorControlTests_SimDeviceType_Double
 @end
 
@@ -33,6 +35,11 @@
     [NSFileManager.defaultManager createDirectoryAtPath:_dataPath withIntermediateDirectories:YES attributes:nil error:nil];
   }
   return _dataPath;
+}
+
+- (NSString *)stateString
+{
+  return [FBSimulator stateStringFromSimulatorState:(FBSimulatorState)self.state];
 }
 
 @end

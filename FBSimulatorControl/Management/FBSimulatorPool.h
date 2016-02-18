@@ -15,6 +15,7 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorPool;
+@class FBSimulatorSet;
 @class SimDevice;
 @class SimDeviceSet;
 
@@ -34,9 +35,13 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 @protocol FBSimulatorLogger;
 
 /**
- A container for a collection of Simulators.
+ A FBSimulatorPool manages the allocation of Simulators from an FBSimulatorSet.
+ This is an optional part of the API that allows clients to use multiple Simulators in the same set whilst avoiding
+ using the same Simulator for multiple tasks.
  */
 @interface FBSimulatorPool : NSObject <FBDebugDescribeable>
+
+#pragma mark Initializers
 
 /**
  Creates and returns an FBSimulatorPool.
@@ -48,18 +53,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
  */
 + (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
 
-/**
- Returns the configuration for the reciever.
- */
-@property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
-
-/**
- An Ordered Set of the Simulators for the DeviceSet.
- This includes allocated and un-allocated Simulators.
- Ordering is based on the ordering of SimDeviceSet.
- Is an NSOrderedSet<FBSimulator>
- */
-@property (nonatomic, copy, readonly) NSArray *allSimulators;
+#pragma mark Methods
 
 /**
  Returns a Device for the given parameters. Will create devices where necessary.
@@ -77,38 +71,36 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
  Marks a device that was previously returned from `allocateDeviceWithName:sdkVersion:error:` as free.
  Call this when multiple test runs, or simulators are to be re-used in a process.
 
- @param simulator the Device to Free.
+ @param simulator the Simulator to Free.
  @param error an error out for any error that occured.
- @returns YES if the freeing of the device was successful, NO otherwise.
+ @return YES if the freeing of the device was successful, NO otherwise.
  */
 - (BOOL)freeSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
-@end
-
 /**
- Fetchers for Specific and Groups of Simulators
+ Marks a device that was previously returned from `allocateDeviceWithName:sdkVersion:error:` as free.
+ Call this when multiple test runs, or simulators are to be re-used in a process.
+
+ @param simulator the Simulator to test.
+ @return YES if the Simulator is Allocated, NO otherwise.
  */
-@interface FBSimulatorPool (Fetchers)
+- (BOOL)simulatorIsAllocated:(FBSimulator *)simulator;
+
+#pragma mark Properties
 
 /**
- An Ordered Set of the Simulators that this Pool has allocated.
- This includes only allocated simulators.
- Is an NSOrderedSet<FBSimulator>
+ Returns the FBSimulatorSer of the receiver.
+ */
+@property (nonatomic, copy, readonly) FBSimulatorSet *set;
+
+/**
+ An Array of all the Simulators that this Pool has allocated.
  */
 @property (nonatomic, copy, readonly) NSArray *allocatedSimulators;
 
 /**
- An Ordered Set of the Simulators that this Pool has allocated.
- This includes only allocated simulators.
- Ordering is based on the recency of the allocation: the most recent allocated Simulator is at the end of the Set.
- Is an NSOrderedSet<FBSimulator>
+ An Array of all the Simulators that this Pool have not allocated.
  */
 @property (nonatomic, copy, readonly) NSArray *unallocatedSimulators;
-
-/**
- An Ordered Set of the Simulators that have been launched by any pool, or not by FBSimulatorControl at all.
- Is an NSOrderedSet<FBSimulator>
- */
-@property (nonatomic, copy, readonly) NSArray *launchedSimulators;
 
 @end

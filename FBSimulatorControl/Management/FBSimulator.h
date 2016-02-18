@@ -15,7 +15,6 @@
 @protocol FBSimulatorEventSink;
 @protocol FBSimulatorLogger;
 @class FBProcessInfo;
-@class FBProcessInfo;
 @class FBProcessQuery;
 @class FBSimulatorBridge;
 @class FBSimulatorConfiguration;
@@ -23,6 +22,7 @@
 @class FBSimulatorHistory;
 @class FBSimulatorLogger;
 @class FBSimulatorPool;
+@class FBSimulatorSet;
 @class SimDevice;
 
 /**
@@ -66,7 +66,12 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 @property (nonatomic, assign, readonly, getter=isAllocated) BOOL allocated;
 
 /**
- The Pool to which the Simulator belongs.
+ The Simulator Set that the Simulator belongs to.
+ */
+@property (nonatomic, weak, readonly) FBSimulatorSet *set;
+
+/**
+ The Pool to which the Simulator belongs, if Any.
  */
 @property (nonatomic, weak, readonly) FBSimulatorPool *pool;
 
