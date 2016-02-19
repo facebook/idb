@@ -87,7 +87,7 @@ To launch Safari on an iPhone 5, you can use the following:
     BOOL success = [[[simulator.interact
       bootSimulator]
       launchApplication:appLaunch]
-      performInteractionWithError:&error];
+      perform:&error];
 ```
 
 

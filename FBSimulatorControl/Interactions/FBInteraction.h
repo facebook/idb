@@ -22,7 +22,7 @@
  @param error an errorOut if any ocurred.
  @returns YES if the interaction succeeded, NO otherwise.
  */
-- (BOOL)performInteractionWithError:(NSError **)error;
+- (BOOL)perform:(NSError **)error;
 
 @end
 

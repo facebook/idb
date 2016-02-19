@@ -233,7 +233,7 @@ private struct SimulatorRunner : Runner {
     translator.reportSimulator(eventName, EventType.Started, subject)
     let interaction = translator.simulator.interact()
     interact(interaction)
-    try interaction.performInteraction()
+    try interaction.perform()
     translator.reportSimulator(eventName, EventType.Ended, subject)
   }
 }
