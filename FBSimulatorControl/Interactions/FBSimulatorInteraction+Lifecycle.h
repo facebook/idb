@@ -19,7 +19,8 @@
 @interface FBSimulatorInteraction (Lifecycle)
 
 /**
- Boots the Simulator with the default Simulator Launch Configuration.
+ Boots the Simulator with the default Simulator Launch Configuration.\
+ Will fail if the Simulator is currently booted.
 
  @return the reciever, for chaining.
  */
@@ -27,6 +28,7 @@
 
 /**
  Boots the Simulator with the default Simulator Launch Configuration.
+ Will fail if the Simulator is currently booted.
 
  @return the reciever, for chaining.
  */
@@ -34,6 +36,7 @@
 
 /**
  Shuts the Simulator down.
+ Will fail if the Simulator is not booted.
 
  @return the reciever, for chaining.
  */
