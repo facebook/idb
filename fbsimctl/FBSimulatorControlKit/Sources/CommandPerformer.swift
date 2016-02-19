@@ -35,7 +35,7 @@ extension CommandPerformer {
   func perform(input: String, reporter: EventReporter) -> CommandResult {
     do {
       let arguments = Arguments.fromString(input)
-      let (_, command) = try Command.parser().parse(arguments)
+      let (_, command) = try Command.parser.parse(arguments)
       return self.perform(command, reporter: reporter)
     } catch let error as ParseError {
       return .Failure("Error: \(error.description)")

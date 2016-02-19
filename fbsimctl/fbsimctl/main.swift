@@ -13,7 +13,7 @@ import FBSimulatorControl
 // The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
 let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
 do {
-  let (_, configuration) = try Configuration.parser().parse(arguments)
+  let (_, configuration) = try Configuration.parser.parse(arguments)
   let jsonEnabled = configuration.output.contains(OutputOptions.JSON)
   let debugEnabled = configuration.output.contains(OutputOptions.DebugLogging)
 
