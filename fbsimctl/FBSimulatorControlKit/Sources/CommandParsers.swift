@@ -166,45 +166,6 @@ extension Command : Parsable {
   }
 }
 
-extension FBSimulatorAllocationOptions : Parsable {
-  public static func parser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser<FBSimulatorAllocationOptions>
-      .unionOptions([
-        self.createParser(),
-        self.reuseParser(),
-        self.shutdownOnAllocateParser(),
-        self.eraseOnAllocateParser(),
-        self.deleteOnFreeParser(),
-        self.eraseOnAllocateParser(),
-        self.eraseOnFreeParser()
-      ])
-  }
-
-  static func createParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--create", FBSimulatorAllocationOptions.Create)
-  }
-
-  static func reuseParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--reuse", FBSimulatorAllocationOptions.Reuse)
-  }
-
-  static func shutdownOnAllocateParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--shutdown-on-allocate", FBSimulatorAllocationOptions.ShutdownOnAllocate)
-  }
-
-  static func eraseOnAllocateParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--erase-on-allocate", FBSimulatorAllocationOptions.EraseOnAllocate)
-  }
-
-  static func deleteOnFreeParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--delete-on-free", FBSimulatorAllocationOptions.DeleteOnFree)
-  }
-
-  static func eraseOnFreeParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--erase-on-free", FBSimulatorAllocationOptions.EraseOnFree)
-  }
-}
-
 extension FBSimulatorManagementOptions : Parsable {
   public static func parser() -> Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>

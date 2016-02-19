@@ -97,26 +97,6 @@ class FBSimulatorManagementOptionsParserTests : XCTestCase {
   }
 }
 
-class FBSimulatorAllocationOptionsParserTests : XCTestCase {
-  func testParsesSimple() {
-    self.assertParsesAll(FBSimulatorAllocationOptions.parser(), [
-      (["--create"], FBSimulatorAllocationOptions.Create),
-      (["--reuse"], FBSimulatorAllocationOptions.Reuse),
-      (["--shutdown-on-allocate"], FBSimulatorAllocationOptions.ShutdownOnAllocate),
-      (["--erase-on-allocate"], FBSimulatorAllocationOptions.EraseOnAllocate),
-      (["--delete-on-free"], FBSimulatorAllocationOptions.DeleteOnFree),
-      (["--erase-on-free"], FBSimulatorAllocationOptions.EraseOnFree)
-    ])
-  }
-
-  func testParsesCompound() {
-    self.assertParsesAll(FBSimulatorAllocationOptions.parser(), [
-      (["--create", "--reuse", "--erase-on-free"], FBSimulatorAllocationOptions.Create.union(.Reuse).union(.EraseOnFree)),
-      (["--shutdown-on-allocate", "--create", "--erase-on-free"], FBSimulatorAllocationOptions.Create.union(.ShutdownOnAllocate).union(.EraseOnFree)),
-    ])
-  }
-}
-
 class FBSimulatorConfigurationParserTests : XCTestCase {
   func testFailsToParseEmpty() {
     self.assertParseFails(FBSimulatorConfigurationParser.parser(), [])
