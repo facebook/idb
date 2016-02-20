@@ -43,7 +43,8 @@ Since the Frameworks upon which `FBSimulatorControl` depends are loaded laziliy,
 
 For a high level overview:
 - `FBSimulatorControl` is the Principal Class. It is the first object that you should create with `+[FBSimulatorControl withConfiguration:error:]`. It creates a `FBSimulatorPool` upon creation.
-- `FBSimulatorPool` is responsible for managing the allocation and freeing of Simulators. It will also ensure that the running environment is in a clean state before attempting to manipulate Simulators.
+- `FBSimulatorSet` wraps `SimDeviceSet` and provides a resiliant CRUD API for Deleting, Creating and Erasing Simulators.
+- `FBSimulatorPool` builds on `FBSimulatorSet` by providing an 'Allocation' API that allows Simulators to be reserved and re-used within the Framework.
 - `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator.
 - `FBSimulatorInteraction` and it's categories forms the API of possible ways of interacting with a Simulator. These range from booting Simulators, installing & running Applications, uploading photos & videos and more.
 - `FBSimulatorHistory` is a record of all the events that happen to a Simulator. It can be queried in a variety of ways and serialized to file.
