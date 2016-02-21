@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBSimulatorControl.h>
+
 /**
  Bridging Preprocessor Macros to values, so that they can be read in Swift.
  */
@@ -21,4 +23,10 @@
 + (int32_t)asl_level_debug;
 + (int32_t)asl_level_err;
 
+@end
+
+@interface NSString (FBJSONSerializationDescribeable) <FBJSONSerializationDescribeable>
+@end
+
+@interface NSArray (FBJSONSerializationDescribeable) <FBJSONSerializationDescribeable>
 @end

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "Constants.h"
+#import "Bridging.h"
 
 #import <asl.h>
 #import <sys/socket.h>
@@ -37,6 +37,24 @@
 + (int32_t)asl_level_err
 {
   return ASL_LEVEL_ERR;
+}
+
+@end
+
+@implementation NSString (FBJSONSerializationDescribeable)
+
+- (id)jsonSerializableRepresentation
+{
+  return self;
+}
+
+@end
+
+@implementation NSArray (FBJSONSerializationDescribeable)
+
+- (id)jsonSerializableRepresentation
+{
+  return self;
 }
 
 @end

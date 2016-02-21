@@ -18,8 +18,8 @@ do {
   let debugEnabled = configuration.options.contains(Configuration.Options.DebugLogging)
 
   if jsonEnabled {
-    let reporter = JSONEventReporter(writer: FileHandleWriter.stdOutWriter, pretty: false)
-    let logger = JSONLogger.withEventReporter(reporter, debug: debugEnabled)
+    let eventReporter = JSONEventReporter(writer: FileHandleWriter.stdOutWriter, pretty: false)
+    let logger = JSONLogger.withEventReporter(eventReporter, debug: debugEnabled)
     FBSimulatorControlGlobalConfiguration.setDefaultLogger(logger)
   } else {
     FBSimulatorControlGlobalConfiguration.setDefaultLoggerToASLWithStderrLogging(true, debugLogging: debugEnabled)

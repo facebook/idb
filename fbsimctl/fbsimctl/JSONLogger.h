@@ -19,12 +19,12 @@
 @interface JSONLogger : NSObject <FBSimulatorLogger>
 
 /**
- Constructs a new JSONLogger instance with the provided reporter
+ Constructs a new JSONLogger instance with the provided reporter.
 
- @param reporter the the Reporter to report to.
+ @param reporter the the Reporter to report to. Declared as 'id' to prevent the Swift Typechecker getting confused.
  @param debug YES if debug messages should be reported, NO otherwise.
  @return a new JSONLogger instance.
  */
-+ (instancetype)withEventReporter:(JSONEventReporter *)reporter debug:(BOOL)debug;
++ (instancetype)withEventReporter:(id)reporter debug:(BOOL)debug;
 
 @end
