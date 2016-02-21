@@ -22,12 +22,4 @@
  */
 - (instancetype)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch;
 
-/**
- Launches the provided Agent.
-
- @param agent the Agent Launch Configuration to Launch.
- @return the reciever, for chaining.
- */
-- (instancetype)killAgent:(FBSimulatorBinary *)agent;
-
 @end

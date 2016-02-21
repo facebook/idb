@@ -20,13 +20,12 @@
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 
 /**
- Chains an interaction on an process, for the given application.
-
- @param process the process to interact with.
- @param block the block to execute with the process.
- @return the reciever, for chaining.
+ Designated Initializer.
+ 
+ @param interaction the base interaction.
+ @param simulator the Simulator Subject.
  */
-- (instancetype)process:(FBProcessInfo *)process interact:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block;
+- (instancetype)initWithInteraction:(id<FBInteraction>)interaction simulator:(FBSimulator *)simulator;
 
 /**
  Chains an interaction on an process, for the given binary.

@@ -70,6 +70,7 @@
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtl.h>
 #import <FBSimulatorControl/FBSimulatorLogger.h>
+#import <FBSimulatorControl/FBProcessInteraction.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
 #import <FBSimulatorControl/FBSimulatorNotificationEventSink.h>
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>

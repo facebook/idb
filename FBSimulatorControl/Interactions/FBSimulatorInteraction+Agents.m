@@ -59,17 +59,4 @@
   }];
 }
 
-- (instancetype)killAgent:(FBSimulatorBinary *)agent
-{
-  NSParameterAssert(agent);
-
-  return [self binary:agent interact:^ BOOL (id _, NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
-    if (!kill(process.processIdentifier, SIGKILL)) {
-      return [[[FBSimulatorError describeFormat:@"SIGKILL of Agent %@ of PID %d failed", agent, process.processIdentifier] inSimulator:simulator] failBool:error];
-    }
-    [self.simulator.eventSink agentDidTerminate:process expected:YES];
-    return YES;
-  }];
-}
-
 @end

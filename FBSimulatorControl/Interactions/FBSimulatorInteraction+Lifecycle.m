@@ -82,60 +82,6 @@
   }];
 }
 
-- (instancetype)signal:(int)signo process:(FBProcessInfo *)process
-{
-  NSParameterAssert(process);
-
-  return [self process:process interact:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
-    // Confirm that the process has the launchd_sim as a parent process.
-    // The interaction should restrict itself to simulator processes so this is a guard
-    // to ensure that this interaction can't go around killing random processes.
-    pid_t parentProcessIdentifier = [simulator.processQuery parentOf:process.processIdentifier];
-    if (parentProcessIdentifier != simulator.launchdSimProcess.processIdentifier) {
-      return [[FBSimulatorError
-        describeFormat:@"Parent of %@ is not the launchd_sim (%@) it has a pid %d", process.shortDescription, simulator.launchdSimProcess.shortDescription, parentProcessIdentifier]
-        failBool:error];
-    }
-
-    // Notify the eventSink of the process getting killed, before it is killed.
-    // This is done to prevent being marked as an unexpected termination when the
-    // detecting of the process getting killed kicks in.
-    FBProcessLaunchConfiguration *configuration = simulator.history.processLaunchConfigurations[process];
-    if ([configuration isKindOfClass:FBApplicationLaunchConfiguration.class]) {
-      [simulator.eventSink applicationDidTerminate:process expected:YES];
-    } else if ([configuration isKindOfClass:FBAgentLaunchConfiguration.class]) {
-      [simulator.eventSink agentDidTerminate:process expected:YES];
-    }
-
-    // Use FBProcessTerminationStrategy to do the actual process killing
-    // as it has more intelligent backoff strategies and error messaging.
-    NSError *innerError = nil;
-    if (![[FBProcessTerminationStrategy withProcessQuery:simulator.processQuery logger:simulator.logger] killProcess:process error:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-
-    // Ensure that the Simulator's launchctl knows that the process is gone
-    // Killing the process should guarantee that tha Simulator knows that the process has terminated.
-    [simulator.logger.debug logFormat:@"Waiting for %@ to be removed from launchctl", process.shortDescription];
-    BOOL isGoneFromLaunchCtl = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
-      return ![simulator.launchctl processIsRunningOnSimulator:process error:nil];
-    }];
-    if (!isGoneFromLaunchCtl) {
-      return [[FBSimulatorError
-        describeFormat:@"Process %@ did not get removed from launchctl", process.shortDescription]
-        failBool:error];
-    }
-    [simulator.logger.debug logFormat:@"%@ has been removed from launchctl", process.shortDescription];
-
-    return YES;
-  }];
-}
-
-- (instancetype)killProcess:(FBProcessInfo *)process
-{
-  return [self signal:SIGKILL process:process];
-}
-
 #pragma mark Private
 
 + (BOOL)launchSimulatorDirectly:(FBSimulator *)simulator configuration:(FBSimulatorLaunchConfiguration *)configuration error:(NSError **)error

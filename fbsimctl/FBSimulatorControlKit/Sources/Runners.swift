@@ -235,7 +235,7 @@ private struct SimulatorRunner : Runner {
       }
     case .Terminate(let bundleID):
       try interactWithSimulator(translator, EventName.Relaunch, bundleID as NSString) { interaction in
-        interaction.terminateApplicationWithBundleID(bundleID)
+        interaction.applicationProcessWithBundleID(bundleID).kill()
       }
     default:
       assertionFailure("Unhandled")

@@ -28,6 +28,7 @@
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
+#import "FBProcessInteraction.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorInteraction (Applications)
@@ -114,7 +115,7 @@
     NSError *innerError = nil;
     FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
     if (process) {
-      if (![[simulator.interact killProcess:process] perform:&innerError]) {
+      if (![[[simulator.interact process:process] kill] perform:&innerError]) {
         return [FBSimulatorError failBoolWithError:innerError errorOut:error];
       }
     }
@@ -151,7 +152,7 @@
         causedBy:innerError]
         failBool:error];
     }
-    if (![[simulator.interact killProcess:process] perform:&innerError]) {
+    if (![[[simulator.interact process:process] kill] perform:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
     return YES;
@@ -179,7 +180,7 @@
   return [self interactWithLastLaunchedApplicationProcess:^ BOOL (id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     // Kill the Application Process
     NSError *innerError = nil;
-    if (![[simulator.interact killProcess:process] perform:&innerError]) {
+    if (![[[simulator.interact process:process] kill] perform:&innerError]) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to terminate app %@", process.shortDescription]
         causedBy:innerError]
