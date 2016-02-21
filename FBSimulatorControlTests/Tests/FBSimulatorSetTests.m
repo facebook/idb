@@ -11,8 +11,8 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import "FBSimulatorPoolTestCase.h"
 #import "CoreSimulatorDoubles.h"
+#import "FBSimulatorPoolTestCase.h"
 
 @interface FBSimulatorSetTests : FBSimulatorPoolTestCase
 

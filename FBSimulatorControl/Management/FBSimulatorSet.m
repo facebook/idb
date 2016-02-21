@@ -125,7 +125,7 @@
       failBool:error];
     }
   }
-  
+
   [self.logger.debug logFormat:@"Completed Pool Preconditons"];
   return YES;
 }
@@ -187,7 +187,7 @@
       logger:self.logger]
       fail:error];
   }
-  
+
   return simulator;
 }
 
@@ -228,7 +228,7 @@
       logger:self.logger]
       failBool:error];
   }
-  
+
   return YES;
 }
 
