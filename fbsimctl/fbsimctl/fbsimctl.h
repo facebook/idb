@@ -9,5 +9,5 @@
 
 // Bridging Header for fbsimctl
 
-#import "Constants.h"
+#import "Bridging.h"
 #import "JSONLogger.h"

@@ -15,4 +15,4 @@ FOUNDATION_EXPORT double FBSimulatorControlKitVersionNumber;
 //! Project version string for FBSimulatorControlKit.
 FOUNDATION_EXPORT const unsigned char FBSimulatorControlKitVersionString[];
 
-#import <FBSimulatorControlKit/Constants.h>
+#import <FBSimulatorControlKit/Bridging.h>

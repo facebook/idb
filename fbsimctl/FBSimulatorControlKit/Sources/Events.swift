@@ -39,24 +39,6 @@ public enum EventType : String {
   case Discrete = "discrete"
 }
 
-extension NSString : FBJSONSerializationDescribeable {
-  public func jsonSerializableRepresentation() -> AnyObject! {
-    return self
-  }
-}
-
-extension NSArray : FBJSONSerializationDescribeable {
-  public func jsonSerializableRepresentation() -> AnyObject! {
-    return self
-  }
-}
-
-extension NSDictionary : FBJSONSerializationDescribeable {
-  public func jsonSerializableRepresentation() -> AnyObject! {
-    return self
-  }
-}
-
 @objc class SimulatorControlSubjectBridge : NSObject, JSONDescribeable {
   let subject: SimulatorControlSubject
 
