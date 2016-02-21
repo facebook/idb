@@ -51,11 +51,10 @@
 
 - (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error
 {
-  // Construct a Launch Configuration for launchctl.
-  // launchctl requires that it's 1st argument is the name 'launchctl'.
+  // Construct a Launch Configuration for launchctl we'll use the 'list' command.
   FBAgentLaunchConfiguration *launchConfiguration = [FBAgentLaunchConfiguration
     configurationWithBinary:FBSimulatorBinary.launchCtl
-    arguments:@[@"launchctl", @"list"]
+    arguments:@[@"list"]
     environment:@{}];
 
   // Construct a pipe to stdout and read asynchronously from it.
