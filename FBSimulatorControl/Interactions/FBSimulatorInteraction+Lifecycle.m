@@ -52,7 +52,7 @@
 
 - (instancetype)bootSimulator:(FBSimulatorLaunchConfiguration *)configuration
 {
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithShutdownSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     BOOL useDirectLaunch = (configuration.options & FBSimulatorLaunchOptionsEnableDirectLaunch) == FBSimulatorLaunchOptionsEnableDirectLaunch;
     if (useDirectLaunch) {
       return [FBSimulatorInteraction launchSimulatorDirectly:simulator configuration:configuration error:error];
@@ -63,7 +63,7 @@
 
 - (instancetype)shutdownSimulator
 {
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     return [simulator.set killSimulator:simulator error:error];
   }];
 }
@@ -72,7 +72,7 @@
 {
   NSParameterAssert(url);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
     if (![simulator.device openURL:url error:&innerError]) {
       NSString *description = [NSString stringWithFormat:@"Failed to open URL %@ on simulator %@", url, simulator];
@@ -86,7 +86,7 @@
 {
   NSParameterAssert(process);
 
-  return [self process:process interact:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self process:process interact:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     // Confirm that the process has the launchd_sim as a parent process.
     // The interaction should restrict itself to simulator processes so this is a guard
     // to ensure that this interaction can't go around killing random processes.
