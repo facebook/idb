@@ -23,29 +23,31 @@ extension Parser {
 
   static func ofDirectory() -> Parser<String> {
     let expected = "A Directory"
-    return Parser<String>.single(expected) { token in
+    return Parser<String>.single(expected) { token  in
+      let path = (token as NSString).stringByStandardizingPath
       var isDirectory: ObjCBool = false
-      if !NSFileManager.defaultManager().fileExistsAtPath(token, isDirectory: &isDirectory) {
-        throw ParseError.Custom("'\(token)' should exist, but doesn't")
+      if !NSFileManager.defaultManager().fileExistsAtPath(path, isDirectory: &isDirectory) {
+        throw ParseError.Custom("'\(path)' should exist, but doesn't")
       }
       if (!isDirectory) {
-        throw ParseError.Custom("'\(token)' should be a directory, but isn't")
+        throw ParseError.Custom("'\(path)' should be a directory, but isn't")
       }
-      return token
+      return path
     }
   }
 
   static func ofFile() -> Parser<String> {
     let expected = "A File"
     return Parser<String>.single(expected) { token in
+      let path = (token as NSString).stringByStandardizingPath
       var isDirectory: ObjCBool = false
-      if !NSFileManager.defaultManager().fileExistsAtPath(token, isDirectory: &isDirectory) {
-        throw ParseError.Custom("'\(token)' should exist, but doesn't")
+      if !NSFileManager.defaultManager().fileExistsAtPath(path, isDirectory: &isDirectory) {
+        throw ParseError.Custom("'\(path)' should exist, but doesn't")
       }
       if (isDirectory) {
-        throw ParseError.Custom("'\(token)' should be a file, but isn't")
+        throw ParseError.Custom("'\(path)' should be a file, but isn't")
       }
-      return token
+      return path
     }
   }
 
