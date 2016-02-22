@@ -175,7 +175,7 @@ class SocketConnection {
   init(readStream: NSInputStream, writeStream: NSOutputStream, configuration: Configuration, delegate: SocketConnectionDelegate, performer: ActionPerformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(performer: performer, reporter: configuration.options.createReporter(self.writeStreamDelegate))
+    self.relayConnection = RelayConnection(performer: performer, reporter: configuration.output.createReporter(self.writeStreamDelegate))
     self.readStream = readStream
     self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
   }

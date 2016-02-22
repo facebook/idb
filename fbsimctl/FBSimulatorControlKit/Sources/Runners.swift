@@ -42,7 +42,7 @@ private struct CommandBootstrap {
   func bootstrap() -> ActionResult {
     do {
       switch (self.command) {
-      case .Help(let userSpecified, _):
+      case .Help(_, let userSpecified, _):
         self.writer.write(Command.getHelp())
         if userSpecified {
           return .Success
@@ -50,7 +50,7 @@ private struct CommandBootstrap {
           return .Failure("")
         }
       case .Perform(let configuration, let actions, let query, let format):
-        let reporter = configuration.options.createReporter(self.writer)
+        let reporter = configuration.output.createReporter(self.writer)
         let defaults = try Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
         let control = try defaults.configuration.buildSimulatorControl()
         return SequenceRunner(runners:

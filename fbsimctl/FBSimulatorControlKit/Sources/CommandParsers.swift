@@ -95,26 +95,28 @@ extension Parser {
   }
 }
 
+extension OutputOptions : Parsable {
+  public static func parser() -> Parser<OutputOptions> {
+    return Parser<OutputOptions>
+      .unionOptions([
+        Parser.ofString("--debug-logging", OutputOptions.DebugLogging),
+        Parser.ofString("--json", OutputOptions.JSON),
+        Parser.ofString("---pretty", OutputOptions.Pretty)
+      ])
+  }
+}
+
 extension Configuration : Parsable {
   public static func parser() -> Parser<Configuration> {
     return Parser
       .ofThreeSequenced(
-        self.optionsParser(),
+        OutputOptions.parser(),
         Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
         FBSimulatorManagementOptions.parser()
       )
-      .fmap { (options, deviceSetPath, managementOptions) in
-        return Configuration(options: options, deviceSetPath: deviceSetPath, managementOptions: managementOptions)
+      .fmap { (output, deviceSetPath, managementOptions) in
+        return Configuration(output: output, deviceSetPath: deviceSetPath, managementOptions: managementOptions)
       }
-  }
-
-  static func optionsParser() -> Parser<Configuration.Options> {
-    return Parser<Configuration.Options>
-      .unionOptions([
-        Parser.ofString("--debug-logging", Configuration.Options.DebugLogging),
-        Parser.ofString("--json", Configuration.Options.JSON),
-        Parser.ofString("---pretty", Configuration.Options.Pretty)
-      ])
   }
 }
 
@@ -154,7 +156,13 @@ extension Command : Parsable {
 
   static func helpParser() -> Parser<Command> {
     return Parser
-      .ofString("help", .Help(true, nil))
+      .ofTwoSequenced(
+        OutputOptions.parser(),
+        Parser.ofString("help", NSNull())
+      )
+      .fmap { (output, _) in
+        return Command.Help(output, true, nil)
+      }
   }
 }
 

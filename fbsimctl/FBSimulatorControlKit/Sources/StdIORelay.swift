@@ -44,7 +44,7 @@ class StdIORelay : Relay {
   let reporter: RelayReporter
 
   init(configuration: Configuration, performer: ActionPerformer, reporter: RelayReporter) {
-    self.relayConnection = RelayConnection(performer: performer, reporter: configuration.options.createReporter(FileHandleWriter.stdOutWriter))
+    self.relayConnection = RelayConnection(performer: performer, reporter: configuration.output.createReporter(FileHandleWriter.stdOutWriter))
     self.stdIn = NSFileHandle.fileHandleWithStandardInput()
     self.reporter = reporter
   }

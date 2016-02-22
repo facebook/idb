@@ -32,7 +32,7 @@ extension Configuration : Defaultable {
   public static var defaultValue: Configuration {
     get {
       return Configuration(
-        options: Configuration.Options(),
+        output: OutputOptions(),
         deviceSetPath: nil,
         managementOptions: FBSimulatorManagementOptions()
       )

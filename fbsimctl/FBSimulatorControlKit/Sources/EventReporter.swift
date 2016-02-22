@@ -136,10 +136,10 @@ public class HumanReadableEventReporter : EventReporter {
   }
 }
 
-public extension Configuration.Options {
+public extension OutputOptions {
   public func createReporter(writer: Writer) -> EventReporter {
-    if self.contains(Configuration.Options.JSON) {
-      let pretty = self.contains(Configuration.Options.Pretty)
+    if self.contains(OutputOptions.JSON) {
+      let pretty = self.contains(OutputOptions.Pretty)
       return JSONEventReporter(writer: writer, pretty: pretty)
     }
     return HumanReadableEventReporter(writer: writer)
