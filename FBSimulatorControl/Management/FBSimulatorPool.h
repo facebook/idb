@@ -91,7 +91,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 /**
  Returns the FBSimulatorSer of the receiver.
  */
-@property (nonatomic, copy, readonly) FBSimulatorSet *set;
+@property (nonatomic, strong, readonly) FBSimulatorSet *set;
 
 /**
  An Array of all the Simulators that this Pool has allocated.
