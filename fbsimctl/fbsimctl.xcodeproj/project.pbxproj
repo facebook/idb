@@ -27,8 +27,6 @@
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA3ADDB91C2B19A4004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
-		AA54EF6F1C47E9FC006D5118 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF6E1C47E9FC006D5118 /* Constants.swift */; };
-		AA54EF701C47E9FC006D5118 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF6E1C47E9FC006D5118 /* Constants.swift */; };
 		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
 		AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
 		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
@@ -123,7 +121,6 @@
 		AA2AFD721C29412C000123BA /* CommandParsersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsersTests.swift; sourceTree = "<group>"; };
 		AA2AFD741C294158000123BA /* TestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
-		AA54EF6E1C47E9FC006D5118 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		AA6085BF1C287B36009B500E /* fbsimctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fbsimctl.h; sourceTree = "<group>"; };
@@ -188,7 +185,6 @@
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
-				AA54EF6E1C47E9FC006D5118 /* Constants.swift */,
 				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
 				AACF9F521C46E5C100B17E82 /* Environment.swift */,
 				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
@@ -417,7 +413,6 @@
 				AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */,
 				AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */,
 				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
-				AA54EF6F1C47E9FC006D5118 /* Constants.swift in Sources */,
 				AA6085D21C287E02009B500E /* Command.swift in Sources */,
 				AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */,
 				AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */,
@@ -457,7 +452,6 @@
 				AABDEDF51C68D0A200DBA9D8 /* ActionPerformer.swift in Sources */,
 				AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */,
 				AA83D5EC1C58E368003B253E /* Events.swift in Sources */,
-				AA54EF701C47E9FC006D5118 /* Constants.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
 				AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */,
 				AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */,

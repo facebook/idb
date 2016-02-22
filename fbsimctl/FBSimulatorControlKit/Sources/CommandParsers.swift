@@ -111,7 +111,7 @@ extension Configuration : Parsable {
   static func optionsParser() -> Parser<Configuration.Options> {
     return Parser<Configuration.Options>
       .unionOptions([
-        Parser.ofString(Flags.DebugLogging, Configuration.Options.DebugLogging),
+        Parser.ofString("--debug-logging", Configuration.Options.DebugLogging),
         Parser.ofString("--json", Configuration.Options.JSON),
         Parser.ofString("---pretty", Configuration.Options.Pretty)
       ])
