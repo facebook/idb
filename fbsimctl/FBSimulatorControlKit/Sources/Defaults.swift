@@ -113,8 +113,8 @@ public class Defaults {
   private static var rcFileParser: Parser<(Configuration?, Format?)> { get {
     return Parser
       .ofTwoSequenced(
-        Configuration.parser().optional(),
-        Format.parser().optional()
+        Configuration.parser.optional(),
+        Format.parser.optional()
       )
   }}
 

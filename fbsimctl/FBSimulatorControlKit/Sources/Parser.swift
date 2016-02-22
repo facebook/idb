@@ -13,7 +13,7 @@ import FBSimulatorControl
 public extension Command {
   public static func fromArguments(arguments: [String], environment: [String : String]) -> Command {
     do {
-      let (_, command) = try Command.parser().parse(arguments)
+      let (_, command) = try Command.parser.parse(arguments)
       return command.appendEnvironment(environment)
     } catch let error as ParseError {
       print("Failed to Parse Command \(error)")
@@ -283,5 +283,5 @@ extension Parser {
 }
 
 public protocol Parsable {
-  static func parser() -> Parser<Self>
+  static var parser: Parser<Self> { get }
 }

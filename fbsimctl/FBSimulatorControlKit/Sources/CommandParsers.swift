@@ -96,346 +96,307 @@ extension Parser {
 }
 
 extension OutputOptions : Parsable {
-  public static func parser() -> Parser<OutputOptions> {
+  public static var parser: Parser<OutputOptions> { get {
     return Parser<OutputOptions>
       .unionOptions([
         Parser.ofString("--debug-logging", OutputOptions.DebugLogging),
         Parser.ofString("--json", OutputOptions.JSON),
         Parser.ofString("---pretty", OutputOptions.Pretty)
       ])
-  }
+  }}
 }
 
 extension Configuration : Parsable {
-  public static func parser() -> Parser<Configuration> {
+  public static var parser: Parser<Configuration> { get {
     return Parser
       .ofThreeSequenced(
-        OutputOptions.parser(),
+        OutputOptions.parser,
         Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
-        FBSimulatorManagementOptions.parser()
+        FBSimulatorManagementOptions.parser
       )
       .fmap { (output, deviceSetPath, managementOptions) in
         return Configuration(output: output, deviceSetPath: deviceSetPath, managementOptions: managementOptions)
       }
-  }
+  }}
 }
 
 extension FBSimulatorState : Parsable {
-  public static func parser() -> Parser<FBSimulatorState> {
+  public static var parser: Parser<FBSimulatorState> { get {
     return Parser.alternative([
         Parser.ofString("--state=creating", FBSimulatorState.Creating),
         Parser.ofString("--state=shutdown", FBSimulatorState.Shutdown),
         Parser.ofString("--state=booting", FBSimulatorState.Booting),
         Parser.ofString("--state=booted", FBSimulatorState.Booted),
         Parser.ofString("--state=shutting-down", FBSimulatorState.ShuttingDown),
-      ])
-    }
+    ])
+  }}
 }
 
 extension Command : Parsable {
-  public static func parser() -> Parser<Command> {
+  public static var parser: Parser<Command> { get {
     return Parser
       .alternative([
-        self.helpParser(),
-        self.performParser(),
+        self.helpParser,
+        self.performParser,
       ])
-  }
+  }}
 
-  static func performParser() -> Parser<Command> {
+  static var performParser: Parser<Command> { get {
     return Parser
       .ofFourSequenced(
-        Configuration.parser(),
-        Query.parser().optional(),
-        Format.parser().optional(),
-        Parser.manyCount(1, Action.parser())
+        Configuration.parser,
+        Query.parser.optional(),
+        Format.parser.optional(),
+        Parser.manyCount(1, Action.parser)
       )
       .fmap { (configuration, query, format, actions) in
         return Command.Perform(configuration, actions, query, format)
       }
-  }
+  }}
 
-  static func helpParser() -> Parser<Command> {
+  static var helpParser: Parser<Command> { get {
     return Parser
       .ofTwoSequenced(
-        OutputOptions.parser(),
+        OutputOptions.parser,
         Parser.ofString("help", NSNull())
       )
       .fmap { (output, _) in
         return Command.Help(output, true, nil)
       }
-  }
-}
-
-extension FBSimulatorAllocationOptions : Parsable {
-  public static func parser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser<FBSimulatorAllocationOptions>
-      .unionOptions([
-        self.createParser(),
-        self.reuseParser(),
-        self.shutdownOnAllocateParser(),
-        self.eraseOnAllocateParser(),
-        self.deleteOnFreeParser(),
-        self.eraseOnAllocateParser(),
-        self.eraseOnFreeParser()
-      ])
-  }
-
-  static func createParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--create", FBSimulatorAllocationOptions.Create)
-  }
-
-  static func reuseParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--reuse", FBSimulatorAllocationOptions.Reuse)
-  }
-
-  static func shutdownOnAllocateParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--shutdown-on-allocate", FBSimulatorAllocationOptions.ShutdownOnAllocate)
-  }
-
-  static func eraseOnAllocateParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--erase-on-allocate", FBSimulatorAllocationOptions.EraseOnAllocate)
-  }
-
-  static func deleteOnFreeParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--delete-on-free", FBSimulatorAllocationOptions.DeleteOnFree)
-  }
-
-  static func eraseOnFreeParser() -> Parser<FBSimulatorAllocationOptions> {
-    return Parser.ofString("--erase-on-free", FBSimulatorAllocationOptions.EraseOnFree)
-  }
+  }}
 }
 
 extension FBSimulatorManagementOptions : Parsable {
-  public static func parser() -> Parser<FBSimulatorManagementOptions> {
+  public static var parser: Parser<FBSimulatorManagementOptions> { get {
     return Parser<FBSimulatorManagementOptions>
       .unionOptions([
-        self.deleteAllOnFirstParser(),
-        self.killAllOnFirstParser(),
-        self.killSpuriousSimulatorsOnFirstStartParser(),
-        self.ignoreSpuriousKillFailParser(),
-        self.killSpuriousCoreSimulatorServicesParser(),
-        self.useSimDeviceTimeoutResilianceParser()
+        self.deleteAllOnFirstParser,
+        self.killAllOnFirstParser,
+        self.killSpuriousSimulatorsOnFirstStartParser,
+        self.ignoreSpuriousKillFailParser,
+        self.killSpuriousCoreSimulatorServicesParser,
+        self.useSimDeviceTimeoutResilianceParser
       ])
-  }
+  }}
 
-  static func deleteAllOnFirstParser() -> Parser<FBSimulatorManagementOptions> {
+  static var deleteAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
     return Parser.ofString("--delete-all", .DeleteAllOnFirstStart)
-  }
+  }}
 
-  static func killAllOnFirstParser() -> Parser<FBSimulatorManagementOptions> {
+  static var killAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
     return Parser.ofString("--kill-all", .KillAllOnFirstStart)
-  }
+  }}
 
-  static func killSpuriousSimulatorsOnFirstStartParser() -> Parser<FBSimulatorManagementOptions> {
+  static var killSpuriousSimulatorsOnFirstStartParser: Parser<FBSimulatorManagementOptions> { get {
     return Parser.ofString("--kill-spurious", .KillSpuriousSimulatorsOnFirstStart)
-  }
+  }}
 
-  static func ignoreSpuriousKillFailParser() -> Parser<FBSimulatorManagementOptions> {
+  static var ignoreSpuriousKillFailParser: Parser<FBSimulatorManagementOptions> { get {
     return Parser.ofString("--ignore-spurious-kill-fail", .IgnoreSpuriousKillFail)
-  }
+  }}
 
-  static func killSpuriousCoreSimulatorServicesParser() -> Parser<FBSimulatorManagementOptions> {
+  static var killSpuriousCoreSimulatorServicesParser: Parser<FBSimulatorManagementOptions> { get {
     return Parser.ofString("--kill-spurious-services", .KillSpuriousCoreSimulatorServices)
-  }
+  }}
 
-  static func useSimDeviceTimeoutResilianceParser() -> Parser<FBSimulatorManagementOptions> {
+  static var useSimDeviceTimeoutResilianceParser: Parser<FBSimulatorManagementOptions> { get {
     return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
-  }
+  }}
 }
 
 extension Server : Parsable {
-  public static func parser() -> Parser<Server> {
+  public static var parser: Parser<Server> { get {
     return Parser
       .alternative([
-        self.socketParser(),
-        self.httpParser()
+        self.socketParser,
+        self.httpParser
       ])
       .fallback(Server.StdIO)
-  }
+  }}
 
-  public static func socketParser() -> Parser<Server> {
+  static var socketParser: Parser<Server> { get {
     return Parser
       .succeeded("--socket", Parser<Int>.ofInt())
       .fmap { portNumber in
         return Server.Socket(UInt16(portNumber))
       }
-  }
+  }}
 
-  public static func httpParser() -> Parser<Server> {
+  static var httpParser:  Parser<Server> { get {
     return Parser
       .succeeded("--http", Parser<Int>.ofInt())
       .fmap { portNumber in
         return Server.Http(UInt16(portNumber))
       }
-  }
+  }}
 }
 
 extension Action : Parsable {
-  public static func parser() -> Parser<Action> {
+  public static var parser: Parser<Action> { get {
     return Parser
       .alternative([
-        self.approveParser(),
-        self.bootParser(),
-        self.createParser(),
-        self.deleteParser(),
-        self.diagnoseParser(),
-        self.installParser(),
-        self.launchParser(),
-        self.listenParser(),
-        self.listParser(),
-        self.relaunchParser(),
-        self.shutdownParser(),
-        self.terminateParser()
+        self.approveParser,
+        self.bootParser,
+        self.createParser,
+        self.deleteParser,
+        self.diagnoseParser,
+        self.installParser,
+        self.launchParser,
+        self.listenParser,
+        self.listParser,
+        self.relaunchParser,
+        self.shutdownParser,
+        self.terminateParser
       ])
-  }
+  }}
 
-  private static func approveParser() -> Parser<Action> {
+  static var approveParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Approve.rawValue, Parser.manyCount(1, Parser<String>.ofBundleID()))
       .fmap { Action.Approve($0) }
-  }
+  }}
 
-  private static func bootParser() -> Parser<Action> {
+  static var bootParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Boot.rawValue, FBSimulatorLaunchConfigurationParser.parser().optional())
+      .succeeded(EventName.Boot.rawValue, FBSimulatorLaunchConfigurationParser.parser.optional())
       .fmap { Action.Boot($0) }
-  }
+  }}
 
-  private static func createParser() -> Parser<Action> {
+  static var createParser: Parser<Action> { get {
     return Parser
-      .succeeded("create", FBSimulatorConfigurationParser.parser())
+      .succeeded("create", FBSimulatorConfigurationParser.parser)
       .fmap { configuration in
         return Action.Create(configuration)
     }
-  }
+  }}
 
-  private static func deleteParser() -> Parser<Action> {
+  static var deleteParser: Parser<Action> { get {
     return Parser.ofString(EventName.Delete.rawValue, Action.Delete)
-  }
+  }}
 
-  private static func diagnoseParser() -> Parser<Action> {
+  static var diagnoseParser: Parser<Action> { get {
     return Parser.ofString(EventName.Diagnose.rawValue, Action.Diagnose)
-  }
+  }}
 
-  private static func launchParser() -> Parser<Action> {
+  static var launchParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Launch.rawValue, self.processLaunchParser())
+      .succeeded(EventName.Launch.rawValue, self.processLaunchParser)
       .fmap { Action.Launch($0) }
-  }
+  }}
 
-  private static func listenParser() -> Parser<Action> {
+  static var listenParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Listen.rawValue, Server.parser())
+      .succeeded(EventName.Listen.rawValue, Server.parser)
       .fmap { return Action.Listen($0) }
-  }
+  }}
 
-  private static func listParser() -> Parser<Action> {
+  static var listParser: Parser<Action> { get {
     return Parser.ofString(EventName.List.rawValue, Action.List)
-  }
+  }}
 
-  private static func installParser() -> Parser<Action> {
+  static var installParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Install.rawValue, Parser<FBSimulatorApplication>.ofApplication())
       .fmap { Action.Install($0) }
-  }
+  }}
 
-  private static func relaunchParser() -> Parser<Action> {
+  static var relaunchParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Relaunch.rawValue, self.appLaunchParser())
+      .succeeded(EventName.Relaunch.rawValue, self.appLaunchParser)
       .fmap { Action.Relaunch($0 as! FBApplicationLaunchConfiguration) }
-  }
+  }}
 
-  private static func shutdownParser() -> Parser<Action> {
+  static var shutdownParser: Parser<Action> { get {
     return Parser.ofString(EventName.Shutdown.rawValue, Action.Shutdown)
-  }
+  }}
 
-  private static func terminateParser() -> Parser<Action> {
+  static var terminateParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Terminate.rawValue, Parser<String>.ofBundleID())
       .fmap { Action.Terminate($0) }
-  }
+  }}
 
-  private static func processLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
+  static var processLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
     return Parser<FBProcessLaunchConfiguration>
       .alternative([
-        self.agentLaunchParser(),
-        self.appLaunchParser(),
+        self.agentLaunchParser,
+        self.appLaunchParser,
       ])
-  }
+  }}
 
-  private static func agentLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
+  static var agentLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
     return Parser
       .ofTwoSequenced(
         Parser<FBSimulatorBinary>.ofBinary(),
-        self.argumentParser()
+        self.argumentParser
       )
       .fmap { (binary, arguments) in
         return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:])
       }
-  }
+  }}
 
-  private static func appLaunchParser() -> Parser<FBProcessLaunchConfiguration> {
+  static var appLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
     return Parser
       .ofTwoSequenced(
         Parser<FBSimulatorApplication>.ofBundleID(),
-        self.argumentParser()
+        self.argumentParser
       )
       .fmap { (bundleID, arguments) in
         return FBApplicationLaunchConfiguration(bundleID: bundleID, bundleName: nil, arguments: arguments, environment : [:])
       }
-  }
+  }}
 
-  private static func argumentParser() -> Parser<[String]> {
+  static var argumentParser: Parser<[String]> { get {
     return Parser.many(Parser<String>.ofAny())
-  }
+    }}
 }
 
 extension Query : Parsable {
-  public static func parser() -> Parser<Query> {
+  public static var parser: Parser<Query> { get {
     return Parser.alternative([
-      self.allParser(),
-      self.specificParser()
+      self.allParser,
+      self.specificParser
     ])
-  }
+  }}
 
-  private static func allParser() -> Parser<Query> {
+  static var allParser: Parser<Query> { get {
     return Parser<Query>
       .ofString("all", Query.And([]))
-  }
+  }}
 
-  private static func specificParser() -> Parser<Query> {
+  static var specificParser: Parser<Query> { get {
     return Parser<Query>
       .alternativeMany(1, [
-        self.simulatorStateParser(),
-        self.uuidParser(),
-        self.simulatorConfigurationParser()
+        self.simulatorStateParser,
+        self.uuidParser,
+        self.simulatorConfigurationParser
       ])
       .fmap { Query.flatten($0) }
-  }
+  }}
 
-  private static func uuidParser() -> Parser<Query> {
+  static var uuidParser: Parser<Query> { get {
     return Parser<Query>
       .ofUDID()
       .fmap { Query.UDID([$0.UUIDString]) }
-  }
+  }}
 
-  private static func simulatorStateParser() -> Parser<Query> {
+  static var simulatorStateParser: Parser<Query> { get {
     return FBSimulatorState
-      .parser()
+      .parser
       .fmap { Query.State([$0]) }
-  }
+  }}
 
-  private static func simulatorConfigurationParser() -> Parser<Query> {
+  static var simulatorConfigurationParser: Parser<Query> { get {
     return FBSimulatorConfigurationParser
-      .parser()
+      .parser
       .fmap { configuration in
         Query.Configured(Set([configuration]))
       }
-  }
+  }}
 }
 
 extension Keyword : Parsable {
-  public static func parser() -> Parser<Keyword> {
+  public static var parser: Parser<Keyword> { get {
     return Parser
       .alternative([
         Parser.ofString(Keyword.UDID.rawValue, Keyword.UDID),
@@ -445,13 +406,13 @@ extension Keyword : Parsable {
         Parser.ofString(Keyword.State.rawValue, Keyword.State),
         Parser.ofString(Keyword.ProcessIdentifier.rawValue, Keyword.ProcessIdentifier)
       ])
-  }
+  }}
 }
 
 extension SequenceType where Generator.Element == Keyword {
-  public static func parser() -> Parser<Format> {
-    return Parser.manyCount(1, Keyword.parser())
-  }
+  public static var parser: Parser<Format> { get {
+    return Parser.manyCount(1, Keyword.parser)
+  }}
 }
 
 /**
@@ -459,12 +420,12 @@ extension SequenceType where Generator.Element == Keyword {
  applied to FBSimulatorConfiguration as it is a non-final.
  */
 struct FBSimulatorConfigurationParser {
-  static func parser() -> Parser<FBSimulatorConfiguration> {
+  internal static var parser: Parser<FBSimulatorConfiguration> { get {
     return Parser
       .ofThreeSequenced(
-        self.deviceParser().optional(),
-        self.osVersionParser().optional(),
-        self.auxDirectoryParser().optional()
+        self.deviceParser.optional(),
+        self.osVersionParser.optional(),
+        self.auxDirectoryParser.optional()
       )
       .fmap { (device, os, auxDirectory) in
         if device == nil && os == nil && auxDirectory == nil {
@@ -482,9 +443,9 @@ struct FBSimulatorConfigurationParser {
         }
         return configuration
       }
-  }
+  }}
 
-  static func deviceParser() -> Parser<FBSimulatorConfiguration_Device> {
+  static var deviceParser: Parser<FBSimulatorConfiguration_Device> { get {
     return Parser.single("A Device Name") { token in
       let nameToDevice = FBSimulatorConfiguration.nameToDevice() as! [String : FBSimulatorConfiguration_Device]
       guard let device = nameToDevice[token] else {
@@ -492,9 +453,9 @@ struct FBSimulatorConfigurationParser {
       }
       return device
     }
-  }
+  }}
 
-  static func osVersionParser() -> Parser<FBSimulatorConfiguration_OS> {
+  static var osVersionParser: Parser<FBSimulatorConfiguration_OS> { get {
     return Parser.single("An OS Version") { token in
       let nameToOSVersion = FBSimulatorConfiguration.nameToOSVersion() as! [String : FBSimulatorConfiguration_OS]
       guard let osVersion = nameToOSVersion[token] else {
@@ -502,11 +463,11 @@ struct FBSimulatorConfigurationParser {
       }
       return osVersion
     }
-  }
+  }}
 
-  static func auxDirectoryParser() -> Parser<String> {
+  static var auxDirectoryParser: Parser<String> { get {
     return Parser.succeeded("--aux", Parser<String>.ofDirectory())
-  }
+  }}
 }
 
 /**
@@ -514,12 +475,12 @@ struct FBSimulatorConfigurationParser {
  applied to FBSimulatorLaunchConfigurationParser as it is a non-final.
  */
 struct FBSimulatorLaunchConfigurationParser {
-  static func parser() -> Parser<FBSimulatorLaunchConfiguration> {
+  static var parser: Parser<FBSimulatorLaunchConfiguration> { get {
     return Parser
       .ofThreeSequenced(
-        self.localeParser().optional(),
-        self.scaleParser().optional(),
-        self.optionsParser().optional()
+        self.localeParser.optional(),
+        self.scaleParser.optional(),
+        self.optionsParser.optional()
       )
       .fmap { (locale, scale, options) in
         if locale == nil && scale == nil && options == nil {
@@ -537,29 +498,28 @@ struct FBSimulatorLaunchConfigurationParser {
         }
         return configuration
     }
-  }
+  }}
 
-  static func localeParser() -> Parser<NSLocale> {
+  static var localeParser: Parser<NSLocale> { get {
     return Parser
       .succeeded("--locale", Parser<NSLocale>.ofLocale())
-  }
+  }}
 
-  static func scaleParser() -> Parser<FBSimulatorLaunchConfiguration_Scale> {
+  static var scaleParser: Parser<FBSimulatorLaunchConfiguration_Scale> { get {
     return Parser.alternative([
       Parser.ofString("--scale=25", FBSimulatorLaunchConfiguration_Scale_25()),
       Parser.ofString("--scale=50", FBSimulatorLaunchConfiguration_Scale_50()),
       Parser.ofString("--scale=75", FBSimulatorLaunchConfiguration_Scale_75()),
       Parser.ofString("--scale=100", FBSimulatorLaunchConfiguration_Scale_100())
     ])
-  }
+  }}
 
-  static func optionsParser() -> Parser<FBSimulatorLaunchOptions> {
+  static var optionsParser: Parser<FBSimulatorLaunchOptions> { get {
     return Parser<FBSimulatorLaunchOptions>
       .unionOptions(1, [
         Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
         Parser.ofString("--record-video", FBSimulatorLaunchOptions.RecordVideo),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])
-  }
+  }}
 }
-

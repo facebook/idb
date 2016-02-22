@@ -13,7 +13,7 @@ import FBSimulatorControl
 
 class QueryParserTests : XCTestCase {
   func testParsesSimpleQueries() {
-    self.assertParsesAll(Query.parser(), [
+    self.assertParsesAll(Query.parser, [
       (["all"], .And([])),
       (["iPhone 5"], .Configured([FBSimulatorConfiguration.iPhone5()])),
       (["iPad 2"], .Configured([FBSimulatorConfiguration.iPad2()])),
@@ -27,7 +27,7 @@ class QueryParserTests : XCTestCase {
   }
 
   func testFailsSimpleQueries() {
-    self.assertFailsToParseAll(Query.parser(), [
+    self.assertFailsToParseAll(Query.parser, [
       ["Galaxy S5"],
       ["Nexus Chromebook Pixel G4 Droid S5 S1 S4 4S"],
       ["makingtea"],
@@ -37,7 +37,7 @@ class QueryParserTests : XCTestCase {
   }
 
   func testParsesCompoundQueries() {
-    self.assertParsesAll(Query.parser(), [
+    self.assertParsesAll(Query.parser, [
       (["iPhone 5", "iPad 2"], .Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPad2()])),
       (["--state=creating", "--state=booting", "--state=shutdown"], .State([.Creating, .Booting, .Shutdown])),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
@@ -46,7 +46,7 @@ class QueryParserTests : XCTestCase {
   }
 
   func testParsesPartially() {
-    self.assertParsesAll(Query.parser(), [
+    self.assertParsesAll(Query.parser, [
       (["iPhone 5", "Nexus 5", "iPad 2"], Query.Configured([FBSimulatorConfiguration.iPhone5()])),
       (["--state=creating", "--state=booting", "jelly", "shutdown"], Query.State([.Creating, .Booting])),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "banana", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"], .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
@@ -54,7 +54,7 @@ class QueryParserTests : XCTestCase {
   }
 
   func testFailsPartialParse() {
-    self.assertFailsToParseAll(Query.parser(), [
+    self.assertFailsToParseAll(Query.parser, [
       ["Nexus 5", "iPhone 5", "iPad 2"],
       ["jelly", "--state=creating", "--state=booting", "shutdown"],
       ["banana", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"],
@@ -64,7 +64,7 @@ class QueryParserTests : XCTestCase {
 
 class KeywordParserTests : XCTestCase {
   func testParsesKeywords() {
-    self.assertParsesAll(Keyword.parser(), [
+    self.assertParsesAll(Keyword.parser, [
       (["--udid"], Keyword.UDID),
       (["--name"], Keyword.Name),
       (["--device-name"], Keyword.DeviceName),
@@ -77,7 +77,7 @@ class KeywordParserTests : XCTestCase {
 
 class FBSimulatorManagementOptionsParserTests : XCTestCase {
   func testParsesSimple() {
-    self.assertParsesAll(FBSimulatorManagementOptions.parser(), [
+    self.assertParsesAll(FBSimulatorManagementOptions.parser, [
       (["--delete-all"], FBSimulatorManagementOptions.DeleteAllOnFirstStart),
       (["--kill-all"], FBSimulatorManagementOptions.KillAllOnFirstStart),
       (["--kill-spurious"], FBSimulatorManagementOptions.KillSpuriousSimulatorsOnFirstStart),
@@ -88,7 +88,7 @@ class FBSimulatorManagementOptionsParserTests : XCTestCase {
   }
 
   func testParsesCompound() {
-    self.assertParsesAll(FBSimulatorManagementOptions.parser(), [
+    self.assertParsesAll(FBSimulatorManagementOptions.parser, [
       (["--delete-all", "--kill-all"], FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillAllOnFirstStart)),
       (["--kill-spurious-services"], FBSimulatorManagementOptions.KillSpuriousCoreSimulatorServices),
       (["--ignore-spurious-kill-fail", "--timeout-resiliance"], FBSimulatorManagementOptions.IgnoreSpuriousKillFail.union(.UseSimDeviceTimeoutResiliance)),
@@ -97,34 +97,14 @@ class FBSimulatorManagementOptionsParserTests : XCTestCase {
   }
 }
 
-class FBSimulatorAllocationOptionsParserTests : XCTestCase {
-  func testParsesSimple() {
-    self.assertParsesAll(FBSimulatorAllocationOptions.parser(), [
-      (["--create"], FBSimulatorAllocationOptions.Create),
-      (["--reuse"], FBSimulatorAllocationOptions.Reuse),
-      (["--shutdown-on-allocate"], FBSimulatorAllocationOptions.ShutdownOnAllocate),
-      (["--erase-on-allocate"], FBSimulatorAllocationOptions.EraseOnAllocate),
-      (["--delete-on-free"], FBSimulatorAllocationOptions.DeleteOnFree),
-      (["--erase-on-free"], FBSimulatorAllocationOptions.EraseOnFree)
-    ])
-  }
-
-  func testParsesCompound() {
-    self.assertParsesAll(FBSimulatorAllocationOptions.parser(), [
-      (["--create", "--reuse", "--erase-on-free"], FBSimulatorAllocationOptions.Create.union(.Reuse).union(.EraseOnFree)),
-      (["--shutdown-on-allocate", "--create", "--erase-on-free"], FBSimulatorAllocationOptions.Create.union(.ShutdownOnAllocate).union(.EraseOnFree)),
-    ])
-  }
-}
-
 class FBSimulatorConfigurationParserTests : XCTestCase {
   func testFailsToParseEmpty() {
-    self.assertParseFails(FBSimulatorConfigurationParser.parser(), [])
+    self.assertParseFails(FBSimulatorConfigurationParser.parser, [])
   }
 
   func testParsesOSAlone() {
     self.assertParses(
-      FBSimulatorConfigurationParser.parser(),
+      FBSimulatorConfigurationParser.parser,
       ["iOS 9.2"],
       FBSimulatorConfiguration.defaultConfiguration().iOS_9_2()
     )
@@ -132,7 +112,7 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
 
   func testParsesDeviceAlone() {
     self.assertParses(
-      FBSimulatorConfigurationParser.parser(),
+      FBSimulatorConfigurationParser.parser,
       ["iPhone 6"],
       FBSimulatorConfiguration.defaultConfiguration().iPhone6()
     )
@@ -140,14 +120,14 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
 
   func testParsesAuxDirectoryAlone() {
     self.assertParses(
-      FBSimulatorConfigurationParser.parser(),
+      FBSimulatorConfigurationParser.parser,
       ["--aux", "/usr/bin"],
       FBSimulatorConfiguration.defaultConfiguration().withAuxillaryDirectory("/usr/bin")
     )
   }
 
   func parsesOSAndDevice(){
-    self.assertParsesAll(FBSimulatorConfigurationParser.parser(), [
+    self.assertParsesAll(FBSimulatorConfigurationParser.parser, [
       (["iPhone 6", "iOS 9.2"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2()),
       (["iPad 2", "iOS 9.0"], FBSimulatorConfiguration.defaultConfiguration().iPad2().iOS_9_0()),
     ])
@@ -157,7 +137,7 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
 class FBSimulatorLaunchConfigurationTests : XCTestCase {
   func testParsesLocale() {
     self.assertParses(
-      FBSimulatorLaunchConfigurationParser.parser(),
+      FBSimulatorLaunchConfigurationParser.parser,
       ["--locale", "fr_FR"],
       FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("fr_FR")
     )
@@ -165,7 +145,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
 
   func testParsesScale() {
     self.assertParses(
-      FBSimulatorLaunchConfigurationParser.parser(),
+      FBSimulatorLaunchConfigurationParser.parser,
       ["--scale=50"],
       FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent()
     )
@@ -173,7 +153,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
 
   func testParsesOptions() {
     self.assertParses(
-      FBSimulatorLaunchConfigurationParser.parser(),
+      FBSimulatorLaunchConfigurationParser.parser,
       ["--record-video", "--direct-launch"],
       FBSimulatorLaunchConfiguration.defaultConfiguration().withOptions(FBSimulatorLaunchOptions.RecordVideo.union(FBSimulatorLaunchOptions.EnableDirectLaunch))
     )
@@ -181,7 +161,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
 
   func testParsesAllTheAbove() {
     self.assertParses(
-      FBSimulatorLaunchConfigurationParser.parser(),
+      FBSimulatorLaunchConfigurationParser.parser,
       ["--locale", "en_GB", "--scale=75", "--direct-launch","--record-video"],
       FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("en_GB").scale75Percent().withOptions(FBSimulatorLaunchOptions.RecordVideo.union(FBSimulatorLaunchOptions.EnableDirectLaunch))
     )
@@ -191,7 +171,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
 class ConfigurationParserTests : XCTestCase {
   func testParsesEmptyAsDefaultValue() {
     self.assertParses(
-      Configuration.parser(),
+      Configuration.parser,
       [],
       Configuration.defaultValue
     )
@@ -199,7 +179,7 @@ class ConfigurationParserTests : XCTestCase {
 
   func testParsesWithDebugLogging() {
     self.assertParses(
-      Configuration.parser(),
+      Configuration.parser,
       ["--debug-logging"],
       Configuration(
         output: OutputOptions.DebugLogging,
@@ -211,7 +191,7 @@ class ConfigurationParserTests : XCTestCase {
 
   func testParsesWithSetPath() {
     self.assertParses(
-      Configuration.parser(),
+      Configuration.parser,
       ["--set", "/usr/bin"],
       Configuration(
         output: OutputOptions(),
@@ -223,7 +203,7 @@ class ConfigurationParserTests : XCTestCase {
 
   func testParsesWithOptions() {
     self.assertParses(
-      Configuration.parser(),
+      Configuration.parser,
       ["--kill-all", "--kill-spurious"],
       Configuration(
         output: OutputOptions(),
@@ -235,7 +215,7 @@ class ConfigurationParserTests : XCTestCase {
 
   func testParsesWithSetPathAndOptions() {
     self.assertParses(
-      Configuration.parser(),
+      Configuration.parser,
       ["--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
         output: OutputOptions(),
@@ -247,7 +227,7 @@ class ConfigurationParserTests : XCTestCase {
 
   func testParsesWithAllTheAbove() {
     self.assertParses(
-      Configuration.parser(),
+      Configuration.parser,
       ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
         output: OutputOptions.DebugLogging,
@@ -260,7 +240,7 @@ class ConfigurationParserTests : XCTestCase {
 
 class ActionParserTests : XCTestCase {
   func testParsesAllCases() {
-    self.assertParsesAll(Action.parser(), [
+    self.assertParsesAll(Action.parser, [
       (["list"], Action.List),
       (["approve", "com.foo.bar", "com.bing.bong"], Action.Approve(["com.foo.bar", "com.bing.bong"])),
       (["approve", Fixtures.application().path], Action.Approve([Fixtures.application().bundleID])),
@@ -278,7 +258,7 @@ class ActionParserTests : XCTestCase {
   }
 
   func testDoesNotParseInvalidTokens() {
-    self.assertFailsToParseAll(Action.parser(), [
+    self.assertFailsToParseAll(Action.parser, [
       ["listaa"],
       ["approve"],
       ["approve", "dontadddotstome"],
@@ -292,7 +272,7 @@ class ActionParserTests : XCTestCase {
 
 class CommandParserTests : XCTestCase {
   func testParsesHelp() {
-    self.assertParsesAll(Command.parser(), [
+    self.assertParsesAll(Command.parser, [
       (["help"], Command.Help(OutputOptions(), true, nil))
     ])
   }
@@ -306,7 +286,7 @@ class CommandParserTests : XCTestCase {
   }
 
   func testFailsToParseCreate() {
-    self.assertParseFails(Action.parser(), ["create"])
+    self.assertParseFails(Action.parser, ["create"])
   }
 
   func testParsesDelete() {
@@ -410,7 +390,7 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesCreate() {
-    self.assertParsesAll(Action.parser(), [
+    self.assertParsesAll(Action.parser, [
       (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
       (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
       (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
@@ -437,6 +417,6 @@ class CommandParserTests : XCTestCase {
     let pairs = extras.map { (tokens, query, format) in
       return (tokens + suffix, Command.Perform(Configuration.defaultValue, actions, query, format))
     }
-    self.assertParsesAll(Command.parser(), pairs)
+    self.assertParsesAll(Command.parser, pairs)
   }
 }
