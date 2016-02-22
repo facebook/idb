@@ -20,7 +20,7 @@
 - (void)assertInteractionSuccessful:(id<FBInteraction>)interaction
 {
   NSError *error = nil;
-  BOOL success = [interaction performInteractionWithError:&error];
+  BOOL success = [interaction perform:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 }
@@ -28,7 +28,7 @@
 - (void)assertInteractionFailed:(id<FBInteraction>)interaction
 {
   NSError *error = nil;
-  BOOL success = [interaction performInteractionWithError:&error];
+  BOOL success = [interaction perform:&error];
   XCTAssertNotNil(error);
   XCTAssertFalse(success);
 }

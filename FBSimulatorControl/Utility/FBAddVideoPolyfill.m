@@ -94,7 +94,7 @@
     environment:@{@"SHIMULATOR_UPLOAD_VIDEO" : joinedPaths}]
     injectingShimulator];
 
-  if (![[simulator.interact launchApplication:appLaunch] performInteractionWithError:&innerError]) {
+  if (![[simulator.interact launchApplication:appLaunch] perform:&innerError]) {
     return [[[FBSimulatorError describe:@"Couldn't launch MobileSlideShow to upload videos"]
       causedBy:innerError]
       failBool:error];
@@ -114,7 +114,7 @@
       failBool:error];
   }
 
-  if (![[simulator.interact killProcess:photosAppProcess] performInteractionWithError:nil]) {
+  if (![[simulator.interact killProcess:photosAppProcess] perform:nil]) {
     return [[[FBSimulatorError
       describe:@"Couldn't kill MobileSlideShow after uploading videos"]
       causedBy:innerError]

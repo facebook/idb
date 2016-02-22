@@ -95,7 +95,7 @@
   return self;
 }
 
-- (BOOL)performInteractionWithError:(NSError **)error
+- (BOOL)perform:(NSError **)error
 {
   NSError *innerError = nil;
   BOOL success = self.block(&innerError);
@@ -127,11 +127,11 @@
   return self;
 }
 
-- (BOOL)performInteractionWithError:(NSError **)error
+- (BOOL)perform:(NSError **)error
 {
   for (id<FBInteraction> interaction in self.interactions) {
     NSError *innerError = nil;
-    if (![interaction performInteractionWithError:&innerError]) {
+    if (![interaction perform:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }
@@ -146,7 +146,7 @@
 
 @implementation FBInteraction_Success
 
-- (BOOL)performInteractionWithError:(NSError **)error
+- (BOOL)perform:(NSError **)error
 {
   return YES;
 }
@@ -173,7 +173,7 @@
   return self;
 }
 
-- (BOOL)performInteractionWithError:(NSError **)errorPtr
+- (BOOL)perform:(NSError **)errorPtr
 {
   if (errorPtr) {
     *errorPtr = self.error;
@@ -205,11 +205,11 @@
   return self;
 }
 
-- (BOOL)performInteractionWithError:(NSError **)error
+- (BOOL)perform:(NSError **)error
 {
   NSError *innerError = nil;
   for (NSUInteger index = 0; index < self.retries; index++) {
-    if ([self.interaction performInteractionWithError:&innerError]) {
+    if ([self.interaction perform:&innerError]) {
       return YES;
     }
   }
@@ -281,7 +281,7 @@
 
   return [self interact:^ BOOL (NSError **error) {
     NSError *innerError = nil;
-    [interaction performInteractionWithError:&innerError];
+    [interaction perform:&innerError];
     return YES;
   }];
 }
@@ -320,9 +320,9 @@
 
 #pragma mark FBInteraction
 
-- (BOOL)performInteractionWithError:(NSError **)error
+- (BOOL)perform:(NSError **)error
 {
-  return [self.interaction performInteractionWithError:error];
+  return [self.interaction perform:error];
 }
 
 @end

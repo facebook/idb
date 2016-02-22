@@ -114,13 +114,13 @@
     NSError *innerError = nil;
     FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
     if (process) {
-      if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
+      if (![[simulator.interact killProcess:process] perform:&innerError]) {
         return [FBSimulatorError failBoolWithError:innerError errorOut:error];
       }
     }
 
     // Perform the launch usin the launch config
-    if (![[simulator.interact launchApplication:appLaunch] performInteractionWithError:&innerError]) {
+    if (![[simulator.interact launchApplication:appLaunch] perform:&innerError]) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to re-launch %@", appLaunch]
         inSimulator:simulator]
@@ -151,7 +151,7 @@
         causedBy:innerError]
         failBool:error];
     }
-    if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
+    if (![[simulator.interact killProcess:process] perform:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
     return YES;
@@ -170,7 +170,7 @@
         failBool:error];
     }
 
-    return [[simulator.interact launchOrRelaunchApplication:launchConfig] performInteractionWithError:error];
+    return [[simulator.interact launchOrRelaunchApplication:launchConfig] perform:error];
   }];
 }
 
@@ -179,7 +179,7 @@
   return [self interactWithLastLaunchedApplicationProcess:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     // Kill the Application Process
     NSError *innerError = nil;
-    if (![[simulator.interact killProcess:process] performInteractionWithError:&innerError]) {
+    if (![[simulator.interact killProcess:process] perform:&innerError]) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to terminate app %@", process.shortDescription]
         causedBy:innerError]
