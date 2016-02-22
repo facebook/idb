@@ -134,7 +134,7 @@ class SocketConnection {
 
     @objc func stream(stream: NSStream, handleEvent eventCode: NSStreamEvent) {
       assert(stream == self.stream, "Handled delegate from unexpected stream")
-      print("ActionResult Event \(eventCode.description)")
+      print("CommandResult Event \(eventCode.description)")
       switch (eventCode.rawValue) {
         case NSStreamEvent.HasSpaceAvailable.rawValue:
           self.flushAvailable()
@@ -172,10 +172,10 @@ class SocketConnection {
 
   private let relayConnection: RelayConnection
 
-  init(readStream: NSInputStream, writeStream: NSOutputStream, configuration: Configuration, delegate: SocketConnectionDelegate, performer: ActionPerformer) {
+  init(readStream: NSInputStream, writeStream: NSOutputStream, outputOptions: OutputOptions, delegate: SocketConnectionDelegate, performer: CommandPerformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(performer: performer, reporter: configuration.output.createReporter(self.writeStreamDelegate))
+    self.relayConnection = RelayConnection(performer: performer, reporter: outputOptions.createReporter(self.writeStreamDelegate))
     self.readStream = readStream
     self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
   }
@@ -210,16 +210,16 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     }
   }
 
-  let configuration: Configuration
-  let options: SocketRelay.Options
-  let performer: ActionPerformer
+  let outputOptions: OutputOptions
+  let socketOptions: SocketRelay.Options
+  let performer: CommandPerformer
   let reporter: RelayReporter
   var registeredConnections: [SocketConnection] = []
 
-  init(configuration: Configuration, portNumber: in_port_t, performer: ActionPerformer, reporter: RelayReporter) {
-    self.configuration = configuration
+  init(outputOptions: OutputOptions, portNumber: in_port_t, performer: CommandPerformer, reporter: RelayReporter) {
+    self.socketOptions = SocketRelay.Options(portNumber: portNumber, bindIPv4: false, bindIPv6: true)
+    self.outputOptions = outputOptions
     self.performer = performer
-    self.options = SocketRelay.Options(portNumber: portNumber, bindIPv4: false, bindIPv6: true)
     self.reporter = reporter
   }
 
@@ -267,7 +267,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     var addr = sockaddr_in(
       sin_len: UInt8(strideof(sockaddr_in)),
       sin_family: UInt8(AF_INET),
-      sin_port: self.options.portNumberNetworkByteOrder(),
+      sin_port: self.socketOptions.portNumberNetworkByteOrder(),
       sin_addr: in_addr(s_addr: UInt32(0).bigEndian),
       sin_zero: (0, 0, 0, 0, 0, 0, 0, 0)
     )
@@ -295,7 +295,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     var addr = sockaddr_in6(
       sin6_len: UInt8(strideof(sockaddr_in6)),
       sin6_family: UInt8(AF_INET6),
-      sin6_port: self.options.portNumberNetworkByteOrder(),
+      sin6_port: self.socketOptions.portNumberNetworkByteOrder(),
       sin6_flowinfo: 0,
       sin6_addr: in6addr_any,
       sin6_scope_id: 0
@@ -311,10 +311,10 @@ class SocketRelay : Relay, SocketConnectionDelegate {
   func createSocketsAndRunInRunLoop() {
     var sockets: [CFSocket] = []
 
-    if (self.options.bindIPv4) {
+    if (self.socketOptions.bindIPv4) {
       sockets.append(createSocket4())
     }
-    if (self.options.bindIPv6) {
+    if (self.socketOptions.bindIPv6) {
       sockets.append(createSocket6())
     }
 
@@ -340,7 +340,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     let connection = SocketConnection(
       readStream: inputStream,
       writeStream: outputStream,
-      configuration: self.configuration,
+      outputOptions: self.outputOptions,
       delegate: self,
       performer: self.performer
     )

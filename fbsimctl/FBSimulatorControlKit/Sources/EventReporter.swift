@@ -145,3 +145,14 @@ public extension OutputOptions {
     return HumanReadableEventReporter(writer: writer)
   }
 }
+
+public extension Command {
+  public func createReporter(writer: Writer) -> EventReporter {
+    switch self {
+    case .Help(let outputOptions, _, _):
+      return outputOptions.createReporter(writer)
+    case .Perform(let configuration, _, _, _):
+      return configuration.output.createReporter(writer)
+    }
+  }
+}
