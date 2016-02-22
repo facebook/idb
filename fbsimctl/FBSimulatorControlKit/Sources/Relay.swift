@@ -40,11 +40,11 @@ struct RelayReporter {
  A Connection of Reporter-to-Transformer, linebuffering an input
  */
 class RelayConnection : LineBufferDelegate {
-  let performer: ActionPerformer
+  let performer: CommandPerformer
   let reporter: EventReporter
   lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
 
-  init (performer: ActionPerformer, reporter: EventReporter) {
+  init (performer: CommandPerformer, reporter: EventReporter) {
     self.performer = performer
     self.reporter = reporter
   }

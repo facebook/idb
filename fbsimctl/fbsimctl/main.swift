@@ -14,8 +14,8 @@ import FBSimulatorControl
 let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
 do {
   let (_, configuration) = try Configuration.parser().parse(arguments)
-  let jsonEnabled = configuration.options.contains(Configuration.Options.JSON)
-  let debugEnabled = configuration.options.contains(Configuration.Options.DebugLogging)
+  let jsonEnabled = configuration.output.contains(OutputOptions.JSON)
+  let debugEnabled = configuration.output.contains(OutputOptions.DebugLogging)
 
   if jsonEnabled {
     let eventReporter = JSONEventReporter(writer: FileHandleWriter.stdOutWriter, pretty: false)

@@ -202,7 +202,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging"],
       Configuration(
-        options: Configuration.Options.DebugLogging,
+        output: OutputOptions.DebugLogging,
         deviceSetPath: nil,
         managementOptions: FBSimulatorManagementOptions()
       )
@@ -214,7 +214,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--set", "/usr/bin"],
       Configuration(
-        options: Configuration.Options(),
+        output: OutputOptions(),
         deviceSetPath: "/usr/bin",
         managementOptions: FBSimulatorManagementOptions()
       )
@@ -226,7 +226,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--kill-all", "--kill-spurious"],
       Configuration(
-        options: Configuration.Options(),
+        output: OutputOptions(),
         deviceSetPath: nil,
         managementOptions: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
@@ -238,7 +238,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
-        options: Configuration.Options(),
+        output: OutputOptions(),
         deviceSetPath: "/usr/bin",
         managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
@@ -250,7 +250,7 @@ class ConfigurationParserTests : XCTestCase {
       Configuration.parser(),
       ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
       Configuration(
-        options: Configuration.Options.DebugLogging,
+        output: OutputOptions.DebugLogging,
         deviceSetPath: "/usr/bin",
         managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
       )
@@ -293,7 +293,7 @@ class ActionParserTests : XCTestCase {
 class CommandParserTests : XCTestCase {
   func testParsesHelp() {
     self.assertParsesAll(Command.parser(), [
-      (["help"], Command.Help(true, nil))
+      (["help"], Command.Help(OutputOptions(), true, nil))
     ])
   }
 

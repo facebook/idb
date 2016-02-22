@@ -11,21 +11,24 @@ import Foundation
 import FBSimulatorControl
 
 /**
-  Describes the Configuration for the running of a Command
+  Base Options that are also used in Help.
 */
-public struct Configuration {
-  public struct Options : OptionSetType {
-    public let rawValue : Int
-    public init(rawValue: Int) {
-      self.rawValue = rawValue
-    }
-
-    static let DebugLogging = Options(rawValue: 1 << 0)
-    static let JSON = Options(rawValue: 1 << 1)
-    static let Pretty = Options(rawValue: 1 << 2)
+public struct OutputOptions : OptionSetType {
+  public let rawValue : Int
+  public init(rawValue: Int) {
+    self.rawValue = rawValue
   }
 
-  let options: Options
+  static let DebugLogging = OutputOptions(rawValue: 1 << 0)
+  static let JSON = OutputOptions(rawValue: 1 << 1)
+  static let Pretty = OutputOptions(rawValue: 1 << 2)
+}
+
+/**
+  Describes the Configuration for the running FBSimulatorControl Commands
+*/
+public struct Configuration {
+  let output: OutputOptions
   let deviceSetPath: String?
   let managementOptions: FBSimulatorManagementOptions
 }
@@ -75,12 +78,12 @@ public enum Action {
  */
 public indirect enum Command {
   case Perform(Configuration, [Action], Query?, Format?)
-  case Help(Bool, Command?)
+  case Help(OutputOptions, Bool, Command?)
 }
 
 extension Configuration : Equatable {}
 public func == (left: Configuration, right: Configuration) -> Bool {
-  return left.options == right.options && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
+  return left.output == right.output && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
 }
 
 extension Action : Equatable { }
@@ -133,8 +136,8 @@ public func == (left: Command, right: Command) -> Bool {
     default:
       return false
     }
-  case (.Help(let leftSuccess, let leftCommand), .Help(let rightSuccess, let rightCommand)):
-    return leftSuccess == rightSuccess && leftCommand == rightCommand
+  case (.Help(let leftOutput, let leftSuccess, let leftCommand), .Help(let rightOutput, let rightSuccess, let rightCommand)):
+    return leftOutput == rightOutput && leftSuccess == rightSuccess && leftCommand == rightCommand
   default:
     return false
   }

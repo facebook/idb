@@ -87,7 +87,7 @@ class HttpRelay : Relay {
 
   private func dispatchAction(action: Action) -> HttpResponse {
     let reporter = HttpEventReporter()
-    var result = ActionResult.Success
+    var result = CommandResult.Success
     dispatch_sync(dispatch_get_main_queue()) {
       result = self.performer.perform(action, reporter: reporter)
     }
@@ -103,7 +103,7 @@ class HttpRelay : Relay {
     return HttpResponse.BadRequest(.Json(json.decode()))
   }
 
-  private func interactionResultResponse(eventReporter: HttpEventReporter, result: ActionResult) -> HttpResponse {
+  private func interactionResultResponse(eventReporter: HttpEventReporter, result: CommandResult) -> HttpResponse {
     switch result {
     case .Failure(let string):
       let json = JSON.JDictionary([
