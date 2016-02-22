@@ -24,6 +24,7 @@
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
+#import "FBSimulatorSet.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulator (Helpers)
@@ -170,7 +171,7 @@
 
 - (FBSimDeviceWrapper *)simDeviceWrapper
 {
-  return [FBSimDeviceWrapper withSimulator:self configuration:self.pool.configuration processQuery:self.processQuery];
+  return [FBSimDeviceWrapper withSimulator:self configuration:self.set.configuration processQuery:self.processQuery];
 }
 
 - (FBSimulatorLaunchCtl *)launchctl

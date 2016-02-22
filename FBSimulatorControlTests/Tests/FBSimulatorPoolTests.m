@@ -9,127 +9,17 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorApplication.h>
-#import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorPool+Private.h>
-#import <FBSimulatorControl/FBSimulatorPool.h>
+#import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "CoreSimulatorDoubles.h"
+#import "FBSimulatorControlTestCase.h"
+#import "FBSimulatorPoolTestCase.h"
 
-@interface FBSimulatorPoolTests : XCTestCase
-
-@property (nonatomic, strong) FBSimulatorPool *pool;
+@interface FBSimulatorPoolTests : FBSimulatorPoolTestCase
 
 @end
 
 @implementation FBSimulatorPoolTests
-
-- (void)teardown
-{
-  self.pool = nil;
-}
-
-+ (NSDictionary *)keySimulatorsByName:(id<NSFastEnumeration>)simulators
-{
-  NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
-  for (FBSimulator *simulator in simulators) {
-    dictionary[simulator.name] = simulator;
-  }
-  return dictionary;
-}
-
-- (NSArray *)createPoolWithExistingSimDeviceSpecs:(NSArray *)simulatorSpecs
-{
-  NSMutableArray *simulators = [NSMutableArray array];
-  for (NSDictionary *simulatorSpec in simulatorSpecs) {
-    NSString *name = simulatorSpec[@"name"];
-    NSUUID *uuid = simulatorSpec[@"uuid"] ?: [NSUUID UUID];
-    NSString *os = simulatorSpec[@"os"] ?: @"iOS 9.0";
-    NSString *version = [[os componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet] lastObject];
-    FBSimulatorState state = [(simulatorSpec[@"state"] ?: @(FBSimulatorStateShutdown)) integerValue];
-
-    FBSimulatorControlTests_SimDeviceType_Double *deviceType = [FBSimulatorControlTests_SimDeviceType_Double new];
-    deviceType.name = name;
-
-    FBSimulatorControlTests_SimDeviceRuntime_Double *runtime = [FBSimulatorControlTests_SimDeviceRuntime_Double new];
-    runtime.name = os;
-    runtime.versionString = version;
-
-    FBSimulatorControlTests_SimDevice_Double *device = [FBSimulatorControlTests_SimDevice_Double new];
-    device.name = name;
-    device.UDID = uuid;
-    device.state = (unsigned long long) state;
-    device.deviceType = deviceType;
-    device.runtime = runtime;
-
-    [simulators addObject:device];
-  }
-
-  FBSimulatorControlTests_SimDeviceSet_Double *deviceSet = [FBSimulatorControlTests_SimDeviceSet_Double new];
-  deviceSet.availableDevices = [simulators copy];
-
-  FBSimulatorControlConfiguration *poolConfig = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0];
-  self.pool = [[FBSimulatorPool alloc] initWithConfiguration:poolConfig deviceSet:(id)deviceSet logger:nil];
-
-  return deviceSet.availableDevices;
-}
-
-- (void)mockAllocationOfSimulatorsUDIDs:(NSArray *)deviceUDIDs
-{
-  for (NSUUID *udid in deviceUDIDs) {
-    [self.pool.allocatedUDIDs addObject:udid.UUIDString];
-  }
-}
-
-- (void)testInflatesSimulators
-{
-  [self createPoolWithExistingSimDeviceSpecs:@[
-    @{@"name" : @"iPad 2", @"state" : @(FBSimulatorStateBooted)},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateCreating)},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown)},
-    @{@"name" : @"iPad 3", @"state" : @(FBSimulatorStateCreating)},
-    @{@"name" : @"iPhone 6S", @"state" : @(FBSimulatorStateShuttingDown) },
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateBooted)},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown)},
-    @{@"name" : @"iPad", @"state" : @(FBSimulatorStateBooted)}
-  ]];
-
-  NSArray *simulators = self.pool.allSimulators;
-  XCTAssertEqual(simulators.count, 8u);
-
-  XCTAssertEqualObjects([simulators[0] name], @"iPad 2");
-  XCTAssertEqual([simulators[0] state], FBSimulatorStateBooted);
-  XCTAssertEqual([simulators[0] pool], self.pool);
-
-  XCTAssertEqualObjects([simulators[1] name], @"iPhone 5");
-  XCTAssertEqual([simulators[1] state], FBSimulatorStateCreating);
-  XCTAssertEqual([simulators[1] pool], self.pool);
-
-  XCTAssertEqualObjects([simulators[2] name], @"iPhone 5");
-  XCTAssertEqual([simulators[2] state], FBSimulatorStateShutdown);
-  XCTAssertEqual([simulators[2] pool], self.pool);
-
-  XCTAssertEqualObjects([simulators[3] name], @"iPad 3");
-  XCTAssertEqual([simulators[3] state], FBSimulatorStateCreating);
-  XCTAssertEqual([simulators[3] pool], self.pool);
-
-  XCTAssertEqualObjects([simulators[4] name], @"iPhone 6S");
-  XCTAssertEqual([simulators[4] state], FBSimulatorStateShuttingDown);
-  XCTAssertEqual([simulators[4] pool], self.pool);
-
-  XCTAssertEqualObjects([simulators[5] name], @"iPhone 5");
-  XCTAssertEqual([simulators[5] state], FBSimulatorStateBooted);
-  XCTAssertEqual([simulators[5] pool], self.pool);
-
-  XCTAssertEqualObjects([simulators[6] name], @"iPhone 5");
-  XCTAssertEqual([simulators[6] state], FBSimulatorStateShutdown);
-  XCTAssertEqual([simulators[6] pool], self.pool);
-
-  XCTAssertEqualObjects([simulators[7] name], @"iPad");
-  XCTAssertEqual([simulators[7] state], FBSimulatorStateBooted);
-  XCTAssertEqual([simulators[7] pool], self.pool);
-}
 
 - (void)testDividesAllocatedAndUnAllocated
 {
@@ -152,63 +42,168 @@
   NSArray *simulators = self.pool.allocatedSimulators;
   XCTAssertEqual(simulators.count, 2u);
 
-  XCTAssertEqualObjects([simulators[0] name], @"iPad 2");
-  XCTAssertEqual([simulators[0] state], FBSimulatorStateBooted);
-  XCTAssertEqual([simulators[0] pool], self.pool);
+  FBSimulator *simulator = simulators[0];
+  XCTAssertEqualObjects(simulator.name, @"iPad 2");
+  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertEqual(simulator.pool, self.pool);
 
-  XCTAssertEqualObjects([simulators[1] name], @"iPad 3");
-  XCTAssertEqual([simulators[1] state], FBSimulatorStateCreating);
-  XCTAssertEqual([simulators[1] pool], self.pool);
+  simulator = simulators[1];
+  XCTAssertEqualObjects(simulator.name, @"iPad 3");
+  XCTAssertEqual(simulator.state, FBSimulatorStateCreating);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertEqual(simulator.pool, self.pool);
 
   simulators = self.pool.unallocatedSimulators;
   XCTAssertEqual(simulators.count, 6u);
 
-  XCTAssertEqualObjects([simulators[0] name], @"iPhone 5");
-  XCTAssertEqual([simulators[0] state], FBSimulatorStateCreating);
-  XCTAssertEqual([simulators[0] pool], self.pool);
+  simulator = simulators[0];
+  XCTAssertEqualObjects(simulator.name, @"iPhone 5");
+  XCTAssertEqual(simulator.state, FBSimulatorStateCreating);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertNil(simulator.pool);
 
-  XCTAssertEqualObjects([simulators[1] name], @"iPhone 5");
-  XCTAssertEqual([simulators[1] state], FBSimulatorStateShutdown);
-  XCTAssertEqual([simulators[1] pool], self.pool);
+  simulator = simulators[1];
+  XCTAssertEqualObjects(simulator.name, @"iPhone 5");
+  XCTAssertEqual(simulator.state, FBSimulatorStateShutdown);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertNil(simulator.pool);
 
-  XCTAssertEqualObjects([simulators[2] name], @"iPhone 6S");
-  XCTAssertEqual([simulators[2] state], FBSimulatorStateShuttingDown);
-  XCTAssertEqual([simulators[2] pool], self.pool);
+  simulator = simulators[2];
+  XCTAssertEqualObjects(simulator.name, @"iPhone 6S");
+  XCTAssertEqual(simulator.state, FBSimulatorStateShuttingDown);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertNil(simulator.pool);
 
-  XCTAssertEqualObjects([simulators[3] name], @"iPhone 5");
-  XCTAssertEqual([simulators[3] state], FBSimulatorStateBooted);
-  XCTAssertEqual([simulators[3] pool], self.pool);
+  simulator = simulators[3];
+  XCTAssertEqualObjects(simulator.name, @"iPhone 5");
+  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertNil(simulator.pool);
 
-  XCTAssertEqualObjects([simulators[4] name], @"iPhone 5");
-  XCTAssertEqual([simulators[4] state], FBSimulatorStateShutdown);
-  XCTAssertEqual([simulators[4] pool], self.pool);
+  simulator = simulators[4];
+  XCTAssertEqualObjects(simulator.name, @"iPhone 5");
+  XCTAssertEqual(simulator.state, FBSimulatorStateShutdown);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertNil(simulator.pool);
 
-  XCTAssertEqualObjects([simulators[5] name], @"iPad");
-  XCTAssertEqual([simulators[5] state], FBSimulatorStateBooted);
-  XCTAssertEqual([simulators[5] pool], self.pool);
+  simulator = simulators[5];
+  XCTAssertEqualObjects(simulator.name, @"iPad");
+  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
+  XCTAssertEqual(simulator.set, self.set);
+  XCTAssertNil(simulator.pool);
 }
 
-- (void)testReferencesForSimulatorsAreTheSame
+@end
+
+@interface FBSimulatorPoolAllocationTests : FBSimulatorControlTestCase
+
+@end
+
+@implementation FBSimulatorPoolAllocationTests
+
+- (void)setUp
 {
-  [self createPoolWithExistingSimDeviceSpecs:@[
-    @{@"name" : @"iPad 2", @"state" : @(FBSimulatorStateBooted)},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateCreating)},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown)},
-    @{@"name" : @"iPad 3", @"state" : @(FBSimulatorStateCreating)},
-    @{@"name" : @"iPhone 6S", @"state" : @(FBSimulatorStateShuttingDown) },
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateBooted)},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown)},
-    @{@"name" : @"iPad", @"state" : @(FBSimulatorStateBooted)}
-  ]];
+  NSError *error = nil;
+  [NSFileManager.defaultManager removeItemAtPath:self.deviceSetPath error:&error];
+  (void)error;
 
-  NSArray *firstFetch = self.pool.allSimulators;
-  NSArray *secondFetch = self.pool.allSimulators;
-  XCTAssertEqualObjects(firstFetch, secondFetch);
+  [super setUp];
+}
 
-  // Reference equality.
-  for (NSUInteger index = 0; index < firstFetch.count; index++) {
-    XCTAssertEqual(firstFetch[index], secondFetch[index]);
+- (NSString *)deviceSetPath
+{
+  return [NSTemporaryDirectory()
+    stringByAppendingPathComponent:[NSString stringWithFormat:@"%@", NSStringFromClass(self.class)]];
+}
+
+- (void)assertFreesSimulator:(FBSimulator *)simulator
+{
+  NSError *error = nil;
+  BOOL success = [self.control.simulatorPool freeSimulator:simulator error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  XCTAssertNil(simulator.pool);
+}
+
+- (void)testReallocatesAndErasesFreedDevice
+{
+  FBSimulatorAllocationOptions options = self.allocationOptions;
+  self.allocationOptions = options | FBSimulatorAllocationOptionsEraseOnFree;
+
+  FBSimulator *simulator = [self obtainSimulator];
+  NSString *simulatorUUID = simulator.udid;
+  [self addTemporaryFileToSimulator:simulator];
+  [self assertFreesSimulator:simulator];
+
+  simulator = [self obtainSimulator];
+  XCTAssertEqualObjects(simulatorUUID, simulator.udid);
+  [self assertTemporaryFileForSimulator:simulator exists:NO];
+  [self assertFreesSimulator:simulator];
+}
+
+- (void)testDoesNotReallocateDeletedDevice
+{
+  FBSimulatorAllocationOptions options = self.allocationOptions;
+  self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
+
+  FBSimulator *simulator = [self obtainSimulator];
+  NSString *simulatorUUID = simulator.udid;
+  [self assertFreesSimulator:simulator];
+
+  simulator = [self obtainSimulator];
+  XCTAssertNotEqualObjects(simulatorUUID, simulator.udid);
+  [self assertFreesSimulator:simulator];
+}
+
+- (void)testRemovesDeletedDeviceFromSet
+{
+  FBSimulatorAllocationOptions options = self.allocationOptions;
+  self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
+
+  FBSimulator *simulator = [self obtainSimulator];
+  NSString *simulatorUUID = simulator.udid;
+  [self assertFreesSimulator:simulator];
+
+  NSOrderedSet *uuidSet = [self.control.simulatorPool.set.allSimulators valueForKey:@"udid"];
+  XCTAssertFalse([uuidSet containsObject:simulatorUUID]);
+}
+
+- (void)testRemovesMultipleAllocatedDevicesFromSet
+{
+  NSMutableArray *simulators = [NSMutableArray array];
+  NSMutableSet *simulatorUUIDs = [NSMutableSet set];
+
+  for (NSInteger index = 0; index < 4; index++) {
+    FBSimulator *simulator = [self obtainSimulator];
+    [simulators addObject:simulator];
+    [simulatorUUIDs addObject:simulator.udid];
   }
+
+  NSError *error = nil;
+  XCTAssertTrue([self.control.simulatorPool.set deleteAllWithError:&error]);
+  XCTAssertNil(error);
+
+  NSSet *uuidSet = [NSSet setWithArray:[self.control.simulatorPool.set.allSimulators valueForKey:@"udid"]];
+  [simulatorUUIDs intersectSet:uuidSet];
+  XCTAssertEqual(simulatorUUIDs.count, 0u);
+}
+
+#pragma mark Helpers
+
+- (NSString *)temporaryFilePathForSimulator:(FBSimulator *)simulator
+{
+  return [[simulator.dataDirectory stringByAppendingPathComponent:@"something_temp"] stringByAppendingPathExtension:@"txt"];
+}
+
+- (void)addTemporaryFileToSimulator:(FBSimulator *)simulator
+{
+  XCTAssertTrue([@"Hi there I'm a file" writeToFile:[self temporaryFilePathForSimulator:simulator] atomically:YES encoding:NSUTF8StringEncoding error:nil]);
+}
+
+- (void)assertTemporaryFileForSimulator:(FBSimulator *)simulator exists:(BOOL)exists
+{
+  XCTAssertEqual([NSFileManager.defaultManager fileExistsAtPath:[self temporaryFilePathForSimulator:simulator]], exists);
 }
 
 @end

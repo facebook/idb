@@ -64,17 +64,7 @@
 - (instancetype)shutdownSimulator
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBSimulatorTerminationStrategy *terminationStrategy = [FBSimulatorTerminationStrategy
-      withConfiguration:simulator.pool.configuration
-      processQuery:simulator.processQuery
-      logger:simulator.pool.logger];
-
-    NSError *innerError = nil;
-    if (![terminationStrategy killSimulators:@[simulator] withError:&innerError]) {
-      return [[[[FBSimulatorError describe:@"Could not shutdown simulator"] inSimulator:simulator] causedBy:innerError] failBool:error];
-    }
-
-    return YES;
+    return [simulator.set killSimulator:simulator error:error];
   }];
 }
 

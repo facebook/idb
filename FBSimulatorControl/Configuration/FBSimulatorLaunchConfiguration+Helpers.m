@@ -12,10 +12,11 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBSimulator.h"
-#import "FBSimulatorPool.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorPool.h"
+#import "FBSimulatorSet.h"
 
 @implementation FBSimulatorLaunchConfiguration (Helpers)
 
@@ -28,11 +29,12 @@
     @"-ConnectHardwareKeyboard", @"0",
     [self lastScaleCommandLineSwitchForSimulator:simulator], self.scaleString
   ]];
-  if (simulator.pool.configuration.deviceSetPath) {
+  NSString *setPath = simulator.device.setPath;
+  if (setPath) {
     if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
       return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] fail:error];
     }
-    [arguments addObjectsFromArray:@[@"-DeviceSetPath", simulator.pool.configuration.deviceSetPath]];
+    [arguments addObjectsFromArray:@[@"-DeviceSetPath", setPath]];
   }
   return [arguments copy];
 }

@@ -99,10 +99,10 @@ struct ActionRunner : Runner {
       return CreationRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, simulatorConfiguration: configuration).run(reporter)
     default:
       do {
-        let simulators = try Query.perform(self.control.simulatorPool, query: self.query, defaults: self.defaults, action: self.action)
+        let simulators = try Query.perform(self.control.simulatorPool.set, query: self.query, defaults: self.defaults, action: self.action)
         let format = self.format ?? defaults.format
         let runners: [Runner] = simulators.map { simulator in
-          SimulatorRunner(simulator: simulator, configuration: self.configuration, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
+          SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
         }
         return SequenceRunner(runners: runners).run(reporter)
       } catch let error as QueryError {
@@ -149,9 +149,8 @@ struct CreationRunner : Runner {
 
   func run(reporter: EventReporter) -> ActionResult {
     do {
-      let options = FBSimulatorAllocationOptions.Create
       reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
-      let simulator = try self.control.simulatorPool.allocateSimulatorWithConfiguration(simulatorConfiguration, options: options)
+      let simulator = try self.control.simulatorPool.set.createSimulatorWithConfiguration(simulatorConfiguration)
       self.defaults.updateLastQuery(Query.UDID([simulator.udid]))
       reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return ActionResult.Success
@@ -163,7 +162,6 @@ struct CreationRunner : Runner {
 
 private struct SimulatorRunner : Runner {
   let simulator: FBSimulator
-  let configuration: Configuration
   let action: Action
   let format: Format
 
@@ -177,49 +175,19 @@ private struct SimulatorRunner : Runner {
       switch self.action {
       case .List:
         translator.reportSimulator(EventName.List, simulator)
-      case .Approve(let bundleIDs):
-        try interactWithSimulator(translator, EventName.Approve, bundleIDs as NSArray) { interaction in
-          interaction.authorizeLocationSettings(bundleIDs)
-        }
-      case .Boot(let maybeLaunchConfiguration):
-        let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
-        try interactWithSimulator(translator, EventName.Boot, launchConfiguration) { interaction in
-          interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
-        }
       case .Shutdown:
-        try interactWithSimulator(translator, EventName.Shutdown, self.simulator) { interaction in
-          interaction.shutdownSimulator()
-        }
+        translator.reportSimulator(EventName.Shutdown, EventType.Started, self.simulator)
+        try simulator.set!.killSimulator(simulator)
+        translator.reportSimulator(EventName.Shutdown, EventType.Ended, self.simulator)
       case .Diagnose:
         let logs = simulator.diagnostics.allDiagnostics().map{ $0.jsonSerializableRepresentation() }
         translator.reportSimulator(EventName.Diagnose, EventType.Discrete, logs as NSArray)
       case .Delete:
         translator.reportSimulator(EventName.Delete, EventType.Started, self.simulator)
-        try simulator.pool!.deleteSimulator(simulator)
+        try simulator.set!.deleteSimulator(simulator)
         translator.reportSimulator(EventName.Delete, EventType.Ended, self.simulator)
-      case .Install(let application):
-        try interactWithSimulator(translator, EventName.Install, application) { interaction in
-          interaction.installApplication(application)
-        }
-      case .Launch(let launch):
-        try interactWithSimulator(translator, EventName.Launch, launch) { interaction in
-          if let appLaunch = launch as? FBApplicationLaunchConfiguration {
-            interaction.launchApplication(appLaunch)
-          }
-          else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
-            interaction.launchAgent(agentLaunch)
-          }
-        }
-      case .Relaunch(let appLaunch):
-        try interactWithSimulator(translator, EventName.Relaunch, appLaunch) { interaction in
-          interaction.launchOrRelaunchApplication(appLaunch)
-        }
-      case .Terminate(let bundleID):
-        try interactWithSimulator(translator, EventName.Relaunch, bundleID as NSString) { interaction in
-          interaction.terminateApplicationWithBundleID(bundleID)
-        }
       default:
-        assertionFailure("Unhandled")
+        try self.performInteractionAction(translator, simulator, action)
       }
     } catch let error as NSError {
       return .Failure(error.description)
@@ -227,6 +195,43 @@ private struct SimulatorRunner : Runner {
       return .Failure(error.description)
     }
     return .Success
+  }
+
+  func performInteractionAction(translator: EventSinkTranslator, _ simulator: FBSimulator, _ action: Action) throws {
+    switch action {
+    case .Boot(let maybeLaunchConfiguration):
+      let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
+      try interactWithSimulator(translator, EventName.Boot, launchConfiguration) { interaction in
+        interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
+      }
+    case .Approve(let bundleIDs):
+      try interactWithSimulator(translator, EventName.Approve, bundleIDs as NSArray) { interaction in
+        interaction.authorizeLocationSettings(bundleIDs)
+      }
+    case .Install(let application):
+      try interactWithSimulator(translator, EventName.Install, application) { interaction in
+        interaction.installApplication(application)
+      }
+    case .Launch(let launch):
+      try interactWithSimulator(translator, EventName.Launch, launch) { interaction in
+        if let appLaunch = launch as? FBApplicationLaunchConfiguration {
+          interaction.launchApplication(appLaunch)
+        }
+        else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
+          interaction.launchAgent(agentLaunch)
+        }
+      }
+    case .Relaunch(let appLaunch):
+      try interactWithSimulator(translator, EventName.Relaunch, appLaunch) { interaction in
+        interaction.launchOrRelaunchApplication(appLaunch)
+      }
+    case .Terminate(let bundleID):
+      try interactWithSimulator(translator, EventName.Relaunch, bundleID as NSString) { interaction in
+        interaction.terminateApplicationWithBundleID(bundleID)
+      }
+    default:
+      assertionFailure("Unhandled")
+    }
   }
 
   func interactWithSimulator(translator: EventSinkTranslator, _ eventName: EventName, _ subject: SimulatorControlSubject, interact: FBSimulatorInteraction -> Void) throws {

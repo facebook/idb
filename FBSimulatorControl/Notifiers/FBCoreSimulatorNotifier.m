@@ -15,7 +15,7 @@
 #import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBSimulator.h"
-#import "FBSimulatorPool+Private.h"
+#import "FBSimulatorSet.h"
 
 @interface FBCoreSimulatorNotifier ()
 
@@ -31,15 +31,15 @@
   return [self notifierForSimDevice:simulator.device block:block];
 }
 
-+ (instancetype)notifierForPool:(FBSimulatorPool *)pool block:(void (^)(NSDictionary *info))block
-{
-  id<SimDeviceNotifier> notifier = pool.deviceSet.notificationManager;
-  return [[self alloc] initWithNotifier:notifier block:block];
-}
-
 + (instancetype)notifierForSimDevice:(SimDevice *)simDevice block:(void (^)(NSDictionary *info))block
 {
   id<SimDeviceNotifier> notifier = simDevice.notificationManager;
+  return [[self alloc] initWithNotifier:notifier block:block];
+}
+
++ (instancetype)notifierForSet:(FBSimulatorSet *)set block:(void (^)(NSDictionary *info))block;
+{
+  id<SimDeviceNotifier> notifier = set.deviceSet.notificationManager;
   return [[self alloc] initWithNotifier:notifier block:block];
 }
 

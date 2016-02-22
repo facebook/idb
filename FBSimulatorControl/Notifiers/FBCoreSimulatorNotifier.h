@@ -12,7 +12,7 @@
 #import <FBSimulatorControl/FBTerminationHandle.h>
 
 @class FBSimulator;
-@class FBSimulatorPool;
+@class FBSimulatorSet;
 @class SimDevice;
 
 /**
@@ -39,12 +39,12 @@
 + (instancetype)notifierForSimDevice:(SimDevice *)simDevice block:(void (^)(NSDictionary *info))block;
 
 /**
- Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDeviceSet broadcasts for the provided Pool.
+ Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDeviceSet broadcasts for the provided Set.
 
- @param pool the FBSimulator to relay events from.
+ @param set the FBSimulator to relay events from.
  @param block the block to call when events are sent from the SimDevice.
  @return an instance of FBSimDeviceNotifier for later termination.
  */
-+ (instancetype)notifierForPool:(FBSimulatorPool *)pool block:(void (^)(NSDictionary *info))block;
++ (instancetype)notifierForSet:(FBSimulatorSet *)set block:(void (^)(NSDictionary *info))block;
 
 @end

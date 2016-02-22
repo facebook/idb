@@ -76,6 +76,8 @@
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorResourceManager.h>
+#import <FBSimulatorControl/FBSimulatorSet+Private.h>
+#import <FBSimulatorControl/FBSimulatorSet.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBTask+Private.h>
 #import <FBSimulatorControl/FBTask.h>

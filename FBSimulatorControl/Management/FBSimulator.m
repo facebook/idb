@@ -9,7 +9,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorPool+Private.h"
 
 #import <AppKit/AppKit.h>
 
@@ -34,25 +33,26 @@
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
+#import "FBSimulatorSet.h"
 #import "FBTaskExecutor.h"
 
 @implementation FBSimulator
 
 #pragma mark Lifecycle
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set
 {
   return [[[FBSimulator alloc]
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDevice:device error:nil]
-    pool:pool
-    query:pool.processQuery
+    set:set
+    query:set.processQuery
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
-    logger:pool.logger]
+    logger:set.logger]
     attachEventSinkComposition];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration pool:(FBSimulatorPool *)pool query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBSimulatorLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -61,7 +61,7 @@
 
   _device = device;
   _configuration = configuration;
-  _pool = pool;
+  _set = set;
   _processQuery = query;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;

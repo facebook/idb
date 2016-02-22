@@ -15,7 +15,6 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
-
 @interface FBSimulatorLaunchTests : FBSimulatorControlTestCase
 
 @end
