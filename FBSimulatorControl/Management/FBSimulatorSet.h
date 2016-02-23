@@ -82,6 +82,14 @@
 - (NSArray *)deleteAllWithError:(NSError **)error;
 
 /**
+ Fetches a Simulator from the Set with the Provided UDID.
+ 
+ @param udid the UDID of the Simulator to obtain.
+ @return A FBSimulator instance or nil if one could not be obtained.
+ */
+- (FBSimulator *)simulatorWithUDID:(NSString *)udid;
+
+/**
  The Logger to use.
  */
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;

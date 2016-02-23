@@ -19,6 +19,7 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorLogger.h"
+#import "FBSimulatorPredicates.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
@@ -267,6 +268,13 @@
 - (NSArray *)deleteAllWithError:(NSError **)error
 {
   return [self deleteSimulators:self.allSimulators withError:error];
+}
+
+- (FBSimulator *)simulatorWithUDID:(NSString *)udid
+{
+  return [[self.allSimulators
+    filteredArrayUsingPredicate:[FBSimulatorPredicates udid:udid]]
+    firstObject];
 }
 
 #pragma mark FBDebugDescribeable Protocol
