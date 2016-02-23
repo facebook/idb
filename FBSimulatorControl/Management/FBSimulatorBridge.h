@@ -54,4 +54,11 @@
  */
 - (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
 
+#pragma mark Properties
+
+/**
+ The FBSimulatorFramebuffer Instance.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
+
 @end
