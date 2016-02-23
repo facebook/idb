@@ -1,4 +1,3 @@
-# vim: set tabstop=2 shiftwidth=2 filetype=sh:
 #!/bin/sh
 
 set -e
@@ -151,3 +150,4 @@ case $TARGET in
     exit 1;;
 esac
 
+# vim: set tabstop=2 shiftwidth=2 filetype=sh:
