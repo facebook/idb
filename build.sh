@@ -5,7 +5,16 @@ set -e
 
 BUILD_DIRECTORY=build
 
+function assert_has_carthage() {
+  if ! command -v carthage; then
+      echo "cli build needs 'carthage' to bootstrap dependencies"
+      echo "You can install it using brew. E.g. $ brew install carthage"
+      exit 1;
+  fi
+}
+
 function build_cli_deps() {
+  assert_has_carthage
   pushd fbsimctl
   carthage bootstrap --platform Mac
   popd
