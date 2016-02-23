@@ -1,11 +1,19 @@
-# vim: set tabstop=2 shiftwidth=2 filetype=sh:
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
 BUILD_DIRECTORY=build
 
-function build_deps() {
+function assert_has_carthage() {
+  if ! command -v carthage; then
+      echo "cli build needs 'carthage' to bootstrap dependencies"
+      echo "You can install it using brew. E.g. $ brew install carthage"
+      exit 1;
+  fi
+}
+
+function build_cli_deps() {
+  assert_has_carthage
   pushd fbsimctl
   carthage bootstrap --platform Mac
   popd
@@ -23,8 +31,8 @@ function framework_build() {
   if [[ -n $OUTPUT_DIRECTORY ]]; then
     ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/FBSimulatorControl.framework"
     echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p $OUTPUT_DIRECTORY
-    cp -r $ARTIFACT $OUTPUT_DIRECTORY
+    mkdir -p "$OUTPUT_DIRECTORY"
+    cp -r "$ARTIFACT" "$OUTPUT_DIRECTORY"
   fi
 }
 
@@ -50,8 +58,8 @@ function cli_build() {
   if [[ -n $OUTPUT_DIRECTORY ]]; then
     ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/*"
     echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p $OUTPUT_DIRECTORY
-    cp -r $ARTIFACT $OUTPUT_DIRECTORY
+    mkdir -p "$OUTPUT_DIRECTORY"
+    cp -r "$ARTIFACT" "$OUTPUT_DIRECTORY"
   fi
 }
 
@@ -127,7 +135,7 @@ case $TARGET in
         exit 1;;
     esac;;
   cli)
-    build_deps
+    build_cli_deps
     case $COMMAND in
       build) 
         cli_build;;
@@ -142,3 +150,4 @@ case $TARGET in
     exit 1;;
 esac
 
+# vim: set tabstop=2 shiftwidth=2 filetype=sh:
