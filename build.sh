@@ -5,7 +5,7 @@ set -e
 
 BUILD_DIRECTORY=build
 
-function build_deps() {
+function build_cli_deps() {
   pushd fbsimctl
   carthage bootstrap --platform Mac
   popd
@@ -127,7 +127,7 @@ case $TARGET in
         exit 1;;
     esac;;
   cli)
-    build_deps
+    build_cli_deps
     case $COMMAND in
       build) 
         cli_build;;
