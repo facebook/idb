@@ -112,6 +112,9 @@ struct ActionRunner : Runner {
           SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
         }
         return SequenceRunner(runners: runners).run(reporter)
+      } catch QueryError.PoolIsEmpty {
+        reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "Pool is empty")
+        return CommandResult.Success
       } catch let error as QueryError {
         return CommandResult.Failure(error.description)
       } catch {
