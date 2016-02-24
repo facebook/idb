@@ -232,6 +232,8 @@ private struct SimulatorRunner : Runner {
           interaction.launchAgent(agentLaunch)
         }
       }
+    case .Record(let start):
+      assertionFailure()
     case .Relaunch(let appLaunch):
       try interactWithSimulator(translator, EventName.Relaunch, appLaunch) { interaction in
         interaction.launchOrRelaunchApplication(appLaunch)
