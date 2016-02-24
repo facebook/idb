@@ -280,4 +280,32 @@
   return launchdSimProcess;
 }
 
+- (instancetype)startRecordingVideo
+{
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    FBFramebufferVideo *video = simulator.bridge.framebuffer.video;
+    if (video) {
+      [video startRecording];
+      return YES;
+    }
+
+    [simulator.ipcClient startRecordingVideo:simulator];
+    return YES;
+  }];
+}
+
+- (instancetype)stopRecordingVideo
+{
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    FBFramebufferVideo *video = simulator.bridge.framebuffer.video;
+    if (video) {
+      [video stopRecording];
+      return YES;
+    }
+
+    [simulator.ipcClient stopRecordingVideo:simulator];
+    return YES;
+  }];
+}
+
 @end

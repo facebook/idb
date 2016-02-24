@@ -233,7 +233,13 @@ private struct SimulatorRunner : Runner {
         }
       }
     case .Record(let start):
-      assertionFailure()
+      try interactWithSimulator(translator, EventName.Record, simulator) { interaction in
+        if (start) {
+          interaction.startRecordingVideo()
+        } else {
+          interaction.stopRecordingVideo()
+        }
+      }
     case .Relaunch(let appLaunch):
       try interactWithSimulator(translator, EventName.Relaunch, appLaunch) { interaction in
         interaction.launchOrRelaunchApplication(appLaunch)

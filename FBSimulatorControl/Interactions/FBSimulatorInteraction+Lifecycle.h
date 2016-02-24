@@ -67,4 +67,16 @@
  */
 - (instancetype)killProcess:(FBProcessInfo *)process;
 
+/**
+ Starts Recording video on the Simulator.
+ This call will always succeed, regardless whether the video is started correctly or not.
+ */
+- (instancetype)startRecordingVideo;
+
+/**
+ Stops Recording video on the Simulator.
+ This call will always succeed, regardless whether the video is stopped correctly or not.
+ */
+- (instancetype)stopRecordingVideo;
+
 @end
