@@ -136,6 +136,22 @@
   return [self signal:SIGKILL process:process];
 }
 
+- (instancetype)startRecordingVideo
+{
+  return [self interactWithVideo:^ BOOL (NSError **error, FBSimulator *simulator, FBFramebufferVideo *video) {
+    [video startRecording];
+    return YES;
+  }];
+}
+
+- (instancetype)stopRecordingVideo
+{
+  return [self interactWithVideo:^ BOOL (NSError **error, FBSimulator *simulator, FBFramebufferVideo *video) {
+    [video stopRecording];
+    return YES;
+  }];
+}
+
 #pragma mark Private
 
 + (BOOL)launchSimulatorDirectly:(FBSimulator *)simulator configuration:(FBSimulatorLaunchConfiguration *)configuration error:(NSError **)error
@@ -278,6 +294,20 @@
   }
 
   return launchdSimProcess;
+}
+
+- (instancetype)interactWithVideo:(BOOL (^)(NSError **error, FBSimulator *simulator, FBFramebufferVideo *video))block
+{
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    FBFramebufferVideo *video = simulator.bridge.framebuffer.video;
+    if (!video) {
+      return [[[FBSimulatorError
+        describe:@"Simulator Does not have a FBFramebufferVideo instance"]
+        inSimulator:simulator]
+        failBool:error];
+    }
+    return block(error, simulator, video);
+  }];
 }
 
 @end

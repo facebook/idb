@@ -67,4 +67,18 @@
  */
 - (instancetype)killProcess:(FBProcessInfo *)process;
 
+/**
+ Starts Recording video on the Simulator.
+ The Interaction will always succeed if the Simulator has a FBFramebufferVideo instance.
+ The Interaction will always fail if the Simulator does not have a FBFramebufferVideo instance.
+ */
+- (instancetype)startRecordingVideo;
+
+/**
+ Stops Recording video on the Simulator.
+ The Interaction will always succeed if the Simulator has a FBFramebufferVideo instance.
+ The Interaction will always fail if the Simulator does not have a FBFramebufferVideo instance.
+ */
+- (instancetype)stopRecordingVideo;
+
 @end
