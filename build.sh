@@ -31,8 +31,8 @@ function framework_build() {
   if [[ -n $OUTPUT_DIRECTORY ]]; then
     ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/FBSimulatorControl.framework"
     echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p "$OUTPUT_DIRECTORY"
-    cp -r "$ARTIFACT" "$OUTPUT_DIRECTORY"
+    mkdir -p $OUTPUT_DIRECTORY
+    cp -r $ARTIFACT $OUTPUT_DIRECTORY
   fi
 }
 
@@ -58,8 +58,8 @@ function cli_build() {
   if [[ -n $OUTPUT_DIRECTORY ]]; then
     ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/*"
     echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p "$OUTPUT_DIRECTORY"
-    cp -r "$ARTIFACT" "$OUTPUT_DIRECTORY"
+    mkdir -p $OUTPUT_DIRECTORY
+    cp -r $ARTIFACT $OUTPUT_DIRECTORY
   fi
 }
 
