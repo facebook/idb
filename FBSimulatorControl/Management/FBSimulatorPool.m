@@ -33,12 +33,8 @@
 
 #pragma mark - Initializers
 
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
++ (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBSimulatorLogger>)logger
 {
-  FBSimulatorSet *set = [FBSimulatorSet setWithConfiguration:configuration logger:logger error:error];
-  if (!set) {
-    return nil;
-  }
   return [[self alloc] initWithSet:set logger:logger];
 }
 

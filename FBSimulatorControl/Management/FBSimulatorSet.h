@@ -15,6 +15,7 @@
 @class FBProcessQuery;
 @class FBSimulator;
 @class FBSimulatorConfiguration;
+@class FBSimulatorControl;
 @class FBSimulatorControlConfiguration;
 @class SimDeviceSet;
 @protocol FBSimulatorLogger;
@@ -33,7 +34,7 @@
  @param error any error that occurred during the creation of the pool.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
 
 /**
  Creates and returns a FBSimulator fbased on a configuration.
@@ -86,7 +87,17 @@
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 
 /**
- The SimDeviceSet to which the Simulators belong.
+ Returns the configuration for the reciever.
+ */
+@property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
+
+/**
+ The FBSimulatorControl Instance to which the Set Belongs.
+ */
+@property (nonatomic, weak, readonly) FBSimulatorControl *control;
+
+/**
+ The SimDeviceSet to that is owned by the reciever.
  */
 @property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
 
@@ -94,11 +105,6 @@
  The FBProcessQuery that is used to obtain Simulator Process Information.
  */
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
-
-/**
- Returns the configuration for the reciever.
- */
-@property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 
 /**
  An NSArray<FBSimulator> of all Simulators in the Set.
