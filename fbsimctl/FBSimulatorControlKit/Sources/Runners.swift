@@ -24,12 +24,12 @@ extension Configuration {
 
 public extension Command {
   func runFromCLI() -> Int32 {
-    let writer = FileHandleWriter.stdOutWriter
-    switch CommandRunner.bootstrap(self, writer: writer) {
+    let (reporter, result) = CommandRunner.bootstrap(self, writer: FileHandleWriter.stdOutWriter)
+    switch result {
     case .Success:
       return 0
     case .Failure(let string):
-      writer.write(string)
+      reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, string as NSString)
       return 1
     }
   }
@@ -83,10 +83,10 @@ private struct CommandRunner : Runner {
     }
   }
 
-  static func bootstrap(command: Command, writer: Writer) -> CommandResult {
+  static func bootstrap(command: Command, writer: Writer) -> (EventReporter, CommandResult) {
     let reporter = command.createReporter(writer)
     let runner = CommandRunner(command: command, defaults: nil, control: nil)
-    return runner.run(reporter)
+    return (reporter, runner.run(reporter))
   }
 }
 
@@ -112,6 +112,9 @@ struct ActionRunner : Runner {
           SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
         }
         return SequenceRunner(runners: runners).run(reporter)
+      } catch QueryError.PoolIsEmpty {
+        reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "Pool is empty")
+        return CommandResult.Success
       } catch let error as QueryError {
         return CommandResult.Failure(error.description)
       } catch {
