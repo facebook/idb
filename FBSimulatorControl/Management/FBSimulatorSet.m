@@ -30,7 +30,7 @@
   [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
 
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
   SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration error:&innerError];
@@ -38,14 +38,14 @@
     return [[[FBSimulatorError describe:@"Failed to create device set"] causedBy:innerError] fail:error];
   }
 
-  FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet logger:logger];
+  FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet control:control logger:logger];
   if (![set performSetPreconditionsWithConfiguration:configuration Error:&innerError]) {
     return [[[FBSimulatorError describe:@"Failed meet pool preconditions"] causedBy:innerError] fail:error];
   }
   return set;
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet control:(FBSimulatorControl *)control logger:(id<FBSimulatorLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -54,6 +54,7 @@
 
   _logger = logger;
   _deviceSet = deviceSet;
+  _control = control;
   _configuration = configuration;
 
   _inflatedSimulators = [NSMutableDictionary dictionary];
@@ -191,11 +192,17 @@
   return simulator;
 }
 
-
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-  NSParameterAssert(simulator.device.deviceSet != self.deviceSet);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
 
   // Kill the Simulators before deleting them.
   NSError *innerError = nil;
@@ -235,7 +242,14 @@
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-  NSParameterAssert(simulator.device.deviceSet != self.deviceSet);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
 
   return [self.simulatorTerminationStrategy killSimulators:@[simulator] withError:error] != nil;
 }

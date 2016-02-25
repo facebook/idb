@@ -14,6 +14,8 @@
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
+@class FBSimulatorPool;
+@class FBSimulatorSet;
 @protocol FBSimulatorLogger;
 
 /**
@@ -60,24 +62,17 @@
  */
 + (void)loadPrivateFrameworksOrAbort;
 
-#pragma mark Simulators
-
-/**
- Obtains a Simulator for the given configuration and allocation options from the pool.
-
- @param simulatorConfiguration the Configuration of the Simulator to Launch.
- @param options the options to for the allocation/freeing of the Simulator.
- @param error an outparam for describing any error that occured during the allocation of the Simulator.
- @returns A FBSimulator instance, or nil if an error occured.
- */
-- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
-
 #pragma mark Properties
 
 /**
  The Pool that the FBSimulatorControl instance uses.
  */
-@property (nonatomic, strong, readonly) FBSimulatorPool *simulatorPool;
+@property (nonatomic, strong, readonly) FBSimulatorPool *pool;
+
+/**
+ The Pool that the FBSimulatorControl instance uses.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorSet *set;
 
 /**
  The Configuration that FBSimulatorControl uses.

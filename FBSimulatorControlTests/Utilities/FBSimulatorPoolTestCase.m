@@ -57,7 +57,7 @@
   deviceSet.availableDevices = [simulators copy];
 
   FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0];
-  _set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:(id)deviceSet logger:nil];
+  _set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:(id)deviceSet control:nil logger:nil];
   _pool = [[FBSimulatorPool alloc] initWithSet:_set logger:nil];
 
   return deviceSet.availableDevices;

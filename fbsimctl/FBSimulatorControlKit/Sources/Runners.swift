@@ -106,7 +106,7 @@ struct ActionRunner : Runner {
       return CreationRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, simulatorConfiguration: configuration).run(reporter)
     default:
       do {
-        let simulators = try Query.perform(self.control.simulatorPool.set, query: self.query, defaults: self.defaults, action: self.action)
+        let simulators = try Query.perform(self.control.set, query: self.query, defaults: self.defaults, action: self.action)
         let format = self.format ?? defaults.format
         let runners: [Runner] = simulators.map { simulator in
           SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
@@ -161,7 +161,7 @@ struct CreationRunner : Runner {
   func run(reporter: EventReporter) -> CommandResult {
     do {
       reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
-      let simulator = try self.control.simulatorPool.set.createSimulatorWithConfiguration(simulatorConfiguration)
+      let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
       self.defaults.updateLastQuery(Query.UDID([simulator.udid]))
       reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success

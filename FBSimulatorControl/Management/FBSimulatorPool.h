@@ -46,12 +46,11 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 /**
  Creates and returns an FBSimulatorPool.
 
- @param configuration the configuration to use. Must not be nil.
+ @param set the FBSimulatorSet to Manage.
  @param logger the logger to use to verbosely describe what is going on. May be nil.
- @param error any error that occurred during the creation of the pool.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)poolWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
++ (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBSimulatorLogger>)logger;
 
 #pragma mark Methods
 

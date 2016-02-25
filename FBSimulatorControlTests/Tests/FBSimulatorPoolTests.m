@@ -120,7 +120,7 @@
 - (void)assertFreesSimulator:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  BOOL success = [self.control.simulatorPool freeSimulator:simulator error:&error];
+  BOOL success = [self.control.pool freeSimulator:simulator error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   XCTAssertNil(simulator.pool);
@@ -165,7 +165,7 @@
   NSString *simulatorUUID = simulator.udid;
   [self assertFreesSimulator:simulator];
 
-  NSOrderedSet *uuidSet = [self.control.simulatorPool.set.allSimulators valueForKey:@"udid"];
+  NSOrderedSet *uuidSet = [self.control.pool.set.allSimulators valueForKey:@"udid"];
   XCTAssertFalse([uuidSet containsObject:simulatorUUID]);
 }
 
@@ -181,10 +181,10 @@
   }
 
   NSError *error = nil;
-  XCTAssertTrue([self.control.simulatorPool.set deleteAllWithError:&error]);
+  XCTAssertTrue([self.control.pool.set deleteAllWithError:&error]);
   XCTAssertNil(error);
 
-  NSSet *uuidSet = [NSSet setWithArray:[self.control.simulatorPool.set.allSimulators valueForKey:@"udid"]];
+  NSSet *uuidSet = [NSSet setWithArray:[self.control.pool.set.allSimulators valueForKey:@"udid"]];
   [simulatorUUIDs intersectSet:uuidSet];
   XCTAssertEqual(simulatorUUIDs.count, 0u);
 }

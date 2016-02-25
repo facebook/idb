@@ -26,6 +26,7 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
+#import "FBSimulatorSet.h"
 
 @implementation FBSimulatorControl
 
@@ -36,14 +37,14 @@
   [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
-{
-  return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
-}
-
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
   return [self withConfiguration:configuration logger:FBSimulatorControlGlobalConfiguration.defaultLogger error:error];
+}
+
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
+{
+  return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
@@ -53,8 +54,13 @@
     return nil;
   }
 
+  _set = [FBSimulatorSet setWithConfiguration:configuration control:self logger:logger error:error];
+  if (!_set) {
+    return nil;
+  }
   _configuration = configuration;
-  _simulatorPool = [FBSimulatorPool poolWithConfiguration:configuration logger:logger error:error];
+  _pool = [FBSimulatorPool poolWithSet:_set logger:logger];
+
   return self;
 }
 
@@ -128,20 +134,6 @@
   }
   [logger.error logFormat:@"Failed to load Frameworks with error %@", error];
   abort();
-}
-
-#pragma mark Simulators
-
-- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
-{
-  NSParameterAssert(simulatorConfiguration);
-
-  NSError *innerError = nil;
-  FBSimulator *simulator = [self.simulatorPool allocateSimulatorWithConfiguration:simulatorConfiguration options:options error:&innerError];
-  if (!simulator) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-  return simulator;
 }
 
 #pragma mark Private Methods

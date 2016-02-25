@@ -59,7 +59,7 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
     XCTAssertNil(error);
     XCTAssertNotNil(control);
     _control = control;
-    _assert = [FBSimulatorControlNotificationAssertions withTestCase:self pool:control.simulatorPool];
+    _assert = [FBSimulatorControlNotificationAssertions withTestCase:self pool:control.pool];
   }
   return _control;
 }
@@ -75,7 +75,7 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 - (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
   NSError *error = nil;
-  FBSimulator *simulator = [self.control obtainSimulatorWithConfiguration:configuration options:self.allocationOptions error:&error];
+  FBSimulator *simulator = [self.control.pool allocateSimulatorWithConfiguration:configuration options:self.allocationOptions error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(simulator);
   return simulator;
@@ -153,7 +153,7 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 
 - (void)tearDown
 {
-  [self.control.simulatorPool.set killAllWithError:nil];
+  [self.control.pool.set killAllWithError:nil];
   _control = nil;
   _assert = nil;
 }

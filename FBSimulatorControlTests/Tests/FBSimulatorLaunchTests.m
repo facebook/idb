@@ -105,7 +105,7 @@
   FBSimulator *simulator2 = [self obtainSimulatorWithConfiguration:FBSimulatorConfiguration.iPhone5];
   FBSimulator *simulator3 = [self obtainSimulatorWithConfiguration:FBSimulatorConfiguration.iPad2];
 
-  XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 3u);
+  XCTAssertEqual(self.control.pool.allocatedSimulators.count, 3u);
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
 
   [self assertInteractionSuccessful:[simulator1.interact bootSimulator:self.simulatorLaunchConfiguration]];
@@ -125,7 +125,7 @@
     [self assertShutdownSimulatorAndTerminateSession:simulator];
   }
 
-  XCTAssertEqual(self.control.simulatorPool.allocatedSimulators.count, 0u);
+  XCTAssertEqual(self.control.pool.allocatedSimulators.count, 0u);
 }
 
 - (void)testLaunchesSafariApplication
