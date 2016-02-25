@@ -192,11 +192,17 @@
   return simulator;
 }
 
-
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-  NSParameterAssert(simulator.device.deviceSet != self.deviceSet);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
 
   // Kill the Simulators before deleting them.
   NSError *innerError = nil;
@@ -236,7 +242,14 @@
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-  NSParameterAssert(simulator.device.deviceSet != self.deviceSet);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
 
   return [self.simulatorTerminationStrategy killSimulators:@[simulator] withError:error] != nil;
 }
