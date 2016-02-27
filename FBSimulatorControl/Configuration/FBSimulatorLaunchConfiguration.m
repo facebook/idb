@@ -217,6 +217,13 @@
   return [[self.class alloc] initWithScale:scale locale:self.locale options:self.options];
 }
 
+- (CGSize)scaleSize:(CGSize)size
+{
+  NSDecimalNumber *scaleNumber = [NSDecimalNumber decimalNumberWithString:self.scaleString];
+  CGFloat scale = scaleNumber.doubleValue;
+  return CGSizeMake(size.width * scale, size.height * scale);
+}
+
 #pragma mark Locale
 
 + (instancetype)withLocale:(NSLocale *)locale

@@ -27,11 +27,10 @@
  Creates a new FBFramebufferVideo instance.
 
  @param diagnostic the log to base the video file from.
- @param scale the scaling factor of the video. Must be 1 or lower.
  @param logger the logger object to log events to, may be nil.
  @param eventSink an event sink to report video output to.
  @return a new FBFramebufferVideo instance.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 @end

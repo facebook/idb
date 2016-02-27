@@ -10,6 +10,7 @@
 #import "FBSimulatorBridge.h"
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceType.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 
@@ -45,7 +46,20 @@
   // Creating the Framebuffer with the 'mainScreen' constructor will return a 'PurpleFBServer' and attach it to the '_registeredServices' ivar.
   // This is the Framebuffer for the Simulator's main screen, which is distinct from 'PurpleFBTVOut' and 'Stark' Framebuffers for External Displays and CarPlay.
   NSError *innerError = nil;
-  SimDeviceFramebufferService *framebufferService = [NSClassFromString(@"SimDeviceFramebufferService") mainScreenFramebufferServiceForDevice:simulator.device error:&innerError];
+  NSPort *purpleServerPort = [simulator.device portForServiceNamed:@"PurpleFBServer" error:&innerError];
+  if (!purpleServerPort) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not find the 'PurpleFBServer' Port for %@", simulator.device]
+      causedBy:innerError]
+      fail:error];
+  }
+
+  // Setup the scale for the framebuffer service.
+  CGSize size = simulator.device.deviceType.mainScreenSize;
+  CGSize scaledSize = [configuration scaleSize:size];
+
+  // Create the service
+  SimDeviceFramebufferService *framebufferService = [NSClassFromString(@"SimDeviceFramebufferService") framebufferServiceWithPort:purpleServerPort deviceDimensions:size scaledDimensions:scaledSize error:&innerError];
   if (!framebufferService) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create the Main Screen Framebuffer for device %@", simulator.device]
