@@ -247,7 +247,7 @@ private struct SimulatorRunner : Runner {
 
   func interactWithSimulator(translator: EventSinkTranslator, _ eventName: EventName, _ subject: SimulatorControlSubject, interact: FBSimulatorInteraction -> Void) throws {
     translator.reportSimulator(eventName, EventType.Started, subject)
-    let interaction = translator.simulator.interact()
+    let interaction = translator.simulator.interact
     interact(interaction)
     try interaction.perform()
     translator.reportSimulator(eventName, EventType.Ended, subject)
