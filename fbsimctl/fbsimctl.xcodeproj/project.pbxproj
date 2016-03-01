@@ -58,7 +58,7 @@
 		AAD999551C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAD999571C68D80B0014D61F /* Swifter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AAD9995A1C68D8680014D61F /* Swifter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
+		AAD9995A1C68D8680014D61F /* Swifter.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
 		AAE0C5561C49214F005DE6D9 /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
 		AAE0C5571C492158005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
@@ -91,14 +91,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AAD999581C68D84F0014D61F /* CopyFiles */ = {
+		AAD999581C68D84F0014D61F /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				AAD9995A1C68D8680014D61F /* Swifter.framework in CopyFiles */,
+				AAD9995A1C68D8680014D61F /* Swifter.framework in Copy Files */,
 			);
+			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -305,7 +306,7 @@
 			buildPhases = (
 				AA93B7AC1BE8351000CF6A56 /* Sources */,
 				AAE35A521C285F150073CC70 /* Frameworks */,
-				AAD999581C68D84F0014D61F /* CopyFiles */,
+				AAD999581C68D84F0014D61F /* Copy Files */,
 			);
 			buildRules = (
 			);

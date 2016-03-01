@@ -155,7 +155,6 @@
 		AAC083761B9FB89600451648 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
 		AAC083781B9FBA7600451648 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AAC083791B9FBACB00451648 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
-		AAC241241BB3113F0054570C /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAC241231BB3113F0054570C /* AppKit.framework */; };
 		AAC241261BB311690054570C /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAC241251BB311690054570C /* ApplicationServices.framework */; };
 		AACA2C371C2976B100979C45 /* FBAddVideoPolyfill.h in Headers */ = {isa = PBXBuildFile; fileRef = AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AACA2C381C2976B100979C45 /* FBAddVideoPolyfill.m in Sources */ = {isa = PBXBuildFile; fileRef = AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */; };
@@ -992,7 +991,6 @@
 			files = (
 				AAB4AC1E1BB586930046F6A1 /* AVFoundation.framework in Frameworks */,
 				AAC241261BB311690054570C /* ApplicationServices.framework in Frameworks */,
-				AAC241241BB3113F0054570C /* AppKit.framework in Frameworks */,
 				E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */,
 				E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */,
 				AA4243041C5295FC008ABD80 /* CoreMedia.framework in Frameworks */,
