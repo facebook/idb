@@ -74,7 +74,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 
 /**
  Scales the provided size with the receiver's scale/
- 
+
  @param size the size to scale.
  @return a scaled size.
  */
