@@ -11,6 +11,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "FBFramebufferFrame.h"
+
 @interface FBFramebufferDebugWindow () <NSApplicationDelegate>
 
 @property (nonatomic, copy, readonly) NSString *name;
@@ -50,17 +52,17 @@
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(dispatch_get_main_queue(), ^{
-    if (count == 0) {
-      self.window = [self createWindowWithSize:size];
+    if (frame.count == 0) {
+      self.window = [self createWindowWithSize:frame.size];
     }
-    [self updateWindowWithImage:image];
+    [self updateWindowWithImage:frame.image];
   });
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   [self teardownWindow];
 }

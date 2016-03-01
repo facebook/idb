@@ -36,17 +36,17 @@
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
   for (id<FBFramebufferDelegate> delegate in self.delegates) {
-    [delegate framebufferDidUpdate:framebuffer withImage:image count:count size:size];
+    [delegate framebuffer:framebuffer didUpdate:frame];
   }
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   for (id<FBFramebufferDelegate> delegate in self.delegates) {
-    [delegate framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
+    [delegate framebuffer:framebuffer didBecomeInvalidWithError:error teardownGroup:teardownGroup];
   }
 }
 

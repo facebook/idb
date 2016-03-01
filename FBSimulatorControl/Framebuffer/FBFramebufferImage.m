@@ -10,11 +10,12 @@
 #import "FBFramebufferImage.h"
 
 #import "FBDiagnostic.h"
+#import "FBFramebufferFrame.h"
 #import "FBSimulatorEventSink.h"
 
 @interface FBFramebufferImage ()
 
-@property (atomic, assign, readwrite) CGImageRef image;
+@property (atomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 
 @property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
@@ -39,11 +40,6 @@
   _eventSink = eventSink;
 
   return self;
-}
-
-- (void)dealloc
-{
-  CGImageRelease(_image);
 }
 
 #pragma mark Public
@@ -73,16 +69,14 @@
 
 #pragma mark FBFramebufferCounterDelegate Implementation
 
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
-  CGImageRef oldImage = self.image;
-  self.image = CGImageRetain(image);
-  CGImageRelease(oldImage);
+  self.lastFrame = frame;
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
-  FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.image toDiagnostic:self.diagnostic];
+  FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.lastFrame.image toDiagnostic:self.diagnostic];
   id<FBSimulatorEventSink> eventSink = self.eventSink;
 
   dispatch_async(dispatch_get_main_queue(), ^{

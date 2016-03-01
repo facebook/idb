@@ -15,6 +15,7 @@
 
 #import "FBCapacityQueue.h"
 #import "FBDiagnostic.h"
+#import "FBFramebufferFrame.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLogger.h"
@@ -22,49 +23,13 @@
 typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
   FBFramebufferVideoStateNotStarted = 0,
   FBFramebufferVideoStateRunning = 1,
-  FBFramebufferVideoStateTerminated = 2,
+  FBFramebufferVideoStateTerminating = 2,
 };
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
-static const CMTimeScale FBFramebufferTimescale = 1000;
-
-@interface FBFramebufferVideoItem : NSObject
-
-@property (nonatomic, assign, readonly) CMTime time;
-@property (nonatomic, assign, readonly) NSUInteger frameCount;
-@property (nonatomic, assign, readonly) CGImageRef image;
-
-- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image frameCount:(NSUInteger)frameCount;
-
-@end
-
-@implementation FBFramebufferVideoItem
-
-- (instancetype)initWithTime:(CMTime)time image:(CGImageRef)image frameCount:(NSUInteger)frameCount
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _time = time;
-  _frameCount = frameCount;
-  _image = CGImageRetain(image);
-
-  return self;
-}
-
-- (void)dealloc
-{
-  CGImageRelease(_image);
-}
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:@"Time %f | Count %lu", CMTimeGetSeconds(self.time), self.frameCount];
-}
-
-@end
+// Timescale is in microseconds.
+static const CMTimeScale FBFramebufferVideoTimescale = 10E4;
+static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_RoundTowardZero;
 
 @interface FBFramebufferVideo ()
 
@@ -73,10 +38,11 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t mediaQueue;
-@property (nonatomic, strong, readonly) FBCapacityQueue *itemQueue;
+@property (nonatomic, strong, readonly) FBCapacityQueue *frameQueue;
 
+@property (nonatomic, assign, readwrite) FBFramebufferVideoState state;
+@property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
-@property (nonatomic, strong, readwrite) FBFramebufferVideoItem *lastItem;
 
 @property (nonatomic, strong, readwrite) AVAssetWriter *writer;
 @property (nonatomic, strong, readwrite) AVAssetWriterInputPixelBufferAdaptor *adaptor;
@@ -106,7 +72,8 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
   _eventSink = eventSink;
 
   _mediaQueue = queue;
-  _itemQueue = [FBCapacityQueue withCapacity:20];
+  _frameQueue = [FBCapacityQueue withCapacity:20];
+  _state = FBFramebufferVideoStateNotStarted;
   _timebase = NULL;
 
   return self;
@@ -114,29 +81,32 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(self.mediaQueue, ^{
     // First frame means that the Video Session should be started.
     // The Frame will be enqueued with the time of the session start time.
-    if (count == 0) {
-      [self startRecordingWithImage:image size:size error:nil];
+    if (self.state == FBFramebufferVideoStateNotStarted) {
+      [self startRecordingWithFrame:frame error:nil];
       return;
     }
 
     // Push the image at the current time.
-    [self pushImage:image time:[self currentTime] frameCount:count];
+    [self pushFrame:frame timebaseConversion:YES];
   });
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   dispatch_group_enter(teardownGroup);
   dispatch_barrier_async(self.mediaQueue, ^{
-    if (self.lastItem) {
-      CMTime time = [self currentTime];
-      [self.logger.info logFormat:@"Pushing frame (%@) again at time %f as this is the final frame", self.lastItem, CMTimeGetSeconds(time)];
-      [self pushImage:self.lastItem.image time:time frameCount:self.lastItem.frameCount + 1];
+    if (self.lastFrame) {
+      // Construct a time at the current timebase's time and push it to the queue.
+      // Timebase conversion does not need to apply.
+      CMTime time = CMTimebaseGetTime(self.timebase);
+      FBFramebufferFrame *finalFrame = [[FBFramebufferFrame alloc] initWithTime:time timebase:self.timebase image:self.lastFrame.image count:(self.lastFrame.count + 1) size:self.lastFrame.size];
+      [self.logger.info logFormat:@"Pushing last frame with new timing (%@) as this is the final frame", finalFrame];
+      [self pushFrame:finalFrame timebaseConversion:NO];
     }
     [self teardownWriterWithGroup:teardownGroup];
     dispatch_group_leave(teardownGroup);
@@ -144,13 +114,6 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 }
 
 #pragma mark - Private
-
-#pragma mark CMTime
-
-- (CMTime)currentTime
-{
-  return CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferTimescale, kCMTimeRoundingMethod_QuickTime);
-}
 
 #pragma mark KVO
 
@@ -168,12 +131,12 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 
 #pragma mark Queueing
 
-- (void)pushImage:(CGImageRef)image time:(CMTime)time frameCount:(NSUInteger)frameCount
+- (void)pushFrame:(FBFramebufferFrame *)frame timebaseConversion:(BOOL)timebaseConversion
 {
-  FBFramebufferVideoItem *item = [[FBFramebufferVideoItem alloc] initWithTime:time image:image frameCount:frameCount];
-  FBFramebufferVideoItem *evictedItem = [self.itemQueue push:item];
-  if (evictedItem) {
-    [self.logger.debug logFormat:@"Evicted Frame (%@), frame dropped", item];
+  frame = timebaseConversion ? [frame convertToTimebase:self.timebase timescale:FBFramebufferVideoTimescale roundingMethod:FBFramebufferVideoRoundingMode] : frame;
+  FBFramebufferFrame *evictedFrame = [self.frameQueue push:frame];
+  if (evictedFrame) {
+    [self.logger.debug logFormat:@"Evicted Frame (%@), frame dropped", evictedFrame];
   }
   [self drainQueue];
 }
@@ -182,8 +145,8 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 {
   NSInteger drainCount = 0;
   while (self.adaptor.assetWriterInput.readyForMoreMediaData) {
-    FBFramebufferVideoItem *item = [self.itemQueue pop];
-    if (!item) {
+    FBFramebufferFrame *frame = [self.frameQueue pop];
+    if (!frame) {
       return;
     }
     drainCount++;
@@ -191,10 +154,10 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
     // Create the pixel buffer from the buffer pool if the pool exists, otherwise create one.
     NSError *error = nil;
     CVPixelBufferRef pixelBuffer = self.adaptor.pixelBufferPool
-      ? [FBFramebufferVideo createPixelBufferFromAdaptor:self.adaptor ofImage:item.image error:&error]
-      : [FBFramebufferVideo createPixelBufferFromAttributes:self.pixelBufferAttributes ofImage:item.image error:&error];
+      ? [FBFramebufferVideo createPixelBufferFromAdaptor:self.adaptor ofImage:frame.image error:&error]
+      : [FBFramebufferVideo createPixelBufferFromAttributes:self.pixelBufferAttributes ofImage:frame.image error:&error];
     if (!pixelBuffer) {
-      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame (%@): %@", item, error];
+      [self.logger.error logFormat:@"Could not construct a pixel buffer for frame (%@): %@", frame, error];
       continue;
     }
 
@@ -208,54 +171,53 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
     // "The operation couldn't be completed. (OSStatus error -12633.)" is 'InvalidTimestamp': http://stackoverflow.com/a/23252239
     // "An unknown error occurred (-16341)" is 'kMediaSampleTimingGeneratorError_InvalidTimeStamp': @rfistman
 
-    if (self.lastItem && CMTimeCompare(item.time, self.lastItem.time) != 1) {
-      [self.logger.error logFormat:@"Dropping Frame (%@) as it's timestamp is not greater than a previous frame (%@)", item, self.lastItem];
-    } else if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:item.time]) {
-      [self.logger.error logFormat:@"Failed to append pixel buffer of frame (%@) with error %@", item, self.writer.error];
+    if (self.lastFrame && CMTimeCompare(frame.time, self.lastFrame.time) != 1) {
+      [self.logger.error logFormat:@"Dropping Frame (%@) as it's timestamp is not greater than a previous frame (%@)", frame, self.lastFrame];
+    } else if (![self.adaptor appendPixelBuffer:pixelBuffer withPresentationTime:frame.time]) {
+      [self.logger.error logFormat:@"Failed to append pixel buffer of frame (%@) with error %@", frame, self.writer.error];
     }
-    self.lastItem = item;
+    self.lastFrame = frame;
     CVPixelBufferRelease(pixelBuffer);
   }
-  if (drainCount == 0 && self.itemQueue.count > 0) {
+  if (drainCount == 0 && self.frameQueue.count > 0) {
     [self.logger.debug logFormat:@"Failed to drain any frames with a queue of length %lu", drainCount];
   }
 }
 
 #pragma mark Writer Lifecycle
 
-- (BOOL)startRecordingWithImage:(CGImageRef)image size:(CGSize)size error:(NSError **)error
+- (BOOL)startRecordingWithFrame:(FBFramebufferFrame *)frame error:(NSError **)error
 {
-  // Create a Timebase to construct the time of the first frame.
+  // Create a Timebase based off frame's timebase, with a new base time.
   CMTimebaseRef timebase = NULL;
-  CMTimebaseCreateWithMasterClock(
+  CMTimebaseCreateWithMasterTimebase(
     kCFAllocatorDefault,
-    CMClockGetHostTimeClock(),
+    frame.timebase,
     &timebase
   );
   NSAssert(timebase, @"Expected to be able to construct timebase");
+  CMTimebaseSetTime(timebase, kCMTimeZero);
   CMTimebaseSetRate(timebase, 1.0);
   self.timebase = timebase;
-
-  // Construct time for the enqueing of the first frame as well as the session start.
-  CMTime time = CMTimeMakeWithSeconds(0, FBFramebufferTimescale);
 
   // Create the asset writer.
   FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.diagnostic];
   NSString *path = logBuilder.createPath;
-  if (![self createAssetWriterAtPath:path size:size startTime:time error:error]) {
+  if (![self createAssetWriterAtPath:path fromFrame:frame error:error]) {
     return NO;
   }
 
   // Enqueue the first frame
-  [self pushImage:image time:time frameCount:0];
+  [self pushFrame:frame timebaseConversion:YES];
 
   // Report the availability of the video
   [self.eventSink diagnosticAvailable:[[logBuilder updatePath:path] build]];
 
+  self.state = FBFramebufferVideoStateRunning;
   return YES;
 }
 
-- (BOOL)createAssetWriterAtPath:(NSString *)videoPath size:(CGSize)size startTime:(CMTime)startTime error:(NSError **)error
+- (BOOL)createAssetWriterAtPath:(NSString *)videoPath fromFrame:(FBFramebufferFrame *)frame error:(NSError **)error
 {
   NSError *innerError = nil;
   NSURL *url = [NSURL fileURLWithPath:videoPath];
@@ -270,8 +232,8 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
   // Create an Input for the Writer
   NSDictionary *outputSettings = @{
     AVVideoCodecKey : AVVideoCodecH264,
-    AVVideoWidthKey : @(size.width),
-    AVVideoHeightKey : @(size.height),
+    AVVideoWidthKey : @(frame.size.width),
+    AVVideoHeightKey : @(frame.size.height),
   };
   AVAssetWriterInput *input = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:outputSettings];
   input.expectsMediaDataInRealTime = NO;
@@ -286,8 +248,8 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
   self.pixelBufferAttributes =  @{
     (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
     (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferWidthKey : @(size.width),
-    (NSString *) kCVPixelBufferHeightKey : @(size.height),
+    (NSString *) kCVPixelBufferWidthKey : @(frame.size.width),
+    (NSString *) kCVPixelBufferHeightKey : @(frame.size.height),
     (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
   };
   AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor
@@ -310,6 +272,8 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
       causedBy:writer.error]
       failBool:error];
   }
+  // Create a writer at time zero with the first frame's scale.
+  CMTime startTime = CMTimeMake(0, frame.time.timescale);
   [writer startSessionAtSourceTime:startTime];
 
   // Success means the state needs to be set.
@@ -325,6 +289,10 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 
 - (void)teardownWriterWithGroup:(dispatch_group_t)teardownGroup
 {
+  if (self.state != FBFramebufferVideoStateRunning) {
+    return;
+  }
+  self.state = FBFramebufferVideoStateTerminating;
   [self.logger.info logFormat:@"Marking video at '%@ as finished", self.writer.outputURL];
   [self.adaptor.assetWriterInput markAsFinished];
   [self.writer removeObserver:self forKeyPath:@"readyForMoreMediaData"];
@@ -334,6 +302,9 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
   [self.writer finishWritingWithCompletionHandler:^{
     [self.logger.info logFormat:@"Finished Writing '%@'", self.writer.outputURL];
     dispatch_group_leave(teardownGroup);
+    dispatch_async(self.mediaQueue, ^{
+      self.state = FBFramebufferVideoStateNotStarted;
+    });
   }];
 }
 

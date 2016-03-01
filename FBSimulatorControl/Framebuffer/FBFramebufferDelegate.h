@@ -8,8 +8,10 @@
  */
 
 #import <CoreGraphics/CoreGraphics.h>
+#import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
 
+@class FBFramebufferFrame;
 @class FBSimulatorFramebuffer;
 
 /**
@@ -20,12 +22,9 @@
 /**
  Called when an Image Frame is available.
 
- @param framebuffer the framebuffer that was updated.
- @param size the size of the image.
- @param count the frame count.
- @param image the updated image.
+ @param frame the updated frame.
  */
-- (void)framebufferDidUpdate:(FBSimulatorFramebuffer *)framebuffer withImage:(CGImageRef)image count:(NSUInteger)count size:(CGSize)size;
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame;
 
 /**
  Called when the framebuffer is no longer valid, typically when the Simulator shuts down.
@@ -34,6 +33,6 @@
  @param error an error, if any occured in the teardown of the simulator.
  @param teardownGroup a dispatch_group to add asynchronous tasks to that should be performed in the teardown of the Framebuffer.
  */
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
+- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
 
 @end
