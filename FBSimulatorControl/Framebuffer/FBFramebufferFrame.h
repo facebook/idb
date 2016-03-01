@@ -25,7 +25,7 @@
 
 /**
  The Designated Initializer.
-
+ 
  @param time the time the frame was recieved.
  @param timebase the timebase the time was constructed with.
  @param image the image data of the frame.

@@ -21,8 +21,8 @@
 #import "FBFramebufferCompositeDelegate.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
-#import "FBFramebufferFrame.h"
 #import "FBFramebufferImage.h"
+#import "FBFramebufferFrame.h"
 #import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorDiagnostics.h"
@@ -72,20 +72,19 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
     [sinks addObject:[FBFramebufferDebugWindow withName:@"Simulator"]];
   }
 
-  BOOL recordVideo = (launchConfiguration.options & FBSimulatorLaunchOptionsRecordVideo) == FBSimulatorLaunchOptionsRecordVideo;
-  if (recordVideo) {
-    [sinks addObject:[FBFramebufferVideo withDiagnostic:simulator.diagnostics.video logger:logger eventSink:simulator.eventSink]];
-  }
-  [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.diagnostics.screenshot eventSink:simulator.eventSink]];
+  BOOL autorecord = (launchConfiguration.options & FBSimulatorLaunchOptionsRecordVideo) == FBSimulatorLaunchOptionsRecordVideo;
+  FBFramebufferVideo *video = [FBFramebufferVideo withDiagnostic:simulator.diagnostics.video shouldAutorecord:autorecord logger:logger eventSink:simulator.eventSink];
+  [sinks addObject:video];
 
+  [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.diagnostics.screenshot eventSink:simulator.eventSink]];
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.simulatorframebuffer", DISPATCH_QUEUE_SERIAL);
 
-  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue logger:[logger onQueue:queue] delegate:delegate];
+  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue video:video logger:[logger onQueue:queue] delegate:delegate];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService onQueue:(dispatch_queue_t)clientQueue logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video logger:(id<FBSimulatorLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
 {
   NSParameterAssert(framebufferService);
 
@@ -95,6 +94,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   }
 
   _framebufferService = framebufferService;
+  _video = video;
   _logger = logger;
   _delegate = delegate;
 
