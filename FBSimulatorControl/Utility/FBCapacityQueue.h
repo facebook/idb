@@ -39,6 +39,13 @@
 - (id)pop;
 
 /**
+ Pops all items from the queue.
+
+ @return an Array of all the items popped from the queue.
+ */
+- (NSArray *)popAll;
+
+/**
  The count of the queue.
 
  @return the count of items in the queue

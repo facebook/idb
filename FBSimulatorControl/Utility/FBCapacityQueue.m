@@ -63,6 +63,13 @@
   return item;
 }
 
+- (NSArray *)popAll
+{
+  NSArray *all = self.array.copy;
+  [self.array removeAllObjects];
+  return all;
+}
+
 - (NSUInteger)count
 {
   return self.array.count;
