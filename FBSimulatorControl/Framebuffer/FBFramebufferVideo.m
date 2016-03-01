@@ -221,7 +221,7 @@ static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_
 {
   NSError *innerError = nil;
   NSURL *url = [NSURL fileURLWithPath:videoPath];
-  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeQuickTimeMovie error:&innerError];
+  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeMPEG4 error:&innerError];
   if (!writer) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create an asset writer at %@", videoPath]
