@@ -33,12 +33,12 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 @property (nonatomic, strong, readonly) NSLocale *locale;
 
 /**
- A String representing the Scale at which to launch the Simulator.
+ A String representing the Scaling Factor at which to launch the Simulator.
  */
 @property (nonatomic, copy, readonly) NSString *scaleString;
 
 /**
- Options for using a useFramebuffer App instead of Xcode's Simulator.app
+ Options for how the Simulator should be launched.
  */
 @property (nonatomic, assign, readonly) FBSimulatorLaunchOptions options;
 
@@ -71,6 +71,14 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
  */
 + (instancetype)scale100Percent;
 - (instancetype)scale100Percent;
+
+/**
+ Scales the provided size with the receiver's scale/
+ 
+ @param size the size to scale.
+ @return a scaled size.
+ */
+- (CGSize)scaleSize:(CGSize)size;
 
 #pragma mark Locale
 

@@ -69,7 +69,6 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 @interface FBFramebufferVideo ()
 
 @property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
-@property (nonatomic, assign, readonly) CGFloat scale;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
@@ -77,7 +76,6 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 @property (nonatomic, strong, readonly) FBCapacityQueue *itemQueue;
 
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
-@property (nonatomic, assign, readwrite) CGSize size;
 @property (nonatomic, strong, readwrite) FBFramebufferVideoItem *lastItem;
 
 @property (nonatomic, strong, readwrite) AVAssetWriter *writer;
@@ -90,13 +88,13 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 
 #pragma mark Initializers
 
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithDiagnostic:diagnostic scale:scale onQueue:queue logger:[logger onQueue:queue] eventSink:eventSink];
+  return [[self alloc] initWithDiagnostic:diagnostic onQueue:queue logger:[logger onQueue:queue] eventSink:eventSink];
 }
 
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic scale:(CGFloat)scale onQueue:(dispatch_queue_t)queue logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic onQueue:(dispatch_queue_t)queue logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -104,15 +102,12 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
   }
 
   _diagnostic = diagnostic;
-  _scale = scale;
   _logger = logger;
   _eventSink = eventSink;
 
   _mediaQueue = queue;
   _itemQueue = [FBCapacityQueue withCapacity:20];
-
   _timebase = NULL;
-  _size = CGSizeZero;
 
   return self;
 }
@@ -230,8 +225,6 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
 
 - (BOOL)startRecordingWithImage:(CGImageRef)image size:(CGSize)size error:(NSError **)error
 {
-  self.size = CGSizeMake(ceil(size.width * self.scale), ceil(size.height * self.scale));
-
   // Create a Timebase to construct the time of the first frame.
   CMTimebaseRef timebase = NULL;
   CMTimebaseCreateWithMasterClock(
@@ -249,7 +242,7 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
   // Create the asset writer.
   FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.diagnostic];
   NSString *path = logBuilder.createPath;
-  if (![self createAssetWriterAtPath:path size:self.size startTime:time error:error]) {
+  if (![self createAssetWriterAtPath:path size:size startTime:time error:error]) {
     return NO;
   }
 
@@ -293,8 +286,8 @@ static const CMTimeScale FBFramebufferTimescale = 1000;
   self.pixelBufferAttributes =  @{
     (NSString *) kCVPixelBufferCGImageCompatibilityKey:(id)kCFBooleanTrue,
     (NSString *) kCVPixelBufferCGBitmapContextCompatibilityKey:(id)kCFBooleanTrue,
-    (NSString *) kCVPixelBufferWidthKey : @(self.size.width),
-    (NSString *) kCVPixelBufferHeightKey : @(self.size.height),
+    (NSString *) kCVPixelBufferWidthKey : @(size.width),
+    (NSString *) kCVPixelBufferHeightKey : @(size.height),
     (NSString *) kCVPixelBufferPixelFormatTypeKey : @(FBFramebufferPixelFormat)
   };
   AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor
