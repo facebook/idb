@@ -9,7 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 

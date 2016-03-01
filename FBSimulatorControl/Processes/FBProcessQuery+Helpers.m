@@ -9,7 +9,7 @@
 
 #import "FBProcessQuery+Helpers.h"
 
-#import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 #import "FBProcessInfo.h"
 #import "FBSimulatorError.h"

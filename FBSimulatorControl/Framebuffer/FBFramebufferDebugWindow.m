@@ -9,7 +9,7 @@
 
 #import "FBFramebufferDebugWindow.h"
 
-#import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 @interface FBFramebufferDebugWindow () <NSApplicationDelegate>
 

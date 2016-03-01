@@ -9,7 +9,7 @@
 
 #import "FBSimulatorEventRelay.h"
 
-#import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 #import <CoreSimulator/SimDevice.h>
 

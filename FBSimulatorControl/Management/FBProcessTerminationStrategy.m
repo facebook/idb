@@ -9,7 +9,7 @@
 
 #import "FBProcessTerminationStrategy.h"
 
-#import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Helpers.h"

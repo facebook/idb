@@ -12,7 +12,7 @@
 #import <mach/exc.h>
 #import <mach/mig.h>
 
-#import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 #import <CoreSimulator/SimDevice.h>
 

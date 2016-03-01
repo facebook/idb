@@ -9,7 +9,7 @@
 
 #import "FBSimulatorControl+PrincipalClass.h"
 
-#import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
 
 #import <CoreSimulator/NSUserDefaults-SimDefaults.h>
 #import <CoreSimulator/SimDevice.h>
