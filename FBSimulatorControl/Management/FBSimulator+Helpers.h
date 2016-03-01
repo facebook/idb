@@ -14,12 +14,39 @@
 @class FBSimulatorInteraction;
 @class FBSimulatorLaunchCtl;
 
+/**
+ Helper Methods & Properties for FBSimulator.
+ */
 @interface FBSimulator (Helpers)
 
+#pragma mark Properties
+
 /**
- Creates an `FBSimulatorInteraction` for the reciever.
+ Creates an FBSimulatorInteraction for the reciever.
  */
-- (FBSimulatorInteraction *)interact;
+@property (nonatomic, strong, readonly) FBSimulatorInteraction *interact;
+
+/**
+ Creates a FBSimDeviceWrapper for the Simulator.
+ */
+@property (nonatomic, strong, readonly) FBSimDeviceWrapper *simDeviceWrapper;
+
+/**
+ Creates a FBSimulatorLaunchCtl for the Simulator.
+ */
+@property (nonatomic, strong, readonly) FBSimulatorLaunchCtl *launchctl;
+
+/**
+ The DeviceSetPath of the Simulator.
+ */
+@property (nonatomic, copy, readonly) NSString *deviceSetPath;
+
+/*
+ Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
+ */
+@property (nonatomic, copy, readonly) NSArray *launchdSimSubprocesses;
+
+#pragma mark Methods
 
 /**
  Synchronously waits on the provided state.
@@ -99,21 +126,6 @@
  @return An FBProcessInfo for the Application if one is running, nil otherwise.
  */
 - (FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
-
-/*
- Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
- */
-- (NSArray *)launchdSimSubprocesses;
-
-/**
- Creates a FBSimDeviceWrapper for the Simulator.
- */
-- (FBSimDeviceWrapper *)simDeviceWrapper;
-
-/**
- Creates a FBSimulatorLaunchCtl for the Simulator.
- */
-- (FBSimulatorLaunchCtl *)launchctl;
 
 /*
  A Set of process names that are used to determine whether all the Simulator OS services

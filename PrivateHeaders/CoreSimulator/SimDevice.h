@@ -53,7 +53,6 @@
 @property(retain) NSMutableDictionary *registeredServices; // @synthesize registeredServices=_registeredServices;
 @property(retain) NSObject<OS_dispatch_queue> *bootstrapQueue; // @synthesize bootstrapQueue=_bootstrapQueue;
 @property(retain) SimDeviceNotificationManager *notificationManager; // @synthesize notificationManager=_notificationManager;
-@property(copy) NSString *setPath; // @synthesize setPath=_setPath;
 @property(retain) SimServiceContext *serviceContext; // @synthesize serviceContext=_serviceContext;
 @property(readonly) SimDeviceSet *deviceSet; // @synthesize deviceSet=_deviceSet;
 @property(copy) NSUUID *UDID; // @synthesize UDID=_UDID;

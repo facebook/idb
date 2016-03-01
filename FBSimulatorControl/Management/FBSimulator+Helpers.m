@@ -10,6 +10,7 @@
 #import "FBSimulator+Helpers.h"
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceSet.h>
 
 #import "FBCollectionDescriptions.h"
 #import "FBProcessInfo.h"
@@ -29,10 +30,38 @@
 
 @implementation FBSimulator (Helpers)
 
+#pragma mark Properties
+
 - (FBSimulatorInteraction *)interact
 {
   return [FBSimulatorInteraction withSimulator:self];
 }
+
+- (FBSimDeviceWrapper *)simDeviceWrapper
+{
+  return [FBSimDeviceWrapper withSimulator:self configuration:self.set.configuration processQuery:self.processQuery];
+}
+
+- (FBSimulatorLaunchCtl *)launchctl
+{
+  return [FBSimulatorLaunchCtl withSimulator:self];
+}
+
+- (NSString *)deviceSetPath
+{
+  return self.set.deviceSet.setPath;
+}
+
+- (NSArray *)launchdSimSubprocesses
+{
+  FBProcessInfo *launchdSim = self.launchdSimProcess;
+  if (!launchdSim) {
+    return @[];
+  }
+  return [self.processQuery subprocessesOf:launchdSim.processIdentifier];
+}
+
+#pragma mark Methods
 
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
 {
@@ -167,25 +196,6 @@
     launchdSimSubprocesses]
     filteredArrayUsingPredicate:[FBSimulator predicateForApplicationProcessOfApplication:application]]
     firstObject];
-}
-
-- (FBSimDeviceWrapper *)simDeviceWrapper
-{
-  return [FBSimDeviceWrapper withSimulator:self configuration:self.set.configuration processQuery:self.processQuery];
-}
-
-- (FBSimulatorLaunchCtl *)launchctl
-{
-  return [FBSimulatorLaunchCtl withSimulator:self];
-}
-
-- (NSArray *)launchdSimSubprocesses
-{
-  FBProcessInfo *launchdSim = self.launchdSimProcess;
-  if (!launchdSim) {
-    return @[];
-  }
-  return [self.processQuery subprocessesOf:launchdSim.processIdentifier];
 }
 
 - (NSSet *)requiredProcessNamesToVerifyBooted
