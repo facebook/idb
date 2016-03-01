@@ -14,6 +14,7 @@
 @class FBSimulator;
 @class FBSimulatorLaunchConfiguration;
 @class SimDeviceFramebufferService;
+@class FBFramebufferVideo;
 @protocol FBFramebufferDelegate;
 
 /**
@@ -51,5 +52,10 @@
  @param teardownGroup the dispatch_group to append asynchronous operations to.
  */
 - (void)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup;
+
+/**
+ The FBFramebufferVideo instance owned by the receiver.
+ */
+@property (nonatomic, strong, readonly) FBFramebufferVideo *video;
 
 @end
