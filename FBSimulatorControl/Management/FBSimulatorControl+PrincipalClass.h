@@ -11,6 +11,7 @@
 
 #import <FBSimulatorControl/FBSimulatorPool.h>
 
+@class FBIPCManager;
 @class FBSimulatorApplication;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
@@ -73,6 +74,11 @@
  The Pool that the FBSimulatorControl instance uses.
  */
 @property (nonatomic, strong, readonly) FBSimulatorSet *set;
+
+/**
+ The IPC Manager.
+ */
+@property (nonatomic, strong, readonly) FBIPCManager *ipcManager;
 
 /**
  The Configuration that FBSimulatorControl uses.

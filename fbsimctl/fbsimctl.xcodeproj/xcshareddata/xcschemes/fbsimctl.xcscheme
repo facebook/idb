@@ -74,19 +74,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--state=booted"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "listen"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "--http"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "8090"
+            argument = "51895E05-73ED-4A98-8834-DC2F67B6BE41 boot --direct-launch listen"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -355,6 +355,14 @@ class CommandParserTests : XCTestCase {
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
+  func testParsesRecordStart() {
+    self.assertWithDefaultAction(Action.Record(true), suffix: ["record", "start"])
+  }
+
+  func testParsesRecordStop() {
+    self.assertWithDefaultAction(Action.Record(false), suffix: ["record", "stop"])
+  }
+
   func testParsesRelaunchAppByBundleID() {
     let action = Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
     let suffix: [String] = ["relaunch", "com.foo.bar"]

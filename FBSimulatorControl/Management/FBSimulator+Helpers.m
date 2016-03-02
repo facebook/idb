@@ -19,6 +19,8 @@
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorControl.h"
+#import "FBIPCManager.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
@@ -50,6 +52,11 @@
 - (NSString *)deviceSetPath
 {
   return self.set.deviceSet.setPath;
+}
+
+- (FBIPCClient *)ipcClient
+{
+  return self.set.control.ipcManager.client;
 }
 
 - (NSArray *)launchdSimSubprocesses

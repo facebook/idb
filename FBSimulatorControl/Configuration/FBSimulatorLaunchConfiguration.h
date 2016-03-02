@@ -17,7 +17,7 @@
  */
 typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
   FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 0, /** Launches Simulators directly with a Framebuffer instead of with Simulator.app */
-  FBSimulatorLaunchOptionsRecordVideo = 1 << 1, /** Records the Framebuffer to a video */
+  FBSimulatorLaunchOptionsRecordVideo = 1 << 1, /** Automatically starts the recording of video when the simulator is launched. */
   FBSimulatorLaunchOptionsShowDebugWindow = 1 << 2, /** Relays the Simulator Framebuffer to a window */
   FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 4, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
 };

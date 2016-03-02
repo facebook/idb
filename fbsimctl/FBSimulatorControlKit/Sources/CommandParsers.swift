@@ -244,6 +244,7 @@ extension Action : Parsable {
         self.launchParser,
         self.listenParser,
         self.listParser,
+        self.recordParser,
         self.relaunchParser,
         self.shutdownParser,
         self.terminateParser
@@ -304,6 +305,15 @@ extension Action : Parsable {
     return Parser
       .succeeded(EventName.Relaunch.rawValue, self.appLaunchParser)
       .fmap { Action.Relaunch($0 as! FBApplicationLaunchConfiguration) }
+  }}
+
+  static var recordParser: Parser<Action> { get {
+    return Parser
+      .succeeded(EventName.Record.rawValue, Parser.alternative([
+        Parser.ofString("start", true),
+        Parser.ofString("stop", false)
+      ]))
+      .fmap { Action.Record($0) }
   }}
 
   static var shutdownParser: Parser<Action> { get {

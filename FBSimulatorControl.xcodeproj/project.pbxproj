@@ -52,6 +52,12 @@
 		AA791BA91C63668C00AE49EB /* SimulatorBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = AA791BA61C63668C00AE49EB /* SimulatorBridge.h */; };
 		AA79A1CE1C7766ED00D5C685 /* FBSimulatorSet+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA79A1CD1C77666000D5C685 /* FBSimulatorSet+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA819DB71B9FB40D002F58CA /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */; };
+		AA8C49101C7D153E00F9C996 /* FBIPCServer.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8C490E1C7D153E00F9C996 /* FBIPCServer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA8C49111C7D153E00F9C996 /* FBIPCServer.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8C490F1C7D153E00F9C996 /* FBIPCServer.m */; };
+		AA8C49151C7D167500F9C996 /* FBIPCClient.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8C49131C7D167500F9C996 /* FBIPCClient.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA8C49161C7D167500F9C996 /* FBIPCClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8C49141C7D167500F9C996 /* FBIPCClient.m */; };
+		AA8C49191C7D168D00F9C996 /* FBIPCManager.h in Headers */ = {isa = PBXBuildFile; fileRef = AA8C49171C7D168D00F9C996 /* FBIPCManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA8C491A1C7D168D00F9C996 /* FBIPCManager.m in Sources */ = {isa = PBXBuildFile; fileRef = AA8C49181C7D168D00F9C996 /* FBIPCManager.m */; };
 		AA9517471C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9516C21C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9517481C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9516C31C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m */; };
 		AA9517491C15F54600A89CAD /* FBProcessLaunchConfiguration+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9516C41C15F54600A89CAD /* FBProcessLaunchConfiguration+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -849,6 +855,12 @@
 		AA79A1CD1C77666000D5C685 /* FBSimulatorSet+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorSet+Private.h"; sourceTree = "<group>"; };
 		AA819DB21B9FB40D002F58CA /* FBSimulatorControlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBSimulatorControlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA819E0B1B9FB427002F58CA /* FBSimulatorControlTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FBSimulatorControlTests-Info.plist"; sourceTree = "<group>"; };
+		AA8C490E1C7D153E00F9C996 /* FBIPCServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIPCServer.h; sourceTree = "<group>"; };
+		AA8C490F1C7D153E00F9C996 /* FBIPCServer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIPCServer.m; sourceTree = "<group>"; };
+		AA8C49131C7D167500F9C996 /* FBIPCClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIPCClient.h; sourceTree = "<group>"; };
+		AA8C49141C7D167500F9C996 /* FBIPCClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIPCClient.m; sourceTree = "<group>"; };
+		AA8C49171C7D168D00F9C996 /* FBIPCManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBIPCManager.h; sourceTree = "<group>"; };
+		AA8C49181C7D168D00F9C996 /* FBIPCManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBIPCManager.m; sourceTree = "<group>"; };
 		AA9516C21C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBProcessLaunchConfiguration+Helpers.h"; sourceTree = "<group>"; };
 		AA9516C31C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBProcessLaunchConfiguration+Helpers.m"; sourceTree = "<group>"; };
 		AA9516C41C15F54600A89CAD /* FBProcessLaunchConfiguration+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBProcessLaunchConfiguration+Private.h"; sourceTree = "<group>"; };
@@ -1715,10 +1727,11 @@
 				AA4876491BAC7399007F7D23 /* FBSimulatorControl-Info.plist */,
 				AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */,
 				AA9516C11C15F54600A89CAD /* Configuration */,
+				AA9516F31C15F54600A89CAD /* Diagnostics */,
 				AA9516D21C15F54600A89CAD /* Events */,
 				AA4242D81C528338008ABD80 /* Framebuffer */,
 				AA9516DE1C15F54600A89CAD /* Interactions */,
-				AA9516F31C15F54600A89CAD /* Diagnostics */,
+				AA8C490D1C7CF3A000F9C996 /* IPC */,
 				AA9516FA1C15F54600A89CAD /* Management */,
 				AA95170A1C15F54600A89CAD /* Model */,
 				AA9517171C15F54600A89CAD /* Notifiers */,
@@ -1727,6 +1740,19 @@
 				AA9517391C15F54600A89CAD /* Utility */,
 			);
 			path = FBSimulatorControl;
+			sourceTree = "<group>";
+		};
+		AA8C490D1C7CF3A000F9C996 /* IPC */ = {
+			isa = PBXGroup;
+			children = (
+				AA8C49131C7D167500F9C996 /* FBIPCClient.h */,
+				AA8C49141C7D167500F9C996 /* FBIPCClient.m */,
+				AA8C49171C7D168D00F9C996 /* FBIPCManager.h */,
+				AA8C49181C7D168D00F9C996 /* FBIPCManager.m */,
+				AA8C490E1C7D153E00F9C996 /* FBIPCServer.h */,
+				AA8C490F1C7D153E00F9C996 /* FBIPCServer.m */,
+			);
+			path = IPC;
 			sourceTree = "<group>";
 		};
 		AA8DFB0B1BAC76B60076A6C2 /* Utilities */ = {
@@ -2007,6 +2033,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA8C49151C7D167500F9C996 /* FBIPCClient.h in Headers */,
 				AA9517971C15F54600A89CAD /* FBCoreSimulatorNotifier.h in Headers */,
 				AA9517591C15F54600A89CAD /* FBSimulatorEventRelay.h in Headers */,
 				AA95176B1C15F54600A89CAD /* FBSimulatorInteraction+Diagnostics.h in Headers */,
@@ -2040,6 +2067,7 @@
 				AA9517B41C15F54600A89CAD /* FBConcurrentCollectionOperations.h in Headers */,
 				AA95176D1C15F54600A89CAD /* FBSimulatorInteraction+Private.h in Headers */,
 				AA791BA81C63668C00AE49EB /* SimulatorBridge-Protocol.h in Headers */,
+				AA8C49191C7D168D00F9C996 /* FBIPCManager.h in Headers */,
 				AAF8DA6D1C1AFFF0003B519E /* FBProcessQuery+Helpers.h in Headers */,
 				AA9517931C15F54600A89CAD /* FBSimulatorHistory.h in Headers */,
 				AA9517741C15F54600A89CAD /* FBSimulatorInteraction.h in Headers */,
@@ -2058,6 +2086,7 @@
 				AAD51EA31C3AEFEA00A763D0 /* FBSimulatorLaunchConfiguration+Helpers.h in Headers */,
 				AA9517A71C15F54600A89CAD /* FBTaskExecutor+Convenience.h in Headers */,
 				AA791BA71C63668C00AE49EB /* CDStructures.h in Headers */,
+				AA8C49101C7D153E00F9C996 /* FBIPCServer.h in Headers */,
 				AA791BA11C6364F500AE49EB /* FBSimulatorBridge.h in Headers */,
 				AA95175B1C15F54600A89CAD /* FBSimulatorEventSink.h in Headers */,
 				AA95179B1C15F54600A89CAD /* FBProcessQuery+Simulators.h in Headers */,
@@ -2213,6 +2242,7 @@
 				AA9517781C15F54600A89CAD /* FBSimulatorDiagnostics.m in Sources */,
 				AABD8DFA1C592DBA008527CD /* FBFramebufferImage.m in Sources */,
 				AA95177D1C15F54600A89CAD /* FBSimulator+Helpers.m in Sources */,
+				AA8C491A1C7D168D00F9C996 /* FBIPCManager.m in Sources */,
 				AA4243021C529393008ABD80 /* FBCapacityQueue.m in Sources */,
 				AA9517B91C15F54600A89CAD /* FBSimulatorError.m in Sources */,
 				AAD51EA01C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.m in Sources */,
@@ -2222,6 +2252,7 @@
 				AA95177B1C15F54600A89CAD /* FBDiagnostic.m in Sources */,
 				AA95176C1C15F54600A89CAD /* FBSimulatorInteraction+Diagnostics.m in Sources */,
 				AA95179E1C15F54600A89CAD /* FBProcessQuery.m in Sources */,
+				AA8C49161C7D167500F9C996 /* FBIPCClient.m in Sources */,
 				AA9517981C15F54600A89CAD /* FBCoreSimulatorNotifier.m in Sources */,
 				AA4242FE1C529366008ABD80 /* FBFramebufferVideo.m in Sources */,
 				AA9517BD1C15F54600A89CAD /* NSRunLoop+SimulatorControlAdditions.m in Sources */,
@@ -2234,6 +2265,7 @@
 				AA9517A61C15F54600A89CAD /* FBTask.m in Sources */,
 				AA9517481C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m in Sources */,
 				AAB207C11C2099A9007C7908 /* FBSimulatorLoggingEventSink.m in Sources */,
+				AA8C49111C7D153E00F9C996 /* FBIPCServer.m in Sources */,
 				AA9517801C15F54600A89CAD /* FBSimulator.m in Sources */,
 				AA9517711C15F54600A89CAD /* FBSimulatorInteraction+Upload.m in Sources */,
 				AA9517A81C15F54600A89CAD /* FBTaskExecutor+Convenience.m in Sources */,

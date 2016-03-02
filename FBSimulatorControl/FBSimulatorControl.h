@@ -25,6 +25,9 @@
 #import <FBSimulatorControl/FBFramebufferDelegate.h>
 #import <FBSimulatorControl/FBFramebufferVideo.h>
 #import <FBSimulatorControl/FBInteraction.h>
+#import <FBSimulatorControl/FBIPCClient.h>
+#import <FBSimulatorControl/FBIPCManager.h>
+#import <FBSimulatorControl/FBIPCServer.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
 #import <FBSimulatorControl/FBProcessInfo.h>
