@@ -27,10 +27,25 @@
  Creates a new FBFramebufferVideo instance.
 
  @param diagnostic the log to base the video file from.
+ @param autorecord whether the the instance shoud start recording when it recieves it's first frame.
  @param logger the logger object to log events to, may be nil.
  @param eventSink an event sink to report video output to.
  @return a new FBFramebufferVideo instance.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic shouldAutorecord:(BOOL)autorecord logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+
+/**
+ Starts Recording Video.
+ If the video is already recording, this call will do nothing.
+ Is asynchronous with the caller so the Event Sink will be notified when the video starts recording.
+ */
+- (void)startRecording;
+
+/**
+ Stops Recording Video.
+ If the video is not recording, this call will do nothing.
+ Is asynchronous with the caller so the Event Sink will be notified when the video starts recording.
+ */
+- (void)stopRecording;
 
 @end
