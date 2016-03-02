@@ -472,7 +472,7 @@ struct FBSimulatorConfigurationParser {
 
 /**
  A separate struct for FBSimulatorLaunchConfigurationParser is needed as Parsable protcol conformance cannot be
- applied to FBSimulatorLaunchConfigurationParser as it is a non-final.
+ applied to FBSimulatorLaunchConfiguration as it is a non-final class.
  */
 struct FBSimulatorLaunchConfigurationParser {
   static var parser: Parser<FBSimulatorLaunchConfiguration> { get {
@@ -518,7 +518,6 @@ struct FBSimulatorLaunchConfigurationParser {
     return Parser<FBSimulatorLaunchOptions>
       .unionOptions(1, [
         Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
-        Parser.ofString("--record-video", FBSimulatorLaunchOptions.RecordVideo),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])
   }}

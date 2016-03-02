@@ -110,13 +110,13 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
   return YES;
 }
 
-+ (BOOL)recordVideo
++ (FBFramebufferVideoConfiguration *)defaultVideoConfiguration
 {
   NSString *value = NSProcessInfo.processInfo.environment[DirectLaunchRecordVideoKey];
   if (value && value.boolValue == NO) {
-    return NO;
+    return [FBFramebufferVideoConfiguration withAutorecord:YES];
   }
-  return YES;
+  return [FBFramebufferVideoConfiguration withAutorecord:NO];
 }
 
 + (NSString *)defaultDeviceSetPath
@@ -132,10 +132,7 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 {
   if (self.useDirectLaunching) {
     FBSimulatorLaunchOptions options = FBSimulatorLaunchOptionsEnableDirectLaunch;
-    if (self.recordVideo) {
-      options = (options | FBSimulatorLaunchOptionsRecordVideo);
-    }
-    return [FBSimulatorLaunchConfiguration withOptions:options];
+    return [[FBSimulatorLaunchConfiguration withOptions:options] withVideo:self.defaultVideoConfiguration];
   }
   return FBSimulatorLaunchConfiguration.defaultConfiguration;
 }

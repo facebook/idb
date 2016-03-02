@@ -154,8 +154,8 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
   func testParsesOptions() {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
-      ["--record-video", "--direct-launch"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withOptions(FBSimulatorLaunchOptions.RecordVideo.union(FBSimulatorLaunchOptions.EnableDirectLaunch))
+      ["--direct-launch"],
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
     )
   }
 
@@ -163,7 +163,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
       ["--locale", "en_GB", "--scale=75", "--direct-launch","--record-video"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("en_GB").scale75Percent().withOptions(FBSimulatorLaunchOptions.RecordVideo.union(FBSimulatorLaunchOptions.EnableDirectLaunch))
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("en_GB").scale75Percent().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
     )
   }
 }
@@ -382,10 +382,10 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesListBootListenShutdownDiagnose() {
-    let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(FBSimulatorLaunchOptions.RecordVideo))
+    let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
     let simulatorConfiguration = FBSimulatorConfiguration.iPhone5()
     let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, Action.Diagnose]
-    let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "--record-video", "listen", "--http", "8090", "shutdown", "diagnose"]
+    let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "listen", "--http", "8090", "shutdown", "diagnose"]
     self.assertWithDefaultActions(actions, suffix: suffix)
   }
 
