@@ -24,6 +24,7 @@
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory.h"
+#import "FBIPCManager.h"
 #import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
@@ -60,6 +61,7 @@
   }
   _configuration = configuration;
   _pool = [FBSimulatorPool poolWithSet:_set logger:logger];
+  _ipcManager = [FBIPCManager withSimulatorSet:_set];
 
   return self;
 }

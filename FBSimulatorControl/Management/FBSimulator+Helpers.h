@@ -9,6 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
+@class FBIPCClient;
 @class FBSimDeviceWrapper;
 @class FBSimulatorApplication;
 @class FBSimulatorInteraction;
@@ -40,6 +41,11 @@
  The DeviceSetPath of the Simulator.
  */
 @property (nonatomic, copy, readonly) NSString *deviceSetPath;
+
+/**
+ Fetches an FBIPCServer for the Simulator.
+ */
+@property (nonatomic, strong, readonly) FBIPCClient *ipcClient;
 
 /*
  Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
