@@ -19,7 +19,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorFramebuffer.h"
+#import "FBFramebuffer.h"
 #import "FBSimulatorLaunchConfiguration.h"
 
 @interface FBSimulatorBridge ()
@@ -134,7 +134,7 @@
   // Create and start the consumer of the Framebuffer Service.
   // The launch configuration will define the way that the Framebuffer is consumed.
   // Then the simulator's event sink should be notified with the created framebuffer object.
-  FBSimulatorFramebuffer *framebuffer = [FBSimulatorFramebuffer withFramebufferService:framebufferService configuration:configuration simulator:simulator];
+  FBFramebuffer *framebuffer = [FBFramebuffer withFramebufferService:framebufferService configuration:configuration simulator:simulator];
   [framebuffer startListeningInBackground];
 
   // Create the bridge and broadcast the availability
@@ -144,7 +144,7 @@
   return bridge;
 }
 
-- (instancetype)initWithFramebuffer:(FBSimulatorFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(id<SimulatorBridge>)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(id<SimulatorBridge>)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {

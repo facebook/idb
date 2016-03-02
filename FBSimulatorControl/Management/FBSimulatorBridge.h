@@ -12,7 +12,7 @@
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 
 @class FBSimulator;
-@class FBSimulatorFramebuffer;
+@class FBFramebuffer;
 @class FBSimulatorLaunchConfiguration;
 
 /**
@@ -59,6 +59,6 @@
 /**
  The FBSimulatorFramebuffer Instance.
  */
-@property (nonatomic, strong, readonly) FBSimulatorFramebuffer *framebuffer;
+@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
 
 @end

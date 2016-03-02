@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorFramebuffer.h"
+#import "FBFramebuffer.h"
 
 #import <mach/exc.h>
 #import <mach/mig.h>
@@ -46,7 +46,7 @@ static const NSInteger FBFramebufferLogFrameFrequency = 100;
 static const CMTimeScale FBSimulatorFramebufferTimescale = 10E8;
 static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTimeRoundingMethod_Default;
 
-@interface FBSimulatorFramebuffer ()
+@interface FBFramebuffer ()
 
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
@@ -60,7 +60,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
 
 @end
 
-@implementation FBSimulatorFramebuffer
+@implementation FBFramebuffer
 
 #pragma mark Initializers
 
@@ -113,7 +113,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
 {
   return [NSString stringWithFormat:
     @"%@ | Size %@ | Frame Count %ld",
-    [FBSimulatorFramebuffer stringFromFramebufferState:self.state],
+    [FBFramebuffer stringFromFramebufferState:self.state],
     NSStringFromSize(self.size),
     self.frameCount
   ];
@@ -153,7 +153,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   });
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error
+- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error
 {
   dispatch_group_t teardownGroup = dispatch_group_create();
   [self framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
@@ -207,7 +207,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   [self.logger.info logFormat:@"Frame Count %lu", self.frameCount];
 }
 
-- (void)framebufferDidBecomeInvalid:(FBSimulatorFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   if (self.state != FBSimulatorFramebufferStateStarting && self.state != FBSimulatorFramebufferStateRunning) {
     return;

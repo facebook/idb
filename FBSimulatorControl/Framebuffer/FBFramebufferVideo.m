@@ -114,7 +114,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
+- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(self.mediaQueue, ^{
     // Push the image, converting to the new timebase.
@@ -122,7 +122,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   });
 }
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   dispatch_group_enter(teardownGroup);
   dispatch_barrier_async(self.mediaQueue, ^{
