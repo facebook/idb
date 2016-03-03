@@ -52,7 +52,7 @@
 
 #pragma mark FBFramebufferDelegate Implementation
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
+- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(dispatch_get_main_queue(), ^{
     if (frame.count == 0) {
@@ -62,7 +62,7 @@
   });
 }
 
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   [self teardownWindow];
 }

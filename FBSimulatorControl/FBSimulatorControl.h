@@ -20,6 +20,7 @@
 #import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBDiagnostic.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
+#import <FBSimulatorControl/FBFramebuffer.h>
 #import <FBSimulatorControl/FBFramebufferCompositeDelegate.h>
 #import <FBSimulatorControl/FBFramebufferDebugWindow.h>
 #import <FBSimulatorControl/FBFramebufferDelegate.h>
@@ -53,7 +54,6 @@
 #import <FBSimulatorControl/FBSimulatorError.h>
 #import <FBSimulatorControl/FBSimulatorEventRelay.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
-#import <FBSimulatorControl/FBSimulatorFramebuffer.h>
 #import <FBSimulatorControl/FBSimulatorHistory+Private.h>
 #import <FBSimulatorControl/FBSimulatorHistory+Queries.h>
 #import <FBSimulatorControl/FBSimulatorHistory.h>

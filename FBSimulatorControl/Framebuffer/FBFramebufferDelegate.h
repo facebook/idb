@@ -12,7 +12,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBFramebufferFrame;
-@class FBSimulatorFramebuffer;
+@class FBFramebuffer;
 
 /**
  A Delegate for updates from a Simulator's Framebuffer.
@@ -24,7 +24,7 @@
 
  @param frame the updated frame.
  */
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame;
+- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame;
 
 /**
  Called when the framebuffer is no longer valid, typically when the Simulator shuts down.
@@ -33,6 +33,6 @@
  @param error an error, if any occured in the teardown of the simulator.
  @param teardownGroup a dispatch_group to add asynchronous tasks to that should be performed in the teardown of the Framebuffer.
  */
-- (void)framebuffer:(FBSimulatorFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
+- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
 
 @end
