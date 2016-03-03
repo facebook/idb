@@ -350,8 +350,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     return;
   }
 
-  // Push last frame if one exists.
-  if (self.lastFrame) {
+  // Push last frame if one exists and the flag is set.
+  if (self.pushFinalFrame && self.lastFrame) {
     // Construct a time at the current timebase's time and push it to the queue.
     // Timebase conversion does not need to apply.
     CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, self.configuration.timescale, self.configuration.roundingMethod);
@@ -471,6 +471,11 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 - (BOOL)immediateStart
 {
   return (self.configuration.options & FBFramebufferVideoOptionsImmediateFrameStart) == FBFramebufferVideoOptionsImmediateFrameStart;
+}
+
+- (BOOL)pushFinalFrame
+{
+  return (self.configuration.options & FBFramebufferVideoOptionsFinalFrame) == FBFramebufferVideoOptionsFinalFrame;
 }
 
 #pragma mark String Formatting
