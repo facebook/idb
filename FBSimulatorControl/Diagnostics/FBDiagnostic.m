@@ -182,6 +182,26 @@
   ];
 }
 
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBDiagnostic *)diagnostic
+{
+  if ([diagnostic isMemberOfClass:self.class]) {
+    return NO;
+  }
+
+  return (self.shortName == diagnostic.shortName || [self.shortName isEqualToString:diagnostic.shortName]) &&
+         (self.fileType == diagnostic.fileType || [self.fileType isEqualToString:diagnostic.fileType]) &&
+         (self.humanReadableName == diagnostic.humanReadableName || [self.humanReadableName isEqualToString:diagnostic.humanReadableName]) &&
+         (self.storageDirectory == diagnostic.storageDirectory || [self.storageDirectory isEqualToString:diagnostic.storageDirectory]) &&
+         (self.destination == diagnostic.destination || [self.destination isEqualToString:diagnostic.destination]);
+}
+
+- (NSUInteger)hash
+{
+  return self.shortName.hash ^ self.fileType.hash ^ self.humanReadableName.hash ^ self.storageDirectory.hash ^ self.destination.hash;
+}
+
 @end
 
 @implementation FBDiagnostic_Data
@@ -281,6 +301,22 @@
   ];
 }
 
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBDiagnostic_Data *)diagnostic
+{
+  if ([super isEqual:diagnostic]) {
+    return NO;
+  }
+
+  return self.backingData == diagnostic.backingData || [self.backingData isEqualToData:diagnostic.backingData];
+}
+
+- (NSUInteger)hash
+{
+  return super.hash ^ self.backingData.hash;
+}
+
 @end
 
 @implementation FBDiagnostic_String
@@ -378,6 +414,22 @@
   ];
 }
 
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBDiagnostic_String *)diagnostic
+{
+  if ([super isEqual:diagnostic]) {
+    return NO;
+  }
+
+  return self.backingString == diagnostic.backingString || [self.backingString isEqualToString:diagnostic.backingString];
+}
+
+- (NSUInteger)hash
+{
+  return super.hash ^ self.backingString.hash;
+}
+
 @end
 
 @implementation FBDiagnostic_Path
@@ -434,6 +486,22 @@
   return self.backingFilePath;
 }
 
+- (BOOL)hasLogContent
+{
+  NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.backingFilePath error:nil];
+  return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
+}
+
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  if ([self.backingFilePath.stringByStandardizingPath isEqualToString:self.backingFilePath.stringByStandardizingPath]) {
+    return YES;
+  }
+  return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
@@ -441,11 +509,8 @@
   return dictionary;
 }
 
-- (BOOL)hasLogContent
-{
-  NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.backingFilePath error:nil];
-  return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
-}
+
+#pragma mark FBDebugDescribeable
 
 - (NSString *)shortDescription
 {
@@ -465,12 +530,20 @@
   ];
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBDiagnostic_Path *)diagnostic
 {
-  if ([self.backingFilePath.stringByStandardizingPath isEqualToString:self.backingFilePath.stringByStandardizingPath]) {
-    return YES;
+  if ([super isEqual:diagnostic]) {
+    return NO;
   }
-  return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
+
+  return self.backingFilePath == diagnostic.backingFilePath || [self.backingFilePath isEqualToString:diagnostic.backingFilePath];
+}
+
+- (NSUInteger)hash
+{
+  return super.hash ^ self.backingFilePath.hash;
 }
 
 @end
