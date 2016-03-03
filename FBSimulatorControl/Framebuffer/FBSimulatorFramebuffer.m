@@ -21,9 +21,10 @@
 #import "FBFramebufferCompositeDelegate.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
-#import "FBFramebufferImage.h"
 #import "FBFramebufferFrame.h"
+#import "FBFramebufferImage.h"
 #import "FBFramebufferVideo.h"
+#import "FBFramebufferVideoConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorEventSink.h"
@@ -72,8 +73,8 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
     [sinks addObject:[FBFramebufferDebugWindow withName:@"Simulator"]];
   }
 
-  BOOL autorecord = (launchConfiguration.options & FBSimulatorLaunchOptionsRecordVideo) == FBSimulatorLaunchOptionsRecordVideo;
-  FBFramebufferVideo *video = [FBFramebufferVideo withDiagnostic:simulator.diagnostics.video shouldAutorecord:autorecord logger:logger eventSink:simulator.eventSink];
+  FBFramebufferVideoConfiguration *videoConfiguration = [launchConfiguration.video withDiagnostic:simulator.diagnostics.video];
+  FBFramebufferVideo *video = [FBFramebufferVideo withConfiguration:videoConfiguration logger:logger eventSink:simulator.eventSink];
   [sinks addObject:video];
 
   [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.diagnostics.screenshot eventSink:simulator.eventSink]];

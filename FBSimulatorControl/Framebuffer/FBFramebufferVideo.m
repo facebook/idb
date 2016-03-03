@@ -16,6 +16,7 @@
 #import "FBCapacityQueue.h"
 #import "FBDiagnostic.h"
 #import "FBFramebufferFrame.h"
+#import "FBFramebufferVideoConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLogger.h"
@@ -28,13 +29,10 @@ typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
 };
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
-// Timescale is in microseconds.
-static const CMTimeScale FBFramebufferVideoTimescale = 10E4;
-static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_RoundTowardZero;
 
 @interface FBFramebufferVideo ()
 
-@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
+@property (nonatomic, strong, readonly) FBFramebufferVideoConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
@@ -55,26 +53,26 @@ static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_
 
 #pragma mark Initializers
 
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic shouldAutorecord:(BOOL)autorecord logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withConfiguration:(FBFramebufferVideoConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithDiagnostic:diagnostic shouldAutorecord:autorecord onQueue:queue logger:[logger onQueue:queue] eventSink:eventSink];
+  return [[self alloc] initWithConfiguration:configuration onQueue:queue logger:[logger onQueue:queue] eventSink:eventSink];
 }
 
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic shouldAutorecord:(BOOL)autorecord onQueue:(dispatch_queue_t)queue logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBFramebufferVideoConfiguration *)configuration onQueue:(dispatch_queue_t)queue logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _diagnostic = diagnostic;
+  _configuration = configuration;
   _logger = logger;
   _eventSink = eventSink;
 
   _mediaQueue = queue;
   _frameQueue = [FBCapacityQueue withCapacity:20];
-  _state = autorecord ? FBFramebufferVideoStateWaitingForFirstFrame : FBFramebufferVideoStateNotStarted;
+  _state = configuration.autorecord ? FBFramebufferVideoStateWaitingForFirstFrame : FBFramebufferVideoStateNotStarted;
   _timebase = NULL;
 
   return self;
@@ -168,7 +166,7 @@ static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_
   }
 
   // Convert the timebase if required, then push the frame to the queue and drain.
-  frame = timebaseConversion ? [frame convertToTimebase:self.timebase timescale:FBFramebufferVideoTimescale roundingMethod:FBFramebufferVideoRoundingMode] : frame;
+  frame = timebaseConversion ? [frame convertToTimebase:self.timebase timescale:self.configuration.timescale roundingMethod:self.configuration.roundingMethod] : frame;
   [self.frameQueue push:frame];
   [self drainQueue];
 }
@@ -248,7 +246,7 @@ static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_
   self.timebase = timebase;
 
   // Create the asset writer.
-  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.diagnostic];
+  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.configuration.diagnostic];
   NSString *path = logBuilder.createPath;
   if (![self createAssetWriterAtPath:path fromFrame:frame error:error]) {
     return NO;
@@ -269,7 +267,7 @@ static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_
 {
   NSError *innerError = nil;
   NSURL *url = [NSURL fileURLWithPath:videoPath];
-  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:AVFileTypeMPEG4 error:&innerError];
+  AVAssetWriter *writer = [[AVAssetWriter alloc] initWithURL:url fileType:self.configuration.fileType error:&innerError];
   if (!writer) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create an asset writer at %@", videoPath]
@@ -347,7 +345,7 @@ static const CMTimeScale FBFramebufferVideoRoundingMode = kCMTimeRoundingMethod_
   if (self.lastFrame) {
     // Construct a time at the current timebase's time and push it to the queue.
     // Timebase conversion does not need to apply.
-    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBFramebufferVideoTimescale, FBFramebufferVideoRoundingMode);
+    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, self.configuration.timescale, self.configuration.roundingMethod);
     FBFramebufferFrame *finalFrame = [[FBFramebufferFrame alloc] initWithTime:time timebase:self.timebase image:self.lastFrame.image count:(self.lastFrame.count + 1) size:self.lastFrame.size];
     [self.logger.info logFormat:@"Pushing last frame (%@) with new timing (%@) as this is the final frame", self.lastFrame, finalFrame];
     [self pushFrame:finalFrame timebaseConversion:NO];

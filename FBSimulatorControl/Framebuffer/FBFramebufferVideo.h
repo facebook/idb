@@ -11,7 +11,7 @@
 
 #import <FBSimulatorControl/FBFramebufferDelegate.h>
 
-@class FBDiagnostic;
+@class FBFramebufferVideoConfiguration;
 @protocol FBSimulatorLogger;
 @protocol FBSimulatorEventSink;
 
@@ -26,13 +26,12 @@
 /**
  Creates a new FBFramebufferVideo instance.
 
- @param diagnostic the log to base the video file from.
- @param autorecord whether the the instance shoud start recording when it recieves it's first frame.
+ @param configuration the configuration to use for encoding.
  @param logger the logger object to log events to, may be nil.
  @param eventSink an event sink to report video output to.
  @return a new FBFramebufferVideo instance.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic shouldAutorecord:(BOOL)autorecord logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withConfiguration:(FBFramebufferVideoConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  Starts Recording Video.

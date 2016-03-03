@@ -12,20 +12,26 @@
 #import <FBSimulatorControl/FBDebugDescribeable.h>
 #import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
 
+@class FBFramebufferVideoConfiguration;
+
 /**
  An Option Set for Direct Launching.
  */
 typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
   FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 0, /** Launches Simulators directly with a Framebuffer instead of with Simulator.app */
-  FBSimulatorLaunchOptionsRecordVideo = 1 << 1, /** Automatically starts the recording of video when the simulator is launched. */
-  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 2, /** Relays the Simulator Framebuffer to a window */
-  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 4, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
+  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 1, /** Relays the Simulator Framebuffer to a window */
+  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 2, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
 };
 
 /**
  A Value Object for defining how to launch a Simulator.
  */
 @interface FBSimulatorLaunchConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializationDescribeable, FBDebugDescribeable>
+
+/**
+ Options for how the Simulator should be launched.
+ */
+@property (nonatomic, assign, readonly) FBSimulatorLaunchOptions options;
 
 /**
  The Locale in which to Simulate, may be nil.
@@ -38,13 +44,22 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 @property (nonatomic, copy, readonly) NSString *scaleString;
 
 /**
- Options for how the Simulator should be launched.
+ Configuration for Framebuffer Video encoding.
+ Only applies if FBSimulatorLaunchOptionsEnableDirectLaunch is flagged.
  */
-@property (nonatomic, assign, readonly) FBSimulatorLaunchOptions options;
+@property (nonatomic, copy, readonly) FBFramebufferVideoConfiguration *video;
 
 #pragma mark Default Instance
 
 + (instancetype)defaultConfiguration;
+
+#pragma mark Launch Options
+
+/**
+ Set Direct Launch Options
+ */
++ (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
+- (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
 
 #pragma mark Device Scale
 
@@ -90,12 +105,12 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 + (instancetype)withLocale:(NSLocale *)locale;
 - (instancetype)withLocale:(NSLocale *)locale;
 
-#pragma mark Launch Options
+#pragma mark Video
 
 /**
- Set Direct Launch Options
+ Set Video Configuration
  */
-+ (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
-- (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
++ (instancetype)withVideo:(FBFramebufferVideoConfiguration *)video;
+- (instancetype)withVideo:(FBFramebufferVideoConfiguration *)video;
 
 @end

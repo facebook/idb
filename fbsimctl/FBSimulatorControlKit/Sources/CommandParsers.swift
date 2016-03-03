@@ -244,6 +244,7 @@ extension Action : Parsable {
         self.launchParser,
         self.listenParser,
         self.listParser,
+        self.recordParser,
         self.relaunchParser,
         self.shutdownParser,
         self.terminateParser
@@ -304,6 +305,15 @@ extension Action : Parsable {
     return Parser
       .succeeded(EventName.Relaunch.rawValue, self.appLaunchParser)
       .fmap { Action.Relaunch($0 as! FBApplicationLaunchConfiguration) }
+  }}
+
+  static var recordParser: Parser<Action> { get {
+    return Parser
+      .succeeded(EventName.Record.rawValue, Parser.alternative([
+        Parser.ofString("start", true),
+        Parser.ofString("stop", false)
+      ]))
+      .fmap { Action.Record($0) }
   }}
 
   static var shutdownParser: Parser<Action> { get {
@@ -472,7 +482,7 @@ struct FBSimulatorConfigurationParser {
 
 /**
  A separate struct for FBSimulatorLaunchConfigurationParser is needed as Parsable protcol conformance cannot be
- applied to FBSimulatorLaunchConfigurationParser as it is a non-final.
+ applied to FBSimulatorLaunchConfiguration as it is a non-final class.
  */
 struct FBSimulatorLaunchConfigurationParser {
   static var parser: Parser<FBSimulatorLaunchConfiguration> { get {
@@ -518,7 +528,6 @@ struct FBSimulatorLaunchConfigurationParser {
     return Parser<FBSimulatorLaunchOptions>
       .unionOptions(1, [
         Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
-        Parser.ofString("--record-video", FBSimulatorLaunchOptions.RecordVideo),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])
   }}

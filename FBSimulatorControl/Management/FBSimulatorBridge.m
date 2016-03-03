@@ -27,7 +27,6 @@
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 @property (nonatomic, strong, readonly) dispatch_group_t teardownGroup;
 
-@property (nonatomic, strong, readwrite) FBSimulatorFramebuffer *framebuffer;
 @property (nonatomic, assign, readwrite) mach_port_t hidPort;
 @property (nonatomic, strong, readwrite) id<SimulatorBridge> bridge;
 
