@@ -90,8 +90,15 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
       [self.logger.info logFormat:@"Cannot start recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
       return;
     }
+
+    // Set the Waiting for Frame State, this will be used when a frame is ready.
     [self.logger.debug log:@"Manually starting recording"];
     self.state = FBFramebufferVideoStateWaitingForFirstFrame;
+
+    // With Immedate Start enabled, start the record if there's a frame ready.
+    if (self.immediateStart && self.lastFrame) {
+      [self startRecordingWithFrame:self.lastFrame error:nil];
+    }
   });
 }
 
@@ -155,8 +162,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 {
   // Discard frames when there's no reason to record them
   if (self.state == FBFramebufferVideoStateNotStarted || self.state == FBFramebufferVideoStateTerminating) {
-    self.lastFrame = nil;
     [self.frameQueue popAll];
+    self.lastFrame = self.immediateStart ? frame : nil;
     return;
   }
   // When waiting for first frame, start video recording.
@@ -457,6 +464,13 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
 
   return pixelBuffer;
+}
+
+#pragma mark Options
+
+- (BOOL)immediateStart
+{
+  return (self.configuration.options & FBFramebufferVideoOptionsImmediateFrameStart) == FBFramebufferVideoOptionsImmediateFrameStart;
 }
 
 #pragma mark String Formatting
