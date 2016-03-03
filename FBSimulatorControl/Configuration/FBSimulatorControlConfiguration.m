@@ -95,13 +95,35 @@
          self.options == object.options;
 }
 
+#pragma mark FBJSONSerializationDescribeable
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    NSStringFromSelector(@selector(deviceSetPath)) : self.deviceSetPath ?: NSNull.null,
+    NSStringFromSelector(@selector(options)) : @(self.options)
+  };
+}
+
+#pragma mark FBDebugDescribeable
+
 - (NSString *)description
+{
+  return [self shortDescription];
+}
+
+- (NSString *)shortDescription
 {
   return [NSString stringWithFormat:
     @"Pool Config | Set Path %@ | Options %ld",
     self.deviceSetPath,
     self.options
   ];
+}
+
+- (NSString *)debugDescription
+{
+  return [self shortDescription];
 }
 
 @end
