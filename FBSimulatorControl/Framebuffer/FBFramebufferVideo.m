@@ -72,8 +72,10 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
   _mediaQueue = queue;
   _frameQueue = [FBCapacityQueue withCapacity:20];
-  _state = configuration.autorecord ? FBFramebufferVideoStateWaitingForFirstFrame : FBFramebufferVideoStateNotStarted;
   _timebase = NULL;
+
+  BOOL autorecord = (configuration.options & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord;
+  _state = autorecord ? FBFramebufferVideoStateWaitingForFirstFrame : FBFramebufferVideoStateNotStarted;
 
   return self;
 }

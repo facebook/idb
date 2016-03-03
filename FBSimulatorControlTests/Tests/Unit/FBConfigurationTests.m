@@ -33,8 +33,8 @@
 - (NSArray *)videoConfigurations
 {
   return @[
-    [[[FBFramebufferVideoConfiguration withAutorecord:YES] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
-    [[[FBFramebufferVideoConfiguration withAutorecord:NO] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
+    [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsAutorecord | FBFramebufferVideoOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
+    [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
   ];
 }
 

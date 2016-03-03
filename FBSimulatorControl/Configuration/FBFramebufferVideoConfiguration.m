@@ -17,20 +17,30 @@
 
 + (instancetype)defaultConfiguration
 {
-  return [FBFramebufferVideoConfiguration withDiagnostic:nil autorecord:NO timescale:1000 roundingMethod:kCMTimeRoundingMethod_RoundTowardZero fileType:AVFileTypeMPEG4];
+  return [FBFramebufferVideoConfiguration
+    withDiagnostic:nil
+    options:FBFramebufferVideoOptionsImmediateFrameStart | FBFramebufferVideoOptionsFinalFrame
+    timescale:1000
+    roundingMethod:kCMTimeRoundingMethod_RoundTowardZero
+    fileType:AVFileTypeMPEG4];
 }
 
 + (instancetype)prudentConfiguration
 {
-  return [FBFramebufferVideoConfiguration withDiagnostic:nil autorecord:NO timescale:1000 roundingMethod:kCMTimeRoundingMethod_QuickTime fileType:AVFileTypeQuickTimeMovie];
+  return [FBFramebufferVideoConfiguration
+    withDiagnostic:nil
+    options:FBFramebufferVideoOptionsImmediateFrameStart | FBFramebufferVideoOptionsFinalFrame
+    timescale:1000
+    roundingMethod:kCMTimeRoundingMethod_QuickTime
+    fileType:AVFileTypeQuickTimeMovie];
 }
 
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic autorecord:(BOOL)autorecord timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(NSString *)fileType
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic options:(FBFramebufferVideoOptions)options timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(NSString *)fileType
 {
-  return [[FBFramebufferVideoConfiguration alloc] initWithDiagnostic:diagnostic autorecord:autorecord timescale:timescale roundingMethod:roundingMethod fileType:fileType];
+  return [[FBFramebufferVideoConfiguration alloc] initWithDiagnostic:diagnostic options:options timescale:timescale roundingMethod:roundingMethod fileType:fileType];
 }
 
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic autorecord:(BOOL)autorecord timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(NSString *)fileType
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic options:(FBFramebufferVideoOptions)options timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(NSString *)fileType
 {
   self = [super init];
   if (!self) {
@@ -38,7 +48,7 @@
   }
 
   _diagnostic = diagnostic;
-  _autorecord = autorecord;
+  _options = options;
   _timescale = timescale;
   _roundingMethod = roundingMethod;
   _fileType = fileType;
@@ -50,14 +60,14 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic autorecord:self.autorecord timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
+  return [[self.class alloc] initWithDiagnostic:self.diagnostic options:self.options timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
 }
 
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return self.diagnostic.hash ^ (NSUInteger) self.autorecord ^ (NSUInteger) self.timescale ^ (NSUInteger) self.roundingMethod ^ self.fileType.hash;
+  return self.diagnostic.hash ^ self.options ^ (NSUInteger) self.timescale ^ (NSUInteger) self.roundingMethod ^ self.fileType.hash;
 }
 
 - (BOOL)isEqual:(FBFramebufferVideoConfiguration *)configuration
@@ -67,7 +77,7 @@
   }
 
   return (self.diagnostic == configuration.diagnostic || [self.diagnostic isEqual:configuration.diagnostic]) &&
-         (self.autorecord == configuration.autorecord) &&
+         (self.options == configuration.options) &&
          (self.timescale == configuration.timescale) &&
          (self.roundingMethod == configuration.roundingMethod) &&
          (self.fileType == configuration.fileType || [self.fileType isEqual:configuration.fileType]);
@@ -83,7 +93,7 @@
   }
 
   _diagnostic = [decoder decodeObjectForKey:NSStringFromSelector(@selector(diagnostic))];
-  _autorecord = [decoder decodeBoolForKey:NSStringFromSelector(@selector(autorecord))];
+  _options = [[decoder decodeObjectForKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
   _timescale = [decoder decodeInt32ForKey:NSStringFromSelector(@selector(timescale))];
   _roundingMethod = [[decoder decodeObjectForKey:NSStringFromSelector(@selector(roundingMethod))] unsignedIntValue];
   _fileType = [decoder decodeObjectForKey:NSStringFromSelector(@selector(fileType))];
@@ -94,7 +104,7 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [coder encodeObject:self.diagnostic forKey:NSStringFromSelector(@selector(diagnostic))];
-  [coder encodeBool:self.autorecord forKey:NSStringFromSelector(@selector(autorecord))];
+  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
   [coder encodeInt32:self.timescale forKey:NSStringFromSelector(@selector(timescale))];
   [coder encodeObject:@(self.roundingMethod) forKey:NSStringFromSelector(@selector(roundingMethod))];
   [coder encodeObject:self.fileType forKey:NSStringFromSelector(@selector(fileType))];
@@ -106,7 +116,7 @@
 {
   return @{
     NSStringFromSelector(@selector(diagnostic)) : self.diagnostic.jsonSerializableRepresentation ?: NSNull.null,
-    NSStringFromSelector(@selector(autorecord)) : @(self.autorecord),
+    NSStringFromSelector(@selector(options)) : @(self.options),
     NSStringFromSelector(@selector(timescale)) : @(self.timescale),
     NSStringFromSelector(@selector(roundingMethod)) : @(self.roundingMethod),
     NSStringFromSelector(@selector(fileType)) : self.fileType ?: NSNull.null
@@ -117,7 +127,7 @@
 
 - (NSString *)shortDescription
 {
-  return [NSString stringWithFormat:@"Autorecord %hhd | Timescale %d | Rounding Method %d", self.autorecord, self.timescale, self.roundingMethod];
+  return [NSString stringWithFormat:@"Options %lu | Timescale %d | Rounding Method %d", (unsigned long) self.options, self.timescale, self.roundingMethod];
 }
 
 - (NSString *)debugDescription
@@ -139,19 +149,19 @@
 
 - (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic
 {
-  return [[self.class alloc] initWithDiagnostic:diagnostic autorecord:self.autorecord timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
+  return [[self.class alloc] initWithDiagnostic:diagnostic options:self.options timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
 }
 
 #pragma mark Autorecord
 
-+ (instancetype)withAutorecord:(BOOL)autorecord
++ (instancetype)withOptions:(FBFramebufferVideoOptions)options
 {
-  return [self.defaultConfiguration withAutorecord:autorecord];
+  return [self.defaultConfiguration withOptions:options];
 }
 
-- (instancetype)withAutorecord:(BOOL)autorecord
+- (instancetype)withOptions:(FBFramebufferVideoOptions)options
 {
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic autorecord:autorecord timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
+  return [[self.class alloc] initWithDiagnostic:self.diagnostic options:options timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
 }
 
 #pragma mark Timescale
@@ -163,7 +173,7 @@
 
 - (instancetype)withTimescale:(CMTimeScale)timescale
 {
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic autorecord:self.autorecord timescale:timescale roundingMethod:self.roundingMethod fileType:self.fileType];
+  return [[self.class alloc] initWithDiagnostic:self.diagnostic options:self.options timescale:timescale roundingMethod:self.roundingMethod fileType:self.fileType];
 }
 
 #pragma mark Rounding
@@ -175,7 +185,7 @@
 
 - (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod
 {
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic autorecord:self.autorecord timescale:self.timescale roundingMethod:roundingMethod fileType:self.fileType];
+  return [[self.class alloc] initWithDiagnostic:self.diagnostic options:self.options timescale:self.timescale roundingMethod:roundingMethod fileType:self.fileType];
 }
 
 #pragma mark File Type
@@ -187,7 +197,7 @@
 
 - (instancetype)withFileType:(NSString *)fileType
 {
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic autorecord:self.autorecord timescale:self.timescale roundingMethod:self.roundingMethod fileType:fileType];
+  return [[self.class alloc] initWithDiagnostic:self.diagnostic options:self.options timescale:self.timescale roundingMethod:self.roundingMethod fileType:fileType];
 }
 
 @end
