@@ -52,7 +52,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
   NSParameterAssert(application);
   NSParameterAssert(name);
 
-  return [self binary:application.binary interact:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
+  return [self binary:application.binary interact:^ BOOL (id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, process.processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 
@@ -76,7 +76,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
   NSParameterAssert(application);
   NSParameterAssert(name);
 
-  return [self binary:application.binary interact:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
+  return [self binary:application.binary interact:^ BOOL (id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, process.processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 

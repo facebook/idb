@@ -41,24 +41,6 @@
 - (instancetype)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch;
 
 /**
- Terminates an Application based on the Application.
- Will fail if a running Application could not be found, or the kill fails.
-
- @param application the Application to terminate.
- @return the reciever, for chaining.
- */
-- (instancetype)terminateApplication:(FBSimulatorApplication *)application;
-
-/**
- Terminates an Application based on the Bundle ID.
- Will fail if a running Application for the Bundle ID could not be found, or the kill fails.
-
- @param bundleID the bundle ID of the Application to Terminate.
- @return the reciever, for chaining.
- */
-- (instancetype)terminateApplicationWithBundleID:(NSString *)bundleID;
-
-/**
  Relaunches the last-launched Application:
  - If the Application is running, it will be killed first then launched.
  - If the Application has terminated, it will be launched.

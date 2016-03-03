@@ -60,59 +60,42 @@
 
 #pragma mark Private
 
-- (instancetype)interactWithSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block
+- (instancetype)interactWithSimulator:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block
 {
   return [self interact:^ BOOL (NSError **error, FBSimulatorInteraction *interaction) {
-    return block(error, interaction.simulator);
+    return block(interaction, error, interaction.simulator);
   }];
 }
 
-- (instancetype)interactWithSimulatorAtState:(FBSimulatorState)state block:(BOOL (^)(NSError **error, FBSimulator *simulator))block
+- (instancetype)interactWithSimulatorAtState:(FBSimulatorState)state block:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block
 {
-  return [self interactWithSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithSimulator:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     if (simulator.state != state) {
       return [[[FBSimulatorError
         describeFormat:@"Expected Simulator %@ to be %@, but it was '%@'", simulator.udid, [FBSimulator stateStringFromSimulatorState:state], simulator.stateString]
         inSimulator:simulator]
         failBool:error];
     }
-    return block(error, simulator);
+    return block(interaction, error, simulator);
   }];
 }
 
-- (instancetype)interactWithShutdownSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block
+- (instancetype)interactWithShutdownSimulator:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block
 {
   return [self interactWithSimulatorAtState:FBSimulatorStateShutdown block:block];
 }
 
-- (instancetype)interactWithBootedSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block
+- (instancetype)interactWithBootedSimulator:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block
 {
   return [self interactWithSimulatorAtState:FBSimulatorStateBooted block:block];
 }
 
-- (instancetype)process:(FBProcessInfo *)process interact:(BOOL (^)(NSError **error, FBSimulator *simulator))block
-{
-  NSParameterAssert(process);
-  NSParameterAssert(block);
-
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess;
-    pid_t ppid = [simulator.processQuery parentOf:process.processIdentifier];
-    if (launchdSimProcess.processIdentifier != ppid) {
-      return [[FBSimulatorError
-        describeFormat:@"Process %@ has parent %d but should have parent %@", process.shortDescription, ppid, launchdSimProcess.shortDescription]
-        failBool:error];
-    }
-    return block(error, simulator);
-  }];
-}
-
-- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
+- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
 {
   NSParameterAssert(binary);
   NSParameterAssert(block);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     FBProcessInfo *processInfo = [[[simulator
       launchdSimSubprocesses]
       filteredArrayUsingPredicate:[FBProcessQuery processesForBinary:binary]]
@@ -121,7 +104,7 @@
     if (!processInfo) {
       return [[[FBSimulatorError describeFormat:@"Could not find an active process for %@", binary] inSimulator:simulator] failBool:error];
     }
-    return block(error, simulator, processInfo);
+    return block(interaction, error, simulator, processInfo);
   }];
 }
 

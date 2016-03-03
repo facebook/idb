@@ -20,13 +20,12 @@
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 
 /**
- Chains an interaction on an process, for the given application.
-
- @param process the process to interact with.
- @param block the block to execute with the process.
- @return the reciever, for chaining.
+ Designated Initializer.
+ 
+ @param interaction the base interaction.
+ @param simulator the Simulator Subject.
  */
-- (instancetype)process:(FBProcessInfo *)process interact:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+- (instancetype)initWithInteraction:(id<FBInteraction>)interaction simulator:(FBSimulator *)simulator;
 
 /**
  Chains an interaction on an process, for the given binary.
@@ -35,7 +34,7 @@
  @param block the block to execute with the process.
  @return the reciever, for chaining.
  */
-- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block;
+- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process))block;
 
 /**
  Interact with the Simulator.
@@ -43,7 +42,7 @@
  @param block the block to execute with the Simulator.
  @return the reciever, for chaining.
  */
-- (instancetype)interactWithSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+- (instancetype)interactWithSimulator:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block;
 
 /**
  Interact with the Simulator. Will ensure that the Simulator is in the appropriate state.
@@ -52,7 +51,7 @@
  @param block the block to execute with the Simulator.
  @return the reciever, for chaining.
  */
-- (instancetype)interactWithSimulatorAtState:(FBSimulatorState)state block:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+- (instancetype)interactWithSimulatorAtState:(FBSimulatorState)state block:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block;
 
 /**
  Interact with a Shutdown Simulator. Will ensure that the Simulator is in the appropriate state.
@@ -60,7 +59,7 @@
  @param block the block to execute with the Shutdown Simulator.
  @return the reciever, for chaining.
  */
-- (instancetype)interactWithShutdownSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+- (instancetype)interactWithShutdownSimulator:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block;
 
 /**
  Interact with a Shutdown Simulator. Will ensure that the Simulator is in the appropriate state.s
@@ -68,6 +67,6 @@
  @param block the block to execute with the Shutdown Simulator.
  @return the reciever, for chaining.
  */
-- (instancetype)interactWithBootedSimulator:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
+- (instancetype)interactWithBootedSimulator:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator))block;
 
 @end

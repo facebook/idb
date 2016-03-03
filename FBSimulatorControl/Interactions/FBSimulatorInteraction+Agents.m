@@ -31,7 +31,7 @@
 {
   NSParameterAssert(agentLaunch);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
     NSFileHandle *stdOut = nil;
     NSFileHandle *stdErr = nil;
@@ -55,19 +55,6 @@
     }
 
     [simulator.eventSink agentDidLaunch:agentLaunch didStart:process stdOut:stdOut stdErr:stdErr];
-    return YES;
-  }];
-}
-
-- (instancetype)killAgent:(FBSimulatorBinary *)agent
-{
-  NSParameterAssert(agent);
-
-  return [self binary:agent interact:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
-    if (!kill(process.processIdentifier, SIGKILL)) {
-      return [[[FBSimulatorError describeFormat:@"SIGKILL of Agent %@ of PID %d failed", agent, process.processIdentifier] inSimulator:simulator] failBool:error];
-    }
-    [self.simulator.eventSink agentDidTerminate:process expected:YES];
     return YES;
   }];
 }

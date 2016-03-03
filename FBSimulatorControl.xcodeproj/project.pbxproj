@@ -160,6 +160,8 @@
 		AAC241261BB311690054570C /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAC241251BB311690054570C /* ApplicationServices.framework */; };
 		AACA2C371C2976B100979C45 /* FBAddVideoPolyfill.h in Headers */ = {isa = PBXBuildFile; fileRef = AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AACA2C381C2976B100979C45 /* FBAddVideoPolyfill.m in Sources */ = {isa = PBXBuildFile; fileRef = AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */; };
+		AACD41F81C6A658A00FB1212 /* FBProcessInteraction.h in Headers */ = {isa = PBXBuildFile; fileRef = AACD41F61C6A658A00FB1212 /* FBProcessInteraction.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AACD41F91C6A658A00FB1212 /* FBProcessInteraction.m in Sources */ = {isa = PBXBuildFile; fileRef = AACD41F71C6A658A00FB1212 /* FBProcessInteraction.m */; };
 		AAD3051F1BD4D5B10047376E /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AAD3051D1BD4D5B10047376E /* photo0.png */; };
 		AAD305201BD4D5B10047376E /* photo1.png in Resources */ = {isa = PBXBuildFile; fileRef = AAD3051E1BD4D5B10047376E /* photo1.png */; };
 		AAD497851C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -958,6 +960,8 @@
 		AAC241251BB311690054570C /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAddVideoPolyfill.h; sourceTree = "<group>"; };
 		AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAddVideoPolyfill.m; sourceTree = "<group>"; };
+		AACD41F61C6A658A00FB1212 /* FBProcessInteraction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessInteraction.h; sourceTree = "<group>"; };
+		AACD41F71C6A658A00FB1212 /* FBProcessInteraction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessInteraction.m; sourceTree = "<group>"; };
 		AAD3051D1BD4D5B10047376E /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
 		AAD3051E1BD4D5B10047376E /* photo1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo1.png; sourceTree = "<group>"; };
 		AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONSerializationDescribeable.h; sourceTree = "<group>"; };
@@ -1797,6 +1801,8 @@
 			children = (
 				AA9516E01C15F54600A89CAD /* FBInteraction.h */,
 				AA9516E11C15F54600A89CAD /* FBInteraction.m */,
+				AACD41F61C6A658A00FB1212 /* FBProcessInteraction.h */,
+				AACD41F71C6A658A00FB1212 /* FBProcessInteraction.m */,
 				AA9516F11C15F54600A89CAD /* FBSimulatorInteraction.h */,
 				AA9516F21C15F54600A89CAD /* FBSimulatorInteraction.m */,
 				AA9516E21C15F54600A89CAD /* FBSimulatorInteraction+Agents.h */,
@@ -2020,6 +2026,7 @@
 				AA9517471C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h in Headers */,
 				AA9517AA1C15F54600A89CAD /* FBTaskExecutor.h in Headers */,
 				AA5639551C060005009BAFAA /* FBSimulatorControl.h in Headers */,
+				AACD41F81C6A658A00FB1212 /* FBProcessInteraction.h in Headers */,
 				AA9517A41C15F54600A89CAD /* FBTask+Private.h in Headers */,
 				AA9517571C15F54600A89CAD /* FBSimulatorResourceManager.h in Headers */,
 				AA4242FD1C529366008ABD80 /* FBFramebufferVideo.h in Headers */,
@@ -2205,6 +2212,7 @@
 				AAAB13291C74EC0300F3B083 /* FBSimulatorSet.m in Sources */,
 				AA9517C31C15F60B00A89CAD /* FBCompositeSimulatorEventSink.m in Sources */,
 				AAD51EA41C3AEFEA00A763D0 /* FBSimulatorLaunchConfiguration+Helpers.m in Sources */,
+				AACD41F91C6A658A00FB1212 /* FBProcessInteraction.m in Sources */,
 				AA791BA21C6364F500AE49EB /* FBSimulatorBridge.m in Sources */,
 				AA9517831C15F54600A89CAD /* FBSimulatorControl+PrincipalClass.m in Sources */,
 				AA4242F21C529145008ABD80 /* FBFramebufferCompositeDelegate.m in Sources */,

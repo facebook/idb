@@ -28,6 +28,7 @@
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
+#import "FBProcessInteraction.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorInteraction (Applications)
@@ -36,7 +37,7 @@
 {
   NSParameterAssert(application);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     if ([simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
       return YES;
     }
@@ -62,7 +63,7 @@
 {
   NSParameterAssert(appLaunch);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
     FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
     if (!application) {
@@ -109,12 +110,12 @@
 {
   NSParameterAssert(appLaunch);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
     NSError *innerError = nil;
     FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
     if (process) {
-      if (![[simulator.interact killProcess:process] perform:&innerError]) {
+      if (![[[simulator.interact process:process] kill] perform:&innerError]) {
         return [FBSimulatorError failBoolWithError:innerError errorOut:error];
       }
     }
@@ -141,7 +142,7 @@
 {
   NSParameterAssert(bundleID);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
     FBProcessInfo *process = [simulator runningApplicationWithBundleID:bundleID error:&innerError];
     if (!process) {
@@ -151,7 +152,7 @@
         causedBy:innerError]
         failBool:error];
     }
-    if (![[simulator.interact killProcess:process] perform:&innerError]) {
+    if (![[[simulator.interact process:process] kill] perform:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
     return YES;
@@ -160,7 +161,7 @@
 
 - (instancetype)relaunchLastLaunchedApplication
 {
-  return [self interactWithLastLaunchedApplicationProcess:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
+  return [self interactWithLastLaunchedApplicationProcess:^ BOOL (id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     // Obtain the Launch Config for the process.
     FBApplicationLaunchConfiguration *launchConfig = simulator.history.processLaunchConfigurations[process];
     if (!process) {
@@ -176,10 +177,10 @@
 
 - (instancetype)terminateLastLaunchedApplication
 {
-  return [self interactWithLastLaunchedApplicationProcess:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
+  return [self interactWithLastLaunchedApplicationProcess:^ BOOL (id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     // Kill the Application Process
     NSError *innerError = nil;
-    if (![[simulator.interact killProcess:process] perform:&innerError]) {
+    if (![[[simulator.interact process:process] kill] perform:&innerError]) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to terminate app %@", process.shortDescription]
         causedBy:innerError]
@@ -192,9 +193,9 @@
 
 #pragma mark Private
 
-- (instancetype)interactWithLastLaunchedApplicationProcess:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
+- (instancetype)interactWithLastLaunchedApplicationProcess:(BOOL (^)(id interaction, NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
 {
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithBootedSimulator:^ BOOL (id interaction, NSError **error, FBSimulator *simulator) {
     // Obtain Application Launch info for the last launch.
     FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
     if (!process) {
@@ -204,7 +205,7 @@
         failBool:error];
     }
 
-    return block(error, simulator, process);
+    return block(interaction, error, simulator, process);
   }];
 }
 

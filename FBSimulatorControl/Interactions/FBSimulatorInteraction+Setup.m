@@ -32,7 +32,7 @@
     return [self succeed];
   }
 
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithShutdownSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     NSString *localeIdentifier = [locale localeIdentifier];
     NSString *languageIdentifier = [NSLocale canonicalLanguageIdentifierFromString:localeIdentifier];
 
@@ -56,7 +56,7 @@
 {
   NSParameterAssert(bundleIDs);
 
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithShutdownSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     return [FBSimulatorInteraction
       forSimulator:simulator
       relativeFromRootPath:@"Library/Caches/locationd/clients.plist"
@@ -88,7 +88,7 @@
   NSParameterAssert(bundleIDs);
   NSParameterAssert(timeout);
 
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithShutdownSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     return [FBSimulatorInteraction
       forSimulator:simulator
       relativeFromRootPath:@"Library/Preferences/com.apple.springboard.plist"
@@ -105,7 +105,7 @@
 
 - (instancetype)setupKeyboard
 {
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithShutdownSimulator:^ BOOL (id _, NSError **error, FBSimulator *simulator) {
     return [FBSimulatorInteraction
       forSimulator:simulator
       relativeFromRootPath:@"Library/Preferences/com.apple.Preferences.plist"
