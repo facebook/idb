@@ -86,13 +86,11 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 - (void)startRecording:(dispatch_group_t)group
 {
   group = group ?: dispatch_group_create();
-  dispatch_group_enter(group);
 
-  dispatch_async(self.mediaQueue, ^{
+  dispatch_group_async(group, self.mediaQueue, ^{
     // Must be NotStarted to flick the First Frame wait switch.
     if (self.state != FBFramebufferVideoStateNotStarted) {
       [self.logger.info logFormat:@"Cannot start recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
-      dispatch_group_leave(group);
       return;
     }
 
@@ -104,11 +102,11 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     if (self.immediateStart && self.lastFrame) {
       [self.logger.debug log:@"Prior frame is ready, starting record"];
       [self startRecordingWithFrame:self.lastFrame error:nil];
-      dispatch_group_leave(group);
     }
     // Otherwise the group should be notified when the frame arrives.
     else {
       [self.logger.debug log:@"Waiting for first frame to arrive"];
+      dispatch_group_enter(group);
       self.startWaitGroup = group;
     }
   });
@@ -117,25 +115,21 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 - (void)stopRecording:(dispatch_group_t)group
 {
   group = group ?: dispatch_group_create();
-  dispatch_group_enter(group);
 
-  dispatch_async(self.mediaQueue, ^{
+  dispatch_group_async(group, self.mediaQueue, ^{
     // No video has been recorded, so the recorder can just switch off.
     if (self.state == FBFramebufferVideoStateWaitingForFirstFrame) {
       self.state = FBFramebufferVideoStateNotStarted;
-      dispatch_group_leave(group);
       return;
     }
     // If not running, this is an invalid state to call from.
     if (self.state != FBFramebufferVideoStateRunning) {
       [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
-      dispatch_group_leave(group);
       return;
     }
     // Otherwise it is running and in need of stopping.
     [self.logger.debug log:@"Manually stopping recording"];
     [self teardownWriterWithGroup:group];
-    dispatch_group_leave(group);
   });
 }
 
