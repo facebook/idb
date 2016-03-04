@@ -40,6 +40,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 @property (nonatomic, strong, readonly) FBCapacityQueue *frameQueue;
 
 @property (nonatomic, assign, readwrite) FBFramebufferVideoState state;
+@property (nonatomic, strong, readwrite) dispatch_group_t startWaitGroup;
 @property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
 
@@ -72,31 +73,50 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
   _mediaQueue = queue;
   _frameQueue = [FBCapacityQueue withCapacity:20];
-  _state = configuration.autorecord ? FBFramebufferVideoStateWaitingForFirstFrame : FBFramebufferVideoStateNotStarted;
   _timebase = NULL;
+
+  BOOL autorecord = (configuration.options & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord;
+  _state = autorecord ? FBFramebufferVideoStateWaitingForFirstFrame : FBFramebufferVideoStateNotStarted;
 
   return self;
 }
 
 #pragma mark Public Methods
 
-- (void)startRecording
+- (void)startRecording:(dispatch_group_t)group
 {
-  dispatch_async(self.mediaQueue, ^{
+  group = group ?: dispatch_group_create();
+
+  dispatch_group_async(group, self.mediaQueue, ^{
     // Must be NotStarted to flick the First Frame wait switch.
     if (self.state != FBFramebufferVideoStateNotStarted) {
       [self.logger.info logFormat:@"Cannot start recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
       return;
     }
+
+    // Set the Waiting for Frame State, this will be used when a frame is ready.
     [self.logger.debug log:@"Manually starting recording"];
     self.state = FBFramebufferVideoStateWaitingForFirstFrame;
+
+    // With Immedate Start enabled, start the record if there's a frame ready.
+    if (self.immediateStart && self.lastFrame) {
+      [self.logger.debug log:@"Prior frame is ready, starting record"];
+      [self startRecordingWithFrame:self.lastFrame error:nil];
+    }
+    // Otherwise the group should be notified when the frame arrives.
+    else {
+      [self.logger.debug log:@"Waiting for first frame to arrive"];
+      dispatch_group_enter(group);
+      self.startWaitGroup = group;
+    }
   });
 }
 
-- (void)stopRecording
+- (void)stopRecording:(dispatch_group_t)group
 {
-  dispatch_group_t group = dispatch_group_create();
-  dispatch_async(self.mediaQueue, ^{
+  group = group ?: dispatch_group_create();
+
+  dispatch_group_async(group, self.mediaQueue, ^{
     // No video has been recorded, so the recorder can just switch off.
     if (self.state == FBFramebufferVideoStateWaitingForFirstFrame) {
       self.state = FBFramebufferVideoStateNotStarted;
@@ -107,6 +127,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
       [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
       return;
     }
+    // Otherwise it is running and in need of stopping.
     [self.logger.debug log:@"Manually stopping recording"];
     [self teardownWriterWithGroup:group];
   });
@@ -153,8 +174,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 {
   // Discard frames when there's no reason to record them
   if (self.state == FBFramebufferVideoStateNotStarted || self.state == FBFramebufferVideoStateTerminating) {
-    self.lastFrame = nil;
     [self.frameQueue popAll];
+    self.lastFrame = self.immediateStart ? frame : nil;
     return;
   }
   // When waiting for first frame, start video recording.
@@ -162,6 +183,10 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     self.lastFrame = nil;
     [self.frameQueue popAll];
     [self startRecordingWithFrame:frame error:nil];
+    if (self.startWaitGroup) {
+      dispatch_group_leave(self.startWaitGroup);
+      self.startWaitGroup = nil;
+    }
     return;
   }
 
@@ -341,8 +366,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     return;
   }
 
-  // Push last frame if one exists.
-  if (self.lastFrame) {
+  // Push last frame if one exists and the flag is set.
+  if (self.pushFinalFrame && self.lastFrame) {
     // Construct a time at the current timebase's time and push it to the queue.
     // Timebase conversion does not need to apply.
     CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, self.configuration.timescale, self.configuration.roundingMethod);
@@ -455,6 +480,18 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
 
   return pixelBuffer;
+}
+
+#pragma mark Options
+
+- (BOOL)immediateStart
+{
+  return (self.configuration.options & FBFramebufferVideoOptionsImmediateFrameStart) == FBFramebufferVideoOptionsImmediateFrameStart;
+}
+
+- (BOOL)pushFinalFrame
+{
+  return (self.configuration.options & FBFramebufferVideoOptionsFinalFrame) == FBFramebufferVideoOptionsFinalFrame;
 }
 
 #pragma mark String Formatting

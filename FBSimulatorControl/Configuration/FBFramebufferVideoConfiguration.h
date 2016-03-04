@@ -16,7 +16,17 @@
 @class FBDiagnostic;
 
 /**
+ Options for FBFramebufferVideo.
+ */
+typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
+  FBFramebufferVideoOptionsAutorecord = 1 << 0, /** If Set, will automatically start recording when the first video frame is recieved. **/
+  FBFramebufferVideoOptionsImmediateFrameStart = 1 << 1, /** If Set, will start recording a video immediately, using the previously delivered frame **/
+  FBFramebufferVideoOptionsFinalFrame = 1 << 2, /** If Set, will repeat the last frame just before a video is stopped **/
+};
+
+/**
  A Configuration Value for FBFramebufferVideo.
+
  */
 @interface FBFramebufferVideoConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializationDescribeable, FBDebugDescribeable>
 
@@ -28,7 +38,7 @@
 /**
  YES if the Video Component should automatically record when the first frame comes in.
  */
-@property (nonatomic, assign, readonly) BOOL autorecord;
+@property (nonatomic, assign, readonly) FBFramebufferVideoOptions options;
 
 /**
  The Timescale used in Video Encoding.
@@ -63,36 +73,51 @@
  Creates and Returns a new FBFramebufferVideoConfiguration Value with the provided parameters.
 
  @param diagnostic The Diagnostic Value to determine the video path
- @param autorecord YES if the Video Component should automatically record when the first frame comes in.
+ @param options The Flags for FBFramebufferVideo.
  @param timescale The Timescale used in Video Encoding.
  @param roundingMethod The Rounding Method used for Video Frames.
  @param fileType The FileType of the Video.
  @return a FBFramebufferVideoConfiguration instance.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic autorecord:(BOOL)autorecord timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(NSString *)fileType;
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic options:(FBFramebufferVideoOptions)options timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(NSString *)fileType;
 
 #pragma mark Diagnostics
 
+/**
+ Returns a new Configuration with the Diagnostic Applied.
+ */
 + (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
 - (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
 
-#pragma mark Autorecord
+#pragma mark Options
 
-- (instancetype)withAutorecord:(BOOL)autorecord;
-+ (instancetype)withAutorecord:(BOOL)autorecord;
+/**
+ Returns a new Configuration with the Options Applied.
+ */
+- (instancetype)withOptions:(FBFramebufferVideoOptions)options;
++ (instancetype)withOptions:(FBFramebufferVideoOptions)options;
 
 #pragma mark Timescale
 
+/**
+ Returns a new Configuration with the Timescale Applied.
+ */
 - (instancetype)withTimescale:(CMTimeScale)timescale;
 + (instancetype)withTimescale:(CMTimeScale)timescale;
 
 #pragma mark Rounding
 
+/**
+ Returns a new Configuration with the Rounding Method Applied.
+ */
 - (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod;
 + (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod;
 
 #pragma mark File Type
 
+/**
+ Returns a new Configuration with the File Type Applied.
+ */
 - (instancetype)withFileType:(NSString *)fileType;
 + (instancetype)withFileType:(NSString *)fileType;
 

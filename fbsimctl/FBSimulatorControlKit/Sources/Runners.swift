@@ -233,13 +233,12 @@ private struct SimulatorRunner : Runner {
         }
       }
     case .Record(let start):
-      guard let video = simulator.bridge?.framebuffer?.video else {
-        throw FBSimulatorError.describe("Simulator Does not have a Video Framebuffer").inSimulator(simulator).build()
-      }
-      if start {
-        video.startRecording()
-      } else {
-        video.stopRecording()
+      try interactWithSimulator(translator, EventName.Record, simulator) { interaction in
+        if (start) {
+          interaction.startRecordingVideo()
+        } else {
+          interaction.stopRecordingVideo()
+        }
       }
     case .Relaunch(let appLaunch):
       try interactWithSimulator(translator, EventName.Relaunch, appLaunch) { interaction in
