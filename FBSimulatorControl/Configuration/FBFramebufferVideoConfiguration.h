@@ -83,26 +83,41 @@ typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
 
 #pragma mark Diagnostics
 
+/**
+ Returns a new Configuration with the Diagnostic Applied.
+ */
 + (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
 - (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
 
 #pragma mark Options
 
+/**
+ Returns a new Configuration with the Options Applied.
+ */
 - (instancetype)withOptions:(FBFramebufferVideoOptions)options;
 + (instancetype)withOptions:(FBFramebufferVideoOptions)options;
 
 #pragma mark Timescale
 
+/**
+ Returns a new Configuration with the Timescale Applied.
+ */
 - (instancetype)withTimescale:(CMTimeScale)timescale;
 + (instancetype)withTimescale:(CMTimeScale)timescale;
 
 #pragma mark Rounding
 
+/**
+ Returns a new Configuration with the Rounding Method Applied.
+ */
 - (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod;
 + (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod;
 
 #pragma mark File Type
 
+/**
+ Returns a new Configuration with the File Type Applied.
+ */
 - (instancetype)withFileType:(NSString *)fileType;
 + (instancetype)withFileType:(NSString *)fileType;
 
