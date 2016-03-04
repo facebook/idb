@@ -35,14 +35,14 @@
 
 /**
  Starts Recording Video.
- 
+
  @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
 - (void)startRecording:(dispatch_group_t)group;
 
 /**
  Stops Recording Video.
- 
+
  @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
 - (void)stopRecording:(dispatch_group_t)group;
