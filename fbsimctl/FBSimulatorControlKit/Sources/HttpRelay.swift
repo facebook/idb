@@ -56,12 +56,10 @@ class HttpRelay : Relay {
         let bundleID = try json.getValue("bundle_id").getString()
         return Action.Terminate(bundleID)
       }),
-      ("record_start", { json in
-        return Action.Record(true)
+      ("record", { json in
+        let start = try json.getValue("start").getBool()
+        return Action.Record(start)
       }),
-      ("record_stop", { json in
-        return Action.Record(false)
-      })
     ])
   }
 

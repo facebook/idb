@@ -166,6 +166,15 @@ extension JSON {
     }
   }
 
+  func getBool() throws -> Bool {
+    switch self {
+    case .JNumber(let number):
+      return number.boolValue
+    default:
+      throw JSONError.Parse("\(self) is not a number/boolean")
+    }
+  }
+
   func getArrayOfStrings() throws -> [String] {
     return try self.getArray().map { try $0.getString() }
   }
