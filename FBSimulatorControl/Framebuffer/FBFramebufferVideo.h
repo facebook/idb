@@ -35,16 +35,16 @@
 
 /**
  Starts Recording Video.
- If the video is already recording, this call will do nothing.
- Is asynchronous with the caller so the Event Sink will be notified when the video starts recording.
+ 
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
-- (void)startRecording;
+- (void)startRecording:(dispatch_group_t)group;
 
 /**
  Stops Recording Video.
- If the video is not recording, this call will do nothing.
- Is asynchronous with the caller so the Event Sink will be notified when the video starts recording.
+ 
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
-- (void)stopRecording;
+- (void)stopRecording:(dispatch_group_t)group;
 
 @end

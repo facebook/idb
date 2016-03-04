@@ -40,6 +40,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 @property (nonatomic, strong, readonly) FBCapacityQueue *frameQueue;
 
 @property (nonatomic, assign, readwrite) FBFramebufferVideoState state;
+@property (nonatomic, strong, readwrite) dispatch_group_t startWaitGroup;
 @property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 @property (nonatomic, assign, readwrite) CMTimebaseRef timebase;
 
@@ -82,12 +83,16 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 #pragma mark Public Methods
 
-- (void)startRecording
+- (void)startRecording:(dispatch_group_t)group
 {
+  group = group ?: dispatch_group_create();
+  dispatch_group_enter(group);
+
   dispatch_async(self.mediaQueue, ^{
     // Must be NotStarted to flick the First Frame wait switch.
     if (self.state != FBFramebufferVideoStateNotStarted) {
       [self.logger.info logFormat:@"Cannot start recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
+      dispatch_group_leave(group);
       return;
     }
 
@@ -97,27 +102,40 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
     // With Immedate Start enabled, start the record if there's a frame ready.
     if (self.immediateStart && self.lastFrame) {
+      [self.logger.debug log:@"Prior frame is ready, starting record"];
       [self startRecordingWithFrame:self.lastFrame error:nil];
+      dispatch_group_leave(group);
+    }
+    // Otherwise the group should be notified when the frame arrives.
+    else {
+      [self.logger.debug log:@"Waiting for first frame to arrive"];
+      self.startWaitGroup = group;
     }
   });
 }
 
-- (void)stopRecording
+- (void)stopRecording:(dispatch_group_t)group
 {
-  dispatch_group_t group = dispatch_group_create();
+  group = group ?: dispatch_group_create();
+  dispatch_group_enter(group);
+
   dispatch_async(self.mediaQueue, ^{
     // No video has been recorded, so the recorder can just switch off.
     if (self.state == FBFramebufferVideoStateWaitingForFirstFrame) {
       self.state = FBFramebufferVideoStateNotStarted;
+      dispatch_group_leave(group);
       return;
     }
     // If not running, this is an invalid state to call from.
     if (self.state != FBFramebufferVideoStateRunning) {
       [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
+      dispatch_group_leave(group);
       return;
     }
+    // Otherwise it is running and in need of stopping.
     [self.logger.debug log:@"Manually stopping recording"];
     [self teardownWriterWithGroup:group];
+    dispatch_group_leave(group);
   });
 }
 
@@ -171,6 +189,10 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     self.lastFrame = nil;
     [self.frameQueue popAll];
     [self startRecordingWithFrame:frame error:nil];
+    if (self.startWaitGroup) {
+      dispatch_group_leave(self.startWaitGroup);
+      self.startWaitGroup = nil;
+    }
     return;
   }
 
