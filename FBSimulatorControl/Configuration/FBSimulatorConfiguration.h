@@ -77,10 +77,22 @@
 - (instancetype)iPhone6;
 
 /**
+ An iPhone 6s.
+ */
++ (instancetype)iPhone6s;
+- (instancetype)iPhone6s;
+
+/**
  An iPhone 6 Plus.
  */
 + (instancetype)iPhone6Plus;
 - (instancetype)iPhone6Plus;
+
+/**
+ An iPhone 6s Plus.
+ */
++ (instancetype)iPhone6sPlus;
+- (instancetype)iPhone6sPlus;
 
 /**
  An iPad 2.
@@ -93,6 +105,12 @@
  */
 + (instancetype)iPadRetina;
 - (instancetype)iPadRetina;
+
+/**
+ An iPad Pro.
+ */
++ (instancetype)iPadPro;
+- (instancetype)iPadPro;
 
 /**
  An iPad Air.
