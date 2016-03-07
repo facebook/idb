@@ -131,6 +131,11 @@
   return NO;
 }
 
+- (BOOL)isSearchableAsText
+{
+  return self.asString != nil;
+}
+
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
   return NO;
@@ -384,6 +389,11 @@
 - (BOOL)hasLogContent
 {
   return self.backingString.length >= 1;
+}
+
+- (BOOL)isSearchableAsText
+{
+  return YES;
 }
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
@@ -690,16 +700,6 @@
   self.diagnostic.backingString = nil;
   self.diagnostic.backingFilePath = nil;
   object_setClass(self.diagnostic, FBDiagnostic_Empty.class);
-}
-
-+ (NSSet *)defaultStringBackedPathExtensions
-{
-  static dispatch_once_t onceToken;
-  static NSSet *extensions;
-  dispatch_once(&onceToken, ^{
-    extensions = [NSSet setWithArray:@[@"txt", @"log", @""]];
-  });
-  return extensions;
 }
 
 @end

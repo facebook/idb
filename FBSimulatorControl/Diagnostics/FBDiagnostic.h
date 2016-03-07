@@ -66,6 +66,11 @@
 @property (nonatomic, readonly, assign) BOOL hasLogContent;
 
 /**
+ Whether or not the log can be searched as Text.
+ */
+@property (nonatomic, readonly, assign) BOOL isSearchableAsText;
+
+/**
  Writes the FBDiagnostic out to a file path in the most efficient way for the backing store of the log.
 
  @param path the File Path write to.

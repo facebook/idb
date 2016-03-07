@@ -35,6 +35,7 @@
   XCTAssertEqualObjects(diagnostic.fileType, @"filetype");
   XCTAssertEqualObjects(diagnostic.humanReadableName, @"human");
   XCTAssertEqualObjects(diagnostic.asData, data);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 - (void)testBuilderReplacesExistingProperties
@@ -61,6 +62,7 @@
   XCTAssertEqualObjects(diagnostic.fileType, @"newfiletype");
   XCTAssertEqualObjects(diagnostic.humanReadableName, @"newhuman");
   XCTAssertEqualObjects(diagnostic.asData, secondData);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 - (void)testBuilderReplacesStringsAndData
@@ -85,6 +87,7 @@
 
   XCTAssertEqualObjects(diagnostic.asData, [@"I am now over here" dataUsingEncoding:NSUTF8StringEncoding]);
   XCTAssertEqualObjects(diagnostic.asString, @"I am now over here");
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 - (void)testStringAccessorReadsFromFile
@@ -121,6 +124,7 @@
   XCTAssertNotNil(diagnostic.asPath);
   [self assertNeedle:@"layer position 375 667 bounds 0 0 750 1334" inHaystack:diagnostic.asString];
   XCTAssertNotNil(diagnostic.asData);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 - (void)testBinaryFileCoercions
@@ -130,6 +134,7 @@
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
   XCTAssertNil(diagnostic.asString);
+  XCTAssertFalse(diagnostic.isSearchableAsText);
 }
 
 @end
