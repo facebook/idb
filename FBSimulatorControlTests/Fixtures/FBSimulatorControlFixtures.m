@@ -34,6 +34,11 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"video0" ofType:@"mp4"];
 }
 
++ (NSString *)simulatorSystemLogPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"simulator_system" ofType:@"log"];
+}
+
 @end
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
@@ -123,6 +128,13 @@
     launchPath:self.safariApplication.binary.path
     arguments:self.appLaunch2.arguments
     environment:self.appLaunch2.environment];
+}
+
+- (FBDiagnostic *)simulatorSystemLog
+{
+  return [[[FBDiagnosticBuilder builder]
+    updatePath:FBSimulatorControlFixtures.simulatorSystemLogPath]
+    build];
 }
 
 @end

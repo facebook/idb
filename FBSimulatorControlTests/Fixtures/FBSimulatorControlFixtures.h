@@ -12,6 +12,7 @@
 
 @class FBAgentLaunchConfiguration;
 @class FBApplicationLaunchConfiguration;
+@class FBDiagnostic;
 @class FBProcessInfo;
 @class FBSimulatorApplication;
 
@@ -34,6 +35,11 @@
  A File Path to the first video.
  */
 + (NSString *)video0Path;
+
+/**
+ A File Path to sample system log.
+ */
++ (NSString *)simulatorSystemLogPath;
 
 @end
 
@@ -93,5 +99,10 @@
  Another Process Info, like 'processInfo2a' but with a different pid. Does not represent a real process.
  */
 - (FBProcessInfo *)processInfo2a;
+
+/**
+ A System Log.
+ */
+- (FBDiagnostic *)simulatorSystemLog;
 
 @end
