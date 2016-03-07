@@ -117,5 +117,10 @@ Direct Launching does not currently support manipulation of the UI within the Si
 ## Contributing
 See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to work on the issues!
 
+## Example Projects
+
+* [SimulatorController](https://github.com/davidlawson/SimulatorController): GUI interface written in Swift
+* [FBSimulatorClient](https://github.com/tapthaker/FBSimulatorClient): Simulator interface using REST requests
+
 ## License
 [`FBSimulatorControl` is BSD-licensed](LICENSE). We also provide an additional [patent grant](PATENTS).
