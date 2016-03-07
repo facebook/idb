@@ -28,6 +28,7 @@
 #import <FBSimulatorControl/FBFramebufferVideoConfiguration.h>
 #import <FBSimulatorControl/FBInteraction.h>
 #import <FBSimulatorControl/FBJSONConversion.h>
+#import <FBSimulatorControl/FBLogSearch.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
 #import <FBSimulatorControl/FBProcessInfo.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
