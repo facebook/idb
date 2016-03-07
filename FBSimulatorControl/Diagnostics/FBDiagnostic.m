@@ -659,6 +659,7 @@
   }
   object_setClass(self.diagnostic, FBDiagnostic_Path.class);
   self.diagnostic.backingFilePath = path;
+  self.diagnostic.fileType = [path pathExtension];
   return self;
 }
 
