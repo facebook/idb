@@ -654,6 +654,16 @@
   return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6.class];
 }
 
++ (instancetype)iPhone6s
+{
+    return [self.defaultConfiguration iPhone6s];
+}
+
+- (instancetype)iPhone6s
+{
+    return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6S.class];
+}
+
 + (instancetype)iPhone6Plus
 {
   return [self.defaultConfiguration iPhone6Plus];
@@ -662,6 +672,16 @@
 - (instancetype)iPhone6Plus
 {
   return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6Plus.class];
+}
+
++ (instancetype)iPhone6sPlus
+{
+    return [self.defaultConfiguration iPhone6sPlus];
+}
+
+- (instancetype)iPhone6sPlus
+{
+    return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6SPlus.class];
 }
 
 + (instancetype)iPad2
@@ -682,6 +702,16 @@
 - (instancetype)iPadRetina
 {
   return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPadRetina.class];
+}
+
++ (instancetype)iPadPro
+{
+    return [self.defaultConfiguration iPadPro];
+}
+
+- (instancetype)iPadPro
+{
+    return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPadPro.class];
 }
 
 + (instancetype)iPadAir
