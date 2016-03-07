@@ -183,48 +183,47 @@ private struct SimulatorRunner : Runner {
         translator.simulator.userEventSink = nil
       }
 
-      switch self.action {
-      case .List:
-        translator.reportSimulator(EventName.List, simulator)
-      case .Shutdown:
-        translator.reportSimulator(EventName.Shutdown, EventType.Started, self.simulator)
-        try simulator.set!.killSimulator(simulator)
-        translator.reportSimulator(EventName.Shutdown, EventType.Ended, self.simulator)
-      case .Diagnose:
-        let logs = simulator.diagnostics.allDiagnostics().map{ $0.jsonSerializableRepresentation() }
-        translator.reportSimulator(EventName.Diagnose, EventType.Discrete, logs as NSArray)
-      case .Delete:
-        translator.reportSimulator(EventName.Delete, EventType.Started, self.simulator)
-        try simulator.set!.deleteSimulator(simulator)
-        translator.reportSimulator(EventName.Delete, EventType.Ended, self.simulator)
-      default:
-        try self.performInteractionAction(translator, simulator, action)
-      }
-    } catch let error as NSError {
-      return .Failure(error.description)
-    } catch let error as JSONError {
-      return .Failure(error.description)
+      return SimulatorRunner.makeActionPerformer(self.action, translator).perform()
     }
-    return .Success
   }
 
-  func performInteractionAction(translator: EventSinkTranslator, _ simulator: FBSimulator, _ action: Action) throws {
+  static func makeActionPerformer(action : Action, _ translator: EventSinkTranslator) -> SimulatorControlActionPerformer {
+    let simulator = translator.simulator
     switch action {
+    case .List:
+      return SimulatorAction(translator: translator, name: EventName.List, subject: simulator) {
+        translator.reportSimulator(EventName.List, simulator)
+      }
+    case .Shutdown:
+      return SimulatorAction(translator: translator, name: EventName.Shutdown, subject: simulator) {
+        try simulator.set!.killSimulator(simulator)
+      }
+    case .Diagnose:
+      return SimulatorAction(translator: translator, name: EventName.Diagnose, subject: simulator) {
+        let diagnostics = simulator.diagnostics.allDiagnostics() as! [FBDiagnostic]
+        for diagnostic in diagnostics {
+          translator.reportSimulator(EventName.Diagnose, EventType.Discrete, diagnostic)
+        }
+      }
+    case .Delete:
+      return SimulatorAction(translator: translator, name: EventName.Delete, subject: simulator) {
+        try simulator.set!.deleteSimulator(simulator)
+      }
     case .Boot(let maybeLaunchConfiguration):
       let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
-      try interactWithSimulator(translator, EventName.Boot, launchConfiguration) { interaction in
+      return SimulatorInteraction(translator: translator, name: EventName.Boot, subject: launchConfiguration) { interaction in
         interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
       }
     case .Approve(let bundleIDs):
-      try interactWithSimulator(translator, EventName.Approve, bundleIDs as NSArray) { interaction in
+      return SimulatorInteraction(translator: translator, name: EventName.Approve, subject: bundleIDs as NSArray) { interaction in
         interaction.authorizeLocationSettings(bundleIDs)
       }
     case .Install(let application):
-      try interactWithSimulator(translator, EventName.Install, application) { interaction in
+      return SimulatorInteraction(translator: translator, name: EventName.Install, subject: application) { interaction in
         interaction.installApplication(application)
       }
     case .Launch(let launch):
-      try interactWithSimulator(translator, EventName.Launch, launch) { interaction in
+      return SimulatorInteraction(translator: translator, name: EventName.Launch, subject: launch) { interaction in
         if let appLaunch = launch as? FBApplicationLaunchConfiguration {
           interaction.launchApplication(appLaunch)
         }
@@ -233,7 +232,7 @@ private struct SimulatorRunner : Runner {
         }
       }
     case .Record(let start):
-      try interactWithSimulator(translator, EventName.Record, simulator) { interaction in
+      return SimulatorInteraction(translator: translator, name: EventName.Record, subject: simulator) { interaction in
         if (start) {
           interaction.startRecordingVideo()
         } else {
@@ -241,23 +240,60 @@ private struct SimulatorRunner : Runner {
         }
       }
     case .Relaunch(let appLaunch):
-      try interactWithSimulator(translator, EventName.Relaunch, appLaunch) { interaction in
+      return SimulatorInteraction(translator: translator, name: EventName.Relaunch, subject: appLaunch) { interaction in
         interaction.launchOrRelaunchApplication(appLaunch)
       }
     case .Terminate(let bundleID):
-      try interactWithSimulator(translator, EventName.Relaunch, bundleID as NSString) { interaction in
+      return SimulatorInteraction(translator: translator, name: EventName.Record, subject: bundleID as NSString) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)
       }
     default:
-      assertionFailure("Unhandled")
+      return SimulatorAction(translator: translator, name: EventName.Failure, subject: simulator) {
+        assertionFailure("Unimplemented")
+      }
     }
   }
+}
 
-  func interactWithSimulator(translator: EventSinkTranslator, _ eventName: EventName, _ subject: SimulatorControlSubject, interact: FBSimulatorInteraction -> Void) throws {
-    translator.reportSimulator(eventName, EventType.Started, subject)
-    let interaction = translator.simulator.interact
-    interact(interaction)
-    try interaction.perform()
-    translator.reportSimulator(eventName, EventType.Ended, subject)
+protocol SimulatorControlActionPerformer {
+  func perform() -> CommandResult
+}
+
+struct SimulatorAction : SimulatorControlActionPerformer {
+  let translator: EventSinkTranslator
+  let name: EventName
+  let subject: SimulatorControlSubject
+  let action: Void throws -> Void
+
+  func perform() -> CommandResult {
+    do {
+      self.translator.reportSimulator(self.name, EventType.Started, self.subject)
+      try self.action()
+      self.translator.reportSimulator(self.name, EventType.Ended, self.subject)
+    } catch let error as NSError {
+      return .Failure(error.description)
+    } catch let error as JSONError {
+      return .Failure(error.description)
+    }
+    return .Success
   }
 }
+
+struct SimulatorInteraction : SimulatorControlActionPerformer {
+  let translator: EventSinkTranslator
+  let name: EventName
+  let subject: SimulatorControlSubject
+  let interaction: FBSimulatorInteraction throws -> Void
+
+  func perform() -> CommandResult {
+    let simulator = self.translator.simulator
+    let interaction = self.interaction
+    let action = SimulatorAction(translator: self.translator, name: self.name, subject: self.subject) {
+      let interact = simulator.interact
+      try interaction(interact)
+      try interact.perform()
+    }
+    return action.perform()
+  }
+}
+
