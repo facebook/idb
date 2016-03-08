@@ -111,6 +111,21 @@
 
 #pragma mark Public API
 
+- (NSData *)asData
+{
+  return self.backingData;
+}
+
+- (NSString *)asString
+{
+  return self.backingString;
+}
+
+- (NSString *)asPath
+{
+  return self.backingFilePath;
+}
+
 - (BOOL)hasLogContent
 {
   return NO;
@@ -237,11 +252,6 @@
 
 #pragma mark Public API
 
-- (NSData *)asData
-{
-  return self.backingData;
-}
-
 - (NSString *)asString
 {
   if (!self.backingString) {
@@ -360,11 +370,6 @@
   return self.backingData;
 }
 
-- (NSString *)asString
-{
-  return self.backingString;
-}
-
 - (NSString *)asPath
 {
   if (!self.backingFilePath) {
@@ -481,11 +486,6 @@
   return self.backingString;
 }
 
-- (NSString *)asPath
-{
-  return self.backingFilePath;
-}
-
 - (BOOL)hasLogContent
 {
   NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.backingFilePath error:nil];
@@ -508,7 +508,6 @@
   dictionary[@"location"] = self.backingFilePath;
   return dictionary;
 }
-
 
 #pragma mark FBDebugDescribeable
 

@@ -46,17 +46,17 @@
 @property (nonatomic, readonly, copy) NSString *destination;
 
 /**
- The content of the log, as represented by NSData.
+ The content of the log, if representable as NSData.
  */
 @property (nonatomic, readonly, copy) NSData *asData;
 
 /**
- The content of the log, as represented by String.
+ The content of the log, if representable by String.
  */
 @property (nonatomic, readonly, copy) NSString *asString;
 
 /**
- The content of the log, as represented by a File Path.
+ The content of the log, if representable as a File Path.
  */
 @property (nonatomic, readonly, copy) NSString *asPath;
 
