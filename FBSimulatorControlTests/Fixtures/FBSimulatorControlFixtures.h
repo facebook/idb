@@ -41,6 +41,11 @@
  */
 + (NSString *)simulatorSystemLogPath;
 
+/**
+ A File Path to the WebDriverAgent Element Tree of Springboard.
+ */
++ (NSString *)treeJSONPath;
+
 @end
 
 /**
@@ -104,5 +109,15 @@
  A System Log.
  */
 - (FBDiagnostic *)simulatorSystemLog;
+
+/**
+ A Diagnostic for the WebDriverAgent Element Tree of Springboard.
+ */
+- (FBDiagnostic *)treeJSONDiagnostic;
+
+/**
+ A Diagnostic of a PNG.
+ */
+- (FBDiagnostic *)photoDiagnostic;
 
 @end

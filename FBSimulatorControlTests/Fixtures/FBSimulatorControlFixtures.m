@@ -39,6 +39,11 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"simulator_system" ofType:@"log"];
 }
 
++ (NSString *)treeJSONPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"tree" ofType:@"json"];
+}
+
 @end
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
@@ -134,6 +139,20 @@
 {
   return [[[FBDiagnosticBuilder builder]
     updatePath:FBSimulatorControlFixtures.simulatorSystemLogPath]
+    build];
+}
+
+- (FBDiagnostic *)treeJSONDiagnostic
+{
+  return [[[FBDiagnosticBuilder builder]
+    updatePath:FBSimulatorControlFixtures.treeJSONPath]
+    build];
+}
+
+- (FBDiagnostic *)photoDiagnostic
+{
+  return [[[FBDiagnosticBuilder builder]
+    updatePath:FBSimulatorControlFixtures.photo0Path]
     build];
 }
 
