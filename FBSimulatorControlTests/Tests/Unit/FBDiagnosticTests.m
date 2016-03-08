@@ -11,6 +11,9 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+#import "FBSimulatorControlAssertions.h"
+#import "FBSimulatorControlFixtures.h"
+
 @interface FBDiagnosticTests : XCTestCase
 
 @end
@@ -109,6 +112,24 @@
   NSString *writeOutString = [NSString stringWithContentsOfFile:diagnostic.asPath usedEncoding:nil error:nil];
 
   XCTAssertEqualObjects(writeOutString, logString);
+}
+
+- (void)testTextFileCoercions
+{
+  FBDiagnostic *diagnostic = self.simulatorSystemLog;
+
+  XCTAssertNotNil(diagnostic.asPath);
+  [self assertNeedle:@"layer position 375 667 bounds 0 0 750 1334" inHaystack:diagnostic.asString];
+  XCTAssertNotNil(diagnostic.asData);
+}
+
+- (void)testBinaryFileCoercions
+{
+  FBDiagnostic *diagnostic = self.photoDiagnostic;
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  XCTAssertNil(diagnostic.asString);
 }
 
 @end
