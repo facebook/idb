@@ -282,9 +282,10 @@
 {
   if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if ([self.backingData writeToFile:path atomically:YES]) {
-      self.backingFilePath = path;
+    if (![self writeOutToPath:path error:nil]) {
+      return nil;
     }
+    self.backingFilePath = path;
   }
   return self.backingFilePath;
 }
@@ -304,6 +305,9 @@
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
+  if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
+    return NO;
+  }
   return [self.backingData writeToFile:path options:0 error:error];
 }
 
@@ -400,9 +404,10 @@
 {
   if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if ([self.backingString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil]) {
-      self.backingFilePath = path;
+    if (![self writeOutToPath:path error:nil]) {
+      return nil;
     }
+    self.backingFilePath = path;
   }
   return self.backingFilePath;
 }
@@ -430,7 +435,10 @@
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  return [self.backingString writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:error];
+  if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
+    return NO;
+  }
+  return [self.backingString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:error];
 }
 
 #pragma mark FBJSONSerializationDescribeable
@@ -547,8 +555,8 @@
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
 {
-  if ([self.backingFilePath.stringByStandardizingPath isEqualToString:self.backingFilePath.stringByStandardizingPath]) {
-    return YES;
+  if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
+    return NO;
   }
   return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
 }
@@ -657,16 +665,30 @@
 {
   if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    NSOutputStream *outputStream = [NSOutputStream outputStreamToFileAtPath:path append:NO];
-    [outputStream open];
-    NSInteger bytesWritten = [NSJSONSerialization writeJSONObject:self.backingJSON toStream:outputStream options:NSJSONWritingPrettyPrinted error:nil];
-    [outputStream close];
-    if (bytesWritten == 0) {
+    if (![self writeOutToPath:path error:nil]) {
       return nil;
     }
     self.backingFilePath = path;
   }
   return self.backingFilePath;
+}
+
+- (BOOL)hasLogContent
+{
+  return self.backingJSON != nil;
+}
+
+- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+{
+  if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
+    return NO;
+  }
+
+  NSOutputStream *outputStream = [NSOutputStream outputStreamToFileAtPath:path append:NO];
+  [outputStream open];
+  NSInteger bytesWritten = [NSJSONSerialization writeJSONObject:self.backingJSON toStream:outputStream options:NSJSONWritingPrettyPrinted error:nil];
+  [outputStream close];
+  return bytesWritten > 0;
 }
 
 #pragma mark FBJSONSerializationDescribeable

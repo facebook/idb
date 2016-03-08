@@ -20,6 +20,26 @@
 
 @implementation FBDiagnosticTests
 
+- (NSString *)temporaryOutputFile
+{
+  return [[NSTemporaryDirectory() stringByAppendingPathComponent:@"FBDiagnosticTests"] stringByAppendingPathExtension:@"tempout"];
+}
+
+- (void)assertWritesOutToFile:(FBDiagnostic *)diagnostic
+{
+  NSString *outFile = self.temporaryOutputFile;
+  NSError *error = nil;
+  BOOL success = [diagnostic writeOutToPath:outFile error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  NSData *readData = [[[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
+    updatePath:outFile]
+    build]
+    asData];
+  XCTAssertEqualObjects(diagnostic.asData, readData);
+}
+
 - (void)testBuilderBuilds
 {
   NSData *data = [@"SOME DATA" dataUsingEncoding:NSUTF8StringEncoding];
@@ -93,7 +113,7 @@
 - (void)testStringAccessorReadsFromFile
 {
   NSString *logString = @"FOO BAR BAZ";
-  NSString *logPath = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"testBuilderReadsFromFile"] stringByAppendingPathExtension:@"txt"];
+  NSString *logPath = self.temporaryOutputFile;
   [logString writeToFile:logString atomically:YES encoding:NSUTF8StringEncoding error:nil];
 
   FBDiagnostic *diagnostic = [[[FBDiagnosticBuilder builder]
@@ -122,10 +142,12 @@
   FBDiagnostic *diagnostic = self.simulatorSystemLog;
 
   XCTAssertNotNil(diagnostic.asPath);
-  [self assertNeedle:@"layer position 375 667 bounds 0 0 750 1334" inHaystack:diagnostic.asString];
   XCTAssertNotNil(diagnostic.asData);
   XCTAssertNil(diagnostic.asJSON);
+  XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
+  [self assertNeedle:@"layer position 375 667 bounds 0 0 750 1334" inHaystack:diagnostic.asString];
+  [self assertWritesOutToFile:diagnostic];
 }
 
 - (void)testBinaryFileCoercions
@@ -136,7 +158,9 @@
   XCTAssertNotNil(diagnostic.asData);
   XCTAssertNil(diagnostic.asString);
   XCTAssertNil(diagnostic.asJSON);
+  XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertFalse(diagnostic.isSearchableAsText);
+  [self assertWritesOutToFile:diagnostic];
 }
 
 - (void)testJSONNativeObjectCoercions
@@ -156,9 +180,11 @@
 
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
-  [self assertNeedle:substring inHaystack:diagnostic.asString];
   XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
+  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  [self assertWritesOutToFile:diagnostic];
 }
 
 - (void)testJSONDataCoercions
@@ -179,9 +205,11 @@
 
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
-  [self assertNeedle:substring inHaystack:diagnostic.asString];
   XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
+  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  [self assertWritesOutToFile:diagnostic];
 }
 
 - (void)testJSONFileCoercions
@@ -190,9 +218,11 @@
 
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
-  [self assertNeedle:@"Swipe down with three fingers to reveal the notification center" inHaystack:diagnostic.asString];
   XCTAssertEqualObjects([[[diagnostic.asJSON objectForKey:@"value"] objectForKey:@"tree"] objectForKey:@"name"], @"SpringBoard");
+  XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
+  [self assertNeedle:@"Swipe down with three fingers to reveal the notification center" inHaystack:diagnostic.asString];
+  [self assertWritesOutToFile:diagnostic];
 }
 
 - (void)testJSONSerializableCoercions
@@ -204,9 +234,11 @@
 
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
-  [self assertNeedle:@"com.example.apple-samplecode.TableSearch" inHaystack:diagnostic.asString];
   XCTAssertEqualObjects([[diagnostic.asJSON objectForKey:@"environment"] objectForKey:@"FOO"], @"BAR");
+  XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
+  [self assertNeedle:@"com.example.apple-samplecode.TableSearch" inHaystack:diagnostic.asString];
+  [self assertWritesOutToFile:diagnostic];
 }
 
 @end
