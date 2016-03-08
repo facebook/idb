@@ -124,6 +124,7 @@
   XCTAssertNotNil(diagnostic.asPath);
   [self assertNeedle:@"layer position 375 667 bounds 0 0 750 1334" inHaystack:diagnostic.asString];
   XCTAssertNotNil(diagnostic.asData);
+  XCTAssertNil(diagnostic.asJSON);
   XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
@@ -134,7 +135,78 @@
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
   XCTAssertNil(diagnostic.asString);
+  XCTAssertNil(diagnostic.asJSON);
   XCTAssertFalse(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONNativeObjectCoercions
+{
+  NSString *substring = @"FOO BAR BAAAA";
+  id json = @{
+    @"bing" : @"bong",
+    @"animal" : @"cat",
+    @"somes" : @[
+      @1, @2, @3, @4, substring
+    ],
+  };
+  FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
+    updateShortName:@"somelog"]
+    updateJSONSerializable:json]
+    build];
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONDataCoercions
+{
+  NSString *substring = @"FOO BAR BAAAA";
+  id json = @{
+    @"bing" : @"bong",
+    @"animal" : @"cat",
+    @"somes" : @[
+      @1, @2, @3, @4, substring
+    ],
+  };
+  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingPrettyPrinted error:nil];
+  FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
+    updateShortName:@"somelog"]
+    updateData:jsonData]
+    build];
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONFileCoercions
+{
+  FBDiagnostic *diagnostic = self.treeJSONDiagnostic;
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:@"Swipe down with three fingers to reveal the notification center" inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects([[[diagnostic.asJSON objectForKey:@"value"] objectForKey:@"tree"] objectForKey:@"name"], @"SpringBoard");
+  XCTAssertTrue(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONSerializableCoercions
+{
+  FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
+    updateShortName:@"applaunch"]
+    updateJSONSerializable:self.appLaunch1]
+    build];
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:@"com.example.apple-samplecode.TableSearch" inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects([[diagnostic.asJSON objectForKey:@"environment"] objectForKey:@"FOO"], @"BAR");
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 @end
