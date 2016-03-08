@@ -11,6 +11,8 @@
 #import "FBProcessLaunchConfiguration+Private.h"
 
 #import "FBSimulator.h"
+#import "FBCollectionInformation.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorApplication.h"
 
 @implementation FBProcessLaunchConfiguration
@@ -146,6 +148,27 @@
   }
 
   return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+}
+
++ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
+{
+  NSString *bundleID = json[@"bundle_id"];
+  if (![bundleID isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not a bundle_id", bundleID] fail:error];
+  }
+  NSString *bundleName = json[@"bundle_name"];
+  if (![bundleName isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not a bundle_name", bundleName] fail:error];
+  }
+  NSArray *arguments = json[@"arguments"];
+  if (![FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
+  }
+  NSDictionary *environment = json[@"environment"];
+  if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
+  }
+  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment];
 }
 
 - (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath

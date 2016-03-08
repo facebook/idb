@@ -46,7 +46,7 @@
 /**
  A Value object with the information required to launch an Application.
  */
-@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration
+@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBJSONDeserializable>
 
 /**
  Creates and returns a new Configuration with the provided parameters.
