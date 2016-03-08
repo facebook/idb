@@ -31,4 +31,18 @@
   return string;
 }
 
++ (BOOL)isArrayHeterogeneous:(NSArray *)array withClass:(Class)cls
+{
+  NSParameterAssert(cls);
+  if (!array) {
+    return NO;
+  }
+  for (id object in array) {
+    if (![object isKindOfClass:cls]) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
 @end

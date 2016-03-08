@@ -36,4 +36,13 @@
  */
 + (NSString *)oneLineDescriptionFromDictionary:(NSDictionary *)dictionary;
 
+/**
+ Confirms that the collection is heterogeneous of a given class.
+
+ @param array the array to check.
+ @param cls the class that all elements in the array should belong to.
+ @return YES if hetrogeneous, NO otherwise.
+ */
++ (BOOL)isArrayHeterogeneous:(NSArray *)array withClass:(Class)cls;
+
 @end
