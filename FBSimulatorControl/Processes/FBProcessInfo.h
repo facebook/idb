@@ -17,7 +17,7 @@
 /**
  Concrete Value of Process Information.
  */
-@interface FBProcessInfo : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBProcessInfo : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The Designated Initializer.

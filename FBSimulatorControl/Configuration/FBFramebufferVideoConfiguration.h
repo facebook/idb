@@ -28,7 +28,7 @@ typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
  A Configuration Value for FBFramebufferVideo.
 
  */
-@interface FBFramebufferVideoConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBFramebufferVideoConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The Diagnostic Value to determine the video path.

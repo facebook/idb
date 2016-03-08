@@ -53,7 +53,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBSimulator : NSObject <FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The Underlying SimDevice.

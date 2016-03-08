@@ -108,7 +108,7 @@
   return [self debugDescription];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -230,7 +230,7 @@
          (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]);
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -343,7 +343,7 @@
   [self.environment isEqual:object.environment];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {

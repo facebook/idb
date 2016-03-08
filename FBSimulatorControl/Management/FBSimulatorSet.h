@@ -24,7 +24,7 @@
  Complements SimDeviceSet with additional functionality and more resiliant behaviours.
  Performs the preconditions necessary to call certain SimDeviceSet/SimDevice methods.
  */
-@interface FBSimulatorSet : NSObject <FBDebugDescribeable, FBJSONSerializationDescribeable>
+@interface FBSimulatorSet : NSObject <FBDebugDescribeable, FBJSONSerializable>
 
 /**
  Creates and returns an FBSimulatorSet, performing the preconditions defined in the configuration.

@@ -214,7 +214,7 @@
   return [NSString stringWithFormat:@"Simulator %@", self.udid];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {

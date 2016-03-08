@@ -286,7 +286,7 @@
   return [self shortDescription];
 }
 
-#pragma mark FBJSONSerializationDescribeable Protocol
+#pragma mark FBJSONSerializable Protocol
 
 - (id)jsonSerializableRepresentation
 {

@@ -19,7 +19,7 @@
  A Simulator Bridge is a container for all of the relevant services that can be obtained when launching via: -[SimDevice bootWithOptions:error].
  Typically these are all the services with which Simulator.app can interact with, except that we have them inside FBSimulatorControl.
  */
-@interface FBSimulatorBridge : NSObject  <FBJSONSerializationDescribeable>
+@interface FBSimulatorBridge : NSObject  <FBJSONSerializable>
 
 #pragma mark Lifecycle
 

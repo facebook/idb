@@ -23,7 +23,7 @@
  The class itself doesn't perform much behaviour other than to manage the lifecycle.
  Implementors of FBFramebufferDelegate perform individual behaviours such as recording videos and images.
  */
-@interface FBFramebuffer : NSObject <FBJSONSerializationDescribeable>
+@interface FBFramebuffer : NSObject <FBJSONSerializable>
 
 /**
  Creates and returns a new FBSimulatorDirectLaunch object for the provided SimDeviceFramebufferService.

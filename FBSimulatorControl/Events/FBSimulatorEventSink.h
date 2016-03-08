@@ -17,7 +17,7 @@
 @class FBSimulatorApplication;
 @class FBSimulatorBridge;
 @protocol FBTerminationHandle;
-@protocol FBJSONSerializationDescribeable;
+@protocol FBJSONSerializable;
 
 /**
  A reciever of Simulator Events

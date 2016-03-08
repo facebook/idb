@@ -12,7 +12,7 @@
 /**
  Protocol for denoting objects that are serializable with NSJSONSerialization.
  */
-@protocol FBJSONSerializationDescribeable
+@protocol FBJSONSerializable
 
 /**
  Returns an NSJSONSerialization-compatible representation of the reciever.
