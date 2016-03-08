@@ -1,0 +1,494 @@
+Mar  7 16:50:17 some-hostname syslogd[24896]: --- syslogd restarted ---
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.authkit.asl" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 --- last message repeated 1 time ---
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.cloudd" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.clouddocs" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.corespotlight" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.HealthKit" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.HomeKit" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.iad.logging" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 --- last message repeated 1 time ---
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.icloud.fmfd" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 --- last message repeated 2 times ---
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.iclouddriveapp" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.mobileme.fmf1" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.mobileme.fmip1" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.PassKit" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.persistentphotos" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.photobackend" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.photoprivate" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.photos" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.securityd" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 --- last message repeated 7 times ---
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.serverdocs" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.softwareupdateservices" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname syslogd[24896]: Configuration Notice:
+	ASL Module "com.apple.wcd" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894]: assertion failed: 15D21: launchd_sim + 166407 [F1B6CC0B-B906-36E6-8587-218F8AB4EA05]: 0xd
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.assetsd.notificationServer): The HideUntilCheckIn property is an architectural performance issue. Please transition away from it.
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.backboardd): Unknown key for Boolean: HighPriorityIO
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.backboardd): This service is defined to be constantly running and is inherently inefficient.
+Mar  7 16:50:17 some-hostname UserEventAgent[24897]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.assertiond): This service is defined to be constantly running and is inherently inefficient.
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.calaccessd.xpc): The HideUntilCheckIn property is an architectural performance issue. Please transition away from it.
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.certui.relay): ThrottleInterval set to zero. You're not that important. Ignoring.
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.companionappd): This service is defined to be constantly running and is inherently inefficient.
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.coreservices.useractivityd): Unknown key for Boolean: DrainMessagesAfterFailedInit
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.coreservices.appleid.passwordcheck): Unknown key for Boolean: DrainMessagesAfterFailedInit
+Mar  7 16:50:17 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.dataaccess.dataaccessd.active): The HideUntilCheckIn property is an architectural performance issue. Please transition away from it.
+Mar  7 16:50:17 some-hostname syslogd[24896]: ASL Sender Statistics
+Mar  7 16:50:17 some-hostname UserEventAgent[24897]: Failed to copy info dictionary for bundle /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/UserEventPlugins/locationd.events.plugin
+Mar  7 16:50:17 some-hostname UserEventAgent[24897]: /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/UserEventPlugins/routined.events.plugin: dlsym(initRoutinedEventAgent) failed
+Mar  7 16:50:17 some-hostname UserEventAgent[24897]: nsurlsessiond_events plugin: adding token 2 for client com.apple.passd
+Mar  7 16:50:17 some-hostname UserEventAgent[24897]: nsurlsessiond_events plugin: adding token 1 for client com.apple.itunesstored
+Mar  7 16:50:17 some-hostname com.apple.cts[24897]: Badly specified XPC Activity: com.apple.searchd.expirations: permissible values for priority are Utility or Maintenance
+Mar  7 16:50:17 some-hostname distnoted[24924]: # distnote server daemon  absolute time: 81113.864113276   civil time: Mon Mar  7 16:50:17 2016   pid: 24924 uid: 1258250853  root: yes
+Mar  7 16:50:17 some-hostname configd_sim[24918]: network changed: v4(en5+:172.17.179.7) v6(en5+:2620:10d:c0c1:10e0:e4d:e9ff:fea9:cfcd) DNS+ Proxy+
+Mar  7 16:50:18 some-hostname securityd[24925]: unable to access hwaes key
+Mar  7 16:50:18 some-hostname lsd[24939]: LaunchServices: Scheme mapping file does not exist, creating file.
+Mar  7 16:50:18 some-hostname identityservicesd[24905]: [Warning] NULL accountGUIDs passed to CFArrayRef IDSOutgoingMessageRecordCopyUnsentMessagesForAccountsAndPriority(NSArray *, int64_t, int64_t, IDSDataProtectionClass)
+Mar  7 16:50:18 some-hostname locationd[24914]: Logging binary sensor data to /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/51895E05-73ED-4A98-8834-DC2F67B6BE41/data/Library/Caches/locationd/locationdSensors.bin
+Mar  7 16:50:18 some-hostname locationd[24914]: NBB-Could not get UDID for stable refill timing, falling back on random
+Mar  7 16:50:18 some-hostname locationd[24914]: BLP: bundle path does not exist, /System/Library/LocationBundles/Traffic.bundle
+Mar  7 16:50:18 some-hostname locationd[24914]: BLP: Need a bundle path or a bundle identifier.
+Mar  7 16:50:18 some-hostname companionappd[24908]: PairedSync, Debugging at level 0 for console and level 0 for log files
+Mar  7 16:50:18 some-hostname locationd[24914]: BLP: Need a bundle path or a bundle identifier.
+Mar  7 16:50:18 --- last message repeated 1 time ---
+Mar  7 16:50:18 some-hostname networkd[24940]: main networkd-583.20.10 pid 24940
+Mar  7 16:50:18 some-hostname networkd[24940]: -[NETPowerManager setupPowerPolicyTable] created power policy table from defaults with 5 timeslots
+Mar  7 16:50:18 some-hostname locationd[24914]: BLP: bundle path does not exist, /System/Library/LocationBundles/MotionCalibration.bundle
+Mar  7 16:50:18 some-hostname locationd[24914]: BLP: Need a bundle path or a bundle identifier.
+Mar  7 16:50:18 some-hostname networkd[24940]: nw_nat64_post_new_ifstate successfully changed NAT64 ifstate from 0x0 to 0x8000000000000000
+Mar  7 16:50:18 some-hostname CoreSimulatorBridge[24919]: Switching to keyboard: en
+Mar  7 16:50:18 some-hostname backboardd[24912]: PUIProgressWindow initWithOptions: 4 contextLevel: 2999 appearance: 0
+Mar  7 16:50:18 some-hostname backboardd[24912]: main display width 750 height 1334 framebuffer width 750 height 1334 scale 2 orientation 0
+Mar  7 16:50:18 some-hostname backboardd[24912]: PUIProgressWindow not using PreBoard appearance
+Mar  7 16:50:18 some-hostname backboardd[24912]: _sideways 0
+Mar  7 16:50:18 some-hostname backboardd[24912]: layer position 375 667 bounds 0 0 750 1334
+Mar  7 16:50:18 some-hostname backboardd[24912]: PUIProgressWindow trying to load image source for /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/PrivateFrameworks/ProgressUI.framework/apple-logo@2x~iphone.png
+Mar  7 16:50:18 some-hostname backboardd[24912]: void __IOHIDPlugInLoadBundles(): Loaded 0 HID plugins
+Mar  7 16:50:18 some-hostname backboardd[24912]: ____IOHIDSessionScheduleAsync_block_invoke: thread_id=0x700000323000
+Mar  7 16:50:18 some-hostname backboardd[24912]: HID Session async scheduling initiated.
+Mar  7 16:50:18 some-hostname backboardd[24912]: HID Session async root queue running at priority 63 and schedule 2.
+Mar  7 16:50:18 some-hostname backboardd[24912]: HID Session async scheduling complete.
+Mar  7 16:50:18 some-hostname backboardd[24912]: Successfully opened the IOHIDSession
+Mar  7 16:50:18 some-hostname backboardd[24912]: Migration complete (if performed). (Elapsed time: 0.00 seconds)
+Mar  7 16:50:18 some-hostname nanoregistryd[24942]: 03-07-2016 16:50:18.173: nanoregistryd restarted. "NanoRegistry_Sim-175.7" "5" internalInstall=NO
+Mar  7 16:50:18 some-hostname locationd[24914]: PairedSync, Debugging at level 0 for console and level 0 for log files
+Mar  7 16:50:18 some-hostname locationd[24914]: PSYObserverController connection was invalidated.
+Mar  7 16:50:18 some-hostname locationd[24914]: Error: Could not create service from plist at path: file:///Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/PairedSyncServices/com.apple.pairedsync.locationd.plist. Returning nil PSYSyncCoordinator for service name com.apple.pairedsync.locationd.  Please check that your plist exists and is in the correct format.
+Mar  7 16:50:18 some-hostname companionappd[24908]: (Error) NPSLogging: <NPSDomainAccessor.m +[NPSDomainAccessor resolveActivePairedDevicePairingID:pairingDataStore:]:40> Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+Mar  7 16:50:18 some-hostname locationd[24914]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:18 some-hostname companionappd[24908]: (Error) WatchKit: <SPApplicationManager.m -[SPApplicationManager watchKitApplicationIdentifierWithContainerProxy:]:2389> missing Info.plist for internal wk2 app (null)
+Mar  7 16:50:18 some-hostname companionappd[24908]: (Error) WatchKit: createWatchKitApplicationInfoWithContainerProxy, spApplicationIdentifier == nil
+Mar  7 16:50:18 some-hostname geod[24941]: 2016-03-07 16:50:18.205, 24941, c1c00c60, [GEOPersistenceManager]: Mapping directory does not exist. Will create it at path: /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/51895E05-73ED-4A98-8834-DC2F67B6BE41/data/Library/GeoServices/PhoneNumberMapping.plist
+Mar  7 16:50:18 some-hostname geod[24941]: 2016-03-07 16:50:18.210, 24941, c1c00c60, [GEOPhoneNumberMUIDMapper]: Unable to create directory at path: /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/51895E05-73ED-4A98-8834-DC2F67B6BE41/data/Library/GeoServices/PhoneNumberMapping.plist with error: (null)
+Mar  7 16:50:18 some-hostname geod[24941]: 2016-03-07 16:50:18.213, 24941, c1c00c60, [LogMessageLogging]: adaptorOptionsArray is nil or empty, there no adaptors available to create
+Mar  7 16:50:18 some-hostname locationd[24914]: Location icon should now be in state 'Inactive'
+Mar  7 16:50:18 some-hostname CoreSimulatorBridge[24919]: KEYMAP: Chose mode=en_US@hw=US;sw=QWERTY from match=en_US@hw=US;sw=QWERTY from language=en
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: objc[24911]: Class AVTimeFormatter is implemented in both /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/PrivateFrameworks/MediaPlayerUI.framework/MediaPlayerUI and /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/AVKit.framework/AVKit. One of the two will be used. Which one is undefined.
+Mar  7 16:50:18 some-hostname securityd[24925]:  SecOCSPSingleResponseCalculateValidity OCSPSingleResponse: nextUpdate 2.03 days ago
+Mar  7 16:50:18 some-hostname syslogd[24896]: Disabling module com.apple.securityd writes to /var/mobile/Library/Logs/CrashReporter/DiagnosticLogs/security.log following 6 failures (Operation Failed)
+Mar  7 16:50:18 some-hostname backboardd[24912]: Now monitoring "com.apple.springboard"
+Mar  7 16:50:18 some-hostname backboardd[24912]: Telling system app "com.apple.springboard" that it can start immediately
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: FBDefaultLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: FBAppLibraryLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: FBWorkspaceLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: FBSystemGestureLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: FBAppDataStoreLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: SBIconLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: SBStatusBarishLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: SBAlarmLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: SBBannerLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: SBSoundLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: SBSystemGestureLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Loaded logger: SBSoftwareUpdateLog; isEnabled: 0
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: assertion failed: 15D21 13C75: libxpc.dylib + 58018 [3E9AE163-9A95-35D3-BA2C-2E7144498580]: 0x7d
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Simulator user has requested new graphics quality: 10
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:18 --- last message repeated 2 times ---
+Mar  7 16:50:18 some-hostname callservicesd[24926]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:18 --- last message repeated 1 time ---
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: libMobileGestalt MobileGestalt.c:844: watch-companion is static and will never generate a notification
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: libMobileGestalt MobileGestalt.c:844: stand-alone-contacts is static and will never generate a notification
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: libMobileGestalt MobileGestalt.c:844: still-camera is static and will never generate a notification
+Mar  7 16:50:18 some-hostname SpringBoard[24911]: Installed apps did change.
+	Added: {(
+	    "com.apple.webapp",
+	    "com.apple.SharedWebCredentialViewService",
+	    "com.apple.FacebookAccountMigrationDialog",
+	    "com.apple.AdSheetPhone",
+	    "com.apple.mobilesafari",
+	    "com.apple.share",
+	    "com.apple.SafariViewService",
+	    "com.apple.appleaccount.AACredentialRecoveryDialog",
+	    "com.apple.Preferences",
+	    "com.apple.CloudKit.ShareBear",
+	    "com.apple.WebContentFilter.remoteUI.WebContentAnalysisUI",
+	    "com.apple.iCloudDriveApp",
+	    "com.apple.TrustMe",
+	    "com.apple.mobileslideshow",
+	    "com.apple.mobilesms.compose",
+	    "com.apple.CoreAuthUI",
+	    "com.apple.MailCompositionService",
+	    "com.apple.WatchKitSettings",
+	    "com.apple.iad.iAdOptOut",
+	    "com.apple.WebViewService",
+	    "com.apple.TencentWeiboAccountMigrationDialog",
+	    "com.apple.AccountAuthenticationDialog",
+	    "com.apple.Maps",
+	    "com.apple.Passbook",
+	    "com.apple.MusicUIService",
+	    "com.apple.social.SLYahooAuth",
+	    "com.apple.PhotosViewService",
+	    "com.apple.quicklook.quicklookd",
+	    "com.apple.Health",
+	    "com.apple.MobileAddressBook",
+	    "com.apple.datadetectors.DDActionsService",
+	    "com.apple.social.SLGoogleAuth",
+	    "com.apple.DataActivation",
+	    "com.apple.Home.HomeUIService",
+	    "com.apple.ServerDocuments",
+	    "com.apple.HealthPrivacyService",
+	    "com.apple.WebSheet",
+	    "com.apple.camera",
+	    "com.apple.mobilecal",
+	    "com.apple.news",
+	    "com.apple.ios.StoreKitUIService",
+	    "com.apple.PassbookUIService",
+	    "com.apple.reminders",
+	    "com.apple.PrintKit.Print-Center",
+	    "com.apple.gamecenter.GameCenterUIService",
+	    "com.apple.webapp1",
+	    "com.apple.gamecenter"
+	)}
+	Removed: {(
+	)}
+	Modified: {(
+	)}
+Mar  7 16:50:18 some-hostname callservicesd[24926]: CallHistory: Directory creation failed at location file:///var/mobile///Library/Logs/CallHistory error: Error Domain=NSCocoaErrorDomain Code=513 "You don’t have permission to save the file “CallHistory” in the folder “Logs”." UserInfo={NSFilePath=/var/mobile///Library/Logs/CallHistory, NSUnderlyingError=0x7f940250f610 {Error Domain=NSPOSIXErrorDomain Code=13 "Permission denied"}}
+Mar  7 16:50:18 some-hostname callservicesd[24926]: --- Received com.apple.coreservices.useractivity.reconnection notification, and we had an active user activity, so reconnecting to server. (UAUserActivityManager.m #149)
+Mar  7 16:50:19 some-hostname sharingd[24913]: 16:50:19.027 : Starting Up...
+Mar  7 16:50:19 some-hostname sharingd[24913]: 16:50:19.034 : Device Capabilities (Handoff:YES, Instant Hotspot:YES, AirDrop:YES, Legacy AirDrop:NO, Remote Disc:NO)
+Mar  7 16:50:19 some-hostname sharingd[24913]: table drop: 101
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: *** error reading settings archive file: <SBRootSettings: /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/51895E05-73ED-4A98-8834-DC2F67B6BE41/data/Documents/com.apple.springboard.settings/RootSettings.plist> 
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: *** error reading settings archive file: <SBRootSettings: /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/51895E05-73ED-4A98-8834-DC2F67B6BE41/data/Documents/com.apple.springboard.settings/RootSettings.previous.plist> 
+Mar  7 16:50:19 some-hostname com.apple.accessibility.AccessibilityUIServer[24949]: |AXIPC|warning| Could not find server for service: com.apple.accessibility.AXSpringBoardServer
+Mar  7 16:50:19 some-hostname com.apple.accessibility.AccessibilityUIServer[24949]: |AXSBServer|error| AX SpringBoardServer: Error: Domain:AXIPC Code:0 Reason:The operation couldn’t be completed. Could not find server for service: com.apple.accessibility.AXSpringBoardServer
+Mar  7 16:50:19 some-hostname com.apple.accessibility.AccessibilityUIServer[24949]: |AXIPC|warning| Could not verify connection. server port was nil
+Mar  7 16:50:19 some-hostname com.apple.accessibility.AccessibilityUIServer[24949]: assertion failed: 15D21 13C75: libxpc.dylib + 58018 [3E9AE163-9A95-35D3-BA2C-2E7144498580]: 0x7d
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: +[UNNotificationStore migratePushStore] Migrating push store: /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/51895E05-73ED-4A98-8834-DC2F67B6BE41/data/Library/SpringBoard/PushStore
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: +[UNNotificationStore migratePushStore] Push store does not exist; no migration needed.
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: -[BBObserver setDelegate:] Delegate implements addBulletin but does not implement noteInvalidatedBulletinIDs: <SBBulletinLocalObserverGateway: 0x7fca291d0400>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: -[SBAssistantController _loadPlugin] Assistant failed to load!
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.MobileSMS
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: throwing out icon because its isn't visible in the model : node=<SBApplicationIcon: 0x7fca28e8e200; nodeID: "com.apple.camera"> com.apple.camera
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.weather
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.mobiletimer
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.videos
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.mobilenotes
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.stocks
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.MobileStore
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.AppStore
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.iBooks
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.facetime
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.calculator
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.podcasts
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.Bridge
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.compass
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.tips
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.VoiceMemos
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.mobileme.fmf1
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.mobileme.fmip1
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.mobilephone
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.mobilemail
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: could not find icon for representation -> com.apple.Music
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING LOCAL com.apple.mobilecal, <BBLocalDataProvider 0x7fca2941ba20; com.apple.mobilecal>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING LOCAL com.apple.reminders, <BBLocalDataProvider 0x7fca29430c30; com.apple.reminders>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: table drop: 101
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.Preferences, <BBRemoteDataProvider 0x7fca28f1e750; com.apple.Preferences>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.AirDrop, <BBRemoteDataProvider 0x7fca29318400; com.apple.AirDrop>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING LOCAL com.apple.mobilecal.today, <BBLocalDataProvider 0x7fca28c0dc80; com.apple.mobilecal.today>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING LOCAL com.apple.cmas, <BBLocalDataProvider 0x7fca28e07a40; com.apple.cmas>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING LOCAL com.apple.mobileslideshow, <BBLocalDataProvider 0x7fca29206f40; com.apple.mobileslideshow>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: table drop: 101
+Mar  7 16:50:19 some-hostname profiled[24950]: (Note ) profiled: Service starting...
+Mar  7 16:50:19 some-hostname profiled[24950]: (Note ) MC: Battery Saver Mode is currently disabled
+Mar  7 16:50:19 some-hostname profiled[24950]: (Note ) MC: Removing battery saver mode restrictions
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING LOCAL com.apple.MobileSMS, <BBLocalDataProvider 0x7fca290e30f0; com.apple.MobileSMS>
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING LOCAL com.apple.SocialBulletinBoardProvider, <BBLocalDataProvider 0x7fca291ea120; com.apple.SocialBulletinBoardProvider>
+Mar  7 16:50:19 some-hostname sharingd[24913]: 16:50:19.552 : SDAirDropAlertBBManager dataProviderDidLoad
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.passbook.general, <BBRemoteDataProvider 0x7fca291d3570; com.apple.passbook.general>
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a scenario producer: PLCloudLegacyPruneAgent
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a scenario producer: PLCloudLegacyDownloadAgent
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a trigger: PLCloudSystemStartedTrigger
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a trigger: PLCloudCacheDeleteTrigger
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a trigger: PLCLoudSettingsChangedTrigger
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a trigger: PLCloudAppInForegroundTrigger
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a trigger: PLCloudMetadataChangedTrigger
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a trigger: PLCloudMaintenanceTrigger
+Mar  7 16:50:19 some-hostname assetsd[24909]: Cloud Resources scheduler activated a trigger: PLCloudMetadataStableTrigger
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: Unable to simultaneously satisfy constraints.
+		Probably at least one of the constraints in the following list is one you don't want. 
+		Try this: 
+			(1) look at each constraint and try to figure out which you don't expect; 
+			(2) find the code that added the unwanted constraint or constraints and fix it. 
+	(
+	    "<NSLayoutConstraint:0x7fca2955b050 UILabel:0x7fca290521a0' '.leading == SPUISearchTableHeaderView:0x7fca297034d0.leadingMargin>",
+	    "<NSLayoutConstraint:0x7fca2955bcd0 H:[UILabel:0x7fca290521a0' ']-(NSSpace(8))-[UIButton:0x7fca294547b0'Show More']>",
+	    "<NSLayoutConstraint:0x7fca2955bd20 SPUISearchTableHeaderView:0x7fca297034d0.trailingMargin == UIButton:0x7fca294547b0'Show More'.trailing>",
+	    "<NSLayoutConstraint:0x7fca2955b2a0 'UIView-Encapsulated-Layout-Width' H:[SPUISearchTableHeaderView:0x7fca297034d0(0)]>"
+	)
+	
+	Will attempt to recover by breaking constraint 
+	<NSLayoutConstraint:0x7fca2955bcd0 H:[UILabel:0x7fca290521a0' ']-(NSSpace(8))-[UIButton:0x7fca294547b0'Show More']>
+	
+	Make a symbolic breakpoint at UIViewAlertForUnsatisfiableConstraints to catch this in the debugger.
+	The methods in the UIConstraintBasedLayoutDebugging category on UIView listed in <UIKit/UIView.h> may also be helpful.
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: Unable to simultaneously satisfy constraints.
+		Probably at least one of the constraints in the following list is one you don't want. 
+		Try this: 
+			(1) look at each constraint and try to figure out which you don't expect; 
+			(2) find the code that added the unwanted constraint or constraints and fix it. 
+	(
+	    "<NSLayoutConstraint:0x7fca29030ba0 SPUISearchTableHeaderView:0x7fca297034d0.bottom == UILabel:0x7fca290521a0' '.lastBaseline + 8>",
+	    "<NSLayoutConstraint:0x7fca29556b90 UILabel:0x7fca290521a0' '.firstBaseline == SPUISearchTableHeaderView:0x7fca297034d0.top + 36>",
+	    "<NSLayoutConstraint:0x7fca2955b400 'UIView-Encapsulated-Layout-Height' V:[SPUISearchTableHeaderView:0x7fca297034d0(0)]>"
+	)
+	
+	Will attempt to recover by breaking constraint 
+	<NSLayoutConstraint:0x7fca29556b90 UILabel:0x7fca290521a0' '.firstBaseline == SPUISearchTableHeaderView:0x7fca297034d0.top + 36>
+	
+	Make a symbolic breakpoint at UIViewAlertForUnsatisfiableConstraints to catch this in the debugger.
+	The methods in the UIConstraintBasedLayoutDebugging category on UIView listed in <UIKit/UIView.h> may also be helpful.
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: Unable to simultaneously satisfy constraints.
+		Probably at least one of the constraints in the following list is one you don't want. 
+		Try this: 
+			(1) look at each constraint and try to figure out which you don't expect; 
+			(2) find the code that added the unwanted constraint or constraints and fix it. 
+	(
+	    "<NSLayoutConstraint:0x7fca29030ba0 SPUISearchTableHeaderView:0x7fca297034d0.bottom == UILabel:0x7fca290521a0' '.lastBaseline + 8>",
+	    "<NSLayoutConstraint:0x7fca295514b0 V:|-(0)-[UIButton:0x7fca294547b0'Show More']   (Names: '|':SPUISearchTableHeaderView:0x7fca297034d0 )>",
+	    "<NSLayoutConstraint:0x7fca2955a2e0 UIButton:0x7fca294547b0'Show More'.firstBaseline == UILabel:0x7fca290521a0' '.firstBaseline>",
+	    "<NSLayoutConstraint:0x7fca2955aad0 UIButton:0x7fca294547b0'Show More'.lastBaseline == UILabel:0x7fca290521a0' '.lastBaseline>",
+	    "<NSLayoutConstraint:0x7fca2955d860 UIButtonLabel:0x7fca290ccf80.centerY == UIButton:0x7fca294547b0'Show More'.centerY>",
+	    "<NSLayoutConstraint:0x7fca2955b400 'UIView-Encapsulated-Layout-Height' V:[SPUISearchTableHeaderView:0x7fca297034d0(0)]>"
+	)
+	
+	Will attempt to recover by breaking constraint 
+	<NSLayoutConstraint:0x7fca2955d860 UIButtonLabel:0x7fca290ccf80.centerY == UIButton:0x7fca294547b0'Show More'.centerY>
+	
+	Make a symbolic breakpoint at UIViewAlertForUnsatisfiableConstraints to catch this in the debugger.
+	The methods in the UIConstraintBasedLayoutDebugging category on UIView listed in <UIKit/UIView.h> may also be helpful.
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: Unable to simultaneously satisfy constraints.
+		Probably at least one of the constraints in the following list is one you don't want. 
+		Try this: 
+			(1) look at each constraint and try to figure out which you don't expect; 
+			(2) find the code that added the unwanted constraint or constraints and fix it. 
+	(
+	    "<NSLayoutConstraint:0x7fca29030ba0 SPUISearchTableHeaderView:0x7fca297034d0.bottom == UILabel:0x7fca290521a0' '.lastBaseline + 8>",
+	    "<NSLayoutConstraint:0x7fca295514b0 V:|-(0)-[UIButton:0x7fca294547b0'Show More']   (Names: '|':SPUISearchTableHeaderView:0x7fca297034d0 )>",
+	    "<NSLayoutConstraint:0x7fca2955a2e0 UIButton:0x7fca294547b0'Show More'.firstBaseline == UILabel:0x7fca290521a0' '.firstBaseline>",
+	    "<NSLayoutConstraint:0x7fca2955aad0 UIButton:0x7fca294547b0'Show More'.lastBaseline == UILabel:0x7fca290521a0' '.lastBaseline>",
+	    "<NSLayoutConstraint:0x7fca2955e510 UIButtonLabel:0x7fca290ccf80'Show More'.centerY == UIButton:0x7fca294547b0'Show More'.centerY>",
+	    "<NSLayoutConstraint:0x7fca2955b400 'UIView-Encapsulated-Layout-Height' V:[SPUISearchTableHeaderView:0x7fca297034d0(0)]>"
+	)
+	
+	Will attempt to recover by breaking constraint 
+	<NSLayoutConstraint:0x7fca2955e510 UIButtonLabel:0x7fca290ccf80'Show More'.centerY == UIButton:0x7fca294547b0'Show More'.centerY>
+	
+	Make a symbolic breakpoint at UIViewAlertForUnsatisfiableConstraints to catch this in the debugger.
+	The methods in the UIConstraintBasedLayoutDebugging category on UIView listed in <UIKit/UIView.h> may also be helpful.
+Mar  7 16:50:19 some-hostname backboardd[24912]: Couldn't find the digitizer HID service, this is probably bad
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: BTM: attaching to BTServer
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: BTM: failed to attach with error 9
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: BTM: attaching to BTServer
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: BTM: failed to attach with error 9
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: BTM: attaching to BTServer
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: BTM: failed to attach with error 9
+Mar  7 16:50:19 some-hostname searchd[24935]: (Error) IndexGeneral in si_playBackMobileRecords:2313: played back 0 records
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: [MPUSystemMediaControls] Updating supported commands for now playing application.
+Mar  7 16:50:19 some-hostname searchd[24935]: (Error) IndexGeneral in si_playBackMobileRecords:2313: played back 0 records
+Mar  7 16:50:19 some-hostname searchd[24935]: (Error) IndexGeneral in si_playBackMobileRecords:2313: played back 3 records
+Mar  7 16:50:19 some-hostname pkd[24943]: assigning plug-in com.apple.MobileAddressBook.ContactsCoreSpotlightExtension(1.0) to plugin sandbox
+Mar  7 16:50:19 some-hostname pkd[24943]: enabling pid=24935 for plug-in com.apple.MobileAddressBook.ContactsCoreSpotlightExtension(1.0) 322E8108-E03D-43CD-9AA4-C7506EC052DE /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications/Contacts.app/PlugIns/ContactsCoreSpotlightExtension.appex
+Mar  7 16:50:19 some-hostname nsurlsessiond[24923]: Task 1 for client <CFString 0x7fa9c2f03b70 [0x106de57b0]>{contents = "com.apple.mobileassetd"} completed with error - code: -999
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: Application windows are expected to have a root view controller at the end of application launch
+Mar  7 16:50:19 --- last message repeated 1 time ---
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: |GAXGeneral|info| whitelistedApps and appSelfLockIDs both nil.  No need to enable GAX (Single App Mode)
+Mar  7 16:50:19 some-hostname ContactsCoreSpotlightExtension[24957]: PlugInKit subsystem NSSharingService_Subsystem not present
+Mar  7 16:50:19 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:19 --- last message repeated 3 times ---
+Mar  7 16:50:19 some-hostname ContactsCoreSpotlightExtension[24957]: table drop: 101
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: [MPUSystemMediaControls] Updating supported commands for now playing application.
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: BBObserver: Unable to retrieve section parameters for <com.apple.Passbook>. Using default parameters.
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: SMS Plugin initialized.
+Mar  7 16:50:19 some-hostname searchd[24935]: tcp_connection_set_tfo 3 TFO is not yet supported on Simulator
+Mar  7 16:50:19 some-hostname SpringBoard[24911]: Sharing Plugin initialized.
+Mar  7 16:50:20 some-hostname SpringBoard[24911]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:20 some-hostname backboardd[24912]: System app "com.apple.springboard" finished startup after 1.56s.
+Mar  7 16:50:20 some-hostname routined[24899]: BTM: attaching to BTServer
+Mar  7 16:50:20 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.CoreRoutine, <BBRemoteDataProvider 0x7fca2971ce60; com.apple.CoreRoutine>
+Mar  7 16:50:20 some-hostname routined[24899]: BTM: failed to attach with error 9
+Mar  7 16:50:20 some-hostname routined[24899]: CoreLocation: Error occurred while trying to retrieve motion state update: CMErrorDomain Code:104
+Mar  7 16:50:20 some-hostname carkitd[24958]: BTM: attaching to BTServer
+Mar  7 16:50:20 some-hostname carkitd[24958]: BTM: failed to attach with error 9
+Mar  7 16:50:20 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.CarPlay, <BBRemoteDataProvider 0x7fca295767a0; com.apple.CarPlay>
+Mar  7 16:50:20 some-hostname itunesstored[24959]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:20 --- last message repeated 1 time ---
+Mar  7 16:50:20 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.AppStore, <BBRemoteDataProvider 0x7fca28c68650; com.apple.AppStore>
+Mar  7 16:50:20 some-hostname SpringBoard[24911]: BUG in libdispatch: 15D21 - 3192 - 0x1b74b
+Mar  7 16:50:20 some-hostname nsurlsessiond[24923]: Task 1 for client <CFString 0x7fa9c2f03b70 [0x106de57b0]>{contents = "com.apple.mobileassetd"} completed with error - code: -999
+Mar  7 16:50:20 some-hostname geocorrectiond[24932]: /BuildRoot/Library/Caches/com.apple.xbs/Sources/Maps_Sim/Maps-1906.2.15.7.3/iOS/geocorrectiond/MCAddressCorrector.m:87 0x7faf00801350 startProcessing - failed. Not authorized (0)
+Mar  7 16:50:20 some-hostname CloudKeychainProxy[24962]:  __45-[UbiqitousKVSProxy doEnsurePeerRegistration]_block_invoke <UB---e-C---> ensurePeerRegistration called, success ((null))
+Mar  7 16:50:20 some-hostname IDSKeychainSyncingProxy[24961]:  -[IDSKeychainSyncingProxy doSetIDSDeviceID:] Error Domain=com.apple.security.ids.error Code=-1 "IDSKeychainSyncingProxy could not retrieve device ID from keychain" UserInfo={NSLocalizedDescription=IDSKeychainSyncingProxy could not retrieve device ID from keychain}
+Mar  7 16:50:20 some-hostname securityd[24925]:  __SOSTransportMessageIDSGetIDSDeviceID_block_invoke Could not ask IDSKeychainSyncingProxy for Device ID: Error Domain=com.apple.security.ids.error Code=-1 "IDSKeychainSyncingProxy could not retrieve device ID from keychain" UserInfo={NSLocalizedDescription=IDSKeychainSyncingProxy could not retrieve device ID from keychain}
+Mar  7 16:50:20 some-hostname securityd[24925]:  __talkWithIDS_block_invoke_2 talkwithIDS callback error: Error Domain=com.apple.security.ids.error Code=-1 "IDSKeychainSyncingProxy could not retrieve device ID from keychain" UserInfo={NSLocalizedDescription=IDSKeychainSyncingProxy could not retrieve device ID from keychain}
+Mar  7 16:50:21 some-hostname assetsd[24909]: table drop: 101
+Mar  7 16:50:21 some-hostname aslmanager[24921]: 0x70000019a000 CacheDelete: -[CacheDeleteServiceListener servicePeriodic:info:replyBlock:] periodic callback is NULL
+Mar  7 16:50:21 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.Maps, <BBRemoteDataProvider 0x7fca290e3fc0; com.apple.Maps>
+Mar  7 16:50:21 some-hostname itunesstored[24959]: iTunes Store environment is: NWK
+Mar  7 16:50:21 some-hostname fileproviderd[24898]: (Note ) FileProvider: /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd starting.
+Mar  7 16:50:21 some-hostname pkd[24943]: assigning plug-in com.apple.ServerDocuments.ServerFileProvider(1.0) to plugin sandbox
+Mar  7 16:50:21 some-hostname pkd[24943]: enabling pid=24898 for plug-in com.apple.ServerDocuments.ServerFileProvider(1.0) 9CAC744E-3887-4769-B08B-11561D5B59C9 /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications/ServerDocuments.app/PlugIns/ServerFileProvider.appex
+Mar  7 16:50:21 some-hostname installd[24904]: 0x10cec7000 main: Reboot detected
+Mar  7 16:50:21 some-hostname wcd[24910]: libMobileGestalt MobileGestalt.c:2537: Failed to get battery level
+Mar  7 16:50:21 --- last message repeated 1 time ---
+Mar  7 16:50:21 some-hostname installd[24904]: 0x10cec7000 is_build_upgrade: Current build version (13C75 / (null)) equal to last version recorded (13C75 / (null)); skipping upgrade
+Mar  7 16:50:21 some-hostname itunesstored[24959]: libMobileGestalt MGIOKitSupport.c:387: value for udid-version property of IODeviceTree:/product is invalid ((null))
+Mar  7 16:50:21 some-hostname itunesstored[24959]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:21 some-hostname itunesstored[24959]: libMobileGestalt MGBasebandSupport.c:60: _CTServerConnectionCopyMobileEquipmentInfo: CommCenter error: 1:45 (Operation not supported)
+Mar  7 16:50:21 some-hostname itunesstored[24959]: libMobileGestalt MGBasebandSupport.c:189: No CT mobile equipment info dictionary while fetching kCTMobileEquipmentInfoIMEI
+Mar  7 16:50:22 some-hostname installd[24904]: 0x10cec7000 __47-[MIDeveloperDiskImageTracker checkMountPoint:]_block_invoke: /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Developer/Applications is not present now or before
+Mar  7 16:50:22 some-hostname companionappd[24908]: (Error) NPSLogging: <NPSDomainAccessor.m +[NPSDomainAccessor resolveActivePairedDevicePairingID:pairingDataStore:]:40> Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.nanomapscd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.companionmessagesd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.eventkitsyncd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.nanoappregistryd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.companionproximityd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.nanosystemsettingsd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.NPKCompanionAgent.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.bulletindistributord.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.resourcegrabberd.companion.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.pairedunlockd-phone.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.nanoprefsyncd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.nanoweatherprefsd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.companionfindlocallyd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.pairedsyncd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.addressbooksyncd.plist
+Mar  7 16:50:22 some-hostname nanoregistrylaunchd[24967]: Failed to enable path: code = 113: Could not find specified service, /Applications/xcode_7.2.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/NanoLaunchDaemons/com.apple.nanomailbootstrapd.plist
+Mar  7 16:50:22 some-hostname itunesstored[24959]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:22 some-hostname itunesstored[24959]: libMobileGestalt MGBasebandSupport.c:60: _CTServerConnectionCopyMobileEquipmentInfo: CommCenter error: 1:45 (Operation not supported)
+Mar  7 16:50:22 some-hostname itunesstored[24959]: libMobileGestalt MGBasebandSupport.c:189: No CT mobile equipment info dictionary while fetching kCTMobileEquipmentInfoIMEI
+Mar  7 16:50:22 some-hostname itunesstored[24959]: UpdateAssetsOperation: Error downloading manifest from URL https://apps.itunes.com/files/ios-music-app/manifest.json: Error Domain=SSErrorDomain Code=109 "Cannot connect to iTunes Store" UserInfo={NSLocalizedDescription=Cannot connect to iTunes Store, SSErrorHTTPStatusCodeKey=503}
+Mar  7 16:50:22 some-hostname mstreamd[24900]: (Note ) mstreamd: mstreamd starting up.
+Mar  7 16:50:22 some-hostname calaccessd[24954]: table drop: 101
+Mar  7 16:50:22 some-hostname mstreamd[24900]: (Note ) PS: The subscription plugin class does not support push notification refreshing.
+Mar  7 16:50:22 some-hostname mstreamd[24900]: (Note ) PS: Media stream daemon starting...
+Mar  7 16:50:22 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:23 some-hostname syncdefaultsd[24971]: (Note ) SYDAlwaysOnAccount: no account (null)
+Mar  7 16:50:23 some-hostname syncdefaultsd[24971]: (Note ) SYDAccount: no account
+Mar  7 16:50:23 some-hostname syncdefaultsd[24971]: (Note ) SYDPIMAccount: no account (null)
+Mar  7 16:50:23 some-hostname splashboardd[24970]: Simulator user has requested new graphics quality: 10
+Mar  7 16:50:23 some-hostname MobileSafari[24969]: libMobileGestalt MobileGestalt.c:1201: Could not retrieve region info
+Mar  7 16:50:23 some-hostname MobileSafari[24969]: assertion failed: 15D21 13C75: libxpc.dylib + 58018 [3E9AE163-9A95-35D3-BA2C-2E7144498580]: 0x7d
+Mar  7 16:50:23 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:23 --- last message repeated 3 times ---
+Mar  7 16:50:23 some-hostname SpringBoard[24911]: [MPUSystemMediaControls] Updating supported commands for now playing application.
+Mar  7 16:50:23 some-hostname MobileSafari[24969]: Simulator user has requested new graphics quality: 10
+Mar  7 16:50:23 some-hostname MobileSafari[24969]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:23 --- last message repeated 1 time ---
+Mar  7 16:50:23 some-hostname MobileSafari[24969]: tcp_connection_set_tfo 3 TFO is not yet supported on Simulator
+Mar  7 16:50:23 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:23 some-hostname MobileSafari[24969]: Normal message received by listener connection. Ignoring.
+Mar  7 16:50:23 some-hostname containermanagerd[24968]: 0x1087d3000 main: containermanagerd performing first boot initialization
+Mar  7 16:50:23 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:23 some-hostname securityd[24925]:  SecOCSPSingleResponseCreate OCSPResponse: single response has extension(s).
+Mar  7 16:50:24 --- last message repeated 1 time ---
+Mar  7 16:50:24 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:24 --- last message repeated 1 time ---
+Mar  7 16:50:24 some-hostname securityd[24925]:  SecOCSPSingleResponseCreate OCSPResponse: single response has extension(s).
+Mar  7 16:50:24 --- last message repeated 1 time ---
+Mar  7 16:50:24 some-hostname SpringBoard[24911]: [MPUSystemMediaControls] Updating supported commands for now playing application.
+Mar  7 16:50:24 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:24 --- last message repeated 11 times ---
+Mar  7 16:50:24 some-hostname profiled[24950]: (Note ) MC: Loaded MobileCoreServices.framework
+Mar  7 16:50:24 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:25 --- last message repeated 9 times ---
+Mar  7 16:50:25 some-hostname suggestd[24937]: table drop: 101
+Mar  7 16:50:26 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:26 --- last message repeated 1 time ---
+Mar  7 16:50:26 some-hostname SpringBoard[24911]: [MPUSystemMediaControls] Updating supported commands for now playing application.
+Mar  7 16:50:26 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:26 some-hostname fileproviderd[24898]: plugin com.apple.ServerDocuments.ServerFileProvider invalidated
+Mar  7 16:50:26 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:26 some-hostname ServerFileProvider[24964]: host connection <NSXPCConnection: 0x7fe440e03ce0> connection from pid 24898 invalidated
+Mar  7 16:50:26 some-hostname SpringBoard[24911]: [MPUSystemMediaControls] Updating supported commands for now playing application.
+Mar  7 16:50:26 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:26 some-hostname SpringBoard[24911]: BSXPCMessage received error for message: Connection interrupted
+Mar  7 16:50:26 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:26 --- last message repeated 1 time ---
+Mar  7 16:50:26 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.WebKit.Networking.4A27D4BB-0160-4574-A183-8B3C08F085D1[24974]): Service exited with abnormal code: 1
+Mar  7 16:50:26 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.WebKit.Networking.29442701-A148-49D6-AE71-4A3AB00A8771[24972]): Service exited with abnormal code: 1
+Mar  7 16:50:26 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.WebKit.Networking.4BA12060-F65F-4D56-B4A6-A134619EC8A8[24976]): Service exited with abnormal code: 1
+Mar  7 16:50:26 some-hostname com.apple.CoreSimulator.SimDevice.51895E05-73ED-4A98-8834-DC2F67B6BE41.launchd_sim[24894] (com.apple.WebKit.WebContent.C940F528-8AC8-4E2D-BF27-9D433F7B5D5D[24975]): Service exited with abnormal code: 1
+Mar  7 16:50:26 some-hostname deleted[24930]: 0x70000021d000 CacheDelete: CallBlockWithProxy timed out waiting for com.apple.WebBookmarks.CacheDelete
+Mar  7 16:50:26 some-hostname SpringBoard[24911]: Application 'UIKitApplication:com.apple.mobilesafari[0x56bb]' exited voluntarily.
+Mar  7 16:50:26 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:26 some-hostname assertiond[24915]: notify_suspend_pid() failed with error 7
+Mar  7 16:50:26 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:29 some-hostname SpringBoard[24911]: Weekly asset update check did fire (force=NO)
+Mar  7 16:50:29 some-hostname SpringBoard[24911]: Beginning check for asset updates (force: 0
+Mar  7 16:50:29 some-hostname SpringBoard[24911]: Did not complete check for asset updates (force: 0, isVoiceOverRunning: 0
+Mar  7 16:50:29 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:29 some-hostname searchd[24935]: plugin com.apple.MobileAddressBook.ContactsCoreSpotlightExtension invalidated
+Mar  7 16:50:29 some-hostname ContactsCoreSpotlightExtension[24957]: host connection <NSXPCConnection: 0x7fb555910b90> connection from pid 24935 invalidated
+Mar  7 16:50:29 some-hostname assertiond[24915]: assertion failed: 15D21 13C75: assertiond + 12188 [8CF1968D-3466-38B7-B225-3F6F5B64C552]: 0x1
+Mar  7 16:50:30 some-hostname suggestd[24937]: 2016-03-07 16:50:30.856+0000|24937|0x7f8ce9475630|EventKit: __44-[EKEventStore insertSuggestedEventCalendar]_block_invoke_3: Could not insert the Found in Mail calendar with error Error Domain=EKCADErrorDomain Code=1012 "(null)"
+Mar  7 16:50:31 some-hostname deleted[24930]: 0x70000021d000 CacheDelete: CallBlockWithProxy timed out waiting for com.apple.TextInput.CacheDelete
+Mar  7 16:50:39 some-hostname searchd[24935]: tcp_connection_set_tfo 6 TFO is not yet supported on Simulator
+Mar  7 16:50:48 some-hostname lsd[24939]: LaunchServices: Currently 0 installed placeholders: (
+	)

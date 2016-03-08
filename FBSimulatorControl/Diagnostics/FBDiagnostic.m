@@ -22,6 +22,7 @@
 @property (nonatomic, copy, readwrite) NSData *backingData;
 @property (nonatomic, copy, readwrite) NSString *backingString;
 @property (nonatomic, copy, readwrite) NSString *backingFilePath;
+@property (nonatomic, copy, readwrite) id backingJSON;
 
 @end
 
@@ -43,6 +44,13 @@
  A representation of a Diagnostic, backed by a File Path.
  */
 @interface FBDiagnostic_Path : FBDiagnostic
+
+@end
+
+/**
+ A representation of a Diagnostic, backed by JSON.
+ */
+@interface FBDiagnostic_JSON : FBDiagnostic
 
 @end
 
@@ -111,9 +119,34 @@
 
 #pragma mark Public API
 
+- (NSData *)asData
+{
+  return self.backingData;
+}
+
+- (NSString *)asString
+{
+  return self.backingString;
+}
+
+- (NSString *)asPath
+{
+  return self.backingFilePath;
+}
+
+- (id)asJSON
+{
+  return self.backingJSON;
+}
+
 - (BOOL)hasLogContent
 {
   return NO;
+}
+
+- (BOOL)isSearchableAsText
+{
+  return self.asString != nil;
 }
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
@@ -237,11 +270,6 @@
 
 #pragma mark Public API
 
-- (NSData *)asData
-{
-  return self.backingData;
-}
-
 - (NSString *)asString
 {
   if (!self.backingString) {
@@ -259,6 +287,14 @@
     }
   }
   return self.backingFilePath;
+}
+
+- (id)asJSON
+{
+  if (!self.backingJSON) {
+    self.backingJSON = [NSJSONSerialization JSONObjectWithData:self.backingData options:0 error:nil];
+  }
+  return self.backingJSON;
 }
 
 - (BOOL)hasLogContent
@@ -360,11 +396,6 @@
   return self.backingData;
 }
 
-- (NSString *)asString
-{
-  return self.backingString;
-}
-
 - (NSString *)asPath
 {
   if (!self.backingFilePath) {
@@ -376,9 +407,25 @@
   return self.backingFilePath;
 }
 
+- (id)asJSON
+{
+  if (!self.backingJSON) {
+    if (!self.asData) {
+      return nil;
+    }
+    self.backingJSON = [NSJSONSerialization JSONObjectWithData:self.asData options:0 error:nil];
+  }
+  return self.backingJSON;
+}
+
 - (BOOL)hasLogContent
 {
   return self.backingString.length >= 1;
+}
+
+- (BOOL)isSearchableAsText
+{
+  return YES;
 }
 
 - (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
@@ -481,9 +528,15 @@
   return self.backingString;
 }
 
-- (NSString *)asPath
+- (id)asJSON
 {
-  return self.backingFilePath;
+  if (!self.backingJSON) {
+    NSInputStream *inputStream = [NSInputStream inputStreamWithFileAtPath:self.backingFilePath];
+    [inputStream open];
+    self.backingJSON = [NSJSONSerialization JSONObjectWithStream:inputStream options:0 error:nil];
+    [inputStream close];
+  }
+  return self.backingJSON;
 }
 
 - (BOOL)hasLogContent
@@ -508,7 +561,6 @@
   dictionary[@"location"] = self.backingFilePath;
   return dictionary;
 }
-
 
 #pragma mark FBDebugDescribeable
 
@@ -548,6 +600,118 @@
 
 @end
 
+@implementation FBDiagnostic_JSON
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super initWithCoder:coder];
+  if (!self) {
+    return nil;
+  }
+
+  self.backingJSON = [coder decodeObjectForKey:NSStringFromSelector(@selector(backingJSON))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [super encodeWithCoder:coder];
+  [coder encodeObject:self.backingJSON forKey:NSStringFromSelector(@selector(backingJSON))];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  FBDiagnostic_JSON *log = [super copyWithZone:zone];
+  log.backingJSON = self.backingJSON;
+  return log;
+}
+
+#pragma mark Public API
+
+- (NSData *)asData
+{
+  if (!self.backingData) {
+    self.backingData = [NSJSONSerialization dataWithJSONObject:self.backingJSON options:NSJSONWritingPrettyPrinted error:nil];
+  }
+  return self.backingData;
+}
+
+- (NSString *)asString
+{
+  if (!self.backingString) {
+    NSData *data = self.backingData;
+    if (!data) {
+      return nil;
+    }
+    self.backingString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+  }
+  return self.backingString;
+}
+
+- (NSString *)asPath
+{
+  if (!self.backingFilePath) {
+    NSString *path = [self temporaryFilePath];
+    NSOutputStream *outputStream = [NSOutputStream outputStreamToFileAtPath:path append:NO];
+    [outputStream open];
+    NSInteger bytesWritten = [NSJSONSerialization writeJSONObject:self.backingJSON toStream:outputStream options:NSJSONWritingPrettyPrinted error:nil];
+    [outputStream close];
+    if (bytesWritten == 0) {
+      return nil;
+    }
+    self.backingFilePath = path;
+  }
+  return self.backingFilePath;
+}
+
+#pragma mark FBJSONSerializationDescribeable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  NSMutableDictionary *dictionary = [[super jsonSerializableRepresentation] mutableCopy];
+  dictionary[@"object"] = self.backingJSON;
+  return dictionary;
+}
+
+#pragma mark FBDebugDescribeable
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"JSON Log %@ | Value %@",
+    [super shortDescription],
+    self.backingJSON
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return self.shortDescription;
+}
+
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBDiagnostic_JSON *)diagnostic
+{
+  if ([super isEqual:diagnostic]) {
+    return NO;
+  }
+
+  return [self.backingJSON isEqual:diagnostic.backingJSON];
+}
+
+- (NSUInteger)hash
+{
+  return super.hash ^ [self.backingJSON hash];
+}
+
+@end
+
 @implementation FBDiagnostic_Empty
 
 - (NSData *)asData
@@ -561,6 +725,11 @@
 }
 
 - (NSString *)asPath
+{
+  return nil;
+}
+
+- (id)asJSON
 {
   return nil;
 }
@@ -663,6 +832,21 @@
   return self;
 }
 
+- (instancetype)updateJSONSerializable:(id)jsonSerializable
+{
+  id json = [jsonSerializable conformsToProtocol:@protocol(FBJSONSerializationDescribeable)]
+    ? [jsonSerializable jsonSerializableRepresentation]
+    : jsonSerializable;
+  if (!json) {
+    return self;
+  }
+
+  object_setClass(self.diagnostic, FBDiagnostic_JSON.class);
+  self.diagnostic.backingJSON = json;
+  self.diagnostic.fileType = @"json";
+  return self;
+}
+
 - (NSString *)createPath
 {
   return [self.diagnostic temporaryFilePath];
@@ -690,17 +874,8 @@
   self.diagnostic.backingData = nil;
   self.diagnostic.backingString = nil;
   self.diagnostic.backingFilePath = nil;
+  self.diagnostic.backingJSON = nil;
   object_setClass(self.diagnostic, FBDiagnostic_Empty.class);
-}
-
-+ (NSSet *)defaultStringBackedPathExtensions
-{
-  static dispatch_once_t onceToken;
-  static NSSet *extensions;
-  dispatch_once(&onceToken, ^{
-    extensions = [NSSet setWithArray:@[@"txt", @"log", @""]];
-  });
-  return extensions;
 }
 
 @end

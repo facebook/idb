@@ -46,24 +46,34 @@
 @property (nonatomic, readonly, copy) NSString *destination;
 
 /**
- The content of the log, as represented by NSData.
+ The content of the log, if representable as NSData.
  */
 @property (nonatomic, readonly, copy) NSData *asData;
 
 /**
- The content of the log, as represented by String.
+ The content of the log, if representable by String.
  */
 @property (nonatomic, readonly, copy) NSString *asString;
 
 /**
- The content of the log, as represented by a File Path.
+ The content of the log, if representable as a File Path.
  */
 @property (nonatomic, readonly, copy) NSString *asPath;
+
+/**
+ The content of the log, if representable as a JSON Object in Native Containers.
+ */
+@property (nonatomic, readonly, copy) id asJSON;
 
 /**
  Whether the log has content or is missing/empty.
  */
 @property (nonatomic, readonly, assign) BOOL hasLogContent;
+
+/**
+ Whether or not the log can be searched as Text.
+ */
+@property (nonatomic, readonly, assign) BOOL isSearchableAsText;
 
 /**
  Writes the FBDiagnostic out to a file path in the most efficient way for the backing store of the log.
@@ -168,6 +178,16 @@
  @return the reciever, for chaining.
  */
 - (instancetype)updatePath:(NSString *)path;
+
+/**
+ Updates the underlying `FBDiagnostic` with JSON Encoded String.
+ Will replace any data, string or path associated with the log.
+
+ @param jsonSerializable Can be either an FBJSONSerializationDescribeable 
+                         or an object that meets the requirements of NSJSONSerialization.
+ @return the reciever, for chaining.
+ */
+- (instancetype)updateJSONSerializable:(id)jsonSerializable;
 
 /**
  Returns a File Path suitable for writing data into.

@@ -11,6 +11,9 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+#import "FBSimulatorControlAssertions.h"
+#import "FBSimulatorControlFixtures.h"
+
 @interface FBDiagnosticTests : XCTestCase
 
 @end
@@ -32,6 +35,7 @@
   XCTAssertEqualObjects(diagnostic.fileType, @"filetype");
   XCTAssertEqualObjects(diagnostic.humanReadableName, @"human");
   XCTAssertEqualObjects(diagnostic.asData, data);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 - (void)testBuilderReplacesExistingProperties
@@ -58,6 +62,7 @@
   XCTAssertEqualObjects(diagnostic.fileType, @"newfiletype");
   XCTAssertEqualObjects(diagnostic.humanReadableName, @"newhuman");
   XCTAssertEqualObjects(diagnostic.asData, secondData);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 - (void)testBuilderReplacesStringsAndData
@@ -82,6 +87,7 @@
 
   XCTAssertEqualObjects(diagnostic.asData, [@"I am now over here" dataUsingEncoding:NSUTF8StringEncoding]);
   XCTAssertEqualObjects(diagnostic.asString, @"I am now over here");
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 - (void)testStringAccessorReadsFromFile
@@ -109,6 +115,98 @@
   NSString *writeOutString = [NSString stringWithContentsOfFile:diagnostic.asPath usedEncoding:nil error:nil];
 
   XCTAssertEqualObjects(writeOutString, logString);
+}
+
+- (void)testTextFileCoercions
+{
+  FBDiagnostic *diagnostic = self.simulatorSystemLog;
+
+  XCTAssertNotNil(diagnostic.asPath);
+  [self assertNeedle:@"layer position 375 667 bounds 0 0 750 1334" inHaystack:diagnostic.asString];
+  XCTAssertNotNil(diagnostic.asData);
+  XCTAssertNil(diagnostic.asJSON);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
+}
+
+- (void)testBinaryFileCoercions
+{
+  FBDiagnostic *diagnostic = self.photoDiagnostic;
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  XCTAssertNil(diagnostic.asString);
+  XCTAssertNil(diagnostic.asJSON);
+  XCTAssertFalse(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONNativeObjectCoercions
+{
+  NSString *substring = @"FOO BAR BAAAA";
+  id json = @{
+    @"bing" : @"bong",
+    @"animal" : @"cat",
+    @"somes" : @[
+      @1, @2, @3, @4, substring
+    ],
+  };
+  FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
+    updateShortName:@"somelog"]
+    updateJSONSerializable:json]
+    build];
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONDataCoercions
+{
+  NSString *substring = @"FOO BAR BAAAA";
+  id json = @{
+    @"bing" : @"bong",
+    @"animal" : @"cat",
+    @"somes" : @[
+      @1, @2, @3, @4, substring
+    ],
+  };
+  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingPrettyPrinted error:nil];
+  FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
+    updateShortName:@"somelog"]
+    updateData:jsonData]
+    build];
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertTrue(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONFileCoercions
+{
+  FBDiagnostic *diagnostic = self.treeJSONDiagnostic;
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:@"Swipe down with three fingers to reveal the notification center" inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects([[[diagnostic.asJSON objectForKey:@"value"] objectForKey:@"tree"] objectForKey:@"name"], @"SpringBoard");
+  XCTAssertTrue(diagnostic.isSearchableAsText);
+}
+
+- (void)testJSONSerializableCoercions
+{
+  FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
+    updateShortName:@"applaunch"]
+    updateJSONSerializable:self.appLaunch1]
+    build];
+
+  XCTAssertNotNil(diagnostic.asPath);
+  XCTAssertNotNil(diagnostic.asData);
+  [self assertNeedle:@"com.example.apple-samplecode.TableSearch" inHaystack:diagnostic.asString];
+  XCTAssertEqualObjects([[diagnostic.asJSON objectForKey:@"environment"] objectForKey:@"FOO"], @"BAR");
+  XCTAssertTrue(diagnostic.isSearchableAsText);
 }
 
 @end

@@ -1,0 +1,1257 @@
+{
+  "sessionId" : null,
+  "value" : {
+    "tree" : {
+      "rect" : {
+        "size" : {
+          "width" : 375,
+          "height" : 667
+        },
+        "origin" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "isEnabled" : "1",
+      "type" : "UIAApplication",
+      "name" : "SpringBoard",
+      "label" : " ",
+      "value" : null,
+      "children" : [
+        {
+          "rect" : {
+            "size" : {
+              "width" : 375,
+              "height" : 667
+            },
+            "origin" : {
+              "x" : 0,
+              "y" : 0
+            }
+          },
+          "isEnabled" : "1",
+          "type" : "UIAWindow",
+          "name" : null,
+          "label" : null,
+          "value" : null,
+          "children" : [
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 446.964,
+                  "height" : 795
+                },
+                "origin" : {
+                  "x" : -35.98201,
+                  "y" : -64
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAImage",
+              "name" : null,
+              "label" : null,
+              "value" : null,
+              "isVisible" : "0",
+              "attributes" : {
+                "isEnabled" : "1",
+                "rect" : "NSRect: {{-35.98201, -64}, {446.96402, 795}}",
+                "hasKeyboardFocus" : "0",
+                "class" : "UIAImage",
+                "isValid" : "1"
+              },
+              "frame" : "{{-35.98201, -64}, {446.96402, 795}}"
+            }
+          ],
+          "isVisible" : "0",
+          "attributes" : {
+            "isEnabled" : "1",
+            "rect" : "NSRect: {{0, 0}, {375, 667}}",
+            "hasKeyboardFocus" : "0",
+            "class" : "UIAWindow",
+            "isValid" : "1"
+          },
+          "frame" : "{{0, 0}, {375, 667}}"
+        },
+        {
+          "rect" : {
+            "size" : {
+              "width" : 375,
+              "height" : 667
+            },
+            "origin" : {
+              "x" : 0,
+              "y" : 0
+            }
+          },
+          "isEnabled" : "1",
+          "type" : "UIAWindow",
+          "name" : null,
+          "label" : null,
+          "value" : null,
+          "children" : [
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 64,
+                  "height" : 78
+                },
+                "origin" : {
+                  "x" : -2,
+                  "y" : 5
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAButton",
+              "name" : "Double tap to open",
+              "label" : null,
+              "value" : "",
+              "isVisible" : "0",
+              "attributes" : {
+                "rect" : "NSRect: {{-2, 5}, {64, 78}}",
+                "isEnabled" : "1",
+                "hint" : "Double tap to open",
+                "isValid" : "1",
+                "name" : "Double tap to open",
+                "hasKeyboardFocus" : "0",
+                "value" : "",
+                "class" : "UIAButton"
+              },
+              "frame" : "{{-2, 5}, {64, 78}}"
+            },
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 447.485,
+                  "height" : 795
+                },
+                "origin" : {
+                  "x" : -36.24252,
+                  "y" : -64
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAImage",
+              "name" : null,
+              "label" : null,
+              "value" : null,
+              "isVisible" : "0",
+              "attributes" : {
+                "isEnabled" : "1",
+                "rect" : "NSRect: {{-36.242516, -64}, {447.48502, 795}}",
+                "hasKeyboardFocus" : "0",
+                "class" : "UIAImage",
+                "isValid" : "1"
+              },
+              "frame" : "{{-36.242516, -64}, {447.48502, 795}}"
+            },
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 375,
+                  "height" : 535
+                },
+                "origin" : {
+                  "x" : 0,
+                  "y" : 20
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAScrollView",
+              "name" : null,
+              "label" : null,
+              "value" : null,
+              "children" : [
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 375,
+                      "height" : 667
+                    },
+                    "origin" : {
+                      "x" : -375,
+                      "y" : 0
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Dismiss Spotlight",
+                  "label" : "Dismiss Spotlight",
+                  "value" : null,
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "name" : "Dismiss Spotlight",
+                    "rect" : "NSRect: {{-375, 0}, {375, 667}}",
+                    "isEnabled" : "1",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIAButton",
+                    "isValid" : "1"
+                  },
+                  "frame" : "{{-375, 0}, {375, 667}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 375,
+                      "height" : 44
+                    },
+                    "origin" : {
+                      "x" : -375,
+                      "y" : 0
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIANavigationBar",
+                  "name" : "SPUISearchView",
+                  "label" : null,
+                  "value" : null,
+                  "children" : [
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 343,
+                          "height" : 29
+                        },
+                        "origin" : {
+                          "x" : -359,
+                          "y" : 7.5
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIASearchBar",
+                      "name" : null,
+                      "label" : null,
+                      "value" : "Search",
+                      "children" : [
+                        {
+                          "rect" : {
+                            "size" : {
+                              "width" : 19,
+                              "height" : 19
+                            },
+                            "origin" : {
+                              "x" : -40,
+                              "y" : 12.5
+                            }
+                          },
+                          "isEnabled" : "1",
+                          "type" : "UIAButton",
+                          "name" : "Clear text",
+                          "label" : "Clear text",
+                          "value" : null,
+                          "isVisible" : "0",
+                          "attributes" : {
+                            "name" : "Clear text",
+                            "rect" : "NSRect: {{-40, 12.5}, {19, 19}}",
+                            "isEnabled" : "1",
+                            "hasKeyboardFocus" : "0",
+                            "class" : "UIAButton",
+                            "isValid" : "1"
+                          },
+                          "frame" : "{{-40, 12.5}, {19, 19}}"
+                        }
+                      ],
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "isEnabled" : "1",
+                        "rect" : "NSRect: {{-359, 7.5}, {343, 29}}",
+                        "value" : "Search",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIASearchBar",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{-359, 7.5}, {343, 29}}"
+                    },
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 53,
+                          "height" : 30
+                        },
+                        "origin" : {
+                          "x" : -4,
+                          "y" : 7.5
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIAButton",
+                      "name" : "Cancel",
+                      "label" : "Cancel",
+                      "value" : null,
+                      "children" : [
+                        {
+                          "rect" : {
+                            "size" : {
+                              "width" : 53,
+                              "height" : 20.5
+                            },
+                            "origin" : {
+                              "x" : -4,
+                              "y" : 12
+                            }
+                          },
+                          "isEnabled" : "1",
+                          "type" : "UIAStaticText",
+                          "name" : "Cancel",
+                          "label" : "Cancel",
+                          "value" : "Cancel",
+                          "isVisible" : "0",
+                          "attributes" : {
+                            "rect" : "NSRect: {{-4, 12}, {53, 20.5}}",
+                            "isEnabled" : "1",
+                            "isValid" : "1",
+                            "name" : "Cancel",
+                            "hasKeyboardFocus" : "0",
+                            "value" : "Cancel",
+                            "class" : "UIAStaticText"
+                          },
+                          "frame" : "{{-4, 12}, {53, 20.5}}"
+                        }
+                      ],
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "name" : "Cancel",
+                        "rect" : "NSRect: {{-4, 7.5}, {53, 30}}",
+                        "isEnabled" : "1",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIAButton",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{-4, 7.5}, {53, 30}}"
+                    },
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 21,
+                          "height" : 21
+                        },
+                        "origin" : {
+                          "x" : -367,
+                          "y" : 11.5
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIAButton",
+                      "name" : "Back",
+                      "label" : "Back",
+                      "value" : null,
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "name" : "Back",
+                        "rect" : "NSRect: {{-367, 11.5}, {21, 21}}",
+                        "isEnabled" : "1",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIAButton",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{-367, 11.5}, {21, 21}}"
+                    }
+                  ],
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "name" : "SPUISearchView",
+                    "rect" : "NSRect: {{-375, 0}, {375, 44}}",
+                    "isEnabled" : "1",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIANavigationBar",
+                    "isValid" : "1"
+                  },
+                  "frame" : "{{-375, 0}, {375, 44}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 375,
+                      "height" : 603
+                    },
+                    "origin" : {
+                      "x" : -375,
+                      "y" : 64
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAScrollView",
+                  "name" : null,
+                  "label" : null,
+                  "value" : null,
+                  "children" : [
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 2.5,
+                          "height" : 36
+                        },
+                        "origin" : {
+                          "x" : -5.5,
+                          "y" : 25
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIAImage",
+                      "name" : null,
+                      "label" : null,
+                      "value" : null,
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "isEnabled" : "1",
+                        "rect" : "NSRect: {{-5.5, 25}, {2.5, 36}}",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIAImage",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{-5.5, 25}, {2.5, 36}}"
+                    },
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 36,
+                          "height" : 2.5
+                        },
+                        "origin" : {
+                          "x" : -414,
+                          "y" : 661.5
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIAImage",
+                      "name" : null,
+                      "label" : null,
+                      "value" : null,
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "isEnabled" : "1",
+                        "rect" : "NSRect: {{-414, 661.5}, {36, 2.5}}",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIAImage",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{-414, 661.5}, {36, 2.5}}"
+                    }
+                  ],
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "isEnabled" : "1",
+                    "rect" : "NSRect: {{-375, 64}, {375, 603}}",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIAScrollView",
+                    "isValid" : "1"
+                  },
+                  "frame" : "{{-375, 64}, {375, 603}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 375,
+                      "height" : 44
+                    },
+                    "origin" : {
+                      "x" : -375,
+                      "y" : 667
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAToolbar",
+                  "name" : null,
+                  "label" : null,
+                  "value" : null,
+                  "children" : [
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 375,
+                          "height" : 0.5
+                        },
+                        "origin" : {
+                          "x" : -375,
+                          "y" : 666.5
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIAImage",
+                      "name" : null,
+                      "label" : null,
+                      "value" : null,
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "isEnabled" : "1",
+                        "rect" : "NSRect: {{-375, 666.5}, {375, 0.5}}",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIAImage",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{-375, 666.5}, {375, 0.5}}"
+                    },
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 375,
+                          "height" : 44
+                        },
+                        "origin" : {
+                          "x" : -375,
+                          "y" : 667
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIAImage",
+                      "name" : null,
+                      "label" : null,
+                      "value" : null,
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "isEnabled" : "1",
+                        "rect" : "NSRect: {{-375, 667}, {375, 44}}",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIAImage",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{-375, 667}, {375, 44}}"
+                    }
+                  ],
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "isEnabled" : "1",
+                    "rect" : "NSRect: {{-375, 667}, {375, 44}}",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIAToolbar",
+                    "isValid" : "1"
+                  },
+                  "frame" : "{{-375, 667}, {375, 44}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 25,
+                      "y" : 22
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Calendar",
+                  "label" : "Calendar",
+                  "value" : "Tuesday, March 08",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{25, 22}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Calendar",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "Tuesday, March 08",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{25, 22}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 112,
+                      "y" : 22
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Photos",
+                  "label" : "Photos",
+                  "value" : "",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{112, 22}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Photos",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{112, 22}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 199,
+                      "y" : 22
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Maps",
+                  "label" : "Maps",
+                  "value" : "",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{199, 22}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Maps",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{199, 22}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 286,
+                      "y" : 22
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Wallet",
+                  "label" : "Wallet",
+                  "value" : "",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{286, 22}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Wallet",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{286, 22}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 68,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 23.5,
+                      "y" : 110
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Reminders",
+                  "label" : "Reminders",
+                  "value" : "",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{23.5, 110}, {68, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Reminders",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{23.5, 110}, {68, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 112,
+                      "y" : 110
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "News",
+                  "label" : "News",
+                  "value" : "",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{112, 110}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "News",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{112, 110}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 199,
+                      "y" : 110
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Health",
+                  "label" : "Health",
+                  "value" : "",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{199, 110}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Health",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{199, 110}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 286,
+                      "y" : 110
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Settings",
+                  "label" : "Settings",
+                  "value" : "",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{286, 110}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Settings",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{286, 110}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 83,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 390.5,
+                      "y" : 22
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Game Center",
+                  "label" : "Game Center",
+                  "value" : "",
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "rect" : "NSRect: {{390.5, 22}, {83, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Game Center",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{390.5, 22}, {83, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 487,
+                      "y" : 22
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Extras",
+                  "label" : "Extras folder",
+                  "value" : "1 app",
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "rect" : "NSRect: {{487, 22}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Extras",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "1 app",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{487, 22}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 64,
+                      "height" : 85.5
+                    },
+                    "origin" : {
+                      "x" : 574,
+                      "y" : 22
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAButton",
+                  "name" : "Watch",
+                  "label" : "Watch",
+                  "value" : "",
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "rect" : "NSRect: {{574, 22}, {64, 85.5}}",
+                    "isEnabled" : "1",
+                    "hint" : "Double tap to open",
+                    "isValid" : "1",
+                    "name" : "Watch",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "",
+                    "class" : "UIAButton"
+                  },
+                  "frame" : "{{574, 22}, {64, 85.5}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 375,
+                      "height" : 535
+                    },
+                    "origin" : {
+                      "x" : 0,
+                      "y" : 20
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAScrollView",
+                  "name" : null,
+                  "label" : null,
+                  "value" : null,
+                  "children" : [
+                    {
+                      "rect" : {
+                        "size" : {
+                          "width" : 369,
+                          "height" : 2.5
+                        },
+                        "origin" : {
+                          "x" : 3,
+                          "y" : 549.5
+                        }
+                      },
+                      "isEnabled" : "1",
+                      "type" : "UIAImage",
+                      "name" : null,
+                      "label" : null,
+                      "value" : null,
+                      "isVisible" : "0",
+                      "attributes" : {
+                        "isEnabled" : "1",
+                        "rect" : "NSRect: {{3, 549.5}, {369, 2.5}}",
+                        "hasKeyboardFocus" : "0",
+                        "class" : "UIAImage",
+                        "isValid" : "1"
+                      },
+                      "frame" : "{{3, 549.5}, {369, 2.5}}"
+                    }
+                  ],
+                  "isVisible" : "0",
+                  "attributes" : {
+                    "isEnabled" : "1",
+                    "rect" : "NSRect: {{0, 20}, {375, 535}}",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIAScrollView",
+                    "isValid" : "1"
+                  },
+                  "frame" : "{{0, 20}, {375, 535}}"
+                }
+              ],
+              "isVisible" : "1",
+              "attributes" : {
+                "isEnabled" : "1",
+                "rect" : "NSRect: {{0, 20}, {375, 535}}",
+                "hasKeyboardFocus" : "0",
+                "class" : "UIAScrollView",
+                "isValid" : "1"
+              },
+              "frame" : "{{0, 20}, {375, 535}}"
+            },
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 375,
+                  "height" : 42
+                },
+                "origin" : {
+                  "x" : 0,
+                  "y" : 545
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAPageIndicator",
+              "name" : null,
+              "label" : null,
+              "value" : "Page 1 of 2",
+              "isVisible" : "1",
+              "attributes" : {
+                "isEnabled" : "1",
+                "rect" : "NSRect: {{0, 545}, {375, 42}}",
+                "value" : "Page 1 of 2",
+                "hasKeyboardFocus" : "0",
+                "class" : "UIAPageIndicator",
+                "isValid" : "1"
+              },
+              "frame" : "{{0, 545}, {375, 42}}"
+            },
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 375,
+                  "height" : 2.5
+                },
+                "origin" : {
+                  "x" : 0,
+                  "y" : 570
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAImage",
+              "name" : null,
+              "label" : null,
+              "value" : null,
+              "isVisible" : "1",
+              "attributes" : {
+                "isEnabled" : "1",
+                "rect" : "NSRect: {{0, 570}, {375, 2.5}}",
+                "hasKeyboardFocus" : "0",
+                "class" : "UIAImage",
+                "isValid" : "1"
+              },
+              "frame" : "{{0, 570}, {375, 2.5}}"
+            },
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 64,
+                  "height" : 85.5
+                },
+                "origin" : {
+                  "x" : 155,
+                  "y" : 583
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAButton",
+              "name" : "Safari",
+              "label" : "Safari",
+              "value" : "",
+              "isVisible" : "1",
+              "attributes" : {
+                "rect" : "NSRect: {{155, 583}, {64, 85.5}}",
+                "isEnabled" : "1",
+                "hint" : "Double tap to open",
+                "isValid" : "1",
+                "name" : "Safari",
+                "hasKeyboardFocus" : "0",
+                "value" : "",
+                "class" : "UIAButton"
+              },
+              "frame" : "{{155, 583}, {64, 85.5}}"
+            },
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 447.485,
+                  "height" : 795
+                },
+                "origin" : {
+                  "x" : -36.24252,
+                  "y" : 507
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAImage",
+              "name" : null,
+              "label" : null,
+              "value" : null,
+              "isVisible" : "0",
+              "attributes" : {
+                "isEnabled" : "1",
+                "rect" : "NSRect: {{-36.242516, 507}, {447.48502, 795}}",
+                "hasKeyboardFocus" : "0",
+                "class" : "UIAImage",
+                "isValid" : "1"
+              },
+              "frame" : "{{-36.242516, 507}, {447.48502, 795}}"
+            }
+          ],
+          "isVisible" : "1",
+          "attributes" : {
+            "isEnabled" : "1",
+            "rect" : "NSRect: {{0, 0}, {375, 667}}",
+            "hasKeyboardFocus" : "0",
+            "class" : "UIAWindow",
+            "isValid" : "1"
+          },
+          "frame" : "{{0, 0}, {375, 667}}"
+        },
+        {
+          "rect" : {
+            "size" : {
+              "width" : 375,
+              "height" : 667
+            },
+            "origin" : {
+              "x" : 0,
+              "y" : 0
+            }
+          },
+          "isEnabled" : "1",
+          "type" : "UIAWindow",
+          "name" : null,
+          "label" : null,
+          "value" : null,
+          "isVisible" : "0",
+          "attributes" : {
+            "isEnabled" : "1",
+            "rect" : "NSRect: {{0, 0}, {375, 667}}",
+            "hasKeyboardFocus" : "0",
+            "class" : "UIAWindow",
+            "isValid" : "1"
+          },
+          "frame" : "{{0, 0}, {375, 667}}"
+        },
+        {
+          "rect" : {
+            "size" : {
+              "width" : 375,
+              "height" : 667
+            },
+            "origin" : {
+              "x" : 0,
+              "y" : 0
+            }
+          },
+          "isEnabled" : "1",
+          "type" : "UIAWindow",
+          "name" : null,
+          "label" : null,
+          "value" : null,
+          "isVisible" : "0",
+          "attributes" : {
+            "isEnabled" : "1",
+            "rect" : "NSRect: {{0, 0}, {375, 667}}",
+            "hasKeyboardFocus" : "0",
+            "class" : "UIAWindow",
+            "isValid" : "1"
+          },
+          "frame" : "{{0, 0}, {375, 667}}"
+        },
+        {
+          "rect" : {
+            "size" : {
+              "width" : 375,
+              "height" : 667
+            },
+            "origin" : {
+              "x" : 0,
+              "y" : 0
+            }
+          },
+          "isEnabled" : "1",
+          "type" : "UIAWindow",
+          "name" : null,
+          "label" : null,
+          "value" : null,
+          "children" : [
+            {
+              "rect" : {
+                "size" : {
+                  "width" : 375,
+                  "height" : 20
+                },
+                "origin" : {
+                  "x" : 0,
+                  "y" : 0
+                }
+              },
+              "isEnabled" : "1",
+              "type" : "UIAStatusBar",
+              "name" : null,
+              "label" : null,
+              "value" : null,
+              "children" : [
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 39,
+                      "height" : 20
+                    },
+                    "origin" : {
+                      "x" : 6,
+                      "y" : 0
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAElement",
+                  "name" : "Swipe down with three fingers to reveal the notification center., Swipe up with three fingers to reveal the control center, Double-tap to scroll to top",
+                  "label" : null,
+                  "value" : null,
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{6, 0}, {39, 20}}",
+                    "isEnabled" : "1",
+                    "isValid" : "1",
+                    "hint" : "Swipe down with three fingers to reveal the notification center., Swipe up with three fingers to reveal the control center, Double-tap to scroll to top",
+                    "name" : "Swipe down with three fingers to reveal the notification center., Swipe up with three fingers to reveal the control center, Double-tap to scroll to top",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIAElement"
+                  },
+                  "frame" : "{{6, 0}, {39, 20}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 13,
+                      "height" : 20
+                    },
+                    "origin" : {
+                      "x" : 50,
+                      "y" : 0
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAElement",
+                  "name" : "3 of 3 Wi-Fi bars",
+                  "label" : "3 of 3 Wi-Fi bars",
+                  "value" : "SSID",
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{50, 0}, {13, 20}}",
+                    "isEnabled" : "1",
+                    "hint" : "Swipe down with three fingers to reveal the notification center., Swipe up with three fingers to reveal the control center, Double-tap to scroll to top",
+                    "isValid" : "1",
+                    "name" : "3 of 3 Wi-Fi bars",
+                    "hasKeyboardFocus" : "0",
+                    "value" : "SSID",
+                    "class" : "UIAElement"
+                  },
+                  "frame" : "{{50, 0}, {13, 20}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 51,
+                      "height" : 20
+                    },
+                    "origin" : {
+                      "x" : 164,
+                      "y" : 0
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAElement",
+                  "name" : "8:28 AM",
+                  "label" : "8:28 AM",
+                  "value" : null,
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{164, 0}, {51, 20}}",
+                    "isEnabled" : "1",
+                    "isValid" : "1",
+                    "hint" : "Swipe down with three fingers to reveal the notification center., Swipe up with three fingers to reveal the control center, Double-tap to scroll to top",
+                    "name" : "8:28 AM",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIAElement"
+                  },
+                  "frame" : "{{164, 0}, {51, 20}}"
+                },
+                {
+                  "rect" : {
+                    "size" : {
+                      "width" : 25,
+                      "height" : 20
+                    },
+                    "origin" : {
+                      "x" : 345,
+                      "y" : 0
+                    }
+                  },
+                  "isEnabled" : "1",
+                  "type" : "UIAElement",
+                  "name" : "-100% battery power",
+                  "label" : "-100% battery power",
+                  "value" : null,
+                  "isVisible" : "1",
+                  "attributes" : {
+                    "rect" : "NSRect: {{345, 0}, {25, 20}}",
+                    "isEnabled" : "1",
+                    "isValid" : "1",
+                    "hint" : "Swipe down with three fingers to reveal the notification center., Swipe up with three fingers to reveal the control center, Double-tap to scroll to top",
+                    "name" : "-100% battery power",
+                    "hasKeyboardFocus" : "0",
+                    "class" : "UIAElement"
+                  },
+                  "frame" : "{{345, 0}, {25, 20}}"
+                }
+              ],
+              "isVisible" : "1",
+              "attributes" : {
+                "isEnabled" : "1",
+                "rect" : "NSRect: {{0, 0}, {375, 20}}",
+                "hasKeyboardFocus" : "0",
+                "class" : "UIAStatusBar",
+                "isValid" : "1"
+              },
+              "frame" : "{{0, 0}, {375, 20}}"
+            }
+          ],
+          "isVisible" : "1",
+          "attributes" : {
+            "isEnabled" : "1",
+            "rect" : "NSRect: {{0, 0}, {375, 667}}",
+            "hasKeyboardFocus" : "0",
+            "class" : "UIAWindow",
+            "isValid" : "1"
+          },
+          "frame" : "{{0, 0}, {375, 667}}"
+        }
+      ],
+      "isVisible" : "1",
+      "attributes" : {
+        "class" : "UIAApplication",
+        "isValid" : "1",
+        "bundleVersion" : "50",
+        "bundleID" : "com.apple.springboard",
+        "version" : "1.0"
+      },
+      "frame" : "{{0, 0}, {375, 667}}"
+    }
+  },
+  "status" : 0
+}
