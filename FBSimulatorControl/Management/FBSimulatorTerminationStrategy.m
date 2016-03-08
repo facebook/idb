@@ -14,7 +14,7 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 #import "FBCoreSimulatorNotifier.h"
 #import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
@@ -94,7 +94,7 @@
   // Since `-[FBSimDeviceWrapper shutdownWithError:]` will spin the run loop until CoreSimulator confirms that the device is shutdown,
   // this will give a sufficient amount of time between killing Applications.
 
-  [self.logger.debug logFormat:@"Killing %@", [FBCollectionDescriptions oneLineDescriptionFromArray:simulators atKeyPath:@"shortDescription"]];
+  [self.logger.debug logFormat:@"Killing %@", [FBCollectionInformation oneLineDescriptionFromArray:simulators atKeyPath:@"shortDescription"]];
   for (FBSimulator *simulator in simulators) {
     // Get some preconditions
     NSError *innerError = nil;

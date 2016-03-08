@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 
-@implementation FBCollectionDescriptions
+@implementation FBCollectionInformation
 
 + (NSString *)oneLineDescriptionFromArray:(NSArray *)array
 {

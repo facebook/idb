@@ -17,7 +17,7 @@
 
 #import <DVTFoundation/DVTPlatform.h>
 
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -116,7 +116,7 @@
 
   // We're done with loading Frameworks.
   hasLoaded = YES;
-  [logger logFormat:@"Loaded All Private Frameworks %@", [FBCollectionDescriptions oneLineDescriptionFromArray:classMapping.allValues atKeyPath:@"lastPathComponent"]];
+  [logger logFormat:@"Loaded All Private Frameworks %@", [FBCollectionInformation oneLineDescriptionFromArray:classMapping.allValues atKeyPath:@"lastPathComponent"]];
 
   // Set CoreSimulator Logging since it is now loaded.
   [self setCoreSimulatorLoggingEnabled:FBSimulatorControlGlobalConfiguration.debugLoggingEnabled];

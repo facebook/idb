@@ -18,7 +18,7 @@
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 #import "FBProcessInfo.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessQuery+Simulators.h"
@@ -288,7 +288,7 @@
   }];
   if (!didStartAllRequiredProcesses) {
     return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionDescriptions oneLineDescriptionFromArray:requiredProcessNames.allObjects]]
+      describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredProcessNames.allObjects]]
       inSimulator:simulator]
       fail:error];
   }

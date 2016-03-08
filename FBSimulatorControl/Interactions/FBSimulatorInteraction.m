@@ -12,7 +12,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBSimulator+Helpers.h"

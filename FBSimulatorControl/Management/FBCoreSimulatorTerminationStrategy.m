@@ -9,7 +9,7 @@
 
 #import "FBCoreSimulatorTerminationStrategy.h"
 
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
 #import "FBSimulatorLogger.h"
@@ -59,7 +59,7 @@
     return YES;
   }
 
-  [self.logger.debug logFormat:@"Killing Spurious CoreSimulatorServices %@", [FBCollectionDescriptions oneLineDescriptionFromArray:processes atKeyPath:@"debugDescription"]];
+  [self.logger.debug logFormat:@"Killing Spurious CoreSimulatorServices %@", [FBCollectionInformation oneLineDescriptionFromArray:processes atKeyPath:@"debugDescription"]];
   return [self.processTerminationStrategy killProcesses:processes error:error];
 }
 

@@ -10,9 +10,9 @@
 #import <Foundation/Foundation.h>
 
 /**
- Better String representations of Collections.
+ Helpers for information about of Collections.
  */
-@interface FBCollectionDescriptions : NSObject
+@interface FBCollectionInformation : NSObject
 
 /**
  Creates a One-Line Array description from the array, using the -[NSObject description] keypath.

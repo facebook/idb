@@ -11,7 +11,7 @@
 #import <FBSimulatorControl/FBAddVideoPolyfill.h>
 #import <FBSimulatorControl/FBBinaryParser.h>
 #import <FBSimulatorControl/FBCapacityQueue.h>
-#import <FBSimulatorControl/FBCollectionDescriptions.h>
+#import <FBSimulatorControl/FBCollectionInformation.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
