@@ -45,4 +45,24 @@
   return YES;
 }
 
++ (BOOL)isDictionaryHeterogeneous:(NSDictionary *)dictionary keyClass:(Class)keyCls valueClass:(Class)valueCls
+{
+  NSParameterAssert(keyCls);
+  NSParameterAssert(valueCls);
+  if (!dictionary) {
+    return NO;
+  }
+  for (id object in dictionary.allKeys) {
+    if (![object isKindOfClass:keyCls]) {
+      return NO;
+    }
+  }
+  for (id object in dictionary.allValues) {
+    if (![object isKindOfClass:valueCls]) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
 @end
