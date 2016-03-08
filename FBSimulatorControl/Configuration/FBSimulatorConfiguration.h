@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+#import <FBSimulatorControl/FBJSONConversion.h>
 
 /**
  A Value object that represents the Configuration of a iPhone, iPad, Watch or TV Simulator.

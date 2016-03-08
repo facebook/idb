@@ -176,7 +176,7 @@
 		AACA2C381C2976B100979C45 /* FBAddVideoPolyfill.m in Sources */ = {isa = PBXBuildFile; fileRef = AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */; };
 		AAD3051F1BD4D5B10047376E /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AAD3051D1BD4D5B10047376E /* photo0.png */; };
 		AAD305201BD4D5B10047376E /* photo1.png in Resources */ = {isa = PBXBuildFile; fileRef = AAD3051E1BD4D5B10047376E /* photo1.png */; };
-		AAD497851C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAD497851C50F0BB00ABC1A7 /* FBJSONConversion.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497841C50F0BB00ABC1A7 /* FBJSONConversion.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAD497871C50F0FD00ABC1A7 /* FBDebugDescribeable.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497861C50F0FD00ABC1A7 /* FBDebugDescribeable.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAD4978A1C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497881C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAD4978B1C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.m in Sources */ = {isa = PBXBuildFile; fileRef = AAD497891C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.m */; };
@@ -976,7 +976,7 @@
 		AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAddVideoPolyfill.m; sourceTree = "<group>"; };
 		AAD3051D1BD4D5B10047376E /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
 		AAD3051E1BD4D5B10047376E /* photo1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo1.png; sourceTree = "<group>"; };
-		AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONSerializationDescribeable.h; sourceTree = "<group>"; };
+		AAD497841C50F0BB00ABC1A7 /* FBJSONConversion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONConversion.h; sourceTree = "<group>"; };
 		AAD497861C50F0FD00ABC1A7 /* FBDebugDescribeable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDebugDescribeable.h; sourceTree = "<group>"; };
 		AAD497881C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBMutableSimulatorEventSink.h; sourceTree = "<group>"; };
 		AAD497891C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMutableSimulatorEventSink.m; sourceTree = "<group>"; };
@@ -1885,7 +1885,7 @@
 			isa = PBXGroup;
 			children = (
 				AAD497861C50F0FD00ABC1A7 /* FBDebugDescribeable.h */,
-				AAD497841C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h */,
+				AAD497841C50F0BB00ABC1A7 /* FBJSONConversion.h */,
 				AA95170E1C15F54600A89CAD /* FBSimulatorApplication.h */,
 				AA95170F1C15F54600A89CAD /* FBSimulatorApplication.m */,
 				AA9517131C15F54600A89CAD /* FBSimulatorHistory.h */,
@@ -2102,7 +2102,7 @@
 				AAF2D3561C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.h in Headers */,
 				AA7490051C4E6CBA00F3BDBA /* FBSimulatorLaunchConfiguration+Private.h in Headers */,
 				AA95179D1C15F54600A89CAD /* FBProcessQuery.h in Headers */,
-				AAD497851C50F0BB00ABC1A7 /* FBJSONSerializationDescribeable.h in Headers */,
+				AAD497851C50F0BB00ABC1A7 /* FBJSONConversion.h in Headers */,
 				AA78DCDA1C5005D2006FAB41 /* FBSimulatorLaunchCtl.h in Headers */,
 				AA2219951C3E752800371B01 /* FBCoreSimulatorTerminationStrategy.h in Headers */,
 				AA9517871C15F54600A89CAD /* FBSimulatorPredicates.h in Headers */,
