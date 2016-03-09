@@ -22,17 +22,21 @@
 
 - (NSArray *)serializableConfigurations
 {
-  return [[[[[self.videoConfigurations
+  return [[[[[[[self.videoConfigurations
     arrayByAddingObjectsFromArray:self.processLaunchConfigurations]
     arrayByAddingObjectsFromArray:self.simulatorConfigurations]
     arrayByAddingObjectsFromArray:self.controlConfigurations]
     arrayByAddingObjectsFromArray:self.launchConfigurations]
-    arrayByAddingObjectsFromArray:self.diagnostics];
+    arrayByAddingObjectsFromArray:self.diagnostics]
+    arrayByAddingObjectsFromArray:self.logSearchPredicates]
+    arrayByAddingObject:self.batchLogSearch];
 }
 
 - (NSArray *)deserializableConfigurations
 {
-  return [self appLaunchConfigurations];
+  return [[[self appLaunchConfigurations]
+    arrayByAddingObjectsFromArray:self.logSearchPredicates]
+    arrayByAddingObject:self.batchLogSearch];
 }
 
 - (NSArray *)videoConfigurations
@@ -104,6 +108,22 @@
       updateFileType:@"txt"]
       build],
   ];
+}
+
+- (NSArray *)logSearchPredicates
+{
+  return @[
+    [FBLogSearchPredicate substrings:@[@"foo", @"bar", @"baz"]],
+    [FBLogSearchPredicate regex:@"(foo|bar|baz)"]
+  ];
+}
+
+- (FBBatchLogSearch *)batchLogSearch
+{
+  return [FBBatchLogSearch withMapping:@{
+    @[@"log1", @"log2"] : @[[FBLogSearchPredicate substrings:@[@"foo, bar, baz"]]],
+    @[@"log3"] : @[[FBLogSearchPredicate regex:@"(foo|bar|baz)"], [FBLogSearchPredicate substrings:@[@"blastoof"]]]
+  } error:nil];
 }
 
 - (void)testEqualityOfCopy
