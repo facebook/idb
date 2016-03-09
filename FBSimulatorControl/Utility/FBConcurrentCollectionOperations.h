@@ -62,4 +62,9 @@
  */
 + (NSArray *)filterMap:(NSArray *)array predicate:(NSPredicate *)predicate map:(id (^)(id))block;
 
+/**
+ An NSPredicate that will filter out null/NSNull values.
+ */
++ (NSPredicate *)notNullPredicate;
+
 @end

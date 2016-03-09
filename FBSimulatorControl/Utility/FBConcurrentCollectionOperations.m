@@ -109,6 +109,11 @@
     filteredArrayUsingPredicate:self.nonTerminalPredicate];
 }
 
++ (NSPredicate *)notNullPredicate
+{
+  return [NSPredicate predicateWithFormat:@"self != nil"];
+}
+
 #pragma mark Private
 
 + (NSPredicate *)nonTerminalPredicate

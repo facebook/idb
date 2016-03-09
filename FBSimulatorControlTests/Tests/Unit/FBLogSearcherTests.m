@@ -66,3 +66,43 @@
 }
 
 @end
+
+@interface FBBatchLogSearcherTests : XCTestCase
+
+@end
+
+@implementation FBBatchLogSearcherTests
+
+- (void)testBatchSearchFindsAcrossMultipleDiagnostics
+{
+  NSDictionary *mapping = @{
+    @[@"simulator_system", @"tree"] : @[
+      [FBLogSearchPredicate substrings:@[@"Springboard", @"IOHIDSession", @"rect"]],
+      [FBLogSearchPredicate regex:@"layer position \\d+ \\d+ bounds \\d+ \\d+ \\d+ \\d+"]
+    ],
+    @[@"simulator_system"] : @[
+      [FBLogSearchPredicate substrings:@[@"ADDING REMOTE com.apple.Maps"]],
+    ],
+    @[@"tree"] : @[
+      [FBLogSearchPredicate regex:@"(ANIMPOSSIBLE|REGEAAAAAAAAA)"],
+    ],
+    @[@"photo0"] : @[
+      [FBLogSearchPredicate substrings:@[@"111", @"222"]],
+    ]
+  };
+  NSError *error = nil;
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:mapping error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(batchSearch);
+  NSDictionary *results = [batchSearch search:@[
+    self.simulatorSystemLog,
+    self.treeJSONDiagnostic,
+    self.photoDiagnostic
+  ]];
+  XCTAssertNotNil(results);
+  XCTAssertEqual([results[@"simulator_system"] count], 3u);
+  XCTAssertEqual([results[@"tree"] count], 1u);
+  XCTAssertEqual([results[@"photo0"] count], 0u);
+}
+
+@end

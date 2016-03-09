@@ -288,6 +288,202 @@
 
 @end
 
+#pragma mark - FBBatchLogSearch
+
+@interface FBBatchLogSearch ()
+
+@property (nonatomic, copy, readonly) NSDictionary *mapping;
+
+@end
+
+@implementation FBBatchLogSearch
+
+#pragma mark Initializers
+
++ (instancetype)withMapping:(NSDictionary *)mapping error:(NSError **)error
+{
+  for (id key in mapping.allKeys) {
+    if (![key isKindOfClass:NSArray.class]) {
+      return [[FBSimulatorError describeFormat:@"%@ key is not an array", key] fail:error];
+    }
+    if (![FBCollectionInformation isArrayHeterogeneous:key withClass:NSString.class]) {
+      return [[FBSimulatorError describeFormat:@"%@ key is not an array of strings", key] fail:error];
+    }
+  }
+  for (id value in mapping.allValues) {
+    if (![value isKindOfClass:NSArray.class]) {
+      return [[FBSimulatorError describeFormat:@"%@ value is not an array", value] fail:error];
+    }
+    if (![FBCollectionInformation isArrayHeterogeneous:value withClass:FBLogSearchPredicate.class]) {
+      return [[FBSimulatorError describeFormat:@"%@ value is not an array of log search predicates", value] fail:error];
+    }
+  }
+  return [[FBBatchLogSearch alloc] initWithMapping:mapping];
+}
+
++ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  if (![json isKindOfClass:NSDictionary.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not a dictionary", json] fail:error];
+  }
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSArray.class valueClass:NSArray.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not a dictionary of <array, array>", json] fail:error];
+  }
+
+  NSMutableDictionary *mapping = [NSMutableDictionary dictionary];
+  for (NSString *key in json.allKeys) {
+    NSMutableArray *predicates = [NSMutableArray array];
+    for (NSDictionary *predicateJSON in json[key]) {
+      FBLogSearchPredicate *predicate = [FBLogSearchPredicate inflateFromJSON:predicateJSON error:error];
+      if (!predicate) {
+        return [[FBSimulatorError describeFormat:@"%@ is not a predicate", predicateJSON] fail:error];
+      }
+      [predicates addObject:predicate];
+    }
+
+    mapping[key] = [predicates copy];
+  }
+  return [self withMapping:[mapping copy] error:error];
+}
+
+- (instancetype)initWithMapping:(NSDictionary *)mapping
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _mapping = mapping;
+
+  return self;
+}
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _mapping = [coder decodeObjectForKey:NSStringFromSelector(@selector(mapping))];
+
+  return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeObject:self.mapping forKey:NSStringFromSelector(@selector(mapping))];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return [[FBBatchLogSearch alloc] initWithMapping:self.mapping];
+}
+
+#pragma mark FBJSONSerializationDescribeable Implementation
+
+- (id)jsonSerializableRepresentation
+{
+  NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+  for (NSArray *key in self.mapping) {
+    dictionary[key] = [self.mapping[key] valueForKey:@"jsonSerializableRepresentation"];
+  }
+  return [dictionary copy];
+}
+
+#pragma mark FBDebugDescribeable Implementation
+
+- (NSString *)description
+{
+  return self.shortDescription;
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Batch Search: %@",
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return self.shortDescription;
+}
+
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBBatchLogSearch *)object
+{
+  if (![object isKindOfClass:self.class]) {
+    return NO;
+  }
+
+  return [self.mapping isEqualToDictionary:object.mapping];
+}
+
+- (NSUInteger)hash
+{
+  return self.mapping.hash;
+}
+
+#pragma mark Public API
+
+- (NSDictionary *)search:(NSArray *)diagnostics
+{
+  NSParameterAssert([FBCollectionInformation isArrayHeterogeneous:diagnostics withClass:FBDiagnostic.class]);
+
+  // Construct an NSDictionary<NSString, FBDiagnostic> of diagnostics.
+  NSDictionary *namesToDiagnostics = [NSDictionary dictionaryWithObjects:diagnostics forKeys:[diagnostics valueForKey:@"shortName"]];
+
+  // Construct and NSArray<FBLogSearch> instances
+  NSMutableArray *searchers = [NSMutableArray array];
+  for (NSArray *nameArray in self.mapping.allKeys) {
+    for (NSString *name in nameArray) {
+      FBDiagnostic *diagnostic = namesToDiagnostics[name];
+      if (!diagnostic) {
+        continue;
+      }
+      for (FBLogSearchPredicate *predicate in self.mapping[nameArray]) {
+        [searchers addObject:[FBLogSearch withDiagnostic:diagnostic predicate:predicate]];
+      }
+    }
+  }
+
+  // Perform the search, concurrently
+  NSArray *results = [FBConcurrentCollectionOperations
+    mapFilter:[searchers copy]
+    map:^ NSArray * (FBLogSearch *searcher) {
+      NSString *line = searcher.firstMatchingLine;
+      if (!line) {
+        return nil;
+      }
+      return @[searcher.diagnostic.shortName, line];
+    }
+    predicate:FBConcurrentCollectionOperations.notNullPredicate];
+
+  // Rebuild the output dictionary
+  NSMutableDictionary *output = [NSMutableDictionary dictionary];
+  for (NSArray *result in results) {
+    NSString *key = result[0];
+    NSString *value = result[1];
+    NSMutableArray *matches = output[key];
+    if (!matches) {
+      matches = [NSMutableArray array];
+      output[key] = matches;
+    }
+    [matches addObject:value];
+  }
+
+  return [output copy];
+}
+
+@end
+
 #pragma mark - FBLogSearch
 
 @interface FBLogSearch ()
