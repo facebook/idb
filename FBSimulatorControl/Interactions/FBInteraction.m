@@ -155,7 +155,7 @@
 
 @interface FBInteraction_Failure : NSObject <FBInteraction>
 
-@property (nonnull, strong, readonly) NSError *error;
+@property (atomic, strong, nonnull, readonly) NSError *error;
 
 @end
 
@@ -326,4 +326,3 @@
 }
 
 @end
-

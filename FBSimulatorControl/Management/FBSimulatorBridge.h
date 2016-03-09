@@ -11,8 +11,8 @@
 
 #import <FBSimulatorControl/FBJSONConversion.h>
 
-@class FBSimulator;
 @class FBFramebuffer;
+@class FBSimulator;
 @class FBSimulatorLaunchConfiguration;
 
 /**

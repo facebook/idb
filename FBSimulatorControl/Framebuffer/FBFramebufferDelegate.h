@@ -11,8 +11,8 @@
 #import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
 
-@class FBFramebufferFrame;
 @class FBFramebuffer;
+@class FBFramebufferFrame;
 
 /**
  A Delegate for updates from a Simulator's Framebuffer.

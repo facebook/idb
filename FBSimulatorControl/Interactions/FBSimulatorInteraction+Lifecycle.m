@@ -166,7 +166,7 @@
   if (![self launchdSimWithAllRequiredProcessesForSimulator:simulator error:&innerError]) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
-  
+
   return YES;
 }
 

@@ -16,10 +16,10 @@
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
+#import "FBFramebuffer.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBFramebuffer.h"
 #import "FBSimulatorLaunchConfiguration.h"
 
 @interface FBSimulatorBridge ()

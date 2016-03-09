@@ -20,7 +20,7 @@
  Prepares the Simulator for Launch:
  - Sets the Locale (if set)
  - Sets up the keyboard.
- 
+
  @param configuration the configuration to use.
  @return the reciever, for chaining.
  */
@@ -53,7 +53,7 @@
 /**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
  time to startup before being killed by SpringBoard. (SB's default is 20 seconds.)
- 
+
  @param bundleIDs The bundle IDs of the applications to override.
  @param timeout The new startup timeout.
  @return the receiver, for chaining.

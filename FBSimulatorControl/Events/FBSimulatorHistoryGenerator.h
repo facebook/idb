@@ -26,7 +26,7 @@
 
 /**
  Creates and returns a History Generator for the Provided Simulator.
- 
+
  @param simulator the Simulator to generate history for. Will not be retained. Must not be nil.
  @return a new FBSimulatorHistoryGenerator instance
  */
@@ -40,7 +40,7 @@
 /**
  If set to YES: History will be serialized to file.
  If set to NO: History will not be serialized to file.
- 
+
  When setting this to NO, persistent history will be deleted from the filesystem.
  */
 @property (nonatomic, assign, readwrite, getter=isPersistenceEnabled) BOOL peristenceEnabled;

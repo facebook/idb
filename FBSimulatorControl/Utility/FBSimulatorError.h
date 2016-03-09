@@ -10,8 +10,8 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
-@class FBSimulator;
 @class FBProcessQuery;
+@class FBSimulator;
 
 @protocol FBSimulatorLogger;
 

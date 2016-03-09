@@ -10,13 +10,13 @@
 #import "FBSimulatorLaunchCtl.h"
 
 #import "FBProcessInfo.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimDeviceWrapper.h"
-#import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 

@@ -35,7 +35,7 @@
 
 /**
  Creates a Subclassable Interaction
- 
+
  @param interaction the underlying interaction.
  @return a subclassable FBInteraction Instance.
  */

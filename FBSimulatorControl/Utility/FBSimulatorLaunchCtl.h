@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBSimulator;
 @class FBProcessInfo;
+@class FBSimulator;
 
 /**
  An Interface to a Simulator's launchctl.
@@ -19,7 +19,7 @@
 
 /**
  Creates a FBSimulatorLaunchCtl instance for the provided Simulator
- 
+
  @param simulator the Simulator to create a launchctl wrapper for.
  @return a new FBSimulatorLaunchCtl instance.
  */

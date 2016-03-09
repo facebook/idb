@@ -221,8 +221,8 @@
 
 - (NSString *)homeDirectoryOfLastLaunchedApplication
 {
-  FBProcessInfo* processInfo = [self.history lastLaunchedApplicationProcess];
-  NSDictionary* environment = processInfo.environment;
+  FBProcessInfo *processInfo = [self.history lastLaunchedApplicationProcess];
+  NSDictionary *environment = processInfo.environment;
   return environment[@"HOME"];
 }
 
