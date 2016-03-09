@@ -15,8 +15,6 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import <DVTFoundation/DVTPlatform.h>
-
 #import "FBCollectionInformation.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
