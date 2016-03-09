@@ -13,13 +13,12 @@
 #import <CoreVideo/CVPixelBuffer.h>
 #import <CoreVideo/CoreVideo.h>
 
-#import "FBCapacityQueue.h"
-#import "FBDiagnostic.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferVideoConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorLogger.h"
 
 typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
   FBFramebufferVideoStateNotStarted = 0,
@@ -33,7 +32,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 @interface FBFramebufferVideo ()
 
 @property (nonatomic, strong, readonly) FBFramebufferVideoConfiguration *configuration;
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @property (nonatomic, strong, readonly) dispatch_queue_t mediaQueue;
@@ -54,13 +53,13 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 #pragma mark Initializers
 
-+ (instancetype)withConfiguration:(FBFramebufferVideoConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withConfiguration:(FBFramebufferVideoConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
   return [[self alloc] initWithConfiguration:configuration onQueue:queue logger:[logger onQueue:queue] eventSink:eventSink];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferVideoConfiguration *)configuration onQueue:(dispatch_queue_t)queue logger:(id<FBSimulatorLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBFramebufferVideoConfiguration *)configuration onQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {

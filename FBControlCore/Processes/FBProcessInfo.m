@@ -9,8 +9,6 @@
 
 #import "FBProcessInfo.h"
 
-#import "FBProcessLaunchConfiguration.h"
-
 @implementation FBProcessInfo
 
 @synthesize launchPath = _launchPath;

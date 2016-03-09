@@ -12,14 +12,10 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
-#import "FBASLParser.h"
-#import "FBConcurrentCollectionOperations.h"
-#import "FBCrashLogInfo.h"
-#import "FBDiagnostic.h"
-#import "FBProcessInfo.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBTaskExecutor.h"
 
 NSString *const FBSimulatorLogNameSyslog = @"system_log";
 NSString *const FBSimulatorLogNameCoreSimulator = @"coresimulator";

@@ -11,18 +11,15 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <libkern/OSAtomic.h>
 
 #import "FBAddVideoPolyfill.h"
-#import "FBProcessInfo.h"
-#import "FBProcessQuery+Helpers.h"
-#import "FBProcessQuery.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLogger.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBSimDeviceWrapper ()
@@ -51,7 +48,7 @@
   [newInvocation setArgument:&semaphore atIndex:3];
   [NSThread detachNewThreadSelector:@selector(invoke) toTarget:newInvocation withObject:nil];
 
-  int64_t timeout = ((int64_t) FBSimulatorControlGlobalConfiguration.slowTimeout) * ((int64_t) NSEC_PER_SEC);
+  int64_t timeout = ((int64_t) FBControlCoreGlobalConfiguration.slowTimeout) * ((int64_t) NSEC_PER_SEC);
   return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, timeout)) == 0;
 }
 
@@ -140,7 +137,7 @@
 - (BOOL)shutdownWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  id<FBSimulatorLogger> logger = self.simulator.logger;
+  id<FBControlCoreLogger> logger = self.simulator.logger;
   [logger.debug logFormat:@"Starting Safe Shutdown of %@", simulator.udid];
 
   // If the device is in a strange state, we should bail now
@@ -282,7 +279,7 @@
     return nil;
   }
 
-  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
+  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
   if (!processInfo) {
     return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
   }

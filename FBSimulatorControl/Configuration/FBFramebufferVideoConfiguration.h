@@ -10,8 +10,9 @@
 #import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONConversion.h>
+
+#import <FBControlCore/FBDebugDescribeable.h>
+#import <FBControlCore/FBJSONConversion.h>
 
 @class FBDiagnostic;
 

@@ -12,9 +12,10 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
@@ -32,7 +33,7 @@
   ]];
   NSString *setPath = simulator.set.deviceSet.setPath;
   if (setPath) {
-    if (!FBSimulatorControlGlobalConfiguration.supportsCustomDeviceSets) {
+    if (!FBControlCoreGlobalConfiguration.supportsCustomDeviceSets) {
       return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] fail:error];
     }
     [arguments addObjectsFromArray:@[@"-DeviceSetPath", setPath]];

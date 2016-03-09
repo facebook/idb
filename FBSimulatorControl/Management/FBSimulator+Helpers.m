@@ -12,14 +12,12 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 
-#import "FBCollectionInformation.h"
-#import "FBProcessInfo.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessQuery+Simulators.h"
-#import "FBProcessQuery.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction.h"
@@ -107,7 +105,7 @@
 
 - (BOOL)waitOnState:(FBSimulatorState)state
 {
-  return [self waitOnState:state timeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
+  return [self waitOnState:state timeout:FBControlCoreGlobalConfiguration.regularTimeout];
 }
 
 - (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout

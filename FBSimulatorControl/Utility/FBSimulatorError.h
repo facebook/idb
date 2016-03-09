@@ -13,7 +13,7 @@
 @class FBProcessQuery;
 @class FBSimulator;
 
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 
 /**
  The Error Domain for FBSimulatorControl.
@@ -83,7 +83,7 @@ extern NSString *const FBSimulatorControlErrorDomain;
  @param logger the logger to log to
  @return the reciever, for chaining.
  */
-- (instancetype)logger:(id<FBSimulatorLogger>)logger;
+- (instancetype)logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Builds the Error with the applied arguments.

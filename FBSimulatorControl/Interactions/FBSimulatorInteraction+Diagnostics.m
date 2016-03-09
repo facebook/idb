@@ -9,15 +9,14 @@
 
 #import "FBSimulatorInteraction+Diagnostics.h"
 
-#import "FBDiagnostic.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Private.h"
-#import "FBTaskExecutor.h"
 
 typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t processIdentifier);
 
@@ -80,7 +79,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
     id<FBTask> task = taskFactory(FBTaskExecutor.sharedInstance, process.processIdentifier);
     NSCAssert(task, @"Task should not be nil");
 
-    [task startSynchronouslyWithTimeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
+    [task startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
     if (task.error) {
       return [FBSimulatorError failBoolWithError:task.error errorOut:error];
     }

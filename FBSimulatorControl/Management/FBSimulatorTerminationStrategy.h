@@ -13,7 +13,7 @@
 @class FBSimulator;
 @class FBSimulatorControlConfiguration;
 
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 
 /**
  A class for terminating Simulators.
@@ -28,7 +28,7 @@
  @param logger the Logger to log all activities on.
  @return a configured FBSimulatorTerminationStrategy instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Kills the provided Simulators.

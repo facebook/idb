@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBProcessQuery.h>
+#import <FBControlCore/FBControlCore.h>
 
 @class FBProcessInfo;
 @class FBSimulatorBinary;

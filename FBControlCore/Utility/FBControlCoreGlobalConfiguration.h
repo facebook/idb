@@ -9,29 +9,23 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 
 /**
- An Environment Variable that is inserted into launched Simulator.app processes
- in order to easily identify the Simulator UUID that they were launched to run against.
+ An Environment Variable: 'FBCONTROLCORE_LOGGING' to enable logging of Informational Messages to stderr.
  */
-extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
+extern NSString *const FBControlCoreStderrLogging;
 
 /**
- An Environment Variable: 'FBSIMULATORCONTROL_LOGGING' to enable logging of Informational Messages to stderr.
+ An Environment Variable: 'FBCONTROLCORE_DEBUG_LOGGING' to enable logging of Debug Messages to stderr.
  */
-extern NSString *const FBSimulatorControlStderrLogging;
-
-/**
- An Environment Variable: 'FBSIMULATORCONTROL_DEBUG_LOGGING' to enable logging of Debug Messages to stderr.
- */
-extern NSString *const FBSimulatorControlDebugLogging;
+extern NSString *const FBControlCoreDebugLogging;
 
 /**
  Environment Globals & other derived constants.
  These values can be accessed before the Private Frameworks are loaded.
  */
-@interface FBSimulatorControlGlobalConfiguration : NSObject
+@interface FBControlCoreGlobalConfiguration : NSObject
 
 /**
  The path to of Xcode's /Xcode.app/Contents/Developer directory.
@@ -81,7 +75,7 @@ extern NSString *const FBSimulatorControlDebugLogging;
 /**
  The default logger to send log messages to.
  */
-+ (id<FBSimulatorLogger>)defaultLogger;
++ (id<FBControlCoreLogger>)defaultLogger;
 
 /**
  A Description of the Current Configuration.
@@ -92,16 +86,16 @@ extern NSString *const FBSimulatorControlDebugLogging;
 
 /**
  Updates the Global Configuration.
- These Methods should typically be called *before any other* method in FBSimulatorControl.
+ These Methods should typically be called *before any other* method in FBControlCore.
  */
-@interface FBSimulatorControlGlobalConfiguration (Setters)
+@interface FBControlCoreGlobalConfiguration (Setters)
 
 /**
  This is provided as a global so that a custom logger can be provided to the Private Framework loader.
 
  @param logger the new default logger
  */
-+ (void)setDefaultLogger:(id<FBSimulatorLogger>)logger;
++ (void)setDefaultLogger:(id<FBControlCoreLogger>)logger;
 
 /**
  Update the current process environment to enable logging to stderr.

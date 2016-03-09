@@ -10,7 +10,6 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorHistory+Private.h"
 
-#import "FBCollectionInformation.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorApplication.h"

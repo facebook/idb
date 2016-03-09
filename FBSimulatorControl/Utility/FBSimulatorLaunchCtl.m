@@ -9,7 +9,8 @@
 
 #import "FBSimulatorLaunchCtl.h"
 
-#import "FBProcessInfo.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimDeviceWrapper.h"
@@ -75,7 +76,7 @@
   pid_t processIdentifier = [self.simulator.simDeviceWrapper
     spawnShortRunningWithPath:launchConfiguration.agentBinary.path
     options:options
-    timeout:FBSimulatorControlGlobalConfiguration.fastTimeout
+    timeout:FBControlCoreGlobalConfiguration.fastTimeout
     error:&innerError];
   if (processIdentifier <= 0) {
     return [[[FBSimulatorError
@@ -86,7 +87,7 @@
 
   // Wait for the data to exist.
   NSString *needle = [NSString stringWithFormat:@"%d", process.processIdentifier];
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
     @synchronized(haystack)
     {
       return [haystack containsString:needle];

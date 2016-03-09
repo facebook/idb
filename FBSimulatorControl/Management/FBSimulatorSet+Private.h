@@ -13,6 +13,6 @@
 
 @property (nonatomic, strong, readonly) NSMutableDictionary *inflatedSimulators;
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet control:(FBSimulatorControl *)control logger:(id<FBSimulatorLogger>)logger;
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger;
 
 @end

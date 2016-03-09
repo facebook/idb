@@ -10,6 +10,8 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPool+Private.h"
 
+#import <FBControlCore/FBControlCoreLogger.h>
+
 #import "FBCoreSimulatorNotifier.h"
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulator+Helpers.h"
@@ -21,24 +23,21 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
-#import "FBSimulatorLogger.h"
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorTerminationStrategy.h"
-#import "FBTaskExecutor+Convenience.h"
-#import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorPool
 
 #pragma mark - Initializers
 
-+ (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBSimulatorLogger>)logger
++ (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithSet:set logger:logger];
 }
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

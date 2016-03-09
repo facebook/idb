@@ -58,7 +58,7 @@
   XCTAssertNotNil(workspaceApplication);
   [workspaceApplication forceTerminate];
 
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
     return NO;
   }];
 

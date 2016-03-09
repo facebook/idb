@@ -12,9 +12,10 @@
 
 #import <objc/runtime.h>
 
+#import <FBControlCore/FBControlCoreGlobalConfiguration.h>
+
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl+PrincipalClass.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 
 @implementation FBSimulatorConfigurationVariant_Base
 

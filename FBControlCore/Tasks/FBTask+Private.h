@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBTask.h>
+#import <FBControlCore/FBTask.h>
 
 @interface FBTask : NSObject<FBTask>
 

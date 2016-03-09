@@ -9,13 +9,10 @@
 
 #import "FBSimulatorError.h"
 
-#import "FBCollectionInformation.h"
-#import "FBProcessInfo.h"
-#import "FBProcessQuery.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
-#import "FBSimulatorLogger.h"
 
 NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorControl";
 
@@ -23,7 +20,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 
 @property (nonatomic, copy, readwrite) NSString *describedAs;
 @property (nonatomic, copy, readwrite) NSError *cause;
-@property (nonatomic, strong, readwrite) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readwrite) NSMutableDictionary *additionalInfo;
 @property (nonatomic, assign, readwrite) BOOL describeRecursively;
 
@@ -40,7 +37,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
 
   _additionalInfo = [NSMutableDictionary dictionary];
   _describeRecursively = YES;
-  _logger = FBSimulatorControlGlobalConfiguration.defaultLogger;
+  _logger = FBControlCoreGlobalConfiguration.defaultLogger;
 
   return self;
 }
@@ -144,7 +141,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
     value:[query processInfoFor:processIdentifier] ?: @"No Process Info"];
 }
 
-- (instancetype)logger:(id<FBSimulatorLogger>)logger
+- (instancetype)logger:(id<FBControlCoreLogger>)logger
 {
   self.logger = logger;
   return self;
@@ -167,7 +164,7 @@ NSString *const FBSimulatorControlErrorDomain = @"com.facebook.FBSimulatorContro
   [userInfo addEntriesFromDictionary:self.additionalInfo];
 
   NSError *error = [NSError errorWithDomain:FBSimulatorControlErrorDomain code:0 userInfo:[userInfo copy]];
-  if (FBSimulatorControlGlobalConfiguration.debugLoggingEnabled) {
+  if (FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
     [self.logger.error logFormat:@"New Error Built ==> %@", error];
   }
 

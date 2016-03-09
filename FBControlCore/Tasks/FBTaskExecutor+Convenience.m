@@ -9,7 +9,7 @@
 
 #import "FBTaskExecutor+Convenience.h"
 
-#import "FBSimulatorControlGlobalConfiguration.h"
+#import "FBControlCoreGlobalConfiguration.h"
 #import "FBTask.h"
 #import "FBTaskExecutor+Private.h"
 
@@ -23,7 +23,7 @@
 - (NSString *)executeShellCommand:(NSString *)commandString returningError:(NSError **)error
 {
   id<FBTask> command = [self shellTask:commandString];
-  [command startSynchronouslyWithTimeout:FBSimulatorControlGlobalConfiguration.regularTimeout];
+  [command startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   if (command.error) {
     if (error) {
@@ -37,7 +37,7 @@
 - (BOOL)repeatedlyRunCommand:(NSString *)commandString withError:(NSError **)error untilTrue:( BOOL(^)(NSString *stdOut) )block
 {
   @autoreleasepool {
-    NSDate *endDate = [NSDate dateWithTimeIntervalSinceNow:FBSimulatorControlGlobalConfiguration.regularTimeout];
+    NSDate *endDate = [NSDate dateWithTimeIntervalSinceNow:FBControlCoreGlobalConfiguration.regularTimeout];
     while ([endDate timeIntervalSinceNow] < 0) {
       NSError *innerError = nil;
       NSString *stdOut = [self executeShellCommand:commandString returningError:&innerError];

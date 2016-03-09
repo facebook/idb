@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBSimulatorControl/FBProcessQuery.h>
+#import <FBControlCore/FBProcessQuery.h>
 
 @class FBProcessInfo;
 @class NSRunningApplication;

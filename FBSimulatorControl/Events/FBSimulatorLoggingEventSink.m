@@ -9,15 +9,14 @@
 
 #import "FBSimulatorLoggingEventSink.h"
 
-#import "FBDiagnostic.h"
-#import "FBProcessInfo.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 
 @interface FBSimulatorLoggingEventSink ()
 
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -25,12 +24,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBSimulatorLogger>)logger
++ (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithLogger:[logger withPrefix:[NSString stringWithFormat:@"%@:", simulator.udid]]];
 }
 
-- (instancetype)initWithLogger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

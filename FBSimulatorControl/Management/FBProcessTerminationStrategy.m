@@ -11,12 +11,9 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "FBProcessInfo.h"
-#import "FBProcessQuery+Helpers.h"
-#import "FBProcessQuery.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulatorError.h"
-#import "FBSimulatorLogger.h"
 
 static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrategyConfigurationDefault = {
   .signo = SIGKILL,
@@ -30,7 +27,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 @property (nonatomic, assign, readonly) FBProcessTerminationStrategyConfiguration configuration;
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -80,7 +77,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @implementation FBProcessTerminationStrategy
 
-+ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
++ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
 {
   BOOL useWorkspaceKilling = (configuration.options & FBProcessTerminationStrategyOptionsUseNSRunningApplication) == FBProcessTerminationStrategyOptionsUseNSRunningApplication;
   return useWorkspaceKilling
@@ -88,12 +85,12 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processQuery:processQuery logger:logger];
 }
 
-+ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
++ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
 {
   return [self withConfiguration:FBProcessTerminationStrategyConfigurationDefault processQuery:processQuery logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(processQuery);
   NSAssert(configuration.signo > 0 && configuration.signo < 32, @"Signal must be greater than 0 (SIGHUP) and less than 32 (SIGUSR2) was %d", configuration.signo);
@@ -161,7 +158,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
   // It may take some time for the process to have truly died, so wait for it to be so.
   [self.logger.debug logFormat:@"Waiting on %@ to dissappear from the process table", process.shortDescription];
-  if (![self.processQuery waitForProcessToDie:process timeout:FBSimulatorControlGlobalConfiguration.fastTimeout]) {
+  if (![self.processQuery waitForProcessToDie:process timeout:FBControlCoreGlobalConfiguration.fastTimeout]) {
     // If this is a SIGKILL and it's taken a while for the process to dissapear, perhaps the process isn't
     // well behaved when responding to other terminating signals.
     // There's nothing more than can be done with a SIGKILL.

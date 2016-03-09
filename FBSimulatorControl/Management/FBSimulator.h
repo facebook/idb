@@ -9,18 +9,18 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONConversion.h>
+#import <FBControlCore/FBDebugDescribeable.h>
+#import <FBControlCore/FBJSONConversion.h>
 
 @protocol FBSimulatorEventSink;
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
+@class FBControlCoreLogger;
 @class FBProcessInfo;
 @class FBProcessQuery;
 @class FBSimulatorBridge;
 @class FBSimulatorConfiguration;
 @class FBSimulatorDiagnostics;
 @class FBSimulatorHistory;
-@class FBSimulatorLogger;
 @class FBSimulatorPool;
 @class FBSimulatorSet;
 @class SimDevice;
@@ -90,7 +90,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 /**
  The Simulator's Logger.
  */
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
  History of the Simulator.

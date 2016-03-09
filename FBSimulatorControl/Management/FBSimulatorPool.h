@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBDebugDescribeable.h>
+#import <FBControlCore/FBDebugDescribeable.h>
 
 @class FBSimulator;
 @class FBSimulatorConfiguration;
@@ -32,7 +32,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
   FBSimulatorAllocationOptionsPersistHistory = 1 << 7 /** Fetch & Persist History for the allocated Simulator. */
 };
 
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 
 /**
  A FBSimulatorPool manages the allocation of Simulators from an FBSimulatorSet.
@@ -50,7 +50,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
  @param logger the logger to use to verbosely describe what is going on. May be nil.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Methods
 

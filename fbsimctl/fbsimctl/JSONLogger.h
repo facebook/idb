@@ -16,7 +16,7 @@
  Since the FBSimulatorLoggerProtocol omits the varags logFormat: method,
  this Objective-C implementation can do the appropriate bridging.
  */
-@interface JSONLogger : NSObject <FBSimulatorLogger>
+@interface JSONLogger : NSObject <FBControlCoreLogger>
 
 /**
  Constructs a new JSONLogger instance with the provided reporter.

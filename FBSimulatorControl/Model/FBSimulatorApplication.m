@@ -9,12 +9,7 @@
 
 #import "FBSimulatorApplication.h"
 
-#import "FBBinaryParser.h"
-#import "FBCollectionInformation.h"
-#import "FBConcurrentCollectionOperations.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBTaskExecutor.h"
 
 @implementation FBSimulatorBinary
 
@@ -288,18 +283,18 @@
 
 + (NSString *)pathForSimulatorApplication
 {
-  NSString *simulatorBinaryName = [FBSimulatorControlGlobalConfiguration.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
+  NSString *simulatorBinaryName = [FBControlCoreGlobalConfiguration.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
     ? @"Simulator"
     : @"iOS Simulator";
 
-  return [[FBSimulatorControlGlobalConfiguration.developerDirectory
+  return [[FBControlCoreGlobalConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Applications"]
     stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
 }
 
 + (NSString *)pathForSystemApplicationNamed:(NSString *)name
 {
-  return [[[FBSimulatorControlGlobalConfiguration.developerDirectory
+  return [[[FBControlCoreGlobalConfiguration.developerDirectory
     stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"]
     stringByAppendingPathComponent:name]
     stringByAppendingPathExtension:@"app"];
@@ -439,7 +434,7 @@
 
 + (NSString *)pathForiPhoneLaunchCtl
 {
-  return [FBSimulatorControlGlobalConfiguration.developerDirectory
+  return [FBControlCoreGlobalConfiguration.developerDirectory
     stringByAppendingPathComponent:@"/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator.sdk/bin/launchctl"];
 }
 

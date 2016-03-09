@@ -15,10 +15,11 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
+#import <FBControlCore/FBControlCoreLogger.h>
+
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorLogger.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
@@ -30,7 +31,7 @@
   [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
 
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
   SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration error:&innerError];
@@ -45,7 +46,7 @@
   return set;
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet control:(FBSimulatorControl *)control logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -224,7 +225,7 @@
   // Deleting the device from the set can still leave it around for a few seconds.
   // This could race with methods that may reallocate the newly-deleted device
   // So we should wait for the device to no longer be present in the underlying set.
-  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.regularTimeout untilTrue:^ BOOL {
+  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout untilTrue:^ BOOL {
     NSOrderedSet *udidSet = [self.allSimulators valueForKey:@"udid"];
     return ![udidSet containsObject:udid];
   }];

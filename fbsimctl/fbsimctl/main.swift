@@ -20,9 +20,9 @@ do {
   if jsonEnabled {
     let eventReporter = JSONEventReporter(writer: FileHandleWriter.stdOutWriter, pretty: false)
     let logger = JSONLogger.withEventReporter(eventReporter, debug: debugEnabled)
-    FBSimulatorControlGlobalConfiguration.setDefaultLogger(logger)
+    FBControlCoreGlobalConfiguration.setDefaultLogger(logger)
   } else {
-    FBSimulatorControlGlobalConfiguration.setDefaultLoggerToASLWithStderrLogging(true, debugLogging: debugEnabled)
+    FBControlCoreGlobalConfiguration.setDefaultLoggerToASLWithStderrLogging(true, debugLogging: debugEnabled)
   }
 } catch {
   // Parse errors will be handled by the full parse

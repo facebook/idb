@@ -13,11 +13,11 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBCoreSimulatorNotifier.h"
 #import "FBDispatchSourceNotifier.h"
-#import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
-#import "FBProcessQuery.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 

@@ -16,11 +16,10 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
-#import "FBCollectionInformation.h"
-#import "FBFramebuffer.h"
-#import "FBProcessInfo.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
@@ -38,10 +37,8 @@
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
-#import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorTerminationStrategy.h"
-#import "FBTaskExecutor.h"
 
 @implementation FBSimulatorInteraction (Lifecycle)
 
@@ -117,7 +114,7 @@
     // Ensure that the Simulator's launchctl knows that the process is gone
     // Killing the process should guarantee that tha Simulator knows that the process has terminated.
     [simulator.logger.debug logFormat:@"Waiting for %@ to be removed from launchctl", process.shortDescription];
-    BOOL isGoneFromLaunchCtl = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
+    BOOL isGoneFromLaunchCtl = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
       return ![simulator.launchctl processIsRunningOnSimulator:process error:nil];
     }];
     if (!isGoneFromLaunchCtl) {
@@ -282,7 +279,7 @@
 
   // Waitng for all required processes to start
   NSSet *requiredProcessNames = simulator.requiredProcessNamesToVerifyBooted;
-  BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
+  BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
     NSSet *runningProcessNames = [NSSet setWithArray:[[processQuery subprocessesOf:launchdSimProcess.processIdentifier] valueForKey:@"processName"]];
     return [requiredProcessNames isSubsetOfSet:runningProcessNames];
   }];
@@ -310,7 +307,7 @@
     if (!block(error, simulator, video, waitGroup)) {
       return NO;
     }
-    NSTimeInterval timeout = FBSimulatorControlGlobalConfiguration.regularTimeout;
+    NSTimeInterval timeout = FBControlCoreGlobalConfiguration.regularTimeout;
     int64_t timeoutInt = ((int64_t) timeout) * ((int64_t) NSEC_PER_SEC);
     long fail = dispatch_group_wait(waitGroup, dispatch_time(DISPATCH_TIME_NOW, timeoutInt));
     if (fail) {

@@ -13,7 +13,6 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Applications.h"
@@ -129,7 +128,7 @@
   NSFileManager *fileManager = [NSFileManager defaultManager];
   __block NSError *innerError = nil;
   const BOOL success = [NSRunLoop.currentRunLoop
-    spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.regularTimeout
+    spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout
     untilTrue:^ BOOL {
       NSArray *paths = [fileManager subpathsOfDirectoryAtPath:directory error:&innerError];
       paths = [paths filteredArrayUsingPredicate:[self.class predicateForVideoFiles]];

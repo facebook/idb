@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBTerminationHandle.h>
+#import <FBControlCore/FBTerminationHandle.h>
 
 /**
  A class for wrapping `dispatch_source` with some conveniences.

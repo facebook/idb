@@ -13,10 +13,10 @@
 
 @interface FBSimulatorPool ()
 
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) NSMutableOrderedSet *allocatedUDIDs;
 @property (nonatomic, strong, readonly) NSMutableDictionary *allocationOptions;
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set logger:(id<FBSimulatorLogger>)logger;
+- (instancetype)initWithSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger;
 
 @end

@@ -11,7 +11,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 
-#import "FBDiagnostic.h"
+#import <FBControlCore/FBControlCore.h>
 
 @implementation FBFramebufferVideoConfiguration
 

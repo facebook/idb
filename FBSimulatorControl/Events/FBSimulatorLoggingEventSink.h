@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
-#import <FBSimulatorControl/FBSimulatorLogger.h>
 
 @class FBSimulator;
 
@@ -26,6 +25,6 @@
  @param logger the Logger to write messages to. May be nil.
  @return a new FBSimulatorLoggingEventSink instance.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withSimulator:(FBSimulator *)simulator logger:(id<FBControlCoreLogger>)logger;
 
 @end

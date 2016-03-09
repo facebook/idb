@@ -14,11 +14,10 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBCollectionInformation.h"
+#import <FBControlCore/FBControlCoreLogger.h>
+
 #import "FBCoreSimulatorNotifier.h"
-#import "FBProcessInfo.h"
 #import "FBProcessQuery+Simulators.h"
-#import "FBProcessQuery.h"
 #import "FBProcessTerminationStrategy.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
@@ -29,20 +28,16 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
-#import "FBSimulatorLogger.h"
 #import "FBSimulatorPredicates.h"
-#import "FBTaskExecutor+Convenience.h"
-#import "FBTaskExecutor.h"
 #import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBSimulatorTerminationStrategy ()
 
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
 @end
@@ -51,13 +46,13 @@
 
 #pragma mark Initialization
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
 {
   FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessQuery:processQuery logger:logger];
   return [[self alloc] initWithConfiguration:configuration processQuery:processQuery processTerminationStrategy:processTerminationStrategy logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(processQuery);
   NSParameterAssert(configuration);
@@ -123,7 +118,7 @@
     if (bridge) {
       [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, terminating it now", simulator.shortDescription, bridge];
       // Stopping listening will notify the event sink.
-      NSTimeInterval timeout = FBSimulatorControlGlobalConfiguration.regularTimeout;
+      NSTimeInterval timeout = FBControlCoreGlobalConfiguration.regularTimeout;
       [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, stopping & wait with timeout %f", simulator.shortDescription, bridge, timeout];
       NSDate *date = NSDate.date;
       BOOL success = [bridge terminateWithTimeout:timeout];

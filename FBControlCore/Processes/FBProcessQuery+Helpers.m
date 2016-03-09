@@ -12,8 +12,8 @@
 #import <Cocoa/Cocoa.h>
 
 #import "FBProcessInfo.h"
-#import "FBSimulatorError.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
+#import "FBControlCoreError.h"
+#import "NSRunLoop+FBControlCore.h"
 
 @implementation FBProcessQuery (Helpers)
 
@@ -28,12 +28,12 @@
 {
   FBProcessInfo *actual = [self processInfoFor:process.processIdentifier];
   if (!actual) {
-    return [[FBSimulatorError
+    return [[FBControlCoreError
       describeFormat:@"Could not find the processs for %@ with pid %d", process.shortDescription, process.processIdentifier]
       failBool:error];
   }
   if (![process.launchPath isEqualToString:actual.launchPath]) {
-    return [[FBSimulatorError
+    return [[FBControlCoreError
       describeFormat:@"Processes '%@' and '%@' do not have the same launch path '%@' and '%@'", process.shortDescription, actual.shortDescription, process.launchPath, actual.launchPath]
       failBool:error];
   }

@@ -16,7 +16,7 @@
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorPool;
 @class FBSimulatorSet;
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 
 /**
  The Root Class for the FBSimulatorControl Framework.
@@ -33,7 +33,7 @@
  @param error any error that occurred during instantiation.
  @returns a new FBSimulatorControl instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Creates and returns a new `FBSimulatorControl` instance.
@@ -55,7 +55,7 @@
  @param error any error that occurred during performing the preconditions.
  @returns YES if FBSimulatorControl is usable, NO otherwise.
  */
-+ (BOOL)loadPrivateFrameworks:(id<FBSimulatorLogger>)logger error:(NSError **)error;
++ (BOOL)loadPrivateFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Calls +[FBSimulatorControl loadPrivateFrameworks:error], aborting in the event the Frameworks could not be loaded

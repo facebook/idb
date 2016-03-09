@@ -9,7 +9,8 @@
 
 #import "FBFramebufferImage.h"
 
-#import "FBDiagnostic.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBFramebufferFrame.h"
 #import "FBSimulatorEventSink.h"
 

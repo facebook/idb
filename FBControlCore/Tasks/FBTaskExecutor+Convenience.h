@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBSimulatorControl/FBTaskExecutor.h>
+#import <FBControlCore/FBTaskExecutor.h>
 
 @interface FBTaskExecutor (Convenience)
 

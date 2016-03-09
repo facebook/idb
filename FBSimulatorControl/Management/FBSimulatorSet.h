@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONConversion.h>
+#import <FBControlCore/FBDebugDescribeable.h>
+#import <FBControlCore/FBJSONConversion.h>
 
 @class FBProcessQuery;
 @class FBSimulator;
@@ -18,7 +18,7 @@
 @class FBSimulatorControl;
 @class FBSimulatorControlConfiguration;
 @class SimDeviceSet;
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 
 /**
  Complements SimDeviceSet with additional functionality and more resiliant behaviours.
@@ -34,7 +34,7 @@
  @param error any error that occurred during the creation of the pool.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBSimulatorLogger>)logger error:(NSError **)error;
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Creates and returns a FBSimulator fbased on a configuration.
@@ -84,7 +84,7 @@
 /**
  The Logger to use.
  */
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
  Returns the configuration for the reciever.

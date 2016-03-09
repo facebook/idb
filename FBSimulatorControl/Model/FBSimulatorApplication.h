@@ -9,8 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONConversion.h>
+#import <FBControlCore/FBControlCore.h>
 
 /**
  Concrete value wrapper around a binary artifact.

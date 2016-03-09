@@ -7,20 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorControlGlobalConfiguration.h"
+#import "FBControlCoreGlobalConfiguration.h"
 
-#import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorLogger.h"
+#import "FBControlCoreLogger.h"
 #import "FBTaskExecutor.h"
 
-NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
-NSString *const FBSimulatorControlStderrLogging = @"FBSIMULATORCONTROL_LOGGING";
-NSString *const FBSimulatorControlDebugLogging = @"FBSIMULATORCONTROL_DEBUG_LOGGING";
+NSString *const FBControlCoreStderrLogging = @"FBControlCore_LOGGING";
+NSString *const FBControlCoreDebugLogging = @"FBControlCore_DEBUG_LOGGING";
 
-static id<FBSimulatorLogger> logger;
+static id<FBControlCoreLogger> logger;
 
-@implementation FBSimulatorControlGlobalConfiguration
+@implementation FBControlCoreGlobalConfiguration
 
 + (NSString *)developerDirectory
 {
@@ -29,7 +26,7 @@ static id<FBSimulatorLogger> logger;
   dispatch_once(&onceToken, ^{
     directory = [[[FBTaskExecutor.sharedInstance
       taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-      startSynchronouslyWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout]
+      startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout]
       stdOut];
     NSCAssert(directory, @"Xcode Path could not be determined from `xcode-select`");
   });
@@ -61,7 +58,7 @@ static id<FBSimulatorLogger> logger;
   dispatch_once(&onceToken, ^{
     NSString *showSdks= [[[FBTaskExecutor.sharedInstance
       taskWithLaunchPath:@"/usr/bin/xcodebuild" arguments:@[@"-showsdks"]]
-      startSynchronouslyWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout]
+      startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout]
       stdOut];
 
     NSString *pattern = @"iphonesimulator(.*)";
@@ -112,7 +109,7 @@ static id<FBSimulatorLogger> logger;
   return [self.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
 }
 
-+ (id<FBSimulatorLogger>)defaultLogger
++ (id<FBControlCoreLogger>)defaultLogger
 {
   if (logger) {
     return logger;
@@ -134,27 +131,27 @@ static id<FBSimulatorLogger> logger;
 
 + (BOOL)debugLoggingEnabled
 {
-  return [NSProcessInfo.processInfo.environment[FBSimulatorControlDebugLogging] boolValue];
+  return [NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging] boolValue];
 }
 
 
 #pragma mark Private
 
-+ (id<FBSimulatorLogger>)createDefaultLogger
++ (id<FBControlCoreLogger>)createDefaultLogger
 {
-  return [FBSimulatorLogger aslLoggerWritingToStderrr:self.stderrLoggingEnabled withDebugLogging:self.debugLoggingEnabled];
+  return [FBControlCoreLogger aslLoggerWritingToStderrr:self.stderrLoggingEnabled withDebugLogging:self.debugLoggingEnabled];
 }
 
 + (BOOL)stderrLoggingEnabled
 {
-  return [NSProcessInfo.processInfo.environment[FBSimulatorControlStderrLogging] boolValue] || self.debugLoggingEnabled;
+  return [NSProcessInfo.processInfo.environment[FBControlCoreStderrLogging] boolValue] || self.debugLoggingEnabled;
 }
 
 @end
 
-@implementation FBSimulatorControlGlobalConfiguration (Environment)
+@implementation FBControlCoreGlobalConfiguration (Environment)
 
-+ (void)setDefaultLogger:(id<FBSimulatorLogger>)defaultLogger
++ (void)setDefaultLogger:(id<FBControlCoreLogger>)defaultLogger
 {
   if (logger) {
     [defaultLogger logFormat:@"Overriding the Default Logger with %@", defaultLogger];
@@ -164,8 +161,8 @@ static id<FBSimulatorLogger> logger;
 
 + (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging
 {
-  setenv(FBSimulatorControlStderrLogging.UTF8String, stderrLogging ? "YES" : "NO", 1);
-  setenv(FBSimulatorControlDebugLogging.UTF8String, debugLogging ? "YES" : "NO", 1);
+  setenv(FBControlCoreStderrLogging.UTF8String, stderrLogging ? "YES" : "NO", 1);
+  setenv(FBControlCoreDebugLogging.UTF8String, debugLogging ? "YES" : "NO", 1);
 }
 
 @end

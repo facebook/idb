@@ -15,14 +15,13 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBCollectionInformation.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory.h"
-#import "FBSimulatorLogger.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
 
@@ -37,15 +36,15 @@
 
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
-  return [self withConfiguration:configuration logger:FBSimulatorControlGlobalConfiguration.defaultLogger error:error];
+  return [self withConfiguration:configuration logger:FBControlCoreGlobalConfiguration.defaultLogger error:error];
 }
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   self = [super init];
   if (!self) {
@@ -64,7 +63,7 @@
 
 #pragma mark Framework Loading
 
-+ (BOOL)loadPrivateFrameworks:(id<FBSimulatorLogger>)logger error:(NSError **)error
++ (BOOL)loadPrivateFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   static BOOL hasLoaded = NO;
   if (hasLoaded) {
@@ -72,7 +71,7 @@
   }
 
   // This will assert if the directory could not be found.
-  NSString *developerDirectory = FBSimulatorControlGlobalConfiguration.developerDirectory;
+  NSString *developerDirectory = FBControlCoreGlobalConfiguration.developerDirectory;
 
   // A Mapping of Class Names to the Frameworks that they belong to. This serves to:
   // 1) Represent the Frameworks that FBSimulatorControl is dependent on via their classes
@@ -117,14 +116,14 @@
   [logger logFormat:@"Loaded All Private Frameworks %@", [FBCollectionInformation oneLineDescriptionFromArray:classMapping.allValues atKeyPath:@"lastPathComponent"]];
 
   // Set CoreSimulator Logging since it is now loaded.
-  [self setCoreSimulatorLoggingEnabled:FBSimulatorControlGlobalConfiguration.debugLoggingEnabled];
+  [self setCoreSimulatorLoggingEnabled:FBControlCoreGlobalConfiguration.debugLoggingEnabled];
 
   return YES;
 }
 
 + (void)loadPrivateFrameworksOrAbort
 {
-  id<FBSimulatorLogger> logger = FBSimulatorControlGlobalConfiguration.defaultLogger;
+  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
   NSError *error = nil;
   BOOL success = [FBSimulatorControl loadPrivateFrameworks:logger.debug error:&error];
   if (success) {
@@ -142,7 +141,7 @@
   [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
 }
 
-+ (BOOL)loadFrameworkAtPath:(NSString *)path logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
++ (BOOL)loadFrameworkAtPath:(NSString *)path logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSBundle *bundle = [NSBundle bundleWithPath:path];
   if (!bundle) {
@@ -169,7 +168,7 @@
  In order to prevent crazy behaviour from arising, FBSimulatorControl will check the
  directories of these Frameworks match the one that is currently set.
  */
-+ (BOOL)verifyDeveloperDirectoryForPrivateClass:(NSString *)className developerDirectory:(NSString *)developerDirectory logger:(id<FBSimulatorLogger>)logger error:(NSError **)error
++ (BOOL)verifyDeveloperDirectoryForPrivateClass:(NSString *)className developerDirectory:(NSString *)developerDirectory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSBundle *bundle = [NSBundle bundleForClass:NSClassFromString(className)];
   if (!bundle) {

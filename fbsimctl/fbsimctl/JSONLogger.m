@@ -80,28 +80,28 @@
   return [self log:string];
 }
 
-- (id<FBSimulatorLogger>)info
+- (id<FBControlCoreLogger>)info
 {
   return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_INFO maxLevel:self.maxLevel dispatchToMain:self.dispatchToMain];
 }
 
-- (id<FBSimulatorLogger>)debug
+- (id<FBControlCoreLogger>)debug
 {
   return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_DEBUG maxLevel:self.maxLevel dispatchToMain:self.dispatchToMain];
 }
 
-- (id<FBSimulatorLogger>)error
+- (id<FBControlCoreLogger>)error
 {
   return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_ERR maxLevel:self.maxLevel dispatchToMain:self.dispatchToMain];
 }
 
-- (id<FBSimulatorLogger>)onQueue:(dispatch_queue_t)queue
+- (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
 {
   BOOL dispatchToMain = queue != dispatch_get_main_queue();
   return [[JSONLogger alloc] initWithEventReporter:self.reporter currentLevel:ASL_LEVEL_ERR maxLevel:self.maxLevel dispatchToMain:dispatchToMain];
 }
 
-- (id<FBSimulatorLogger>)withPrefix:(NSString *)prefix
+- (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
 {
   // Ignore prefixing as 'subject' will be included instead.
   return self;

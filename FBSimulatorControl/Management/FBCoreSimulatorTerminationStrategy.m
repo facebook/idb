@@ -9,15 +9,15 @@
 
 #import "FBCoreSimulatorTerminationStrategy.h"
 
-#import "FBCollectionInformation.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
-#import "FBSimulatorLogger.h"
 
 @interface FBCoreSimulatorTerminationStrategy ()
 
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
-@property (nonatomic, strong, readonly) id<FBSimulatorLogger> logger;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
 @end
@@ -26,12 +26,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
++ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithProcessQuery:processQuery logger:logger];
 }
 
-- (instancetype)initWithProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

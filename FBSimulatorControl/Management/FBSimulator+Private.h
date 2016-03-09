@@ -14,7 +14,7 @@
 @class FBProcessQuery;
 @class FBSimulatorEventRelay;
 @class FBSimulatorHistoryGenerator;
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 
 @interface FBSimulator ()
 
@@ -27,6 +27,6 @@
 @property (nonatomic, weak, readwrite) FBSimulatorPool *pool;
 
 + (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set;
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBSimulatorLogger>)logger;
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger;
 
 @end

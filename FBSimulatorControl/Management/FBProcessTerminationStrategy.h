@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FBSimulatorLogger;
+@protocol FBControlCoreLogger;
 @class FBProcessInfo;
 @class FBProcessQuery;
 
@@ -44,7 +44,7 @@ typedef struct {
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Creates and returns a strategy with the default configuration.
@@ -53,7 +53,7 @@ typedef struct {
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBSimulatorLogger>)logger;
++ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Terminates a Process of the provided Process Info.

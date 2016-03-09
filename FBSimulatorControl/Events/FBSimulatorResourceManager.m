@@ -9,8 +9,7 @@
 
 #import "FBSimulatorResourceManager.h"
 
-#import "FBProcessInfo.h"
-#import "FBTerminationHandle.h"
+#import <FBControlCore/FBControlCore.h>
 
 @interface FBTerminationHandle_NSFileHandle : NSObject <FBTerminationHandle>
 

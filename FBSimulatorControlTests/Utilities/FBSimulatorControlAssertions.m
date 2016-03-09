@@ -226,7 +226,7 @@
 - (void)consumeAllNotifications
 {
   // Spin run loop to filter out any pending notifications.
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^{
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^{
     return NO;
   }];
   [self.notificationsRecieved removeAllObjects];
@@ -235,7 +235,7 @@
 - (void)noNotificationsToConsume
 {
   // Spin run loop to filter out any pending notifications.
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBSimulatorControlGlobalConfiguration.fastTimeout untilTrue:^{
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^{
     return NO;
   }];
   [self failIfFalse:(self.notificationsRecieved.count == 0) line:__LINE__ withFormat:@"Expected no notifications but got %@", [self.notificationsRecieved valueForKey:@"name"]];

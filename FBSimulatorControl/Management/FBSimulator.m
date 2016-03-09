@@ -16,15 +16,14 @@
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
-#import "FBProcessInfo.h"
-#import "FBProcessQuery.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventRelay.h"
@@ -34,7 +33,6 @@
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
-#import "FBTaskExecutor.h"
 
 @implementation FBSimulator
 
@@ -52,7 +50,7 @@
     attachEventSinkComposition];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBSimulatorLogger>)logger
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

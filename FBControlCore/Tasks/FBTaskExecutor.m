@@ -14,9 +14,9 @@
 
 #import "FBTask+Private.h"
 #import "FBTask.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
+#import "NSRunLoop+FBControlCore.h"
 
-NSString *const FBTaskExecutorErrorDomain = @"com.facebook.fbsimulatorcontrol.task";
+NSString *const FBTaskExecutorErrorDomain = @"com.facebook.fbcontrolcore.task";
 
 /**
  The name of the shell executable file to execute shell commands.

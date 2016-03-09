@@ -11,7 +11,6 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBProcessInfo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -126,7 +125,7 @@
 
 + (NSPredicate *)coreSimulatorProcessesForCurrentXcode
 {
-  return [self processesWithLaunchPath:FBSimulatorControlGlobalConfiguration.developerDirectory];
+  return [self processesWithLaunchPath:FBControlCoreGlobalConfiguration.developerDirectory];
 }
 
 + (NSPredicate *)processesWithLaunchPath:(NSString *)launchPath

@@ -16,7 +16,7 @@
 #include <mach-o/loader.h>
 #include <mach-o/swap.h>
 
-#import "FBSimulatorError.h"
+#import "FBControlCoreError.h"
 
 static inline NSString *ArchitectureForCPUType(cpu_type_t cpuType)
 {
@@ -167,7 +167,7 @@ static inline NSArray *ReadArchs(FILE *file, uint32_t magic)
 {
   FILE *file = fopen(binaryPath.UTF8String, "rb");
   if (file == NULL) {
-    return [[FBSimulatorError describeFormat:@"Could not fopen file at path %@", binaryPath] fail:error];
+    return [[FBControlCoreError describeFormat:@"Could not fopen file at path %@", binaryPath] fail:error];
   }
 
   // Seek to and read the magic.
@@ -176,13 +176,13 @@ static inline NSArray *ReadArchs(FILE *file, uint32_t magic)
 
   if (!IsMagic(magic)) {
     fclose(file);
-    return [[FBSimulatorError describeFormat:@"Could not interpret magic '%d' in file %@", magic, binaryPath] fail:error];
+    return [[FBControlCoreError describeFormat:@"Could not interpret magic '%d' in file %@", magic, binaryPath] fail:error];
   }
 
   NSArray *archs = ReadArchs(file, magic);
   if (!archs) {
     fclose(file);
-    return [[FBSimulatorError describeFormat:@"Could not read architechtures of magic %@ in file %@", MagicNameForMagic(magic), binaryPath] fail:error];
+    return [[FBControlCoreError describeFormat:@"Could not read architechtures of magic %@ in file %@", MagicNameForMagic(magic), binaryPath] fail:error];
   }
 
   fclose(file);

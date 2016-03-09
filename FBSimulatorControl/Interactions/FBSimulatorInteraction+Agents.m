@@ -11,10 +11,10 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import "FBProcessInfo.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBProcessLaunchConfiguration.h"
-#import "FBProcessQuery.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"

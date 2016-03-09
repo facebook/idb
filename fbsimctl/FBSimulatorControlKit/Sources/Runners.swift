@@ -17,7 +17,7 @@ protocol Runner {
 extension Configuration {
   func buildSimulatorControl() throws -> FBSimulatorControl {
     let controlConfiguration = FBSimulatorControlConfiguration(deviceSetPath: self.deviceSetPath, options: self.managementOptions)
-    let logger = FBSimulatorControlGlobalConfiguration.defaultLogger()
+    let logger = FBControlCoreGlobalConfiguration.defaultLogger()
     return try FBSimulatorControl.withConfiguration(controlConfiguration, logger: logger)
   }
 }
