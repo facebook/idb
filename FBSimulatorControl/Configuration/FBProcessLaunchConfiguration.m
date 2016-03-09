@@ -10,10 +10,10 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessLaunchConfiguration+Private.h"
 
-#import "FBSimulator.h"
 #import "FBCollectionInformation.h"
-#import "FBSimulatorError.h"
+#import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorError.h"
 
 @implementation FBProcessLaunchConfiguration
 

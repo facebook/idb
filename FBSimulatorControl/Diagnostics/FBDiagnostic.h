@@ -183,7 +183,7 @@
  Updates the underlying `FBDiagnostic` with JSON Encoded String.
  Will replace any data, string or path associated with the log.
 
- @param jsonSerializable Can be either an FBJSONSerializable 
+ @param jsonSerializable Can be either an FBJSONSerializable
                          or an object that meets the requirements of NSJSONSerialization.
  @return the reciever, for chaining.
  */
