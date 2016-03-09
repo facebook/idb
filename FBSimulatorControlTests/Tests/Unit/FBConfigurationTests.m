@@ -20,7 +20,7 @@
 
 @implementation FBConfigurationTests
 
-- (NSArray *)configurations
+- (NSArray *)serializableConfigurations
 {
   return [[[[[self.videoConfigurations
     arrayByAddingObjectsFromArray:self.processLaunchConfigurations]
@@ -28,6 +28,11 @@
     arrayByAddingObjectsFromArray:self.controlConfigurations]
     arrayByAddingObjectsFromArray:self.launchConfigurations]
     arrayByAddingObjectsFromArray:self.diagnostics];
+}
+
+- (NSArray *)deserializableConfigurations
+{
+  return [self appLaunchConfigurations];
 }
 
 - (NSArray *)videoConfigurations
@@ -38,13 +43,17 @@
   ];
 }
 
-- (NSArray *)processLaunchConfigurations
+- (NSArray *)appLaunchConfigurations
 {
   return @[
     self.appLaunch1,
     self.appLaunch2,
-    self.agentLaunch1,
   ];
+}
+
+- (NSArray *)processLaunchConfigurations
+{
+  return [self.appLaunchConfigurations arrayByAddingObject:self.agentLaunch1];
 }
 
 - (NSArray *)simulatorConfigurations
@@ -99,7 +108,7 @@
 
 - (void)testEqualityOfCopy
 {
-  for (id config in self.configurations) {
+  for (id config in self.serializableConfigurations) {
     id configCopy = [config copy];
     id configCopyCopy = [configCopy copy];
     XCTAssertEqualObjects(config, configCopy);
@@ -110,7 +119,7 @@
 
 - (void)testUnarchiving
 {
-  for (id config in self.configurations) {
+  for (id config in self.serializableConfigurations) {
     NSData *configData = [NSKeyedArchiver archivedDataWithRootObject:config];
     id configUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:configData];
     XCTAssertEqualObjects(config, configUnarchived);
@@ -119,8 +128,20 @@
 
 - (void)testJSONSerialization
 {
-  for (id config in self.configurations) {
+  for (id config in self.serializableConfigurations) {
     [self assertStringKeysJSONValues:[config jsonSerializableRepresentation]];
+  }
+}
+
+- (void)testEqualityOfDeserialization
+{
+  for (id value in self.deserializableConfigurations) {
+    id json = [value jsonSerializableRepresentation];
+    NSError *error = nil;
+    id serializedValue = [[value class] inflateFromJSON:json error:&error];
+    XCTAssertNil(error);
+    XCTAssertEqualObjects(value, serializedValue);
+    XCTAssertEqualObjects(json, [serializedValue jsonSerializableRepresentation]);
   }
 }
 

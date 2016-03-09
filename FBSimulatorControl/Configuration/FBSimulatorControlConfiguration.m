@@ -95,7 +95,7 @@
          self.options == object.options;
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (id)jsonSerializableRepresentation
 {

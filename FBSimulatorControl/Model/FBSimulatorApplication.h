@@ -10,12 +10,12 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+#import <FBSimulatorControl/FBJSONConversion.h>
 
 /**
  Concrete value wrapper around a binary artifact.
  */
-@interface FBSimulatorBinary : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBSimulatorBinary : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The Designated Initializer.
@@ -57,7 +57,7 @@
 /**
  Concrete value wrapper around a Application artifact.
  */
-@interface FBSimulatorApplication : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBSimulatorApplication : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The Designated Initializer.

@@ -110,7 +110,7 @@
   [coder encodeObject:self.fileType forKey:NSStringFromSelector(@selector(fileType))];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (id)jsonSerializableRepresentation
 {

@@ -172,7 +172,7 @@
   return [storageDirectory stringByAppendingPathComponent:filename];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -311,7 +311,7 @@
   return [self.backingData writeToFile:path options:0 error:error];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -441,7 +441,7 @@
   return [self.backingString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:error];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -561,7 +561,7 @@
   return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -691,7 +691,7 @@
   return bytesWritten > 0;
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -856,7 +856,7 @@
 
 - (instancetype)updateJSONSerializable:(id)jsonSerializable
 {
-  id json = [jsonSerializable conformsToProtocol:@protocol(FBJSONSerializationDescribeable)]
+  id json = [jsonSerializable conformsToProtocol:@protocol(FBJSONSerializable)]
     ? [jsonSerializable jsonSerializableRepresentation]
     : jsonSerializable;
   if (!json) {

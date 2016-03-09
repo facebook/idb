@@ -10,7 +10,7 @@
 #import "FBSimulatorApplication.h"
 
 #import "FBBinaryParser.h"
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
@@ -102,7 +102,7 @@
     @"Name: %@ | Path: %@ | Architectures: %@",
     self.name,
     self.path,
-    [FBCollectionDescriptions oneLineDescriptionFromArray:self.architectures.allObjects]
+    [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
   ];
 }
 
@@ -116,7 +116,7 @@
   return [self description];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -238,7 +238,7 @@
   ];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {

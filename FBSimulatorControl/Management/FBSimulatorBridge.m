@@ -173,7 +173,7 @@
   ];
 }
 
-#pragma mark FBJSONSerializationDescribeable Implementation
+#pragma mark FBJSONSerializable Implementation
 
 - (id)jsonSerializableRepresentation
 {

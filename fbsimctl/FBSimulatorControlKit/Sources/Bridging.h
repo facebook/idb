@@ -25,8 +25,8 @@
 
 @end
 
-@interface NSString (FBJSONSerializationDescribeable) <FBJSONSerializationDescribeable>
+@interface NSString (FBJSONSerializable) <FBJSONSerializable>
 @end
 
-@interface NSArray (FBJSONSerializationDescribeable) <FBJSONSerializationDescribeable>
+@interface NSArray (FBJSONSerializable) <FBJSONSerializable>
 @end

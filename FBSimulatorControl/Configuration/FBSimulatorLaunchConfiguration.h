@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+#import <FBSimulatorControl/FBJSONConversion.h>
 
 @class FBFramebufferVideoConfiguration;
 
@@ -26,7 +26,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 /**
  A Value Object for defining how to launch a Simulator.
  */
-@interface FBSimulatorLaunchConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBSimulatorLaunchConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  Options for how the Simulator should be launched.

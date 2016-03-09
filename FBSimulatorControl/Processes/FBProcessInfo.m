@@ -121,7 +121,7 @@
   [coder encodeObject:self.environment forKey:NSStringFromSelector(@selector(environment))];
 }
 
-#pragma mark FBJSONSerializationDescribeable
+#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {

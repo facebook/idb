@@ -11,7 +11,7 @@ import Foundation
 import FBSimulatorControl
 
 public typealias EventReporterSubject = protocol<JSONDescribeable, CustomStringConvertible>
-public typealias SimulatorControlSubject = protocol<FBJSONSerializationDescribeable, CustomStringConvertible>
+public typealias SimulatorControlSubject = protocol<FBJSONSerializable, CustomStringConvertible>
 
 public enum EventName : String {
   case Approve = "approve"

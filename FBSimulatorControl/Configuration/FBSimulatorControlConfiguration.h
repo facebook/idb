@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+#import <FBSimulatorControl/FBJSONConversion.h>
 
 @class FBSimulatorApplication;
 
@@ -29,7 +29,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
 /**
  A Value object with the information required to create a Simulator Pool.
  */
-@interface FBSimulatorControlConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBSimulatorControlConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  Creates and returns a new Configuration with the provided parameters.

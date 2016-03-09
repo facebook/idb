@@ -10,7 +10,7 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorHistory+Private.h"
 
-#import "FBCollectionDescriptions.h"
+#import "FBCollectionInformation.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorApplication.h"
@@ -159,14 +159,14 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   if (![to.mutableLaunchedProcesses isEqualToOrderedSet:from.mutableLaunchedProcesses]) {
     [string appendFormat:
       @"Running Processes from %@ to %@ | ",
-      [FBCollectionDescriptions oneLineDescriptionFromArray:from.mutableLaunchedProcesses.array atKeyPath:@"shortDescription"],
-      [FBCollectionDescriptions oneLineDescriptionFromArray:to.mutableLaunchedProcesses.array atKeyPath:@"shortDescription"]
+      [FBCollectionInformation oneLineDescriptionFromArray:from.mutableLaunchedProcesses.array atKeyPath:@"shortDescription"],
+      [FBCollectionInformation oneLineDescriptionFromArray:to.mutableLaunchedProcesses.array atKeyPath:@"shortDescription"]
     ];
   }
   if (![to.mutableProcessMetadata isEqualToDictionary:from.mutableProcessMetadata]) {
     [string appendFormat:@"Process Metadata from %@ to %@ | ",
-      [FBCollectionDescriptions oneLineDescriptionFromDictionary:from.mutableProcessMetadata],
-      [FBCollectionDescriptions oneLineDescriptionFromDictionary:to.mutableProcessMetadata]
+      [FBCollectionInformation oneLineDescriptionFromDictionary:from.mutableProcessMetadata],
+      [FBCollectionInformation oneLineDescriptionFromDictionary:to.mutableProcessMetadata]
     ];
   }
   if (string.length == 0) {

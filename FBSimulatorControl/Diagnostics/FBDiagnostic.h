@@ -10,13 +10,13 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+#import <FBSimulatorControl/FBJSONConversion.h>
 
 /**
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
-@interface FBDiagnostic : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBDiagnostic : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The name of the Log for uniquely identifying the log.
@@ -183,7 +183,7 @@
  Updates the underlying `FBDiagnostic` with JSON Encoded String.
  Will replace any data, string or path associated with the log.
 
- @param jsonSerializable Can be either an FBJSONSerializationDescribeable 
+ @param jsonSerializable Can be either an FBJSONSerializable 
                          or an object that meets the requirements of NSJSONSerialization.
  @return the reciever, for chaining.
  */

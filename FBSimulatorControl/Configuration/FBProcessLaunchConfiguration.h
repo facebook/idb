@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBDebugDescribeable.h>
-#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+#import <FBSimulatorControl/FBJSONConversion.h>
 
 @class FBSimulator;
 @class FBSimulatorApplication;
@@ -19,7 +19,7 @@
 /**
  An abstract value object for launching both agents and applications
  */
-@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializationDescribeable, FBDebugDescribeable>
+@interface FBProcessLaunchConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
@@ -46,7 +46,7 @@
 /**
  A Value object with the information required to launch an Application.
  */
-@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration
+@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBJSONDeserializable>
 
 /**
  Creates and returns a new Configuration with the provided parameters.

@@ -41,7 +41,7 @@
 
 @end
 
-@implementation NSString (FBJSONSerializationDescribeable)
+@implementation NSString (FBJSONSerializable)
 
 - (id)jsonSerializableRepresentation
 {
@@ -50,7 +50,7 @@
 
 @end
 
-@implementation NSArray (FBJSONSerializationDescribeable)
+@implementation NSArray (FBJSONSerializable)
 
 - (id)jsonSerializableRepresentation
 {

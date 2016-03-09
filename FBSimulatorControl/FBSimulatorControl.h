@@ -11,7 +11,7 @@
 #import <FBSimulatorControl/FBAddVideoPolyfill.h>
 #import <FBSimulatorControl/FBBinaryParser.h>
 #import <FBSimulatorControl/FBCapacityQueue.h>
-#import <FBSimulatorControl/FBCollectionDescriptions.h>
+#import <FBSimulatorControl/FBCollectionInformation.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBConcurrentCollectionOperations.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
@@ -27,7 +27,7 @@
 #import <FBSimulatorControl/FBFramebufferVideo.h>
 #import <FBSimulatorControl/FBFramebufferVideoConfiguration.h>
 #import <FBSimulatorControl/FBInteraction.h>
-#import <FBSimulatorControl/FBJSONSerializationDescribeable.h>
+#import <FBSimulatorControl/FBJSONConversion.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
 #import <FBSimulatorControl/FBProcessInfo.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
