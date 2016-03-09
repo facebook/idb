@@ -850,7 +850,12 @@
   }
   object_setClass(self.diagnostic, FBDiagnostic_Path.class);
   self.diagnostic.backingFilePath = path;
-  self.diagnostic.fileType = [path pathExtension];
+  if (!self.diagnostic.shortName) {
+    self.diagnostic.shortName = [[path lastPathComponent] stringByDeletingPathExtension];
+  }
+  if (!self.diagnostic.fileType) {
+    self.diagnostic.fileType = [path pathExtension];
+  }
   return self;
 }
 

@@ -137,6 +137,28 @@
   XCTAssertEqualObjects(writeOutString, logString);
 }
 
+- (void)testInitializesDefaultsWhenPopulatingFromFile
+{
+  FBDiagnostic *diagnostic = [[[FBDiagnosticBuilder builder]
+    updatePath:FBSimulatorControlFixtures.simulatorSystemLogPath]
+    build];
+
+  XCTAssertEqualObjects(diagnostic.shortName, @"simulator_system");
+  XCTAssertEqualObjects(diagnostic.fileType, @"log");
+}
+
+- (void)testDoesNotInitializeDefaultsWhenAlreadySpecified
+{
+  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
+    updateShortName:@"bibble"]
+    updateFileType:@"txt"]
+    updatePath:FBSimulatorControlFixtures.simulatorSystemLogPath]
+    build];
+
+  XCTAssertEqualObjects(diagnostic.shortName, @"bibble");
+  XCTAssertEqualObjects(diagnostic.fileType, @"txt");
+}
+
 - (void)testTextFileCoercions
 {
   FBDiagnostic *diagnostic = self.simulatorSystemLog;
