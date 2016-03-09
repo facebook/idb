@@ -43,13 +43,7 @@ class HttpRelay : Relay {
   private func registerRoutes() {
     registerRoutes([
       ("relaunch", { json in
-        let bundleID = try json.getValue("bundle_id").getString()
-        let bundleName = try json.getValue("bundle_name").getString()
-        let arguments = try json.getValue("arguments").getArrayOfStrings()
-        let environment = try json.getValue("environment").getDictionaryOfStrings()
-        let launchConfiguration = FBApplicationLaunchConfiguration(
-          bundleID: bundleID, bundleName: bundleName, arguments: arguments, environment: environment
-        )
+        let launchConfiguration = try FBApplicationLaunchConfiguration.inflateFromJSON(json.decode())
         return Action.Relaunch(launchConfiguration)
       }),
       ("terminate", { json in
