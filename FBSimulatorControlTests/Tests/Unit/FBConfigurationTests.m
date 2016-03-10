@@ -9,65 +9,63 @@
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
-
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBSimulatorControlFixtures.h"
+#import "FBControlCoreValueTestCase.h"
 
-@interface FBConfigurationTests : XCTestCase
+@interface FBConfigurationTests : FBControlCoreValueTestCase
 
 @end
 
 @implementation FBConfigurationTests
 
-- (NSArray *)serializableConfigurations
+- (void)testVideoConfigurations
 {
-  return [[[[[self.videoConfigurations
-    arrayByAddingObjectsFromArray:self.processLaunchConfigurations]
-    arrayByAddingObjectsFromArray:self.simulatorConfigurations]
-    arrayByAddingObjectsFromArray:self.controlConfigurations]
-    arrayByAddingObjectsFromArray:self.launchConfigurations]
-    arrayByAddingObjectsFromArray:self.diagnostics];
-}
-
-- (NSArray *)deserializableConfigurations
-{
-  return [self appLaunchConfigurations];
-}
-
-- (NSArray *)videoConfigurations
-{
-  return @[
+  NSArray *values = @[
     [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsAutorecord | FBFramebufferVideoOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
     [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
   ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
 }
 
-- (NSArray *)appLaunchConfigurations
+- (void)testAppLaunchConfigurations
 {
-  return @[
+  NSArray *values = @[
     self.appLaunch1,
     self.appLaunch2,
   ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
 }
 
-- (NSArray *)processLaunchConfigurations
+- (void)testAgentLaunchConfigurations
 {
-  return [self.appLaunchConfigurations arrayByAddingObject:self.agentLaunch1];
+  NSArray *values = @[self.agentLaunch1];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
 }
 
-- (NSArray *)simulatorConfigurations
+- (void)testSimulatorConfigurations
 {
-  return @[
+  NSArray *values = @[
     FBSimulatorConfiguration.defaultConfiguration,
     FBSimulatorConfiguration.iPhone5,
     FBSimulatorConfiguration.iPad2.iOS_8_3
   ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
 }
 
-- (NSArray *)controlConfigurations
+- (void)testControlConfigurations
 {
-  return @[
+  NSArray *values = @[
     [FBSimulatorControlConfiguration
       configurationWithDeviceSetPath:nil
       options:FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart],
@@ -75,11 +73,14 @@
       configurationWithDeviceSetPath:@"/foo/bar"
       options:FBSimulatorManagementOptionsKillAllOnFirstStart | FBSimulatorManagementOptionsKillAllOnFirstStart]
   ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
 }
 
-- (NSArray *)launchConfigurations
+- (void)testLaunchConfigurations
 {
-  return @[
+  NSArray *values = @[
     [[[FBSimulatorLaunchConfiguration
       withLocaleNamed:@"en_US"]
       withOptions:FBSimulatorLaunchOptionsShowDebugWindow]
@@ -88,94 +89,9 @@
       withOptions:FBSimulatorLaunchOptionsUseNSWorkspace]
       scale25Percent]
   ];
-}
-
-- (NSArray *)diagnostics
-{
-  return @[
-    [[[[FBDiagnosticBuilder.builder
-      updateString:@"FOO"]
-      updateShortName:@"BAAAA"]
-      updateFileType:@"txt"]
-      build],
-    [[[[FBDiagnosticBuilder.builder
-      updateString:@"BING"]
-      updateShortName:@"BONG"]
-      updateFileType:@"txt"]
-      build],
-  ];
-}
-
-- (void)testEqualityOfCopy
-{
-  for (id config in self.serializableConfigurations) {
-    id configCopy = [config copy];
-    id configCopyCopy = [configCopy copy];
-    XCTAssertEqualObjects(config, configCopy);
-    XCTAssertEqualObjects(config, configCopyCopy);
-    XCTAssertEqualObjects(configCopy, configCopyCopy);
-  }
-}
-
-- (void)testUnarchiving
-{
-  for (id config in self.serializableConfigurations) {
-    NSData *configData = [NSKeyedArchiver archivedDataWithRootObject:config];
-    id configUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:configData];
-    XCTAssertEqualObjects(config, configUnarchived);
-  }
-}
-
-- (void)testJSONSerialization
-{
-  for (id config in self.serializableConfigurations) {
-    [self assertStringKeysJSONValues:[config jsonSerializableRepresentation]];
-  }
-}
-
-- (void)testEqualityOfDeserialization
-{
-  for (id value in self.deserializableConfigurations) {
-    id json = [value jsonSerializableRepresentation];
-    NSError *error = nil;
-    id serializedValue = [[value class] inflateFromJSON:json error:&error];
-    XCTAssertNil(error);
-    XCTAssertEqualObjects(value, serializedValue);
-    XCTAssertEqualObjects(json, [serializedValue jsonSerializableRepresentation]);
-  }
-}
-
-- (void)assertStringKeysJSONValues:(NSDictionary *)json
-{
-  NSSet *keyTypes = [NSSet setWithArray:[json.allKeys valueForKey:@"class"]];
-  for (Class class in keyTypes) {
-    XCTAssertTrue([class isSubclassOfClass:NSString.class]);
-  }
-  [self assertJSONValues:json.allValues];
-}
-
-- (void)assertJSONValues:(NSArray *)json
-{
-  for (id value in json) {
-    if ([value isKindOfClass:NSString.class]) {
-      continue;
-    }
-    if ([value isKindOfClass:NSNumber.class]) {
-      continue;
-    }
-    if ([value isEqual:NSNull.null]) {
-      continue;
-    }
-    if ([value isKindOfClass:NSArray.class]) {
-      [self assertJSONValues:value];
-      continue;
-    }
-    if ([value isKindOfClass:NSDictionary.class]) {
-      [self assertStringKeysJSONValues:value];
-      continue;
-    }
-    XCTFail(@"%@ is not json encodable", value);
-  }
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
 }
 
 @end

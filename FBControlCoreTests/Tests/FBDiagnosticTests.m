@@ -12,8 +12,9 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBControlCoreFixtures.h"
+#import "FBControlCoreValueTestCase.h"
 
-@interface FBDiagnosticTests : XCTestCase
+@interface FBDiagnosticTests : FBControlCoreValueTestCase
 
 @end
 
@@ -22,6 +23,14 @@
 - (NSString *)temporaryOutputFile
 {
   return [[NSTemporaryDirectory() stringByAppendingPathComponent:@"FBDiagnosticTests"] stringByAppendingPathExtension:@"tempout"];
+}
+
+- (void)testValueSemantics
+{
+  NSArray *values = @[self.photoDiagnostic, self.simulatorSystemLog, self.treeJSONDiagnostic];
+  [self assertEqualityOfCopy:values];
+  [self assertJSONSerialization:values];
+  [self assertUnarchiving:values];
 }
 
 - (void)assertWritesOutToFile:(FBDiagnostic *)diagnostic
