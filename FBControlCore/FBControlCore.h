@@ -19,6 +19,7 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBJSONSerializationDescribeable.h>
+#import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessQuery+Helpers.h>
 #import <FBControlCore/FBProcessQuery.h>
