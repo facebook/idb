@@ -41,7 +41,7 @@
 - (NSString *)match:(NSString *)line
 {
   if (!self.regularExpression) {
-    return NO;
+    return nil;
   }
   NSRange range = line.length ? NSMakeRange(0, line.length - 1) : NSMakeRange(0, 0);
   NSTextCheckingResult *result = [self.regularExpression firstMatchInString:line options:0 range:range];
