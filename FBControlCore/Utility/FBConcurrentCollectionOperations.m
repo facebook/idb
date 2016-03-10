@@ -60,6 +60,13 @@
     }];
 }
 
++ (NSArray *)filter:(NSArray *)array predicate:(NSPredicate *)predicate
+{
+  return [self filterMap:array predicate:predicate map:^ id (id object) {
+    return object;
+  }];
+}
+
 + (NSArray *)mapFilter:(NSArray *)array map:(id (^)(id))block predicate:(NSPredicate *)predicate
 {
   NSMutableArray *output = [NSMutableArray array];
@@ -100,6 +107,11 @@
       return object;
     }]
     filteredArrayUsingPredicate:self.nonTerminalPredicate];
+}
+
++ (NSPredicate *)notNullPredicate
+{
+  return [NSPredicate predicateWithFormat:@"self != nil"];
 }
 
 #pragma mark Private
