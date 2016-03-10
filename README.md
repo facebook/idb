@@ -119,6 +119,7 @@ See the [CONTRIBUTING](CONTRIBUTING) file for how to help out. There's plenty to
 
 ## Example Projects
 
+* [fbsimctl](https://github.com/facebook/FBSimulatorControl/blob/master/fbsimctl/README.md): Command line interface
 * [SimulatorController](https://github.com/davidlawson/SimulatorController): GUI interface written in Swift
 * [FBSimulatorClient](https://github.com/tapthaker/FBSimulatorClient): Simulator interface using REST requests
 
