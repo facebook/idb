@@ -9,10 +9,9 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
+#import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulatorControlAssertions.h"
-#import "FBSimulatorControlFixtures.h"
+#import "FBControlCoreFixtures.h"
 
 @interface FBDiagnosticTests : XCTestCase
 
@@ -137,6 +136,47 @@
   XCTAssertEqualObjects(writeOutString, logString);
 }
 
+- (void)testInitializesDefaultsWhenPopulatingFromFile
+{
+  FBDiagnostic *diagnostic = [[[FBDiagnosticBuilder builder]
+    updatePath:FBControlCoreFixtures.simulatorSystemLogPath]
+    build];
+
+  XCTAssertEqualObjects(diagnostic.shortName, @"simulator_system");
+  XCTAssertEqualObjects(diagnostic.fileType, @"log");
+}
+
+- (void)testDoesNotInitializeDefaultsWhenAlreadySpecified
+{
+  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
+    updateShortName:@"bibble"]
+    updateFileType:@"txt"]
+    updatePath:FBControlCoreFixtures.simulatorSystemLogPath]
+    build];
+
+  XCTAssertEqualObjects(diagnostic.shortName, @"bibble");
+  XCTAssertEqualObjects(diagnostic.fileType, @"txt");
+}
+
+- (void)testUpdatingAFileBackedDiagnostic
+{
+  NSString *file = self.temporaryOutputFile;
+  XCTAssertTrue([@"FIRST" writeToFile:file atomically:YES encoding:NSUTF8StringEncoding error:nil]);
+
+  FBDiagnostic *fileDiagnostic = [[[FBDiagnosticBuilder builder]
+    updatePath:file]
+    build];
+  FBDiagnostic *memoryDiagnostic = [[[FBDiagnosticBuilder builderWithDiagnostic:fileDiagnostic]
+    readIntoMemory]
+    build];
+  XCTAssertEqualObjects(@"FIRST", fileDiagnostic.asString);
+  XCTAssertEqualObjects(@"FIRST", memoryDiagnostic.asString);
+
+  XCTAssertTrue([@"SECOND" writeToFile:file atomically:YES encoding:NSUTF8StringEncoding error:nil]);
+  XCTAssertEqualObjects(@"SECOND", fileDiagnostic.asString);
+  XCTAssertEqualObjects(@"FIRST", memoryDiagnostic.asString);
+}
+
 - (void)testTextFileCoercions
 {
   FBDiagnostic *diagnostic = self.simulatorSystemLog;
@@ -146,7 +186,7 @@
   XCTAssertNil(diagnostic.asJSON);
   XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
-  [self assertNeedle:@"layer position 375 667 bounds 0 0 750 1334" inHaystack:diagnostic.asString];
+  XCTAssertTrue([diagnostic.asString containsString:@"layer position 375 667 bounds 0 0 750 1334"]);
   [self assertWritesOutToFile:diagnostic];
 }
 
@@ -183,7 +223,7 @@
   XCTAssertEqualObjects(diagnostic.asJSON, json);
   XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
-  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  XCTAssertTrue([diagnostic.asString containsString:substring]);
   [self assertWritesOutToFile:diagnostic];
 }
 
@@ -208,7 +248,7 @@
   XCTAssertEqualObjects(diagnostic.asJSON, json);
   XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
-  [self assertNeedle:substring inHaystack:diagnostic.asString];
+  XCTAssertTrue([diagnostic.asString containsString:substring]);
   [self assertWritesOutToFile:diagnostic];
 }
 
@@ -221,23 +261,23 @@
   XCTAssertEqualObjects([[[diagnostic.asJSON objectForKey:@"value"] objectForKey:@"tree"] objectForKey:@"name"], @"SpringBoard");
   XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
-  [self assertNeedle:@"Swipe down with three fingers to reveal the notification center" inHaystack:diagnostic.asString];
+  XCTAssertTrue([diagnostic.asString containsString:@"Swipe down with three fingers to reveal the notification center"]);
   [self assertWritesOutToFile:diagnostic];
 }
 
 - (void)testJSONSerializableCoercions
 {
   FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
-    updateShortName:@"applaunch"]
-    updateJSONSerializable:self.appLaunch1]
+    updateShortName:@"process_info"]
+    updateJSONSerializable:self.launchCtlProcess]
     build];
 
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
-  XCTAssertEqualObjects([[diagnostic.asJSON objectForKey:@"environment"] objectForKey:@"FOO"], @"BAR");
+  XCTAssertEqualObjects([diagnostic.asJSON objectForKey:@"pid"] , @(NSProcessInfo.processInfo.processIdentifier));
   XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
-  [self assertNeedle:@"com.example.apple-samplecode.TableSearch" inHaystack:diagnostic.asString];
+  XCTAssertTrue([diagnostic.asString containsString:[@(NSProcessInfo.processInfo.processIdentifier) stringValue]]);
   [self assertWritesOutToFile:diagnostic];
 }
 

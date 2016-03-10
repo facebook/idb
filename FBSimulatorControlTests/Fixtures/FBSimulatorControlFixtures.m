@@ -135,25 +135,4 @@
     environment:self.appLaunch2.environment];
 }
 
-- (FBDiagnostic *)simulatorSystemLog
-{
-  return [[[FBDiagnosticBuilder builder]
-    updatePath:FBSimulatorControlFixtures.simulatorSystemLogPath]
-    build];
-}
-
-- (FBDiagnostic *)treeJSONDiagnostic
-{
-  return [[[FBDiagnosticBuilder builder]
-    updatePath:FBSimulatorControlFixtures.treeJSONPath]
-    build];
-}
-
-- (FBDiagnostic *)photoDiagnostic
-{
-  return [[[FBDiagnosticBuilder builder]
-    updatePath:FBSimulatorControlFixtures.photo0Path]
-    build];
-}
-
 @end

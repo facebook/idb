@@ -36,16 +36,6 @@
  */
 + (NSString *)video0Path;
 
-/**
- A File Path to sample system log.
- */
-+ (NSString *)simulatorSystemLogPath;
-
-/**
- A File Path to the WebDriverAgent Element Tree of Springboard.
- */
-+ (NSString *)treeJSONPath;
-
 @end
 
 /**
@@ -104,20 +94,5 @@
  Another Process Info, like 'processInfo2a' but with a different pid. Does not represent a real process.
  */
 - (FBProcessInfo *)processInfo2a;
-
-/**
- A System Log.
- */
-- (FBDiagnostic *)simulatorSystemLog;
-
-/**
- A Diagnostic for the WebDriverAgent Element Tree of Springboard.
- */
-- (FBDiagnostic *)treeJSONDiagnostic;
-
-/**
- A Diagnostic of a PNG.
- */
-- (FBDiagnostic *)photoDiagnostic;
 
 @end

@@ -174,6 +174,8 @@
  Updates the underlying `FBDiagnostic` with a File Path.
  Will replace any data or string associated with the log.
 
+ Since the Diagnostic associated with a Path can change, any coercions will happen lazily.
+
  @param path the File Path to update with.
  @return the reciever, for chaining.
  */
@@ -210,6 +212,14 @@
  @return the reciever, for chaining.
  */
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block;
+
+/**
+ Updates the underlying `FBDiagnostic` by reading it into memory, if it is backed by a file.
+ This means that the created FBDiagnostic is effectively immutable since the content cannot change.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)readIntoMemory;
 
 /**
  Returns a new `FBDiagnostic` with the reciever's updates applied.

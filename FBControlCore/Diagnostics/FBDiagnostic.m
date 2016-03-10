@@ -522,29 +522,21 @@
 
 - (NSData *)asData
 {
-  if (!self.backingData) {
-    self.backingData = [[NSData alloc] initWithContentsOfFile:self.backingFilePath];
-  }
-  return self.backingData;
+  return [[NSData alloc] initWithContentsOfFile:self.backingFilePath];
 }
 
 - (NSString *)asString
 {
-  if (!self.backingString) {
-    self.backingString = [[NSString alloc] initWithContentsOfFile:self.backingFilePath usedEncoding:nil error:nil];
-  }
-  return self.backingString;
+  return [[NSString alloc] initWithContentsOfFile:self.backingFilePath usedEncoding:nil error:nil];
 }
 
 - (id)asJSON
 {
-  if (!self.backingJSON) {
-    NSInputStream *inputStream = [NSInputStream inputStreamWithFileAtPath:self.backingFilePath];
-    [inputStream open];
-    self.backingJSON = [NSJSONSerialization JSONObjectWithStream:inputStream options:0 error:nil];
-    [inputStream close];
-  }
-  return self.backingJSON;
+  NSInputStream *inputStream = [NSInputStream inputStreamWithFileAtPath:self.backingFilePath];
+  [inputStream open];
+  id json = [NSJSONSerialization JSONObjectWithStream:inputStream options:0 error:nil];
+  [inputStream close];
+  return json;
 }
 
 - (BOOL)hasLogContent
@@ -850,7 +842,12 @@
   }
   object_setClass(self.diagnostic, FBDiagnostic_Path.class);
   self.diagnostic.backingFilePath = path;
-  self.diagnostic.fileType = [path pathExtension];
+  if (!self.diagnostic.shortName) {
+    self.diagnostic.shortName = [[path lastPathComponent] stringByDeletingPathExtension];
+  }
+  if (!self.diagnostic.fileType) {
+    self.diagnostic.fileType = [path pathExtension];
+  }
   return self;
 }
 
@@ -882,6 +879,19 @@
     [self flushBackingStore];
   }
   return [self updatePath:path];
+}
+
+- (instancetype)readIntoMemory
+{
+  if (!self.diagnostic.backingFilePath) {
+    return self;
+  }
+
+  NSData *data = [self.diagnostic asData];
+  if (!data) {
+    return self;
+  }
+  return [self updateData:data];
 }
 
 - (FBDiagnostic *)build
