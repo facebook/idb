@@ -17,6 +17,13 @@
 @class SimDevice;
 
 /**
+ An Environment Variable that is inserted into launched Simulator.app processes
+ in order to easily identify the Simulator UUID that they were launched to run against.
+ */
+extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
+
+
+/**
  Extension for obtaining Simulator Process information.
  */
 @interface FBProcessQuery (Simulators)

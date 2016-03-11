@@ -17,9 +17,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBSimulatorLaunchCtl ()
 

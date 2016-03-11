@@ -20,7 +20,6 @@
 #import "FBSimulatorInteraction+Applications.h"
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorPool.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorInteraction (Upload)
 

@@ -19,7 +19,6 @@
 #import "FBDispatchSourceNotifier.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBSimulatorBridge.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 
 @interface FBSimulatorEventRelay ()
 

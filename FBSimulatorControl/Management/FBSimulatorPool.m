@@ -26,7 +26,6 @@
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorTerminationStrategy.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorPool
 

@@ -20,7 +20,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBSimDeviceWrapper ()
 

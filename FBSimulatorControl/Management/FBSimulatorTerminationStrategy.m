@@ -31,7 +31,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorPredicates.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBSimulatorTerminationStrategy ()
 

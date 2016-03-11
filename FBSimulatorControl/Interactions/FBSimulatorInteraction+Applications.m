@@ -27,7 +27,6 @@
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulatorInteraction (Applications)
 

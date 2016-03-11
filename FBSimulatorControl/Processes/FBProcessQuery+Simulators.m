@@ -14,8 +14,8 @@
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
+
+NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBControlCore_SIM_UDID";
 
 @implementation FBProcessQuery (Simulators)
 

@@ -24,7 +24,6 @@
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @implementation FBSimulator (Helpers)
 

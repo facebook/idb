@@ -17,7 +17,6 @@
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Applications.h"
 #import "FBSimulatorInteraction+Lifecycle.h"
-#import "NSRunLoop+SimulatorControlAdditions.h"
 
 @interface FBAddVideoPolyfill ()
 

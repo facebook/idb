@@ -31,7 +31,6 @@
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorControlGlobalConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorInteraction+Private.h"
