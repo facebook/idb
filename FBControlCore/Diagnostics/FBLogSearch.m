@@ -45,7 +45,7 @@
   }
   NSRange range = line.length ? NSMakeRange(0, line.length - 1) : NSMakeRange(0, 0);
   NSTextCheckingResult *result = [self.regularExpression firstMatchInString:line options:0 range:range];
-  if (result.range.location == NSNotFound) {
+  if (!result || result.range.location == NSNotFound || result.range.length < 1) {
     return nil;
   }
   return [line substringWithRange:result.range];
@@ -215,7 +215,7 @@
 {
   NSRegularExpression *regex = [NSRegularExpression
     regularExpressionWithPattern:pattern
-    options:0
+    options:NSRegularExpressionAnchorsMatchLines
     error:nil];
   return [[FBLogSearchPredicate_Regex alloc] initWithRegularExpression:regex];
 }
@@ -299,6 +299,7 @@
 @interface FBBatchLogSearch ()
 
 @property (nonatomic, copy, readonly) NSDictionary *mapping;
+@property (nonatomic, assign, readonly) BOOL lines;
 
 @end
 
@@ -306,25 +307,18 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withMapping:(NSDictionary *)mapping error:(NSError **)error
++ (instancetype)withMapping:(NSDictionary *)mapping lines:(BOOL)lines error:(NSError **)error
 {
-  for (id key in mapping.allKeys) {
-    if (![key isKindOfClass:NSArray.class]) {
-      return [[FBControlCoreError describeFormat:@"%@ key is not an array", key] fail:error];
-    }
-    if (![FBCollectionInformation isArrayHeterogeneous:key withClass:NSString.class]) {
-      return [[FBControlCoreError describeFormat:@"%@ key is not an array of strings", key] fail:error];
-    }
+  if (![FBCollectionInformation isDictionaryHeterogeneous:mapping keyClass:NSString.class valueClass:NSArray.class]) {
+   return [[FBControlCoreError describeFormat:@"%@ is not an dictionary<string, string>", mapping] fail:error];
   }
+
   for (id value in mapping.allValues) {
-    if (![value isKindOfClass:NSArray.class]) {
-      return [[FBControlCoreError describeFormat:@"%@ value is not an array", value] fail:error];
-    }
     if (![FBCollectionInformation isArrayHeterogeneous:value withClass:FBLogSearchPredicate.class]) {
       return [[FBControlCoreError describeFormat:@"%@ value is not an array of log search predicates", value] fail:error];
     }
   }
-  return [[FBBatchLogSearch alloc] initWithMapping:mapping];
+  return [[FBBatchLogSearch alloc] initWithMapping:mapping lines:lines];
 }
 
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
@@ -332,14 +326,20 @@
   if (![json isKindOfClass:NSDictionary.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a dictionary", json] fail:error];
   }
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSArray.class valueClass:NSArray.class]) {
-    return [[FBControlCoreError describeFormat:@"%@ is not a dictionary of <array, array>", json] fail:error];
+  NSNumber *lines = json[@"lines"];
+  if (![lines isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a number for 'lines'", lines] fail:error];
   }
 
-  NSMutableDictionary *mapping = [NSMutableDictionary dictionary];
-  for (NSString *key in json.allKeys) {
+  NSDictionary *jsonMapping = json[@"mapping"];
+  if (![FBCollectionInformation isDictionaryHeterogeneous:jsonMapping keyClass:NSString.class valueClass:NSArray.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a dictionary of <array, array>", jsonMapping] fail:error];
+  }
+
+  NSMutableDictionary *predicateMapping = [NSMutableDictionary dictionary];
+  for (NSString *key in jsonMapping.allKeys) {
     NSMutableArray *predicates = [NSMutableArray array];
-    for (NSDictionary *predicateJSON in json[key]) {
+    for (NSDictionary *predicateJSON in jsonMapping[key]) {
       FBLogSearchPredicate *predicate = [FBLogSearchPredicate inflateFromJSON:predicateJSON error:error];
       if (!predicate) {
         return [[FBControlCoreError describeFormat:@"%@ is not a predicate", predicateJSON] fail:error];
@@ -347,12 +347,12 @@
       [predicates addObject:predicate];
     }
 
-    mapping[key] = [predicates copy];
+    predicateMapping[key] = [predicates copy];
   }
-  return [self withMapping:[mapping copy] error:error];
+  return [self withMapping:[predicateMapping copy] lines:lines.boolValue error:error];
 }
 
-- (instancetype)initWithMapping:(NSDictionary *)mapping
+- (instancetype)initWithMapping:(NSDictionary *)mapping lines:(BOOL)lines
 {
   self = [super init];
   if (!self) {
@@ -360,6 +360,7 @@
   }
 
   _mapping = mapping;
+  _lines = lines;
 
   return self;
 }
@@ -374,6 +375,7 @@
   }
 
   _mapping = [coder decodeObjectForKey:NSStringFromSelector(@selector(mapping))];
+  _lines = [coder decodeBoolForKey:NSStringFromSelector(@selector(lines))];
 
   return self;
 }
@@ -381,24 +383,28 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
   [coder encodeObject:self.mapping forKey:NSStringFromSelector(@selector(mapping))];
+  [coder encodeBool:self.lines forKey:NSStringFromSelector(@selector(lines))];
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[FBBatchLogSearch alloc] initWithMapping:self.mapping];
+  return [[FBBatchLogSearch alloc] initWithMapping:self.mapping lines:self.lines];
 }
 
 #pragma mark FBJSONSerializationDescribeable Implementation
 
 - (id)jsonSerializableRepresentation
 {
-  NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+  NSMutableDictionary *mappingDictionary = [NSMutableDictionary dictionary];
   for (NSArray *key in self.mapping) {
-    dictionary[key] = [self.mapping[key] valueForKey:@"jsonSerializableRepresentation"];
+    mappingDictionary[key] = [self.mapping[key] valueForKey:@"jsonSerializableRepresentation"];
   }
-  return [dictionary copy];
+  return @{
+    @"lines" : @(self.lines),
+    @"mapping" : [mappingDictionary copy],
+  };
 }
 
 #pragma mark FBDebugDescribeable Implementation
@@ -429,12 +435,12 @@
     return NO;
   }
 
-  return [self.mapping isEqualToDictionary:object.mapping];
+  return self.lines == object.lines && [self.mapping isEqualToDictionary:object.mapping];
 }
 
 - (NSUInteger)hash
 {
-  return self.mapping.hash;
+  return (NSUInteger) self.lines ^ self.mapping.hash;
 }
 
 #pragma mark Public API
@@ -448,36 +454,35 @@
 
   // Construct and NSArray<FBLogSearch> instances
   NSMutableArray *searchers = [NSMutableArray array];
-  for (NSArray *nameArray in self.mapping.allKeys) {
-    NSArray *predicates = self.mapping[nameArray];
+  for (NSString *diagnosticName in self.mapping.allKeys) {
+    NSArray *predicates = self.mapping[diagnosticName];
 
-    if ([nameArray isEqualToArray:@[]]) {
+    if ([diagnosticName isEqualToString:@""]) {
       for (FBDiagnostic *diagnostic in diagnostics) {
         for (FBLogSearchPredicate *predicate in predicates) {
           [searchers addObject:[FBLogSearch withDiagnostic:diagnostic predicate:predicate]];
         }
       }
     }
-    for (NSString *name in nameArray) {
-      FBDiagnostic *diagnostic = namesToDiagnostics[name];
-      if (!diagnostic) {
-        continue;
-      }
-      for (FBLogSearchPredicate *predicate in predicates) {
-        [searchers addObject:[FBLogSearch withDiagnostic:diagnostic predicate:predicate]];
-      }
+    FBDiagnostic *diagnostic = namesToDiagnostics[diagnosticName];
+    if (!diagnostic) {
+      continue;
+    }
+    for (FBLogSearchPredicate *predicate in predicates) {
+      [searchers addObject:[FBLogSearch withDiagnostic:diagnostic predicate:predicate]];
     }
   }
 
   // Perform the search, concurrently
+  BOOL lines = self.lines;
   NSArray *results = [FBConcurrentCollectionOperations
     mapFilter:[searchers copy]
     map:^ NSArray * (FBLogSearch *searcher) {
-      NSString *line = searcher.firstMatchingLine;
-      if (!line) {
+      NSString *match = lines ? searcher.firstMatchingLine : searcher.firstMatch;
+      if (!match) {
         return nil;
       }
-      return @[searcher.diagnostic.shortName, line];
+      return @[searcher.diagnostic.shortName, match];
     }
     predicate:FBConcurrentCollectionOperations.notNullPredicate];
 
@@ -497,9 +502,9 @@
   return [output copy];
 }
 
-+ (NSDictionary *)searchDiagnostics:(NSArray *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate
++ (NSDictionary *)searchDiagnostics:(NSArray *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate lines:(BOOL)lines
 {
-  return [[self withMapping:@{@[] : @[predicate]} error:nil] search:diagnostics];
+  return [[self withMapping:@{@[] : @[predicate]} lines:lines error:nil] search:diagnostics];
 }
 
 @end

@@ -52,14 +52,15 @@
 /**
  Constructs a Batch Log Search for the provided mapping of log names to predicates.
  The provided mapping is an NSDictionary where:
- - The keys are an NSArray of NSStrings of the names of the Logs to search. An Empty list means that the value will apply to all predicates.
- - The values are an NSArray of FBLogSearchPredicates of the predicates to search the named logs with.
+ - The keys are the names of the Diagnostics to search. The empty string matches against all input diagnostics.
+ - The values are an NSArray of FBLogSearchPredicates of the predicates to search the the diagnostic with.
 
  @param mapping the mapping to search with.
+ @param lines YES to include the full line in the output, NO for the matched substring.
  @param error an error out for any error in the mapping format.
  @return an FBBatchLogSearch instance if the mapping is valid, nil otherwise.
  */
-+ (instancetype)withMapping:(NSDictionary *)mapping error:(NSError **)error;
++ (instancetype)withMapping:(NSDictionary *)mapping lines:(BOOL)lines error:(NSError **)error;
 
 /**
  Runs the Reciever over an array of Diagnostics.
@@ -77,9 +78,10 @@
 
  @param diagnostics an NSArray of FBDiagnostics to search.
  @param predicate a Log Search Predicate to search with.
+ @param lines YES to include the full line in the output, NO for the matched substring.
  @return an NSDictionary mapping log names to the matching lines that were found in the diagnostics.
  */
-+ (NSDictionary *)searchDiagnostics:(NSArray *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate;
++ (NSDictionary *)searchDiagnostics:(NSArray *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate lines:(BOOL)lines;
 
 @end
 
