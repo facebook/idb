@@ -34,7 +34,7 @@
 + (BOOL)isArrayHeterogeneous:(NSArray *)array withClass:(Class)cls
 {
   NSParameterAssert(cls);
-  if (!array) {
+  if (![array isKindOfClass:NSArray.class]) {
     return NO;
   }
   for (id object in array) {
@@ -49,7 +49,7 @@
 {
   NSParameterAssert(keyCls);
   NSParameterAssert(valueCls);
-  if (!dictionary) {
+  if (![dictionary isKindOfClass:NSDictionary.class]) {
     return NO;
   }
   for (id object in dictionary.allKeys) {

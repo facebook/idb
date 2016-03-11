@@ -294,6 +294,98 @@
 
 @end
 
+@implementation FBBatchLogSearchResult
+
+- (instancetype)initWithMapping:(NSDictionary<NSString *, NSArray<NSString *> *> *)mapping
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _mapping = mapping;
+
+  return self;
+}
+
++ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSArray.class]) {
+    return [[FBControlCoreError describe:@"%@ is not an NSDictionary<NSString, NSArray>"] fail:error];
+  }
+  for (NSArray *results in json.allValues) {
+    if (![FBCollectionInformation isArrayHeterogeneous:results withClass:NSString.class]) {
+      return [[FBControlCoreError describe:@"%@ is not an NSArray<NSString>"] fail:error];
+    }
+  }
+  return [[self alloc] initWithMapping:json];
+}
+
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+  id mapping = [coder decodeObjectForKey:NSStringFromSelector(@selector(mapping))];
+  return [self initWithMapping:mapping];
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+  [coder encodeObject:self.mapping forKey:NSStringFromSelector(@selector(mapping))];
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return [[FBBatchLogSearchResult alloc] initWithMapping:self.mapping];
+}
+
+#pragma mark FBJSONSerializationDescribeable Implementation
+
+- (id)jsonSerializableRepresentation
+{
+  return self.mapping;
+}
+
+#pragma mark FBDebugDescribeable Implementation
+
+- (NSString *)description
+{
+  return self.shortDescription;
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Batch Search Result: %@",
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
+  ];
+}
+
+- (NSString *)debugDescription
+{
+  return self.shortDescription;
+}
+
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBBatchLogSearchResult *)object
+{
+  if (![object isKindOfClass:self.class]) {
+    return NO;
+  }
+
+  return [self.mapping isEqualToDictionary:object.mapping];
+}
+
+- (NSUInteger)hash
+{
+  return self.mapping.hash;
+}
+
+@end
+
 #pragma mark - FBBatchLogSearch
 
 @interface FBBatchLogSearch ()
@@ -445,7 +537,7 @@
 
 #pragma mark Public API
 
-- (NSDictionary *)search:(NSArray *)diagnostics
+- (FBBatchLogSearchResult *)search:(NSArray *)diagnostics
 {
   NSParameterAssert([FBCollectionInformation isArrayHeterogeneous:diagnostics withClass:FBDiagnostic.class]);
 
@@ -499,12 +591,15 @@
     [matches addObject:value];
   }
 
-  return [output copy];
+  // The JSON Inflation will check the format, so is a sanity chek on the data structure.
+  FBBatchLogSearchResult *result = [FBBatchLogSearchResult inflateFromJSON:[output copy] error:nil];
+  NSAssert(result != nil, @"%@ search result should be well-formed, but isn't", output);
+  return result;
 }
 
 + (NSDictionary *)searchDiagnostics:(NSArray *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate lines:(BOOL)lines
 {
-  return [[self withMapping:@{@[] : @[predicate]} lines:lines error:nil] search:diagnostics];
+  return [[[self withMapping:@{@[] : @[predicate]} lines:lines error:nil] search:diagnostics] mapping];
 }
 
 @end

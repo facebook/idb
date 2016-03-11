@@ -41,6 +41,21 @@
 @end
 
 /**
+ Defines a model for the result of a batch search on diagnostics.
+ */
+@interface FBBatchLogSearchResult : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+
+/**
+ The Results as a Mapping:
+ The returned dictionary is a NSDictionary where:
+ - The keys are the log names. A log must have 1 or more matches to have a key.
+ - The values are an NSArrray of NSStrings for the lines that have been matched.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSArray<NSString *> *> *mapping;
+
+@end
+
+/**
  Defines a model for batch searching diagnostics.
  This model is then used to concurrently search logs, returning the relevant matches.
 
@@ -64,14 +79,11 @@
 
 /**
  Runs the Reciever over an array of Diagnostics.
- The returned dictionary is a NSDictionary where:
- - The keys are the log names. A log must have 1 or more matches to have a key.
- - The values are an NSArrray of NSStrings for the lines that have been matched.
 
  @param diagnostics an NSArray of FBDiagnostics to search.
- @return an NSDictionary mapping log names to the matching lines that were found in the diagnostics.
+ @return a search result
  */
-- (NSDictionary *)search:(NSArray *)diagnostics;
+- (FBBatchLogSearchResult *)search:(NSArray *)diagnostics;
 
 /**
  Convenience method for searching an array of diagnostics with a single predicate.
@@ -79,7 +91,7 @@
  @param diagnostics an NSArray of FBDiagnostics to search.
  @param predicate a Log Search Predicate to search with.
  @param lines YES to include the full line in the output, NO for the matched substring.
- @return an NSDictionary mapping log names to the matching lines that were found in the diagnostics.
+ @return a NSDictionary specified by -[FBBatchLogSearchResult mapping].
  */
 + (NSDictionary *)searchDiagnostics:(NSArray *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate lines:(BOOL)lines;
 

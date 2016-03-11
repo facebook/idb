@@ -130,26 +130,40 @@
   ];
 }
 
-- (void)testValueSemantics
+- (NSArray *)batches
 {
-  NSArray *batches = @[
+  return @[
     [FBBatchLogSearch withMapping:self.complexMapping lines:YES error:nil],
     [FBBatchLogSearch withMapping:self.complexMapping lines:NO error:nil],
     [FBBatchLogSearch withMapping:self.searchAllMapping lines:YES error:nil],
     [FBBatchLogSearch withMapping:self.searchAllMapping lines:NO error:nil],
   ];
+}
 
+- (void)testValueSemanticsOfSearch
+{
+  NSArray *batches = self.batches;
   [self assertEqualityOfCopy:batches];
   [self assertUnarchiving:batches];
   [self assertJSONSerialization:batches];
   [self assertJSONDeserialization:batches];
 }
 
+- (void)testValueSemanticsOfResult
+{
+  for (FBBatchLogSearch *batch in self.batches) {
+    FBBatchLogSearchResult *result = [batch search:self.diagnostics];
+    [self assertEqualityOfCopy:@[result]];
+    [self assertUnarchiving:@[result]];
+    [self assertJSONSerialization:@[result]];
+    [self assertJSONDeserialization:@[result]];
+  }
+}
 
 - (void)testBatchSearchFindsLinesAcrossMultipleDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping lines:YES error:nil];
-  NSDictionary *results = [batchSearch search:self.diagnostics];
+  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 3u);
   XCTAssertEqual([results[@"tree"] count], 1u);
@@ -163,7 +177,7 @@
 - (void)testBatchSearchFindsExtractsAcrossMultipleDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping lines:NO error:nil];
-  NSDictionary *results = [batchSearch search:self.diagnostics];
+  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 3u);
   XCTAssertEqual([results[@"tree"] count], 1u);
@@ -177,7 +191,7 @@
 - (void)testSearchAllFindsAcrossAllDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.searchAllMapping lines:YES error:nil];
-  NSDictionary *results = [batchSearch search:self.diagnostics];
+  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 4u);
   XCTAssertEqual([results[@"tree"] count], 1u);
