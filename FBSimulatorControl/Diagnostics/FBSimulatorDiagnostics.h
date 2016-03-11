@@ -115,6 +115,6 @@ extern NSString *const FBSimulatorLogNameScreenshot;
 
  @return an NSArray<FBDiagnostic> of all the Diagnostics associated with the Simulator.
  */
-- (NSArray *)allDiagnostics;
+- (NSArray<FBDiagnostic *> *)allDiagnostics;
 
 @end

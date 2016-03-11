@@ -164,7 +164,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [logs copy];
 }
 
-- (NSArray *)allDiagnostics
+- (NSArray<FBDiagnostic *> *)allDiagnostics
 {
   NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
     return diagnostic.hasLogContent;

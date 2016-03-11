@@ -63,7 +63,7 @@ public enum Action {
   case Boot(FBSimulatorLaunchConfiguration?)
   case Create(FBSimulatorConfiguration)
   case Delete
-  case Diagnose
+  case Diagnose([String]?)
   case Install(FBSimulatorApplication)
   case Launch(FBProcessLaunchConfiguration)
   case List
@@ -98,7 +98,9 @@ public func == (left: Action, right: Action) -> Bool {
     return leftConfiguration == rightConfiguration
   case (.Delete, .Delete):
     return true
-  case (.Diagnose, .Diagnose):
+  case (.Diagnose(.Some(let leftNames)), .Diagnose(.Some(let rightNames))):
+    return leftNames == rightNames
+  case (.Diagnose(.None), .Diagnose(.None)):
     return true
   case (.Install(let leftApp), .Install(let rightApp)):
     return leftApp == rightApp

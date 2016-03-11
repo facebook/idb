@@ -198,13 +198,8 @@ private struct SimulatorRunner : Runner {
       return SimulatorAction(translator: translator, name: EventName.Shutdown, subject: simulator) {
         try simulator.set!.killSimulator(simulator)
       }
-    case .Diagnose:
-      return SimulatorAction(translator: translator, name: EventName.Diagnose, subject: simulator) {
-        let diagnostics = simulator.diagnostics.allDiagnostics() as! [FBDiagnostic]
-        for diagnostic in diagnostics {
-          translator.reportSimulator(EventName.Diagnose, EventType.Discrete, diagnostic)
-        }
-      }
+    case .Diagnose(let names):
+      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: simulator, names: names)
     case .Delete:
       return SimulatorAction(translator: translator, name: EventName.Delete, subject: simulator) {
         try simulator.set!.deleteSimulator(simulator)
@@ -297,3 +292,27 @@ struct SimulatorInteraction : SimulatorControlActionPerformer {
   }
 }
 
+struct DiagnosticsInteraction : SimulatorControlActionPerformer {
+  let translator: EventSinkTranslator
+  let name: EventName
+  let subject: SimulatorControlSubject
+  let names: [String]?
+
+  func perform() -> CommandResult {
+    let diagnostics = self.fetchDiagnostics()
+    for diagnostic in diagnostics {
+      translator.reportSimulator(EventName.Diagnostic, EventType.Discrete, diagnostic)
+    }
+    return .Success
+  }
+
+  func fetchDiagnostics() -> [FBDiagnostic] {
+    let simulator = self.translator.simulator
+    let diagnostics = simulator.diagnostics.allDiagnostics()
+    guard let names = self.names else {
+      return diagnostics
+    }
+    let nameSet = Set(names)
+    return diagnostics.filter { nameSet.contains($0.shortName) }
+  }
+}

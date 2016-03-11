@@ -249,7 +249,8 @@ class ActionParserTests : XCTestCase {
       (["boot", "--scale=50"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
       (["boot", "--locale", "en_US", "--scale=75"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
       (["shutdown"], Action.Shutdown),
-      (["diagnose"], Action.Diagnose),
+      (["diagnose"], Action.Diagnose(nil)),
+      (["diagnose", "log1", "log2", "log3"], Action.Diagnose(["log1", "log2", "log3"])),
       (["delete"], Action.Delete),
       (["install", Fixtures.application().path], Action.Install(Fixtures.application())),
       (["launch", Fixtures.application().path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))),
@@ -294,7 +295,8 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesDiagnose() {
-    self.assertWithDefaultAction(Action.Diagnose, suffix: ["diagnose"])
+    self.assertWithDefaultAction(Action.Diagnose(nil), suffix: ["diagnose"])
+    self.assertWithDefaultAction(Action.Diagnose(["log1", "log2", "log3"]), suffix: ["diagnose", "log1", "log2", "log3"])
   }
 
   func testParsesInstall() {
@@ -392,7 +394,7 @@ class CommandParserTests : XCTestCase {
   func testParsesListBootListenShutdownDiagnose() {
     let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
     let simulatorConfiguration = FBSimulatorConfiguration.iPhone5()
-    let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, Action.Diagnose]
+    let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, Action.Diagnose(nil)]
     let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "listen", "--http", "8090", "shutdown", "diagnose"]
     self.assertWithDefaultActions(actions, suffix: suffix)
   }

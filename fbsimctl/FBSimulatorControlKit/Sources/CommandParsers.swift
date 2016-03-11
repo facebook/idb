@@ -276,7 +276,12 @@ extension Action : Parsable {
   }}
 
   static var diagnoseParser: Parser<Action> { get {
-    return Parser.ofString(EventName.Diagnose.rawValue, Action.Diagnose)
+    return Parser
+      .succeeded(
+        EventName.Diagnose.rawValue,
+        Parser.manyCount(1, Parser<String>.ofAny()).optional()
+      )
+      .fmap { Action.Diagnose($0) }
   }}
 
   static var launchParser: Parser<Action> { get {
@@ -288,7 +293,7 @@ extension Action : Parsable {
   static var listenParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Listen.rawValue, Server.parser)
-      .fmap { return Action.Listen($0) }
+      .fmap { Action.Listen($0) }
   }}
 
   static var listParser: Parser<Action> { get {
@@ -358,7 +363,7 @@ extension Action : Parsable {
 
   static var argumentParser: Parser<[String]> { get {
     return Parser.many(Parser<String>.ofAny())
-    }}
+  }}
 }
 
 extension Query : Parsable {
