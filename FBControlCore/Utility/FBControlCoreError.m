@@ -18,6 +18,7 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 
 @interface FBControlCoreError ()
 
+@property (nonatomic, copy, readwrite) NSString *domain;
 @property (nonatomic, copy, readwrite) NSString *describedAs;
 @property (nonatomic, copy, readwrite) NSError *cause;
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
@@ -35,6 +36,7 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
     return nil;
   }
 
+  _domain = FBControlCoreErrorDomain;
   _additionalInfo = [NSMutableDictionary dictionary];
   _describeRecursively = YES;
   _logger = FBControlCoreGlobalConfiguration.defaultLogger;
@@ -140,6 +142,12 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return self;
 }
 
+- (instancetype)inDomain:(NSString *)domain
+{
+  self.domain = domain;
+  return self;
+}
+
 - (NSError *)build
 {
   // If there's just a cause, there's no error to build
@@ -156,7 +164,7 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   }
   [userInfo addEntriesFromDictionary:self.additionalInfo];
 
-  NSError *error = [NSError errorWithDomain:FBControlCoreErrorDomain code:0 userInfo:[userInfo copy]];
+  NSError *error = [NSError errorWithDomain:self.domain code:0 userInfo:[userInfo copy]];
   if (FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
     [self.logger.error logFormat:@"New Error Built ==> %@", error];
   }

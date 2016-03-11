@@ -78,6 +78,14 @@ extern NSString *const FBControlCoreErrorDomain;
 - (instancetype)logger:(id<FBControlCoreLogger>)logger;
 
 /**
+ Updates the Error Domain of the reciever.
+
+ @param domain the error domain to update with.
+ @return the reciever, for chaining.
+ */
+- (instancetype)inDomain:(NSString *)domain;
+
+/**
  Builds the Error with the applied arguments.
  */
 - (NSError *)build;
