@@ -574,6 +574,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = fbsimctl/fbsimctl.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -589,6 +590,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = fbsimctl/fbsimctl.h;
 			};
