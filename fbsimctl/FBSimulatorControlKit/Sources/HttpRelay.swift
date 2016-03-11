@@ -81,6 +81,8 @@ struct HttpRoute {
         return performer.dispatchAction(action)
       } catch let error as JSONError {
         return HttpEventReporter.errorResponse(error.description)
+      } catch let error as NSError {
+        return HttpEventReporter.errorResponse(error.description)
       } catch {
         return HttpEventReporter.errorResponse(nil)
       }
@@ -159,12 +161,20 @@ class HttpRelay : Relay {
     }
   }}
 
+  private var searchRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: "search") { json in
+      let search = try FBBatchLogSearch.inflateFromJSON(json.decode())
+      return Action.Search(search)
+    }
+  }}
+
   private var routes: [HttpRoute] { get {
     return [
       self.relaunchRoute,
       self.terminateRoute,
       self.recordRoute,
-      self.diagnoseRoute
+      self.diagnoseRoute,
+      self.searchRoute,
     ]
   }}
 

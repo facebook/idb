@@ -190,29 +190,21 @@ private struct SimulatorRunner : Runner {
   static func makeActionPerformer(action : Action, _ translator: EventSinkTranslator) -> SimulatorControlActionPerformer {
     let simulator = translator.simulator
     switch action {
-    case .List:
-      return SimulatorAction(translator: translator, name: EventName.List, subject: simulator) {
-        translator.reportSimulator(EventName.List, simulator)
-      }
-    case .Shutdown:
-      return SimulatorAction(translator: translator, name: EventName.Shutdown, subject: simulator) {
-        try simulator.set!.killSimulator(simulator)
-      }
-    case .Diagnose(let names):
-      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: simulator, names: names)
-    case .Delete:
-      return SimulatorAction(translator: translator, name: EventName.Delete, subject: simulator) {
-        try simulator.set!.deleteSimulator(simulator)
+    case .Approve(let bundleIDs):
+      return SimulatorInteraction(translator: translator, name: EventName.Approve, subject: bundleIDs as NSArray) { interaction in
+        interaction.authorizeLocationSettings(bundleIDs)
       }
     case .Boot(let maybeLaunchConfiguration):
       let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
       return SimulatorInteraction(translator: translator, name: EventName.Boot, subject: launchConfiguration) { interaction in
         interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
       }
-    case .Approve(let bundleIDs):
-      return SimulatorInteraction(translator: translator, name: EventName.Approve, subject: bundleIDs as NSArray) { interaction in
-        interaction.authorizeLocationSettings(bundleIDs)
+    case .Delete:
+      return SimulatorAction(translator: translator, name: EventName.Delete, subject: simulator) {
+        try simulator.set!.deleteSimulator(simulator)
       }
+    case .Diagnose(let names):
+      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: simulator, names: names)
     case .Install(let application):
       return SimulatorInteraction(translator: translator, name: EventName.Install, subject: application) { interaction in
         interaction.installApplication(application)
@@ -226,6 +218,10 @@ private struct SimulatorRunner : Runner {
           interaction.launchAgent(agentLaunch)
         }
       }
+    case .List:
+      return SimulatorAction(translator: translator, name: EventName.List, subject: simulator) {
+        translator.reportSimulator(EventName.List, simulator)
+      }
     case .Record(let start):
       return SimulatorInteraction(translator: translator, name: EventName.Record, subject: simulator) { interaction in
         if (start) {
@@ -237,6 +233,12 @@ private struct SimulatorRunner : Runner {
     case .Relaunch(let appLaunch):
       return SimulatorInteraction(translator: translator, name: EventName.Relaunch, subject: appLaunch) { interaction in
         interaction.launchOrRelaunchApplication(appLaunch)
+      }
+    case .Search(let search):
+      return SearchInteraction(translator: translator, name: EventName.Search, search: search)
+    case .Shutdown:
+      return SimulatorAction(translator: translator, name: EventName.Shutdown, subject: simulator) {
+        try simulator.set!.killSimulator(simulator)
       }
     case .Terminate(let bundleID):
       return SimulatorInteraction(translator: translator, name: EventName.Record, subject: bundleID as NSString) { interaction in
@@ -314,5 +316,19 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
     }
     let nameSet = Set(names)
     return diagnostics.filter { nameSet.contains($0.shortName) }
+  }
+}
+
+struct SearchInteraction : SimulatorControlActionPerformer {
+  let translator: EventSinkTranslator
+  let name: EventName
+  let search: FBBatchLogSearch
+
+  func perform() -> CommandResult {
+    let simulator = self.translator.simulator
+    let diagnostics = simulator.diagnostics.allDiagnostics()
+    let results = search.search(diagnostics)
+    translator.reportSimulator(EventName.Search, EventType.Discrete, results)
+    return .Success
   }
 }

@@ -70,6 +70,7 @@ public enum Action {
   case Listen(Server)
   case Record(Bool)
   case Relaunch(FBApplicationLaunchConfiguration)
+  case Search(FBBatchLogSearch)
   case Shutdown
   case Terminate(String)
 }
@@ -114,6 +115,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftStart == rightStart
   case (.Relaunch(let leftLaunch), .Relaunch(let rightLaunch)):
     return leftLaunch == rightLaunch
+  case (.Search(let leftSearch), .Search(let rightSearch)):
+    return leftSearch == rightSearch
   case (.Shutdown, .Shutdown):
     return true
   case (.Terminate(let leftBundleID), .Terminate(let rightBundleID)):
