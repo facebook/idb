@@ -128,10 +128,17 @@ public protocol JSONDescribeable {
 */
 extension JSON {
   func getValue(key: String) throws -> JSON {
+    guard let value = try getOptionalValue(key) else {
+      throw JSONError.Parse("Could not find \(key) in dictionary \(self)")
+    }
+    return value
+  }
+
+  func getOptionalValue(key: String) throws -> JSON? {
     switch self {
     case .JDictionary(let dictionary):
       guard let value = dictionary[key] else {
-        throw JSONError.Parse("Could not find \(key) in dictionary \(dictionary)")
+        return nil
       }
       return value
     default:
