@@ -97,16 +97,16 @@ class SimpleEvent : NSObject, JSONDescribeable {
   }
 }
 
-@objc class LogEvent : NSObject, JSONDescribeable {
+@objc public class LogEvent : NSObject, JSONDescribeable {
   let logString: String
   let level: Int32
 
-  init(_ logString: String, level: Int32) {
+  public init(_ logString: String, level: Int32) {
     self.logString = logString
     self.level = level
   }
 
-  var jsonDescription: JSON {
+  public var jsonDescription: JSON {
     get {
       return JSON.JDictionary([
         "event_name" : JSON.JString(EventName.Diagnostic.rawValue),
@@ -118,7 +118,7 @@ class SimpleEvent : NSObject, JSONDescribeable {
     }
   }
 
-  override var description: String {
+  public override var description: String {
     get {
       return self.logString
     }

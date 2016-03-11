@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA0DE44D1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
 		AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
 		AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -26,47 +25,26 @@
 		AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
-		AA3ADDB91C2B19A4004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
-		AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
 		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
-		AA54EF761C48DE6F006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
-		AA60468F1C7A96E500639DD5 /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* CommandPerformer.swift */; };
 		AA6046901C7A96E500639DD5 /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* CommandPerformer.swift */; };
-		AA6085BE1C287AC3009B500E /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA6085CF1C287DBD009B500E /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE35A7C1C2863EB0073CC70 /* main.swift */; };
-		AA6085D11C287E02009B500E /* Bridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */; };
-		AA6085D21C287E02009B500E /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5D1C2867EE0038C6A5 /* Command.swift */; };
-		AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */; };
-		AA6085D41C287E02009B500E /* Bridging.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F601C2867EE0038C6A5 /* Bridging.m */; };
-		AA6085D51C287E02009B500E /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F611C2867EE0038C6A5 /* Help.swift */; };
-		AA6085D61C287E02009B500E /* LineBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */; };
-		AA6085D71C287E02009B500E /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F641C2867EE0038C6A5 /* Parser.swift */; };
-		AA6085D81C287E02009B500E /* Relay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F651C2867EE0038C6A5 /* Relay.swift */; };
-		AA6085D91C287E02009B500E /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F661C2867EE0038C6A5 /* Runners.swift */; };
-		AA6085DA1C287E02009B500E /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
-		AA6085DB1C287E02009B500E /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
-		AA6085DC1C287E02009B500E /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
 		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
-		AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
-		AA83D5E61C57E5FE003B253E /* JSONLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5E51C57E5FE003B253E /* JSONLogger.m */; };
-		AA83D5EB1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
 		AA83D5EC1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
 		AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
-		AACF9F541C46E85800B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
-		AAD999551C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAD999571C68D80B0014D61F /* Swifter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AAD9995A1C68D8680014D61F /* Swifter.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
 		AAE0C5561C49214F005DE6D9 /* CommandParsersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD721C29412C000123BA /* CommandParsersTests.swift */; };
-		AAE0C5571C492158005DE6D9 /* Query.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE0C5521C4904BC005DE6D9 /* Query.swift */; };
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
 		AAF2D34E1C32EA4D00434516 /* Writer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D34D1C32EA4D00434516 /* Writer.swift */; };
-		AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D34D1C32EA4D00434516 /* Writer.swift */; };
 		AAF6DC801C466E7600C7E1E2 /* Fixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF6DC7F1C466E7600C7E1E2 /* Fixtures.swift */; };
+		AAFE7AB11C92F01300D92E46 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
+		AAFE7AB31C92F19D00D92E46 /* CLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFE7AB21C92F19D00D92E46 /* CLI.swift */; };
+		AAFE7AB61C92F25B00D92E46 /* JSONLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFE7AB41C92F25B00D92E46 /* JSONLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAFE7AB71C92F25B00D92E46 /* JSONLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFE7AB51C92F25B00D92E46 /* JSONLogger.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,7 +75,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				AAD9995A1C68D8680014D61F /* Swifter.framework in Copy Files */,
 			);
 			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -125,10 +102,7 @@
 		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		AA60468E1C7A96E500639DD5 /* CommandPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
-		AA6085BF1C287B36009B500E /* fbsimctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fbsimctl.h; sourceTree = "<group>"; };
 		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
-		AA83D5E41C57E5FE003B253E /* JSONLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSONLogger.h; sourceTree = "<group>"; };
-		AA83D5E51C57E5FE003B253E /* JSONLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JSONLogger.m; sourceTree = "<group>"; };
 		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -144,6 +118,9 @@
 		AAE35AD21C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AAF2D34D1C32EA4D00434516 /* Writer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Writer.swift; sourceTree = "<group>"; };
 		AAF6DC7F1C466E7600C7E1E2 /* Fixtures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fixtures.swift; sourceTree = "<group>"; };
+		AAFE7AB21C92F19D00D92E46 /* CLI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLI.swift; sourceTree = "<group>"; };
+		AAFE7AB41C92F25B00D92E46 /* JSONLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSONLogger.h; sourceTree = "<group>"; };
+		AAFE7AB51C92F25B00D92E46 /* JSONLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JSONLogger.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -151,8 +128,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA6085BE1C287AC3009B500E /* FBSimulatorControl.framework in Frameworks */,
-				AAD999551C68D1460014D61F /* Swifter.framework in Frameworks */,
+				AAFE7AB11C92F01300D92E46 /* FBSimulatorControlKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -183,6 +159,7 @@
 				AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */,
 				AA1B7F601C2867EE0038C6A5 /* Bridging.m */,
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
+				AAFE7AB21C92F19D00D92E46 /* CLI.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
 				AA60468E1C7A96E500639DD5 /* CommandPerformer.swift */,
@@ -193,6 +170,8 @@
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
 				AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */,
 				AA54EF741C48275B006D5118 /* JSON.swift */,
+				AAFE7AB41C92F25B00D92E46 /* JSONLogger.h */,
+				AAFE7AB51C92F25B00D92E46 /* JSONLogger.m */,
 				AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */,
 				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
 				AAE0C5521C4904BC005DE6D9 /* Query.swift */,
@@ -257,9 +236,6 @@
 		AAE35A7B1C2863EB0073CC70 /* fbsimctl */ = {
 			isa = PBXGroup;
 			children = (
-				AA6085BF1C287B36009B500E /* fbsimctl.h */,
-				AA83D5E41C57E5FE003B253E /* JSONLogger.h */,
-				AA83D5E51C57E5FE003B253E /* JSONLogger.m */,
 				AAE35A7C1C2863EB0073CC70 /* main.swift */,
 			);
 			path = fbsimctl;
@@ -294,6 +270,7 @@
 			files = (
 				AA1B7F6E1C2867EE0038C6A5 /* Bridging.h in Headers */,
 				AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */,
+				AAFE7AB61C92F25B00D92E46 /* JSONLogger.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -409,30 +386,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAE0C5571C492158005DE6D9 /* Query.swift in Sources */,
-				AA54EF731C4818F9006D5118 /* Arguments.swift in Sources */,
-				AA78DCD71C4E9F61006FAB41 /* EventReporter.swift in Sources */,
-				AA6085D11C287E02009B500E /* Bridging.swift in Sources */,
-				AA6085D21C287E02009B500E /* Command.swift in Sources */,
-				AA6085D31C287E02009B500E /* CommandParsers.swift in Sources */,
-				AAF2D34F1C32EAE100434516 /* Writer.swift in Sources */,
-				AA0DE44D1C68894000B4D2AF /* HttpRelay.swift in Sources */,
-				AA6085D41C287E02009B500E /* Bridging.m in Sources */,
-				AA6085D51C287E02009B500E /* Help.swift in Sources */,
-				AA60468F1C7A96E500639DD5 /* CommandPerformer.swift in Sources */,
-				AA54EF761C48DE6F006D5118 /* JSON.swift in Sources */,
-				AA83D5E61C57E5FE003B253E /* JSONLogger.m in Sources */,
-				AA83D5EB1C58E368003B253E /* Events.swift in Sources */,
-				AA6085D61C287E02009B500E /* LineBuffer.swift in Sources */,
-				AA6085D71C287E02009B500E /* Parser.swift in Sources */,
-				AA6085D81C287E02009B500E /* Relay.swift in Sources */,
-				AA6085D91C287E02009B500E /* Runners.swift in Sources */,
-				AA6085DA1C287E02009B500E /* SignalHandler.swift in Sources */,
-				AA6085DB1C287E02009B500E /* SocketRelay.swift in Sources */,
-				AA3ADDB91C2B19A4004E4FA9 /* Defaults.swift in Sources */,
-				AA6085DC1C287E02009B500E /* StdIORelay.swift in Sources */,
 				AA6085CF1C287DBD009B500E /* main.swift in Sources */,
-				AACF9F541C46E85800B17E82 /* Environment.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -440,6 +394,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAFE7AB31C92F19D00D92E46 /* CLI.swift in Sources */,
 				AA1B7F711C2867EE0038C6A5 /* LineBuffer.swift in Sources */,
 				AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */,
 				AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */,
@@ -448,6 +403,7 @@
 				AA1B7F6F1C2867EE0038C6A5 /* Bridging.m in Sources */,
 				AA6046901C7A96E500639DD5 /* CommandPerformer.swift in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
+				AAFE7AB71C92F25B00D92E46 /* JSONLogger.m in Sources */,
 				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
 				AAE0C5531C4904BC005DE6D9 /* Query.swift in Sources */,
 				AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */,
@@ -522,7 +478,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -559,7 +515,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 			};
@@ -574,9 +530,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = fbsimctl/fbsimctl.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -590,9 +544,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = fbsimctl/fbsimctl.h;
 			};
 			name = Release;
 		};
@@ -605,6 +557,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
@@ -630,6 +583,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",

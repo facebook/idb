@@ -11,7 +11,7 @@
 
 #import <asl.h>
 
-#import "fbsimctl-Swift.h"
+#import <FBSimulatorControlKit/FBSimulatorControlKit-Swift.h>
 
 @interface JSONLogger ()
 

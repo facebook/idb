@@ -16,3 +16,4 @@ FOUNDATION_EXPORT double FBSimulatorControlKitVersionNumber;
 FOUNDATION_EXPORT const unsigned char FBSimulatorControlKitVersionString[];
 
 #import <FBSimulatorControlKit/Bridging.h>
+#import <FBSimulatorControlKit/JSONLogger.h>

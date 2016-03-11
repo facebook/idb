@@ -19,18 +19,18 @@ public struct OutputOptions : OptionSetType {
     self.rawValue = rawValue
   }
 
-  static let DebugLogging = OutputOptions(rawValue: 1 << 0)
-  static let JSON = OutputOptions(rawValue: 1 << 1)
-  static let Pretty = OutputOptions(rawValue: 1 << 2)
+  public static let DebugLogging = OutputOptions(rawValue: 1 << 0)
+  public static let JSON = OutputOptions(rawValue: 1 << 1)
+  public static let Pretty = OutputOptions(rawValue: 1 << 2)
 }
 
 /**
   Describes the Configuration for the running FBSimulatorControl Commands
 */
 public struct Configuration {
-  let output: OutputOptions
-  let deviceSetPath: String?
-  let managementOptions: FBSimulatorManagementOptions
+  public let output: OutputOptions
+  public let deviceSetPath: String?
+  public let managementOptions: FBSimulatorManagementOptions
 }
 
 /**

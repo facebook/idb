@@ -59,7 +59,7 @@ public struct Parser<A> : CustomStringConvertible {
     self.output = output
   }
 
-  func parse(tokens: [String]) throws -> ([String], A) {
+  public func parse(tokens: [String]) throws -> ([String], A) {
     let (nextTokens, value) = try output(tokens)
     return (nextTokens, value)
   }

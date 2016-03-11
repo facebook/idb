@@ -131,7 +131,7 @@ public class HumanReadableEventReporter : EventReporter {
     self.writer.write(try! subject.jsonDescription.serializeToString(pretty) as String)
   }
 
-  func reportLogBridge(subject: LogEvent) {
+  public func reportLogBridge(subject: LogEvent) {
     self.report(subject)
   }
 }
