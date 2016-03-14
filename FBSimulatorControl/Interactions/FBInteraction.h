@@ -65,4 +65,11 @@
  */
 - (instancetype)succeed;
 
+/**
+ Chains an interaction that will allways fail
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)fail:(NSError *)error;
+
 @end

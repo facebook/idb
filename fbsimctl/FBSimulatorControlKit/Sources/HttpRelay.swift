@@ -184,6 +184,27 @@ class HttpRelay : Relay {
     }
   }}
 
+  private var uploadRoute: HttpRoute { get {
+    let jsonToDiagnostics: JSON throws -> [FBDiagnostic] = { json in
+      switch json {
+      case .JArray(let array):
+        let diagnostics = try array.map { jsonDiagnostic in
+          return try FBDiagnostic.inflateFromJSON(json.decode())
+        }
+        return diagnostics
+      case .JDictionary:
+        let diagnostic = try FBDiagnostic.inflateFromJSON(json.decode())
+        return [diagnostic]
+      default:
+        throw JSONError.Parse("Unparsable Diagnostic")
+      }
+    }
+
+    return HttpRoute(method: HttpMethod.POST, endpoint: "upload") { json in
+      return Action.Upload(try jsonToDiagnostics(json))
+    }
+  }}
+
   private var routes: [HttpRoute] { get {
     return [
       self.relaunchRoute,
@@ -191,6 +212,7 @@ class HttpRelay : Relay {
       self.recordRoute,
       self.diagnoseRoute,
       self.searchRoute,
+      self.uploadRoute
     ]
   }}
 

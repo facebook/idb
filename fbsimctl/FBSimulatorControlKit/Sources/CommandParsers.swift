@@ -308,7 +308,8 @@ extension Action : Parsable {
         self.recordParser,
         self.relaunchParser,
         self.shutdownParser,
-        self.terminateParser
+        self.terminateParser,
+        self.uploadParser,
       ])
   }}
 
@@ -387,6 +388,20 @@ extension Action : Parsable {
     return Parser
       .succeeded(EventName.Terminate.rawValue, Parser<Any>.ofBundleID)
       .fmap { Action.Terminate($0) }
+  }}
+
+  static var uploadParser: Parser<Action> { get {
+    return Parser
+      .succeeded(
+        EventName.Upload.rawValue,
+        Parser.manyCount(1, Parser<Any>.ofFile)
+      )
+      .fmap { paths in
+        let diagnostics: [FBDiagnostic] = paths.map { path in
+          return FBDiagnosticBuilder().updatePath(path).build()
+        }
+        return Action.Upload(diagnostics)
+      }
   }}
 
   static var processLaunchParser: Parser<FBProcessLaunchConfiguration> { get {

@@ -308,9 +308,7 @@
     return block(error, strongInteraction);
   }];
 
-  FBInteraction *interaction = [self copy];
-  interaction->_interaction = [FBInteraction first:self.interaction second:next];
-  return interaction;
+  return [self chainNext:next];
 }
 
 - (instancetype)succeed
@@ -318,11 +316,25 @@
   return self;
 }
 
+- (instancetype)fail:(NSError *)error
+{
+  return [self chainNext:[FBInteraction fail:error]];
+}
+
 #pragma mark FBInteraction
 
 - (BOOL)perform:(NSError **)error
 {
   return [self.interaction perform:error];
+}
+
+#pragma mark Private
+
+- (instancetype)chainNext:(id<FBInteraction>)next
+{
+  FBInteraction *interaction = [self copy];
+  interaction->_interaction = [FBInteraction first:self.interaction second:next];
+  return interaction;
 }
 
 @end

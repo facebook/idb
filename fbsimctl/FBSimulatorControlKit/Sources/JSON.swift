@@ -146,22 +146,36 @@ extension JSON {
     }
   }
 
-  func getArray() throws -> [JSON] {
+  func getOptionalArray() -> [JSON]? {
     switch self {
     case .JArray(let array):
       return array
     default:
-      throw JSONError.Parse("\(self) not an array")
+      return nil
     }
   }
 
-  func getDictionary() throws -> [String : JSON] {
+  func getArray() throws -> [JSON] {
+    guard let array = getOptionalArray() else {
+      throw JSONError.Parse("\(self) not an array")
+    }
+    return array
+  }
+
+  func getOptionalDictionary() -> [String : JSON]? {
     switch self {
     case .JDictionary(let dictionary):
       return dictionary
     default:
-      throw JSONError.Parse("\(self) not a dictionary")
+      return nil
     }
+  }
+
+  func getDictionary() throws -> [String : JSON] {
+    guard let dictionary = getOptionalDictionary() else {
+       throw JSONError.Parse("\(self) not a dictionary")
+    }
+    return dictionary
   }
 
   func getString() throws -> String {

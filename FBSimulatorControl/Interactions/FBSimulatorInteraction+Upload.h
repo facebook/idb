@@ -12,12 +12,20 @@
 @interface FBSimulatorInteraction (Upload)
 
 /**
+ Uploads photos or videos to the Camera Roll of the Simulator.
+
+ @param mediaPaths an NSArray<NSString *> of File Paths for the Videos to Upload.
+ @return the reciever, for chaining.
+ */
+- (instancetype)uploadMedia:(NSArray<NSString *> *)mediaPaths;
+
+/**
  Uploads photos to the Camera Roll of the Simulator
 
  @param photoPaths photoPaths an NSArray<NSString *> of File Paths for the Photos to Upload.
  @return the reciever, for chaining.
  */
-- (instancetype)uploadPhotos:(NSArray *)photoPaths;
+- (instancetype)uploadPhotos:(NSArray<NSString *> *)photoPaths;
 
 /**
  Uploads videos to the Camera Roll of the Simulator
@@ -25,6 +33,6 @@
  @param videoPaths an NSArray<NSString *> of File Paths for the Videos to Upload.
  @return the reciever, for chaining.
  */
-- (instancetype)uploadVideos:(NSArray *)videoPaths;
+- (instancetype)uploadVideos:(NSArray<NSString *> *)videoPaths;
 
 @end

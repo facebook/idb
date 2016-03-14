@@ -244,6 +244,13 @@ private struct SimulatorRunner : Runner {
       return SimulatorInteraction(translator: translator, name: EventName.Record, subject: bundleID as NSString) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)
       }
+    case .Upload(let diagnostics):
+      let paths: [String] = diagnostics.map { diagnostic in
+        return diagnostic.asPath
+      }
+      return SimulatorInteraction(translator: translator, name: EventName.Upload, subject: paths as NSArray) { interaction in
+        interaction.uploadMedia(paths)
+      }
     default:
       return SimulatorAction(translator: translator, name: EventName.Failure, subject: simulator) {
         assertionFailure("Unimplemented")

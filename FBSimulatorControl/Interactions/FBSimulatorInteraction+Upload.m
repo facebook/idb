@@ -9,6 +9,8 @@
 
 #import "FBSimulatorInteraction+Upload.h"
 
+#import <Cocoa/Cocoa.h>
+
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBProcessLaunchConfiguration+Helpers.h"
@@ -22,6 +24,23 @@
 #import "FBSimulatorPool.h"
 
 @implementation FBSimulatorInteraction (Upload)
+
+- (instancetype)uploadMedia:(NSArray<NSString *> *)mediaPaths
+{
+  if (!mediaPaths.count) {
+    return [self succeed];
+  }
+
+  NSError *error = nil;
+  NSArray<NSArray<NSString *> *> *divided = [FBSimulatorInteraction divideArrayOfMediaPathsInfoPhotosAndVideos:mediaPaths error:&error];
+  if (!divided) {
+    return [self fail:error];
+  }
+  NSArray<NSString *> *photos = divided[0];
+  NSArray<NSString *> *videos = divided[1];
+
+  return [[self uploadPhotos:photos] uploadVideos:videos];
+}
 
 - (instancetype)uploadPhotos:(NSArray *)photoPaths
 {
@@ -63,6 +82,30 @@
 
     return YES;
   }];
+}
+
+#pragma mark Private
+
++ (NSArray<NSArray<NSString *> *> *)divideArrayOfMediaPathsInfoPhotosAndVideos:(NSArray *)mediaPaths error:(NSError **)error
+{
+  NSMutableArray *photos = [NSMutableArray array];
+  NSMutableArray *videos = [NSMutableArray array];
+
+  NSSet *imageUTIs = [NSSet setWithArray:@[(NSString *)kUTTypeImage, (NSString *)kUTTypePNG, (NSString *)kUTTypeJPEG, (NSString *)kUTTypeJPEG2000]];
+  NSSet *movieUTIs = [NSSet setWithArray:@[(NSString *)kUTTypeMovie, (NSString *)kUTTypeMPEG4, (NSString *)kUTTypeQuickTimeMovie]];
+
+  for (NSString *path in mediaPaths) {
+    NSString *uti = [NSWorkspace.sharedWorkspace typeOfFile:path error:nil];
+    if ([imageUTIs containsObject:uti]) {
+      [photos addObject:path];
+    } else if ([movieUTIs containsObject:uti]) {
+      [videos addObject:path];
+    } else {
+      return [[FBSimulatorError describeFormat:@"%@ has a non media uti of %@", path, uti] fail:error];
+    }
+  }
+
+  return @[[photos copy], [videos copy]];
 }
 
 @end

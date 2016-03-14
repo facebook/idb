@@ -87,6 +87,7 @@ public enum Action {
   case Search(FBBatchLogSearch)
   case Shutdown
   case Terminate(String)
+  case Upload([FBDiagnostic])
 }
 
 /**
@@ -133,6 +134,8 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.Terminate(let leftBundleID), .Terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
+  case (.Upload(let leftPaths), .Upload(let rightPaths)):
+    return leftPaths == rightPaths
   default:
     return false
   }

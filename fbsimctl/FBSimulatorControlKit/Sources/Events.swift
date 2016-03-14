@@ -34,6 +34,7 @@ public enum EventName : String {
   case Signalled = "signalled"
   case StateChange = "state"
   case Terminate = "terminate"
+  case Upload = "upload"
 }
 
 public enum EventType : String {

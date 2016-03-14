@@ -243,7 +243,7 @@ class ActionParserTests : XCTestCase {
     self.assertParsesAll(Action.parser, [
       (["list"], Action.List),
       (["approve", "com.foo.bar", "com.bing.bong"], Action.Approve(["com.foo.bar", "com.bing.bong"])),
-      (["approve", Fixtures.application().path], Action.Approve([Fixtures.application().bundleID])),
+      (["approve", Fixtures.application.path], Action.Approve([Fixtures.application.bundleID])),
       (["boot"], Action.Boot(nil)),
       (["boot", "--locale", "fr_FR"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
       (["boot", "--scale=50"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
@@ -252,9 +252,9 @@ class ActionParserTests : XCTestCase {
       (["diagnose"], Action.Diagnose(DiagnosticQuery.Default)),
       (["diagnose", "--name", "log1", "--name", "log2"], Action.Diagnose(DiagnosticQuery.Named(["log1", "log2"]))),
       (["delete"], Action.Delete),
-      (["install", Fixtures.application().path], Action.Install(Fixtures.application())),
-      (["launch", Fixtures.application().path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))),
-      (["launch", Fixtures.binary().path], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:])))
+      (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
+      (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
+      (["launch", Fixtures.binary.path], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:])))
     ])
   }
 
@@ -302,8 +302,8 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesInstall() {
-    let action = Action.Install(Fixtures.application())
-    let suffix: [String] = ["install", Fixtures.application().path]
+    let action = Action.Install(Fixtures.application)
+    let suffix: [String] = ["install", Fixtures.application.path]
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
@@ -324,26 +324,26 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesLaunchAgent() {
-    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.binary().path]
+    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.binary.path]
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
   func testParsesLaunchAgentWithArguments() {
-    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary(), arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.binary().path, "--foo", "-b", "-a", "-r"]
+    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.binary.path, "--foo", "-b", "-a", "-r"]
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
   func testParseLaunchAppByPath() {
-    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.application().path]
+    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.application.path]
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
   func testParsesLaunchAppByPathWithArguments() {
-    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application().bundleID, bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.application().path, "--foo", "-b", "-a", "-r"]
+    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
+    let suffix: [String] = ["launch", Fixtures.application.path, "--foo", "-b", "-a", "-r"]
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
@@ -407,6 +407,10 @@ class CommandParserTests : XCTestCase {
       (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
       (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
     ])
+  }
+
+  func testParsesUpload() {
+    self.assertWithDefaultAction(Action.Upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic]), suffix: ["upload", Fixtures.photoPath, Fixtures.videoPath])
   }
 
   func assertWithDefaultAction(action: Action, suffix: [String]) {
