@@ -189,7 +189,7 @@ class HttpRelay : Relay {
       switch json {
       case .JArray(let array):
         let diagnostics = try array.map { jsonDiagnostic in
-          return try FBDiagnostic.inflateFromJSON(json.decode())
+          return try FBDiagnostic.inflateFromJSON(jsonDiagnostic.decode())
         }
         return diagnostics
       case .JDictionary:

@@ -14,6 +14,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorHistory+Queries.h"
 
@@ -166,10 +167,6 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (NSArray<FBDiagnostic *> *)allDiagnostics
 {
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
-    return diagnostic.hasLogContent;
-  }];
-
   NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
     self.syslog,
     self.coreSimulator,
@@ -177,7 +174,23 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   ]];
   [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
   [logs addObjectsFromArray:self.eventLogs.allValues];
-  return [logs filteredArrayUsingPredicate:predicate];
+  return [logs filteredArrayUsingPredicate:FBSimulatorDiagnostics.predicateForHasContent];
+}
+
+- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback
+{
+  NSString *directory = nil;
+  if (bundleID) {
+    directory = [self.simulator homeDirectoryOfApplicationWithBundleID:bundleID error:nil];
+  }
+  if (!directory && globalFallback) {
+    directory = self.simulator.dataDirectory;
+  }
+  if (!directory) {
+    return @[];
+  }
+  NSArray *paths = [FBFileFinder mostRecentFindFiles:filenames inDirectory:directory];
+  return [FBSimulatorDiagnostics diagnosticsForPaths:paths];
 }
 
 #pragma mark FBSimulatorEventSink Implementation
@@ -285,6 +298,11 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
 }
 
+- (NSString *)applicationContainersPath
+{
+  return [self.simulator.dataDirectory stringByAppendingPathComponent:@"Containers/Data/Application"];
+}
+
 - (NSString *)aslPath
 {
   return [[[NSHomeDirectory()
@@ -318,6 +336,22 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   }];
 
   return [[self crashInfoAfterDate:date] filteredArrayUsingPredicate:parentProcessPredicate];
+}
+
++ (NSArray *)diagnosticsForPaths:(NSArray *)paths
+{
+  NSMutableArray *array = [NSMutableArray array];
+  for (NSString *path in paths) {
+    [array addObject:[[[FBDiagnosticBuilder builder] updatePath:path] build]];
+  }
+  return [array filteredArrayUsingPredicate:self.predicateForHasContent];
+}
+
++ (NSPredicate *)predicateForHasContent
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
+    return diagnostic.hasLogContent;
+  }];
 }
 
 + (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension

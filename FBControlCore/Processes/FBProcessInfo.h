@@ -47,11 +47,11 @@
 /**
  An NSArray<NSString *> of the launch arguments of the process.
  */
-@property (nonatomic, copy, readonly) NSArray *arguments;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
 
 /**
  An NSDictionary<NSString *, NSString *> of the environment of the process.
  */
-@property (nonatomic, copy, readonly) NSDictionary *environment;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
 
 @end

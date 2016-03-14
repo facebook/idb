@@ -179,6 +179,23 @@
   return [appInfo[@"ApplicationType"] isEqualToString:@"System"];
 }
 
+- (NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSParameterAssert(bundleID);
+
+  NSError *innerError = nil;
+  FBProcessInfo *runningApplication = [self runningApplicationWithBundleID:bundleID error:&innerError];
+  if (!runningApplication) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+  NSString *homeDirectory = runningApplication.environment[@"HOME"];
+  if (![NSFileManager.defaultManager fileExistsAtPath:homeDirectory]) {
+    return [[FBSimulatorError describeFormat:@"App Home Directory does not exist at path %@", homeDirectory] fail:error];
+  }
+
+  return homeDirectory;
+}
+
 - (FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSParameterAssert(bundleID);
@@ -214,13 +231,6 @@
     ]];
   }
   return [NSSet set];
-}
-
-- (NSString *)homeDirectoryOfLastLaunchedApplication
-{
-  FBProcessInfo *processInfo = [self.history lastLaunchedApplicationProcess];
-  NSDictionary *environment = processInfo.environment;
-  return environment[@"HOME"];
 }
 
 #pragma mark Private

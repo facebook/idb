@@ -51,29 +51,29 @@
   return [set array];
 }
 
-- (NSArray *)allLaunchedApplicationProcesses
+- (NSArray<FBProcessInfo *> *)allLaunchedApplicationProcesses
 {
   return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedApplicationProcesses];
 }
 
-- (NSArray *)allLaunchedAgentProcesses
+- (NSArray<FBProcessInfo *> *)allLaunchedAgentProcesses
 {
   return [self.allUserLaunchedProcesses filteredArrayUsingPredicate:self.predicateForUserLaunchedAgentProcesses];
 }
 
-- (NSArray *)allProcessLaunches
+- (NSArray<FBProcessLaunchConfiguration *> *)allProcessLaunches
 {
   return [self.processLaunchConfigurations objectsForKeys:self.launchedProcesses notFoundMarker:NSNull.null];
 }
 
-- (NSArray *)allApplicationLaunches
+- (NSArray<FBApplicationLaunchConfiguration *> *)allApplicationLaunches
 {
-  return [self.allProcessLaunches filteredArrayUsingPredicate:[FBSimulatorHistory predicateForApplicationLaunches]];
+  return (NSArray<FBApplicationLaunchConfiguration *> *) [self.allProcessLaunches filteredArrayUsingPredicate:[FBSimulatorHistory predicateForApplicationLaunches]];
 }
 
-- (NSArray *)allAgentLaunches
+- (NSArray<FBAgentLaunchConfiguration *> *)allAgentLaunches
 {
-  return [self.allProcessLaunches
+  return (NSArray<FBAgentLaunchConfiguration *> *) [self.allProcessLaunches
     filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:[FBSimulatorHistory predicateForApplicationLaunches]]
   ];
 }
@@ -117,7 +117,7 @@
   return [self runningProcessForApplication:application recursive:NO];
 }
 
-- (NSDictionary *)processTerminationStatuses
+- (NSDictionary<FBProcessInfo *, NSNumber *> *)processTerminationStatuses
 {
   NSDictionary *processMetadata = self.processMetadata;
   NSMutableDictionary *statuses = [NSMutableDictionary dictionary];
@@ -142,7 +142,7 @@
   return nil;
 }
 
-- (NSArray *)changesToSimulatorState
+- (NSArray<FBSimulatorHistory *> *)changesToSimulatorState
 {
   return [self changesToKeyPath:@"simulatorState"];
 }

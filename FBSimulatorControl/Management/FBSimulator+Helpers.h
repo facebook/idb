@@ -110,13 +110,21 @@
 - (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
- Determinates whether a provided Bundle ID represents a System Application
+ Determines whether a provided Bundle ID represents a System Application
 
  @param bundleID the Bundle ID to fetch an installed application for.
  @param error an error out for any error that occurs.
  @return YES if the Application with the provided is a System Application, NO otherwise.
 */
 - (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Determines the location of the Home Directory of an Application.
+
+ @param bundleID the Bundle ID of the Application to search for,.
+ @param error an error out for any error that occurs.
+ */
+- (NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Returns the Process Info for a Application by Bundle ID.
@@ -138,10 +146,5 @@
  @return a NSSet<NSString> of the required process names.
  */
 - (NSSet *)requiredProcessNamesToVerifyBooted;
-
-/**
- Returns the home folder of the last application launched
- */
-- (NSString *)homeDirectoryOfLastLaunchedApplication;
 
 @end

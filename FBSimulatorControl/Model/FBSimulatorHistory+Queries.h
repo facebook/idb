@@ -25,7 +25,7 @@
 
  @return an NSArray<FBProcessInfo> of the currently running, User Launched Applications.
  */
-- (NSArray *)launchedApplicationProcesses;
+- (NSArray<FBProcessInfo *> *)launchedApplicationProcesses;
 
 /**
  Returns Process Info for currently-running agents.
@@ -33,7 +33,7 @@
 
  @return an NSArray<FBProcessInfo> of the currently running, User Launched Agents.
  */
-- (NSArray *)launchedAgentProcesses;
+- (NSArray<FBProcessInfo *> *)launchedAgentProcesses;
 
 /**
  Returns all of the Agents and Applications that have been launched, in the order that they were launched.
@@ -41,7 +41,7 @@
 
  @return An NSArray<FBProcessInfo> of All Launched Processes, most recent first.
  */
-- (NSArray *)allUserLaunchedProcesses;
+- (NSArray<FBProcessInfo *> *)allUserLaunchedProcesses;
 
 /**
  Returns all of the Applications that have been launched, in the order that they were launched.
@@ -49,7 +49,7 @@
 
  @return An NSArray<FBProcessInfo> of All Launched Application Processes, most recent first.
  */
-- (NSArray *)allLaunchedApplicationProcesses;
+- (NSArray<FBProcessInfo *> *)allLaunchedApplicationProcesses;
 
 /**
  Returns all of the Agents that have been launched, in the order that they were launched.
@@ -57,7 +57,7 @@
 
  @return An NSArray<FBProcessInfo> of All Launched Agent Processes, most recent first.
  */
-- (NSArray *)allLaunchedAgentProcesses;
+- (NSArray<FBProcessInfo *> *)allLaunchedAgentProcesses;
 
 /**
  Returns all Process Launch Configurations.
@@ -65,7 +65,7 @@
 
  @return An NSArray<FBProcessLaunchConfiguration> of all historical Process Launches, most recent first.
  */
-- (NSArray *)allProcessLaunches;
+- (NSArray<FBProcessLaunchConfiguration *> *)allProcessLaunches;
 
 /**
  Returns all Application Launch Configurations.
@@ -73,7 +73,7 @@
 
  @return An NSArray<FBApplicationLaunchConfiguration> of all historical Application Launches, most recent first.
  */
-- (NSArray *)allApplicationLaunches;
+- (NSArray<FBApplicationLaunchConfiguration *> *)allApplicationLaunches;
 
 /**
  Returns all Agent Launch Configurations.
@@ -81,7 +81,7 @@
 
  @return An NSArray<FBAgentLaunchConfiguration> of all historical Application Launches, most recent first.
  */
-- (NSArray *)allAgentLaunches;
+- (NSArray<FBAgentLaunchConfiguration *> *)allAgentLaunches;
 
 /**
  Returns Process Info for the Application that was launched most recently.
@@ -145,7 +145,7 @@
 
  @return a NSDictionary<FBProcessInfo *, NSNumber *> of Process Info to Termination status.
  */
-- (NSDictionary *)processTerminationStatuses;
+- (NSDictionary<FBProcessInfo *, NSNumber *> *)processTerminationStatuses;
 
 /**
  Returns the History representing the last change to Simulator State.
@@ -158,7 +158,7 @@
 /**
  An NSArray<FBSimulatorHistory> of the changes to the `simulatorState` property.
  */
-- (NSArray *)changesToSimulatorState;
+- (NSArray<FBSimulatorHistory *> *)changesToSimulatorState;
 
 /**
  The timestamp of the first state.
