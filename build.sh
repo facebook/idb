@@ -19,6 +19,11 @@ function build_cli_deps() {
   popd
 }
 
+function build_test_deps() {
+  assert_has_carthage
+  carthage bootstrap --platform Mac
+}
+
 function framework_build() {
   NAME=FBSimulatorControl
   xcodebuild \
@@ -129,6 +134,7 @@ case $TARGET in
       build) 
         framework_build;;
       test) 
+        build_test_deps
         framework_test;;
       *) 
         echo "Unknown Command $2"
@@ -140,6 +146,7 @@ case $TARGET in
       build) 
         cli_build;;
       test)
+        build_test_deps
         cli_test;;
       *)
         echo "Unknown Command $COMMAND"

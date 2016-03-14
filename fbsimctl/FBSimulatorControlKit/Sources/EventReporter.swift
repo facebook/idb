@@ -9,6 +9,7 @@
 
 import Foundation
 import FBSimulatorControl
+import XCTestBootstrap
 
 public protocol EventReporter {
   func report(subject: EventReporterSubject)
@@ -51,6 +52,14 @@ public class EventSinkTranslator : NSObject, FBSimulatorEventSink {
 
   public func bridgeDidDisconnect(bridge: FBSimulatorBridge!, expected: Bool) {
     self.reportSimulator(EventName.Terminate, bridge)
+  }
+
+  public func testmanagerDidConnect(testManager: FBTestManager!) {
+
+  }
+
+  public func testmanagerDidDisconnect(testManager: FBTestManager!) {
+
   }
 
   public func simulatorDidLaunch(launchdSimProcess: FBProcessInfo!) {
