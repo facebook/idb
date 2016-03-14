@@ -93,21 +93,21 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  @param date the earliest to search for crash reports. If nil will find reports regardless of date.
  @return an NSArray<FBDiagnostic *> of all the applicable crash reports.
  */
-- (NSArray *)subprocessCrashesAfterDate:(NSDate *)date;
+- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date;
 
 /**
  Crashes that occured in the Simulator since the last booting of the Simulator.
 
  @return an NSArray<FBDiagnostic *> of crashes that occured for user processes since the last boot.
  */
-- (NSArray *)userLaunchedProcessCrashesSinceLastLaunch;
+- (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunch;
 
 /**
  The System Log, filtered and bucketed for each process that was launched by the user.
 
  @return an NSDictionary<FBProcessInfo *, FBDiagnostic> of the logs, filtered by launched process.
  */
-- (NSDictionary *)launchedProcessLogs;
+- (NSDictionary<FBProcessInfo *, FBDiagnostic *> *)launchedProcessLogs;
 
 /**
  All of the FBDiagnostic instances for the Simulator.

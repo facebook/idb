@@ -56,6 +56,20 @@ public enum Server {
 }
 
 /**
+  Options for obtaining diagnostics
+*/
+public enum DiagnosticQuery {
+  // The Default Diagnostics.
+  case Default
+  // Default Diagnostics, filtered by diagnostic name.
+  case Named([String])
+  // Crases after a given date.
+  case Crashes(NSDate)
+  // Find Diagnostic Files in an Application's Home Directory.
+  case AppFiles(String, [String])
+}
+
+/**
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
@@ -63,7 +77,7 @@ public enum Action {
   case Boot(FBSimulatorLaunchConfiguration?)
   case Create(FBSimulatorConfiguration)
   case Delete
-  case Diagnose([String]?)
+  case Diagnose(DiagnosticQuery)
   case Install(FBSimulatorApplication)
   case Launch(FBProcessLaunchConfiguration)
   case List
@@ -99,10 +113,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftConfiguration == rightConfiguration
   case (.Delete, .Delete):
     return true
-  case (.Diagnose(.Some(let leftNames)), .Diagnose(.Some(let rightNames))):
-    return leftNames == rightNames
-  case (.Diagnose(.None), .Diagnose(.None)):
-    return true
+  case (.Diagnose(let leftQuery), .Diagnose(let rightQuery)):
+    return leftQuery == rightQuery
   case (.Install(let leftApp), .Install(let rightApp)):
     return leftApp == rightApp
   case (.Launch(let leftLaunch), .Launch(let rightLaunch)):
@@ -195,5 +207,21 @@ extension Server : JSONDescribeable, CustomStringConvertible {
       case .Http(let port): return "HTTP: Port \(port)"
       }
     }
+  }
+}
+
+extension DiagnosticQuery : Equatable {}
+public func == (left: DiagnosticQuery, right: DiagnosticQuery) -> Bool {
+  switch (left, right) {
+  case (.Default, .Default):
+    return true
+  case (.Named(let leftNames), .Named(let rightNames)):
+    return leftNames == rightNames
+  case (.Crashes(let leftDate), .Crashes(let rightDate)):
+    return leftDate == rightDate
+  case (.AppFiles(let leftBundleID, let leftFiles), .AppFiles(let rightBundleID, let rightFiles)):
+    return leftBundleID == rightBundleID && leftFiles == rightFiles
+  default:
+    return false
   }
 }

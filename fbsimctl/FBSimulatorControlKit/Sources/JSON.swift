@@ -173,6 +173,15 @@ extension JSON {
     }
   }
 
+  func getNumber() throws -> NSNumber {
+    switch self {
+    case .JNumber(let number):
+      return number
+    default:
+      throw JSONError.Parse("\(self) is not a number")
+    }
+  }
+
   func getBool() throws -> Bool {
     switch self {
     case .JNumber(let number):

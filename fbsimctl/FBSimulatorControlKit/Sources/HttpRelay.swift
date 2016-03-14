@@ -68,6 +68,22 @@ enum HttpMethod {
   case POST
 }
 
+extension DiagnosticQuery {
+  static func fromJSON(json: JSON) throws -> DiagnosticQuery {
+    if let bundleID = try json.getOptionalValue("bundle_id")?.getString() {
+      return DiagnosticQuery.AppFiles(bundleID, try json.getValue("names").getArrayOfStrings())
+    }
+    if let unixTime = try json.getOptionalValue("crashes_since")?.getNumber().doubleValue {
+      return DiagnosticQuery.Crashes(NSDate(timeIntervalSince1970: unixTime))
+    }
+    if let names = try json.getOptionalValue("names")?.getArrayOfStrings() {
+      return DiagnosticQuery.Named(names)
+    }
+
+    return DiagnosticQuery.Default
+  }
+}
+
 struct HttpRoute {
   let method: HttpMethod
   let endpoint: String
@@ -156,8 +172,8 @@ class HttpRelay : Relay {
 
   private var diagnoseRoute: HttpRoute { get {
     return HttpRoute(method: HttpMethod.POST, endpoint: "diagnose") { json in
-      let diagnosticNames = try json.getOptionalValue("names")?.getArrayOfStrings()
-      return Action.Diagnose(diagnosticNames)
+      let query = try DiagnosticQuery.fromJSON(json)
+      return Action.Diagnose(query)
     }
   }}
 

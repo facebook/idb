@@ -111,7 +111,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     build];
 }
 
-- (NSArray *)subprocessCrashesAfterDate:(NSDate *)date
+- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date
 {
   return [FBConcurrentCollectionOperations
     map:[self launchdSimSubprocessCrashesPathsAfterDate:date]
@@ -120,7 +120,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     }];
 }
 
-- (NSArray *)userLaunchedProcessCrashesSinceLastLaunch
+- (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunch
 {
   // Going from state transition to 'Booted' can be after the crash report is written for an
   // Process that instacrashes around the same time the simulator is booted.
@@ -143,7 +143,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     }];
 }
 
-- (NSDictionary *)launchedProcessLogs
+- (NSDictionary<FBProcessInfo *, FBDiagnostic *> *)launchedProcessLogs
 {
   NSString *aslPath = self.aslPath;
   if (!aslPath) {

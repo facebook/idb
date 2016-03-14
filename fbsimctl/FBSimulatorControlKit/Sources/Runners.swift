@@ -203,8 +203,8 @@ private struct SimulatorRunner : Runner {
       return SimulatorAction(translator: translator, name: EventName.Delete, subject: simulator) {
         try simulator.set!.deleteSimulator(simulator)
       }
-    case .Diagnose(let names):
-      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: simulator, names: names)
+    case .Diagnose(let query):
+      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: simulator, query: query)
     case .Install(let application):
       return SimulatorInteraction(translator: translator, name: EventName.Install, subject: application) { interaction in
         interaction.installApplication(application)
@@ -298,7 +298,7 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
   let translator: EventSinkTranslator
   let name: EventName
   let subject: SimulatorControlSubject
-  let names: [String]?
+  let query: DiagnosticQuery
 
   func perform() -> CommandResult {
     let diagnostics = self.fetchDiagnostics()
@@ -309,13 +309,19 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {
-    let simulator = self.translator.simulator
-    let diagnostics = simulator.diagnostics.allDiagnostics()
-    guard let names = self.names else {
-      return diagnostics
+    let diagnostics = self.translator.simulator.diagnostics
+
+    switch self.query {
+    case .Default:
+      return diagnostics.allDiagnostics()
+    case .Named(let names):
+      let nameSet = Set(names)
+      return diagnostics.allDiagnostics().filter { nameSet.contains($0.shortName) }
+    case .Crashes(let date):
+      return diagnostics.subprocessCrashesAfterDate(date)
+    case .AppFiles:
+      return []
     }
-    let nameSet = Set(names)
-    return diagnostics.filter { nameSet.contains($0.shortName) }
   }
 }
 

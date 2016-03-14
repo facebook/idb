@@ -20,6 +20,15 @@ extension Parser {
     }
   }}
 
+  public static var ofDouble: Parser<Double> { get {
+    return Parser<Double>.single("Of Double") { token in
+      guard let double = NSNumberFormatter().numberFromString(token)?.doubleValue else {
+        throw ParseError.CouldNotInterpret("Double", token)
+      }
+      return double
+    }
+  }}
+
   public static var ofAny: Parser<String> { get {
     return Parser<String>.single("Anything", f: { $0 } )
   }}
@@ -105,6 +114,10 @@ extension Parser {
           return token
         }
       ])
+  }}
+
+  public static var ofDate: Parser<NSDate> { get {
+    return Parser<NSDate>.ofDouble.fmap { NSDate(timeIntervalSince1970: $0) }
   }}
 }
 
@@ -244,6 +257,41 @@ extension Server : Parsable {
   }}
 }
 
+extension DiagnosticQuery : Parsable {
+  public static var parser: Parser<DiagnosticQuery> { get {
+    return Parser
+      .alternative([
+        self.appFilesParser,
+        self.namedParser,
+        self.crashesParser,
+      ])
+      .fallback(DiagnosticQuery.Default)
+  }}
+
+  static var namedParser: Parser<DiagnosticQuery> { get {
+    return Parser
+      .manyCount(1, Parser.succeeded("--name", Parser<Any>.ofAny))
+      .fmap { DiagnosticQuery.Named($0) }
+  }}
+
+  static var crashesParser: Parser<DiagnosticQuery> { get {
+    return Parser
+      .succeeded("--crashes-since", Parser<Any>.ofDate)
+      .fmap { DiagnosticQuery.Crashes($0) }
+  }}
+
+  static var appFilesParser: Parser<DiagnosticQuery> { get {
+    return Parser
+      .ofTwoSequenced(
+        Parser<Any>.ofBundleID,
+        Parser.manyCount(1, Parser<Any>.ofAny)
+      )
+      .fmap { (bundleID, fileNames) in
+        DiagnosticQuery.AppFiles(bundleID, fileNames)
+      }
+  }}
+}
+
 extension Action : Parsable {
   public static var parser: Parser<Action> { get {
     return Parser
@@ -290,10 +338,7 @@ extension Action : Parsable {
 
   static var diagnoseParser: Parser<Action> { get {
     return Parser
-      .succeeded(
-        EventName.Diagnose.rawValue,
-        Parser.manyCount(1, Parser<String>.ofAny).optional()
-      )
+      .succeeded(EventName.Diagnose.rawValue, DiagnosticQuery.parser)
       .fmap { Action.Diagnose($0) }
   }}
 
