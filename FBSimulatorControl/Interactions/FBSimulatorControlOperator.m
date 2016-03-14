@@ -69,6 +69,11 @@
   return YES;
 }
 
+- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  return [[self.simulator.interact terminateApplicationWithBundleID:bundleID] perform:error];
+}
+
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   FBSimulatorApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];

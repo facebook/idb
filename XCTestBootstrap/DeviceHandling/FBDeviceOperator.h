@@ -56,6 +56,15 @@
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment error:(NSError **)error;
 
 /**
+ Kills application with given bundleID
+
+ @param bundleID bundle ID of installed application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if the operation succeeds, otherwise NO.
+ */
+- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
  Returns PID of application with given bundleID
 
  @param bundleID bundle ID of installed application
