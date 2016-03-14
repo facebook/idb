@@ -34,6 +34,15 @@
   return YES;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+          @"SessionID: %@ | Testrunner PID: %d",
+          self.mediator.sessionIdentifier,
+          self.mediator.testRunnerPID
+          ];
+}
+
 #pragma mark - FBTestManagerMediatorDelegate
 
 - (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment error:(NSError **)error

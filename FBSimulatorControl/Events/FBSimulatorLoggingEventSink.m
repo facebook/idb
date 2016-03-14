@@ -95,12 +95,12 @@
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager
 {
-  [self.logger logFormat:@"TestManager Did Connect"];
+  [self.logger logFormat:@"TestManager Did Connect => %@", testManager];
 }
 
 - (void)testmanagerDidDisconnect:(FBTestManager *)testManager
 {
-  [self.logger logFormat:@"TestManager Did Disconnect"];
+  [self.logger logFormat:@"TestManager Did Disconnect => %@", testManager];
 }
 
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic

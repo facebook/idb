@@ -18,6 +18,19 @@
  which is mediator (running on host) between test runner (app that executes XCTest bundle on device) and testmanagerd (running on device), that helps to launch tests.
  */
 @interface FBTestManagerAPIMediator : NSObject
+
+/**
+ XCTest session identifier
+ */
+@property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
+
+/**
+ Process id of test runner application
+ */
+@property (nonatomic, assign, readonly) pid_t testRunnerPID;
+
+/**
+ */
 @property (nonatomic, weak) id<FBTestManagerMediatorDelegate> delegate;
 
 /**

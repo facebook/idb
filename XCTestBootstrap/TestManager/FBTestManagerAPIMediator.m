@@ -40,7 +40,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 @property (nonatomic, assign) BOOL targetIsiOSSimulator;
 
 @property (nonatomic, assign) pid_t testRunnerPID;
-@property (nonatomic, strong) NSUUID *sessionIdentifier;
+@property (nonatomic, copy) NSUUID *sessionIdentifier;
 
 @property (nonatomic, assign) BOOL finished;
 @property (nonatomic, assign) BOOL hasFailed;
