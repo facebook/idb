@@ -75,6 +75,7 @@
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/appData.xcappdata/AppData/tmp/TestPlans" withIntermediateDirectories:NO attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
 
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
+  [[[deviceOperatorMock expect] andReturnValue:@NO] isApplicationInstalledWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturnValue:@YES] installApplicationWithPath:@"/app" error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturn:@"/remote/app"] applicationPathForApplicationWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturn:@"/remote/data"] containerPathForApplicationWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
