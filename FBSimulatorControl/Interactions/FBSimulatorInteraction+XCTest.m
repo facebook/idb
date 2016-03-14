@@ -27,6 +27,7 @@
 - (instancetype)startTestRunnerApplication:(FBSimulatorApplication *)application configuration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath workingDirectory:(NSString *)workingDirectory
 {
   NSParameterAssert(application);
+  [FBFoundationInitializer initializeTestingEnvironment];
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBSimulatorTestPreparationStrategy *testPrepareStrategy =

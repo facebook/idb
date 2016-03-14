@@ -13,6 +13,7 @@
 #import <XCTestBootstrap/FBDeviceOperator.h>
 #import <XCTestBootstrap/FBDeviceTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBFileManager.h>
+#import <XCTestBootstrap/FBFoundationInitializer.h>
 #import <XCTestBootstrap/FBProductBundle.h>
 #import <XCTestBootstrap/FBRunLoopSpinner.h>
 #import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
