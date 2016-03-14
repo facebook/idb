@@ -16,6 +16,7 @@
 @class FBSimulator;
 @class FBSimulatorApplication;
 @class FBSimulatorBridge;
+@class FBTestManager;
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializable;
 
@@ -105,6 +106,20 @@
  @param expected whether the termination was expected or not.
  */
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected;
+
+/**
+ Event for connection of test manager daemon
+
+ @param testManager connected test manager
+ */
+- (void)testmanagerDidConnect:(FBTestManager *)testManager;
+
+/**
+ Event for disconnection of test manager daemon
+
+ @param testManager disconnected test manager
+ */
+- (void)testmanagerDidDisconnect:(FBTestManager *)testManager;
 
 /**
  Event for the availablilty of a new log.

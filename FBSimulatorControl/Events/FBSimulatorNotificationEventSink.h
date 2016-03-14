@@ -62,6 +62,16 @@ extern NSString *const FBSimulatorAgentProcessDidLaunchNotification;
 extern NSString *const FBSimulatorAgentProcessDidTerminateNotification;
 
 /**
+ Notification that is fired when Test Manager Connects.
+ */
+extern NSString *const FBSimulatorTestManagerDidConnectNotification;
+
+/**
+ Notification that is fired when Test Manager Disconnects.
+ */
+extern NSString *const FBSimulatorTestManagerDidDiconnectNotification;
+
+/**
  Notification that is fired when diagnostic information is gained.
  */
 extern NSString *const FBSimulatorGainedDiagnosticInformation;
@@ -95,6 +105,11 @@ extern NSString *const FBSimulatorDiagnosticLog;
  Notification UserInfo for Simulator State.
  */
 extern NSString *const FBSimulatorStateKey;
+
+/**
+ Notification UserInfo for Test Manager.
+ */
+extern NSString *const FBSimulatorTestManagerKey;
 
 /**
  An Event Sink that will fire NSNotifications.

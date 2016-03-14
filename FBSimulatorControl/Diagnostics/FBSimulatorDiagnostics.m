@@ -232,6 +232,14 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 }
 
+- (void)testmanagerDidConnect:(FBTestManager *)testManager
+{
+}
+
+- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
+{
+}
+
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   if (!diagnostic.shortName) {

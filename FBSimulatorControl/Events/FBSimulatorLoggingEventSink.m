@@ -93,6 +93,16 @@
   [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, applicationProcess.shortDescription];
 }
 
+- (void)testmanagerDidConnect:(FBTestManager *)testManager
+{
+  [self.logger logFormat:@"TestManager Did Connect"];
+}
+
+- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
+{
+  [self.logger logFormat:@"TestManager Did Disconnect"];
+}
+
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   [self.logger logFormat:@"Log Available => %@", diagnostic.shortDescription];

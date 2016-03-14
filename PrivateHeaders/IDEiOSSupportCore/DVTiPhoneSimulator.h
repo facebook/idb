@@ -11,7 +11,7 @@
 @class DTAssetProviderService, DTXChannel, DTXConnection, DVTPlatform, DVTSimulatorApplication, NSArray, NSDictionary, NSNumber, NSSet, NSString, SimDevice, SimDeviceType;
 @protocol DVTCancellable;
 
-@interface DVTiPhoneSimulator : DVTAbstractiOSDevice //<NSFileManagerDelegate, IDERunDestinationFallbackSelectorDeviceInfo, DVTDeviceApplicationProvider, XCDTMobileIS_XPCDebuggingProcotol>
+@interface DVTiPhoneSimulator : DVTAbstractiOSDevice
 {
     id <DVTCancellable> _deviceNotificationToken;
     id <DVTCancellable> _deviceSetNotificationToken;

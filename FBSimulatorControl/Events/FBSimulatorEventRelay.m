@@ -187,6 +187,16 @@
   [self.sink applicationDidTerminate:applicationProcess expected:expected];
 }
 
+- (void)testmanagerDidConnect:(FBTestManager *)testManager
+{
+  [self.sink testmanagerDidConnect:testManager];
+}
+
+- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
+{
+  [self.sink testmanagerDidDisconnect:testManager];
+}
+
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   [self.sink diagnosticAvailable:diagnostic];

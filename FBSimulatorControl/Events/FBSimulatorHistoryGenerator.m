@@ -156,6 +156,14 @@
   [self updateProcess:agentProcess withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
 }
 
+- (void)testmanagerDidConnect:(FBTestManager *)testManager
+{
+}
+
+- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
+{
+}
+
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
   [self processLaunched:applicationProcess withConfiguration:launchConfig];

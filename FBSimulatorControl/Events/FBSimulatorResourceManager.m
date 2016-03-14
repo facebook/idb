@@ -38,7 +38,7 @@
 @end
 
 @interface FBSimulatorResourceManager ()
-
+@property (nonatomic, strong, readonly) NSMutableSet *testManagerConnections;
 @property (nonatomic, strong, readonly) NSMutableDictionary *processToHandles;
 @property (nonatomic, strong, readonly) NSMutableArray *simulatorTerminationHandles;
 
@@ -55,7 +55,7 @@
 
   _processToHandles = [NSMutableDictionary dictionary];
   _simulatorTerminationHandles = [NSMutableArray array];
-
+  _testManagerConnections = [NSMutableSet set];
   return self;
 }
 
@@ -111,6 +111,16 @@
   [self terminateHandlesAssociatedWithProcess:applicationProcess];
 }
 
+- (void)testmanagerDidConnect:(FBTestManager *)testManager
+{
+  [self.testManagerConnections addObject:testManager];
+}
+
+- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
+{
+  [self.testManagerConnections removeObject:testManager];
+}
+
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
 
@@ -161,6 +171,7 @@
   [self.processToHandles removeAllObjects];
   [self.simulatorTerminationHandles makeObjectsPerformSelector:@selector(terminate)];
   [self.simulatorTerminationHandles removeAllObjects];
+  [self.testManagerConnections removeAllObjects];
 }
 
 @end

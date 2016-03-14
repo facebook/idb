@@ -104,6 +104,20 @@
   }
 }
 
+- (void)testmanagerDidConnect:(FBTestManager *)testManager
+{
+  for (id<FBSimulatorEventSink> sink in self.sinks) {
+    [sink testmanagerDidConnect:testManager];
+  }
+}
+
+- (void)testmanagerDidDisconnect:(FBTestManager *)testManager
+{
+  for (id<FBSimulatorEventSink> sink in self.sinks) {
+    [sink testmanagerDidDisconnect:testManager];
+  }
+}
+
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
