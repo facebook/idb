@@ -23,7 +23,7 @@
 + (instancetype)operatorWithSimulator:(FBSimulator *)simulator
 {
   FBSimulatorControlOperator *operator = [self.class new];
-  operator.dvtDevice = [DVTiPhoneSimulator simulatorWithDevice:simulator.device];
+  operator.dvtDevice = [NSClassFromString(@"DVTiPhoneSimulator") simulatorWithDevice:simulator.device];
   operator.simulator = simulator;
   return operator;
 }

@@ -46,4 +46,4 @@ APPLE_OTHER_FRAMEWORKS_DIR = $(DEVELOPER_DIR)/../OtherFrameworks
 APPLE_PLUGINS_DIR = $(DEVELOPER_DIR)/../PlugIns
 FRAMEWORK_SEARCH_PATHS = "$(APPLE_FRAMEWORKS_DIR)" "$(APPLE_SHARED_FRAMEWORKS_DIR)" "$(APPLE_OTHER_FRAMEWORKS_DIR)" "$(APPLE_PLUGINS_DIR)" "$(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks" "$(PLATFORM_DIR)/Developer/Library/Frameworks"
 LD_RUNPATH_SEARCH_PATHS = "$(APPLE_FRAMEWORKS_DIR)" "$(APPLE_SHARED_FRAMEWORKS_DIR)" "$(APPLE_PLUGINS_DIR)" "$(APPLE_PLUGINS_DIR)/Xcode3Core.ideplugin/Contents/Frameworks" "$(PLATFORM_DIR)/Developer/Library/Frameworks"
-OTHER_LDFLAGS = -weak_framework DVTFoundation -weak_framework DTXConnectionServices -weak_framework IDEFoundation -weak_framework XCTest $DEVELOPER_DIR/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore
+OTHER_LDFLAGS = -weak_framework DVTFoundation -weak_framework DTXConnectionServices -weak_framework IDEFoundation -weak_framework XCTest
