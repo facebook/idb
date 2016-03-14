@@ -147,10 +147,6 @@ extension Parser {
     }
   }
 
-  static func ofAny() -> Parser<String> {
-    return Parser<String>.single("Anything", f: { $0 } )
-  }
-
   static func ofString(string: String, _ constant: A) -> Parser<A> {
     return Parser.single(string) { token in
       if token != string {
@@ -165,15 +161,6 @@ extension Parser {
       .ofString(flag, true)
       .fallback(false)
       .describe("Flag \(flag)")
-  }
-
-  static func ofInt() -> Parser<Int> {
-    return Parser<Int>.single("Of Int") { token in
-      guard let integer = NSNumberFormatter().numberFromString(token)?.integerValue else {
-        throw ParseError.CouldNotInterpret("Int", token)
-      }
-      return integer
-    }
   }
 
   static func succeeded(token: String, _ by: Parser<A>) -> Parser<A> {

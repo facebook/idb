@@ -11,7 +11,20 @@ import Foundation
 import FBSimulatorControl
 
 extension Parser {
-  static func ofUDID() -> Parser<NSUUID> {
+  public static var ofInt: Parser<Int> { get {
+    return Parser<Int>.single("Of Int") { token in
+      guard let integer = NSNumberFormatter().numberFromString(token)?.integerValue else {
+        throw ParseError.CouldNotInterpret("Int", token)
+      }
+      return integer
+    }
+  }}
+
+  public static var ofAny: Parser<String> { get {
+    return Parser<String>.single("Anything", f: { $0 } )
+  }}
+
+  public static var ofUDID: Parser<NSUUID> { get {
     let expected = NSStringFromClass(NSUUID.self)
     return Parser<NSUUID>.single("A \(expected)") { token in
       guard let uuid = NSUUID(UUIDString: token) else {
@@ -19,9 +32,9 @@ extension Parser {
       }
       return uuid
     }
-  }
+  }}
 
-  static func ofDirectory() -> Parser<String> {
+  public static var ofDirectory: Parser<String> { get {
     let expected = "A Directory"
     return Parser<String>.single(expected) { token  in
       let path = (token as NSString).stringByStandardizingPath
@@ -34,9 +47,9 @@ extension Parser {
       }
       return path
     }
-  }
+  }}
 
-  static func ofFile() -> Parser<String> {
+  public static var ofFile: Parser<String> { get {
     let expected = "A File"
     return Parser<String>.single(expected) { token in
       let path = (token as NSString).stringByStandardizingPath
@@ -49,9 +62,9 @@ extension Parser {
       }
       return path
     }
-  }
+  }}
 
-  static func ofApplication() -> Parser<FBSimulatorApplication> {
+  public static var ofApplication: Parser<FBSimulatorApplication> { get {
     let expected = "An Application"
     return Parser<FBSimulatorApplication>.single(expected) { token in
       do {
@@ -60,9 +73,9 @@ extension Parser {
         throw ParseError.Custom("Could not get an app \(token) \(error.description)")
       }
     }
-  }
+  }}
 
-  static func ofBinary() -> Parser<FBSimulatorBinary> {
+  public static var ofBinary: Parser<FBSimulatorBinary> { get {
     let expected = "A Binary"
     return Parser<FBSimulatorBinary>.single(expected) { token in
       do {
@@ -71,19 +84,19 @@ extension Parser {
         throw ParseError.Custom("Could not get an binary \(token) \(error.description)")
       }
     }
-  }
+  }}
 
-  static func ofLocale() -> Parser<NSLocale> {
+  public static var ofLocale: Parser<NSLocale> { get {
     let expected = "A Locale"
     return Parser<NSLocale>.single(expected) { token in
       return NSLocale(localeIdentifier: token)
     }
-  }
+  }}
 
-  static func ofBundleID() -> Parser<String> {
+  public static var ofBundleID: Parser<String> { get {
     return Parser<String>
       .alternative([
-        Parser<FBSimulatorApplication>.ofApplication().fmap { $0.bundleID },
+        Parser.ofApplication.fmap { $0.bundleID },
         Parser<String>.single("A Bundle ID") { token in
           let components = token.componentsSeparatedByCharactersInSet(NSCharacterSet(charactersInString: "."))
           if components.count < 2 {
@@ -92,7 +105,7 @@ extension Parser {
           return token
         }
       ])
-  }
+  }}
 }
 
 extension OutputOptions : Parsable {
@@ -111,7 +124,7 @@ extension Configuration : Parsable {
     return Parser
       .ofThreeSequenced(
         OutputOptions.parser,
-        Parser.succeeded("--set", Parser<String>.ofDirectory()).optional(),
+        Parser.succeeded("--set", Parser<Any>.ofDirectory).optional(),
         FBSimulatorManagementOptions.parser
       )
       .fmap { (output, deviceSetPath, managementOptions) in
@@ -216,7 +229,7 @@ extension Server : Parsable {
 
   static var socketParser: Parser<Server> { get {
     return Parser
-      .succeeded("--socket", Parser<Int>.ofInt())
+      .succeeded("--socket", Parser<Int>.ofInt)
       .fmap { portNumber in
         return Server.Socket(UInt16(portNumber))
       }
@@ -224,7 +237,7 @@ extension Server : Parsable {
 
   static var httpParser:  Parser<Server> { get {
     return Parser
-      .succeeded("--http", Parser<Int>.ofInt())
+      .succeeded("--http", Parser<Int>.ofInt)
       .fmap { portNumber in
         return Server.Http(UInt16(portNumber))
       }
@@ -253,7 +266,7 @@ extension Action : Parsable {
 
   static var approveParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Approve.rawValue, Parser.manyCount(1, Parser<String>.ofBundleID()))
+      .succeeded(EventName.Approve.rawValue, Parser.manyCount(1, Parser<Any>.ofBundleID))
       .fmap { Action.Approve($0) }
   }}
 
@@ -265,7 +278,7 @@ extension Action : Parsable {
 
   static var createParser: Parser<Action> { get {
     return Parser
-      .succeeded("create", FBSimulatorConfigurationParser.parser)
+      .succeeded(EventName.Create.rawValue, FBSimulatorConfigurationParser.parser)
       .fmap { configuration in
         return Action.Create(configuration)
     }
@@ -279,7 +292,7 @@ extension Action : Parsable {
     return Parser
       .succeeded(
         EventName.Diagnose.rawValue,
-        Parser.manyCount(1, Parser<String>.ofAny()).optional()
+        Parser.manyCount(1, Parser<String>.ofAny).optional()
       )
       .fmap { Action.Diagnose($0) }
   }}
@@ -302,7 +315,7 @@ extension Action : Parsable {
 
   static var installParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Install.rawValue, Parser<FBSimulatorApplication>.ofApplication())
+      .succeeded(EventName.Install.rawValue, Parser<Any>.ofApplication)
       .fmap { Action.Install($0) }
   }}
 
@@ -327,7 +340,7 @@ extension Action : Parsable {
 
   static var terminateParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Terminate.rawValue, Parser<String>.ofBundleID())
+      .succeeded(EventName.Terminate.rawValue, Parser<Any>.ofBundleID)
       .fmap { Action.Terminate($0) }
   }}
 
@@ -342,7 +355,7 @@ extension Action : Parsable {
   static var agentLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
     return Parser
       .ofTwoSequenced(
-        Parser<FBSimulatorBinary>.ofBinary(),
+        Parser<Any>.ofBinary,
         self.argumentParser
       )
       .fmap { (binary, arguments) in
@@ -353,7 +366,7 @@ extension Action : Parsable {
   static var appLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
     return Parser
       .ofTwoSequenced(
-        Parser<FBSimulatorApplication>.ofBundleID(),
+        Parser<Any>.ofBundleID,
         self.argumentParser
       )
       .fmap { (bundleID, arguments) in
@@ -362,7 +375,7 @@ extension Action : Parsable {
   }}
 
   static var argumentParser: Parser<[String]> { get {
-    return Parser.many(Parser<String>.ofAny())
+    return Parser.many(Parser<String>.ofAny)
   }}
 }
 
@@ -391,7 +404,7 @@ extension Query : Parsable {
 
   static var uuidParser: Parser<Query> { get {
     return Parser<Query>
-      .ofUDID()
+      .ofUDID
       .fmap { Query.UDID([$0.UUIDString]) }
   }}
 
@@ -481,7 +494,7 @@ struct FBSimulatorConfigurationParser {
   }}
 
   static var auxDirectoryParser: Parser<String> { get {
-    return Parser.succeeded("--aux", Parser<String>.ofDirectory())
+    return Parser.succeeded("--aux", Parser<Any>.ofDirectory)
   }}
 }
 
@@ -517,7 +530,7 @@ struct FBSimulatorLaunchConfigurationParser {
 
   static var localeParser: Parser<NSLocale> { get {
     return Parser
-      .succeeded("--locale", Parser<NSLocale>.ofLocale())
+      .succeeded("--locale", Parser<Any>.ofLocale)
   }}
 
   static var scaleParser: Parser<FBSimulatorLaunchConfiguration_Scale> { get {
