@@ -1,0 +1,93 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
+#import <Foundation/Foundation.h>
+
+@class DVTAbstractiOSDevice;
+@class FBTestRunnerConfiguration;
+
+/**
+ Operators are used to control devices
+ */
+@protocol FBDeviceOperator <NSObject>
+@property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
+
+/**
+ Waits for device to become ready. (eg. unlocked, loaded, available console data)
+
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if the operation succeeds, otherwise NO.
+ */
+- (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error;
+
+/**
+ Installs application at given path
+
+ @param path path to apllication bundle (.app)
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if the operation succeeds, otherwise NO.
+ */
+- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error;
+
+/**
+ Launches application with given bundleID, arguments & environment variables
+
+ @param bundleID bundle ID of installed application
+ @param arguments arguments used to launch application
+ @param environment environment variables used to launch application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if the operation succeeds, otherwise NO.
+ */
+- (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment error:(NSError **)error;
+
+/**
+ Returns PID of application with given bundleID
+
+ @param bundleID bundle ID of installed application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return PID of application, or 0 if not running
+ */
+- (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Removes apllication with given bundleID and it's data
+
+ @param bundleID bundle ID of installed application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if the operation succeeds, otherwise NO.
+ */
+- (BOOL)cleanApplicationStateWithBundleIdentifier:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Returns application path for application with given bundleID
+
+ @param bundleID bundle ID of installed application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return application path on device
+ */
+- (NSString *)applicationPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Uploads application data for application with given bundleID
+
+ @param path path to data package file (.xcappdata)
+ @param bundleID bundle ID of installed application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if the operation succeeds, otherwise NO.
+ */
+- (BOOL)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Returns application data container path for application with given bundleID
+
+ @param bundleID bundle ID of installed application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return application data container path
+ */
+- (NSString *)containerPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ @return Console entries on device
+ */
+- (NSString *)consoleString;
+
+@end

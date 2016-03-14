@@ -162,6 +162,49 @@
 		AAF2D3571C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF2D3551C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.m */; };
 		E7A30F0476B173B900000000 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
 		E7A30F04A6018C7A00000000 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E29A6018C7A00000000 /* CoreGraphics.framework */; };
+		EE4F0D3A1C91B7DB00608E89 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
+		EE4F0D701C91B82700608E89 /* FBApplicationDataPackage.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D4A1C91B82700608E89 /* FBApplicationDataPackage.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D711C91B82700608E89 /* FBApplicationDataPackage.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D4B1C91B82700608E89 /* FBApplicationDataPackage.m */; };
+		EE4F0D721C91B82700608E89 /* FBCodeSignCommand.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D4C1C91B82700608E89 /* FBCodeSignCommand.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D731C91B82700608E89 /* FBCodeSignCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D4D1C91B82700608E89 /* FBCodeSignCommand.m */; };
+		EE4F0D741C91B82700608E89 /* FBCodesignProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D4E1C91B82700608E89 /* FBCodesignProvider.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D751C91B82700608E89 /* FBFileManager.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D4F1C91B82700608E89 /* FBFileManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D761C91B82700608E89 /* FBProductBundle+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D501C91B82700608E89 /* FBProductBundle+Private.h */; };
+		EE4F0D771C91B82700608E89 /* FBProductBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D511C91B82700608E89 /* FBProductBundle.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D781C91B82700608E89 /* FBProductBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D521C91B82700608E89 /* FBProductBundle.m */; };
+		EE4F0D791C91B82700608E89 /* FBTestBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D531C91B82700608E89 /* FBTestBundle.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D7A1C91B82700608E89 /* FBTestBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D541C91B82700608E89 /* FBTestBundle.m */; };
+		EE4F0D7B1C91B82700608E89 /* FBTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D551C91B82700608E89 /* FBTestConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D7C1C91B82700608E89 /* FBTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D561C91B82700608E89 /* FBTestConfiguration.m */; };
+		EE4F0D7D1C91B82700608E89 /* FBTestRunnerConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D571C91B82700608E89 /* FBTestRunnerConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D7E1C91B82700608E89 /* FBTestRunnerConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D581C91B82700608E89 /* FBTestRunnerConfiguration.m */; };
+		EE4F0D7F1C91B82700608E89 /* NSFileManager+FBFileManager.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D5A1C91B82700608E89 /* NSFileManager+FBFileManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D801C91B82700608E89 /* NSFileManager+FBFileManager.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D5B1C91B82700608E89 /* NSFileManager+FBFileManager.m */; };
+		EE4F0D811C91B82700608E89 /* FBDeviceOperator.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D5D1C91B82700608E89 /* FBDeviceOperator.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D821C91B82700608E89 /* FBDeviceTestPreparationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D5F1C91B82700608E89 /* FBDeviceTestPreparationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D831C91B82700608E89 /* FBDeviceTestPreparationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D601C91B82700608E89 /* FBDeviceTestPreparationStrategy.m */; };
+		EE4F0D841C91B82700608E89 /* FBSimulatorTestPreparationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D611C91B82700608E89 /* FBSimulatorTestPreparationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D851C91B82700608E89 /* FBSimulatorTestPreparationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D621C91B82700608E89 /* FBSimulatorTestPreparationStrategy.m */; };
+		EE4F0D861C91B82700608E89 /* FBXCTestPreparationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D631C91B82700608E89 /* FBXCTestPreparationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D871C91B82700608E89 /* FBXCTestRunStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D641C91B82700608E89 /* FBXCTestRunStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D881C91B82700608E89 /* FBXCTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D651C91B82700608E89 /* FBXCTestRunStrategy.m */; };
+		EE4F0D891C91B82700608E89 /* FBTestManagerAPIMediator.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D671C91B82700608E89 /* FBTestManagerAPIMediator.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D8A1C91B82700608E89 /* FBTestManagerAPIMediator.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D681C91B82700608E89 /* FBTestManagerAPIMediator.m */; };
+		EE4F0D8B1C91B82700608E89 /* FBRunLoopSpinner.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D6A1C91B82700608E89 /* FBRunLoopSpinner.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D8C1C91B82700608E89 /* FBRunLoopSpinner.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D6B1C91B82700608E89 /* FBRunLoopSpinner.m */; };
+		EE4F0D8D1C91B82700608E89 /* NSError+XCTestBootstrap.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D6C1C91B82700608E89 /* NSError+XCTestBootstrap.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D8E1C91B82700608E89 /* NSError+XCTestBootstrap.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D6D1C91B82700608E89 /* NSError+XCTestBootstrap.m */; };
+		EE4F0D901C91B82700608E89 /* XCTestBootstrap.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D6F1C91B82700608E89 /* XCTestBootstrap.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D981C91B83300608E89 /* FBApplicationDataPackageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D911C91B83300608E89 /* FBApplicationDataPackageTests.m */; };
+		EE4F0D991C91B83300608E89 /* FBProductBundleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D921C91B83300608E89 /* FBProductBundleTests.m */; };
+		EE4F0D9A1C91B83300608E89 /* FBTestBundleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D931C91B83300608E89 /* FBTestBundleTests.m */; };
+		EE4F0D9B1C91B83300608E89 /* FBTestConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D941C91B83300608E89 /* FBTestConfigurationTests.m */; };
+		EE4F0D9C1C91B83300608E89 /* FBTestRunnerConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D951C91B83300608E89 /* FBTestRunnerConfigurationTests.m */; };
+		EE4F0D9D1C91B83300608E89 /* FBXCTestRunStrategyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D961C91B83300608E89 /* FBXCTestRunStrategyTests.m */; };
+		EE4F0DDD1C91BA8300608E89 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; };
+		EE4F0DE01C91BEB400608E89 /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0DDE1C91BEA500608E89 /* OCMock.framework */; };
+		EE5CFECC1C91C2550011FD3D /* FBDeviceTestPreparationStrategyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE5CFECA1C91C2550011FD3D /* FBDeviceTestPreparationStrategyTests.m */; };
+		EE5CFECD1C91C2550011FD3D /* FBSimulatorTestPreparationStrategyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE5CFECB1C91C2550011FD3D /* FBSimulatorTestPreparationStrategyTests.m */; };
 		EEBD60181C90628F00298A07 /* FBControlCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; };
 		EEBD605B1C9062E900298A07 /* FBASLParser.h in Headers */ = {isa = PBXBuildFile; fileRef = EEBD602C1C9062E900298A07 /* FBASLParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EEBD605C1C9062E900298A07 /* FBASLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = EEBD602D1C9062E900298A07 /* FBASLParser.m */; };
@@ -216,6 +259,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = E66DC04E390C419500000000;
 			remoteInfo = FBSimulatorControl;
+		};
+		EE4F0D3B1C91B7DB00608E89 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96C84793390C419500000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE4F0D2F1C91B7DA00608E89;
+			remoteInfo = XCTestBootstrap;
+		};
+		EE4F0DDB1C91BA7E00608E89 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96C84793390C419500000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EEBD600D1C90628F00298A07;
+			remoteInfo = FBControlCore;
 		};
 		EEBD60191C90628F00298A07 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -460,6 +517,107 @@
 		AAEA3AA81C90BB73004F8409 /* FBLogSearchTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLogSearchTests.m; sourceTree = "<group>"; };
 		AAF2D3541C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorInteraction+Lifecycle.h"; sourceTree = "<group>"; };
 		AAF2D3551C33EA3100434516 /* FBSimulatorInteraction+Lifecycle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBSimulatorInteraction+Lifecycle.m"; sourceTree = "<group>"; };
+		EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE4F0D391C91B7DB00608E89 /* XCTestBootstrapTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XCTestBootstrapTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE4F0D4A1C91B82700608E89 /* FBApplicationDataPackage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBApplicationDataPackage.h; sourceTree = "<group>"; };
+		EE4F0D4B1C91B82700608E89 /* FBApplicationDataPackage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBApplicationDataPackage.m; sourceTree = "<group>"; };
+		EE4F0D4C1C91B82700608E89 /* FBCodeSignCommand.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodeSignCommand.h; sourceTree = "<group>"; };
+		EE4F0D4D1C91B82700608E89 /* FBCodeSignCommand.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCodeSignCommand.m; sourceTree = "<group>"; };
+		EE4F0D4E1C91B82700608E89 /* FBCodesignProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodesignProvider.h; sourceTree = "<group>"; };
+		EE4F0D4F1C91B82700608E89 /* FBFileManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileManager.h; sourceTree = "<group>"; };
+		EE4F0D501C91B82700608E89 /* FBProductBundle+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBProductBundle+Private.h"; sourceTree = "<group>"; };
+		EE4F0D511C91B82700608E89 /* FBProductBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProductBundle.h; sourceTree = "<group>"; };
+		EE4F0D521C91B82700608E89 /* FBProductBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProductBundle.m; sourceTree = "<group>"; };
+		EE4F0D531C91B82700608E89 /* FBTestBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestBundle.h; sourceTree = "<group>"; };
+		EE4F0D541C91B82700608E89 /* FBTestBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestBundle.m; sourceTree = "<group>"; };
+		EE4F0D551C91B82700608E89 /* FBTestConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestConfiguration.h; sourceTree = "<group>"; };
+		EE4F0D561C91B82700608E89 /* FBTestConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestConfiguration.m; sourceTree = "<group>"; };
+		EE4F0D571C91B82700608E89 /* FBTestRunnerConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestRunnerConfiguration.h; sourceTree = "<group>"; };
+		EE4F0D581C91B82700608E89 /* FBTestRunnerConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestRunnerConfiguration.m; sourceTree = "<group>"; };
+		EE4F0D5A1C91B82700608E89 /* NSFileManager+FBFileManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSFileManager+FBFileManager.h"; sourceTree = "<group>"; };
+		EE4F0D5B1C91B82700608E89 /* NSFileManager+FBFileManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSFileManager+FBFileManager.m"; sourceTree = "<group>"; };
+		EE4F0D5D1C91B82700608E89 /* FBDeviceOperator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceOperator.h; sourceTree = "<group>"; };
+		EE4F0D5F1C91B82700608E89 /* FBDeviceTestPreparationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceTestPreparationStrategy.h; sourceTree = "<group>"; };
+		EE4F0D601C91B82700608E89 /* FBDeviceTestPreparationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceTestPreparationStrategy.m; sourceTree = "<group>"; };
+		EE4F0D611C91B82700608E89 /* FBSimulatorTestPreparationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorTestPreparationStrategy.h; sourceTree = "<group>"; };
+		EE4F0D621C91B82700608E89 /* FBSimulatorTestPreparationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorTestPreparationStrategy.m; sourceTree = "<group>"; };
+		EE4F0D631C91B82700608E89 /* FBXCTestPreparationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestPreparationStrategy.h; sourceTree = "<group>"; };
+		EE4F0D641C91B82700608E89 /* FBXCTestRunStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunStrategy.h; sourceTree = "<group>"; };
+		EE4F0D651C91B82700608E89 /* FBXCTestRunStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunStrategy.m; sourceTree = "<group>"; };
+		EE4F0D671C91B82700608E89 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
+		EE4F0D681C91B82700608E89 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
+		EE4F0D6A1C91B82700608E89 /* FBRunLoopSpinner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBRunLoopSpinner.h; sourceTree = "<group>"; };
+		EE4F0D6B1C91B82700608E89 /* FBRunLoopSpinner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBRunLoopSpinner.m; sourceTree = "<group>"; };
+		EE4F0D6C1C91B82700608E89 /* NSError+XCTestBootstrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSError+XCTestBootstrap.h"; sourceTree = "<group>"; };
+		EE4F0D6D1C91B82700608E89 /* NSError+XCTestBootstrap.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSError+XCTestBootstrap.m"; sourceTree = "<group>"; };
+		EE4F0D6E1C91B82700608E89 /* XCTestBootstrap-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "XCTestBootstrap-Info.plist"; sourceTree = "<group>"; };
+		EE4F0D6F1C91B82700608E89 /* XCTestBootstrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XCTestBootstrap.h; sourceTree = "<group>"; };
+		EE4F0D911C91B83300608E89 /* FBApplicationDataPackageTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBApplicationDataPackageTests.m; sourceTree = "<group>"; };
+		EE4F0D921C91B83300608E89 /* FBProductBundleTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProductBundleTests.m; sourceTree = "<group>"; };
+		EE4F0D931C91B83300608E89 /* FBTestBundleTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestBundleTests.m; sourceTree = "<group>"; };
+		EE4F0D941C91B83300608E89 /* FBTestConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestConfigurationTests.m; sourceTree = "<group>"; };
+		EE4F0D951C91B83300608E89 /* FBTestRunnerConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestRunnerConfigurationTests.m; sourceTree = "<group>"; };
+		EE4F0D961C91B83300608E89 /* FBXCTestRunStrategyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunStrategyTests.m; sourceTree = "<group>"; };
+		EE4F0D971C91B83300608E89 /* XCTestBootstrapTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "XCTestBootstrapTests-Info.plist"; sourceTree = "<group>"; };
+		EE4F0DA01C91B85800608E89 /* _DTXProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _DTXProxy.h; sourceTree = "<group>"; };
+		EE4F0DA11C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
+		EE4F0DA21C91B85800608E89 /* DTXAllowedRPC-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTXAllowedRPC-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DA31C91B85800608E89 /* DTXBlockCompressor-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTXBlockCompressor-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DA41C91B85800608E89 /* DTXBlockCompressorFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXBlockCompressorFactory.h; sourceTree = "<group>"; };
+		EE4F0DA51C91B85800608E89 /* DTXBlockCompressorLibCompression.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXBlockCompressorLibCompression.h; sourceTree = "<group>"; };
+		EE4F0DA61C91B85800608E89 /* DTXBlockCompressorLibFastCompression.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXBlockCompressorLibFastCompression.h; sourceTree = "<group>"; };
+		EE4F0DA71C91B85800608E89 /* DTXChannel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXChannel.h; sourceTree = "<group>"; };
+		EE4F0DA81C91B85800608E89 /* DTXConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXConnection.h; sourceTree = "<group>"; };
+		EE4F0DA91C91B85800608E89 /* DTXConnectionRemoteReceiveQueueCalls-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTXConnectionRemoteReceiveQueueCalls-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DAA1C91B85800608E89 /* DTXDecompressionException.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXDecompressionException.h; sourceTree = "<group>"; };
+		EE4F0DAB1C91B85800608E89 /* DTXFileDescriptorTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXFileDescriptorTransport.h; sourceTree = "<group>"; };
+		EE4F0DAC1C91B85800608E89 /* DTXFoundationURLTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXFoundationURLTransport.h; sourceTree = "<group>"; };
+		EE4F0DAD1C91B85800608E89 /* DTXLegacyBufferMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXLegacyBufferMessage.h; sourceTree = "<group>"; };
+		EE4F0DAE1C91B85800608E89 /* DTXLegacyCompactDictionaryAdapter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXLegacyCompactDictionaryAdapter.h; sourceTree = "<group>"; };
+		EE4F0DAF1C91B85800608E89 /* DTXLegacyDictionaryMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXLegacyDictionaryMessage.h; sourceTree = "<group>"; };
+		EE4F0DB01C91B85800608E89 /* DTXLegacyMessageParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXLegacyMessageParser.h; sourceTree = "<group>"; };
+		EE4F0DB11C91B85800608E89 /* DTXLegacyMessageTransmitter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXLegacyMessageTransmitter.h; sourceTree = "<group>"; };
+		EE4F0DB21C91B85800608E89 /* DTXLegacyServiceQueueAdapter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXLegacyServiceQueueAdapter.h; sourceTree = "<group>"; };
+		EE4F0DB31C91B85800608E89 /* DTXMachTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXMachTransport.h; sourceTree = "<group>"; };
+		EE4F0DB41C91B85800608E89 /* DTXMessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXMessage.h; sourceTree = "<group>"; };
+		EE4F0DB51C91B85800608E89 /* DTXMessageParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXMessageParser.h; sourceTree = "<group>"; };
+		EE4F0DB61C91B85800608E89 /* DTXMessageParsingBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXMessageParsingBuffer.h; sourceTree = "<group>"; };
+		EE4F0DB71C91B85800608E89 /* DTXMessageTransmitter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXMessageTransmitter.h; sourceTree = "<group>"; };
+		EE4F0DB81C91B85800608E89 /* DTXMessenger-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTXMessenger-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DB91C91B85800608E89 /* DTXProxyChannel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXProxyChannel.h; sourceTree = "<group>"; };
+		EE4F0DBA1C91B85800608E89 /* DTXRateLimiter-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "DTXRateLimiter-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DBB1C91B85800608E89 /* DTXRemoteInvocationReceipt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXRemoteInvocationReceipt.h; sourceTree = "<group>"; };
+		EE4F0DBC1C91B85800608E89 /* DTXResourceTracker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXResourceTracker.h; sourceTree = "<group>"; };
+		EE4F0DBD1C91B85800608E89 /* DTXSendAndWaitRateLimiter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSendAndWaitRateLimiter.h; sourceTree = "<group>"; };
+		EE4F0DBE1C91B85800608E89 /* DTXSendAndWaitStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSendAndWaitStats.h; sourceTree = "<group>"; };
+		EE4F0DBF1C91B85800608E89 /* DTXService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXService.h; sourceTree = "<group>"; };
+		EE4F0DC01C91B85800608E89 /* DTXSharedMemoryTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSharedMemoryTransport.h; sourceTree = "<group>"; };
+		EE4F0DC11C91B85800608E89 /* DTXSocketTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXSocketTransport.h; sourceTree = "<group>"; };
+		EE4F0DC21C91B85800608E89 /* DTXTransport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DTXTransport.h; sourceTree = "<group>"; };
+		EE4F0DC41C91B85800608E89 /* _IDETestResultsProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _IDETestResultsProcessor.h; sourceTree = "<group>"; };
+		EE4F0DC51C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
+		EE4F0DC61C91B85800608E89 /* DVTArchitecture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTArchitecture.h; sourceTree = "<group>"; };
+		EE4F0DC71C91B85800608E89 /* DVTDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTDevice.h; sourceTree = "<group>"; };
+		EE4F0DC81C91B85800608E89 /* DVTDeviceManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTDeviceManager.h; sourceTree = "<group>"; };
+		EE4F0DC91C91B85800608E89 /* DVTDeviceType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTDeviceType.h; sourceTree = "<group>"; };
+		EE4F0DCA1C91B85800608E89 /* DVTLogAspect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTLogAspect.h; sourceTree = "<group>"; };
+		EE4F0DCB1C91B85800608E89 /* DVTPlatform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTPlatform.h; sourceTree = "<group>"; };
+		EE4F0DCC1C91B85800608E89 /* DVTSDK.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTSDK.h; sourceTree = "<group>"; };
+		EE4F0DCE1C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
+		EE4F0DCF1C91B85800608E89 /* DVTAbstractiOSDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTAbstractiOSDevice.h; sourceTree = "<group>"; };
+		EE4F0DD01C91B85800608E89 /* DVTiOSDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTiOSDevice.h; sourceTree = "<group>"; };
+		EE4F0DD11C91B85800608E89 /* DVTiPhoneSimulator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DVTiPhoneSimulator.h; sourceTree = "<group>"; };
+		EE4F0DD31C91B85800608E89 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
+		EE4F0DD41C91B85800608E89 /* XCTestConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTestConfiguration.h; sourceTree = "<group>"; };
+		EE4F0DD51C91B85800608E89 /* XCTestDriverInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestDriverInterface-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DD61C91B85800608E89 /* XCTestManager_DaemonConnectionInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestManager_DaemonConnectionInterface-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DD71C91B85800608E89 /* XCTestManager_IDEInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestManager_IDEInterface-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DD81C91B85800608E89 /* XCTestManager_ManagerInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestManager_ManagerInterface-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DD91C91B85800608E89 /* XCTestManager_TestsInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "XCTestManager_TestsInterface-Protocol.h"; sourceTree = "<group>"; };
+		EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = XCTestBootstrap.xcconfig; sourceTree = "<group>"; };
+		EE4F0DDE1C91BEA500608E89 /* OCMock.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCMock.framework; path = Carthage/Build/Mac/OCMock.framework; sourceTree = "<group>"; };
+		EE5CFECA1C91C2550011FD3D /* FBDeviceTestPreparationStrategyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceTestPreparationStrategyTests.m; sourceTree = "<group>"; };
+		EE5CFECB1C91C2550011FD3D /* FBSimulatorTestPreparationStrategyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorTestPreparationStrategyTests.m; sourceTree = "<group>"; };
 		EEBD600E1C90628F00298A07 /* FBControlCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBControlCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBD60171C90628F00298A07 /* FBControlCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBControlCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EEBD60271C9062CB00298A07 /* FBControlCoreTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FBControlCoreTests-Info.plist"; sourceTree = "<group>"; };
@@ -532,6 +690,23 @@
 				AA819DB71B9FB40D002F58CA /* FBSimulatorControl.framework in Frameworks */,
 				AAC083791B9FBACB00451648 /* Cocoa.framework in Frameworks */,
 				AAC083761B9FB89600451648 /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE4F0D2C1C91B7DA00608E89 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE4F0DDD1C91BA8300608E89 /* FBControlCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE4F0D361C91B7DB00608E89 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE4F0D3A1C91B7DB00608E89 /* XCTestBootstrap.framework in Frameworks */,
+				EE4F0DE01C91BEB400608E89 /* OCMock.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -631,9 +806,13 @@
 			isa = PBXGroup;
 			children = (
 				AA48775B1BAC74DC007F7D23 /* CoreSimulator */,
+				EE4F0D9F1C91B85800608E89 /* DTXConnectionServices */,
+				EE4F0DC31C91B85800608E89 /* DVTFoundation */,
 				AA4879851BAC74DD007F7D23 /* DVTiPhoneSimulatorRemoteClient */,
+				EE4F0DCD1C91B85800608E89 /* IDEiOSSupportCore */,
 				AA791BA31C63668C00AE49EB /* SimulatorBridge */,
 				AA2DDC221C283F40000689C6 /* SimulatorKit */,
+				EE4F0DD21C91B85800608E89 /* XCTest */,
 			);
 			path = PrivateHeaders;
 			sourceTree = "<group>";
@@ -955,6 +1134,7 @@
 		B401C97968022A5500000000 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				EE4F0DDE1C91BEA500608E89 /* OCMock.framework */,
 				AABA164E1C8D6CC400710801 /* libFBControlCore.a */,
 				AAC241231BB3113F0054570C /* AppKit.framework */,
 				AAC241251BB311690054570C /* ApplicationServices.framework */,
@@ -978,6 +1158,8 @@
 				AA819DB21B9FB40D002F58CA /* FBSimulatorControlTests.xctest */,
 				EEBD600E1C90628F00298A07 /* FBControlCore.framework */,
 				EEBD60171C90628F00298A07 /* FBControlCoreTests.xctest */,
+				EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */,
+				EE4F0D391C91B7DB00608E89 /* XCTestBootstrapTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -991,10 +1173,200 @@
 				AA83D3E11B9FAC9E00ED75DE /* FBSimulatorControl */,
 				AA819E081B9FB427002F58CA /* FBSimulatorControlTests */,
 				AA017F4A1BD7784700F45E9D /* Shims */,
+				EE4F0D311C91B7DA00608E89 /* XCTestBootstrap */,
+				EE4F0D3D1C91B7DB00608E89 /* XCTestBootstrapTests */,
 				B401C97968022A5500000000 /* Frameworks */,
 				B401C979C806358400000000 /* Products */,
 			);
 			name = mainGroup;
+			sourceTree = "<group>";
+		};
+		EE4F0D311C91B7DA00608E89 /* XCTestBootstrap */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D491C91B82700608E89 /* Bundles */,
+				EE4F0D591C91B82700608E89 /* Categories */,
+				EE4F0D5C1C91B82700608E89 /* DeviceHandling */,
+				EE4F0D5E1C91B82700608E89 /* Strategies */,
+				EE4F0D661C91B82700608E89 /* TestManagerMediators */,
+				EE4F0D691C91B82700608E89 /* Utility */,
+				EE4F0D6F1C91B82700608E89 /* XCTestBootstrap.h */,
+				EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */,
+				EE4F0D6E1C91B82700608E89 /* XCTestBootstrap-Info.plist */,
+			);
+			path = XCTestBootstrap;
+			sourceTree = "<group>";
+		};
+		EE4F0D3D1C91B7DB00608E89 /* XCTestBootstrapTests */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D911C91B83300608E89 /* FBApplicationDataPackageTests.m */,
+				EE5CFECA1C91C2550011FD3D /* FBDeviceTestPreparationStrategyTests.m */,
+				EE4F0D921C91B83300608E89 /* FBProductBundleTests.m */,
+				EE5CFECB1C91C2550011FD3D /* FBSimulatorTestPreparationStrategyTests.m */,
+				EE4F0D931C91B83300608E89 /* FBTestBundleTests.m */,
+				EE4F0D941C91B83300608E89 /* FBTestConfigurationTests.m */,
+				EE4F0D951C91B83300608E89 /* FBTestRunnerConfigurationTests.m */,
+				EE4F0D961C91B83300608E89 /* FBXCTestRunStrategyTests.m */,
+				EE4F0D971C91B83300608E89 /* XCTestBootstrapTests-Info.plist */,
+			);
+			path = XCTestBootstrapTests;
+			sourceTree = "<group>";
+		};
+		EE4F0D491C91B82700608E89 /* Bundles */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D4A1C91B82700608E89 /* FBApplicationDataPackage.h */,
+				EE4F0D4B1C91B82700608E89 /* FBApplicationDataPackage.m */,
+				EE4F0D4C1C91B82700608E89 /* FBCodeSignCommand.h */,
+				EE4F0D4D1C91B82700608E89 /* FBCodeSignCommand.m */,
+				EE4F0D4E1C91B82700608E89 /* FBCodesignProvider.h */,
+				EE4F0D4F1C91B82700608E89 /* FBFileManager.h */,
+				EE4F0D501C91B82700608E89 /* FBProductBundle+Private.h */,
+				EE4F0D511C91B82700608E89 /* FBProductBundle.h */,
+				EE4F0D521C91B82700608E89 /* FBProductBundle.m */,
+				EE4F0D531C91B82700608E89 /* FBTestBundle.h */,
+				EE4F0D541C91B82700608E89 /* FBTestBundle.m */,
+				EE4F0D551C91B82700608E89 /* FBTestConfiguration.h */,
+				EE4F0D561C91B82700608E89 /* FBTestConfiguration.m */,
+				EE4F0D571C91B82700608E89 /* FBTestRunnerConfiguration.h */,
+				EE4F0D581C91B82700608E89 /* FBTestRunnerConfiguration.m */,
+			);
+			path = Bundles;
+			sourceTree = "<group>";
+		};
+		EE4F0D591C91B82700608E89 /* Categories */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D5A1C91B82700608E89 /* NSFileManager+FBFileManager.h */,
+				EE4F0D5B1C91B82700608E89 /* NSFileManager+FBFileManager.m */,
+			);
+			path = Categories;
+			sourceTree = "<group>";
+		};
+		EE4F0D5C1C91B82700608E89 /* DeviceHandling */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D5D1C91B82700608E89 /* FBDeviceOperator.h */,
+			);
+			path = DeviceHandling;
+			sourceTree = "<group>";
+		};
+		EE4F0D5E1C91B82700608E89 /* Strategies */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D5F1C91B82700608E89 /* FBDeviceTestPreparationStrategy.h */,
+				EE4F0D601C91B82700608E89 /* FBDeviceTestPreparationStrategy.m */,
+				EE4F0D611C91B82700608E89 /* FBSimulatorTestPreparationStrategy.h */,
+				EE4F0D621C91B82700608E89 /* FBSimulatorTestPreparationStrategy.m */,
+				EE4F0D631C91B82700608E89 /* FBXCTestPreparationStrategy.h */,
+				EE4F0D641C91B82700608E89 /* FBXCTestRunStrategy.h */,
+				EE4F0D651C91B82700608E89 /* FBXCTestRunStrategy.m */,
+			);
+			path = Strategies;
+			sourceTree = "<group>";
+		};
+		EE4F0D661C91B82700608E89 /* TestManagerMediators */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D671C91B82700608E89 /* FBTestManagerAPIMediator.h */,
+				EE4F0D681C91B82700608E89 /* FBTestManagerAPIMediator.m */,
+			);
+			path = TestManagerMediators;
+			sourceTree = "<group>";
+		};
+		EE4F0D691C91B82700608E89 /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0D6A1C91B82700608E89 /* FBRunLoopSpinner.h */,
+				EE4F0D6B1C91B82700608E89 /* FBRunLoopSpinner.m */,
+				EE4F0D6C1C91B82700608E89 /* NSError+XCTestBootstrap.h */,
+				EE4F0D6D1C91B82700608E89 /* NSError+XCTestBootstrap.m */,
+			);
+			path = Utility;
+			sourceTree = "<group>";
+		};
+		EE4F0D9F1C91B85800608E89 /* DTXConnectionServices */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0DA01C91B85800608E89 /* _DTXProxy.h */,
+				EE4F0DA11C91B85800608E89 /* CDStructures.h */,
+				EE4F0DA21C91B85800608E89 /* DTXAllowedRPC-Protocol.h */,
+				EE4F0DA31C91B85800608E89 /* DTXBlockCompressor-Protocol.h */,
+				EE4F0DA41C91B85800608E89 /* DTXBlockCompressorFactory.h */,
+				EE4F0DA51C91B85800608E89 /* DTXBlockCompressorLibCompression.h */,
+				EE4F0DA61C91B85800608E89 /* DTXBlockCompressorLibFastCompression.h */,
+				EE4F0DA71C91B85800608E89 /* DTXChannel.h */,
+				EE4F0DA81C91B85800608E89 /* DTXConnection.h */,
+				EE4F0DA91C91B85800608E89 /* DTXConnectionRemoteReceiveQueueCalls-Protocol.h */,
+				EE4F0DAA1C91B85800608E89 /* DTXDecompressionException.h */,
+				EE4F0DAB1C91B85800608E89 /* DTXFileDescriptorTransport.h */,
+				EE4F0DAC1C91B85800608E89 /* DTXFoundationURLTransport.h */,
+				EE4F0DAD1C91B85800608E89 /* DTXLegacyBufferMessage.h */,
+				EE4F0DAE1C91B85800608E89 /* DTXLegacyCompactDictionaryAdapter.h */,
+				EE4F0DAF1C91B85800608E89 /* DTXLegacyDictionaryMessage.h */,
+				EE4F0DB01C91B85800608E89 /* DTXLegacyMessageParser.h */,
+				EE4F0DB11C91B85800608E89 /* DTXLegacyMessageTransmitter.h */,
+				EE4F0DB21C91B85800608E89 /* DTXLegacyServiceQueueAdapter.h */,
+				EE4F0DB31C91B85800608E89 /* DTXMachTransport.h */,
+				EE4F0DB41C91B85800608E89 /* DTXMessage.h */,
+				EE4F0DB51C91B85800608E89 /* DTXMessageParser.h */,
+				EE4F0DB61C91B85800608E89 /* DTXMessageParsingBuffer.h */,
+				EE4F0DB71C91B85800608E89 /* DTXMessageTransmitter.h */,
+				EE4F0DB81C91B85800608E89 /* DTXMessenger-Protocol.h */,
+				EE4F0DB91C91B85800608E89 /* DTXProxyChannel.h */,
+				EE4F0DBA1C91B85800608E89 /* DTXRateLimiter-Protocol.h */,
+				EE4F0DBB1C91B85800608E89 /* DTXRemoteInvocationReceipt.h */,
+				EE4F0DBC1C91B85800608E89 /* DTXResourceTracker.h */,
+				EE4F0DBD1C91B85800608E89 /* DTXSendAndWaitRateLimiter.h */,
+				EE4F0DBE1C91B85800608E89 /* DTXSendAndWaitStats.h */,
+				EE4F0DBF1C91B85800608E89 /* DTXService.h */,
+				EE4F0DC01C91B85800608E89 /* DTXSharedMemoryTransport.h */,
+				EE4F0DC11C91B85800608E89 /* DTXSocketTransport.h */,
+				EE4F0DC21C91B85800608E89 /* DTXTransport.h */,
+			);
+			path = DTXConnectionServices;
+			sourceTree = "<group>";
+		};
+		EE4F0DC31C91B85800608E89 /* DVTFoundation */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0DC41C91B85800608E89 /* _IDETestResultsProcessor.h */,
+				EE4F0DC51C91B85800608E89 /* CDStructures.h */,
+				EE4F0DC61C91B85800608E89 /* DVTArchitecture.h */,
+				EE4F0DC71C91B85800608E89 /* DVTDevice.h */,
+				EE4F0DC81C91B85800608E89 /* DVTDeviceManager.h */,
+				EE4F0DC91C91B85800608E89 /* DVTDeviceType.h */,
+				EE4F0DCA1C91B85800608E89 /* DVTLogAspect.h */,
+				EE4F0DCB1C91B85800608E89 /* DVTPlatform.h */,
+				EE4F0DCC1C91B85800608E89 /* DVTSDK.h */,
+			);
+			path = DVTFoundation;
+			sourceTree = "<group>";
+		};
+		EE4F0DCD1C91B85800608E89 /* IDEiOSSupportCore */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0DCE1C91B85800608E89 /* CDStructures.h */,
+				EE4F0DCF1C91B85800608E89 /* DVTAbstractiOSDevice.h */,
+				EE4F0DD01C91B85800608E89 /* DVTiOSDevice.h */,
+				EE4F0DD11C91B85800608E89 /* DVTiPhoneSimulator.h */,
+			);
+			path = IDEiOSSupportCore;
+			sourceTree = "<group>";
+		};
+		EE4F0DD21C91B85800608E89 /* XCTest */ = {
+			isa = PBXGroup;
+			children = (
+				EE4F0DD31C91B85800608E89 /* CDStructures.h */,
+				EE4F0DD41C91B85800608E89 /* XCTestConfiguration.h */,
+				EE4F0DD51C91B85800608E89 /* XCTestDriverInterface-Protocol.h */,
+				EE4F0DD61C91B85800608E89 /* XCTestManager_DaemonConnectionInterface-Protocol.h */,
+				EE4F0DD71C91B85800608E89 /* XCTestManager_IDEInterface-Protocol.h */,
+				EE4F0DD81C91B85800608E89 /* XCTestManager_ManagerInterface-Protocol.h */,
+				EE4F0DD91C91B85800608E89 /* XCTestManager_TestsInterface-Protocol.h */,
+			);
+			path = XCTest;
 			sourceTree = "<group>";
 		};
 		EEBD600F1C90628F00298A07 /* FBControlCore */ = {
@@ -1175,6 +1547,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EE4F0D2D1C91B7DA00608E89 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE4F0D901C91B82700608E89 /* XCTestBootstrap.h in Headers */,
+				EE4F0D771C91B82700608E89 /* FBProductBundle.h in Headers */,
+				EE4F0D821C91B82700608E89 /* FBDeviceTestPreparationStrategy.h in Headers */,
+				EE4F0D891C91B82700608E89 /* FBTestManagerAPIMediator.h in Headers */,
+				EE4F0D811C91B82700608E89 /* FBDeviceOperator.h in Headers */,
+				EE4F0D8B1C91B82700608E89 /* FBRunLoopSpinner.h in Headers */,
+				EE4F0D761C91B82700608E89 /* FBProductBundle+Private.h in Headers */,
+				EE4F0D8D1C91B82700608E89 /* NSError+XCTestBootstrap.h in Headers */,
+				EE4F0D751C91B82700608E89 /* FBFileManager.h in Headers */,
+				EE4F0D7B1C91B82700608E89 /* FBTestConfiguration.h in Headers */,
+				EE4F0D861C91B82700608E89 /* FBXCTestPreparationStrategy.h in Headers */,
+				EE4F0D871C91B82700608E89 /* FBXCTestRunStrategy.h in Headers */,
+				EE4F0D791C91B82700608E89 /* FBTestBundle.h in Headers */,
+				EE4F0D7F1C91B82700608E89 /* NSFileManager+FBFileManager.h in Headers */,
+				EE4F0D841C91B82700608E89 /* FBSimulatorTestPreparationStrategy.h in Headers */,
+				EE4F0D721C91B82700608E89 /* FBCodeSignCommand.h in Headers */,
+				EE4F0D701C91B82700608E89 /* FBApplicationDataPackage.h in Headers */,
+				EE4F0D7D1C91B82700608E89 /* FBTestRunnerConfiguration.h in Headers */,
+				EE4F0D741C91B82700608E89 /* FBCodesignProvider.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EEBD600B1C90628F00298A07 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -1249,6 +1647,44 @@
 			productReference = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		EE4F0D2F1C91B7DA00608E89 /* XCTestBootstrap */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE4F0D471C91B7DB00608E89 /* Build configuration list for PBXNativeTarget "XCTestBootstrap" */;
+			buildPhases = (
+				EE4F0D2B1C91B7DA00608E89 /* Sources */,
+				EE4F0D2C1C91B7DA00608E89 /* Frameworks */,
+				EE4F0D2D1C91B7DA00608E89 /* Headers */,
+				EE4F0D2E1C91B7DA00608E89 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EE4F0DDC1C91BA7E00608E89 /* PBXTargetDependency */,
+			);
+			name = XCTestBootstrap;
+			productName = XCTestBootstrap;
+			productReference = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		EE4F0D381C91B7DB00608E89 /* XCTestBootstrapTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE4F0D481C91B7DB00608E89 /* Build configuration list for PBXNativeTarget "XCTestBootstrapTests" */;
+			buildPhases = (
+				EE4F0D351C91B7DB00608E89 /* Sources */,
+				EE4F0D361C91B7DB00608E89 /* Frameworks */,
+				EE4F0D371C91B7DB00608E89 /* Resources */,
+				EE5CFEC91C91C0570011FD3D /* carthage copy-frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EE4F0D3C1C91B7DB00608E89 /* PBXTargetDependency */,
+			);
+			name = XCTestBootstrapTests;
+			productName = XCTestBootstrapTests;
+			productReference = EE4F0D391C91B7DB00608E89 /* XCTestBootstrapTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		EEBD600D1C90628F00298A07 /* FBControlCore */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EEBD601F1C90628F00298A07 /* Build configuration list for PBXNativeTarget "FBControlCore" */;
@@ -1298,6 +1734,12 @@
 					AA819DB11B9FB40D002F58CA = {
 						CreatedOnToolsVersion = 7.0;
 					};
+					EE4F0D2F1C91B7DA00608E89 = {
+						CreatedOnToolsVersion = 7.2.1;
+					};
+					EE4F0D381C91B7DB00608E89 = {
+						CreatedOnToolsVersion = 7.2.1;
+					};
 					EEBD600D1C90628F00298A07 = {
 						CreatedOnToolsVersion = 7.2.1;
 					};
@@ -1321,6 +1763,8 @@
 				EEBD60161C90628F00298A07 /* FBControlCoreTests */,
 				E66DC04E390C419500000000 /* FBSimulatorControl */,
 				AA819DB11B9FB40D002F58CA /* FBSimulatorControlTests */,
+				EE4F0D2F1C91B7DA00608E89 /* XCTestBootstrap */,
+				EE4F0D381C91B7DB00608E89 /* XCTestBootstrapTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1345,6 +1789,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EE4F0D2E1C91B7DA00608E89 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE4F0D371C91B7DB00608E89 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EEBD600C1C90628F00298A07 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1363,6 +1821,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		EE5CFEC91C91C0570011FD3D /* carthage copy-frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/Mac/OCMock.framework",
+			);
+			name = "carthage copy-frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1870857F0000000000000000 /* Sources */ = {
@@ -1446,6 +1922,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EE4F0D2B1C91B7DA00608E89 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE4F0D8A1C91B82700608E89 /* FBTestManagerAPIMediator.m in Sources */,
+				EE4F0D781C91B82700608E89 /* FBProductBundle.m in Sources */,
+				EE4F0D711C91B82700608E89 /* FBApplicationDataPackage.m in Sources */,
+				EE4F0D8E1C91B82700608E89 /* NSError+XCTestBootstrap.m in Sources */,
+				EE4F0D801C91B82700608E89 /* NSFileManager+FBFileManager.m in Sources */,
+				EE4F0D731C91B82700608E89 /* FBCodeSignCommand.m in Sources */,
+				EE4F0D831C91B82700608E89 /* FBDeviceTestPreparationStrategy.m in Sources */,
+				EE4F0D7C1C91B82700608E89 /* FBTestConfiguration.m in Sources */,
+				EE4F0D8C1C91B82700608E89 /* FBRunLoopSpinner.m in Sources */,
+				EE4F0D7E1C91B82700608E89 /* FBTestRunnerConfiguration.m in Sources */,
+				EE4F0D881C91B82700608E89 /* FBXCTestRunStrategy.m in Sources */,
+				EE4F0D7A1C91B82700608E89 /* FBTestBundle.m in Sources */,
+				EE4F0D851C91B82700608E89 /* FBSimulatorTestPreparationStrategy.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE4F0D351C91B7DB00608E89 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE4F0D9B1C91B83300608E89 /* FBTestConfigurationTests.m in Sources */,
+				EE4F0D981C91B83300608E89 /* FBApplicationDataPackageTests.m in Sources */,
+				EE4F0D9C1C91B83300608E89 /* FBTestRunnerConfigurationTests.m in Sources */,
+				EE5CFECC1C91C2550011FD3D /* FBDeviceTestPreparationStrategyTests.m in Sources */,
+				EE4F0D9A1C91B83300608E89 /* FBTestBundleTests.m in Sources */,
+				EE4F0D991C91B83300608E89 /* FBProductBundleTests.m in Sources */,
+				EE4F0D9D1C91B83300608E89 /* FBXCTestRunStrategyTests.m in Sources */,
+				EE5CFECD1C91C2550011FD3D /* FBSimulatorTestPreparationStrategyTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EEBD60091C90628F00298A07 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1490,6 +2001,16 @@
 			isa = PBXTargetDependency;
 			target = E66DC04E390C419500000000 /* FBSimulatorControl */;
 			targetProxy = AA819DB81B9FB40D002F58CA /* PBXContainerItemProxy */;
+		};
+		EE4F0D3C1C91B7DB00608E89 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE4F0D2F1C91B7DA00608E89 /* XCTestBootstrap */;
+			targetProxy = EE4F0D3B1C91B7DB00608E89 /* PBXContainerItemProxy */;
+		};
+		EE4F0DDC1C91BA7E00608E89 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EEBD600D1C90628F00298A07 /* FBControlCore */;
+			targetProxy = EE4F0DDB1C91BA7E00608E89 /* PBXContainerItemProxy */;
 		};
 		EEBD601A1C90628F00298A07 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1781,6 +2302,310 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		EE4F0D411C91B7DB00608E89 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				FRAMEWORK_VERSION = A;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "XCTestBootstrap/XCTestBootstrap-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrap;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		EE4F0D421C91B7DB00608E89 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				FRAMEWORK_VERSION = A;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "XCTestBootstrap/XCTestBootstrap-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrap;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Profile;
+		};
+		EE4F0D431C91B7DB00608E89 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				FRAMEWORK_VERSION = A;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "XCTestBootstrap/XCTestBootstrap-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrap;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		EE4F0D441C91B7DB00608E89 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		EE4F0D451C91B7DB00608E89 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Profile;
+		};
+		EE4F0D461C91B7DB00608E89 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "XCTestBootstrapTests/XCTestBootstrapTests-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrapTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -2090,6 +2915,26 @@
 				AA819DBB1B9FB40D002F58CA /* Debug */,
 				AA819DBC1B9FB40D002F58CA /* Profile */,
 				AA819DBD1B9FB40D002F58CA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE4F0D471C91B7DB00608E89 /* Build configuration list for PBXNativeTarget "XCTestBootstrap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE4F0D411C91B7DB00608E89 /* Debug */,
+				EE4F0D421C91B7DB00608E89 /* Profile */,
+				EE4F0D431C91B7DB00608E89 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE4F0D481C91B7DB00608E89 /* Build configuration list for PBXNativeTarget "XCTestBootstrapTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE4F0D441C91B7DB00608E89 /* Debug */,
+				EE4F0D451C91B7DB00608E89 /* Profile */,
+				EE4F0D461C91B7DB00608E89 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
