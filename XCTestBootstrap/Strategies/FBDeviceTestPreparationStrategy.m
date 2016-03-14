@@ -63,8 +63,10 @@
     withBundlePath:self.applicationPath]
    build];
 
-  if (![deviceOperator installApplicationWithPath:testRunner.path error:error]) {
-    return nil;
+  if (![deviceOperator isApplicationInstalledWithBundleID:testRunner.bundleID error:error]) {
+    if (![deviceOperator installApplicationWithPath:testRunner.path error:error]) {
+      return nil;
+    }
   }
 
   // Get tested app path on device
