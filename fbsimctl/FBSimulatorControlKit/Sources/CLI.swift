@@ -12,8 +12,8 @@
 import Foundation
 import FBSimulatorControl
 
-public struct CLI {
-  public static func bootstrap() {
+@objc public class CLI : NSObject {
+  public static func bootstrap() -> Int32 {
     // The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
     let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
     do {
@@ -34,10 +34,8 @@ public struct CLI {
 
     let environment = NSProcessInfo.processInfo().environment
 
-    let returnCode = Command
+    return Command
       .fromArguments(arguments, environment: environment)
       .runFromCLI()
-
-    exit(returnCode)
   }
 }
