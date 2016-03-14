@@ -167,7 +167,9 @@
 
 - (void)terminateAllHandles
 {
-  [self.processToHandles.allValues makeObjectsPerformSelector:@selector(terminate)];
+  for (FBProcessInfo *processInfo in self.processToHandles) {
+    [self terminateHandlesAssociatedWithProcess:processInfo];
+  }
   [self.processToHandles removeAllObjects];
   [self.simulatorTerminationHandles makeObjectsPerformSelector:@selector(terminate)];
   [self.simulatorTerminationHandles removeAllObjects];
