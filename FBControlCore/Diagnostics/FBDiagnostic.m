@@ -11,6 +11,9 @@
 
 #import <objc/runtime.h>
 
+#import "FBCollectionInformation.h"
+#import "FBControlCoreError.h"
+
 @interface FBDiagnostic ()
 
 @property (nonatomic, copy, readwrite) NSString *shortName;
@@ -31,12 +34,16 @@
  */
 @interface FBDiagnostic_Data : FBDiagnostic
 
++ (NSData *)dataFromJSON:(NSDictionary *)json error:(NSError **)error;
+
 @end
 
 /**
  A representation of a Diagnostic, backed by an NSString.
  */
 @interface FBDiagnostic_String : FBDiagnostic
+
++ (NSString *)stringFromJSON:(NSDictionary *)json error:(NSError **)error;
 
 @end
 
@@ -45,12 +52,16 @@
  */
 @interface FBDiagnostic_Path : FBDiagnostic
 
++ (NSString *)pathFromJSON:(NSDictionary *)json error:(NSError **)error;
+
 @end
 
 /**
  A representation of a Diagnostic, backed by JSON.
  */
 @interface FBDiagnostic_JSON : FBDiagnostic
+
++ (id)objectFromJSON:(NSDictionary *)json error:(NSError **)error;
 
 @end
 
@@ -172,7 +183,42 @@
   return [storageDirectory stringByAppendingPathComponent:filename];
 }
 
-#pragma mark FBJSONSerializable
+#pragma mark JSON
+
++ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isArrayHeterogeneous:json.allKeys withClass:NSString.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ does not have string keys", json] fail:error];
+  }
+  NSString *shortName = json[@"short_name"];
+  if (!shortName) {
+    return [[FBControlCoreError describeFormat:@"%@ should exist for for 'short_name'", shortName] fail:error];
+  }
+  NSString *humanReadableName = json[@"human_name"];
+  NSString *fileType = json[@"file_type"];
+  FBDiagnosticBuilder *builder = [[[[FBDiagnosticBuilder builder]
+    updateShortName:shortName]
+    updateHumanReadableName:humanReadableName]
+    updateFileType:fileType];
+
+  NSData *data = [FBDiagnostic_Data dataFromJSON:json error:nil];
+  if (data) {
+    return [[builder updateData:data] build];
+  }
+  NSString *string = [FBDiagnostic_String stringFromJSON:json error:nil];
+  if (string) {
+    return [[builder updateString:string] build];
+  }
+  NSString *path = [FBDiagnostic_Path pathFromJSON:json error:nil];
+  if (path) {
+    return [[builder updatePath:path] build];
+  }
+  id object = [FBDiagnostic_JSON objectFromJSON:json error:nil];
+  if (object) {
+    return [[builder updateJSON:object] build];
+  }
+  return [builder build];
+}
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -311,7 +357,20 @@
   return [self.backingData writeToFile:path options:0 error:error];
 }
 
-#pragma mark FBJSONSerializable
+#pragma mark JSON
+
++ (NSData *)dataFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  NSString *base64String = json[@"data"];
+  if (![base64String isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a string for 'data'", base64String] fail:error];
+  }
+  NSData *data = [[NSData alloc] initWithBase64EncodedString:base64String options:0];
+  if (!data) {
+    return [[FBControlCoreError describe:@"base64 encoded string could not be decoded"] fail:error];
+  }
+  return data;
+}
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -441,7 +500,16 @@
   return [self.backingString writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:error];
 }
 
-#pragma mark FBJSONSerializable
+#pragma mark JSON
+
++ (NSString *)stringFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  NSString *string = json[@"contents"];
+  if (![string isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a string for 'contents'", string] fail:error];
+  }
+  return string;
+}
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -553,7 +621,16 @@
   return [NSFileManager.defaultManager copyItemAtPath:self.backingFilePath toPath:path error:error];
 }
 
-#pragma mark FBJSONSerializable
+#pragma mark JSON
+
++ (NSString *)pathFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  NSString *path = json[@"location"];
+  if (![path isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a string for 'path'", path] fail:error];
+  }
+  return path;
+}
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -683,7 +760,16 @@
   return bytesWritten > 0;
 }
 
-#pragma mark FBJSONSerializable
+#pragma mark JSON
+
++ (id)objectFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  id object = json[@"object"];
+  if (!object) {
+    return [[FBControlCoreError describe:@"'object' does not exist"] fail:error];
+  }
+  return object;
+}
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -758,15 +844,36 @@
 
 @implementation FBDiagnosticBuilder : NSObject
 
+#pragma mark Initializers
+
 + (instancetype)builder
 {
-  return [self builderWithDiagnostic:nil];
+  return [[FBDiagnosticBuilder alloc] initWithDiagnostic:nil];
 }
 
 + (instancetype)builderWithDiagnostic:(FBDiagnostic *)diagnostic
 {
-  return [[FBDiagnosticBuilder new] updateDiagnostic:[diagnostic copy] ?: [FBDiagnostic_Empty new]];
+  return [[FBDiagnosticBuilder alloc] initWithDiagnostic:diagnostic];
 }
+
+- (instancetype)init
+{
+  return [self initWithDiagnostic:nil];
+}
+
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _diagnostic = [diagnostic copy] ?: FBDiagnostic_Empty.new;
+
+  return self;
+}
+
+#pragma mark Updates
 
 - (instancetype)updateDiagnostic:(FBDiagnostic *)diagnostic
 {
@@ -851,11 +958,9 @@
   return self;
 }
 
-- (instancetype)updateJSONSerializable:(id)jsonSerializable
+- (instancetype)updateJSON:(id)json
 {
-  id json = [jsonSerializable conformsToProtocol:@protocol(FBJSONSerializable)]
-    ? [jsonSerializable jsonSerializableRepresentation]
-    : jsonSerializable;
+  json = [json conformsToProtocol:@protocol(FBJSONSerializable)] ? [json jsonSerializableRepresentation] : json;
   if (!json) {
     return self;
   }

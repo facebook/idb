@@ -29,8 +29,9 @@
 {
   NSArray *values = @[self.photoDiagnostic, self.simulatorSystemLog, self.treeJSONDiagnostic];
   [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
   [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
 }
 
 - (void)assertWritesOutToFile:(FBDiagnostic *)diagnostic
@@ -224,7 +225,7 @@
   };
   FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
     updateShortName:@"somelog"]
-    updateJSONSerializable:json]
+    updateJSON:json]
     build];
 
   XCTAssertNotNil(diagnostic.asPath);
@@ -278,7 +279,7 @@
 {
   FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
     updateShortName:@"process_info"]
-    updateJSONSerializable:self.launchCtlProcess]
+    updateJSON:self.launchCtlProcess]
     build];
 
   XCTAssertNotNil(diagnostic.asPath);
@@ -288,6 +289,23 @@
   XCTAssertTrue(diagnostic.isSearchableAsText);
   XCTAssertTrue([diagnostic.asString containsString:[@(NSProcessInfo.processInfo.processIdentifier) stringValue]]);
   [self assertWritesOutToFile:diagnostic];
+}
+
+- (void)testJSONFileWiring
+{
+  FBDiagnostic *localFile = self.treeJSONDiagnostic;
+  FBDiagnostic *wireDiagnostic = [[[FBDiagnosticBuilder
+    builderWithDiagnostic:localFile]
+    readIntoMemory]
+    build];
+
+  id json = [wireDiagnostic jsonSerializableRepresentation];
+  NSError *error = nil;
+  FBDiagnostic *remoteDiagnostic = [FBDiagnostic inflateFromJSON:json error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(remoteDiagnostic);
+  XCTAssertEqualObjects(localFile.shortName , remoteDiagnostic.shortName);
+  XCTAssertEqualObjects(localFile.asString, remoteDiagnostic.asString);
 }
 
 @end

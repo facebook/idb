@@ -16,7 +16,7 @@
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
-@interface FBDiagnostic : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
+@interface FBDiagnostic : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  The name of the Log for uniquely identifying the log.
@@ -182,14 +182,13 @@
 - (instancetype)updatePath:(NSString *)path;
 
 /**
- Updates the underlying `FBDiagnostic` with JSON Encoded String.
+ Updates the underlying `FBDiagnostic` with the provided Native JSON Object.
  Will replace any data, string or path associated with the log.
 
- @param jsonSerializable Can be either an FBJSONSerializable
-                         or an object that meets the requirements of NSJSONSerialization.
+ @param json Can be either an FBJSONSerializable or an object that meets the requirements of NSJSONSerialization.
  @return the reciever, for chaining.
  */
-- (instancetype)updateJSONSerializable:(id)jsonSerializable;
+- (instancetype)updateJSON:(id)json;
 
 /**
  Returns a File Path suitable for writing data into.
@@ -216,6 +215,13 @@
 /**
  Updates the underlying `FBDiagnostic` by reading it into memory, if it is backed by a file.
  This means that the created FBDiagnostic is effectively immutable since the content cannot change.
+
+ File-backed Diagnostics are beneficial as they allow for the work of reading, transforming or writing a diagnostic
+ to be deferred to a later date. Once a Diagnostic is read into memory the backing file can change and will not
+ affect the diagnostic object.
+
+ If you wish to transfer a diagnostic to a remote machine, reading it into memory will also mean that it can be encoded
+ into a JSON representation and reconstructed as a file on the remote machine.
 
  @return the reciever, for chaining.
  */
