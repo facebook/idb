@@ -45,6 +45,11 @@
   return YES;
 }
 
+- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  return ([self.simulator installedApplicationWithBundleID:bundleID error:error] != nil);
+}
+
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment error:(NSError **)error
 {
   FBSimulatorApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];

@@ -36,6 +36,15 @@
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error;
 
 /**
+ Queries if application with given bundleID is installed
+
+ @param bundleID bundle ID of queried application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return NO if application is not installed or error occured, otherwise YES
+ */
+- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
  Launches application with given bundleID, arguments & environment variables
 
  @param bundleID bundle ID of installed application

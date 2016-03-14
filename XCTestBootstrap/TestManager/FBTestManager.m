@@ -38,8 +38,10 @@
 
 - (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment error:(NSError **)error
 {
-  if (![self.deviceOperator installApplicationWithPath:path error:error]) {
-    return NO;
+  if (![self.deviceOperator isApplicationInstalledWithBundleID:bundleID error:error]) {
+    if (![self.deviceOperator installApplicationWithPath:path error:error]) {
+      return NO;
+    }
   }
   if (![self.deviceOperator launchApplicationWithBundleID:bundleID arguments:arguments environment:environment error:error]) {
     return NO;
