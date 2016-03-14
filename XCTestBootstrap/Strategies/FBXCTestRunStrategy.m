@@ -6,15 +6,14 @@
 
 #import "FBDeviceOperator.h"
 #import "FBProductBundle.h"
-#import "FBTestManagerAPIMediator.h"
+#import "FBTestManager.h"
 #import "FBTestRunnerConfiguration.h"
 #import "FBXCTestPreparationStrategy.h"
 #import "NSError+XCTestBootstrap.h"
 
-@interface FBXCTestRunStrategy () <FBTestManagerDelegate>
+@interface FBXCTestRunStrategy ()
 @property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
 @property (nonatomic, strong) id<FBXCTestPreparationStrategy> prepareStrategy;
-@property (nonatomic, strong) FBTestManagerAPIMediator *mediator;
 @end
 
 @implementation FBXCTestRunStrategy
@@ -27,14 +26,14 @@
   return strategy;
 }
 
-- (BOOL)startTestWithAttributes:(NSArray *)attributes environment:(NSDictionary *)environment error:(NSError **)error
+- (FBTestManager *)startTestManagerWithAttributes:(NSArray *)attributes environment:(NSDictionary *)environment error:(NSError **)error
 {
   NSAssert(self.deviceOperator, @"Device operator is needed to perform meaningful test");
   NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
 
   FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithDeviceOperator:self.deviceOperator error:error];
   if (!configuration) {
-    return NO;
+    return nil;
   }
 
   NSMutableArray *mAttributes = (configuration.launchArguments ?: @[]).mutableCopy;
@@ -51,7 +50,7 @@
                                                 arguments:mAttributes.copy
                                               environment:mEnvironment.copy
                                                     error:error]) {
-    return NO;
+    return nil;
   }
 
   // Get XCTStubApps process Id
@@ -60,31 +59,19 @@
     if (error) {
       *error = [NSError XCTestBootstrapErrorWithDescription:@"Failed to determine launched process PID"];
     }
-    return NO;
+    return nil;
   }
 
   // Attach WDA
-  self.mediator =
-  [FBTestManagerAPIMediator mediatorWithDevice:self.deviceOperator.dvtDevice
-                                 testRunnerPID:testRunnerProcessID
-                             sessionIdentifier:configuration.sessionIdentifier];
-  self.mediator.delegate = self;
-  [self.mediator connectTestRunnerWithTestManagerDaemon];
-  return YES;
-}
-
-
-#pragma mark - FBTestManagerDelegate
-
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment error:(NSError **)error
-{
-  if (![self.deviceOperator installApplicationWithPath:path error:error]) {
-    return NO;
+  FBTestManager *testManager =
+  [FBTestManager testManagerWithOperator:self.deviceOperator
+                           testRunnerPID:testRunnerProcessID
+                       sessionIdentifier:configuration.sessionIdentifier
+   ];
+  if (![testManager connectWithError:error]) {
+    return nil;
   }
-  if (![self.deviceOperator launchApplicationWithBundleID:bundleID arguments:arguments environment:environment error:error]) {
-    return NO;
-  }
-  return YES;
+  return testManager;
 }
 
 @end

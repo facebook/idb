@@ -2,6 +2,7 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBTestManager;
 @protocol FBXCTestPreparationStrategy;
 @protocol FBDeviceOperator;
 
@@ -25,8 +26,8 @@
  @param attributes additional attributes used to start test runner
  @param environment additional environment used to start test runner
  @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return YES if the operation succeeds, otherwise NO.
+ @return testManager if the operation succeeds, otherwise nil.
  */
-- (BOOL)startTestWithAttributes:(NSArray *)attributes environment:(NSDictionary *)environment error:(NSError **)error;
+- (FBTestManager *)startTestManagerWithAttributes:(NSArray *)attributes environment:(NSDictionary *)environment error:(NSError **)error;
 
 @end

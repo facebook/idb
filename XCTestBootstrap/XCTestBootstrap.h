@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
@@ -15,12 +17,12 @@
 #import <XCTestBootstrap/FBFileManager.h>
 #import <XCTestBootstrap/FBProductBundle.h>
 #import <XCTestBootstrap/FBRunLoopSpinner.h>
+#import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBTestBundle.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
-#import <XCTestBootstrap/FBTestRunnerConfiguration.h>
+#import <XCTestBootstrap/FBTestManager.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediator.h>
-#import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
+#import <XCTestBootstrap/FBTestRunnerConfiguration.h>
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
-
 #import <XCTestBootstrap/NSError+XCTestBootstrap.h>
 #import <XCTestBootstrap/NSFileManager+FBFileManager.h>

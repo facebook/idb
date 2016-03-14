@@ -4,14 +4,14 @@
 
 @class DVTAbstractiOSDevice;
 
-@protocol FBTestManagerDelegate;
+@protocol FBTestManagerMediatorDelegate;
 
 /**
  This is massively simplified reimplementations of Apple's _IDETestManagerAPIMediator class,
  which is mediator (running on host) between test runner (app that executes XCTest bundle on device) and testmanagerd (running on device), that helps to launch tests.
  */
 @interface FBTestManagerAPIMediator : NSObject
-@property (nonatomic, weak) id<FBTestManagerDelegate> delegate;
+@property (nonatomic, weak) id<FBTestManagerMediatorDelegate> delegate;
 
 /**
  Creates and returns a mediator with given paramenters
@@ -31,7 +31,7 @@
 @end
 
 
-@protocol FBTestManagerDelegate <NSObject>
+@protocol FBTestManagerMediatorDelegate <NSObject>
 
 /**
  Request to launch an application
