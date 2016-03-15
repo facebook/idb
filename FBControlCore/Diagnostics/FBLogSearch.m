@@ -302,6 +302,8 @@
 
 @implementation FBBatchLogSearchResult
 
+#pragma mark Initializers
+
 - (instancetype)initWithMapping:(NSDictionary<NSString *, NSArray<NSString *> *> *)mapping
 {
   self = [super init];
@@ -325,6 +327,13 @@
     }
   }
   return [[self alloc] initWithMapping:json];
+}
+
+#pragma mark Public Methods
+
+- (NSArray<NSString *> *)allMatches
+{
+  return [self.mapping.allValues valueForKeyPath:@"@unionOfArrays.self"];
 }
 
 #pragma mark NSCoding

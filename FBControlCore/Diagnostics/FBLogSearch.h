@@ -51,6 +51,11 @@
  */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSArray<NSString *> *> *mapping;
 
+/**
+ Returns all matches from all elements in the mapping
+ */
+- (NSArray<NSString *> *)allMatches;
+
 @end
 
 /**
