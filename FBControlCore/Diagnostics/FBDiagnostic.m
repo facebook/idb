@@ -973,7 +973,7 @@
 
 - (NSString *)createPath
 {
-  return [self.diagnostic temporaryFilePath];
+  return self.diagnostic.temporaryFilePath;
 }
 
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block
@@ -984,6 +984,11 @@
     [self flushBackingStore];
   }
   return [self updatePath:path];
+}
+
+- (instancetype)updatePathFromDefaultLocation
+{
+  return [self updatePath:self.diagnostic.temporaryFilePath];
 }
 
 - (instancetype)readIntoMemory

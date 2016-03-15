@@ -96,19 +96,21 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (FBDiagnostic *)video
 {
-  return [[[[self.logBuilder
+  return [[[[[self.logBuilder
     updateShortName:FBSimulatorLogNameVideo]
     updateFileType:@"mp4"]
+    updatePathFromDefaultLocation]
     updateDiagnostic:self.eventLogs[FBSimulatorLogNameVideo]]
     build];
 }
 
 - (FBDiagnostic *)screenshot
 {
-  return [[[[self.logBuilder
+  return [[[[[self.logBuilder
     updateShortName:FBSimulatorLogNameScreenshot]
     updateFileType:@"png"]
-    updateDiagnostic:self.eventLogs[FBSimulatorLogNameVideo]]
+    updatePathFromDefaultLocation]
+    updateDiagnostic:self.eventLogs[FBSimulatorLogNameScreenshot]]
     build];
 }
 
@@ -187,7 +189,9 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
     self.syslog,
     self.coreSimulator,
-    self.simulatorBootstrap
+    self.simulatorBootstrap,
+    self.video,
+    self.screenshot
   ]];
   [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
   [logs addObjectsFromArray:self.eventLogs.allValues];

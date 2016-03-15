@@ -213,6 +213,17 @@
 - (instancetype)updatePathFromBlock:( BOOL (^)(NSString *path) )block;
 
 /**
+ Updates the underlying `FBDiagnostic` by attempting to find the diagnostic at it's default destination.
+ A Diagnostic will have an idempotent destination if the following are consistent:
+ 1) storageDirectory
+ 2) shortName
+ 3) fileType
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)updatePathFromDefaultLocation;
+
+/**
  Updates the underlying `FBDiagnostic` by reading it into memory, if it is backed by a file.
  This means that the created FBDiagnostic is effectively immutable since the content cannot change.
 
