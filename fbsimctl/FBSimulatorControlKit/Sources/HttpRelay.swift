@@ -68,47 +68,6 @@ enum HttpMethod {
   case POST
 }
 
-extension FBCrashLogInfoProcessType {
-  static func fromJSON(json: JSON) throws -> FBCrashLogInfoProcessType {
-    let mapping = [
-      "application" : FBCrashLogInfoProcessType.Application,
-      "system" : FBCrashLogInfoProcessType.System,
-      "custom_agent" : FBCrashLogInfoProcessType.CustomAgent
-    ]
-    var types = FBCrashLogInfoProcessType()
-    for string in try json.getArrayOfStrings() {
-      guard let processType = mapping[string] else {
-        throw JSONError.Parse("\(string) is not a crash log process type")
-      }
-      types.unionInPlace(processType)
-    }
-    return types
-  }
-}
-
-extension DiagnosticQuery {
-  static func fromJSON(json: JSON) throws -> DiagnosticQuery {
-    let type = try json.getValue("type").getString()
-    switch type {
-    case "app_files":
-      let bundleID = try json.getValue("bundle_id").getString()
-      let names = try json.getValue("names").getArrayOfStrings()
-      return DiagnosticQuery.AppFiles(bundleID, names)
-    case "all":
-      guard let names = try json.getOptionalValue("names")?.getArrayOfStrings() else {
-        return DiagnosticQuery.Default
-      }
-      return DiagnosticQuery.Named(names)
-    case "crashes":
-      let since = try json.getValue("since").getNumber().doubleValue
-      let types = try FBCrashLogInfoProcessType.fromJSON(try json.getValue("process_types"))
-      return DiagnosticQuery.Crashes(NSDate(timeIntervalSince1970: since), types)
-    default:
-      throw JSONError.Parse("\(type) is not valid")
-    }
-  }
-}
-
 struct HttpRoute {
   let method: HttpMethod
   let endpoint: String
@@ -197,7 +156,7 @@ class HttpRelay : Relay {
 
   private var diagnoseRoute: HttpRoute { get {
     return HttpRoute(method: HttpMethod.POST, endpoint: "diagnose") { json in
-      let query = try DiagnosticQuery.fromJSON(json)
+      let query = try FBSimulatorDiagnosticQuery.inflateFromJSON(json.decode())
       return Action.Diagnose(query)
     }
   }}

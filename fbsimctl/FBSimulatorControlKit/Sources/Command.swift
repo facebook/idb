@@ -57,20 +57,6 @@ public enum Server {
 }
 
 /**
-  Options for obtaining diagnostics
-*/
-public enum DiagnosticQuery {
-  // The Default Diagnostics.
-  case Default
-  // Default Diagnostics, filtered by diagnostic name.
-  case Named([String])
-  // Crases after a given date.
-  case Crashes(NSDate, FBCrashLogInfoProcessType)
-  // Find Diagnostic Files in an Application's Home Directory.
-  case AppFiles(String, [String])
-}
-
-/**
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
@@ -78,7 +64,7 @@ public enum Action {
   case Boot(FBSimulatorLaunchConfiguration?)
   case Create(FBSimulatorConfiguration)
   case Delete
-  case Diagnose(DiagnosticQuery)
+  case Diagnose(FBSimulatorDiagnosticQuery)
   case Install(FBSimulatorApplication)
   case Launch(FBProcessLaunchConfiguration)
   case List
@@ -211,21 +197,5 @@ extension Server : JSONDescribeable, CustomStringConvertible {
       case .Http(let port): return "HTTP: Port \(port)"
       }
     }
-  }
-}
-
-extension DiagnosticQuery : Equatable {}
-public func == (left: DiagnosticQuery, right: DiagnosticQuery) -> Bool {
-  switch (left, right) {
-  case (.Default, .Default):
-    return true
-  case (.Named(let leftNames), .Named(let rightNames)):
-    return leftNames == rightNames
-  case (.Crashes(let leftDate, let leftProcessType), .Crashes(let rightDate, let rightProcessType)):
-    return leftDate == rightDate && leftProcessType == rightProcessType
-  case (.AppFiles(let leftBundleID, let leftFiles), .AppFiles(let rightBundleID, let rightFiles)):
-    return leftBundleID == rightBundleID && leftFiles == rightFiles
-  default:
-    return false
   }
 }

@@ -166,18 +166,6 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [logs copy];
 }
 
-- (NSArray<FBDiagnostic *> *)allDiagnostics
-{
-  NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
-    self.syslog,
-    self.coreSimulator,
-    self.simulatorBootstrap
-  ]];
-  [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
-  [logs addObjectsFromArray:self.eventLogs.allValues];
-  return [logs filteredArrayUsingPredicate:FBSimulatorDiagnostics.predicateForHasContent];
-}
-
 - (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback
 {
   NSString *directory = nil;
@@ -192,6 +180,30 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   }
   NSArray *paths = [FBFileFinder mostRecentFindFiles:filenames inDirectory:directory];
   return [FBSimulatorDiagnostics diagnosticsForPaths:paths];
+}
+
+- (NSArray<FBDiagnostic *> *)allDiagnostics
+{
+  NSMutableArray *logs = [NSMutableArray arrayWithArray:@[
+    self.syslog,
+    self.coreSimulator,
+    self.simulatorBootstrap
+  ]];
+  [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
+  [logs addObjectsFromArray:self.eventLogs.allValues];
+  return [logs filteredArrayUsingPredicate:FBSimulatorDiagnostics.predicateForHasContent];
+}
+
+- (NSDictionary<NSString *, FBDiagnostic *> *)namedDiagnostics
+{
+  NSMutableDictionary<NSString *, FBDiagnostic *> *dictionary = [NSMutableDictionary dictionary];
+  for (FBDiagnostic *diagnostic in self.allDiagnostics) {
+    if (!diagnostic.shortName) {
+      continue;
+    }
+    dictionary[diagnostic.shortName] = diagnostic;
+  }
+  return [dictionary copy];
 }
 
 #pragma mark FBSimulatorEventSink Implementation

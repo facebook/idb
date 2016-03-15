@@ -94,4 +94,18 @@
   [self assertJSONSerialization:values];
 }
 
+- (void)testDiagnosticQueries
+{
+  NSArray *values = @[
+    [FBSimulatorDiagnosticQuery all],
+    [FBSimulatorDiagnosticQuery named:@[@"foo", @"bar", @"baz"]],
+    [FBSimulatorDiagnosticQuery filesInApplicationOfBundleID:@"foo.bar.baz" withFilenames:@[@"foo.txt", @"bar.log"]],
+    [FBSimulatorDiagnosticQuery crashesOfType:FBCrashLogInfoProcessTypeCustomAgent | FBCrashLogInfoProcessTypeApplication since:[NSDate dateWithTimeIntervalSince1970:100]],
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
+}
+
 @end

@@ -268,45 +268,6 @@ extension Server : Parsable {
   }}
 }
 
-extension DiagnosticQuery : Parsable {
-  public static var parser: Parser<DiagnosticQuery> { get {
-    return Parser
-      .alternative([
-        self.appFilesParser,
-        self.namedParser,
-        self.crashesParser,
-      ])
-      .fallback(DiagnosticQuery.Default)
-  }}
-
-  static var namedParser: Parser<DiagnosticQuery> { get {
-    return Parser
-      .manyCount(1, Parser.succeeded("--name", Parser<Any>.ofAny))
-      .fmap { DiagnosticQuery.Named($0) }
-  }}
-
-  static var crashesParser: Parser<DiagnosticQuery> { get {
-    return Parser
-      .ofTwoSequenced(
-        Parser.succeeded("--crashes-since", Parser<Any>.ofDate),
-        FBCrashLogInfoProcessType.parser
-      )
-      .fmap { (date, processType) in
-        return DiagnosticQuery.Crashes(date, processType)
-      }
-  }}
-
-  static var appFilesParser: Parser<DiagnosticQuery> { get {
-    return Parser
-      .ofTwoSequenced(
-        Parser<Any>.ofBundleID,
-        Parser.manyCount(1, Parser<Any>.ofAny)
-      )
-      .fmap { (bundleID, fileNames) in
-        DiagnosticQuery.AppFiles(bundleID, fileNames)
-      }
-  }}
-}
 
 extension Action : Parsable {
   public static var parser: Parser<Action> { get {
@@ -355,7 +316,7 @@ extension Action : Parsable {
 
   static var diagnoseParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Diagnose.rawValue, DiagnosticQuery.parser)
+      .succeeded(EventName.Diagnose.rawValue, FBSimulatorDiagnosticQueryParser.parser)
       .fmap { Action.Diagnose($0) }
   }}
 
@@ -516,6 +477,52 @@ extension Keyword : Parsable {
 extension SequenceType where Generator.Element == Keyword {
   public static var parser: Parser<Format> { get {
     return Parser.manyCount(1, Keyword.parser)
+  }}
+}
+
+/**
+ A separate struct for FBSimulatorDiagnosticQuery is needed as Parsable protcol conformance cannot be
+ applied to FBSimulatorDiagnosticQuery as it is a non-final.
+ */
+struct FBSimulatorDiagnosticQueryParser {
+  internal static var parser: Parser<FBSimulatorDiagnosticQuery> { get {
+    return Parser
+      .alternative([
+        self.appFilesParser,
+        self.namedParser,
+        self.crashesParser,
+        ])
+      .fallback(FBSimulatorDiagnosticQuery.all())
+    }}
+
+  static var namedParser: Parser<FBSimulatorDiagnosticQuery> { get {
+    return Parser
+      .manyCount(1, Parser.succeeded("--name", Parser<Any>.ofAny))
+      .fmap { names in
+        FBSimulatorDiagnosticQuery.named(names)
+      }
+  }}
+
+  static var crashesParser: Parser<FBSimulatorDiagnosticQuery> { get {
+    return Parser
+      .ofTwoSequenced(
+        Parser.succeeded("--crashes-since", Parser<Any>.ofDate),
+        FBCrashLogInfoProcessType.parser
+      )
+      .fmap { (date, processType) in
+        FBSimulatorDiagnosticQuery.crashesOfType(processType, since: date)
+      }
+  }}
+
+  static var appFilesParser: Parser<FBSimulatorDiagnosticQuery> { get {
+    return Parser
+      .ofTwoSequenced(
+        Parser<Any>.ofBundleID,
+        Parser.manyCount(1, Parser<Any>.ofAny)
+      )
+      .fmap { (bundleID, fileNames) in
+        FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID(bundleID, withFilenames: fileNames)
+      }
   }}
 }
 
