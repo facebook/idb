@@ -11,25 +11,30 @@
 
 #import <stdio.h>
 
+#import "FBControlCoreGlobalConfiguration.h"
 #import "FBDiagnostic.h"
 
 @implementation FBCrashLogInfo
 
 #pragma mark Initializers
 
-+ (instancetype)fromCrashLogAtPath:(NSString *)path
++ (instancetype)fromCrashLogAtPath:(NSString *)crashPath
 {
-  FILE *file = fopen(path.UTF8String, "r");
+  if (!crashPath) {
+    return nil;
+  }
+  FILE *file = fopen(crashPath.UTF8String, "r");
   if (!file) {
     return nil;
   }
 
   // Buffers for the sscanf
-  size_t lineSize = sizeof(char) * 1024;
+  size_t lineSize = sizeof(char) * 4098;
   char *line = malloc(lineSize);
   char value[lineSize];
 
   // Values that should exist after scanning
+  NSString *executablePath = nil;
   NSString *processName = nil;
   NSString *parentProcessName = nil;
   pid_t processIdentifier = -1;
@@ -45,34 +50,43 @@
       parentProcessName = [[NSString alloc] initWithCString:value encoding:NSUTF8StringEncoding];
       continue;
     }
+    if (sscanf(line, "Path: %s", value) > 0) {
+      executablePath = [[NSString alloc] initWithCString:value encoding:NSUTF8StringEncoding];
+    }
   }
 
   free(line);
   fclose(file);
-  if (processIdentifier == -1 || parentProcessIdentifier == -1) {
+  if (executablePath == nil || processIdentifier == -1 || parentProcessIdentifier == -1) {
     return nil;
   }
 
+  FBCrashLogInfoProcessType processType = [self processTypeForExecutablePath:executablePath];
+
   return [[FBCrashLogInfo alloc]
-    initWithPath:path
+    initWithCrashPath:crashPath
+    executablePath:executablePath
     processName:processName
     processIdentifier:processIdentifier
     parentProcessName:parentProcessName
-    parentProcessIdentifier:parentProcessIdentifier];
+    parentProcessIdentifier:parentProcessIdentifier
+    processType:processType];
 }
 
-- (instancetype)initWithPath:(NSString *)path processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier
+- (instancetype)initWithCrashPath:(NSString *)crashPath executablePath:(NSString *)executablePath processName:(NSString *)processName processIdentifier:(pid_t)processIdentifer parentProcessName:(NSString *)parentProcessName parentProcessIdentifier:(pid_t)parentProcessIdentifier processType:(FBCrashLogInfoProcessType)processType
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _path = path;
+  _crashPath = crashPath;
+  _executablePath = executablePath;
   _processName = processName;
   _processIdentifier = processIdentifer;
   _parentProcessName = parentProcessName;
   _parentProcessIdentifier = parentProcessIdentifier;
+  _processType = processType;
 
   return self;
 }
@@ -82,8 +96,8 @@
 - (FBDiagnostic *)toDiagnostic:(FBDiagnosticBuilder *)builder
 {
   return [[[builder
-    updateShortName:[NSString stringWithFormat:@"%@_crash", self.processName]]
-    updatePath:self.path]
+    updateShortName:self.crashPath.lastPathComponent]
+    updatePath:self.crashPath]
     build];
 }
 
@@ -92,8 +106,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Crash => Path %@ | Process %@ | pid %d | Parent %@ | ppid %d",
-    self.path,
+    @"Crash => Crash Path %@ | Executable Path %@ | Process %@ | pid %d | Parent %@ | ppid %d",
+    self.crashPath,
+    self.executablePath,
     self.processName,
     self.processIdentifier,
     self.parentProcessName,
@@ -106,11 +121,26 @@
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc]
-    initWithPath:self.path
+    initWithCrashPath:self.crashPath
+    executablePath:self.executablePath
     processName:self.processName
     processIdentifier:self.processIdentifier
     parentProcessName:self.parentProcessName
-    parentProcessIdentifier:self.parentProcessIdentifier];
+    parentProcessIdentifier:self.parentProcessIdentifier
+    processType:self.processType];
+}
+
+#pragma mark Private
+
++ (FBCrashLogInfoProcessType)processTypeForExecutablePath:(NSString *)executablePath
+{
+  if ([executablePath containsString:@"Platforms/iPhoneSimulator.platform"]) {
+    return FBCrashLogInfoProcessTypeSystem;
+  }
+  if ([executablePath containsString:@".app"]) {
+    return FBCrashLogInfoProcessTypeApplication;
+  }
+  return FBCrashLogInfoProcessTypeCustomAgent;
 }
 
 @end

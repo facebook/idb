@@ -68,19 +68,44 @@ enum HttpMethod {
   case POST
 }
 
+extension FBCrashLogInfoProcessType {
+  static func fromJSON(json: JSON) throws -> FBCrashLogInfoProcessType {
+    let mapping = [
+      "application" : FBCrashLogInfoProcessType.Application,
+      "system" : FBCrashLogInfoProcessType.System,
+      "custom_agent" : FBCrashLogInfoProcessType.CustomAgent
+    ]
+    var types = FBCrashLogInfoProcessType()
+    for string in try json.getArrayOfStrings() {
+      guard let processType = mapping[string] else {
+        throw JSONError.Parse("\(string) is not a crash log process type")
+      }
+      types.unionInPlace(processType)
+    }
+    return types
+  }
+}
+
 extension DiagnosticQuery {
   static func fromJSON(json: JSON) throws -> DiagnosticQuery {
-    if let bundleID = try json.getOptionalValue("bundle_id")?.getString() {
-      return DiagnosticQuery.AppFiles(bundleID, try json.getValue("names").getArrayOfStrings())
-    }
-    if let unixTime = try json.getOptionalValue("crashes_since")?.getNumber().doubleValue {
-      return DiagnosticQuery.Crashes(NSDate(timeIntervalSince1970: unixTime))
-    }
-    if let names = try json.getOptionalValue("names")?.getArrayOfStrings() {
+    let type = try json.getValue("type").getString()
+    switch type {
+    case "app_files":
+      let bundleID = try json.getValue("bundle_id").getString()
+      let names = try json.getValue("names").getArrayOfStrings()
+      return DiagnosticQuery.AppFiles(bundleID, names)
+    case "all":
+      guard let names = try json.getOptionalValue("names")?.getArrayOfStrings() else {
+        return DiagnosticQuery.Default
+      }
       return DiagnosticQuery.Named(names)
+    case "crashes":
+      let since = try json.getValue("since").getNumber().doubleValue
+      let types = try FBCrashLogInfoProcessType.fromJSON(try json.getValue("process_types"))
+      return DiagnosticQuery.Crashes(NSDate(timeIntervalSince1970: since), types)
+    default:
+      throw JSONError.Parse("\(type) is not valid")
     }
-
-    return DiagnosticQuery.Default
   }
 }
 

@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
 @class FBDiagnostic;
@@ -91,9 +93,10 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.
 
  @param date the earliest to search for crash reports. If nil will find reports regardless of date.
+ @param processType an Option Set for the kinds of crashes that should be fetched.
  @return an NSArray<FBDiagnostic *> of all the applicable crash reports.
  */
-- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date;
+- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withProcessType:(FBCrashLogInfoProcessType)processType;
 
 /**
  Crashes that occured in the Simulator since the last booting of the Simulator.

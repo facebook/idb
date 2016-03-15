@@ -33,6 +33,26 @@
  */
 + (NSString *)treeJSONPath;
 
+/**
+ A Crash of a System Simulator Service.
+ */
++ (NSString *)assetsdCrashPathWithCustomDeviceSet;
+
+/**
+ A Crash of an app in a default Simulator Device Set.
+ */
++ (NSString *)appCrashPathWithDefaultDeviceSet;
+
+/**
+ A Crash of an app with a custom Simulator Device Set.
+ */
++ (NSString *)appCrashPathWithCustomDeviceSet;
+
+/**
+ A Crash of an agent with a custom Simulator Device Set.
+ */
++ (NSString *)agentCrashPathWithCustomDeviceSet;
+
 @end
 
 @interface XCTestCase (FBControlCoreFixtures)

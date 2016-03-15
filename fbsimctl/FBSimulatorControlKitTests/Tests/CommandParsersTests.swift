@@ -297,7 +297,7 @@ class CommandParserTests : XCTestCase {
   func testParsesDiagnose() {
     self.assertWithDefaultAction(Action.Diagnose(DiagnosticQuery.Default), suffix: ["diagnose"])
     self.assertWithDefaultAction(Action.Diagnose(DiagnosticQuery.Named(["log1", "log2"])), suffix: ["diagnose", "--name", "log1", "--name", "log2"])
-    self.assertWithDefaultAction(Action.Diagnose(DiagnosticQuery.Crashes(NSDate(timeIntervalSince1970: 100))), suffix: ["diagnose", "--crashes-since", "100"])
+    self.assertWithDefaultAction(Action.Diagnose(DiagnosticQuery.Crashes(NSDate(timeIntervalSince1970: 100), FBCrashLogInfoProcessType.Application)), suffix: ["diagnose", "--crashes-since", "100", "--application"])
     self.assertWithDefaultAction(Action.Diagnose(DiagnosticQuery.AppFiles("com.foo.bar", ["foo.txt", "bar.txt"])), suffix: ["diagnose", "com.foo.bar", "foo.txt", "bar.txt"])
   }
 

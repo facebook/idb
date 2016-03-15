@@ -324,8 +324,8 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
     case .Named(let names):
       let nameSet = Set(names)
       return diagnostics.allDiagnostics().filter { nameSet.contains($0.shortName) }
-    case .Crashes(let date):
-      return diagnostics.subprocessCrashesAfterDate(date)
+    case .Crashes(let date, let processType):
+      return diagnostics.subprocessCrashesAfterDate(date, withProcessType: processType)
     case .AppFiles(let bundleID, let fileNames):
       return diagnostics.diagnosticsForApplicationWithBundleID(bundleID, withFilenames: fileNames, fallbackToGlobalSearch: true)
     }

@@ -112,11 +112,12 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     build];
 }
 
-- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date
+- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withProcessType:(FBCrashLogInfoProcessType)processType;
 {
   return [FBConcurrentCollectionOperations
-    map:[self launchdSimSubprocessCrashesPathsAfterDate:date]
-    withBlock:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
+    filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:date]
+    predicate:[FBSimulatorDiagnostics predicateForProcessType:processType]
+    map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
       return [logInfo toDiagnostic:self.logBuilder];
     }];
 }
@@ -271,12 +272,14 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 }
 
-#pragma mark Private
+#pragma mark - Private
 
 - (FBDiagnosticBuilder *)logBuilder
 {
   return [FBDiagnosticBuilder.builder updateStorageDirectory:self.storageDirectory];
 }
+
+#pragma mark Paths
 
 + (NSString *)storageDirectoryForSimulator:(FBSimulator *)simulator
 {
@@ -311,49 +314,6 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     stringByAppendingPathComponent:@"asl"];
 }
 
-- (NSArray *)crashInfoAfterDate:(NSDate *)date
-{
-  NSString *basePath = self.diagnosticReportsPath;
-
-  return [FBConcurrentCollectionOperations
-    filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
-    predicate:[FBSimulatorDiagnostics predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
-    map:^ FBCrashLogInfo * (NSString *fileName) {
-      NSString *path = [basePath stringByAppendingPathComponent:fileName];
-      return [FBCrashLogInfo fromCrashLogAtPath:path];
-    }];
-}
-
-- (NSArray *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
-{
-  FBProcessInfo *launchdProcess = self.simulator.launchdSimProcess;
-  if (!launchdProcess) {
-    return @[];
-  }
-
-  NSPredicate *parentProcessPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *logInfo, NSDictionary *_) {
-    return [logInfo.parentProcessName isEqualToString:@"launchd_sim"] && logInfo.parentProcessIdentifier == launchdProcess.processIdentifier;
-  }];
-
-  return [[self crashInfoAfterDate:date] filteredArrayUsingPredicate:parentProcessPredicate];
-}
-
-+ (NSArray *)diagnosticsForPaths:(NSArray *)paths
-{
-  NSMutableArray *array = [NSMutableArray array];
-  for (NSString *path in paths) {
-    [array addObject:[[[FBDiagnosticBuilder builder] updatePath:path] build]];
-  }
-  return [array filteredArrayUsingPredicate:self.predicateForHasContent];
-}
-
-+ (NSPredicate *)predicateForHasContent
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
-    return diagnostic.hasLogContent;
-  }];
-}
-
 + (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension
 {
   NSFileManager *fileManager = NSFileManager.defaultManager;
@@ -371,11 +331,66 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   ]];
 }
 
+#pragma mark Crash Logs
+
+- (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date
+{
+  NSString *basePath = self.diagnosticReportsPath;
+
+  return [FBConcurrentCollectionOperations
+    filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
+    predicate:[FBSimulatorDiagnostics predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
+    map:^ FBCrashLogInfo * (NSString *fileName) {
+      NSString *path = [basePath stringByAppendingPathComponent:fileName];
+      return [FBCrashLogInfo fromCrashLogAtPath:path];
+    }];
+}
+
+- (NSArray<FBCrashLogInfo *> *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
+{
+  FBProcessInfo *launchdProcess = self.simulator.launchdSimProcess;
+  if (!launchdProcess) {
+    return @[];
+  }
+
+  NSPredicate *parentProcessPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *logInfo, NSDictionary *_) {
+    return [logInfo.parentProcessName isEqualToString:@"launchd_sim"] && logInfo.parentProcessIdentifier == launchdProcess.processIdentifier;
+  }];
+
+  return [[self crashInfoAfterDate:date] filteredArrayUsingPredicate:parentProcessPredicate];
+}
+
 + (NSPredicate *)predicateForUserLaunchedProcessesInHistory:(FBSimulatorHistory *)history
 {
   NSSet *pidSet = [NSSet setWithArray:[history.allUserLaunchedProcesses valueForKey:@"processIdentifier"]];
   return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, NSDictionary *_) {
     return [pidSet containsObject:@(crashLog.processIdentifier)];
+  }];
+}
+
++ (NSPredicate *)predicateForProcessType:(FBCrashLogInfoProcessType)processType
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, NSDictionary *_) {
+    FBCrashLogInfoProcessType current = crashLog.processType;
+    return (processType & current) == current;
+  }];
+}
+
+#pragma mark Diagnostics
+
++ (NSArray<FBDiagnostic *> *)diagnosticsForPaths:(NSArray<NSString *> *)paths
+{
+  NSMutableArray *array = [NSMutableArray array];
+  for (NSString *path in paths) {
+    [array addObject:[[[FBDiagnosticBuilder builder] updatePath:path] build]];
+  }
+  return [array filteredArrayUsingPredicate:self.predicateForHasContent];
+}
+
++ (NSPredicate *)predicateForHasContent
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
+    return diagnostic.hasLogContent;
   }];
 }
 

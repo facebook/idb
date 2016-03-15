@@ -56,6 +56,11 @@
 		AA791BA81C63668C00AE49EB /* SimulatorBridge-Protocol.h in Headers */ = {isa = PBXBuildFile; fileRef = AA791BA51C63668C00AE49EB /* SimulatorBridge-Protocol.h */; };
 		AA791BA91C63668C00AE49EB /* SimulatorBridge.h in Headers */ = {isa = PBXBuildFile; fileRef = AA791BA61C63668C00AE49EB /* SimulatorBridge.h */; };
 		AA79A1CE1C7766ED00D5C685 /* FBSimulatorSet+Private.h in Headers */ = {isa = PBXBuildFile; fileRef = AA79A1CD1C77666000D5C685 /* FBSimulatorSet+Private.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA7FDA101C981231009F7828 /* agent_custom_set.crash in Resources */ = {isa = PBXBuildFile; fileRef = AA7FDA0C1C981231009F7828 /* agent_custom_set.crash */; };
+		AA7FDA111C981231009F7828 /* app_custom_set.crash in Resources */ = {isa = PBXBuildFile; fileRef = AA7FDA0D1C981231009F7828 /* app_custom_set.crash */; };
+		AA7FDA121C981231009F7828 /* app_default_set.crash in Resources */ = {isa = PBXBuildFile; fileRef = AA7FDA0E1C981231009F7828 /* app_default_set.crash */; };
+		AA7FDA131C981231009F7828 /* assetsd_custom_set.crash in Resources */ = {isa = PBXBuildFile; fileRef = AA7FDA0F1C981231009F7828 /* assetsd_custom_set.crash */; };
+		AA7FDA151C981318009F7828 /* FBCrashLogInfoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA7FDA141C981318009F7828 /* FBCrashLogInfoTests.m */; };
 		AA819DB71B9FB40D002F58CA /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */; };
 		AA9517471C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9516C21C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9517481C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9516C31C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.m */; };
@@ -428,6 +433,11 @@
 		AA791BA51C63668C00AE49EB /* SimulatorBridge-Protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "SimulatorBridge-Protocol.h"; sourceTree = "<group>"; };
 		AA791BA61C63668C00AE49EB /* SimulatorBridge.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimulatorBridge.h; sourceTree = "<group>"; };
 		AA79A1CD1C77666000D5C685 /* FBSimulatorSet+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorSet+Private.h"; sourceTree = "<group>"; };
+		AA7FDA0C1C981231009F7828 /* agent_custom_set.crash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = agent_custom_set.crash; sourceTree = "<group>"; };
+		AA7FDA0D1C981231009F7828 /* app_custom_set.crash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = app_custom_set.crash; sourceTree = "<group>"; };
+		AA7FDA0E1C981231009F7828 /* app_default_set.crash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = app_default_set.crash; sourceTree = "<group>"; };
+		AA7FDA0F1C981231009F7828 /* assetsd_custom_set.crash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = assetsd_custom_set.crash; sourceTree = "<group>"; };
+		AA7FDA141C981318009F7828 /* FBCrashLogInfoTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCrashLogInfoTests.m; sourceTree = "<group>"; };
 		AA819DB21B9FB40D002F58CA /* FBSimulatorControlTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FBSimulatorControlTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA819E0B1B9FB427002F58CA /* FBSimulatorControlTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FBSimulatorControlTests-Info.plist"; sourceTree = "<group>"; };
 		AA9516C21C15F54600A89CAD /* FBProcessLaunchConfiguration+Helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBProcessLaunchConfiguration+Helpers.h"; sourceTree = "<group>"; };
@@ -1146,6 +1156,10 @@
 		AAEA3A8F1C90B5E4004F8409 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				AA7FDA0C1C981231009F7828 /* agent_custom_set.crash */,
+				AA7FDA0D1C981231009F7828 /* app_custom_set.crash */,
+				AA7FDA0E1C981231009F7828 /* app_default_set.crash */,
+				AA7FDA0F1C981231009F7828 /* assetsd_custom_set.crash */,
 				AAEA3A901C90B5E4004F8409 /* FBControlCoreFixtures.h */,
 				AAEA3A911C90B5E4004F8409 /* FBControlCoreFixtures.m */,
 				AA6F22411C916A31009F5CE4 /* photo0.png */,
@@ -1160,6 +1174,7 @@
 			children = (
 				AAEA3A931C90B5E4004F8409 /* FBDiagnosticTests.m */,
 				AAEA3AA81C90BB73004F8409 /* FBLogSearchTests.m */,
+				AA7FDA141C981318009F7828 /* FBCrashLogInfoTests.m */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1859,9 +1874,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA7FDA131C981231009F7828 /* assetsd_custom_set.crash in Resources */,
+				AA7FDA121C981231009F7828 /* app_default_set.crash in Resources */,
 				AA6F22451C916A31009F5CE4 /* simulator_system.log in Resources */,
+				AA7FDA101C981231009F7828 /* agent_custom_set.crash in Resources */,
 				AA6F22441C916A31009F5CE4 /* photo0.png in Resources */,
 				AA6F22461C916A31009F5CE4 /* tree.json in Resources */,
+				AA7FDA111C981231009F7828 /* app_custom_set.crash in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2041,6 +2060,7 @@
 				AAEA3AA91C90BB73004F8409 /* FBLogSearchTests.m in Sources */,
 				AAEA3A941C90B5E4004F8409 /* FBControlCoreFixtures.m in Sources */,
 				AAB68D7B1C90C2F200D20416 /* FBControlCoreValueTestCase.m in Sources */,
+				AA7FDA151C981318009F7828 /* FBCrashLogInfoTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

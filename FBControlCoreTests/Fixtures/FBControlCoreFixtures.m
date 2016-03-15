@@ -28,6 +28,26 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"tree" ofType:@"json"];
 }
 
++ (NSString *)assetsdCrashPathWithCustomDeviceSet
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"assetsd_custom_set" ofType:@"crash"];
+}
+
++ (NSString *)appCrashPathWithDefaultDeviceSet
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"app_default_set" ofType:@"crash"];
+}
+
++ (NSString *)appCrashPathWithCustomDeviceSet
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"app_custom_set" ofType:@"crash"];
+}
+
++ (NSString *)agentCrashPathWithCustomDeviceSet
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"agent_custom_set" ofType:@"crash"];
+}
+
 @end
 
 @implementation XCTestCase (FBControlCoreFixtures)

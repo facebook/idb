@@ -121,6 +121,17 @@ extension Parser {
   }}
 }
 
+extension FBCrashLogInfoProcessType : Parsable {
+  public static var parser: Parser<FBCrashLogInfoProcessType> { get {
+    return Parser<FBCrashLogInfoProcessType>
+      .unionOptions([
+        Parser.ofString("--application", FBCrashLogInfoProcessType.Application),
+        Parser.ofString("--system", FBCrashLogInfoProcessType.System),
+        Parser.ofString("---pretty", FBCrashLogInfoProcessType.CustomAgent)
+      ])
+    }}
+}
+
 extension OutputOptions : Parsable {
   public static var parser: Parser<OutputOptions> { get {
     return Parser<OutputOptions>
@@ -276,8 +287,13 @@ extension DiagnosticQuery : Parsable {
 
   static var crashesParser: Parser<DiagnosticQuery> { get {
     return Parser
-      .succeeded("--crashes-since", Parser<Any>.ofDate)
-      .fmap { DiagnosticQuery.Crashes($0) }
+      .ofTwoSequenced(
+        Parser.succeeded("--crashes-since", Parser<Any>.ofDate),
+        FBCrashLogInfoProcessType.parser
+      )
+      .fmap { (date, processType) in
+        return DiagnosticQuery.Crashes(date, processType)
+      }
   }}
 
   static var appFilesParser: Parser<DiagnosticQuery> { get {
