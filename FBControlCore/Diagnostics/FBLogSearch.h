@@ -97,6 +97,9 @@
 
 /**
  Wraps FBDiagnostic with Log Searching Abilities.
+
+ Most Diagnostics have effectively constant content, except for file backed diagnostics.
+ This is worth bearing in mind of the caller expects idempotent results.
  */
 @interface FBLogSearch : NSObject
 
@@ -109,11 +112,23 @@
 + (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate;
 
 /**
- Searches the Diagnostic Log, returning the first match of the predicate.
- If the Diagnostic is not searchable as text, nil will be returned.
+ Searches the Diagnostic Log, returning all matches of the predicate.
+ If the Diagnostic is not searchable as text, an empty array will be returned.
 
- Most Diagnostics have effectively constant content, except for file backed diagnostics.
- For this reason, the result returned from this method may change if the file backing the diagnostic changes.
+ @return the all matches of the predicate in the diagnostic.
+ */
+- (NSArray<NSString *> *)allMatches;
+
+/**
+ Searches the Diagnostic Log, returning all lines that match the predicate of the predicate.
+ If the Diagnostic is not searchable as text, an empty array will be returned.
+
+ @return the all matching lines of the predicate in the diagnostic.
+ */
+- (NSArray<NSString *> *)matchingLines;
+
+/**
+ Searches the Diagnostic Log, returning the first match of the predicate.
 
  @return the first match of the predicate in the diagnostic, nil if nothing was found.
  */
@@ -121,10 +136,6 @@
 
 /**
  Searches the Diagnostic Log, returning the line where the first match was found.
- If the Diagnostic is not searchable as text, nil will be returned.
-
- Most Diagnostics have effectively constant content, except for file backed diagnostics.
- For this reason, the result returned from this method may change if the file backing the diagnostic changes.
 
  @return the first line matching the predicate in the diagnostic, nil if nothing was found.
  */

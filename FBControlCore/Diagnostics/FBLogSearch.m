@@ -14,6 +14,14 @@
 #import "FBControlCoreError.h"
 #import "FBDiagnostic.h"
 
+@interface FBLogSearch ()
+
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate;
+- (NSArray<NSString *> *)matchesWithLines:(BOOL)lines;
+
+@end
+
+
 #pragma mark - FBLogSearchPredicate
 
 @interface FBLogSearchPredicate_Regex : FBLogSearchPredicate
@@ -565,14 +573,14 @@
 
   // Perform the search, concurrently
   BOOL lines = self.lines;
-  NSArray *results = [FBConcurrentCollectionOperations
+  NSArray<NSArray *> *results = [FBConcurrentCollectionOperations
     mapFilter:[searchers copy]
-    map:^ NSArray * (FBLogSearch *searcher) {
-      NSString *match = lines ? searcher.firstMatchingLine : searcher.firstMatch;
-      if (!match) {
+    map:^ NSArray * (FBLogSearch *search) {
+      NSArray<NSString *> *matches = [search matchesWithLines:lines];
+      if (matches.count == 0) {
         return nil;
       }
-      return @[searcher.diagnostic.shortName, match];
+      return @[search.diagnostic.shortName, matches];
     }
     predicate:FBConcurrentCollectionOperations.notNullPredicate];
 
@@ -580,13 +588,13 @@
   NSMutableDictionary *output = [NSMutableDictionary dictionary];
   for (NSArray *result in results) {
     NSString *key = result[0];
-    NSString *value = result[1];
-    NSMutableArray *matches = output[key];
+    NSArray<NSString *> *values = result[1];
+    NSMutableArray<NSString *> *matches = output[key];
     if (!matches) {
       matches = [NSMutableArray array];
       output[key] = matches;
     }
-    [matches addObject:value];
+    [matches addObjectsFromArray:values];
   }
 
   // The JSON Inflation will check the format, so is a sanity chek on the data structure.
@@ -604,12 +612,6 @@
 
 #pragma mark - FBLogSearch
 
-@interface FBLogSearch ()
-
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate;
-
-@end
-
 @interface FBLogSearch_Invalid : FBLogSearch
 
 @end
@@ -626,29 +628,20 @@
 
 #pragma mark Public API
 
-- (NSString *)firstMatch
+- (NSArray<NSString *> *)matchesWithLines:(BOOL)outputLines
 {
   FBLogSearchPredicate *predicate = self.predicate;
 
-  return [[FBConcurrentCollectionOperations
+  return [FBConcurrentCollectionOperations
     mapFilter:self.lines
     map:^ NSString * (NSString *line) {
-      return [predicate match:line];
+      NSString *substring = [predicate match:line];
+      if (!substring) {
+        return nil;
+      }
+      return outputLines ? line : substring;
     }
-    predicate:FBConcurrentCollectionOperations.notNullPredicate]
-    firstObject];
-}
-
-- (NSString *)firstMatchingLine
-{
-  FBLogSearchPredicate *logSearchPredicate = self.predicate;
-  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *line, NSDictionary *_) {
-    return [logSearchPredicate match:line] != nil;
-  }];
-
-  return [[FBConcurrentCollectionOperations
-    filter:self.lines predicate:predicate]
-    firstObject];
+    predicate:FBConcurrentCollectionOperations.notNullPredicate];
 }
 
 #pragma mark Private
@@ -687,14 +680,29 @@
 
 #pragma mark Public API
 
-- (NSString *)firstMatch
+- (NSArray<NSString *> *)matchesWithLines:(BOOL)lines
 {
   return nil;
 }
 
+- (NSArray<NSString *> *)allMatches
+{
+  return [self matchesWithLines:NO];
+}
+
+- (NSArray<NSString *> *)matchingLines
+{
+  return [self matchesWithLines:YES];
+}
+
+- (NSString *)firstMatch
+{
+  return [self.allMatches firstObject];
+}
+
 - (NSString *)firstMatchingLine
 {
-  return nil;
+  return [self.matchingLines firstObject];
 }
 
 @end

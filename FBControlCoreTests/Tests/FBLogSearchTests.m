@@ -54,6 +54,15 @@
   XCTAssertNil(searcher.firstMatchingLine);
 }
 
+- (void)testFindsMultipleSubstrings
+{
+  FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate substrings:@[
+    @"Cloud Resources scheduler activated"
+  ]]];
+  XCTAssertEqual(searcher.allMatches.count, 9u);
+  XCTAssertEqual(searcher.matchingLines.count, 9u);
+}
+
 - (void)testFindsMatchInFileRegex
 {
   FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate regex:
@@ -165,13 +174,13 @@
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping lines:YES error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
-  XCTAssertEqual([results[@"simulator_system"] count], 3u);
+  XCTAssertEqual([results[@"simulator_system"] count], 99u);
   XCTAssertEqual([results[@"tree"] count], 1u);
   XCTAssertEqual([results[@"photo0"] count], 0u);
 
   XCTAssertEqualObjects(results[@"simulator_system"][0], @"Mar  7 16:50:18 some-hostname backboardd[24912]: ____IOHIDSessionScheduleAsync_block_invoke: thread_id=0x700000323000");
-  XCTAssertEqualObjects(results[@"simulator_system"][1], @"Mar  7 16:50:18 some-hostname backboardd[24912]: layer position 375 667 bounds 0 0 750 1334");
-  XCTAssertEqualObjects(results[@"simulator_system"][2], @"Mar  7 16:50:21 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.Maps, <BBRemoteDataProvider 0x7fca290e3fc0; com.apple.Maps>");
+  XCTAssertEqualObjects(results[@"simulator_system"][97], @"Mar  7 16:50:18 some-hostname backboardd[24912]: layer position 375 667 bounds 0 0 750 1334");
+  XCTAssertEqualObjects(results[@"simulator_system"][98], @"Mar  7 16:50:21 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.Maps, <BBRemoteDataProvider 0x7fca290e3fc0; com.apple.Maps>");
 }
 
 - (void)testBatchSearchFindsExtractsAcrossMultipleDiagnostics
@@ -179,13 +188,13 @@
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping lines:NO error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
-  XCTAssertEqual([results[@"simulator_system"] count], 3u);
+  XCTAssertEqual([results[@"simulator_system"] count], 99u);
   XCTAssertEqual([results[@"tree"] count], 1u);
   XCTAssertEqual([results[@"photo0"] count], 0u);
 
   XCTAssertEqualObjects(results[@"simulator_system"][0], @"IOHIDSession");
-  XCTAssertEqualObjects(results[@"simulator_system"][1], @"layer position 375 667 bounds 0 0 750 133");
-  XCTAssertEqualObjects(results[@"simulator_system"][2], @"ADDING REMOTE com.apple.Maps");
+  XCTAssertEqualObjects(results[@"simulator_system"][97], @"layer position 375 667 bounds 0 0 750 133");
+  XCTAssertEqualObjects(results[@"simulator_system"][98], @"ADDING REMOTE com.apple.Maps");
 }
 
 - (void)testSearchAllFindsAcrossAllDiagnostics
@@ -193,7 +202,7 @@
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.searchAllMapping lines:YES error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
-  XCTAssertEqual([results[@"simulator_system"] count], 4u);
+  XCTAssertEqual([results[@"simulator_system"] count], 100u);
   XCTAssertEqual([results[@"tree"] count], 1u);
   XCTAssertEqual([results[@"photo0"] count], 0u);
 }
