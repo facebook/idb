@@ -127,7 +127,7 @@ extension FBCrashLogInfoProcessType : Parsable {
       .unionOptions([
         Parser.ofString("--application", FBCrashLogInfoProcessType.Application),
         Parser.ofString("--system", FBCrashLogInfoProcessType.System),
-        Parser.ofString("---pretty", FBCrashLogInfoProcessType.CustomAgent)
+        Parser.ofString("--custom-agent", FBCrashLogInfoProcessType.CustomAgent)
       ])
     }}
 }
@@ -510,7 +510,7 @@ struct FBSimulatorDiagnosticQueryParser {
         self.appFilesParser,
         self.namedParser,
         self.crashesParser,
-        ])
+      ])
       .fallback(FBSimulatorDiagnosticQuery.all())
     }}
 

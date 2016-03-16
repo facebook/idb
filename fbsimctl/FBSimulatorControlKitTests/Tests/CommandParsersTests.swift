@@ -249,6 +249,12 @@ let validActions: [([String], Action)] = [
   (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
   (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
   (["delete"], Action.Delete),
+  (["diagnose", "--content", "--crashes-since", "200", "--system"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.System, since: NSDate(timeIntervalSince1970: 200)), DiagnosticFormat.Content)),
+  (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], Action.Diagnose(FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID("com.foo.bar", withFilenames: ["foo.txt", "bar.txt"]), DiagnosticFormat.Content)),
+  (["diagnose", "--crashes-since", "300", "--custom-agent"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.CustomAgent, since: NSDate(timeIntervalSince1970: 300)), DiagnosticFormat.CurrentFormat)),
+  (["diagnose", "--name", "log1", "--name", "log2"], Action.Diagnose(FBSimulatorDiagnosticQuery.named(["log1", "log2"]), DiagnosticFormat.CurrentFormat)),
+  (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
+  (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
   (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
   (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
@@ -263,10 +269,6 @@ let validActions: [([String], Action)] = [
   (["shutdown"], Action.Shutdown),
   (["shutdown"], Action.Shutdown),
   (["terminate", "com.foo.bar"], Action.Terminate("com.foo.bar")),
-  (["diagnose", "--name", "log1", "--name", "log2"], Action.Diagnose(FBSimulatorDiagnosticQuery.named(["log1", "log2"]), DiagnosticFormat.CurrentFormat)),
-  (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
-  (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
-  (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], Action.Diagnose(FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID("com.foo.bar", withFilenames: ["foo.txt", "bar.txt"]), DiagnosticFormat.Content))
 ]
 
 let invalidActions: [[String]] = [
