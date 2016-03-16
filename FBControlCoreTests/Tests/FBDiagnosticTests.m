@@ -25,6 +25,17 @@
   return [[NSTemporaryDirectory() stringByAppendingPathComponent:@"FBDiagnosticTests"] stringByAppendingPathExtension:@"tempout"];
 }
 
+- (id)jsonFixture
+{
+  return  @{
+    @"bing" : @"bong",
+    @"animal" : @"cat",
+    @"somes" : @[
+      @1, @2, @3, @4, @"FOO BAR BAAAA"
+    ],
+  };
+}
+
 - (void)testValueSemantics
 {
   NSArray *values = @[self.photoDiagnostic, self.simulatorSystemLog, self.treeJSONDiagnostic];
@@ -215,39 +226,23 @@
 
 - (void)testJSONNativeObjectCoercions
 {
-  NSString *substring = @"FOO BAR BAAAA";
-  id json = @{
-    @"bing" : @"bong",
-    @"animal" : @"cat",
-    @"somes" : @[
-      @1, @2, @3, @4, substring
-    ],
-  };
   FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
     updateShortName:@"somelog"]
-    updateJSON:json]
+    updateJSON:self.jsonFixture]
     build];
 
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
-  XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertEqualObjects(diagnostic.asJSON, self.jsonFixture);
   XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
-  XCTAssertTrue([diagnostic.asString containsString:substring]);
+  XCTAssertTrue([diagnostic.asString containsString:@"FOO BAR BAAAA"]);
   [self assertWritesOutToFile:diagnostic];
 }
 
 - (void)testJSONDataCoercions
 {
-  NSString *substring = @"FOO BAR BAAAA";
-  id json = @{
-    @"bing" : @"bong",
-    @"animal" : @"cat",
-    @"somes" : @[
-      @1, @2, @3, @4, substring
-    ],
-  };
-  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingPrettyPrinted error:nil];
+  NSData *jsonData = [NSJSONSerialization dataWithJSONObject:self.jsonFixture options:NSJSONWritingPrettyPrinted error:nil];
   FBDiagnostic *diagnostic = [[[[FBDiagnosticBuilder builder]
     updateShortName:@"somelog"]
     updateData:jsonData]
@@ -255,10 +250,10 @@
 
   XCTAssertNotNil(diagnostic.asPath);
   XCTAssertNotNil(diagnostic.asData);
-  XCTAssertEqualObjects(diagnostic.asJSON, json);
+  XCTAssertEqualObjects(diagnostic.asJSON, self.jsonFixture);
   XCTAssertTrue(diagnostic.hasLogContent);
   XCTAssertTrue(diagnostic.isSearchableAsText);
-  XCTAssertTrue([diagnostic.asString containsString:substring]);
+  XCTAssertTrue([diagnostic.asString containsString:@"FOO BAR BAAAA"]);
   [self assertWritesOutToFile:diagnostic];
 }
 
@@ -304,8 +299,17 @@
   FBDiagnostic *remoteDiagnostic = [FBDiagnostic inflateFromJSON:json error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(remoteDiagnostic);
-  XCTAssertEqualObjects(localFile.shortName , remoteDiagnostic.shortName);
-  XCTAssertEqualObjects(localFile.asString, remoteDiagnostic.asString);
+  XCTAssertEqualObjects(localFile.shortName, remoteDiagnostic.shortName);
+  XCTAssertTrue([remoteDiagnostic.asString containsString:@"Swipe down with three fingers to reveal the notification center"]);
+}
+
+- (void)testWritingToFile
+{
+  FBDiagnostic *diagnostic = self.treeJSONDiagnostic;
+  FBDiagnostic *outDiagnostic = [[[FBDiagnosticBuilder builderWithDiagnostic:diagnostic]
+    writeOutToFile]
+    build];
+  XCTAssertEqualObjects(diagnostic.asPath, outDiagnostic.asPath);
 }
 
 @end

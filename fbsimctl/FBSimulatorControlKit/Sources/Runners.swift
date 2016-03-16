@@ -203,8 +203,8 @@ private struct SimulatorRunner : Runner {
       return SimulatorAction(translator: translator, name: EventName.Delete, subject: simulator) {
         try simulator.set!.deleteSimulator(simulator)
       }
-    case .Diagnose(let query):
-      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: query, query: query)
+    case .Diagnose(let query, let format):
+      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: query, query: query, format: format)
     case .Install(let application):
       return SimulatorInteraction(translator: translator, name: EventName.Install, subject: application) { interaction in
         interaction.installApplication(application)
@@ -306,18 +306,33 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
   let name: EventName
   let subject: SimulatorControlSubject
   let query: FBSimulatorDiagnosticQuery
+  let format: DiagnosticFormat
 
   func perform() -> CommandResult {
     let diagnostics = self.fetchDiagnostics()
+
+    translator.reportSimulator(EventName.Diagnose, EventType.Started, query)
     for diagnostic in diagnostics {
       translator.reportSimulator(EventName.Diagnostic, EventType.Discrete, diagnostic)
     }
+    translator.reportSimulator(EventName.Diagnose, EventType.Ended, query)
     return .Success
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {
     let diagnostics = self.translator.simulator.diagnostics
-    return query.perform(diagnostics)
+    let format = self.format
+
+    return query.perform(diagnostics).map { diagnostic in
+      switch format {
+      case .CurrentFormat:
+        return diagnostic
+      case .Content:
+        return FBDiagnosticBuilder(diagnostic: diagnostic).readIntoMemory().build()
+      case .Path:
+        return FBDiagnosticBuilder(diagnostic: diagnostic).writeOutToFile().build()
+      }
+    }
   }
 }
 

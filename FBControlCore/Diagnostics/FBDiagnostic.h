@@ -239,6 +239,15 @@
 - (instancetype)readIntoMemory;
 
 /**
+ Updates the underlying `FBDiagnostic` by reading writing it out to a file, if it has been read into memory.
+ This allows other processes to read the contents of the log.
+ If the diagnostic is backed by a file, this call will do nothing.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)writeOutToFile;
+
+/**
  Returns a new `FBDiagnostic` with the reciever's updates applied.
  */
 - (FBDiagnostic *)build;

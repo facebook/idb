@@ -238,107 +238,63 @@ class ConfigurationParserTests : XCTestCase {
   }
 }
 
+let validActions: [([String], Action)] = [
+  (["approve", "com.foo.bar", "com.bing.bong"], Action.Approve(["com.foo.bar", "com.bing.bong"])),
+  (["approve", Fixtures.application.path], Action.Approve([Fixtures.application.bundleID])),
+  (["boot", "--locale", "en_US", "--scale=75"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
+  (["boot", "--locale", "fr_FR"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
+  (["boot", "--scale=50"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
+  (["boot"], Action.Boot(nil)),
+  (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
+  (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
+  (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
+  (["delete"], Action.Delete),
+  (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
+  (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
+  (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
+  (["launch", Fixtures.binary.path, "--foo", "-b", "-a", "-r"], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
+  (["launch", Fixtures.binary.path], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:]))),
+  (["list"], Action.List),
+  (["listen", "--http", "43"], Action.Listen(Server.Http(43))),
+  (["listen", "--socket", "42"], Action.Listen(Server.Socket(42))),
+  (["listen"], Action.Listen(Server.StdIO)),
+  (["record", "start"], Action.Record(true)),
+  (["record", "stop"], Action.Record(false)),
+  (["shutdown"], Action.Shutdown),
+  (["shutdown"], Action.Shutdown),
+  (["terminate", "com.foo.bar"], Action.Terminate("com.foo.bar")),
+  (["diagnose", "--name", "log1", "--name", "log2"], Action.Diagnose(FBSimulatorDiagnosticQuery.named(["log1", "log2"]), DiagnosticFormat.CurrentFormat)),
+  (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
+  (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
+  (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], Action.Diagnose(FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID("com.foo.bar", withFilenames: ["foo.txt", "bar.txt"]), DiagnosticFormat.Content))
+]
+
+let invalidActions: [[String]] = [
+  ["listaa"],
+  ["approve"],
+  ["approve", "dontadddotstome"],
+  ["aboota"],
+  ["ddshutdown"],
+  ["create"],
+  ["install"],
+  ["install", "/dev/null"],
+]
+
 class ActionParserTests : XCTestCase {
-  func testParsesAllCases() {
-    self.assertParsesAll(Action.parser, [
-      (["list"], Action.List),
-      (["approve", "com.foo.bar", "com.bing.bong"], Action.Approve(["com.foo.bar", "com.bing.bong"])),
-      (["approve", Fixtures.application.path], Action.Approve([Fixtures.application.bundleID])),
-      (["boot"], Action.Boot(nil)),
-      (["boot", "--locale", "fr_FR"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
-      (["boot", "--scale=50"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
-      (["boot", "--locale", "en_US", "--scale=75"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
-      (["shutdown"], Action.Shutdown),
-      (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all())),
-      (["diagnose", "--name", "log1", "--name", "log2"], Action.Diagnose(FBSimulatorDiagnosticQuery.named(["log1", "log2"]))),
-      (["delete"], Action.Delete),
-      (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
-      (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
-      (["launch", Fixtures.binary.path], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:])))
-    ])
+  func testParsesValidActions() {
+    self.assertParsesAll(Action.parser, validActions)
   }
 
-  func testDoesNotParseInvalidTokens() {
-    self.assertFailsToParseAll(Action.parser, [
-      ["listaa"],
-      ["approve"],
-      ["approve", "dontadddotstome"],
-      ["aboota"],
-      ["ddshutdown"],
-      ["install"],
-      ["install", "/dev/null"],
-    ])
+  func testFailsToParseInvalidActions() {
+    self.assertFailsToParseAll(Action.parser, invalidActions)
   }
 }
 
 class CommandParserTests : XCTestCase {
-  func testParsesHelp() {
-    self.assertParsesAll(Command.parser, [
-      (["help"], Command.Help(OutputOptions(), true, nil))
-    ])
-  }
-
-  func testParsesApprove() {
-    self.assertWithDefaultAction(Action.Approve(["com.foo.bar", "com.bing.bong"]), suffix: ["approve", "com.foo.bar", "com.bing.bong"])
-  }
-
-  func testParsesBoot() {
-    self.assertWithDefaultAction(Action.Boot(nil), suffix: ["boot"])
-  }
-
-  func testFailsToParseCreate() {
-    self.assertParseFails(Action.parser, ["create"])
-  }
-
-  func testParsesDelete() {
-    self.assertWithDefaultAction(Action.Delete, suffix: ["delete"])
-  }
-
-  func testParsesDiagnose() {
-    self.assertWithDefaultAction(Action.Diagnose(FBSimulatorDiagnosticQuery.all()), suffix: ["diagnose"])
-    self.assertWithDefaultAction(Action.Diagnose(FBSimulatorDiagnosticQuery.named(["log1", "log2"])), suffix: ["diagnose", "--name", "log1", "--name", "log2"])
-    self.assertWithDefaultAction(Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100))), suffix: ["diagnose", "--crashes-since", "100", "--application"])
-    self.assertWithDefaultAction(Action.Diagnose(FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID("com.foo.bar", withFilenames: ["foo.txt", "bar.txt"])), suffix: ["diagnose", "com.foo.bar", "foo.txt", "bar.txt"])
-  }
-
-  func testParsesInstall() {
-    let action = Action.Install(Fixtures.application)
-    let suffix: [String] = ["install", Fixtures.application.path]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
-  func testParsesList() {
-    self.assertWithDefaultAction(Action.List, suffix: ["list"])
-  }
-
-  func testParsesListenSTDIO() {
-    self.assertWithDefaultAction(Action.Listen(Server.StdIO), suffix: ["listen"])
-  }
-
-  func testParsesListenWithSocket() {
-    self.assertWithDefaultAction(Action.Listen(Server.Socket(42)), suffix: ["listen", "--socket", "42"])
-  }
-
-  func testParsesListenWithHttp() {
-    self.assertWithDefaultAction(Action.Listen(Server.Http(43)), suffix: ["listen", "--http", "43"])
-  }
-
-  func testParsesLaunchAgent() {
-    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.binary.path]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
-  func testParsesLaunchAgentWithArguments() {
-    let action = Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.binary.path, "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
-  func testParseLaunchAppByPath() {
-    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.application.path]
-    self.assertWithDefaultAction(action, suffix: suffix)
+  func testParsesValidActions() {
+    for (suffix, action) in validActions {
+      self.assertWithDefaultAction(action, suffix: suffix)
+    }
   }
 
   func testParsesLaunchAppByPathWithArguments() {
@@ -359,14 +315,6 @@ class CommandParserTests : XCTestCase {
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
-  func testParsesRecordStart() {
-    self.assertWithDefaultAction(Action.Record(true), suffix: ["record", "start"])
-  }
-
-  func testParsesRecordStop() {
-    self.assertWithDefaultAction(Action.Record(false), suffix: ["record", "stop"])
-  }
-
   func testParsesRelaunchAppByBundleID() {
     let action = Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
     let suffix: [String] = ["relaunch", "com.foo.bar"]
@@ -379,14 +327,6 @@ class CommandParserTests : XCTestCase {
     self.assertWithDefaultAction(action, suffix: suffix)
   }
 
-  func testParsesShutdown() {
-    self.assertWithDefaultAction(Action.Shutdown, suffix: ["shutdown"])
-  }
-
-  func testParsesTerminateByBundleID() {
-    self.assertWithDefaultAction(Action.Terminate("com.foo.bar"), suffix: ["terminate", "com.foo.bar"])
-  }
-
   func testParsesListBootListenShutdown() {
     let actions: [Action] = [Action.List, Action.Boot(nil), Action.Listen(Server.Http(1000)), Action.Shutdown]
     let suffix: [String] = ["list", "boot", "listen", "--http", "1000", "shutdown"]
@@ -396,17 +336,10 @@ class CommandParserTests : XCTestCase {
   func testParsesListBootListenShutdownDiagnose() {
     let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
     let simulatorConfiguration = FBSimulatorConfiguration.iPhone5()
-    let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, Action.Diagnose(FBSimulatorDiagnosticQuery.all())]
+    let diagnoseAction = Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
+    let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
     let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "listen", "--http", "8090", "shutdown", "diagnose"]
     self.assertWithDefaultActions(actions, suffix: suffix)
-  }
-
-  func testParsesCreate() {
-    self.assertParsesAll(Action.parser, [
-      (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
-      (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
-      (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
-    ])
   }
 
   func testParsesUpload() {

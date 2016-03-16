@@ -307,7 +307,7 @@ extension Action : Parsable {
       .succeeded(EventName.Create.rawValue, FBSimulatorConfigurationParser.parser)
       .fmap { configuration in
         return Action.Create(configuration)
-    }
+      }
   }}
 
   static var deleteParser: Parser<Action> { get {
@@ -316,8 +316,16 @@ extension Action : Parsable {
 
   static var diagnoseParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Diagnose.rawValue, FBSimulatorDiagnosticQueryParser.parser)
-      .fmap { Action.Diagnose($0) }
+      .succeeded(
+        EventName.Diagnose.rawValue,
+        Parser.ofTwoSequenced(
+          DiagnosticFormat.parser.fallback(DiagnosticFormat.CurrentFormat),
+          FBSimulatorDiagnosticQueryParser.parser
+        )
+      )
+      .fmap { (format, query) in
+        Action.Diagnose(query, format)
+      }
   }}
 
   static var launchParser: Parser<Action> { get {
@@ -470,6 +478,17 @@ extension Keyword : Parsable {
         Parser.ofString(Keyword.OSVersion.rawValue, Keyword.OSVersion),
         Parser.ofString(Keyword.State.rawValue, Keyword.State),
         Parser.ofString(Keyword.ProcessIdentifier.rawValue, Keyword.ProcessIdentifier)
+      ])
+  }}
+}
+
+extension DiagnosticFormat : Parsable {
+  public static var parser: Parser<DiagnosticFormat> { get {
+    return Parser
+      .alternative([
+        Parser.ofString(DiagnosticFormat.CurrentFormat.rawValue, DiagnosticFormat.CurrentFormat),
+        Parser.ofString(DiagnosticFormat.Path.rawValue, DiagnosticFormat.Path),
+        Parser.ofString(DiagnosticFormat.Content.rawValue, DiagnosticFormat.Content),
       ])
   }}
 }

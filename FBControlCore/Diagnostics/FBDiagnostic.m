@@ -721,7 +721,7 @@
 - (NSString *)asString
 {
   if (!self.backingString) {
-    NSData *data = self.backingData;
+    NSData *data = self.asData;
     if (!data) {
       return nil;
     }
@@ -993,15 +993,34 @@
 
 - (instancetype)readIntoMemory
 {
-  if (!self.diagnostic.backingFilePath) {
+  if (!self.diagnostic.backingFilePath || self.diagnostic.hasLogContent == NO) {
     return self;
   }
-
+  id object = [self.diagnostic asJSON];
+  if (object) {
+    return [self updateJSON:object];
+  }
+  NSString *string = [self.diagnostic asString];
+  if (string) {
+    return [self updateString:string];
+  }
   NSData *data = [self.diagnostic asData];
-  if (!data) {
+  if (data) {
+    return [self updateData:data];
+  }
+  return self;
+}
+
+- (instancetype)writeOutToFile
+{
+  if (self.diagnostic.backingFilePath || self.diagnostic.hasLogContent == NO) {
     return self;
   }
-  return [self updateData:data];
+  NSString *path = [self createPath];
+  if (![self.diagnostic writeOutToPath:path error:nil]) {
+    return self;
+  }
+  return [self updatePath:path];
 }
 
 - (FBDiagnostic *)build

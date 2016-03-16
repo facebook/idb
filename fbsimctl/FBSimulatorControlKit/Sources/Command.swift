@@ -57,6 +57,15 @@ public enum Server {
 }
 
 /**
+  An Enumeration specifying the output format of diagnostics.
+*/
+public enum DiagnosticFormat : String {
+  case CurrentFormat = "--current-format"
+  case Path = "--path"
+  case Content = "--content"
+}
+
+/**
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
@@ -64,7 +73,7 @@ public enum Action {
   case Boot(FBSimulatorLaunchConfiguration?)
   case Create(FBSimulatorConfiguration)
   case Delete
-  case Diagnose(FBSimulatorDiagnosticQuery)
+  case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Install(FBSimulatorApplication)
   case Launch(FBProcessLaunchConfiguration)
   case List
@@ -101,8 +110,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftConfiguration == rightConfiguration
   case (.Delete, .Delete):
     return true
-  case (.Diagnose(let leftQuery), .Diagnose(let rightQuery)):
-    return leftQuery == rightQuery
+  case (.Diagnose(let leftQuery, let leftFormat), .Diagnose(let rightQuery, let rightFormat)):
+    return leftQuery == rightQuery && leftFormat == rightFormat
   case (.Install(let leftApp), .Install(let rightApp)):
     return leftApp == rightApp
   case (.Launch(let leftLaunch), .Launch(let rightLaunch)):
