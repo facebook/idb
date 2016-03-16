@@ -18,6 +18,8 @@
 #import <DTXConnectionServices/DTXRemoteInvocationReceipt.h>
 #import <DTXConnectionServices/DTXTransport.h>
 
+#import <FBControlCore/FBControlCoreLogger.h>
+
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
 #define weakify(target) __weak __typeof__(target) weak_##target = target
@@ -100,7 +102,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (void)setupTestBundleConnectionWithTransport:(DTXTransport *)transport
 {
-  [self logTestManagerMessage:@"Creating the connection."];
+  [self.logger logFormat:@"Creating the connection."];
   DTXConnection *connection = [[DTXConnection alloc] initWithTransport:transport];
 
   weakify(self);
@@ -112,24 +114,24 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
       }
     });
   }];
-  [self logTestManagerMessage:@"Listening for proxy connection request from the test bundle (all platforms)"];
+  [self.logger logFormat:@"Listening for proxy connection request from the test bundle (all platforms)"];
   [connection handleProxyRequestForInterface:@protocol(XCTestManager_IDEInterface)
                                peerInterface:@protocol(XCTestDriverInterface)
                                      handler:^(DTXProxyChannel *channel){
     strongify(self);
-    [self logTestManagerMessage:@"Got proxy channel request from test bundle"];
+    [self.logger logFormat:@"Got proxy channel request from test bundle"];
     [channel setExportedObject:self queue:dispatch_get_main_queue()];
     self.testBundleProxy = channel.remoteObjectProxy;
   }];
   self.testBundleConnection = connection;
-  [self logTestManagerMessage:@"Resuming the connection."];
+  [self.logger logFormat:@"Resuming the connection."];
   [self.testBundleConnection resume];
 }
 
 - (void)sendStartSessionRequestToTestManager
 {
   if (self.hasFailed) {
-    [self logTestManagerMessage:@"Mediator has already failed skipping."];
+    [self.logger logFormat:@"Mediator has already failed skipping."];
     return;
   }
 
@@ -145,7 +147,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     bundlePath = [NSBundle mainBundle].executablePath;
   }
 
-  [self logTestManagerMessage:@"Starting test session with ID %@", self.sessionIdentifier];
+  [self.logger logFormat:@"Starting test session with ID %@", self.sessionIdentifier];
 
   DTXRemoteInvocationReceipt *receipt =
   [remoteProxy _IDE_initiateSessionWithIdentifier:self.sessionIdentifier
@@ -156,7 +158,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [receipt handleCompletion:^(NSNumber *version, NSError *error){
     strongify(self);
     if (!self) {
-      [self logTestManagerMessage:@"Strong self should not be nil"];
+      [self.logger logFormat:@"Strong self should not be nil"];
       return;
     }
     if (!self) { // Possibly '!error'
@@ -172,24 +174,24 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 {
   [proxyChannel cancel];
   if (error) {
-    [self logTestManagerMessage:@"Error from testmanagerd: %@ (%@)", error.localizedDescription, error.localizedRecoverySuggestion];
+    [self.logger logFormat:@"Error from testmanagerd: %@ (%@)", error.localizedDescription, error.localizedRecoverySuggestion];
     [self reportStartupFailure:error.localizedDescription errorCode:FBErrorCodeStartupFailure];
     return;
   }
-  [self logTestManagerMessage:@"Testmanagerd handled session request."];
+  [self.logger logFormat:@"Testmanagerd handled session request."];
   [self.startupTimeoutTimer invalidate];
   dispatch_async(dispatch_get_main_queue(), ^{
     if (self.hasFailed) {
-      [self logTestManagerMessage:@"Mediator has already failed skipping."];
+      [self.logger logFormat:@"Mediator has already failed skipping."];
       return;
     }
-    [self logTestManagerMessage:@"Waiting for test process to launch."];
+    [self.logger logFormat:@"Waiting for test process to launch."];
   });
 }
 
 - (void)whitelistTestProcessIDForUITesting
 {
-  [self logTestManagerMessage:@"Creating secondary transport and connection for whitelisting test process PID."];
+  [self.logger logFormat:@"Creating secondary transport and connection for whitelisting test process PID."];
   [self makeTransportWithSuccessBlock:^(DTXTransport *transport) {
     [self setupDaemonConnectionWithTransport:transport];
   }];
@@ -205,7 +207,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
       [self reportStartupFailure:@"Lost connection to test manager service." errorCode:FBErrorCodeLostConnection];
     });
   }];
-  [self logTestManagerMessage:@"Resuming the secondary connection."];
+  [self.logger logFormat:@"Resuming the secondary connection."];
   self.daemonConnection = connection;
   [connection resume];
   DTXProxyChannel *channel =
@@ -214,7 +216,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [channel setExportedObject:self queue:dispatch_get_main_queue()];
   self.daemonProxy = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
 
-  [self logTestManagerMessage:@"Whitelisting test process ID %d", self.testRunnerPID];
+  [self.logger logFormat:@"Whitelisting test process ID %d", self.testRunnerPID];
   DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID) protocolVersion:@(FBProtocolVersion)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     strongify(self);
@@ -223,7 +225,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
       return;
     }
     self.daemonProtocolVersion = version.integerValue;
-    [self logTestManagerMessage:@"Got whitelisting response and daemon protocol version %lld", self.daemonProtocolVersion];
+    [self.logger logFormat:@"Got whitelisting response and daemon protocol version %lld", self.daemonProtocolVersion];
     [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:version];
   }];
 }
@@ -235,11 +237,11 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     strongify(self);
     if (error) {
-      [self logTestManagerMessage:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];
+      [self.logger logFormat:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];
       return;
     }
     self.daemonProtocolVersion = version.integerValue;
-    [self logTestManagerMessage:@"Got legacy whitelisting response, daemon protocol version is 14"];
+    [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
     [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
   }];
 }
@@ -250,7 +252,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     NSError *error;
     DTXTransport *transport = [self.targetDevice makeTransportForTestManagerService:&error];
     if (error) {
-      [self logTestManagerMessage:@"Failure to create transport for test daemon:\n%@", error.userInfo[@"DetailedDescriptionKey"] ?: @""];
+      [self.logger logFormat:@"Failure to create transport for test daemon:\n%@", error.userInfo[@"DetailedDescriptionKey"] ?: @""];
     }
     if (!transport) {
       [self reportStartupFailure:error.localizedFailureReason errorCode:FBErrorCodeStartupFailure];
@@ -268,7 +270,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 {
   NSAssert([NSThread isMainThread], @"code should be running on main thread");
   if (!self.testPlanDidStartExecuting) {
-    [self logTestManagerMessage:@"%@, will wait up to %gs", progress, interval];
+    [self.logger logFormat:@"%@, will wait up to %gs", progress, interval];
     [self.startupTimeoutTimer invalidate];
     self.startupTimeoutTimer = [NSTimer scheduledTimerWithTimeInterval:interval target:self selector:@selector(startupTimedOut:) userInfo:@{@"description" : progress} repeats:NO];
   }
@@ -285,7 +287,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     if (!self.finished && !self.hasFailed) {
       self.hasFailed = YES;
       self.finished = YES;
-      [self logTestManagerMessage:@"Test operation failure: %@", failure];
+      [self.logger logFormat:@"Test operation failure: %@", failure];
       [self.startupTimeoutTimer invalidate];
       [self finishWithError:[NSError errorWithDomain:@"IDETestOperationsObserverErrorDomain" code:errorCode userInfo:@{NSLocalizedDescriptionKey : failure ?: @"Mystery"}] didCancel:YES];
     }
@@ -295,9 +297,9 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (void)finishWithError:(NSError *)error didCancel:(BOOL)didCancel
 {
-  [self logTestManagerMessage:@"_finishWithError:%@ didCancel: %d", error, didCancel];
+  [self.logger logFormat:@"_finishWithError:%@ didCancel: %d", error, didCancel];
   if (self.testingIsFinished) {
-    [self logTestManagerMessage:@"Testing has already finished, ignoring this report."];
+    [self.logger logFormat:@"Testing has already finished, ignoring this report."];
     return;
   }
   self.finished = YES;
@@ -324,20 +326,12 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     }
     error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
     if (error.code != FBErrorCodeLostConnection) {
-      [self logTestManagerMessage:@"\n\n*** %@\n\n", message];
+      [self.logger logFormat:@"\n\n*** %@\n\n", message];
     }
   }
 }
 
 #pragma mark Others
-
-- (void)logTestManagerMessage:(NSString *)format, ...
-{
-  // Possibly we should push that to test dashboard
-  va_list arguments;
-  va_start(arguments, format);
-  NSLogv(format, arguments);
-}
 
 - (void)detect_r17733855_fromError:(NSError *)error
 {
@@ -349,7 +343,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   }
   NSString *message = error.localizedDescription;
   if ([message rangeOfString:@"Unable to run app in Simulator"].location != NSNotFound || [message rangeOfString:@"Test session exited(-1) without checking in"].location != NSNotFound ) {
-    [self logTestManagerMessage:@"Detected radar issue r17733855"];
+    [self.logger logFormat:@"Detected radar issue r17733855"];
   }
 }
 
@@ -370,7 +364,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_getProgressForLaunch:(id)token
 {
-  [self logTestManagerMessage:@"Test process requested launch process status with token %@", token];
+  [self.logger logFormat:@"Test process requested launch process status with token %@", token];
   DTXRemoteInvocationReceipt *recepit = [DTXRemoteInvocationReceipt new];
   [recepit invokeCompletionWithReturnValue:@1 error:nil];
   return recepit;
@@ -378,9 +372,9 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
 {
-  [self logTestManagerMessage:@"_XCT_testSuite:%@ didStartAt:%@", tests, time];
+  [self.logger logFormat:@"_XCT_testSuite:%@ didStartAt:%@", tests, time];
   if (tests.length == 0) {
-    [self logTestManagerMessage:@"Failing for nil suite identifier."];
+    [self.logger logFormat:@"Failing for nil suite identifier."];
     NSError *error = [NSError errorWithDomain:@"IDETestOperationsObserverErrorDomain" code:0x9 userInfo:@{NSLocalizedDescriptionKey : @"Test reported a suite with nil or empty identifier. This is unsupported."}];
     [self finishWithError:error didCancel:NO];
   }
@@ -390,7 +384,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 - (id)_XCT_didBeginExecutingTestPlan
 {
   self.testPlanDidStartExecuting = YES;
-  [self logTestManagerMessage:@"Starting test plan, clearing initialization timeout timer."];
+  [self.logger logFormat:@"Starting test plan, clearing initialization timeout timer."];
   [self.startupTimeoutTimer invalidate];
   return nil;
 }
@@ -403,7 +397,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
   self.testBundleProtocolVersion = protocolVersionInt;
 
-  [self logTestManagerMessage:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion];
+  [self.logger logFormat:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion];
   if (minimumVersionInt > FBProtocolVersion) {
     [self reportStartupFailure:[NSString stringWithFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion] errorCode:FBErrorCodeStartupFailure];
     return nil;
@@ -422,7 +416,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
-  [self logTestManagerMessage:@"_XCT_testCaseDidStartForTestClass:%@ method:%@", testClass, method ?: @""];
+  [self.logger logFormat:@"_XCT_testCaseDidStartForTestClass:%@ method:%@", testClass, method ?: @""];
   return nil;
 }
 
@@ -435,7 +429,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 // ?
 - (id)_XCT_logMessage:(NSString *)message
 {
-  [self logTestManagerMessage:@"MAGIC_MESSAGE: %@", message];
+  [self.logger logFormat:@"MAGIC_MESSAGE: %@", message];
   return nil;
 }
 
@@ -450,7 +444,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 // This will add more logs when unimplemented method from XCTestManager_IDEInterface protocol is called
 - (id)forwardingTargetForSelector:(SEL)aSelector
 {
-  NSLog(@"%@", [self unknownMessageForSelector:aSelector]);
+  [self.logger log:[self unknownMessageForSelector:aSelector]];
   return nil;
 }
 
@@ -473,7 +467,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     strongify(self);
     if (!self) {
-      [self logTestManagerMessage:@"(strongSelf) should not be nil"];
+      [self.logger logFormat:@"(strongSelf) should not be nil"];
       return;
     }
     [self finilzeConnectionWithProxyChannel:proxyChannel error:error];
@@ -487,10 +481,10 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     dispatch_async(dispatch_get_main_queue(), ^{
       CFAbsoluteTime time = CFAbsoluteTimeGetCurrent();
       if (crashLogsSyncError) {
-        [self logTestManagerMessage:@"Error syncing device diagnostic logs after %.1fs: %@", time, crashLogsSyncError];
+        [self.logger logFormat:@"Error syncing device diagnostic logs after %.1fs: %@", time, crashLogsSyncError];
       }
       else {
-        [self logTestManagerMessage:@"Finished syncing device diagnostic logs after %.1fs.", time];
+        [self.logger logFormat:@"Finished syncing device diagnostic logs after %.1fs.", time];
       }
     });
   }];

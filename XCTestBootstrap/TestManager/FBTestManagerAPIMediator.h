@@ -12,6 +12,7 @@
 @class DVTAbstractiOSDevice;
 
 @protocol FBTestManagerMediatorDelegate;
+@protocol FBControlCoreLogger;
 
 /**
  This is massively simplified reimplementations of Apple's _IDETestManagerAPIMediator class,
@@ -30,8 +31,14 @@
 @property (nonatomic, assign, readonly) pid_t testRunnerPID;
 
 /**
+ Delegate object used to handle application install & launch request
  */
 @property (nonatomic, weak) id<FBTestManagerMediatorDelegate> delegate;
+
+/**
+ Logger object to log events to, may be nil.
+ */
+@property (nonatomic, strong) id<FBControlCoreLogger> logger;
 
 /**
  Creates and returns a mediator with given paramenters

@@ -21,15 +21,17 @@
 @interface FBXCTestRunStrategy ()
 @property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
 @property (nonatomic, strong) id<FBXCTestPreparationStrategy> prepareStrategy;
+@property (nonatomic, strong) id<FBControlCoreLogger> logger;
 @end
 
 @implementation FBXCTestRunStrategy
 
-+ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy
++ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy logger:(id<FBControlCoreLogger>)logger
 {
   FBXCTestRunStrategy *strategy = [self.class new];
   strategy.prepareStrategy = prepareStrategy;
   strategy.deviceOperator = deviceOperator;
+  strategy.logger = logger;
   return strategy;
 }
 
@@ -74,6 +76,7 @@
   [FBTestManager testManagerWithOperator:self.deviceOperator
                            testRunnerPID:testRunnerProcessID
                        sessionIdentifier:configuration.sessionIdentifier
+                                  logger:self.logger
    ];
   if (![testManager connectWithError:error]) {
     return nil;

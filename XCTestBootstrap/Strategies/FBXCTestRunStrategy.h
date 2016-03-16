@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCoreLogger.h>
+
 @class FBTestManager;
 @protocol FBXCTestPreparationStrategy;
 @protocol FBDeviceOperator;
@@ -23,9 +25,10 @@
 
  @param deviceOperator device operator used to run tests
  @param testPrepareStrategy test preparation strategy used to prepare device to test
+ @param logger the logger object to log events to, may be nil.
  @return operator
  */
-+ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy;
++ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Starts testing session

@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @protocol FBDeviceOperator;
+@protocol FBControlCoreLogger;
 
 /**
  This class manages connection with testmanager daemon
@@ -22,9 +23,10 @@
  @param deviceOperator a device operator used to handle device
  @param testRunnerPID a process id of test runner (XCTest bundle)
  @param sessionIdentifier a session identifier of test that should be started
+ @param logger the logger object to log events to, may be nil.
  @return Prepared FBTestManager
  */
-+ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
++ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Connects to test manager daemon

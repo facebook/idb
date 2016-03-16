@@ -36,7 +36,7 @@
                                                    workingDirectory:workingDirectory
      ];
     FBSimulatorControlOperator *operator = [FBSimulatorControlOperator operatorWithSimulator:self.simulator];
-    FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy strategyWithDeviceOperator:operator testPrepareStrategy:testPrepareStrategy];
+    FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy strategyWithDeviceOperator:operator testPrepareStrategy:testPrepareStrategy logger:simulator.logger];
     NSError *innerError = nil;
     FBTestManager *testManager = [testRunStrategy startTestManagerWithAttributes:configuration.arguments environment:configuration.environment error:&innerError];
     if (!testManager) {

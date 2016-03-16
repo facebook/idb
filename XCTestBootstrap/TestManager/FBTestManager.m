@@ -19,11 +19,12 @@
 
 @implementation FBTestManager
 
-+ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
++ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier logger:(id<FBControlCoreLogger>)logger
 {
   FBTestManager *testManager = [self.class new];
   testManager.mediator = [FBTestManagerAPIMediator mediatorWithDevice:deviceOperator.dvtDevice testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
   testManager.mediator.delegate = testManager;
+  testManager.mediator.logger = logger;
   testManager.deviceOperator = deviceOperator;
   return testManager;
 }
