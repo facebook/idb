@@ -26,6 +26,7 @@ public enum EventName : String {
   case Launch = "launch"
   case List = "list"
   case Listen = "listen"
+  case Log = "log"
   case Query = "query"
   case Record = "record"
   case Relaunch = "relaunch"
@@ -110,7 +111,7 @@ class SimpleEvent : NSObject, JSONDescribeable {
   public var jsonDescription: JSON {
     get {
       return JSON.JDictionary([
-        "event_name" : JSON.JString(EventName.Diagnostic.rawValue),
+        "event_name" : JSON.JString(EventName.Log.rawValue),
         "event_type" : JSON.JString(EventType.Discrete.rawValue),
         "subject" : JSON.JString(self.logString),
         "level" : JSON.JString(self.levelString),
