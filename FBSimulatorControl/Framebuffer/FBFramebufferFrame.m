@@ -40,6 +40,12 @@
   return [[FBFramebufferFrame alloc] initWithTime:destinationTime timebase:destinationTimebase image:self.image count:self.count size:self.size];
 }
 
+- (instancetype)updateWithCurrentTime:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod
+{
+  CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, timescale, roundingMethod);
+  return [[FBFramebufferFrame alloc] initWithTime:time timebase:self.timebase image:self.image count:self.count size:self.size];
+}
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"Time %f | Count %lu", CMTimeGetSeconds(self.time), self.count];

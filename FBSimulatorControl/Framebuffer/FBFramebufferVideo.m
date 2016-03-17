@@ -97,10 +97,11 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     [self.logger.debug log:@"Manually starting recording"];
     self.state = FBFramebufferVideoStateWaitingForFirstFrame;
 
-    // With Immedate Start enabled, start the record if there's a frame ready.
+    // With Immedate Start enabled, push it.
     if (self.immediateStart && self.lastFrame) {
-      [self.logger.debug log:@"Prior frame is ready, starting record"];
-      [self startRecordingWithFrame:self.lastFrame error:nil];
+      FBFramebufferFrame *frame = [self.lastFrame updateWithCurrentTime:self.configuration.timescale roundingMethod:self.configuration.roundingMethod];
+      [self.logger.debug log:@"Prior frame %@ is exists, pushing it again as %@"];
+      [self pushFrame:frame];
     }
     // Otherwise the group should be notified when the frame arrives.
     else {
@@ -137,8 +138,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 - (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(self.mediaQueue, ^{
-    // Push the image, converting to the new timebase.
-    [self pushFrame:frame timebaseConversion:YES];
+    // Push the image, it will automatically be converted to the video's timescale.
+    [self pushFrame:frame];
   });
 }
 
@@ -169,7 +170,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 #pragma mark Queueing
 
-- (void)pushFrame:(FBFramebufferFrame *)frame timebaseConversion:(BOOL)timebaseConversion
+- (void)pushFrame:(FBFramebufferFrame *)frame
 {
   // Discard frames when there's no reason to record them
   if (self.state == FBFramebufferVideoStateNotStarted || self.state == FBFramebufferVideoStateTerminating) {
@@ -181,6 +182,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   if (self.state == FBFramebufferVideoStateWaitingForFirstFrame) {
     self.lastFrame = nil;
     [self.frameQueue popAll];
+    [self.logger.debug logFormat:@"Starting with Frame %@", frame];
+
     [self startRecordingWithFrame:frame error:nil];
     if (self.startWaitGroup) {
       dispatch_group_leave(self.startWaitGroup);
@@ -189,8 +192,9 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     return;
   }
 
-  // Convert the timebase if required, then push the frame to the queue and drain.
-  frame = timebaseConversion ? [frame convertToTimebase:self.timebase timescale:self.configuration.timescale roundingMethod:self.configuration.roundingMethod] : frame;
+  // Convert to the target timebase. If the frame has the same timebase as self, this is a no-op.
+  NSAssert(self.timebase, @"Timebase must exist before enqueing for render");
+  frame = [frame convertToTimebase:self.timebase timescale:self.configuration.timescale roundingMethod:self.configuration.roundingMethod];
   [self.frameQueue push:frame];
   [self drainQueue];
 }
@@ -278,8 +282,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   // Mark as running.
   self.state = FBFramebufferVideoStateRunning;
 
-  // Enqueue the first frame, converting it to the timebase that has just been created.
-  [self pushFrame:frame timebaseConversion:YES];
+  // Enqueue the first frame.
+  [self pushFrame:frame];
 
   // Report the availability of the video
   [self.eventSink diagnosticAvailable:[[logBuilder updatePath:path] build]];
@@ -369,10 +373,9 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   if (self.pushFinalFrame && self.lastFrame) {
     // Construct a time at the current timebase's time and push it to the queue.
     // Timebase conversion does not need to apply.
-    CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, self.configuration.timescale, self.configuration.roundingMethod);
-    FBFramebufferFrame *finalFrame = [[FBFramebufferFrame alloc] initWithTime:time timebase:self.timebase image:self.lastFrame.image count:(self.lastFrame.count + 1) size:self.lastFrame.size];
+    FBFramebufferFrame *finalFrame = [self.lastFrame updateWithCurrentTime:self.configuration.timescale roundingMethod:self.configuration.roundingMethod];
     [self.logger.info logFormat:@"Pushing last frame (%@) with new timing (%@) as this is the final frame", self.lastFrame, finalFrame];
-    [self pushFrame:finalFrame timebaseConversion:NO];
+    [self pushFrame:finalFrame];
   }
 
   // Update state.
