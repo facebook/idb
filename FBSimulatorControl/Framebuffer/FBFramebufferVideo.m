@@ -99,8 +99,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
     // With Immedate Start enabled, push it.
     if (self.immediateStart && self.lastFrame) {
-      FBFramebufferFrame *frame = [self.lastFrame updateWithCurrentTime:self.configuration.timescale roundingMethod:self.configuration.roundingMethod];
-      [self.logger.debug log:@"Prior frame %@ is exists, pushing it again as %@"];
+      FBFramebufferFrame *frame = self.lastFrame;
+      [self.logger.debug logFormat:@"Ready for immedate start with source frame %@", frame];
       [self pushFrame:frame];
     }
     // Otherwise the group should be notified when the frame arrives.
@@ -138,7 +138,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 - (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(self.mediaQueue, ^{
-    // Push the image, it will automatically be converted to the video's timescale.
+    // Push the image, it will be updated to the appropriate video timing.
     [self pushFrame:frame];
   });
 }
@@ -192,9 +192,9 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     return;
   }
 
-  // Convert to the target timebase. If the frame has the same timebase as self, this is a no-op.
+  // Convert to the target timebase, using the current time.
   NSAssert(self.timebase, @"Timebase must exist before enqueing for render");
-  frame = [frame convertToTimebase:self.timebase timescale:self.configuration.timescale roundingMethod:self.configuration.roundingMethod];
+  frame = [frame updateWithCurrentTimeInTimebase:self.timebase timescale:self.configuration.timescale roundingMethod:self.configuration.roundingMethod];
   [self.frameQueue push:frame];
   [self drainQueue];
 }
@@ -263,9 +263,9 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
   // Create a Timebase to construct the time of the first frame.
   CMTimebaseRef timebase = NULL;
-  CMTimebaseCreateWithMasterTimebase(
+  CMTimebaseCreateWithMasterClock(
     kCFAllocatorDefault,
-    frame.timebase,
+    CMClockGetHostTimeClock(),
     &timebase
   );
   NSAssert(timebase, @"Expected to be able to construct timebase");
@@ -371,11 +371,9 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
   // Push last frame if one exists and the flag is set.
   if (self.pushFinalFrame && self.lastFrame) {
-    // Construct a time at the current timebase's time and push it to the queue.
-    // Timebase conversion does not need to apply.
-    FBFramebufferFrame *finalFrame = [self.lastFrame updateWithCurrentTime:self.configuration.timescale roundingMethod:self.configuration.roundingMethod];
-    [self.logger.info logFormat:@"Pushing last frame (%@) with new timing (%@) as this is the final frame", self.lastFrame, finalFrame];
-    [self pushFrame:finalFrame];
+    // Take the previous frame and update it to the current time
+    [self.logger.info logFormat:@"Pushing last frame (%@) with new timing as this is the final frame", self.lastFrame];
+    [self pushFrame:self.lastFrame];
   }
 
   // Update state.

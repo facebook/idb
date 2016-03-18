@@ -40,10 +40,10 @@
   return [[FBFramebufferFrame alloc] initWithTime:destinationTime timebase:destinationTimebase image:self.image count:self.count size:self.size];
 }
 
-- (instancetype)updateWithCurrentTime:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod
+- (instancetype)updateWithCurrentTimeInTimebase:(CMTimebaseRef)timebase timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod
 {
-  CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, timescale, roundingMethod);
-  return [[FBFramebufferFrame alloc] initWithTime:time timebase:self.timebase image:self.image count:self.count size:self.size];
+  CMTime time = CMTimebaseGetTimeWithTimeScale(timebase, timescale, roundingMethod);
+  return [[FBFramebufferFrame alloc] initWithTime:time timebase:timebase image:self.image count:self.count size:self.size];
 }
 
 - (NSString *)description

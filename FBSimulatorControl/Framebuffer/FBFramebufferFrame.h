@@ -48,10 +48,11 @@
  Constructs a new FBFramebufferFrame by updating it with the current time.
  This is useful if you wish to 'repeat' a historical frame.
 
+ @param timebase the Timebase to get the time from.
  @param timescale the Timescale to convert to.
  @param roundingMethod the rounding method to use.
  @return a new FBFramebufferFrame in the destination timebase.
  */
-- (instancetype)updateWithCurrentTime:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod;
+- (instancetype)updateWithCurrentTimeInTimebase:(CMTimebaseRef)timebase timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod;
 
 @end
