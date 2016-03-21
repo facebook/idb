@@ -16,7 +16,8 @@
 
 @interface FBFramebufferImage ()
 
-@property (atomic, strong, readwrite) FBFramebufferFrame *lastFrame;
+@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
+@property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 
 @property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
@@ -27,10 +28,11 @@
 
 + (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithDiagnostic:diagnostic eventSink:eventSink];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
+  return [[self alloc] initWithDiagnostic:diagnostic eventSink:eventSink writeQueue:queue];
 }
 
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue
 {
   self = [super init];
   if (!self) {
@@ -39,6 +41,7 @@
 
   _diagnostic = [diagnostic copy];
   _eventSink = eventSink;
+  _writeQueue = writeQueue;
 
   return self;
 }
@@ -72,16 +75,19 @@
 
 - (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
-  self.lastFrame = frame;
+  dispatch_async(self.writeQueue, ^{
+    self.lastFrame = frame;
+  });
 }
 
 - (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
-  FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.lastFrame.image toDiagnostic:self.diagnostic];
-  id<FBSimulatorEventSink> eventSink = self.eventSink;
-
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [eventSink diagnosticAvailable:diagnostic];
+  dispatch_group_async(teardownGroup, self.writeQueue, ^{
+    FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.lastFrame.image toDiagnostic:self.diagnostic];
+    id<FBSimulatorEventSink> eventSink = self.eventSink;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [eventSink diagnosticAvailable:diagnostic];
+    });
   });
 }
 
