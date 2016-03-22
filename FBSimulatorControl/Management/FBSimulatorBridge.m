@@ -141,6 +141,11 @@
   FBSimulatorBridge *bridge = [[self alloc] initWithFramebuffer:framebuffer hidPort:hidPort bridge:(id<SimulatorBridge>)distantObject eventSink:simulator.eventSink];
   [simulator.eventSink bridgeDidConnect:bridge];
 
+  // Set the Location to a default location.
+  // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
+  // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
+  [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
+
   return bridge;
 }
 
