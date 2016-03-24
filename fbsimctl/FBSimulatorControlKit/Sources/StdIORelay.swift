@@ -16,11 +16,14 @@ public class FileHandleWriter : Writer {
     self.fileHandle = fileHandle
   }
 
-  public func write(var string: String) {
-    if (string.characters.last != "\n") {
-      string.append("\n" as Character)
+  public func write(string: String) {
+    var output = string
+    if (output.characters.last != "\n") {
+      output.append("\n" as Character)
     }
-    let data = string.dataUsingEncoding(NSUTF8StringEncoding)!
+    guard let data = output.dataUsingEncoding(NSUTF8StringEncoding) else {
+      return
+    }
     self.fileHandle.writeData(data)
   }
 

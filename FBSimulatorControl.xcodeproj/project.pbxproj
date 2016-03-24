@@ -1802,7 +1802,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = FB;
-				LastUpgradeCheck = 0710;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
 					AA819DB11B9FB40D002F58CA = {
@@ -2134,6 +2134,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Shims/Binaries",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "facebook.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = FBSimulatorControl;
 			};
 			name = Debug;
@@ -2183,6 +2184,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Shims/Binaries",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "facebook.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = FBSimulatorControl;
 			};
 			name = Profile;
@@ -2230,6 +2232,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Shims/Binaries",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "facebook.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = FBSimulatorControl;
 			};
 			name = Release;
