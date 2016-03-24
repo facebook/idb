@@ -2182,6 +2182,7 @@
 		};
 		4952437350C7218900000000 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
@@ -2230,6 +2231,7 @@
 		};
 		49524373A439BFE700000000 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
@@ -2327,6 +2329,7 @@
 		};
 		AA819DBC1B9FB40D002F58CA /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2368,6 +2371,7 @@
 		};
 		AA819DBD1B9FB40D002F58CA /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2468,6 +2472,7 @@
 		};
 		EE4F0D421C91B7DB00608E89 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2522,6 +2527,7 @@
 		};
 		EE4F0D431C91B7DB00608E89 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2625,6 +2631,7 @@
 		};
 		EE4F0D451C91B7DB00608E89 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2669,6 +2676,7 @@
 		};
 		EE4F0D461C91B7DB00608E89 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2767,6 +2775,7 @@
 		};
 		EEBD60211C90628F00298A07 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2816,6 +2825,7 @@
 		};
 		EEBD60221C90628F00298A07 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2910,6 +2920,7 @@
 		};
 		EEBD60251C90628F00298A07 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -2950,6 +2961,7 @@
 		};
 		EEBD60261C90628F00298A07 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
