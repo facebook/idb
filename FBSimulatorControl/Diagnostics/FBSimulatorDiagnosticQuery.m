@@ -86,7 +86,7 @@
 {
   return [[[diagnostics namedDiagnostics]
     objectsForKeys:self.names notFoundMarker:(id)NSNull.null]
-    filteredArrayUsingPredicate:FBConcurrentCollectionOperations.notNullPredicate];
+    filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
 }
 
 #pragma mark NSObject

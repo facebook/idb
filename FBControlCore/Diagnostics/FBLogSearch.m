@@ -13,6 +13,7 @@
 #import "FBConcurrentCollectionOperations.h"
 #import "FBControlCoreError.h"
 #import "FBDiagnostic.h"
+#import "NSPredicate+FBControlCore.h"
 
 @interface FBLogSearch ()
 
@@ -591,7 +592,7 @@
       }
       return @[search.diagnostic.shortName, matches];
     }
-    predicate:FBConcurrentCollectionOperations.notNullPredicate];
+    predicate:NSPredicate.notNullPredicate];
 
   // Rebuild the output dictionary
   NSMutableDictionary *output = [NSMutableDictionary dictionary];
@@ -650,7 +651,7 @@
       }
       return outputLines ? line : substring;
     }
-    predicate:FBConcurrentCollectionOperations.notNullPredicate];
+    predicate:NSPredicate.notNullPredicate];
 }
 
 #pragma mark Private

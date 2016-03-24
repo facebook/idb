@@ -160,9 +160,26 @@
   return self.asString != nil;
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+- (BOOL)writeOutToFilePath:(NSString *)path error:(NSError **)error
 {
   return NO;
+}
+
+- (NSString *)writeOutToDirectory:(NSString *)directory error:(NSError **)error
+{
+  BOOL isDirectory = NO;
+  if (![NSFileManager.defaultManager fileExistsAtPath:directory isDirectory:&isDirectory]) {
+    return [[FBControlCoreError describeFormat:@"Directory %@ does not exist", directory] fail:error];
+  }
+  if (!isDirectory) {
+    return [[FBControlCoreError describeFormat:@"Path %@ is not a directory", directory] fail:error];
+  }
+
+  NSString *filePath = [directory stringByAppendingPathComponent:self.inferredFilename];
+  if (![self writeOutToFilePath:filePath error:error]) {
+    return nil;
+  }
+  return filePath;
 }
 
 #pragma mark Private
@@ -170,6 +187,12 @@
 + (NSString *)defaultStorageDirectory
 {
   return [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+}
+
+- (NSString *)inferredFilename
+{
+  NSString *filename = self.shortName ?: NSUUID.UUID.UUIDString;
+  return [filename stringByAppendingPathExtension:self.fileType ?: @"unknown_log"];
 }
 
 - (NSString *)temporaryFilePath
@@ -328,7 +351,7 @@
 {
   if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if (![self writeOutToPath:path error:nil]) {
+    if (![self writeOutToFilePath:path error:nil]) {
       return nil;
     }
     self.backingFilePath = path;
@@ -349,7 +372,7 @@
   return self.backingData.length >= 1;
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+- (BOOL)writeOutToFilePath:(NSString *)path error:(NSError **)error
 {
   if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
     return NO;
@@ -463,7 +486,7 @@
 {
   if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if (![self writeOutToPath:path error:nil]) {
+    if (![self writeOutToFilePath:path error:nil]) {
       return nil;
     }
     self.backingFilePath = path;
@@ -492,7 +515,7 @@
   return YES;
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+- (BOOL)writeOutToFilePath:(NSString *)path error:(NSError **)error
 {
   if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
     return NO;
@@ -613,7 +636,7 @@
   return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+- (BOOL)writeOutToFilePath:(NSString *)path error:(NSError **)error
 {
   if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
     return NO;
@@ -734,7 +757,7 @@
 {
   if (!self.backingFilePath) {
     NSString *path = [self temporaryFilePath];
-    if (![self writeOutToPath:path error:nil]) {
+    if (![self writeOutToFilePath:path error:nil]) {
       return nil;
     }
     self.backingFilePath = path;
@@ -747,7 +770,7 @@
   return self.backingJSON != nil;
 }
 
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error
+- (BOOL)writeOutToFilePath:(NSString *)path error:(NSError **)error
 {
   if ([NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager removeItemAtPath:path error:error]) {
     return NO;
@@ -1017,7 +1040,7 @@
     return self;
   }
   NSString *path = [self createPath];
-  if (![self.diagnostic writeOutToPath:path error:nil]) {
+  if (![self.diagnostic writeOutToFilePath:path error:nil]) {
     return self;
   }
   return [self updatePath:path];

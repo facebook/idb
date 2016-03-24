@@ -9,6 +9,7 @@
 
 import Foundation
 import FBSimulatorControl
+import FBControlCore
 
 protocol Runner {
   func run(reporter: EventReporter) -> CommandResult
@@ -204,7 +205,7 @@ private struct SimulatorRunner : Runner {
         try simulator.set!.deleteSimulator(simulator)
       }
     case .Diagnose(let query, let format):
-      return DiagnosticsInteraction(translator: translator, name: EventName.Diagnose, subject: query, query: query, format: format)
+      return DiagnosticsInteraction(translator: translator, subject: query, query: query, format: format)
     case .Install(let application):
       return SimulatorInteraction(translator: translator, name: EventName.Install, subject: application) { interaction in
         interaction.installApplication(application)
@@ -235,7 +236,7 @@ private struct SimulatorRunner : Runner {
         interaction.launchOrRelaunchApplication(appLaunch)
       }
     case .Search(let search):
-      return SearchInteraction(translator: translator, name: EventName.Search, search: search)
+      return SearchInteraction(translator: translator, search: search)
     case .Shutdown:
       return SimulatorAction(translator: translator, name: EventName.Shutdown, subject: simulator) {
         try simulator.set!.killSimulator(simulator)
@@ -245,107 +246,11 @@ private struct SimulatorRunner : Runner {
         interaction.terminateApplicationWithBundleID(bundleID)
       }
     case .Upload(let diagnostics):
-      let paths: [String] = diagnostics.map { diagnostic in
-        return diagnostic.asPath
-      }
-      return SimulatorInteraction(translator: translator, name: EventName.Upload, subject: paths as NSArray) { interaction in
-        interaction.uploadMedia(paths)
-      }
+      return UploadInteraction(translator: translator, diagnostics: diagnostics)
     default:
       return SimulatorAction(translator: translator, name: EventName.Failure, subject: simulator) {
         assertionFailure("Unimplemented")
       }
     }
-  }
-}
-
-protocol SimulatorControlActionPerformer {
-  func perform() -> CommandResult
-}
-
-struct SimulatorAction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
-  let name: EventName
-  let subject: SimulatorControlSubject
-  let action: Void throws -> Void
-
-  func perform() -> CommandResult {
-    do {
-      self.translator.reportSimulator(self.name, EventType.Started, self.subject)
-      try self.action()
-      self.translator.reportSimulator(self.name, EventType.Ended, self.subject)
-    } catch let error as NSError {
-      return .Failure(error.description)
-    } catch let error as JSONError {
-      return .Failure(error.description)
-    }
-    return .Success
-  }
-}
-
-struct SimulatorInteraction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
-  let name: EventName
-  let subject: SimulatorControlSubject
-  let interaction: FBSimulatorInteraction throws -> Void
-
-  func perform() -> CommandResult {
-    let simulator = self.translator.simulator
-    let interaction = self.interaction
-    let action = SimulatorAction(translator: self.translator, name: self.name, subject: self.subject) {
-      let interact = simulator.interact
-      try interaction(interact)
-      try interact.perform()
-    }
-    return action.perform()
-  }
-}
-
-struct DiagnosticsInteraction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
-  let name: EventName
-  let subject: SimulatorControlSubject
-  let query: FBSimulatorDiagnosticQuery
-  let format: DiagnosticFormat
-
-  func perform() -> CommandResult {
-    let diagnostics = self.fetchDiagnostics()
-
-    translator.reportSimulator(EventName.Diagnose, EventType.Started, query)
-    for diagnostic in diagnostics {
-      translator.reportSimulator(EventName.Diagnostic, EventType.Discrete, diagnostic)
-    }
-    translator.reportSimulator(EventName.Diagnose, EventType.Ended, query)
-    return .Success
-  }
-
-  func fetchDiagnostics() -> [FBDiagnostic] {
-    let diagnostics = self.translator.simulator.diagnostics
-    let format = self.format
-
-    return query.perform(diagnostics).map { diagnostic in
-      switch format {
-      case .CurrentFormat:
-        return diagnostic
-      case .Content:
-        return FBDiagnosticBuilder(diagnostic: diagnostic).readIntoMemory().build()
-      case .Path:
-        return FBDiagnosticBuilder(diagnostic: diagnostic).writeOutToFile().build()
-      }
-    }
-  }
-}
-
-struct SearchInteraction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
-  let name: EventName
-  let search: FBBatchLogSearch
-
-  func perform() -> CommandResult {
-    let simulator = self.translator.simulator
-    let diagnostics = simulator.diagnostics.allDiagnostics()
-    let results = search.search(diagnostics)
-    translator.reportSimulator(EventName.Search, EventType.Discrete, results)
-    return .Success
   }
 }

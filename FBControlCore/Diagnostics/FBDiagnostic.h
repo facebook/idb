@@ -76,13 +76,24 @@
 @property (nonatomic, readonly, assign) BOOL isSearchableAsText;
 
 /**
- Writes the FBDiagnostic out to a file path in the most efficient way for the backing store of the log.
+ Writes the FBDiagnostic out to a file path.
+ This call is optimised for backing store of the reciever.
 
- @param path the File Path write to.
+ @param filePath the File Path write to.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)writeOutToPath:(NSString *)path error:(NSError **)error;
+- (BOOL)writeOutToFilePath:(NSString *)filePath error:(NSError **)error;
+
+/**
+ Writes the FBDiagnostic out to a directory.
+ This call is optimised for backing store of the reciever.
+
+ @param directory the directory to write into.
+ @param error an error out for any error that occurs.
+ @return the location of the file if successful, nil otherwise.
+ */
+- (NSString *)writeOutToDirectory:(NSString *)directory error:(NSError **)error;
 
 @end
 

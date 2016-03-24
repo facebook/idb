@@ -30,4 +30,5 @@
 #import <FBControlCore/FBTaskExecutor+Private.h>
 #import <FBControlCore/FBTaskExecutor.h>
 #import <FBControlCore/FBTerminationHandle.h>
+#import <FBControlCore/NSPredicate+FBControlCore.h>
 #import <FBControlCore/NSRunLoop+FBControlCore.h>

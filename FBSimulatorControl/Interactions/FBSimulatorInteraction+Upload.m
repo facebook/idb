@@ -13,6 +13,8 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
@@ -31,13 +33,13 @@
     return [self succeed];
   }
 
-  NSError *error = nil;
-  NSArray<NSArray<NSString *> *> *divided = [FBSimulatorInteraction divideArrayOfMediaPathsInfoPhotosAndVideos:mediaPaths error:&error];
-  if (!divided) {
-    return [self fail:error];
+  NSArray<NSString *> *unknown = [mediaPaths filteredArrayUsingPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:NSPredicate.predicateForMediaPaths]];
+  if (unknown.count > 0) {
+    return [self fail:[[FBSimulatorError describeFormat:@"%@ not a media path", unknown] build]];
   }
-  NSArray<NSString *> *photos = divided[0];
-  NSArray<NSString *> *videos = divided[1];
+
+  NSArray<NSString *> *photos = [mediaPaths filteredArrayUsingPredicate:NSPredicate.predicateForPhotoPaths];
+  NSArray<NSString *> *videos = [mediaPaths filteredArrayUsingPredicate:NSPredicate.predicateForVideoPaths];
 
   return [[self uploadPhotos:photos] uploadVideos:videos];
 }
@@ -82,30 +84,6 @@
 
     return YES;
   }];
-}
-
-#pragma mark Private
-
-+ (NSArray<NSArray<NSString *> *> *)divideArrayOfMediaPathsInfoPhotosAndVideos:(NSArray *)mediaPaths error:(NSError **)error
-{
-  NSMutableArray *photos = [NSMutableArray array];
-  NSMutableArray *videos = [NSMutableArray array];
-
-  NSSet *imageUTIs = [NSSet setWithArray:@[(NSString *)kUTTypeImage, (NSString *)kUTTypePNG, (NSString *)kUTTypeJPEG, (NSString *)kUTTypeJPEG2000]];
-  NSSet *movieUTIs = [NSSet setWithArray:@[(NSString *)kUTTypeMovie, (NSString *)kUTTypeMPEG4, (NSString *)kUTTypeQuickTimeMovie]];
-
-  for (NSString *path in mediaPaths) {
-    NSString *uti = [NSWorkspace.sharedWorkspace typeOfFile:path error:nil];
-    if ([imageUTIs containsObject:uti]) {
-      [photos addObject:path];
-    } else if ([movieUTIs containsObject:uti]) {
-      [videos addObject:path];
-    } else {
-      return [[FBSimulatorError describeFormat:@"%@ has a non media uti of %@", path, uti] fail:error];
-    }
-  }
-
-  return @[[photos copy], [videos copy]];
 }
 
 @end

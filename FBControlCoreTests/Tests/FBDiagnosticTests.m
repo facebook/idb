@@ -49,7 +49,7 @@
 {
   NSString *outFile = self.temporaryOutputFile;
   NSError *error = nil;
-  BOOL success = [diagnostic writeOutToPath:outFile error:&error];
+  BOOL success = [diagnostic writeOutToFilePath:outFile error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

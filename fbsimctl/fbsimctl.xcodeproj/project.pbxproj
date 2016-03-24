@@ -27,14 +27,14 @@
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
 		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
-		AA6046901C7A96E500639DD5 /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* CommandPerformer.swift */; };
+		AA6046901C7A96E500639DD5 /* Performers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* Performers.swift */; };
 		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
 		AA83D5EC1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
 		AAA27E721C478F4C00C9EC28 /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */; };
-		AAA6EC591C96A5DD0083A62C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA6EC581C96A5DD0083A62C /* main.m */; };
 		AAA6EC531C933DAE0083A62C /* Fixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6EC521C933DAE0083A62C /* Fixtures.swift */; };
 		AAA6EC561C933DDA0083A62C /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AAA6EC541C933DDA0083A62C /* photo0.png */; };
 		AAA6EC571C933DDA0083A62C /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = AAA6EC551C933DDA0083A62C /* video0.mp4 */; };
+		AAA6EC591C96A5DD0083A62C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA6EC581C96A5DD0083A62C /* main.m */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
 		AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
 		AAD999571C68D80B0014D61F /* Swifter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -103,16 +103,16 @@
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
-		AA60468E1C7A96E500639DD5 /* CommandPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
+		AA60468E1C7A96E500639DD5 /* Performers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Performers.swift; sourceTree = "<group>"; };
 		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
 		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA27E711C478F4C00C9EC28 /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
-		AAA6EC581C96A5DD0083A62C /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		AAA6EC521C933DAE0083A62C /* Fixtures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fixtures.swift; sourceTree = "<group>"; };
 		AAA6EC541C933DDA0083A62C /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
 		AAA6EC551C933DDA0083A62C /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
+		AAA6EC581C96A5DD0083A62C /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		AACF9F521C46E5C100B17E82 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		AAD999541C68D1460014D61F /* Swifter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Swifter.framework; path = Carthage/Build/Mac/Swifter.framework; sourceTree = "<group>"; };
 		AAE0C5521C4904BC005DE6D9 /* Query.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Query.swift; sourceTree = "<group>"; };
@@ -166,7 +166,6 @@
 				AAFE7AB21C92F19D00D92E46 /* CLI.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
-				AA60468E1C7A96E500639DD5 /* CommandPerformer.swift */,
 				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
 				AACF9F521C46E5C100B17E82 /* Environment.swift */,
 				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
@@ -178,6 +177,7 @@
 				AAFE7AB51C92F25B00D92E46 /* JSONLogger.m */,
 				AA1B7F621C2867EE0038C6A5 /* LineBuffer.swift */,
 				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
+				AA60468E1C7A96E500639DD5 /* Performers.swift */,
 				AAE0C5521C4904BC005DE6D9 /* Query.swift */,
 				AA1B7F651C2867EE0038C6A5 /* Relay.swift */,
 				AA1B7F661C2867EE0038C6A5 /* Runners.swift */,
@@ -417,7 +417,7 @@
 				AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */,
 				AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */,
 				AA1B7F6F1C2867EE0038C6A5 /* Bridging.m in Sources */,
-				AA6046901C7A96E500639DD5 /* CommandPerformer.swift in Sources */,
+				AA6046901C7A96E500639DD5 /* Performers.swift in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
 				AAFE7AB71C92F25B00D92E46 /* JSONLogger.m in Sources */,
 				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
