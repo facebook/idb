@@ -168,6 +168,14 @@ class HttpRelay : Relay {
     }
   }}
 
+  private var tapRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: EventName.Tap.rawValue) { json in
+      let x = try json.getValue("x").getNumber().doubleValue
+      let y = try json.getValue("y").getNumber().doubleValue
+      return Action.Tap(x, y)
+    }
+  }}
+
   private var uploadRoute: HttpRoute { get {
     let jsonToDiagnostics: JSON throws -> [FBDiagnostic] = { json in
       switch json {
@@ -196,6 +204,7 @@ class HttpRelay : Relay {
       self.recordRoute,
       self.diagnoseRoute,
       self.searchRoute,
+      self.tapRoute,
       self.uploadRoute
     ]
   }}

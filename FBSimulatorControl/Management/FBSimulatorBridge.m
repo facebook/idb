@@ -13,6 +13,7 @@
 #import <CoreSimulator/SimDeviceType.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
+#import <SimulatorBridge/SimulatorBridge.h>
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
@@ -137,8 +138,18 @@
   FBFramebuffer *framebuffer = [FBFramebuffer withFramebufferService:framebufferService configuration:configuration simulator:simulator];
   [framebuffer startListeningInBackground];
 
+  // Load Accessibility, return early if this fails
+  id simulatorBridge = (id) distantObject;
+  [simulatorBridge enableAccessibility];
+  if (![simulatorBridge accessibilityEnabled]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not enable accessibility for bridge '%@'", simulatorBridge]
+      inSimulator:simulator]
+      fail:error];
+  }
+
   // Create the bridge and broadcast the availability
-  FBSimulatorBridge *bridge = [[self alloc] initWithFramebuffer:framebuffer hidPort:hidPort bridge:(id<SimulatorBridge>)distantObject eventSink:simulator.eventSink];
+  FBSimulatorBridge *bridge = [[self alloc] initWithFramebuffer:framebuffer hidPort:hidPort bridge:simulatorBridge eventSink:simulator.eventSink];
   [simulator.eventSink bridgeDidConnect:bridge];
 
   // Set the Location to a default location.
@@ -223,6 +234,22 @@
 - (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude
 {
   [self.bridge setLocationWithLatitude:latitude andLongitude:longitude];
+}
+
+- (BOOL)tapX:(double)x y:(double)y error:(NSError **)error
+{
+  NSDictionary *elementDictionary = [self.bridge accessibilityElementForPoint:x andY:y displayId:0];
+  if (!elementDictionary) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not find element at (%f, %f)", x, y]
+      failBool:error];
+  }
+  if (![self.bridge performPressAction:elementDictionary]) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not Press Element with description %@", elementDictionary]
+      failBool:error];
+  }
+  return YES;
 }
 
 @end

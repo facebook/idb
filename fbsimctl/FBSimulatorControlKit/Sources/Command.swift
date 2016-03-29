@@ -82,6 +82,7 @@ public enum Action {
   case Relaunch(FBApplicationLaunchConfiguration)
   case Search(FBBatchLogSearch)
   case Shutdown
+  case Tap(Double, Double)
   case Terminate(String)
   case Upload([FBDiagnostic])
 }
@@ -128,6 +129,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftSearch == rightSearch
   case (.Shutdown, .Shutdown):
     return true
+  case (.Tap(let leftX, let leftY), .Tap(let rightX, let rightY)):
+    return leftX == rightX && leftY == rightY
   case (.Terminate(let leftBundleID), .Terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.Upload(let leftPaths), .Upload(let rightPaths)):

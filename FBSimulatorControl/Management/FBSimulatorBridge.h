@@ -54,6 +54,16 @@
  */
 - (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude;
 
+/**
+ Performs a Tap (Press) of any element that can be found at this location.
+ Will fail if an element could not be found or tapped.
+
+ @param x the X Coordinate of the Element to Tap.
+ @param y the Y Coordinate of the Element to Tap.
+ @param error an error out for any error that occurs.
+ */
+- (BOOL)tapX:(double)x y:(double)y error:(NSError **)error;
+
 #pragma mark Properties
 
 /**

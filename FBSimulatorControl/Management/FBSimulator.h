@@ -58,7 +58,7 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 /**
  The Underlying SimDevice.
  */
-@property (nonatomic, strong, readonly) SimDevice *device;
+@property (nonatomic, strong, readonly, nonnull) SimDevice *device;
 
 /**
  Whether the Simulator is allocated or not.
@@ -68,44 +68,44 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 /**
  The Simulator Set that the Simulator belongs to.
  */
-@property (nonatomic, weak, readonly) FBSimulatorSet *set;
+@property (nonatomic, weak, readonly, nullable) FBSimulatorSet *set;
 
 /**
  The Pool to which the Simulator belongs, if Any.
  */
-@property (nonatomic, weak, readonly) FBSimulatorPool *pool;
+@property (nonatomic, weak, readonly, nullable) FBSimulatorPool *pool;
 
 /**
  Where the events for the Simulator should be sent.
  */
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+@property (nonatomic, strong, readonly, nullable) id<FBSimulatorEventSink> eventSink;
 
 /**
  An Event Sink that can be updated to the user's choosing.
  Will be called when sending events to `eventSink`.
  Events should be sent to `eventSink` and not this property; events will propogate here automatically.
  */
-@property (nonatomic, strong, readwrite) id<FBSimulatorEventSink> userEventSink;
+@property (nonatomic, strong, readwrite, nullable) id<FBSimulatorEventSink> userEventSink;
 
 /**
  The Simulator's Logger.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
 
 /**
  History of the Simulator.
  */
-@property (nonatomic, strong, readonly) FBSimulatorHistory *history;
+@property (nonatomic, strong, readonly, nonnull) FBSimulatorHistory *history;
 
 /**
  The Name of the allocated Simulator.
  */
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, copy, readonly, nonnull) NSString *name;
 
 /**
  The UDID of the allocated Simulator.
  */
-@property (nonatomic, copy, readonly) NSString *udid;
+@property (nonatomic, copy, readonly, nonnull) NSString *udid;
 
 /**
  The State of the allocated Simulator.
@@ -120,41 +120,41 @@ typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
 /**
  A string representation of the Simulator State.
  */
-@property (nonatomic, copy, readonly) NSString *stateString;
+@property (nonatomic, copy, readonly, nonnull) NSString *stateString;
 
 /**
  The Directory that Contains the Simulator's Data
  */
-@property (nonatomic, copy, readonly) NSString *dataDirectory;
+@property (nonatomic, copy, readonly, nullable) NSString *dataDirectory;
 
 /**
  The Directory that FBSimulatorControl uses to store auxillary files.
  */
-@property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
+@property (nonatomic, copy, readonly, nullable) NSString *auxillaryDirectory;
 
 /**
  The FBSimulatorConfiguration representing this Simulator.
  */
-@property (nonatomic, copy, readonly) FBSimulatorConfiguration *configuration;
+@property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
 
 /**
  The launchd_sim process info for the Simulator, if launched.
  */
-@property (nonatomic, copy, readonly) FBProcessInfo *launchdSimProcess;
+@property (nonatomic, copy, readonly, nullable) FBProcessInfo *launchdSimProcess;
 
 /**
  The FBProcessInfo associated with the Container Application that launched the Simulator.
  */
-@property (nonatomic, copy, readonly) FBProcessInfo *containerApplication;
+@property (nonatomic, copy, readonly, nullable) FBProcessInfo *containerApplication;
 
 /**
  The Bridge of the Simulator.
  */
-@property (nonatomic, strong, readonly) FBSimulatorBridge *bridge;
+@property (nonatomic, strong, readonly, nullable) FBSimulatorBridge *bridge;
 
 /**
  The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
  */
-@property (nonatomic, strong, readonly) FBSimulatorDiagnostics *diagnostics;
+@property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *diagnostics;
 
 @end

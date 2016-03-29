@@ -241,6 +241,10 @@ private struct SimulatorRunner : Runner {
       return SimulatorAction(translator: translator, name: EventName.Shutdown, subject: simulator) {
         try simulator.set!.killSimulator(simulator)
       }
+    case .Tap(let x, let y):
+      return SimulatorInteraction(translator: translator, name: EventName.Tap, subject: simulator) { interaction in
+        interaction.tap(x, y: y)
+      }
     case .Terminate(let bundleID):
       return SimulatorInteraction(translator: translator, name: EventName.Record, subject: bundleID as NSString) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)

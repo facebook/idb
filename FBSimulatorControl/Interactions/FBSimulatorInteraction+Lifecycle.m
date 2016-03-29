@@ -132,22 +132,6 @@
   return [self signal:SIGKILL process:process];
 }
 
-- (instancetype)startRecordingVideo
-{
-  return [self interactWithVideo:^ BOOL (NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup) {
-    [video startRecording:waitGroup];
-    return YES;
-  }];
-}
-
-- (instancetype)stopRecordingVideo
-{
-  return [self interactWithVideo:^ BOOL (NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup) {
-    [video stopRecording:waitGroup];
-    return YES;
-  }];
-}
-
 #pragma mark Private
 
 + (BOOL)launchSimulatorDirectly:(FBSimulator *)simulator configuration:(FBSimulatorLaunchConfiguration *)configuration error:(NSError **)error
@@ -290,33 +274,6 @@
   }
 
   return launchdSimProcess;
-}
-
-- (instancetype)interactWithVideo:(BOOL (^)(NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup))block
-{
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBFramebufferVideo *video = simulator.bridge.framebuffer.video;
-    if (!video) {
-      return [[[FBSimulatorError
-        describe:@"Simulator Does not have a FBFramebufferVideo instance"]
-        inSimulator:simulator]
-        failBool:error];
-    }
-    dispatch_group_t waitGroup = dispatch_group_create();
-    if (!block(error, simulator, video, waitGroup)) {
-      return NO;
-    }
-    NSTimeInterval timeout = FBControlCoreGlobalConfiguration.regularTimeout;
-    int64_t timeoutInt = ((int64_t) timeout) * ((int64_t) NSEC_PER_SEC);
-    long fail = dispatch_group_wait(waitGroup, dispatch_time(DISPATCH_TIME_NOW, timeoutInt));
-    if (fail) {
-      return [[[FBSimulatorError
-        describeFormat:@"Timeout waiting for video interaction to complete in %f seconds", timeout]
-        inSimulator:simulator]
-        failBool:error];
-    }
-    return YES;
-  }];
 }
 
 @end

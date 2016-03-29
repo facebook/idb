@@ -195,7 +195,9 @@ struct UploadInteraction : SimulatorControlActionPerformer {
       }
     }
 
-    let basePath: NSString = translator.simulator.auxillaryDirectory
+    guard let basePath: NSString = translator.simulator.auxillaryDirectory else {
+        return CommandResult.Failure("Could not determine aux directory for simulator \(self.translator.simulator) to path")
+    }
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)
     let arbitrary = diagnosticLocations.filter{ arbitraryPredicate.evaluateWithObject($0.1) }
     for (sourceDiagnostic, sourcePath) in arbitrary {

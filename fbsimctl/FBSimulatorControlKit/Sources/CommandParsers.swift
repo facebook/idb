@@ -285,6 +285,7 @@ extension Action : Parsable {
         self.recordParser,
         self.relaunchParser,
         self.shutdownParser,
+        self.tapParser,
         self.terminateParser,
         self.uploadParser,
       ])
@@ -367,6 +368,20 @@ extension Action : Parsable {
 
   static var shutdownParser: Parser<Action> { get {
     return Parser.ofString(EventName.Shutdown.rawValue, Action.Shutdown)
+  }}
+
+  static var tapParser: Parser<Action> { get {
+    return Parser
+      .succeeded(
+        EventName.Tap.rawValue,
+        Parser.ofTwoSequenced(
+          Parser<Any>.ofDouble,
+          Parser<Any>.ofDouble
+        )
+      )
+      .fmap { (x,y) in
+        Action.Tap(x, y)
+      }
   }}
 
   static var terminateParser: Parser<Action> { get {

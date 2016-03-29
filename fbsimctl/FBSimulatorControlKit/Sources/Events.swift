@@ -34,6 +34,7 @@ public enum EventName : String {
   case Shutdown = "shutdown"
   case Signalled = "signalled"
   case StateChange = "state"
+  case Tap = "tap"
   case Terminate = "terminate"
   case Upload = "upload"
 }
