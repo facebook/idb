@@ -133,17 +133,20 @@ class HttpRelay : Relay {
     self.httpServer.stop()
   }
 
-  private var relaunchRoute: HttpRoute { get {
-    return HttpRoute(method: HttpMethod.POST, endpoint: "relaunch") { json in
-      let launchConfiguration = try FBApplicationLaunchConfiguration.inflateFromJSON(json.decode())
-      return Action.Relaunch(launchConfiguration)
+  private var diagnoseRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: "diagnose") { json in
+      let query = try FBSimulatorDiagnosticQuery.inflateFromJSON(json.decode())
+      return Action.Diagnose(query, DiagnosticFormat.Content)
     }
   }}
 
-  private var terminateRoute: HttpRoute { get {
-    return HttpRoute(method: HttpMethod.POST, endpoint: "terminate") { json in
-      let bundleID = try json.getValue("bundle_id").getString()
-      return Action.Terminate(bundleID)
+  private var openRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: "open") { json in
+      let urlString = try json.getValue("url").getString()
+      guard let url = NSURL(string: urlString) else {
+        throw JSONError.Parse("\(urlString) is not a valid URL")
+      }
+      return Action.Open(url)
     }
   }}
 
@@ -154,10 +157,10 @@ class HttpRelay : Relay {
     }
   }}
 
-  private var diagnoseRoute: HttpRoute { get {
-    return HttpRoute(method: HttpMethod.POST, endpoint: "diagnose") { json in
-      let query = try FBSimulatorDiagnosticQuery.inflateFromJSON(json.decode())
-      return Action.Diagnose(query, DiagnosticFormat.Content)
+  private var relaunchRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: "relaunch") { json in
+      let launchConfiguration = try FBApplicationLaunchConfiguration.inflateFromJSON(json.decode())
+      return Action.Relaunch(launchConfiguration)
     }
   }}
 
@@ -173,6 +176,13 @@ class HttpRelay : Relay {
       let x = try json.getValue("x").getNumber().doubleValue
       let y = try json.getValue("y").getNumber().doubleValue
       return Action.Tap(x, y)
+    }
+  }}
+
+  private var terminateRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: "terminate") { json in
+      let bundleID = try json.getValue("bundle_id").getString()
+      return Action.Terminate(bundleID)
     }
   }}
 
@@ -199,12 +209,13 @@ class HttpRelay : Relay {
 
   private var routes: [HttpRoute] { get {
     return [
-      self.relaunchRoute,
-      self.terminateRoute,
-      self.recordRoute,
       self.diagnoseRoute,
+      self.openRoute,
+      self.recordRoute,
+      self.relaunchRoute,
       self.searchRoute,
       self.tapRoute,
+      self.terminateRoute,
       self.uploadRoute
     ]
   }}

@@ -43,6 +43,16 @@ extension Parser {
     }
   }}
 
+  public static var ofURL: Parser<NSURL> { get {
+    let expected = NSStringFromClass(NSURL.self)
+    return Parser<NSURL>.single("A \(expected)") { token in
+      guard let url = NSURL(string: token) else {
+        throw ParseError.CouldNotInterpret(expected, token)
+      }
+      return url
+    }
+  }}
+
   public static var ofDirectory: Parser<String> { get {
     let expected = "A Directory"
     return Parser<String>.single(expected) { token  in
@@ -282,6 +292,7 @@ extension Action : Parsable {
         self.launchParser,
         self.listenParser,
         self.listParser,
+        self.openParser,
         self.recordParser,
         self.relaunchParser,
         self.shutdownParser,
@@ -343,6 +354,15 @@ extension Action : Parsable {
 
   static var listParser: Parser<Action> { get {
     return Parser.ofString(EventName.List.rawValue, Action.List)
+  }}
+
+  static var openParser: Parser<Action> { get {
+    return Parser
+      .succeeded(
+        EventName.Open.rawValue,
+        Parser<Any>.ofURL
+      )
+      .fmap { Action.Open($0) }
   }}
 
   static var installParser: Parser<Action> { get {

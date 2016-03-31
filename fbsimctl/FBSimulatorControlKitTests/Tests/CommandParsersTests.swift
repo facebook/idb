@@ -264,6 +264,8 @@ let validActions: [([String], Action)] = [
   (["listen", "--http", "43"], Action.Listen(Server.Http(43))),
   (["listen", "--socket", "42"], Action.Listen(Server.Socket(42))),
   (["listen"], Action.Listen(Server.StdIO)),
+  (["open", "aoo://bar/baz"], Action.Open(NSURL(string: "aoo://bar/baz")!)),
+  (["open", "http://facebook.com"], Action.Open(NSURL(string: "http://facebook.com")!)),
   (["record", "start"], Action.Record(true)),
   (["record", "stop"], Action.Record(false)),
   (["shutdown"], Action.Shutdown),
@@ -272,14 +274,14 @@ let validActions: [([String], Action)] = [
 ]
 
 let invalidActions: [[String]] = [
-  ["listaa"],
-  ["approve"],
-  ["approve", "dontadddotstome"],
   ["aboota"],
-  ["ddshutdown"],
+  ["approve", "dontadddotstome"],
+  ["approve"],
   ["create"],
-  ["install"],
+  ["ddshutdown"],
   ["install", "/dev/null"],
+  ["install"],
+  ["listaa"],
 ]
 
 class ActionParserTests : XCTestCase {

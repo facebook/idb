@@ -223,6 +223,10 @@ private struct SimulatorRunner : Runner {
       return SimulatorAction(translator: translator, name: EventName.List, subject: simulator) {
         translator.reportSimulator(EventName.List, simulator)
       }
+    case .Open(let url):
+      return SimulatorInteraction(translator: translator, name: EventName.Open, subject: simulator) { interaction in
+        interaction.openURL(url)
+      }
     case .Record(let start):
       return SimulatorInteraction(translator: translator, name: EventName.Record, subject: simulator) { interaction in
         if (start) {

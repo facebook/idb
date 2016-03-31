@@ -78,6 +78,7 @@ public enum Action {
   case Launch(FBProcessLaunchConfiguration)
   case List
   case Listen(Server)
+  case Open(NSURL)
   case Record(Bool)
   case Relaunch(FBApplicationLaunchConfiguration)
   case Search(FBBatchLogSearch)
@@ -121,6 +122,8 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.Listen(let leftServer), .Listen(let rightServer)):
     return leftServer == rightServer
+  case (.Open(let leftURL), .Open(let rightURL)):
+    return leftURL == rightURL
   case (.Record(let leftStart), .Record(let rightStart)):
     return leftStart == rightStart
   case (.Relaunch(let leftLaunch), .Relaunch(let rightLaunch)):

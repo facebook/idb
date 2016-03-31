@@ -11,6 +11,8 @@
 
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulatorLaunchConfiguration;
 
 /**
@@ -68,3 +70,5 @@
 - (instancetype)killProcess:(FBProcessInfo *)process;
 
 @end
+
+NS_ASSUME_NONNULL_END
