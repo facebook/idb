@@ -682,7 +682,9 @@ struct FBSimulatorLaunchConfigurationParser {
   static var optionsParser: Parser<FBSimulatorLaunchOptions> { get {
     return Parser<FBSimulatorLaunchOptions>
       .unionOptions(1, [
+        Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
         Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
+        Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])
   }}

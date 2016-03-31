@@ -70,7 +70,7 @@
   }
 
   // Connect to the expected-to-be-running CoreSimulatorBridge running inside the Simulator.
-  // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over xpc.
+  // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over a Remote Object connection.
   NSError *innerError = nil;
   mach_port_t port = [self.simulator.device lookup:@"com.apple.iphonesimulator.bridge" error:&innerError];
   if (port == 0) {
@@ -102,15 +102,17 @@
       fail:error];
   }
 
-  // Create the bridge and broadcast the availability
+  // Create the bridge.
   FBSimulatorBridge *bridge = [[FBSimulatorBridge alloc] initWithFramebuffer:self.framebuffer hidPort:self.hidPort bridge:simulatorBridge eventSink:self.simulator.eventSink];
-  [self.simulator.eventSink bridgeDidConnect:bridge];
-
-  // Set the Location to a default location.
+  // Set the Location to a default location, when launched directly.
   // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
   // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
-  [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
+  if (self.framebuffer) {
+    [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
+  }
 
+  // Broadcast the availability of the new bridge.
+  [self.simulator.eventSink bridgeDidConnect:bridge];
   return bridge;
 }
 

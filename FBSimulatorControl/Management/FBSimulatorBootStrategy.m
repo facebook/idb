@@ -27,6 +27,7 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorConnectStrategy.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
@@ -334,7 +335,8 @@
 
   // Connect the Bridge.
   FBFramebuffer *framebuffer = framebufferService ? [FBFramebuffer withFramebufferService:framebufferService configuration:self.configuration simulator:self.simulator] : nil;
-  if (![[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:framebuffer hidPort:hidPort] connect:&innerError]) {
+  FBSimulatorBridge *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:framebuffer hidPort:hidPort] connect:&innerError] : nil;
+  if (self.configuration.shouldConnectBridge && !bridge) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 

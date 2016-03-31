@@ -51,6 +51,11 @@
   return (self.options & FBSimulatorLaunchOptionsUseNSWorkspace) == FBSimulatorLaunchOptionsUseNSWorkspace;
 }
 
+- (BOOL)shouldConnectBridge
+{
+  return ((self.options & FBSimulatorLaunchOptionsConnectBridge) == FBSimulatorLaunchOptionsConnectBridge) || self.shouldUseDirectLaunch;
+}
+
 #pragma mark Scale
 
 - (NSString *)lastScaleCommandLineSwitchForSimulator:(FBSimulator *)simulator

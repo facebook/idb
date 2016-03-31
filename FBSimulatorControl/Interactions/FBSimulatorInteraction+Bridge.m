@@ -13,6 +13,7 @@
 #import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
+#import "FBSimulatorConnectStrategy.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
 
@@ -46,10 +47,12 @@
 - (instancetype)interactWithBridge:(BOOL (^)(NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge))block
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBSimulatorBridge *bridge = simulator.bridge;
+    NSError *innerError = nil;
+    FBSimulatorBridge *bridge = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
     if (!bridge) {
-      return [[[FBSimulatorError
-        describe:@"Simulator does not have a bridge"]
+      return [[[[FBSimulatorError
+        describe:@"Could not connect to Simulator Bridge"]
+        causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
     }

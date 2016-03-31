@@ -244,6 +244,7 @@ let validActions: [([String], Action)] = [
   (["boot", "--locale", "en_US", "--scale=75"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
   (["boot", "--locale", "fr_FR"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
   (["boot", "--scale=50"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
+  (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale25Percent().withOptions(FBSimulatorLaunchOptions.ConnectBridge.union(FBSimulatorLaunchOptions.UseNSWorkspace)))),
   (["boot"], Action.Boot(nil)),
   (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
   (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
@@ -256,6 +257,8 @@ let validActions: [([String], Action)] = [
   (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
   (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
+  (["launch", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
+  (["launch", "com.foo.bar"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))),
   (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
   (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
   (["launch", Fixtures.binary.path, "--foo", "-b", "-a", "-r"], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
@@ -268,9 +271,12 @@ let validActions: [([String], Action)] = [
   (["open", "http://facebook.com"], Action.Open(NSURL(string: "http://facebook.com")!)),
   (["record", "start"], Action.Record(true)),
   (["record", "stop"], Action.Record(false)),
+  (["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
+  (["relaunch", "com.foo.bar"], Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))),
   (["shutdown"], Action.Shutdown),
   (["shutdown"], Action.Shutdown),
   (["terminate", "com.foo.bar"], Action.Terminate("com.foo.bar")),
+  (["upload", Fixtures.photoPath, Fixtures.videoPath], Action.Upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic])),
 ]
 
 let invalidActions: [[String]] = [
@@ -301,36 +307,6 @@ class CommandParserTests : XCTestCase {
     }
   }
 
-  func testParsesLaunchAppByPathWithArguments() {
-    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", Fixtures.application.path, "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
-  func testParsesLaunchAppByBundleID() {
-    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
-    let suffix: [String] = ["launch", "com.foo.bar"]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
-  func testParsesLaunchAppByBundleIDWithArguments() {
-    let action = Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["launch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
-  func testParsesRelaunchAppByBundleID() {
-    let action = Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))
-    let suffix: [String] = ["relaunch", "com.foo.bar"]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
-  func testParsesRelaunchAppByBundleIDArguments() {
-    let action = Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))
-    let suffix: [String] = ["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"]
-    self.assertWithDefaultAction(action, suffix: suffix)
-  }
-
   func testParsesListBootListenShutdown() {
     let actions: [Action] = [Action.List, Action.Boot(nil), Action.Listen(Server.Http(1000)), Action.Shutdown]
     let suffix: [String] = ["list", "boot", "listen", "--http", "1000", "shutdown"]
@@ -344,10 +320,6 @@ class CommandParserTests : XCTestCase {
     let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
     let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "listen", "--http", "8090", "shutdown", "diagnose"]
     self.assertWithDefaultActions(actions, suffix: suffix)
-  }
-
-  func testParsesUpload() {
-    self.assertWithDefaultAction(Action.Upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic]), suffix: ["upload", Fixtures.photoPath, Fixtures.videoPath])
   }
 
   func assertWithDefaultAction(action: Action, suffix: [String]) {

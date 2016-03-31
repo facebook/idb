@@ -18,9 +18,10 @@
  An Option Set for Direct Launching.
  */
 typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
-  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 0, /** Launches Simulators directly with a Framebuffer instead of with Simulator.app */
-  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 1, /** Relays the Simulator Framebuffer to a window */
-  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 2, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
+  FBSimulatorLaunchOptionsConnectBridge = 1 << 0, /** Connects the Simulator Bridge on launch, rather than lazily on-demand */
+  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 1, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
+  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 2, /** Relays the Simulator Framebuffer to a window */
+  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 3, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
 };
 
 /**

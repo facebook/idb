@@ -62,8 +62,11 @@
   static dispatch_once_t onceToken;
   static FBSimulatorLaunchConfiguration *configuration;
   dispatch_once(&onceToken, ^{
-    id<FBSimulatorLaunchConfiguration_Scale> scale = FBSimulatorLaunchConfiguration_Scale_100.new;
-    configuration = [[self alloc] initWithOptions:0 scale:scale locale:nil video:FBFramebufferVideoConfiguration.defaultConfiguration];
+    configuration = [[self alloc]
+      initWithOptions:FBSimulatorLaunchOptionsConnectBridge
+      scale:FBSimulatorLaunchConfiguration_Scale_100.new
+      locale:nil
+      video:FBFramebufferVideoConfiguration.defaultConfiguration];
   });
   return configuration;
 }

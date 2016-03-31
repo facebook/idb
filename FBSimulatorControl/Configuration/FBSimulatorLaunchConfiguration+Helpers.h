@@ -34,4 +34,9 @@
  */
 - (BOOL)shouldLaunchViaWorkspace;
 
+/**
+ Whether the reciever represents a configuration that should connect the Bridge on Launch.
+ */
+- (BOOL)shouldConnectBridge;
+
 @end
