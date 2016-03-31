@@ -130,7 +130,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
 
 #pragma mark Public
 
-- (void)startListeningInBackground;
+- (instancetype)startListeningInBackground;
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
   NSParameterAssert(self.state == FBSimulatorFramebufferStateNotStarted);
@@ -138,9 +138,11 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   self.state = FBSimulatorFramebufferStateStarting;
   [self.framebufferService registerClient:self onQueue:self.clientQueue];
   [self.framebufferService resume];
+
+  return self;
 }
 
-- (void)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup
+- (instancetype)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
   NSParameterAssert(self.state != FBSimulatorFramebufferStateNotStarted);
@@ -151,6 +153,8 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   dispatch_sync(self.clientQueue, ^{
     [self framebufferDidBecomeInvalid:self error:nil teardownGroup:teardownGroup];
   });
+
+  return self;
 }
 
 - (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error
@@ -168,6 +172,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
 
 - (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
 {
+
 }
 
 - (void)framebufferService:(SimDeviceFramebufferService *)service didUpdateRegion:(CGRect)region ofBackingStore:(SimDeviceFramebufferBackingStore *)backingStore

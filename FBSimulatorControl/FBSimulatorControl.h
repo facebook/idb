@@ -31,10 +31,12 @@
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorApplication.h>
+#import <FBSimulatorControl/FBSimulatorBootStrategy.h>
 #import <FBSimulatorControl/FBSimulatorBridge.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration+CoreSimulator.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration+Private.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorConnectStrategy.h>
 #import <FBSimulatorControl/FBSimulatorControl+PrincipalClass.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>

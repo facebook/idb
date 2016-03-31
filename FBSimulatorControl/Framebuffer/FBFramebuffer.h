@@ -40,8 +40,10 @@
  Events are delivered to the Framebuffer's Delegate on this queue.
  Delegates can do work on the queue on which they recieve events, but any heavy work should be dispatched to other queues.
  Must only be called from the main queue.
+
+ @return the reciever, for chaining.
  */
-- (void)startListeningInBackground;
+- (instancetype)startListeningInBackground;
 
 /**
  Stops listening for Framebuffer Events from SimDeviceFramebufferService.
@@ -50,8 +52,9 @@
  For example in the case of the Video Recorder, this means completing the writing to file.
 
  @param teardownGroup the dispatch_group to append asynchronous operations to.
+ @return the reciever, for chaining.
  */
-- (void)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup;
+- (instancetype)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup;
 
 /**
  The FBFramebufferVideo instance owned by the receiver.

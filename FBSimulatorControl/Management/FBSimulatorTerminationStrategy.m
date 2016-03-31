@@ -94,24 +94,6 @@
     NSError *innerError = nil;
     FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess ?: [self.processQuery launchdSimProcessForSimDevice:simulator.device];
 
-    // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
-    // This prevents 'Zombie' Simulator.app from existing.
-    FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
-    if (simulatorProcess) {
-      [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
-      if (![self.processTerminationStrategy killProcess:simulatorProcess error:&innerError]) {
-        return [[[[[FBSimulatorError
-          describeFormat:@"Could not kill simulator process %@", simulatorProcess]
-          inSimulator:simulator]
-          causedBy:innerError]
-          logger:self.logger]
-          fail:error];
-      }
-      [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
-    } else {
-      [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
-    }
-
     // The Bridge should also be tidied up if one exists.
     FBSimulatorBridge *bridge = simulator.bridge;
     if (bridge) {
@@ -128,6 +110,24 @@
       }
     } else {
       [self.logger.debug logFormat:@"Simulator %@ does not have a running bridge", simulator.shortDescription];
+    }
+
+    // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
+    // This prevents 'Zombie' Simulator.app from existing.
+    FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
+    if (simulatorProcess) {
+      [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
+      if (![self.processTerminationStrategy killProcess:simulatorProcess error:&innerError]) {
+        return [[[[[FBSimulatorError
+          describeFormat:@"Could not kill simulator process %@", simulatorProcess]
+          inSimulator:simulator]
+          causedBy:innerError]
+          logger:self.logger]
+          fail:error];
+      }
+      [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
+    } else {
+      [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
     }
 
     // Shutdown will:

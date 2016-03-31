@@ -24,4 +24,14 @@
  */
  - (NSArray *)xcodeSimulatorApplicationArgumentsForSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
+/**
+ Whether the reciever represents a configuration that should call SimDevice booting directly.
+ */
+- (BOOL)shouldUseDirectLaunch;
+
+/**
+ Whether the reciever represents a configuration that should boot via the NSWorkspace Application Launch API.
+ */
+- (BOOL)shouldLaunchViaWorkspace;
+
 @end

@@ -14,6 +14,10 @@
 @class FBFramebuffer;
 @class FBSimulator;
 @class FBSimulatorLaunchConfiguration;
+@protocol SimulatorBridge;
+@protocol FBSimulatorEventSink;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Simulator Bridge is a container for all of the relevant services that can be obtained when launching via: -[SimDevice bootWithOptions:error].
@@ -21,17 +25,17 @@
  */
 @interface FBSimulatorBridge : NSObject  <FBJSONSerializable>
 
-#pragma mark Lifecycle
+#pragma mark Initializers
 
 /**
- Creates a Simulator Bridge by booting the provided Simulator.
+ The Designated Initializer
 
- @param simulator the Simulator to boot and bridge.
- @param configuration the Configuration for configuring the Framebuffer.
- @param error an error out for any error that occurs.
- @return a Simulator Bridge for the given Simulator on success, nil otherwise.
+ @param framebuffer the Framebuffer. May be nil.
+ @param hidPort the Indigo HID Port. Zero if no such port exists.
+ @param bridge the underlying bridge. Must not be nil.
+ @param eventSink the event sink. Must not be nil.
  */
-+ (instancetype)bootSimulator:(FBSimulator *)simulator withConfiguration:(FBSimulatorLaunchConfiguration *)configuration andAttachBridgeWithError:(NSError **)error;
+- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(id<SimulatorBridge>)bridge eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  Tears down the bridge and it's resources, waiting for any asynchronous teardown to occur before returning.
@@ -69,6 +73,8 @@
 /**
  The FBSimulatorFramebuffer Instance.
  */
-@property (nonatomic, strong, readonly) FBFramebuffer *framebuffer;
+@property (nonatomic, strong, readonly, nullable) FBFramebuffer *framebuffer;
 
 @end
+
+NS_ASSUME_NONNULL_END

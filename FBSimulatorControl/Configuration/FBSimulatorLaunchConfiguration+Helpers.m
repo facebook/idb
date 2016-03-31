@@ -41,6 +41,16 @@
   return [arguments copy];
 }
 
+- (BOOL)shouldUseDirectLaunch
+{
+  return (self.options & FBSimulatorLaunchOptionsEnableDirectLaunch) == FBSimulatorLaunchOptionsEnableDirectLaunch;
+}
+
+- (BOOL)shouldLaunchViaWorkspace
+{
+  return (self.options & FBSimulatorLaunchOptionsUseNSWorkspace) == FBSimulatorLaunchOptionsUseNSWorkspace;
+}
+
 #pragma mark Scale
 
 - (NSString *)lastScaleCommandLineSwitchForSimulator:(FBSimulator *)simulator

@@ -9,6 +9,8 @@
 
 #import "FBSimulatorBridge.h"
 
+#import <Cocoa/Cocoa.h>
+
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceType.h>
 
@@ -18,9 +20,14 @@
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
 #import "FBFramebuffer.h"
+#import "FBProcessQuery+Simulators.h"
+#import "FBSimulator+Helpers.h"
+#import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 
 @interface FBSimulatorBridge ()
@@ -37,130 +44,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)bootSimulator:(FBSimulator *)simulator withConfiguration:(FBSimulatorLaunchConfiguration *)configuration andAttachBridgeWithError:(NSError **)error
-{
-  // If you're curious about where the knowledege for these parts of the CoreSimulator.framework comes from, take a look at:
-  // $DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS [VERSION].simruntime/Contents/Resources/profile.plist
-  // as well as the dissasembly for CoreSimulator.framework, SimulatorKit.Framework & the Simulator.app Executable.
-
-  // Creating the Framebuffer with the 'mainScreen' constructor will return a 'PurpleFBServer' and attach it to the '_registeredServices' ivar.
-  // This is the Framebuffer for the Simulator's main screen, which is distinct from 'PurpleFBTVOut' and 'Stark' Framebuffers for External Displays and CarPlay.
-  NSError *innerError = nil;
-  NSPort *purpleServerPort = [simulator.device portForServiceNamed:@"PurpleFBServer" error:&innerError];
-  if (!purpleServerPort) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not find the 'PurpleFBServer' Port for %@", simulator.device]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  // Setup the scale for the framebuffer service.
-  CGSize size = simulator.device.deviceType.mainScreenSize;
-  CGSize scaledSize = [configuration scaleSize:size];
-
-  // Create the service
-  SimDeviceFramebufferService *framebufferService = [NSClassFromString(@"SimDeviceFramebufferService") framebufferServiceWithPort:purpleServerPort deviceDimensions:size scaledDimensions:scaledSize error:&innerError];
-  if (!framebufferService) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to create the Main Screen Framebuffer for device %@", simulator.device]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  // As above with the 'PurpleFBServer', a 'IndigoHIDRegistrationPort' is needed in order for the synthesis of touch events to work appropriately.
-  // If this is not set you will see the following logger message in the System log upon booting the simulator
-  // 'backboardd[10667]: BKHID: Unable to open Indigo HID system'
-  // The dissasembly for backboardd shows that this will happen when the call to 'IndigoHIDSystemSpawnLoopback' fails.
-  // Simulator.app creates a Mach Port for the 'IndigoHIDRegistrationPort' and therefore succeeds in the above call.
-  // As with 'PurpleFBServer' this can be registered with 'register-head-services'
-  // The first step is to create the mach port
-  mach_port_t hidPort = 0;
-  mach_port_t machTask = mach_task_self();
-  kern_return_t result = mach_port_allocate(machTask, MACH_PORT_RIGHT_RECEIVE, &hidPort);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to create a Mach Port for IndigoHIDRegistrationPort with code %d", result]
-      fail:error];
-  }
-  result = mach_port_insert_right(machTask, hidPort, hidPort, MACH_MSG_TYPE_MAKE_SEND);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to 'insert_right' the mach port with code %d", result]
-      fail:error];
-  }
-  // Then register it as the 'IndigoHIDRegistrationPort'
-  if (![simulator.device registerPort:hidPort service:@"IndigoHIDRegistrationPort" error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to register %d as the IndigoHIDRegistrationPort", hidPort]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
-  // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
-  // Prior to Xcode 6 it was possible to shim into the Simulator process but codesigning now prevents this https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f
-  NSDictionary *options = @{
-    @"register-head-services" : @YES
-  };
-
-  // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
-  // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-  BOOL success = [simulator.device bootWithOptions:options error:&innerError];
-  if (!success) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to boot Simulator with options %@", options]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  // Connect to the expected-to-be-running CoreSimulatorBridge running inside the Simulator.
-  // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over xpc.
-  mach_port_t port = [simulator.device lookup:@"com.apple.iphonesimulator.bridge" error:&innerError];
-  if (port == 0) {
-    return [[[FBSimulatorError
-      describe:@"Could not lookup mach port for 'com.apple.iphonesimulator.bridge'"]
-      inSimulator:simulator]
-      fail:error];
-  }
-  NSPort *machPort = [NSMachPort portWithMachPort:port];
-  NSConnection *connection = [NSConnection connectionWithReceivePort:nil sendPort:machPort];
-  NSDistantObject *distantObject = [connection rootProxy];
-  if (![distantObject respondsToSelector:@selector(setLocationScenarioWithPath:)]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Distant Object '%@' for 'com.apple.iphonesimulator.bridge' at port %d isn't a SimulatorBridge", distantObject, port]
-      inSimulator:simulator]
-      fail:error];
-  }
-
-  // Create and start the consumer of the Framebuffer Service.
-  // The launch configuration will define the way that the Framebuffer is consumed.
-  // Then the simulator's event sink should be notified with the created framebuffer object.
-  FBFramebuffer *framebuffer = [FBFramebuffer withFramebufferService:framebufferService configuration:configuration simulator:simulator];
-  [framebuffer startListeningInBackground];
-
-  // Load Accessibility, return early if this fails
-  id simulatorBridge = (id) distantObject;
-  [simulatorBridge enableAccessibility];
-  if (![simulatorBridge accessibilityEnabled]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not enable accessibility for bridge '%@'", simulatorBridge]
-      inSimulator:simulator]
-      fail:error];
-  }
-
-  // Create the bridge and broadcast the availability
-  FBSimulatorBridge *bridge = [[self alloc] initWithFramebuffer:framebuffer hidPort:hidPort bridge:simulatorBridge eventSink:simulator.eventSink];
-  [simulator.eventSink bridgeDidConnect:bridge];
-
-  // Set the Location to a default location.
-  // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
-  // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
-  [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
-
-  return bridge;
-}
-
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(id<SimulatorBridge>)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(id<SimulatorBridge>)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -182,10 +66,10 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Bridge: Framebuffer (%@) | hid_port %d | Remote Bridge (%@)",
+    @"Bridge: Framebuffer (%@) | hid_port %d | Bridge Exists %d",
     self.framebuffer.description,
     self.hidPort,
-    self.bridge
+    self.bridge != nil
   ];
 }
 
@@ -195,7 +79,8 @@
 {
   return @{
     @"framebuffer" : self.framebuffer.jsonSerializableRepresentation,
-    @"hid_port" : @(self.hidPort)
+    @"hid_port" : @(self.hidPort),
+    @"bridge_exists" : @(self.bridge != nil)
   };
 }
 

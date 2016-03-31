@@ -43,6 +43,7 @@ extern NSString *const FBControlCoreErrorDomain;
  For returning early from failing conditions.
  */
 - (BOOL)failBool:(NSError **)error;
+- (unsigned int)failUInt:(NSError **)error;
 - (CGRect)failRect:(NSError **)error;
 - (id)fail:(NSError **)error;
 
