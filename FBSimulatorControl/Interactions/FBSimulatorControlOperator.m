@@ -13,6 +13,8 @@
 
 #import <IDEiOSSupportCore/DVTiPhoneSimulator.h>
 
+#import <XCTestBootstrap/FBProductBundle.h>
+
 @interface FBSimulatorControlOperator ()
 @property (nonatomic, strong) DVTiPhoneSimulator *dvtDevice;
 @property (nonatomic, strong) FBSimulator *simulator;
@@ -48,6 +50,21 @@
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   return ([self.simulator installedApplicationWithBundleID:bundleID error:error] != nil);
+}
+
+- (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  FBSimulatorApplication *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  if (!application) {
+    return nil;
+  }
+
+  FBProductBundle *productBundle =
+  [[[FBProductBundleBuilder builder]
+    withBundlePath:application.path]
+   build];
+
+  return productBundle;
 }
 
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment error:(NSError **)error

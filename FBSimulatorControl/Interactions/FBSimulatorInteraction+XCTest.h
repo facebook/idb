@@ -17,12 +17,11 @@
 /**
  Starts testing application using test bundle
 
- @param application the Application to test.
  @param configuration configuration used to launch test runner application
  @param testBundlePath path to XCTest bundle used for testing
  @param workingDirectory xctest working directory
  @return the reciever, for chaining.
  */
-- (instancetype)startTestRunnerApplication:(FBSimulatorApplication *)application configuration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath workingDirectory:(NSString *)workingDirectory;
+- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath workingDirectory:(NSString *)workingDirectory;
 
 @end

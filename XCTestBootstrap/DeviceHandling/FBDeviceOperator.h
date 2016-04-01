@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class DVTAbstractiOSDevice;
+@class FBProductBundle;
 @class FBTestRunnerConfiguration;
 
 /**
@@ -43,6 +44,15 @@
  @return NO if application is not installed or error occured, otherwise YES
  */
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Queries application with given bundleID
+
+ @param bundleID bundle ID of queried application
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return applicationBundle if application is installed, otherwise nil
+ */
+- (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Launches application with given bundleID, arguments & environment variables

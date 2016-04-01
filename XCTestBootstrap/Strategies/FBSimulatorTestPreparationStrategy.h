@@ -22,27 +22,27 @@
 /**
  Creates and returns a strategy with given paramenters
 
- @param applicationPath path to tested application (.app)
+ @param testRunnerBundleID a bundle ID of apllication used to start tests
  @param testBundlePath path to test bundle (.xctest)
  @param workingDirectory directory used to prepare all bundles
  @returns Prepared FBSimulatorTestRunStrategy
  */
-+ (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
-                             testBundlePath:(NSString *)testBundlePath
-                           workingDirectory:(NSString *)workingDirectory;
++ (instancetype)strategyWithTestRunnerBundleID:(NSString *)testRunnerBundleID
+                                testBundlePath:(NSString *)testBundlePath
+                              workingDirectory:(NSString *)workingDirectory;
 
 /**
  Creates and returns a strategy with given paramenters
 
- @param applicationPath path to tested application (.app)
+ @param testRunnerBundleID a bundle ID of apllication used to start tests
  @param testBundlePath path to test bundle (.xctest)
  @param workingDirectory directory used to prepare all bundles
  @param fileManager file manager used to prepare all bundles
  @returns Prepared FBSimulatorTestRunStrategy
  */
-+ (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
-                             testBundlePath:(NSString *)testBundlePath
-                           workingDirectory:(NSString *)workingDirectory
-                                fileManager:(id<FBFileManager>)fileManager;
++ (instancetype)strategyWithTestRunnerBundleID:(NSString *)testRunnerBundleID
+                                testBundlePath:(NSString *)testBundlePath
+                              workingDirectory:(NSString *)workingDirectory
+                                   fileManager:(id<FBFileManager>)fileManager;
 
 @end

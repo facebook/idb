@@ -65,6 +65,18 @@
   return self;
 }
 
+- (instancetype)withBundleID:(NSString *)bundleID
+{
+  self.bundleID = bundleID;
+  return self;
+}
+
+- (instancetype)withBinaryName:(NSString *)binaryName
+{
+  self.binaryName = binaryName;
+  return self;
+}
+
 - (instancetype)withCodesignProvider:(id<FBCodesignProvider>)codesignProvider
 {
   self.codesignProvider = codesignProvider;
@@ -106,8 +118,8 @@
   bundleProduct.path = targetBundlePath;
   bundleProduct.filename = targetBundlePath.lastPathComponent;
   bundleProduct.name = targetBundlePath.lastPathComponent.stringByDeletingPathExtension;
-  bundleProduct.bundleID = infoPlist[@"CFBundleIdentifier"];
-  bundleProduct.binaryName = infoPlist[@"CFBundleExecutable"];
+  bundleProduct.bundleID = self.bundleID ?: infoPlist[@"CFBundleIdentifier"];
+  bundleProduct.binaryName = self.binaryName ?: infoPlist[@"CFBundleExecutable"];
   bundleProduct.binaryPath = (bundleProduct.binaryName ? [targetBundlePath stringByAppendingPathComponent:bundleProduct.binaryName] : nil);
   return bundleProduct;
 }

@@ -24,16 +24,18 @@
 
 @implementation FBSimulatorInteraction (XCTest)
 
-- (instancetype)startTestRunnerApplication:(FBSimulatorApplication *)application configuration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath workingDirectory:(NSString *)workingDirectory
+- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath workingDirectory:(NSString *)workingDirectory
 {
-  NSParameterAssert(application);
+  NSParameterAssert(configuration);
+  NSParameterAssert(testBundlePath);
+  NSParameterAssert(workingDirectory);
   [FBFoundationInitializer initializeTestingEnvironment];
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBSimulatorTestPreparationStrategy *testPrepareStrategy =
-    [FBSimulatorTestPreparationStrategy strategyWithApplicationPath:application.path
-                                                     testBundlePath:testBundlePath
-                                                   workingDirectory:workingDirectory
+    [FBSimulatorTestPreparationStrategy strategyWithTestRunnerBundleID:configuration.bundleID
+                                                        testBundlePath:testBundlePath
+                                                      workingDirectory:workingDirectory
      ];
     FBSimulatorControlOperator *operator = [FBSimulatorControlOperator operatorWithSimulator:self.simulator];
     FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy strategyWithDeviceOperator:operator testPrepareStrategy:testPrepareStrategy logger:simulator.logger];

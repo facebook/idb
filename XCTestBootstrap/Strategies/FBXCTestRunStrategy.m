@@ -62,7 +62,6 @@
     return nil;
   }
 
-  // Get XCTStubApps process Id
   pid_t testRunnerProcessID = [self.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
   if (testRunnerProcessID <= 0) {
     if (error) {

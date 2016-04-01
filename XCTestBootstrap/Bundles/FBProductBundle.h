@@ -87,6 +87,22 @@
 - (instancetype)withBundlePath:(NSString *)bundlePath;
 
 /**
+ @optional
+
+ @param bundleID bundle id of the application, If passed will, skip loading information from plist
+ @return builder
+ */
+- (instancetype)withBundleID:(NSString *)bundleID;
+
+/**
+ @optional
+
+ @param binaryName binary name of the application, If passed will, skip loading information from plist
+ @return builder
+ */
+- (instancetype)withBinaryName:(NSString *)binaryName;
+
+/**
  @param workingDirectory if not nil product bundle will be copied to this directory
  @return builder
  */
