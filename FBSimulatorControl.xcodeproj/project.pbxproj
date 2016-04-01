@@ -190,6 +190,10 @@
 		EE1277611C9338D700DE52A1 /* FBTestManager.m in Sources */ = {isa = PBXBuildFile; fileRef = EE12775B1C9338D700DE52A1 /* FBTestManager.m */; };
 		EE1277621C9338D700DE52A1 /* FBTestManagerAPIMediator.h in Headers */ = {isa = PBXBuildFile; fileRef = EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE1277641C9338D700DE52A1 /* FBTestManagerAPIMediator.m in Sources */ = {isa = PBXBuildFile; fileRef = EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */; };
+		EE2EC7AC1CAC3F97009A7BB1 /* FBWeakFramework.h in Headers */ = {isa = PBXBuildFile; fileRef = EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE2EC7AD1CAC3F97009A7BB1 /* FBWeakFramework.m in Sources */ = {isa = PBXBuildFile; fileRef = EE2EC7AB1CAC3F97009A7BB1 /* FBWeakFramework.m */; };
+		EE2EC7B01CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h in Headers */ = {isa = PBXBuildFile; fileRef = EE2EC7AE1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE2EC7B11CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.m in Sources */ = {isa = PBXBuildFile; fileRef = EE2EC7AF1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.m */; };
 		EE4F0D3A1C91B7DB00608E89 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
 		EE4F0D701C91B82700608E89 /* FBApplicationDataPackage.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D4A1C91B82700608E89 /* FBApplicationDataPackage.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE4F0D711C91B82700608E89 /* FBApplicationDataPackage.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D4B1C91B82700608E89 /* FBApplicationDataPackage.m */; };
@@ -579,6 +583,10 @@
 		EE12775B1C9338D700DE52A1 /* FBTestManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManager.m; sourceTree = "<group>"; };
 		EE12775C1C9338D700DE52A1 /* FBTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerAPIMediator.h; sourceTree = "<group>"; };
 		EE12775E1C9338D700DE52A1 /* FBTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerAPIMediator.m; sourceTree = "<group>"; };
+		EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFramework.h; sourceTree = "<group>"; };
+		EE2EC7AB1CAC3F97009A7BB1 /* FBWeakFramework.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWeakFramework.m; sourceTree = "<group>"; };
+		EE2EC7AE1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBWeakFramework+ApplePrivateFrameworks.h"; sourceTree = "<group>"; };
+		EE2EC7AF1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBWeakFramework+ApplePrivateFrameworks.m"; sourceTree = "<group>"; };
 		EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XCTestBootstrap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE4F0D391C91B7DB00608E89 /* XCTestBootstrapTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XCTestBootstrapTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE4F0D4A1C91B82700608E89 /* FBApplicationDataPackage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBApplicationDataPackage.h; sourceTree = "<group>"; };
@@ -1553,6 +1561,10 @@
 				EEBD60581C9062E900298A07 /* FBControlCoreLogger.m */,
 				AACA33561C96F8D100DC9704 /* FBFileFinder.h */,
 				AACA33571C96F8D100DC9704 /* FBFileFinder.m */,
+				EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */,
+				EE2EC7AB1CAC3F97009A7BB1 /* FBWeakFramework.m */,
+				EE2EC7AE1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h */,
+				EE2EC7AF1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.m */,
 				AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */,
 				AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */,
 				AA84EFFC1C9FE162000CDA41 /* NSPredicate+FBControlCore.h */,
@@ -1676,6 +1688,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA84EFFE1C9FE162000CDA41 /* NSPredicate+FBControlCore.h in Headers */,
+				EE2EC7B01CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h in Headers */,
 				EEBD60761C9062E900298A07 /* FBBinaryParser.h in Headers */,
 				EEBD60721C9062E900298A07 /* FBTaskExecutor.h in Headers */,
 				EEBD605B1C9062E900298A07 /* FBASLParser.h in Headers */,
@@ -1699,6 +1712,7 @@
 				EEBD606F1C9062E900298A07 /* FBTaskExecutor+Convenience.h in Headers */,
 				EEBD60841C9062E900298A07 /* NSRunLoop+FBControlCore.h in Headers */,
 				EEBD60711C9062E900298A07 /* FBTaskExecutor+Private.h in Headers */,
+				EE2EC7AC1CAC3F97009A7BB1 /* FBWeakFramework.h in Headers */,
 				EEBD606C1C9062E900298A07 /* FBTask+Private.h in Headers */,
 				EEBD606B1C9062E900298A07 /* FBJSONSerializationDescribeable.h in Headers */,
 				EEBD606A1C9062E900298A07 /* FBDebugDescribeable.h in Headers */,
@@ -2077,12 +2091,14 @@
 			files = (
 				AAEA3AA71C90BB62004F8409 /* FBLogSearch.m in Sources */,
 				EEBD607F1C9062E900298A07 /* FBControlCoreError.m in Sources */,
+				EE2EC7B11CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.m in Sources */,
 				AACA33591C96F8D100DC9704 /* FBFileFinder.m in Sources */,
 				EEBD60691C9062E900298A07 /* FBProcessQuery.m in Sources */,
 				EEBD60701C9062E900298A07 /* FBTaskExecutor+Convenience.m in Sources */,
 				EEBD60601C9062E900298A07 /* FBDiagnostic.m in Sources */,
 				EEBD60651C9062E900298A07 /* FBProcessInfo.m in Sources */,
 				EEBD60751C9062E900298A07 /* FBTerminationHandle.m in Sources */,
+				EE2EC7AD1CAC3F97009A7BB1 /* FBWeakFramework.m in Sources */,
 				EEBD60671C9062E900298A07 /* FBProcessQuery+Helpers.m in Sources */,
 				EEBD60811C9062E900298A07 /* FBControlCoreGlobalConfiguration.m in Sources */,
 				EEBD606E1C9062E900298A07 /* FBTask.m in Sources */,

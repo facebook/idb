@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBWeakFramework;
 @protocol FBControlCoreLogger;
 
 /**
@@ -17,14 +18,14 @@
 @interface FBWeakFrameworkLoader : NSObject
 
 /**
- Loads a Mapping of Private Frameworks.
- Will avoid re-loading allready loaded Frameworks.
+ Loads a list of Frameworks.
+ Will avoid re-loading already loaded Frameworks.
 
- @param classMapping a mapping of Class Name to Framework Path. The Framework path is resolved relative to the current Developer Directory.
+ @param weakFrameworks a list of frameworks to load
  @param logger a logger for logging framework loading activities.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-+ (BOOL)loadPrivateFrameworks:(NSDictionary<NSString *, NSString *> *)classMapping logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (BOOL)loadPrivateFrameworks:(NSArray<FBWeakFramework *> *)weakFrameworks logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end

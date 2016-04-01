@@ -16,6 +16,7 @@
 #import <CoreSimulator/SimRuntime.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorConfiguration.h"
@@ -77,13 +78,21 @@
 
 + (BOOL)loadPrivateFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  NSDictionary *classMapping = @{
-    @"SimDevice" : @"Library/PrivateFrameworks/CoreSimulator.framework",
-    @"SimDeviceFramebufferService" : @"Library/PrivateFrameworks/SimulatorKit.framework",
-    @"DVTDevice" : @"../SharedFrameworks/DVTFoundation.framework",
-    @"DTiPhoneSimulatorApplicationSpecifier" : @"../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework"
-  };
-  BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:classMapping logger:logger error:error];
+  NSArray<FBWeakFramework *> *frameworks =
+  @[
+    // Needed by FBSimulatorControl
+    [FBWeakFramework CoreSimulator],
+    [FBWeakFramework SimulatorKit],
+    [FBWeakFramework DVTiPhoneSimulatorRemoteClient],
+
+    // Needed by XCTestBootstrap
+    [FBWeakFramework DTXConnectionServices],
+    [FBWeakFramework DVTFoundation],
+    [FBWeakFramework IDEFoundation],
+    [FBWeakFramework IDEiOSSupportCore],
+    [FBWeakFramework XCTest],
+  ];
+  BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
   // Set CoreSimulator Logging since it is now loaded.
   [self setCoreSimulatorLoggingEnabled:FBControlCoreGlobalConfiguration.debugLoggingEnabled];
   return result;
@@ -93,6 +102,9 @@
 
 + (void)setCoreSimulatorLoggingEnabled:(BOOL)enabled
 {
+  if (![NSUserDefaults instancesRespondToSelector:@selector(simulatorDefaults)]) {
+    return;
+  }
   NSUserDefaults *simulatorDefaults = [NSUserDefaults simulatorDefaults];
   [simulatorDefaults setBool:enabled forKey:@"DebugLogging"];
 }

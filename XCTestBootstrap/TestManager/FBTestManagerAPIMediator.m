@@ -103,7 +103,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 - (void)setupTestBundleConnectionWithTransport:(DTXTransport *)transport
 {
   [self.logger logFormat:@"Creating the connection."];
-  DTXConnection *connection = [[DTXConnection alloc] initWithTransport:transport];
+  DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
 
   weakify(self);
   [connection registerDisconnectHandler:^{
@@ -199,7 +199,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (void)setupDaemonConnectionWithTransport:(DTXTransport *)transport
 {
-  DTXConnection *connection = [[DTXConnection alloc] initWithTransport:transport];
+  DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
   weakify(self);
   [connection registerDisconnectHandler:^{
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -352,7 +352,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
   NSError *error;
-  DTXRemoteInvocationReceipt *recepit = [DTXRemoteInvocationReceipt new];
+  DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
   if(![self.delegate testManagerMediator:(FBTestManagerAPIMediator *)self launchProcessWithPath:path bundleID:bundleID arguments:arguments environmentVariables:environment error:&error]) {
     [recepit invokeCompletionWithReturnValue:nil error:error];
   }
@@ -365,7 +365,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 - (id)_XCT_getProgressForLaunch:(id)token
 {
   [self.logger logFormat:@"Test process requested launch process status with token %@", token];
-  DTXRemoteInvocationReceipt *recepit = [DTXRemoteInvocationReceipt new];
+  DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
   [recepit invokeCompletionWithReturnValue:@1 error:nil];
   return recepit;
 }

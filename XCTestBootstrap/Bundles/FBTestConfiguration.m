@@ -76,7 +76,7 @@
   if (self.savePath) {
     NSAssert(self.fileManager, @"fileManager is required to save test configuration");
     NSError *error;
-    XCTestConfiguration *testConfiguration = [XCTestConfiguration new];
+    XCTestConfiguration *testConfiguration = [NSClassFromString(@"XCTestConfiguration") new];
     testConfiguration.sessionIdentifier = self.sessionIdentifier;
     testConfiguration.testBundleURL = (self.testBundlePath ? [NSURL fileURLWithPath:self.testBundlePath] : nil);
     testConfiguration.treatMissingBaselinesAsFailures = NO;

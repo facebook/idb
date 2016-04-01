@@ -23,23 +23,23 @@
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     NSError *error = nil;
-    NSAssert([IDEFoundationTestInitializer initializeTestabilityWithUI:NO error:&error], @"Failed to initialize Testability %@", error);
-    NSAssert([DVTPlatform loadAllPlatformsReturningError:&error], @"Failed to load all platforms: %@", error);
-    NSAssert([DVTPlatform platformForIdentifier:@"com.apple.platform.iphoneos"] != nil, @"DVTPlatform hasn't been initialized yet.");
-    NSAssert([DVTDeviceType deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"], @"Failed to load Xcode.DeviceType.Mac");
-    NSAssert([DVTDeviceType deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"], @"Failed to load Xcode.DeviceType.iPhone");
-    [[DVTDeviceManager defaultDeviceManager] startLocating];
+    NSAssert([NSClassFromString(@"IDEFoundationTestInitializer") initializeTestabilityWithUI:NO error:&error], @"Failed to initialize Testability %@", error);
+    NSAssert([NSClassFromString(@"DVTPlatform") loadAllPlatformsReturningError:&error], @"Failed to load all platforms: %@", error);
+    NSAssert([NSClassFromString(@"DVTPlatform") platformForIdentifier:@"com.apple.platform.iphoneos"] != nil, @"DVTPlatform hasn't been initialized yet.");
+    NSAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"], @"Failed to load Xcode.DeviceType.Mac");
+    NSAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"], @"Failed to load Xcode.DeviceType.iPhone");
+    [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] startLocating];
   });
 }
 
 + (void)enableDebugLogging
 {
-  [[DVTLogAspect logAspectWithName:@"iPhoneSupport"] setLogLevel:10];
-  [[DVTLogAspect logAspectWithName:@"iPhoneSimulator"] setLogLevel:10];
-  [[DVTLogAspect logAspectWithName:@"DVTDevice"] setLogLevel:10];
-  [[DVTLogAspect logAspectWithName:@"Operations"] setLogLevel:10];
-  [[DVTLogAspect logAspectWithName:@"Executable"] setLogLevel:10];
-  [[DVTLogAspect logAspectWithName:@"CommandInvocation"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSupport"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSimulator"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"DVTDevice"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Operations"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Executable"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"CommandInvocation"] setLogLevel:10];
 }
 
 @end
