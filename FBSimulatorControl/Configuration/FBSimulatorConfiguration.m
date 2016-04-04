@@ -937,6 +937,7 @@
       FBSimulatorConfiguration_Device_iPad2.new,
       FBSimulatorConfiguration_Device_iPadRetina.new,
       FBSimulatorConfiguration_Device_iPadAir.new,
+      FBSimulatorConfiguration_Device_iPadPro.new,
       FBSimulatorConfiguration_Device_iPadAir2.new,
       FBSimulatorConfiguration_Device_AppleWatch38mm.new,
       FBSimulatorConfiguration_Device_AppleWatch42mm.new,
