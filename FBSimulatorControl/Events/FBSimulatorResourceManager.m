@@ -13,7 +13,7 @@
 
 @interface FBTerminationHandle_NSFileHandle : NSObject <FBTerminationHandle>
 
-@property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
+@property (nonatomic, strong, readonly, nonnull) NSFileHandle *fileHandle;
 
 @end
 
@@ -38,9 +38,9 @@
 @end
 
 @interface FBSimulatorResourceManager ()
-@property (nonatomic, strong, readonly) NSMutableSet *testManagerConnections;
-@property (nonatomic, strong, readonly) NSMutableDictionary *processToHandles;
-@property (nonatomic, strong, readonly) NSMutableArray *simulatorTerminationHandles;
+@property (nonatomic, strong, readonly, nonnull) NSMutableSet<FBTestManager *> *mutableTestManagers;
+@property (nonatomic, strong, readonly, nonnull) NSMutableDictionary<FBProcessInfo *, NSMutableArray<FBTerminationHandle *> *> *processToHandles;
+@property (nonatomic, strong, readonly, nonnull) NSMutableArray<FBTerminationHandle *> *simulatorTerminationHandles;
 
 @end
 
@@ -55,8 +55,13 @@
 
   _processToHandles = [NSMutableDictionary dictionary];
   _simulatorTerminationHandles = [NSMutableArray array];
-  _testManagerConnections = [NSMutableSet set];
+  _mutableTestManagers = [NSMutableSet set];
   return self;
+}
+
+- (NSSet<FBTestManager *> *)testManagers
+{
+  return self.mutableTestManagers.copy;
 }
 
 #pragma mark FBSimulatorEventSink Implementation
@@ -113,12 +118,12 @@
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager
 {
-  [self.testManagerConnections addObject:testManager];
+  [self.mutableTestManagers addObject:testManager];
 }
 
 - (void)testmanagerDidDisconnect:(FBTestManager *)testManager
 {
-  [self.testManagerConnections removeObject:testManager];
+  [self.mutableTestManagers removeObject:testManager];
 }
 
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
@@ -173,7 +178,7 @@
   [self.processToHandles removeAllObjects];
   [self.simulatorTerminationHandles makeObjectsPerformSelector:@selector(terminate)];
   [self.simulatorTerminationHandles removeAllObjects];
-  [self.testManagerConnections removeAllObjects];
+  [self.mutableTestManagers removeAllObjects];
 }
 
 @end

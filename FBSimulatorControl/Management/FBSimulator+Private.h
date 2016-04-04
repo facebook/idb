@@ -14,6 +14,7 @@
 @class FBProcessQuery;
 @class FBSimulatorEventRelay;
 @class FBSimulatorHistoryGenerator;
+@class FBSimulatorResourceManager;
 @protocol FBControlCoreLogger;
 
 @interface FBSimulator ()
@@ -21,6 +22,7 @@
 @property (nonatomic, strong, readonly) FBSimulatorEventRelay *eventRelay;
 @property (nonatomic, strong, readonly) FBSimulatorHistoryGenerator *historyGenerator;
 @property (nonatomic, strong, readonly) FBMutableSimulatorEventSink *mutableSink;
+@property (nonatomic, strong, readonly) FBSimulatorResourceManager *resourceSink;
 @property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
 
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;

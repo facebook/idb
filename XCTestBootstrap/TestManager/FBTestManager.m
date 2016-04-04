@@ -31,8 +31,12 @@
 
 - (BOOL)connectWithError:(NSError *__autoreleasing *)error
 {
-  [self.mediator connectTestRunnerWithTestManagerDaemon];
-  return YES;
+  return [self.mediator connectTestRunnerWithTestManagerDaemonWithError:error];
+}
+
+- (void)disconnect
+{
+  [self.mediator disconnectTestRunnerAndTestManagerDaemon];
 }
 
 - (NSString *)description

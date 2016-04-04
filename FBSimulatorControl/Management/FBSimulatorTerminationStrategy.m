@@ -16,6 +16,8 @@
 
 #import <FBControlCore/FBControlCoreLogger.h>
 
+#import <XCTestBootstrap/FBTestManager.h>
+
 #import "FBCoreSimulatorNotifier.h"
 #import "FBProcessQuery+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
@@ -126,6 +128,10 @@
           fail:error];
       }
       [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
+      for (FBTestManager *testManager in simulator.resourceSink.testManagers) {
+        [testManager disconnect];
+        [simulator.eventSink testmanagerDidDisconnect:testManager];
+      }
     } else {
       [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
     }

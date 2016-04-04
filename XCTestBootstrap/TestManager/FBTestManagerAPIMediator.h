@@ -52,8 +52,16 @@
 
 /**
  Starts test and establishes connection between test runner(XCTest bundle) and testmanagerd
+
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if connection request has started successfuly, NO otherwise
  */
-- (void)connectTestRunnerWithTestManagerDaemon;
+- (BOOL)connectTestRunnerWithTestManagerDaemonWithError:(NSError **)error;
+
+/**
+ Terminates connection between test runner(XCTest bundle) and testmanagerd
+ */
+- (void)disconnectTestRunnerAndTestManagerDaemon;
 
 @end
 

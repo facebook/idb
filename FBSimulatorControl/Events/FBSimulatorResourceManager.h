@@ -9,9 +9,15 @@
 
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
+@class FBTestManager;
 /**
  An event sink responsible for cleaning up resources that are allocated for Simulators and their subprocesses.
  */
 @interface FBSimulatorResourceManager : NSObject <FBSimulatorEventSink>
+
+/**
+ Set of connected test manager daemons
+ */
+@property (nonatomic, copy, readonly, nonnull) NSSet<FBTestManager *> *testManagers;
 
 @end

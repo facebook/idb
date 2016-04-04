@@ -36,4 +36,9 @@
  */
 - (BOOL)connectWithError:(NSError **)error;
 
+/**
+ Disconnects to test manager daemon
+ */
+- (void)disconnect;
+
 @end

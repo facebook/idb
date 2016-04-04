@@ -87,14 +87,41 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   return mediator;
 }
 
-- (void)connectTestRunnerWithTestManagerDaemon
+- (BOOL)connectTestRunnerWithTestManagerDaemonWithError:(NSError **)error
 {
+  if (self.finished) {
+    if (error) {
+      *error = [NSError errorWithDomain:@"com.facebook.XCTestBootstrap" code:1 userInfo:@{NSLocalizedDescriptionKey : @"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"}];
+    }
+    return NO;
+  }
   [self makeTransportWithSuccessBlock:^(DTXTransport *transport) {
     [self setupTestBundleConnectionWithTransport:transport];
     dispatch_async(dispatch_get_main_queue(), ^{
       [self sendStartSessionRequestToTestManager];
     });
   }];
+  return YES;
+}
+
+- (void)disconnectTestRunnerAndTestManagerDaemon
+{
+  self.finished = YES;
+  self.testingIsFinished = YES;
+  self.testRunnerPID = 0;
+  self.sessionIdentifier = nil;
+
+  [self.daemonConnection cancel];
+  self.daemonConnection = nil;
+  self.daemonProxy = nil;
+  self.daemonProtocolVersion = 0;
+
+  [self.testBundleConnection cancel];
+  self.testBundleConnection = nil;
+  self.testBundleProxy = nil;
+  self.testBundleProtocolVersion = 0;
+
+  self.targetDevice = nil;
 }
 
 

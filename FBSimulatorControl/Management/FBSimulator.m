@@ -84,7 +84,7 @@
   _eventRelay = relay;
   _mutableSink = mutableSink;
   _diagnostics = diagnosticsSink;
-
+  _resourceSink = resourceSink;
   return self;
 }
 
