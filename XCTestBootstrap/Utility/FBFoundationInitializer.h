@@ -9,6 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ Framework and Class Loading for XCTestBoostrap.
+ */
 @interface FBFoundationInitializer : NSObject
 
 + (void)initializeTestingEnvironment;

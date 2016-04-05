@@ -72,28 +72,15 @@
   if (success) {
     return;
   }
-  [logger.error logFormat:@"Failed to load Frameworks with error %@", error];
+  [logger.error logFormat:@"Failed to private frameworks for FBSimulatorControl with error %@", error];
   abort();
 }
 
 + (BOOL)loadPrivateFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  NSArray<FBWeakFramework *> *frameworks =
-  @[
-    // Needed by FBSimulatorControl
+  NSArray<FBWeakFramework *> *frameworks = @[
     [FBWeakFramework CoreSimulator],
     [FBWeakFramework SimulatorKit],
-    [FBWeakFramework DVTiPhoneSimulatorRemoteClient],
-
-    // Needed by XCTestBootstrap
-    [FBWeakFramework DTXConnectionServices],
-    [FBWeakFramework DVTFoundation],
-    [FBWeakFramework IDEFoundation],
-    [FBWeakFramework IDEiOSSupportCore],
-    [FBWeakFramework XCTest],
-    [FBWeakFramework IBAutolayoutFoundation],
-    [FBWeakFramework IDEKit],
-    [FBWeakFramework IDESourceEditor],
   ];
   BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
   // Set CoreSimulator Logging since it is now loaded.
