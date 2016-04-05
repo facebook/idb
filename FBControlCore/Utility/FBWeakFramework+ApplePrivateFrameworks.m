@@ -38,28 +38,7 @@
 
 + (nonnull instancetype)IDEFoundation
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../Frameworks/IDEFoundation.framework"
-                                 requiredClassNames:@[@"IDEFoundationTestInitializer"]
-                                 requiredFrameworks:@[
-                                                      [FBWeakFramework DVTServices],
-                                                      [FBWeakFramework DVTPortal],
-                                                      [FBWeakFramework DVTSourceControl],
-                                                      ]];
-}
-
-+ (nonnull instancetype)DVTServices
-{
-  return [FBWeakFramework frameworkWithRelativePath:@"../SharedFrameworks/DVTServices.framework" requiredClassNames:@[@"DVTServicesDeserializationContext"]];
-}
-
-+ (nonnull instancetype)DVTPortal
-{
-  return [FBWeakFramework frameworkWithRelativePath:@"../SharedFrameworks/DVTPortal.framework" requiredClassNames:@[@"DVTPortalMerchantContainer"]];
-}
-
-+ (nonnull instancetype)DVTSourceControl
-{
-  return [FBWeakFramework frameworkWithRelativePath:@"../SharedFrameworks/DVTSourceControl.framework" requiredClassNames:@[@"DVTSourceControlSystem"]];
+  return [FBWeakFramework frameworkWithRelativePath:@"../Frameworks/IDEFoundation.framework" requiredClassNames:@[@"IDEFoundationTestInitializer"]];
 }
 
 + (nonnull instancetype)IDEiOSSupportCore
@@ -71,12 +50,27 @@
 
 + (nonnull instancetype)Xcode3Core
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin" requiredClassNames:@[@"Xcode3LocalizedInfoPlistAdaptor"]];
+  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin"];
 }
 
 + (nonnull instancetype)XCTest
 {
   return [FBWeakFramework frameworkWithRelativePath:@"Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework" requiredClassNames:@[@"XCTestConfiguration"]];
+}
+
++ (nonnull instancetype)IBAutolayoutFoundation
+{
+  return [FBWeakFramework frameworkWithRelativePath:@"../Frameworks/IBAutolayoutFoundation.framework"];
+}
+
++ (nonnull instancetype)IDEKit
+{
+  return [FBWeakFramework frameworkWithRelativePath:@"../Frameworks/IDEKit.framework"];
+}
+
++ (nonnull instancetype)IDESourceEditor
+{
+  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/IDESourceEditor.ideplugin"];
 }
 
 @end

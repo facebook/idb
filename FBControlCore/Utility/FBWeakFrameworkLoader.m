@@ -35,9 +35,15 @@
   NSString *developerDirectory = FBControlCoreGlobalConfiguration.developerDirectory;
   [logger logFormat:@"Using Developer Directory %@", developerDirectory];
 
+  NSArray *fallbackDirectories =
+  @[
+    [developerDirectory stringByAppendingPathComponent:@"../Frameworks"],
+    [developerDirectory stringByAppendingPathComponent:@"../SharedFrameworks"],
+  ];
+
   for (FBWeakFramework *framework in weakFrameworks) {
     NSError *innerError = nil;
-    if (![framework loadFromRelativeDirectory:developerDirectory logger:logger error:&innerError]) {
+    if (![framework loadFromRelativeDirectory:developerDirectory fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
   }

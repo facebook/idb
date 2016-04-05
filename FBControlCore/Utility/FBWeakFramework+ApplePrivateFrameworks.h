@@ -21,6 +21,9 @@
 + (nonnull instancetype)DVTFoundation;
 + (nonnull instancetype)IDEFoundation;
 + (nonnull instancetype)IDEiOSSupportCore;
++ (nonnull instancetype)IBAutolayoutFoundation;
++ (nonnull instancetype)IDEKit;
++ (nonnull instancetype)IDESourceEditor;
 
 /**
  XCTest framework for MacOSX

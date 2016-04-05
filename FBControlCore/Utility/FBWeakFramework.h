@@ -19,6 +19,14 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBWeakFramework : NSObject
 
 /**
+ Creates and returns FBWeakFramework with given relativePath
+
+ @param relativePath Developer Directory relative path to the framework.
+ @return Framework with given relativePath and list of checked class names
+ */
++ (instancetype)frameworkWithRelativePath:(NSString *)relativePath;
+
+/**
  Creates and returns FBWeakFramework with given relativePath and list of checked class names
 
  @param relativePath Developer Directory relative path to the framework.
@@ -42,15 +50,17 @@ NS_ASSUME_NONNULL_BEGIN
  - Checking if framework is already loaded by checking existance of classes from requiredClassNames list
  - If not, loads all frameworks from requiredFrameworks list
  - Loads framework bundle
+ - If it fails due to missing framework, it will try to find in fallbackDirectories and load it
  - Makes sanity check for existance of classes from requiredClassNames list
  - Provide a sanity check that any preloaded Private Frameworks match the current xcode-select version
 
  @param relativeDirectory a path to relative directory (eg. developer directory from `xcode-select -p`)
+ @param fallbackDirectories list of directories used to load missing frameworks.
  @param logger a logger for logging framework loading activities.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)loadFromRelativeDirectory:(NSString *)relativeDirectory logger:(nullable id<FBControlCoreLogger>)logger error:(NSError *_Nullable *_Nullable)error;
+- (BOOL)loadFromRelativeDirectory:(NSString *)relativeDirectory fallbackDirectories:(NSArray *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

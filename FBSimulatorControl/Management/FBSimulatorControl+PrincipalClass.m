@@ -91,6 +91,9 @@
     [FBWeakFramework IDEFoundation],
     [FBWeakFramework IDEiOSSupportCore],
     [FBWeakFramework XCTest],
+    [FBWeakFramework IBAutolayoutFoundation],
+    [FBWeakFramework IDEKit],
+    [FBWeakFramework IDESourceEditor],
   ];
   BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
   // Set CoreSimulator Logging since it is now loaded.

@@ -9,6 +9,8 @@
 
 #import "FBWeakFramework.h"
 
+#import <Foundation/FoundationErrors.h>
+
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 
@@ -21,6 +23,11 @@
 
 @implementation FBWeakFramework
 
++ (instancetype)frameworkWithRelativePath:(NSString *)relativePath
+{
+  return [self frameworkWithRelativePath:relativePath requiredClassNames:@[]];
+}
+
 + (instancetype)frameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
 {
   return [self frameworkWithRelativePath:relativePath requiredClassNames:requiredClassNames requiredFrameworks:@[]];
@@ -28,13 +35,33 @@
 
 + (instancetype)frameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks
 {
-  NSAssert(requiredClassNames.count > 0, @"At least one class name is required to properly load and validate framework");
   FBWeakFramework *framework = [FBWeakFramework new];
   framework.relativePath = relativePath;
   framework.requiredClassNames = requiredClassNames;
   framework.requiredFrameworks = requiredFrameworks;
   framework.name = relativePath.lastPathComponent.stringByDeletingPathExtension;
   return framework;
+}
+
++ (NSString *)missingFrameworkNameWithRPathError:(NSError *)error
+{
+  NSString *description = error.userInfo[@"NSDebugDescription"];
+  if (!description) {
+    return nil;
+  }
+
+  NSRange rpathRange = [description rangeOfString:@"@rpath/"];
+  if (rpathRange.location == NSNotFound) {
+    return nil;
+  }
+  NSRange frameworkRange = [description rangeOfString:@".framework" options:NSCaseInsensitiveSearch range:NSMakeRange(rpathRange.location, description.length - rpathRange.location)];
+  if (frameworkRange.location == NSNotFound) {
+    frameworkRange = [description rangeOfString:@".ideplugin" options:NSCaseInsensitiveSearch range:NSMakeRange(rpathRange.location, description.length - rpathRange.location)];
+    if (frameworkRange.location == NSNotFound) {
+      return nil;
+    }
+  }
+  return [description substringWithRange:NSMakeRange(rpathRange.location + rpathRange.length, frameworkRange.location - rpathRange.location - rpathRange.length + frameworkRange.length)];
 }
 
 - (BOOL)allRequiredClassesExistsWithError:(NSError **)error
@@ -49,14 +76,14 @@
   return YES;
 }
 
-- (BOOL)loadFromRelativeDirectory:(NSString *)developerDirectory logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (BOOL)loadFromRelativeDirectory:(NSString *)relativeDirectory fallbackDirectories:(NSArray *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Checking if classes are already loaded. Error here is irrelevant (returning NO means something is not loaded)
-  if ([self allRequiredClassesExistsWithError:nil]) {
+  if ([self allRequiredClassesExistsWithError:nil] && self.requiredClassNames.count > 0) {
     // The Class exists, therefore has been loaded
     [logger logFormat:@"%@: Already loaded, skipping", self.name];
     NSError *innerError = nil;
-    if (![self verifyIfLoadedFromRelativeDirectory:developerDirectory logger:logger error:&innerError]) {
+    if (![self verifyIfLoadedFromRelativeDirectory:relativeDirectory logger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
     return YES;
@@ -65,34 +92,62 @@
   // Load required frameworks
   for (FBWeakFramework *requredFramework in self.requiredFrameworks) {
     NSError *innerError = nil;
-    if(![requredFramework loadFromRelativeDirectory:developerDirectory logger:logger error:&innerError]) {
+    if(![requredFramework loadFromRelativeDirectory:relativeDirectory fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
   }
 
   // Load frameworks
-  NSString *path = [[developerDirectory stringByAppendingPathComponent:self.relativePath] stringByStandardizingPath];
+  NSString *path = [[relativeDirectory stringByAppendingPathComponent:self.relativePath] stringByStandardizingPath];
   NSBundle *bundle = [NSBundle bundleWithPath:path];
   if (!bundle) {
     return [[FBControlCoreError
              describeFormat:@"Failed to load the bundle for path %@", path]
             failBool:error];
   }
-  if (![bundle loadAndReturnError:error]) {
-    return [[FBControlCoreError
-             describeFormat:@"Failed to load the the Framework Bundle %@", bundle]
-            failBool:error];
+  NSError *innerError;
+  if (![self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
+    return [FBControlCoreError failBoolWithError:innerError errorOut:error];
   }
   [logger logFormat:@"%@: Successfully loaded", self.name];
-  NSError *innerError;
   if (![self allRequiredClassesExistsWithError:&innerError]) {
     [logger logFormat:@"Failed to load %@", path.lastPathComponent];
     return [FBControlCoreError failBoolWithError:innerError errorOut:error];
   }
-  if (![self verifyIfLoadedFromRelativeDirectory:developerDirectory logger:logger error:&innerError]) {
+  if (![self verifyIfLoadedFromRelativeDirectory:relativeDirectory logger:logger error:&innerError]) {
     return [FBControlCoreError failBoolWithError:innerError errorOut:error];
   }
   return YES;
+}
+
+- (BOOL)loadBundle:(NSBundle *)bundle fallbackDirectories:(NSArray *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  NSError *innerError;
+  if ([bundle loadAndReturnError:&innerError]) {
+    return YES;
+  }
+
+  BOOL isLinkingIssue = ([innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSExecutableLoadError);
+  if (!isLinkingIssue) {
+    return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+  }
+
+  // If it is linking issue, try to determin missing framework
+  NSString *frameworkName = [self.class missingFrameworkNameWithRPathError:innerError];
+  if (!frameworkName) {
+    return NO;
+  }
+
+  // Try to load missing framework with locations from
+  FBWeakFramework *framework = [FBWeakFramework frameworkWithRelativePath:frameworkName];
+  for (NSString *dictionary in fallbackDirectories) {
+    if ([framework loadFromRelativeDirectory:dictionary fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
+      // If successfully loaded missing library, re-try
+      return [self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error];
+    }
+  }
+  // If failed to load missing framework, fail
+  return NO;
 }
 
 /**
