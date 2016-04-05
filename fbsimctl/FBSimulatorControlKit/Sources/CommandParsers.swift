@@ -455,7 +455,10 @@ extension Action : Parsable {
   }}
 
   static var argumentParser: Parser<[String]> { get {
-    return Parser.many(Parser<String>.ofAny)
+    return Parser.manyTill(
+      Parser<String>.ofString("--", "--"),
+      Parser<String>.ofAny
+    )
   }}
 }
 

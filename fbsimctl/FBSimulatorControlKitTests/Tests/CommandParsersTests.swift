@@ -258,6 +258,7 @@ let validActions: [([String], Action)] = [
   (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
   (["launch", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
+  (["launch", "com.foo.bar", "--foo", "--", "--something-else"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:]))),
   (["launch", "com.foo.bar"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))),
   (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
   (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
@@ -319,6 +320,14 @@ class CommandParserTests : XCTestCase {
     let diagnoseAction = Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
     let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "listen", "--http", "8090", "shutdown", "diagnose"]
+    self.assertWithDefaultActions(actions, suffix: suffix)
+  }
+
+  func testParsesMultipleConsecutiveLaunches() {
+    let launchConfig1 = FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "--bar"], environment: [:])
+    let launchConfig2 = FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: ["--bing", "--bong"], environment: [:])
+    let actions: [Action] = [Action.Launch(launchConfig1), Action.Launch(launchConfig2)]
+    let suffix: [String] = ["launch", "com.foo.bar", "--foo", "--bar", "--", "launch", Fixtures.application.path, "--bing", "--bong"]
     self.assertWithDefaultActions(actions, suffix: suffix)
   }
 

@@ -240,6 +240,26 @@ extension Parser {
     }
   }
 
+  static func manyTill<B>(terminatingParser: Parser<B>,  _ parser: Parser<A>) -> Parser<[A]> {
+    return Parser<[A]>("Many of \(parser)") { tokens in
+      var values: [A] = []
+      var runningArgs = tokens
+
+      while (runningArgs.count > 0) {
+        do {
+          let output = try terminatingParser.parse(runningArgs)
+          runningArgs = output.0
+          break
+        } catch {
+          let output = try parser.parse(runningArgs)
+          runningArgs = output.0
+          values.append(output.1)
+        }
+      }
+      return (runningArgs, values)
+    }
+  }
+
   static func many(parser: Parser<A>) -> Parser<[A]> {
     return self.manyCount(0, parser)
   }
