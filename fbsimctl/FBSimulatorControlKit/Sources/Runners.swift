@@ -179,7 +179,7 @@ private struct SimulatorRunner : Runner {
 
   func run(reporter: EventReporter) -> CommandResult {
     do {
-      let translator = EventSinkTranslator(simulator: self.simulator, format: self.format, reporter: reporter)
+      let translator = SimulatorReporter(simulator: self.simulator, format: self.format, reporter: reporter)
       defer {
         translator.simulator.userEventSink = nil
       }
@@ -188,30 +188,30 @@ private struct SimulatorRunner : Runner {
     }
   }
 
-  static func makeActionPerformer(action : Action, _ translator: EventSinkTranslator) -> SimulatorControlActionPerformer {
-    let simulator = translator.simulator
+  static func makeActionPerformer(action : Action, _ reporter: SimulatorReporter) -> SimulatorControlActionPerformer {
+    let simulator = reporter.simulator
     switch action {
     case .Approve(let bundleIDs):
-      return SimulatorInteraction(translator: translator, name: EventName.Approve, subject: bundleIDs as NSArray) { interaction in
+      return SimulatorInteraction(reporter, EventName.Approve, ArraySubject(bundleIDs)) { interaction in
         interaction.authorizeLocationSettings(bundleIDs)
       }
     case .Boot(let maybeLaunchConfiguration):
       let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
-      return SimulatorInteraction(translator: translator, name: EventName.Boot, subject: launchConfiguration) { interaction in
+      return SimulatorInteraction(reporter, EventName.Boot, ControlCoreSubject(launchConfiguration)) { interaction in
         interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
       }
     case .Delete:
-      return SimulatorAction(translator: translator, name: EventName.Delete, subject: simulator) {
+      return SimulatorAction(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
         try simulator.set!.deleteSimulator(simulator)
       }
     case .Diagnose(let query, let format):
-      return DiagnosticsInteraction(translator: translator, subject: query, query: query, format: format)
+      return DiagnosticsInteraction(reporter, query, query, format)
     case .Install(let application):
-      return SimulatorInteraction(translator: translator, name: EventName.Install, subject: application) { interaction in
+      return SimulatorInteraction(reporter, EventName.Install, ControlCoreSubject(application)) { interaction in
         interaction.installApplication(application)
       }
     case .Launch(let launch):
-      return SimulatorInteraction(translator: translator, name: EventName.Launch, subject: launch) { interaction in
+      return SimulatorInteraction(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
         if let appLaunch = launch as? FBApplicationLaunchConfiguration {
           interaction.launchApplication(appLaunch)
         }
@@ -220,15 +220,15 @@ private struct SimulatorRunner : Runner {
         }
       }
     case .List:
-      return SimulatorAction(translator: translator, name: EventName.List, subject: simulator) {
-        translator.reportSimulator(EventName.List, simulator)
+      return SimulatorAction(reporter, nil, ControlCoreSubject(simulator)) {
+        reporter.reporter.reportSimpleBridge(EventName.List, EventType.Discrete, simulator)
       }
     case .Open(let url):
-      return SimulatorInteraction(translator: translator, name: EventName.Open, subject: simulator) { interaction in
+      return SimulatorInteraction(reporter, EventName.Open, url.absoluteString) { interaction in
         interaction.openURL(url)
       }
     case .Record(let start):
-      return SimulatorInteraction(translator: translator, name: EventName.Record, subject: simulator) { interaction in
+      return SimulatorInteraction(reporter, EventName.Record, start) { interaction in
         if (start) {
           interaction.startRecordingVideo()
         } else {
@@ -236,27 +236,27 @@ private struct SimulatorRunner : Runner {
         }
       }
     case .Relaunch(let appLaunch):
-      return SimulatorInteraction(translator: translator, name: EventName.Relaunch, subject: appLaunch) { interaction in
+      return SimulatorInteraction(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) { interaction in
         interaction.launchOrRelaunchApplication(appLaunch)
       }
     case .Search(let search):
-      return SearchInteraction(translator: translator, search: search)
+      return SearchInteraction(reporter, search)
     case .Shutdown:
-      return SimulatorAction(translator: translator, name: EventName.Shutdown, subject: simulator) {
+      return SimulatorAction(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.killSimulator(simulator)
       }
     case .Tap(let x, let y):
-      return SimulatorInteraction(translator: translator, name: EventName.Tap, subject: simulator) { interaction in
+      return SimulatorInteraction(reporter, EventName.Tap, ControlCoreSubject(simulator)) { interaction in
         interaction.tap(x, y: y)
       }
     case .Terminate(let bundleID):
-      return SimulatorInteraction(translator: translator, name: EventName.Record, subject: bundleID as NSString) { interaction in
+      return SimulatorInteraction(reporter, EventName.Record, bundleID) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)
       }
     case .Upload(let diagnostics):
-      return UploadInteraction(translator: translator, diagnostics: diagnostics)
+      return UploadInteraction(reporter, diagnostics)
     default:
-      return SimulatorAction(translator: translator, name: EventName.Failure, subject: simulator) {
+      return SimulatorAction(reporter, EventName.Failure, ControlCoreSubject(simulator)) {
         assertionFailure("Unimplemented")
       }
     }

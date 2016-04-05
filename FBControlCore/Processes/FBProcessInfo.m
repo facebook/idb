@@ -84,7 +84,7 @@
 
 - (NSString *)description
 {
-  return [self debugDescription];
+  return self.shortDescription;
 }
 
 #pragma mark NSCopying

@@ -18,16 +18,12 @@ import FBSimulatorControl
     let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
     do {
       let (_, configuration) = try FBSimulatorControlKit.Configuration.parser.parse(arguments)
-      let jsonEnabled = configuration.output.contains(OutputOptions.JSON)
       let debugEnabled = configuration.output.contains(OutputOptions.DebugLogging)
 
-      if jsonEnabled {
-        let eventReporter = JSONEventReporter(writer: FileHandleWriter.stdOutWriter, pretty: false)
-        let logger = JSONLogger.withEventReporter(eventReporter, debug: debugEnabled)
-        FBControlCoreGlobalConfiguration.setDefaultLogger(logger)
-      } else {
-        FBControlCoreGlobalConfiguration.setDefaultLoggerToASLWithStderrLogging(true, debugLogging: debugEnabled)
-      }
+      let reporter = configuration.output.createReporter(configuration.output.createLogWriter())
+      let bridge = ControlCoreLoggerBridge(reporter: reporter)
+      let logger = LogReporter(bridge: bridge, debug: debugEnabled)
+      FBControlCoreGlobalConfiguration.setDefaultLogger(logger)
     } catch {
       // Parse errors will be handled by the full parse
     }

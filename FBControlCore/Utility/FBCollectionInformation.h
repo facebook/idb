@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Helpers for information about of Collections.
  */
@@ -56,3 +58,5 @@
 + (BOOL)isDictionaryHeterogeneous:(NSDictionary *)dictionary keyClass:(Class)keyCls valueClass:(Class)valueCls;
 
 @end
+
+NS_ASSUME_NONNULL_END

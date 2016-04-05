@@ -11,6 +11,10 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
+@class ControlCoreLoggerBridge;
+
 /**
  Bridging Preprocessor Macros to values, so that they can be read in Swift.
  */
@@ -25,8 +29,31 @@
 
 @end
 
+/**
+ Coercion to JSON Serializable Representations
+ */
 @interface NSString (FBJSONSerializable) <FBJSONSerializable>
 @end
 
 @interface NSArray (FBJSONSerializable) <FBJSONSerializable>
 @end
+
+/**
+ A Bridge between JSONEventReporter and FBSimulatorLogger.
+ Since the FBSimulatorLoggerProtocol omits the varags logFormat: method,
+ this Objective-C implementation can do the appropriate bridging.
+ */
+@interface LogReporter : NSObject <FBControlCoreLogger>
+
+/**
+ Constructs a new JSONLogger instance with the provided reporter.
+
+ @param bridge the bridge to report messages to.
+ @param debug YES if debug messages should be reported, NO otherwise.
+ @return a new JSONLogger instance.
+ */
+- (instancetype)initWithBridge:(ControlCoreLoggerBridge *)bridge debug:(BOOL)debug;
+
+@end
+
+NS_ASSUME_NONNULL_END

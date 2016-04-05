@@ -88,16 +88,27 @@ protocol SimulatorControlActionPerformer {
 }
 
 struct SimulatorAction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
-  let name: EventName
-  let subject: SimulatorControlSubject
+  let reporter: SimulatorReporter
+  let name: EventName?
+  let subject: EventReporterSubject
   let action: Void throws -> Void
+
+  init(_ reporter: SimulatorReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: Void throws -> Void) {
+    self.reporter = reporter
+    self.name = name
+    self.subject = subject
+    self.action = action
+  }
 
   func perform() -> CommandResult {
     do {
-      self.translator.reportSimulator(self.name, EventType.Started, self.subject)
+      if let name = self.name {
+        self.reporter.report(name, EventType.Started, self.subject)
+      }
       try self.action()
-      self.translator.reportSimulator(self.name, EventType.Ended, self.subject)
+      if let name = self.name {
+        self.reporter.report(name, EventType.Ended, self.subject)
+      }
     } catch let error as NSError {
       return .Failure(error.description)
     } catch let error as JSONError {
@@ -108,15 +119,22 @@ struct SimulatorAction : SimulatorControlActionPerformer {
 }
 
 struct SimulatorInteraction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
+  let reporter: SimulatorReporter
   let name: EventName
-  let subject: SimulatorControlSubject
+  let subject: EventReporterSubject
   let interaction: FBSimulatorInteraction throws -> Void
 
+  init(_ reporter: SimulatorReporter, _ name: EventName, _ subject: EventReporterSubject, _ interaction: FBSimulatorInteraction throws -> Void) {
+    self.reporter = reporter
+    self.name = name
+    self.subject = subject
+    self.interaction = interaction
+  }
+
   func perform() -> CommandResult {
-    let simulator = self.translator.simulator
+    let simulator = self.reporter.simulator
     let interaction = self.interaction
-    let action = SimulatorAction(translator: self.translator, name: self.name, subject: self.subject) {
+    let action = SimulatorAction(self.reporter, self.name, self.subject) {
       let interact = simulator.interact
       try interaction(interact)
       try interact.perform()
@@ -126,24 +144,31 @@ struct SimulatorInteraction : SimulatorControlActionPerformer {
 }
 
 struct DiagnosticsInteraction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
-  let subject: SimulatorControlSubject
+  let reporter: SimulatorReporter
+  let subject: ControlCoreValue
   let query: FBSimulatorDiagnosticQuery
   let format: DiagnosticFormat
+
+  init(_ reporter: SimulatorReporter, _ subject: ControlCoreValue, _ query: FBSimulatorDiagnosticQuery, _ format: DiagnosticFormat) {
+    self.reporter = reporter
+    self.subject = subject
+    self.query = query
+    self.format = format
+  }
 
   func perform() -> CommandResult {
     let diagnostics = self.fetchDiagnostics()
 
-    translator.reportSimulator(EventName.Diagnose, EventType.Started, query)
+    reporter.reportValue(EventName.Diagnose, EventType.Started, query)
     for diagnostic in diagnostics {
-      translator.reportSimulator(EventName.Diagnostic, EventType.Discrete, diagnostic)
+      reporter.reportValue(EventName.Diagnostic, EventType.Discrete, diagnostic)
     }
-    translator.reportSimulator(EventName.Diagnose, EventType.Ended, query)
+    reporter.reportValue(EventName.Diagnose, EventType.Ended, query)
     return .Success
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {
-    let diagnostics = self.translator.simulator.diagnostics
+    let diagnostics = self.reporter.simulator.diagnostics
     let format = self.format
 
     return query.perform(diagnostics).map { diagnostic in
@@ -160,21 +185,31 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
 }
 
 struct SearchInteraction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
+  let reporter: SimulatorReporter
   let search: FBBatchLogSearch
 
+  init(_ reporter: SimulatorReporter, _ search: FBBatchLogSearch) {
+    self.reporter = reporter
+    self.search = search
+  }
+
   func perform() -> CommandResult {
-    let simulator = self.translator.simulator
+    let simulator = self.reporter.simulator
     let diagnostics = simulator.diagnostics.allDiagnostics()
     let results = search.search(diagnostics)
-    translator.reportSimulator(EventName.Search, EventType.Discrete, results)
+    self.reporter.report(EventName.Search, EventType.Discrete, ControlCoreSubject(results))
     return .Success
   }
 }
 
 struct UploadInteraction : SimulatorControlActionPerformer {
-  let translator: EventSinkTranslator
+  let reporter: SimulatorReporter
   let diagnostics: [FBDiagnostic]
+
+  init(_ reporter: SimulatorReporter, _ diagnostics: [FBDiagnostic]) {
+    self.reporter = reporter
+    self.diagnostics = diagnostics
+  }
 
   func perform() -> CommandResult {
     let diagnosticLocations: [(FBDiagnostic, String)] = diagnostics.map { diagnostic in
@@ -185,7 +220,7 @@ struct UploadInteraction : SimulatorControlActionPerformer {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let interaction = SimulatorInteraction(translator: translator, name: EventName.Upload, subject: paths as NSArray) { interaction in
+      let interaction = SimulatorInteraction(self.reporter, EventName.Upload, ArraySubject(paths)) { interaction in
         interaction.uploadMedia(paths)
       }
       let result = interaction.perform()
@@ -195,8 +230,8 @@ struct UploadInteraction : SimulatorControlActionPerformer {
       }
     }
 
-    guard let basePath: NSString = translator.simulator.auxillaryDirectory else {
-        return CommandResult.Failure("Could not determine aux directory for simulator \(self.translator.simulator) to path")
+    guard let basePath: NSString = self.reporter.simulator.auxillaryDirectory else {
+        return CommandResult.Failure("Could not determine aux directory for simulator \(self.reporter.simulator) to path")
     }
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)
     let arbitrary = diagnosticLocations.filter{ arbitraryPredicate.evaluateWithObject($0.1) }
@@ -205,7 +240,7 @@ struct UploadInteraction : SimulatorControlActionPerformer {
         return CommandResult.Failure("Could not write out diagnostic \(sourcePath) to path")
       }
       let destinationDiagnostic = FBDiagnosticBuilder().updatePath(destinationPath).build()
-      self.translator.reportSimulator(EventName.Upload, EventType.Discrete, destinationDiagnostic)
+      self.reporter.report(EventName.Upload, EventType.Discrete, ControlCoreSubject(destinationDiagnostic))
     }
 
     return CommandResult.Success

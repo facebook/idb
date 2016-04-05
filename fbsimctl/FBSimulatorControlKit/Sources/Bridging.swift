@@ -17,3 +17,24 @@ extension FBSimulatorState {
     }
   }
 }
+
+public typealias ControlCoreValue = protocol<FBJSONSerializable, CustomStringConvertible>
+
+@objc public class ControlCoreLoggerBridge : NSObject {
+  let reporter: EventReporter
+
+  init(reporter: EventReporter) {
+    self.reporter = reporter
+  }
+
+  @objc public func log(level: Int32, string: String) {
+    let subject = LogSubject(logString: string, level: level)
+    self.reporter.report(subject)
+  }
+}
+
+extension String : CustomStringConvertible {
+  public var description: String { get {
+    return self
+  }}
+}
