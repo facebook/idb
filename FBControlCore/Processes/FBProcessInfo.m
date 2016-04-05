@@ -38,7 +38,7 @@
 
 - (NSUInteger)hash
 {
-  return ((unsigned long) self.processIdentifier) | self.launchPath.hash ^ self.arguments.hash | self.environment.hash;
+  return ((unsigned long) self.processIdentifier) ^ self.launchPath.hash ^ self.arguments.hash;
 }
 
 - (BOOL)isEqual:(FBProcessInfo *)object
@@ -48,8 +48,7 @@
   }
   return self.processIdentifier == object.processIdentifier &&
          [self.launchPath isEqual:object.launchPath] &&
-         [self.arguments isEqual:object.arguments] &&
-         [self.environment isEqual:object.environment];
+         [self.arguments isEqual:object.arguments];
 }
 
 #pragma mark Accessors
