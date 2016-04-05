@@ -78,9 +78,14 @@ public class Defaults {
     if let query = self.query {
       return query
     }
+    // List should default to listing all.
+    // Delete requires a query, as does boot.
+    // All other actions apply to booted Simulators by default
     switch action {
+      case .Boot: return nil
+      case .Delete: return nil
       case .List: return .And([])
-      default: return nil
+      default: return .State(Set([.Booted]))
     }
   }
 
