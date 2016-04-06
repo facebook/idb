@@ -76,6 +76,7 @@ public enum Action {
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Install(FBSimulatorApplication)
   case Launch(FBProcessLaunchConfiguration)
+  case LaunchXCTest(FBApplicationLaunchConfiguration, String)
   case List
   case Listen(Server)
   case Open(NSURL)
@@ -118,6 +119,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftApp == rightApp
   case (.Launch(let leftLaunch), .Launch(let rightLaunch)):
     return leftLaunch == rightLaunch
+  case (.LaunchXCTest(let leftLaunch, let leftBundle), .LaunchXCTest(let rightLaunch, let rightBundle)):
+    return leftLaunch == rightLaunch && leftBundle == rightBundle
   case (.List, .List):
     return true
   case (.Listen(let leftServer), .Listen(let rightServer)):

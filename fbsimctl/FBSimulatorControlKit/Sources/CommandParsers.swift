@@ -290,6 +290,7 @@ extension Action : Parsable {
         self.diagnoseParser,
         self.installParser,
         self.launchParser,
+        self.launchXCTestParser,
         self.listenParser,
         self.listParser,
         self.openParser,
@@ -344,6 +345,20 @@ extension Action : Parsable {
     return Parser
       .succeeded(EventName.Launch.rawValue, self.processLaunchParser)
       .fmap { Action.Launch($0) }
+  }}
+
+  static var launchXCTestParser: Parser<Action> { get {
+    return Parser
+      .succeeded(
+        EventName.LaunchXCTest.rawValue,
+        Parser.ofTwoSequenced(
+          Parser<Any>.ofDirectory,
+          self.appLaunchParser
+        )
+      )
+      .fmap { (bundle, processLaunch) in
+        Action.LaunchXCTest(processLaunch as! FBApplicationLaunchConfiguration, bundle)
+      }
   }}
 
   static var listenParser: Parser<Action> { get {

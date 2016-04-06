@@ -219,6 +219,10 @@ private struct SimulatorRunner : Runner {
           interaction.launchAgent(agentLaunch)
         }
       }
+    case .LaunchXCTest(let launch, let bundlePath):
+      return SimulatorInteraction(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in
+        interaction.startTestRunnerLaunchConfiguration(launch, testBundlePath: bundlePath)
+      }
     case .List:
       let format = reporter.format
       return SimulatorAction(reporter, nil, ControlCoreSubject(simulator)) {
