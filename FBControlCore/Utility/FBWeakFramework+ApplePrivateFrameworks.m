@@ -21,11 +21,6 @@
   return [FBWeakFramework frameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[@"SimDeviceFramebufferService"]];
 }
 
-+ (nonnull instancetype)DVTiPhoneSimulatorRemoteClient
-{
-  return [FBWeakFramework frameworkWithRelativePath:@"../SharedFrameworks/DVTiPhoneSimulatorRemoteClient.framework" requiredClassNames:@[@"DTiPhoneSimulatorApplicationSpecifier"]];
-}
-
 + (nonnull instancetype)DTXConnectionServices
 {
   return [FBWeakFramework frameworkWithRelativePath:@"../SharedFrameworks/DTXConnectionServices.framework" requiredClassNames:@[@"DTXConnection", @"DTXRemoteInvocationReceipt"]];

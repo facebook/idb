@@ -16,7 +16,7 @@
 
 + (nonnull instancetype)CoreSimulator;
 + (nonnull instancetype)SimulatorKit;
-+ (nonnull instancetype)DVTiPhoneSimulatorRemoteClient;
+
 + (nonnull instancetype)DTXConnectionServices;
 + (nonnull instancetype)DVTFoundation;
 + (nonnull instancetype)IDEFoundation;
