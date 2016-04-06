@@ -220,8 +220,10 @@ private struct SimulatorRunner : Runner {
         }
       }
     case .List:
+      let format = reporter.format
       return SimulatorAction(reporter, nil, ControlCoreSubject(simulator)) {
-        reporter.reporter.reportSimpleBridge(EventName.List, EventType.Discrete, simulator)
+        let subject = SimulatorSubject(simulator: simulator, format: format)
+        reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
       }
     case .Open(let url):
       return SimulatorInteraction(reporter, EventName.Open, url.absoluteString) { interaction in

@@ -27,7 +27,7 @@ struct SimpleSubject : JSONDescribeable, CustomStringConvertible {
         "event_type" : JSON.JString(self.eventType.rawValue),
         "subject" : self.subject.jsonDescription,
         "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
-        ])
+      ])
     }
   }
 

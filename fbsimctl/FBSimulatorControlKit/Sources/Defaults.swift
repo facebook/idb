@@ -26,7 +26,7 @@ public enum DefaultsError : ErrorType, CustomStringConvertible {
 public protocol Defaultable {
   static var defaultValue: Self { get }
 }
-private let defaultFormat: Format = [ .UDID, .Name]
+private let defaultFormat: Format = [ .UDID, .Name, .OSVersion, .State]
 
 extension Configuration : Defaultable {
   public static var defaultValue: Configuration {
