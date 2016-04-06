@@ -15,6 +15,15 @@
 @interface FBSimulatorInteraction (XCTest)
 
 /**
+ Starts testing application using test bundle. It will use simulator's auxillaryDirectory as working directory
+
+ @param configuration configuration used to launch test runner application
+ @param testBundlePath path to XCTest bundle used for testing
+ @return the reciever, for chaining.
+ */
+- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath;
+
+/**
  Starts testing application using test bundle
 
  @param configuration configuration used to launch test runner application

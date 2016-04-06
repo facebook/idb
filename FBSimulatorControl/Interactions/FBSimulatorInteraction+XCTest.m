@@ -24,6 +24,11 @@
 
 @implementation FBSimulatorInteraction (XCTest)
 
+- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath
+{
+  return [self startTestRunnerLaunchConfiguration:configuration testBundlePath:testBundlePath workingDirectory:self.simulator.auxillaryDirectory];
+}
+
 - (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath workingDirectory:(NSString *)workingDirectory
 {
   NSParameterAssert(configuration);
