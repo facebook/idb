@@ -16,6 +16,11 @@
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 
+static NSString *const FBSimulatorDiagnosticQueryTypeAll = @"all";
+static NSString *const FBSimulatorDiagnosticQueryTypeAppFiles = @"app_files";
+static NSString *const FBSimulatorDiagnosticQueryTypeCrashes = @"crashes";
+static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
+
 @interface FBSimulatorDiagnosticQuery_All : FBSimulatorDiagnosticQuery
 
 @end
@@ -46,7 +51,7 @@
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : @"all",
+    @"type" : FBSimulatorDiagnosticQueryTypeAll,
   };
 }
 
@@ -142,7 +147,7 @@
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : @"named",
+    @"type" : FBSimulatorDiagnosticQueryTypeNamed,
     @"names" : self.names,
   };
 }
@@ -250,7 +255,7 @@
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : @"named",
+    @"type" : FBSimulatorDiagnosticQueryTypeAppFiles,
     @"bundle_id" : self.bundleID,
     @"filenames" : self.filenames,
   };
@@ -363,7 +368,7 @@
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : @"named",
+    @"type" : FBSimulatorDiagnosticQueryTypeCrashes,
     @"since" : @(self.date.timeIntervalSince1970),
     @"process_types" : [FBSimulatorDiagnosticQuery_Crashes typeStringsFromProcessType:self.processType],
   };
@@ -371,17 +376,21 @@
 
 #pragma mark Private
 
+static NSString *const FBSimulatorDiagnosticQueryCrashesApplication = @"application";
+static NSString *const FBSimulatorDiagnosticQueryCrashesCustomAgent = @"custom_agent";
+static NSString *const FBSimulatorDiagnosticQueryCrashesSystem = @"system";
+
 + (nonnull NSArray<NSString *> *)typeStringsFromProcessType:(FBCrashLogInfoProcessType)processType
 {
   NSMutableArray<NSString *> *array = [NSMutableArray array];
   if ((processType & FBCrashLogInfoProcessTypeApplication) == FBCrashLogInfoProcessTypeApplication) {
-    [array addObject:@"application"];
+    [array addObject:FBSimulatorDiagnosticQueryCrashesApplication];
   }
   if ((processType & FBCrashLogInfoProcessTypeCustomAgent) == FBCrashLogInfoProcessTypeCustomAgent) {
-    [array addObject:@"custom_agent"];
+    [array addObject:FBSimulatorDiagnosticQueryCrashesCustomAgent];
   }
   if ((processType & FBCrashLogInfoProcessTypeSystem) == processType) {
-    [array addObject:@"system"];
+    [array addObject:FBSimulatorDiagnosticQueryCrashesSystem];
   }
   return [array copy];
 }
@@ -390,13 +399,13 @@
 {
   NSSet<NSString *> *set = [NSSet setWithArray:typeStrings];
   FBCrashLogInfoProcessType processType = 0;
-  if ([set containsObject:@"application"]) {
+  if ([set containsObject:FBSimulatorDiagnosticQueryCrashesApplication]) {
     processType = processType | FBCrashLogInfoProcessTypeApplication;
   }
-  if ([set containsObject:@"custom_agent"]) {
+  if ([set containsObject:FBSimulatorDiagnosticQueryCrashesCustomAgent]) {
     processType = processType | FBCrashLogInfoProcessTypeCustomAgent;
   }
-  if ([set containsObject:@"system"]) {
+  if ([set containsObject:FBSimulatorDiagnosticQueryCrashesSystem]) {
     processType = processType | FBCrashLogInfoProcessTypeSystem;
   }
   return processType;
@@ -486,16 +495,16 @@
     return [[FBSimulatorError describeFormat:@"%@ is not a NSDictionary<NSString, id>", json] fail:error];
   }
   NSString *type = json[@"type"];
-  if ([type isEqualToString:@"all"]) {
+  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeAll]) {
     return [FBSimulatorDiagnosticQuery_All new];
   }
-  if ([type isEqualToString:@"named"] ) {
+  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeNamed] ) {
     return [FBSimulatorDiagnosticQuery_Named inflateFromJSON:json error:error];
   }
-  if ([type isEqualToString:@"crashes"]) {
+  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeCrashes]) {
     return [FBSimulatorDiagnosticQuery_Crashes inflateFromJSON:json error:error];
   }
-  if ([type isEqualToString:@"app_files"]) {
+  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeAppFiles]) {
     return [FBSimulatorDiagnosticQuery_ApplicationLogs inflateFromJSON:json error:error];
   }
   return [[FBSimulatorError describe:@"%@ is not a valid type"] fail:error];
