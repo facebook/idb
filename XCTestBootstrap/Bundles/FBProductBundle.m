@@ -98,7 +98,17 @@
     NSAssert(self.fileManager, @"fileManager is required to copy product bundle");
     NSError *error;
     NSString *bundleName = self.bundlePath.lastPathComponent;
+
+    if (![self.fileManager fileExistsAtPath:self.workingDirectory]) {
+      if(![self.fileManager createDirectoryAtPath:self.workingDirectory withIntermediateDirectories:YES attributes:nil error:&error]){
+        return nil;
+      }
+    }
+
     targetBundlePath = [self.workingDirectory stringByAppendingPathComponent:bundleName];
+    if ([self.fileManager fileExistsAtPath:targetBundlePath]) {
+      [self.fileManager removeItemAtPath:targetBundlePath error:&error];
+    }
     if(![self.fileManager copyItemAtPath:self.bundlePath
                                   toPath:targetBundlePath
                                    error:&error]) {

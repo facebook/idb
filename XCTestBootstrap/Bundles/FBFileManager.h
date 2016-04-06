@@ -9,10 +9,20 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Used for file IO
  */
 @protocol FBFileManager <NSObject>
+
+/**
+ Returns a Boolean value that indicates whether a file or directory exists at a specified path.
+
+ @param path The path of the file or directory.
+ @return YES if a file at the specified path exists, or NO if the file does not exist or its existence could not be determined.
+*/
+- (BOOL)fileExistsAtPath:(NSString *)path;
 
 /**
  Creates a directory with given attributes at the specified path.
@@ -23,7 +33,7 @@
  @param error On input, a pointer to an error object. If an error occurs, this pointer is set to an actual error object containing the error information. You may specify nil for this parameter if you do not want the error information.
  @return YES if the directory was created, YES if createIntermediates is set and the directory already exists), or NO if an error occurred.
  */
-- (BOOL)createDirectoryAtPath:(NSString *)path withIntermediateDirectories:(BOOL)createIntermediates attributes:(NSDictionary<NSString *, id> *)attributes error:(NSError **)error NS_AVAILABLE(10_5, 2_0);
+- (BOOL)createDirectoryAtPath:(NSString *)path withIntermediateDirectories:(BOOL)createIntermediates attributes:(nullable NSDictionary<NSString *, id> *)attributes error:(NSError **)error;
 
 /**
  Copies the item at the specified path to a new location synchronously.
@@ -36,6 +46,15 @@
 - (BOOL)copyItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error NS_AVAILABLE(10_5, 2_0);
 
 /**
+ Removes the file or directory at the specified path.
+
+ @param path A path string indicating the file or directory to remove. If the path specifies a directory, the contents of that directory are recursively removed. You may specify nil for this parameter.
+ @param error On input, a pointer to an error object. If an error occurs, this pointer is set to an actual error object containing the error information. You may specify nil for this parameter if you do not want the error information.
+ @return YES if the item was removed successfully or if path was nil.
+ */
+- (BOOL)removeItemAtPath:(NSString *)path error:(NSError **)error;
+
+/**
  Writes the bytes in the data to the file specified by a given path.
 
  @param data data that should be written
@@ -45,6 +64,7 @@
  @return YES if the operation succeeds, otherwise NO.
  */
 - (BOOL)writeData:(NSData *)data toFile:(NSString *)toFile options:(NSDataWritingOptions)options error:(NSError **)error;
+
 /**
  Creates and returns a dictionary using the keys and values found in a file specified by a given path.
  A new dictionary that contains the dictionary at path, or nil if there is a file error or if the contents of the file are an invalid representation of a dictionary.
@@ -55,3 +75,5 @@
 - (NSDictionary *)dictionaryWithPath:(NSString *)path;
 
 @end
+
+NS_ASSUME_NONNULL_END

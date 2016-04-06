@@ -64,6 +64,9 @@
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:@"/test/Magic.xctest" toPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest" error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/TestPlans/Magic.xctest.xctestconfiguration" options:YES error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest/Magic-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration" options:YES error:[OCMArg anyObjectRef]];
+
+  [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
   [[[fileManagerMock stub] andReturn:nil] dictionaryWithPath:[OCMArg any]];
 
   id testConfigurationMock = [OCMockObject mockForClass:FBTestConfiguration.class];

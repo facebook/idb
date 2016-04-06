@@ -70,6 +70,8 @@
   [[[fileManagerMock stub] andReturn:plist] dictionaryWithPath:[OCMArg any]];
   [[[fileManagerMock expect] andReturnValue:@YES] copyItemAtPath:@"/testBundle" toPath:@"/heaven/testBundle" error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:xctConfigArg options:0 error:[OCMArg anyObjectRef]];
+  [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/heaven" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
 
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builderWithFileManager:fileManagerMock]

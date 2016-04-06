@@ -29,6 +29,8 @@
   OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:bundle.bundlePath toPath:expectedTestConfigPath.stringByDeletingLastPathComponent error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:expectedTestConfigPath options:0 error:[OCMArg anyObjectRef]];
+  [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Deep/Deep/Darkness" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
   [[[fileManagerMock stub] andReturn:nil] dictionaryWithPath:[OCMArg any]];
 
   FBTestBundle *testBundle =
