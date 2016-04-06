@@ -34,6 +34,7 @@
   @[
     [developerDirectory stringByAppendingPathComponent:@"../Frameworks"],
     [developerDirectory stringByAppendingPathComponent:@"../SharedFrameworks"],
+    [developerDirectory stringByAppendingPathComponent:@"../Plugins"],
   ];
 
   for (FBWeakFramework *framework in weakFrameworks) {

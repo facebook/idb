@@ -40,12 +40,27 @@
 {
   return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/IDEiOSSupportCore.ideplugin"
                                  requiredClassNames:@[@"DVTiPhoneSimulator"]
-                                 requiredFrameworks:@[[FBWeakFramework Xcode3Core]]];
+                                 requiredFrameworks:@[
+                                                      [FBWeakFramework DevToolsFoundation],
+                                                      [FBWeakFramework DevToolsSupport],
+                                                      [FBWeakFramework DevToolsCore],
+                                                    ]
+          ];
 }
 
-+ (nonnull instancetype)Xcode3Core
++ (nonnull instancetype)DevToolsFoundation
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin"];
+  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsFoundation.framework"];
+}
+
++ (nonnull instancetype)DevToolsSupport
+{
+  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsSupport.framework"];
+}
+
++ (nonnull instancetype)DevToolsCore
+{
+  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsCore.framework"];
 }
 
 + (nonnull instancetype)XCTest
