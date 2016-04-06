@@ -1,4 +1,4 @@
-/**
+    /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -157,6 +157,14 @@ class HttpRelay : Relay {
     }
   }}
 
+  // TODO - Attempt to inflate an ApplicationLaunchConfiguration if the AgentLaunchConfiguration fails.
+  private var launchRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: "launch") { json in
+      let launchConfiguration = try FBAgentLaunchConfiguration.inflateFromJSON(json.decode())
+      return Action.Launch(launchConfiguration)
+    }
+  }}
+
   private var relaunchRoute: HttpRoute { get {
     return HttpRoute(method: HttpMethod.POST, endpoint: "relaunch") { json in
       let launchConfiguration = try FBApplicationLaunchConfiguration.inflateFromJSON(json.decode())
@@ -210,6 +218,7 @@ class HttpRelay : Relay {
   private var routes: [HttpRoute] { get {
     return [
       self.diagnoseRoute,
+      self.launchRoute,
       self.openRoute,
       self.recordRoute,
       self.relaunchRoute,

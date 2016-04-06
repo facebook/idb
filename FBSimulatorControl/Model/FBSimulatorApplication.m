@@ -89,6 +89,25 @@
   return self.name.hash | self.path.hash | self.architectures.hash;
 }
 
+#pragma mark - FBJSONDeserializable
+
++ (FBSimulatorBinary *)inflateFromJSON:(id)json error:(NSError **)error
+{
+    NSString *path = json[@"path"];
+    if (![path isKindOfClass:NSString.class]) {
+        return [[FBSimulatorError describeFormat:@"%@ is not a valid binary path", path] fail:error];
+    }
+    NSError *innerError = nil;
+    FBSimulatorBinary *binary = [FBSimulatorBinary binaryWithPath:path error:&innerError];
+    if (!binary) {
+        return [[[FBSimulatorError
+                  describeFormat:@"Could not create binary from path %@", path]
+                 causedBy:innerError]
+                fail:error];
+    }
+    return binary;
+}
+
 #pragma mark FBDebugDescribeable
 
 - (NSString *)description

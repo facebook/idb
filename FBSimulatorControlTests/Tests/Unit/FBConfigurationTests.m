@@ -43,6 +43,17 @@
   [self assertJSONDeserialization:values];
 }
 
+- (void)testAgentLaunchLaunchConfigurations
+{
+  NSArray *values = @[
+    self.agentLaunch1,
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
+}
+
 - (void)testAgentLaunchConfigurations
 {
   NSArray *values = @[self.agentLaunch1];

@@ -279,6 +279,38 @@
   return [[self alloc] initWithBinary:agentBinary arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
 }
 
++ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
+{
+  NSError *innerError = nil;
+  NSDictionary *binaryJSON = json[@"binary"];
+  FBSimulatorBinary *binary = [FBSimulatorBinary inflateFromJSON:binaryJSON error:&innerError];
+  if (!binary) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not build binary from json %@", binaryJSON]
+      causedBy:innerError]
+      fail:error];
+  }
+  NSArray *arguments = json[@"arguments"];
+  if (![FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
+  }
+  NSDictionary *environment = json[@"environment"];
+  if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
+  }
+
+  // These are both optional arguments.
+  NSString *stdOutPath = json[@"stdout_path"];
+  if (stdOutPath && ![stdOutPath isKindOfClass:NSNull.class] && ![stdOutPath isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not a valid path for stdout", stdOutPath] fail:error];
+  }
+  NSString *stdErrPath = json[@"stderr_path"];
+  if (stdErrPath && ![stdOutPath isKindOfClass:NSNull.class] && ![stdErrPath isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not a valid path for stderr", stdErrPath] fail:error];
+  }
+  return [self configurationWithBinary:binary arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+}
+
 - (instancetype)initWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
 {
   self = [super initWithArguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];

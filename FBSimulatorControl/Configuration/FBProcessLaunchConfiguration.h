@@ -109,7 +109,7 @@
 /**
  A Value object with the information required to launch a Binary Agent.
  */
-@interface FBAgentLaunchConfiguration : FBProcessLaunchConfiguration
+@interface FBAgentLaunchConfiguration : FBProcessLaunchConfiguration <FBJSONDeserializable>
 
 /**
  Creates and returns a new Configuration with the provided parameters
