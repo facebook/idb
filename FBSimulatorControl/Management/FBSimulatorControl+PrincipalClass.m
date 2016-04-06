@@ -66,14 +66,17 @@
 
 + (void)loadPrivateFrameworksOrAbort
 {
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  NSError *error = nil;
-  BOOL success = [FBSimulatorControl loadPrivateFrameworks:logger.debug error:&error];
-  if (success) {
-    return;
-  }
-  [logger.error logFormat:@"Failed to private frameworks for FBSimulatorControl with error %@", error];
-  abort();
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+    NSError *error = nil;
+    BOOL success = [FBSimulatorControl loadPrivateFrameworks:logger.debug error:&error];
+    if (success) {
+      return;
+    }
+    [logger.error logFormat:@"Failed to private frameworks for FBSimulatorControl with error %@", error];
+    abort();
+  });
 }
 
 + (BOOL)loadPrivateFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
