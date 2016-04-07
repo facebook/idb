@@ -75,7 +75,7 @@ public extension Command {
     case .Help(let outputOptions, _, _):
       return outputOptions.createReporter(writer)
     case .Perform(let configuration, _, _, _):
-      return configuration.output.createReporter(writer)
+      return configuration.outputOptions.createReporter(writer)
     }
   }
 }

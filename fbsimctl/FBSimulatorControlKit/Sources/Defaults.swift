@@ -29,15 +29,9 @@ public protocol Defaultable {
 private let defaultFormat: Format = [ .UDID, .Name, .OSVersion, .State]
 
 extension Configuration : Defaultable {
-  public static var defaultValue: Configuration {
-    get {
-      return Configuration(
-        output: OutputOptions(),
-        deviceSetPath: nil,
-        managementOptions: FBSimulatorManagementOptions()
-      )
-    }
-  }
+  public static var defaultValue: Configuration { get {
+    return Configuration()
+  }}
 }
 
 extension Configuration {

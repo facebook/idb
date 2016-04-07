@@ -117,75 +117,15 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
   }
 }
 
-class ConfigurationParserTests : XCTestCase {
-  func testParsesEmptyAsDefaultValue() {
-    self.assertParses(
-      Configuration.parser,
-      [],
-      Configuration.defaultValue
-    )
-  }
-
-  func testParsesWithDebugLogging() {
-    self.assertParses(
-      Configuration.parser,
-      ["--debug-logging"],
-      Configuration(
-        output: OutputOptions.DebugLogging,
-        deviceSetPath: nil,
-        managementOptions: FBSimulatorManagementOptions()
-      )
-    )
-  }
-
-  func testParsesWithSetPath() {
-    self.assertParses(
-      Configuration.parser,
-      ["--set", "/usr/bin"],
-      Configuration(
-        output: OutputOptions(),
-        deviceSetPath: "/usr/bin",
-        managementOptions: FBSimulatorManagementOptions()
-      )
-    )
-  }
-
-  func testParsesWithOptions() {
-    self.assertParses(
-      Configuration.parser,
-      ["--kill-all", "--kill-spurious"],
-      Configuration(
-        output: OutputOptions(),
-        deviceSetPath: nil,
-        managementOptions: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
-      )
-    )
-  }
-
-  func testParsesWithSetPathAndOptions() {
-    self.assertParses(
-      Configuration.parser,
-      ["--set", "/usr/bin", "--delete-all", "--kill-spurious"],
-      Configuration(
-        output: OutputOptions(),
-        deviceSetPath: "/usr/bin",
-        managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
-      )
-    )
-  }
-
-  func testParsesWithAllTheAbove() {
-    self.assertParses(
-      Configuration.parser,
-      ["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"],
-      Configuration(
-        output: OutputOptions.DebugLogging,
-        deviceSetPath: "/usr/bin",
-        managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart)
-      )
-    )
-  }
-}
+let validConfigurations: [([String], Configuration)] = [
+  ([], Configuration.defaultValue),
+  (["--debug-logging"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: nil)),
+  (["--kill-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.KillAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart), deviceSetPath: nil)),
+  (["--set", "/usr/bin"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions(), deviceSetPath: "/usr/bin")),
+  (["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin")),
+  (["--delete-all", "--set", "/usr/bin", "--debug-logging", "--kill-spurious"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin")),
+  (["--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin"))
+]
 
 let validQueries: [([String], Query)] = [
   (["all"], Query.all),
@@ -272,6 +212,12 @@ let invalidActions: [[String]] = [
   ["install"],
   ["listaa"],
 ]
+
+class ConfigurationParserTests : XCTestCase {
+  func testParsesValidConfigurations() {
+    self.assertParsesAll(Configuration.parser, validConfigurations)
+  }
+}
 
 class QueryParserTests : XCTestCase {
   func testParsesValidActions() {

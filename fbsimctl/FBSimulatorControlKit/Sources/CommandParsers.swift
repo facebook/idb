@@ -131,39 +131,71 @@ extension Parser {
   }}
 }
 
-extension FBCrashLogInfoProcessType : Parsable {
-  public static var parser: Parser<FBCrashLogInfoProcessType> { get {
-    return Parser<FBCrashLogInfoProcessType>
-      .union([
-        Parser.ofString("--application", FBCrashLogInfoProcessType.Application),
-        Parser.ofString("--system", FBCrashLogInfoProcessType.System),
-        Parser.ofString("--custom-agent", FBCrashLogInfoProcessType.CustomAgent)
-      ])
-    }}
-}
-
 extension OutputOptions : Parsable {
   public static var parser: Parser<OutputOptions> { get {
-    return Parser<OutputOptions>
-      .union([
-        Parser.ofString("--debug-logging", OutputOptions.DebugLogging),
-        Parser.ofString("--json", OutputOptions.JSON),
-        Parser.ofString("---pretty", OutputOptions.Pretty)
-      ])
+    return Parser<OutputOptions>.union(parsers)
+  }}
+
+  static var parsers: [Parser<OutputOptions>] { get {
+    return [
+      Parser.ofString("--debug-logging", OutputOptions.DebugLogging),
+      Parser.ofString("--json", OutputOptions.JSON),
+      Parser.ofString("---pretty", OutputOptions.Pretty),
+    ]
+  }}
+}
+
+extension FBSimulatorManagementOptions : Parsable {
+  public static var parser: Parser<FBSimulatorManagementOptions> { get {
+    return Parser<FBSimulatorManagementOptions>.union(self.parsers)
+  }}
+
+  static var parsers: [Parser<FBSimulatorManagementOptions>] { get {
+    return [
+      self.deleteAllOnFirstParser,
+      self.killAllOnFirstParser,
+      self.killSpuriousSimulatorsOnFirstStartParser,
+      self.ignoreSpuriousKillFailParser,
+      self.killSpuriousCoreSimulatorServicesParser,
+      self.useSimDeviceTimeoutResilianceParser
+    ]
+  }}
+
+  static var deleteAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
+    return Parser.ofString("--delete-all", .DeleteAllOnFirstStart)
+  }}
+
+  static var killAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
+    return Parser.ofString("--kill-all", .KillAllOnFirstStart)
+  }}
+
+  static var killSpuriousSimulatorsOnFirstStartParser: Parser<FBSimulatorManagementOptions> { get {
+    return Parser.ofString("--kill-spurious", .KillSpuriousSimulatorsOnFirstStart)
+  }}
+
+  static var ignoreSpuriousKillFailParser: Parser<FBSimulatorManagementOptions> { get {
+    return Parser.ofString("--ignore-spurious-kill-fail", .IgnoreSpuriousKillFail)
+  }}
+
+  static var killSpuriousCoreSimulatorServicesParser: Parser<FBSimulatorManagementOptions> { get {
+    return Parser.ofString("--kill-spurious-services", .KillSpuriousCoreSimulatorServices)
+  }}
+
+  static var useSimDeviceTimeoutResilianceParser: Parser<FBSimulatorManagementOptions> { get {
+    return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
   }}
 }
 
 extension Configuration : Parsable {
   public static var parser: Parser<Configuration> { get {
-    return Parser
-      .ofThreeSequenced(
-        OutputOptions.parser,
-        Parser.succeeded("--set", Parser<Any>.ofDirectory).optional(),
-        FBSimulatorManagementOptions.parser
-      )
-      .fmap { (output, deviceSetPath, managementOptions) in
-        return Configuration(output: output, deviceSetPath: deviceSetPath, managementOptions: managementOptions)
-      }
+    let outputOptionsParsers = OutputOptions.parsers.map { $0.fmap(Configuration.ofOutputOptions) }
+    let managementOptionsParsers = FBSimulatorManagementOptions.parsers.map { $0.fmap(Configuration.ofManagementOptions) }
+    let parsers = Array([outputOptionsParsers, managementOptionsParsers, [self.deviceSetPathParser]].flatten())
+    return Parser<Configuration>.accumilate(0, parsers)
+  }}
+
+  static var deviceSetPathParser: Parser<Configuration> { get {
+    return Parser.succeeded("--set", Parser<Any>.ofDirectory).fmap(Configuration.ofDeviceSetPath)
   }}
 }
 
@@ -176,6 +208,17 @@ extension FBSimulatorState : Parsable {
         Parser.ofString("--state=booted", FBSimulatorState.Booted),
         Parser.ofString("--state=shutting-down", FBSimulatorState.ShuttingDown),
     ])
+  }}
+}
+
+extension FBCrashLogInfoProcessType : Parsable {
+  public static var parser: Parser<FBCrashLogInfoProcessType> { get {
+    return Parser<FBCrashLogInfoProcessType>
+      .union([
+        Parser.ofString("--application", FBCrashLogInfoProcessType.Application),
+        Parser.ofString("--system", FBCrashLogInfoProcessType.System),
+        Parser.ofString("--custom-agent", FBCrashLogInfoProcessType.CustomAgent)
+      ])
   }}
 }
 
@@ -210,44 +253,6 @@ extension Command : Parsable {
       .fmap { (output, _) in
         return Command.Help(output, true, nil)
       }
-  }}
-}
-
-extension FBSimulatorManagementOptions : Parsable {
-  public static var parser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser<FBSimulatorManagementOptions>
-      .union([
-        self.deleteAllOnFirstParser,
-        self.killAllOnFirstParser,
-        self.killSpuriousSimulatorsOnFirstStartParser,
-        self.ignoreSpuriousKillFailParser,
-        self.killSpuriousCoreSimulatorServicesParser,
-        self.useSimDeviceTimeoutResilianceParser
-      ])
-  }}
-
-  static var deleteAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--delete-all", .DeleteAllOnFirstStart)
-  }}
-
-  static var killAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--kill-all", .KillAllOnFirstStart)
-  }}
-
-  static var killSpuriousSimulatorsOnFirstStartParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--kill-spurious", .KillSpuriousSimulatorsOnFirstStart)
-  }}
-
-  static var ignoreSpuriousKillFailParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--ignore-spurious-kill-fail", .IgnoreSpuriousKillFail)
-  }}
-
-  static var killSpuriousCoreSimulatorServicesParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--kill-spurious-services", .KillSpuriousCoreSimulatorServices)
-  }}
-
-  static var useSimDeviceTimeoutResilianceParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
   }}
 }
 

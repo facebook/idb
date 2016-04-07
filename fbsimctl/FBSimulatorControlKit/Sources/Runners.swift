@@ -137,9 +137,9 @@ struct ServerRunner : Runner, CommandPerformer {
     let relayReporter = RelayReporter(reporter: reporter, subject: self.serverConfiguration)
     switch serverConfiguration {
     case .StdIO:
-      StdIORelay(outputOptions: self.configuration.output, performer: self, reporter: relayReporter).start()
+      StdIORelay(outputOptions: self.configuration.outputOptions, performer: self, reporter: relayReporter).start()
     case .Socket(let portNumber):
-      SocketRelay(outputOptions: self.configuration.output, portNumber: portNumber, performer: self, reporter: relayReporter).start()
+      SocketRelay(outputOptions: self.configuration.outputOptions, portNumber: portNumber, performer: self, reporter: relayReporter).start()
     case .Http(let portNumber):
       let performer = ActionPerformer(commandPerformer: self, configuration: self.configuration, query: self.query, format: self.format)
       HttpRelay(portNumber: portNumber, performer: performer, reporter: relayReporter).start()

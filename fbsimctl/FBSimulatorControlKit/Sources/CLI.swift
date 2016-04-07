@@ -18,9 +18,9 @@ import FBSimulatorControl
     let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
     do {
       let (_, configuration) = try FBSimulatorControlKit.Configuration.parser.parse(arguments)
-      let debugEnabled = configuration.output.contains(OutputOptions.DebugLogging)
+      let debugEnabled = configuration.outputOptions.contains(OutputOptions.DebugLogging)
 
-      let reporter = configuration.output.createReporter(configuration.output.createLogWriter())
+      let reporter = configuration.outputOptions.createReporter(configuration.outputOptions.createLogWriter())
       let bridge = ControlCoreLoggerBridge(reporter: reporter)
       let logger = LogReporter(bridge: bridge, debug: debugEnabled)
       FBControlCoreGlobalConfiguration.setDefaultLogger(logger)

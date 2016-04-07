@@ -29,9 +29,9 @@ public struct OutputOptions : OptionSetType {
   Describes the Configuration for the running FBSimulatorControl Commands
 */
 public struct Configuration {
-  public let output: OutputOptions
-  public let deviceSetPath: String?
+  public let outputOptions: OutputOptions
   public let managementOptions: FBSimulatorManagementOptions
+  public let deviceSetPath: String?
 }
 
 /**
@@ -99,7 +99,42 @@ public indirect enum Command {
 
 extension Configuration : Equatable {}
 public func == (left: Configuration, right: Configuration) -> Bool {
-  return left.output == right.output && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
+  return left.outputOptions == right.outputOptions && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
+}
+
+extension Configuration : Accumilator {
+  public init() {
+    self.outputOptions = OutputOptions()
+    self.managementOptions = FBSimulatorManagementOptions()
+    self.deviceSetPath = nil
+  }
+
+  public static var identity: Configuration { get {
+    return Configuration.defaultValue
+  }}
+
+  public func append(other: Configuration) -> Configuration {
+    return Configuration(
+      outputOptions: self.outputOptions.union(other.outputOptions),
+      managementOptions: self.managementOptions.union(other.managementOptions),
+      deviceSetPath: other.deviceSetPath ?? self.deviceSetPath
+    )
+  }
+
+  public static func ofOutputOptions(output: OutputOptions) -> Configuration {
+    let query = self.identity
+    return Configuration(outputOptions: output, managementOptions: query.managementOptions, deviceSetPath: query.deviceSetPath)
+  }
+
+  public static func ofManagementOptions(managementOptions: FBSimulatorManagementOptions) -> Configuration {
+    let query = self.identity
+    return Configuration(outputOptions: query.outputOptions, managementOptions: managementOptions, deviceSetPath: query.deviceSetPath)
+  }
+
+  public static func ofDeviceSetPath(deviceSetPath: String) -> Configuration {
+    let query = self.identity
+    return Configuration(outputOptions: query.outputOptions, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: deviceSetPath)
+  }
 }
 
 extension Action : Equatable { }
