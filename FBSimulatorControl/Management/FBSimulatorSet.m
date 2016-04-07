@@ -31,7 +31,7 @@
   [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
 
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
   SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration error:&innerError];
@@ -255,17 +255,12 @@
   return [self.simulatorTerminationStrategy killSimulators:@[simulator] withError:error] != nil;
 }
 
-- (NSArray *)killAllWithError:(NSError **)error
+- (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
 {
   return [self.simulatorTerminationStrategy killSimulators:self.allSimulators withError:error];
 }
 
-- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
-{
-  return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
-}
-
-- (NSArray *)deleteAllWithError:(NSError **)error
+- (NSArray<NSString *> *)deleteAllWithError:(NSError **)error
 {
   return [self deleteSimulators:self.allSimulators withError:error];
 }
@@ -296,7 +291,12 @@
 
 #pragma mark Private Methods
 
-- (NSArray *)deleteSimulators:(NSArray *)simulators withError:(NSError **)error
+- (BOOL)killSpuriousSimulatorsWithError:(NSError **)error
+{
+  return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
+}
+
+- (NSArray<NSString *> *)deleteSimulators:(NSArray *)simulators withError:(NSError **)error
 {
   NSError *innerError = nil;
   NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
@@ -310,7 +310,7 @@
   return [deletedSimulatorNames copy];
 }
 
-- (NSArray *)eraseSimulators:(NSArray *)simulators withError:(NSError **)error
+- (NSArray<FBSimulator *> *)eraseSimulators:(NSArray *)simulators withError:(NSError **)error
 {
   // Kill the Simulators before erasing them.
   NSError *innerError = nil;
@@ -327,9 +327,9 @@
   return simulators;
 }
 
-+ (NSDictionary *)keySimulatorsByUDID:(NSArray *)simulators
++ (NSDictionary<NSString *, FBSimulator *> *)keySimulatorsByUDID:(NSArray *)simulators
 {
-  NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+  NSMutableDictionary<NSString *, FBSimulator *> *dictionary = [NSMutableDictionary dictionary];
   for (FBSimulator *simulator in simulators) {
     dictionary[simulator.udid] = simulator;
   }
@@ -340,7 +340,7 @@
 
 #pragma mark Public
 
-- (NSArray *)allSimulators
+- (NSArray<FBSimulator *> *)allSimulators
 {
   // Inflate new simulators that have come along since last time this method was called.
   NSArray *simDevices = self.deviceSet.availableDevices;
@@ -362,7 +362,7 @@
   return [self.inflatedSimulators objectsForKeys:currentSimulatorUDIDs notFoundMarker:NSNull.null];
 }
 
-- (NSArray *)launchedSimulators
+- (NSArray<FBSimulator *> *)launchedSimulators
 {
   return [self.allSimulators filteredArrayUsingPredicate:FBSimulatorPredicates.launched];
 }

@@ -10,6 +10,8 @@
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface FBSimulatorConfigurationVariant_Base : NSObject <NSCoding>
 @end
 
@@ -17,7 +19,7 @@
 
 @protocol FBSimulatorConfiguration_Family <NSObject>
 
-- (FBSimulatorProductFamily)productFamilyID;
+@property (nonatomic, assign, readonly) FBSimulatorProductFamily productFamilyID;
 
 @end
 
@@ -41,8 +43,8 @@
 
 @protocol FBSimulatorConfiguration_Device <NSObject>
 
-- (NSString *)deviceName;
-- (id<FBSimulatorConfiguration_Family>)family;
+@property (nonatomic, copy, readonly) NSString *deviceName;
+@property (nonatomic, strong, readonly) id<FBSimulatorConfiguration_Family> family;
 
 @end
 
@@ -107,8 +109,8 @@
 
 @protocol FBSimulatorConfiguration_OS <NSObject>
 
-- (NSString *)name;
-- (NSSet *)families;
+@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, copy, readonly) NSSet *families;
 
 @end
 
@@ -184,3 +186,5 @@
 + (NSDictionary *)nameToOSVersion;
 
 @end
+
+NS_ASSUME_NONNULL_END

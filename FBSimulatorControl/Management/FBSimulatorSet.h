@@ -71,7 +71,7 @@
  @param error an error out if any error occured.
  @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
-- (NSArray *)killAllWithError:(NSError **)error;
+- (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error;
 
 /**
  Delete all of the Simulators Managed by this Pool, killing them first.
@@ -79,7 +79,7 @@
  @param error an error out if any error occured.
  @return an Array of the names of the Simulators that were deleted if successful, nil otherwise.
  */
-- (NSArray *)deleteAllWithError:(NSError **)error;
+- (NSArray<NSString *> *)deleteAllWithError:(NSError **)error;
 
 /**
  The Logger to use.
@@ -109,6 +109,6 @@
 /**
  An NSArray<FBSimulator> of all Simulators in the Set.
 */
-@property (nonatomic, copy, readonly) NSArray *allSimulators;
+@property (nonatomic, copy, readonly) NSArray<FBSimulator *> *allSimulators;
 
 @end

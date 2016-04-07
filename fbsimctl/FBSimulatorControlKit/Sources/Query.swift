@@ -64,11 +64,11 @@ extension Query {
       return FBSimulatorPredicates.udids(Array(udids))
     case .State(let states):
       return NSCompoundPredicate(
-        orPredicateWithSubpredicates: states.map(FBSimulatorPredicates.state) as! [NSPredicate]
+        orPredicateWithSubpredicates: states.map(FBSimulatorPredicates.state)
       )
     case .Configured(let configurations):
       return NSCompoundPredicate(
-        orPredicateWithSubpredicates: configurations.map(FBSimulatorPredicates.configuration) as! [NSPredicate]
+        orPredicateWithSubpredicates: configurations.map(FBSimulatorPredicates.configuration)
       )
     case .And(let subqueries):
       return NSCompoundPredicate(

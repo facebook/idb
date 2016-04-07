@@ -14,10 +14,12 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorPool;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Predicates for filtering collections of available Simulators.
  NSCompoundPredicate can be used to compose Predicates.
- All Prediates operate on FBSimulator instances.
+ All Prediates operate on collections of FBSimulator instances.
  */
 @interface FBSimulatorPredicates : NSObject
 
@@ -59,10 +61,10 @@
 /**
  Predicate for matching against a range of Simulator States.
 
- @param states the states to match against. Must not be nil.
+ @param states Number representations of the states to match against. Must not be nil.
  @return an NSPredicate.
  */
-+ (NSPredicate *)states:(NSArray *)states;
++ (NSPredicate *)states:(NSArray<NSNumber *> *)states;
 
 #pragma mark Configurations
 
@@ -88,14 +90,40 @@
  @param udids the UDIDs to match against. Must not be nil.
  @return an NSPredicate.
  */
-+ (NSPredicate *)udids:(NSArray *)udids;
++ (NSPredicate *)udids:(NSArray<NSString *> *)udids;
 
 /**
- Predicate for matching SimDevices against a Configuration.
+ Predicate for matching against one of multiple Simulator Device Names
+
+ @param names the Device Names to match against.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)deviceNames:(NSArray<NSString *> *)names;
+
+/**
+ Predicate for matching against one of multiple Simulator OS Versions.
+
+ @param versions the OS Versions to match against.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)osVersions:(NSArray<NSString *> *)versions;
+
+/**
+ Predicate for matching Simulators against a Configuration.
 
  @param configuration the configuration to match against.
  @return an NSPredicate.
  */
 + (NSPredicate *)configuration:(FBSimulatorConfiguration *)configuration;
 
+/**
+ Predicate for matching any of the provided configurations against a Simulator.
+
+ @param configurations the configuration to match against.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)configurations:(NSArray<FBSimulatorConfiguration *> *)configurations;
+
 @end
+
+NS_ASSUME_NONNULL_END

@@ -53,7 +53,7 @@
   return [self states:@[@(state)]];
 }
 
-+ (NSPredicate *)states:(NSArray *)states
++ (NSPredicate *)states:(NSArray<NSString *> *)states
 {
   NSSet *statesSet = [NSSet setWithArray:states];
 
@@ -74,12 +74,30 @@
   return [self udids:@[udid]];
 }
 
-+ (NSPredicate *)udids:(NSArray *)udids
++ (NSPredicate *)udids:(NSArray<NSString *> *)udids
 {
-  NSSet *udidsSet = [NSSet setWithArray:udids];
+  NSSet<NSString *> *udidsSet = [NSSet setWithArray:udids];
 
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
     return [udidsSet containsObject:candidate.udid];
+  }];
+}
+
++ (NSPredicate *)deviceNames:(NSArray<NSString *> *)names
+{
+  NSSet<NSString *> *nameSet = [NSSet setWithArray:names];
+
+  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
+    return [nameSet containsObject:candidate.device.name];
+  }];
+}
+
++ (NSPredicate *)osVersions:(NSArray<NSString *> *)versions
+{
+  NSSet<NSString *> *osVersionSet = [NSSet setWithArray:versions];
+
+  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
+    return [osVersionSet containsObject:candidate.device.runtime.versionString];
   }];
 }
 
@@ -94,6 +112,15 @@
     }
     return YES;
   }];
+}
+
++ (NSPredicate *)configurations:(NSArray<FBSimulatorConfiguration *> *)configurations
+{
+  NSMutableArray<NSPredicate *> *subpredicates = [NSMutableArray array];
+  for (FBSimulatorConfiguration *configuration in configurations) {
+    [subpredicates addObject:[self configuration:configuration]];
+  }
+  return [NSCompoundPredicate orPredicateWithSubpredicates:subpredicates];
 }
 
 @end
