@@ -11,57 +11,6 @@ import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
 
-class QueryParserTests : XCTestCase {
-  func testParsesSimpleQueries() {
-    self.assertParsesAll(Query.parser, [
-      (["all"], .And([])),
-      (["iPhone 5"], .Configured([FBSimulatorConfiguration.iPhone5()])),
-      (["iPad 2"], .Configured([FBSimulatorConfiguration.iPad2()])),
-      (["--state=creating"], .State([.Creating])),
-      (["--state=shutdown"], .State([.Shutdown])),
-      (["--state=booted"], .State([.Booted])),
-      (["--state=booting"], .State([.Booting])),
-      (["--state=shutting-down"], .State([.ShuttingDown])),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]))
-    ])
-  }
-
-  func testFailsSimpleQueries() {
-    self.assertFailsToParseAll(Query.parser, [
-      ["Galaxy S5"],
-      ["Nexus Chromebook Pixel G4 Droid S5 S1 S4 4S"],
-      ["makingtea"],
-      ["B8EEA6C4-47E5-92DE-014E0ECD8139"],
-      []
-    ])
-  }
-
-  func testParsesCompoundQueries() {
-    self.assertParsesAll(Query.parser, [
-      (["iPhone 5", "iPad 2"], .Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPad2()])),
-      (["--state=creating", "--state=booting", "--state=shutdown"], .State([.Creating, .Booting, .Shutdown])),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8", "--state=booted"], .And([.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"]), .State([.Booted])]))
-    ])
-  }
-
-  func testParsesPartially() {
-    self.assertParsesAll(Query.parser, [
-      (["iPhone 5", "Nexus 5", "iPad 2"], Query.Configured([FBSimulatorConfiguration.iPhone5()])),
-      (["--state=creating", "--state=booting", "jelly", "shutdown"], Query.State([.Creating, .Booting])),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "banana", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"], .UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
-    ])
-  }
-
-  func testFailsPartialParse() {
-    self.assertFailsToParseAll(Query.parser, [
-      ["Nexus 5", "iPhone 5", "iPad 2"],
-      ["jelly", "--state=creating", "--state=booting", "shutdown"],
-      ["banana", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"],
-    ])
-  }
-}
-
 class KeywordParserTests : XCTestCase {
   func testParsesKeywords() {
     self.assertParsesAll(Keyword.parser, [
@@ -238,6 +187,34 @@ class ConfigurationParserTests : XCTestCase {
   }
 }
 
+let validQueries: [([String], Query)] = [
+  (["all"], Query.all),
+  (["iPhone 5"], Query.ofDevices(["iPhone 5"])),
+  (["iPad 2"], Query.ofDevices(["iPad 2"])),
+  (["iOS 9.0", "iOS 9.1"], Query.ofOSVersions(["iOS 9.0", "iOS 9.1"])),
+  (["--state=creating"], Query.ofStates([.Creating])),
+  (["--state=shutdown"], Query.ofStates([.Shutdown])),
+  (["--state=booted"], Query.ofStates([.Booted])),
+  (["--state=booting"], Query.ofStates([.Booting])),
+  (["--state=shutting-down"], Query.ofStates([.ShuttingDown])),
+  (["--first", "2", "iPhone 6"], Query.ofDevices(["iPhone 6"]).append(Query.ofCount(2))),
+  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.ofUDIDs(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
+  (["iPhone 5", "iPad 2"], Query.ofDevices(["iPhone 5", "iPad 2"])),
+  (["--state=creating", "--state=booting", "--state=shutdown"], Query.ofStates([.Creating, .Booting, .Shutdown])),
+  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], Query.ofUDIDs(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
+  (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], Query.ofDevices(["iPhone 6"]).append(Query.ofUDIDs(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"]))),
+]
+
+let invalidQueries: [[String]] = [
+  ["Galaxy S5"],
+  ["Nexus Chromebook Pixel G4 Droid S5 S1 S4 4S"],
+  ["makingtea"],
+  ["B8EEA6C4-47E5-92DE-014E0ECD8139"],
+  ["Nexus 5", "iPhone 5", "iPad 2"],
+  ["jelly", "--state=creating", "--state=booting", "shutdown"],
+  ["banana", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"],
+]
+
 let validActions: [([String], Action)] = [
   (["approve", "com.foo.bar", "com.bing.bong"], Action.Approve(["com.foo.bar", "com.bing.bong"])),
   (["approve", Fixtures.application.path], Action.Approve([Fixtures.application.bundleID])),
@@ -296,6 +273,16 @@ let invalidActions: [[String]] = [
   ["listaa"],
 ]
 
+class QueryParserTests : XCTestCase {
+  func testParsesValidActions() {
+    self.assertParsesAll(Query.parser, validQueries)
+  }
+
+  func testParsesInvalidActions() {
+    self.assertFailsToParseAll(Query.parser, invalidQueries)
+  }
+}
+
 class ActionParserTests : XCTestCase {
   func testParsesValidActions() {
     self.assertParsesAll(Action.parser, validActions)
@@ -343,12 +330,12 @@ class CommandParserTests : XCTestCase {
   func assertWithDefaultActions(actions: [Action], suffix: [String]) {
     return self.unzipAndAssert(actions, suffix: suffix, extras: [
       ([], nil, nil),
-      (["all"], Query.And([]), nil),
-      (["iPad 2"], Query.Configured([FBSimulatorConfiguration.iPad2()]), nil),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
-      (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.And([.Configured([FBSimulatorConfiguration.iPhone5(), FBSimulatorConfiguration.iPhone6()]), .State([.Shutdown])]), nil),
-      (["iPad 2", "--device-name", "--os"], Query.Configured([FBSimulatorConfiguration.iPad2()]), [.DeviceName, .OSVersion]),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.UDID(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
+      (["all"], Query.all, nil),
+      (["iPad 2"], Query.ofDevices(["iPad 2"]), nil),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.ofUDIDs(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
+      (["iPhone 5", "--state=shutdown", "iPhone 6"], Query.ofDevices(["iPhone 5", "iPhone 6"]).append(Query.ofStates([.Shutdown])), nil),
+      (["iPad 2", "--device-name", "--os"], Query.ofDevices(["iPad 2"]), [.DeviceName, .OSVersion]),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], Query.ofUDIDs(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }
 

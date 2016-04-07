@@ -24,6 +24,7 @@
 		AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
 		AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
+		AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA3DB6401CB3A971000BE7A1 /* SimulatorReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */; };
 		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
@@ -100,6 +101,7 @@
 		AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StdIORelay.swift; sourceTree = "<group>"; };
 		AA2AFD721C29412C000123BA /* CommandParsersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParsersTests.swift; sourceTree = "<group>"; };
 		AA2AFD741C294158000123BA /* TestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
+		AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AbstractTypes.swift; sourceTree = "<group>"; };
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorReporter.swift; sourceTree = "<group>"; };
 		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 		AA1B7F5A1C2867EE0038C6A5 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */,
 				AA54EF711C4814BA006D5118 /* Arguments.swift */,
 				AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */,
 				AA1B7F601C2867EE0038C6A5 /* Bridging.m */,
@@ -432,6 +435,7 @@
 				AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */,
 				AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */,
 				AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */,
+				AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */,
 				AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */,
 				AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */,
 			);

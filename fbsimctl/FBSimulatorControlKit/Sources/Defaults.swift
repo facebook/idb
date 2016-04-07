@@ -78,14 +78,24 @@ public class Defaults {
     if let query = self.query {
       return query
     }
-    // List should default to listing all.
-    // Delete requires a query, as does boot.
-    // All other actions apply to booted Simulators by default
+    // Use reasonable defaults for each action.
+    // Depending on what state the simulator is expected to be in.
+    // Descructive of machine-killing actions shouldn't have defaults.
     switch action {
-      case .Boot: return nil
-      case .Delete: return nil
-      case .List: return .And([])
-      default: return .State(Set([.Booted]))
+      case .Boot:
+        fallthrough
+      case .Delete:
+        return nil
+      case .List:
+        fallthrough
+      case .Search:
+        fallthrough
+      case .Diagnose:
+        return Query.all
+      case .Approve:
+        return Query.ofStates([.Shutdown])
+      default:
+        return Query.ofStates([.Booted])
     }
   }
 

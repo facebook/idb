@@ -272,19 +272,31 @@ extension Parser {
     return Parser.manyCount(count, Parser.alternative(parsers))
   }
 
-  static func unionOptions<B : OptionSetType>(parsers: [Parser<B>]) -> Parser<B> {
-    return Parser.unionOptions(0, parsers)
+  static func union<B : SetAlgebraType>(parsers: [Parser<B>]) -> Parser<B> {
+    return Parser.union(0, parsers)
   }
 
-  static func unionOptions<B : OptionSetType>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
+  static func union<B : SetAlgebraType>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
     return Parser<B>
       .alternativeMany(count, parsers)
-      .fmap { options in
-        var set = B()
-        for option in options {
-          set.unionInPlace(option)
+      .fmap { sets in
+        var result = B()
+        for set in sets {
+          result.unionInPlace(set)
         }
-        return set
+        return result
+      }
+  }
+
+  static func accumilate<B : Accumilator>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
+    return Parser<B>
+      .alternativeMany(count, parsers)
+      .fmap { values in
+        var accumilator = B()
+        for value in values {
+          accumilator = accumilator.append(value)
+        }
+        return accumilator
       }
   }
 }

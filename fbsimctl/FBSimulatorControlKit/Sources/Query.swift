@@ -28,14 +28,75 @@ public enum QueryError : CustomStringConvertible, ErrorType {
 
 /**
  Defines the components of Query for Simulators.
- Each of the fundemental cases takes a collection of values to allow for a union for each case.
- Intersection is achieved with the .And enumeration.
  */
-public indirect enum Query {
-  case UDID(Set<String>)
-  case State(Set<FBSimulatorState>)
-  case Configured(Set<FBSimulatorConfiguration>)
-  case And(Set<Query>)
+public struct Query {
+  let udids: Set<String>
+  let states: Set<FBSimulatorState>
+  let devices: Set<String>
+  let osVersions: Set<String>
+  let count: Int?
+}
+
+extension Query : Accumilator {
+  public init() {
+    self.udids = Set()
+    self.states = Set()
+    self.devices = Set()
+    self.osVersions = Set()
+    self.count = nil
+  }
+
+  public static var identity: Query { get {
+    return Query.all
+  }}
+
+  public func append(other: Query) -> Query {
+    let count = other.count ?? self.count ?? nil
+    return Query(
+      udids: self.udids.union(other.udids),
+      states: self.states.union(other.states),
+      devices: self.devices.union(other.devices),
+      osVersions: self.osVersions.union(other.osVersions),
+      count: count
+    )
+  }
+
+  public static var all: Query { get {
+    return Query()
+  }}
+
+  public static func ofUDIDs(udids: [String]) -> Query {
+    let query = self.all
+    return Query(udids: Set(udids), states: query.states, devices: query.devices, osVersions: query.osVersions, count: query.count)
+  }
+
+  public static func ofStates(states: [FBSimulatorState]) -> Query {
+    let query = self.all
+    return Query(udids: query.udids, states: Set(states), devices: query.devices, osVersions: query.osVersions, count: query.count)
+  }
+
+  public static func ofDevices(devices: [String]) -> Query {
+    let query = self.all
+    return Query(udids: query.udids, states: query.states, devices: Set(devices), osVersions: query.osVersions, count: query.count)
+  }
+
+  public static func ofOSVersions(osVersions: [String]) -> Query {
+    let query = self.all
+    return Query(udids: query.udids, states: query.states, devices: query.devices, osVersions: Set(osVersions), count: query.count)
+  }
+
+  public static func ofCount(count: Int) -> Query {
+    let query = self.all
+    return Query(udids: query.udids, states: query.states, devices: query.devices, osVersions: query.osVersions, count: count)
+  }
+}
+extension Query : Equatable { }
+public func == (left: Query, right: Query) -> Bool {
+  return left.udids == right.udids &&
+         left.states == right.states &&
+         left.devices == right.devices &&
+         left.osVersions == right.osVersions &&
+         left.count == right.count
 }
 
 /**
@@ -49,8 +110,7 @@ extension Query {
     if set.allSimulators.count == 0 {
       throw QueryError.PoolIsEmpty
     }
-    let array: NSArray = set.allSimulators
-    let matching = array.filteredArrayUsingPredicate(query.get(set)) as! [FBSimulator]
+    let matching = query.fetch(set)
     if matching.count == 0 {
       throw QueryError.NoMatches
     }
@@ -58,99 +118,31 @@ extension Query {
     return matching
   }
 
-  func get(set: FBSimulatorSet) -> NSPredicate {
-    switch (self) {
-    case .UDID(let udids):
-      return FBSimulatorPredicates.udids(Array(udids))
-    case .State(let states):
-      return NSCompoundPredicate(
-        orPredicateWithSubpredicates: states.map(FBSimulatorPredicates.state)
-      )
-    case .Configured(let configurations):
-      return NSCompoundPredicate(
-        orPredicateWithSubpredicates: configurations.map(FBSimulatorPredicates.configuration)
-      )
-    case .And(let subqueries):
-      return NSCompoundPredicate(
-        andPredicateWithSubpredicates: subqueries.map { $0.get(set) }
-      )
-    }
-  }
-}
+  func fetch(set: FBSimulatorSet) -> [FBSimulator] {
+    var predicates: [NSPredicate] = []
+    let all: NSArray = set.allSimulators
 
-/**
- Extracts values for each of the cases in the enumeration,
- performing a union along each of these cases.
-*/
-public extension Query {
-  static func flatten(queries: [Query]) -> Query {
-    if (queries.count == 1) {
-      return queries.first!
+    if self.udids.count > 0 {
+      predicates.append(FBSimulatorPredicates.udids(Array(self.udids)))
     }
-
-    var udids: Set<String> = []
-    var states: Set<FBSimulatorState> = []
-    var configurations: Set<FBSimulatorConfiguration> = []
-    var subqueries: Set<Query> = []
-    for query in queries {
-      switch query {
-      case .UDID(let udid): udids.unionInPlace(udid)
-      case .State(let state): states.unionInPlace(state)
-      case .Configured(let configuration): configurations.unionInPlace(configuration)
-      case .And(let subquery): subqueries.unionInPlace(subquery)
-      }
+    if self.states.count > 0 {
+      let states = self.states.map { NSNumber(integer: $0.rawValue) }
+      predicates.append(FBSimulatorPredicates.states(states))
     }
-
-    if udids.count > 0 {
-      let query = Query.UDID(udids)
-      if states.count == 0 && configurations.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
+    if self.devices.count > 0 {
+      predicates.append(FBSimulatorPredicates.deviceNames(Array(self.devices)))
     }
-    if states.count > 0 {
-      let query = Query.State(states)
-      if udids.count == 0 && configurations.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
+    if self.osVersions.count > 0 {
+      predicates.append(FBSimulatorPredicates.osVersions(Array(self.osVersions)))
     }
-    if configurations.count > 0 {
-      let query = Query.Configured(configurations)
-      if udids.count == 0 && states.count == 0 {
-        return query
-      }
-      subqueries.insert(query)
+    if predicates.count == 0 {
+      return all as! [FBSimulator]
     }
-
-    return .And(subqueries)
-  }
-}
-
-extension Query : Equatable { }
-public func == (left: Query, right: Query) -> Bool {
-  switch (left, right) {
-  case (.UDID(let left), .UDID(let right)): return left == right
-  case (.State(let left), .State(let right)): return left == right
-  case (.Configured(let left), .Configured(let right)): return left == right
-  case (.And(let left), .And(let right)): return left == right
-  default: return false
-  }
-}
-
-extension Query : Hashable {
-  public var hashValue: Int {
-    get {
-      switch self {
-      case .UDID(let udids):
-        return 1 ^ udids.hashValue
-      case .Configured(let configurations):
-        return 2 ^ configurations.hashValue
-      case .State(let states):
-        return 4 ^ states.hashValue
-      case .And(let subqueries):
-        return subqueries.hashValue
-      }
+    let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    let simulators = all.filteredArrayUsingPredicate(predicate) as! [FBSimulator]
+    guard let count = self.count else {
+      return simulators
     }
+    return Array(simulators.prefix(count))
   }
 }

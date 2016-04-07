@@ -163,7 +163,7 @@ struct CreationRunner : Runner {
     do {
       reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
-      self.defaults.updateLastQuery(Query.UDID([simulator.udid]))
+      self.defaults.updateLastQuery(Query.ofUDIDs([simulator.udid]))
       reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success
     } catch let error as NSError {

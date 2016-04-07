@@ -134,7 +134,7 @@ extension Parser {
 extension FBCrashLogInfoProcessType : Parsable {
   public static var parser: Parser<FBCrashLogInfoProcessType> { get {
     return Parser<FBCrashLogInfoProcessType>
-      .unionOptions([
+      .union([
         Parser.ofString("--application", FBCrashLogInfoProcessType.Application),
         Parser.ofString("--system", FBCrashLogInfoProcessType.System),
         Parser.ofString("--custom-agent", FBCrashLogInfoProcessType.CustomAgent)
@@ -145,7 +145,7 @@ extension FBCrashLogInfoProcessType : Parsable {
 extension OutputOptions : Parsable {
   public static var parser: Parser<OutputOptions> { get {
     return Parser<OutputOptions>
-      .unionOptions([
+      .union([
         Parser.ofString("--debug-logging", OutputOptions.DebugLogging),
         Parser.ofString("--json", OutputOptions.JSON),
         Parser.ofString("---pretty", OutputOptions.Pretty)
@@ -216,7 +216,7 @@ extension Command : Parsable {
 extension FBSimulatorManagementOptions : Parsable {
   public static var parser: Parser<FBSimulatorManagementOptions> { get {
     return Parser<FBSimulatorManagementOptions>
-      .unionOptions([
+      .union([
         self.deleteAllOnFirstParser,
         self.killAllOnFirstParser,
         self.killSpuriousSimulatorsOnFirstStartParser,
@@ -481,44 +481,54 @@ extension Query : Parsable {
   public static var parser: Parser<Query> { get {
     return Parser.alternative([
       self.allParser,
-      self.specificParser
+      self.unionParser
     ])
   }}
 
   static var allParser: Parser<Query> { get {
     return Parser<Query>
-      .ofString("all", Query.And([]))
+      .ofString("all", Query.all)
   }}
 
-  static var specificParser: Parser<Query> { get {
-    return Parser<Query>
-      .alternativeMany(1, [
-        self.simulatorStateParser,
-        self.uuidParser,
-        self.simulatorConfigurationParser
-      ])
-      .fmap { Query.flatten($0) }
+  static var unionParser: Parser<Query> { get {
+    return Parser<Query>.accumilate(1, [
+      self.firstParser,
+      self.uuidParser,
+      self.simulatorStateParser,
+      self.osVersionsParser,
+      self.deviceParser
+    ])
+  }}
+
+  static var firstParser: Parser<Query> { get {
+    return Parser
+      .succeeded("--first", Parser<Any>.ofInt)
+      .fmap { Query.ofCount($0) }
   }}
 
   static var uuidParser: Parser<Query> { get {
     return Parser<Query>
       .ofUDID
-      .fmap { Query.UDID([$0.UUIDString]) }
+      .fmap { Query.ofUDIDs([$0.UUIDString]) }
   }}
 
   static var simulatorStateParser: Parser<Query> { get {
     return FBSimulatorState
       .parser
-      .fmap { Query.State([$0]) }
+      .fmap { Query.ofStates([$0]) }
   }}
 
-  static var simulatorConfigurationParser: Parser<Query> { get {
+  static var osVersionsParser: Parser<Query> { get {
     return FBSimulatorConfigurationParser
-      .parser
-      .fmap { configuration in
-        Query.Configured(Set([configuration]))
-      }
+      .osVersionParser
+      .fmap { Query.ofOSVersions([ $0.name ]) }
   }}
+
+  static var deviceParser: Parser<Query> { get {
+    return FBSimulatorConfigurationParser
+      .deviceParser
+      .fmap { Query.ofDevices([ $0.deviceName ]) }
+    }}
 }
 
 extension Keyword : Parsable {
@@ -680,7 +690,7 @@ struct FBSimulatorLaunchConfigurationParser {
           configuration = configuration.withOptions(options)
         }
         return configuration
-    }
+      }
   }}
 
   static var localeParser: Parser<NSLocale> { get {
@@ -699,7 +709,7 @@ struct FBSimulatorLaunchConfigurationParser {
 
   static var optionsParser: Parser<FBSimulatorLaunchOptions> { get {
     return Parser<FBSimulatorLaunchOptions>
-      .unionOptions(1, [
+      .union(1, [
         Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
         Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
         Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
