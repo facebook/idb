@@ -11,9 +11,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBCrashLogInfo.h>
-#import <FBControlCore/FBDebugDescribeable.h>
-#import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBControlCore.h>
 
 @class FBSimulatorDiagnostics;
 

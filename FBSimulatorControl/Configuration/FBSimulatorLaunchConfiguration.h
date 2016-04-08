@@ -9,8 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDebugDescribeable.h>
-#import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBControlCore.h>
 
 @class FBFramebufferVideoConfiguration;
 
