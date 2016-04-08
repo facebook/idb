@@ -223,6 +223,12 @@
   return [self.simulator.device installApplication:appURL withOptions:options error:error];
 }
 
+- (BOOL)uninstallApplication:(NSString *)bundleID withOptions:(NSDictionary *)options error:(NSError **)error
+{
+  // The options don't appear to do much, simctl itself doesn't use them.
+  return [self.simulator.device uninstallApplication:bundleID withOptions:nil error:error];
+}
+
 - (FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(FBSimDeviceWrapperCallback)terminationHandler error:(NSError **)error
 {
   return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];

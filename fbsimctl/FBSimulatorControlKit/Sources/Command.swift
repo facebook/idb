@@ -86,6 +86,7 @@ public enum Action {
   case Shutdown
   case Tap(Double, Double)
   case Terminate(String)
+  case Uninstall(String)
   case Upload([FBDiagnostic])
 }
 
@@ -173,6 +174,8 @@ public func == (left: Action, right: Action) -> Bool {
   case (.Tap(let leftX, let leftY), .Tap(let rightX, let rightY)):
     return leftX == rightX && leftY == rightY
   case (.Terminate(let leftBundleID), .Terminate(let rightBundleID)):
+    return leftBundleID == rightBundleID
+  case (.Uninstall(let leftBundleID), .Uninstall(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.Upload(let leftPaths), .Upload(let rightPaths)):
     return leftPaths == rightPaths

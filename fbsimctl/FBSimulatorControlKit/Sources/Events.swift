@@ -37,6 +37,7 @@ public enum EventName : String {
   case StateChange = "state"
   case Tap = "tap"
   case Terminate = "terminate"
+  case Uninstall = "uninstall"
   case Upload = "upload"
 }
 

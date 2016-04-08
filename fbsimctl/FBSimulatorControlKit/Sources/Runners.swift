@@ -259,6 +259,10 @@ private struct SimulatorRunner : Runner {
       return SimulatorInteraction(reporter, EventName.Record, bundleID) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)
       }
+    case .Uninstall(let bundleID):
+      return SimulatorInteraction(reporter, EventName.Uninstall, bundleID) { interaction in
+        interaction.uninstallApplicationWithBundleID(bundleID)
+      }
     case .Upload(let diagnostics):
       return UploadInteraction(reporter, diagnostics)
     default:

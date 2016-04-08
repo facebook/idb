@@ -9,18 +9,29 @@
 
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBApplicationLaunchConfiguration;
 
 @interface FBSimulatorInteraction (Applications)
 
 /**
  Installs the given Application.
- Will Allways Succeed if the Application is a System Application.
+ Will always succeed if the Application is a System Application.
 
  @param application the Application to Install.
  @return the reciever, for chaining.
  */
 - (instancetype)installApplication:(FBSimulatorApplication *)application;
+
+/**
+ Uninstalls the given Application.
+ Will always fail if the Application is a System Application.
+
+ @param bundleID the Bundle ID of the application to uninstall.
+ @return the reciever, for chaining.
+ */
+- (instancetype)uninstallApplicationWithBundleID:(NSString *)bundleID;
 
 /**
  Launches the Application with the given Configuration.
@@ -79,3 +90,5 @@
 - (instancetype)terminateLastLaunchedApplication;
 
 @end
+
+NS_ASSUME_NONNULL_END

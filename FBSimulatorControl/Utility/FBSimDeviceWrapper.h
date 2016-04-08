@@ -24,6 +24,7 @@ typedef void (^FBSimDeviceWrapperCallback)(void);
  Augments methods in CoreSimulator with:
  - More informative return values.
  - Implementations that are more resiliant to failure in CoreSimulator.
+ - Annotations of the expected arguments and return types of CoreSimulator.
  */
 @interface FBSimDeviceWrapper : NSObject
 
@@ -78,6 +79,16 @@ typedef void (^FBSimDeviceWrapperCallback)(void);
  @return YES if the Application was installed successfully, NO otherwise.
  */
 - (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error;
+
+/**
+ Uninstalls an Application on the Simulator.
+
+ @param bundleID the Bundle ID of the Application to uninstall.
+ @param options the Options to use in the launch.
+ @param error an error out for any error that occured.
+ @return YES if the Application was installed successfully, NO otherwise.
+ */
+- (BOOL)uninstallApplication:(NSString *)bundleID withOptions:(NSDictionary *)options error:(NSError **)error;
 
 /**
  Spawns an long-lived executable on the Simulator.

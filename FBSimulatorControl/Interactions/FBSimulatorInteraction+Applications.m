@@ -9,8 +9,6 @@
 
 #import "FBSimulatorInteraction+Applications.h"
 
-#import <CoreSimulator/SimDevice.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBProcessLaunchConfiguration+Helpers.h"
@@ -52,6 +50,40 @@
         failBool:error];
     }
 
+    return YES;
+  }];
+}
+
+- (instancetype)uninstallApplicationWithBundleID:(NSString *)bundleID
+{
+  NSParameterAssert(bundleID);
+
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    // Confirm the app is suitable to be uninstalled.
+    if ([simulator isSystemApplicationWithBundleID:bundleID error:nil]) {
+      return [[[FBSimulatorError
+        describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
+        inSimulator:simulator]
+        failBool:error];
+    }
+    NSError *innerError = nil;
+    if (![simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
+        causedBy:innerError]
+        inSimulator:simulator]
+        failBool:error];
+    }
+    // Kill the app if it's running
+    [[simulator.interact terminateApplicationWithBundleID:bundleID] perform:nil];
+    // Then uninstall for real.
+    if (![simulator.simDeviceWrapper uninstallApplication:bundleID withOptions:nil error:&innerError]) {
+      return [[[[FBSimulatorError
+        describeFormat:@"Failed to uninstall '%@'", bundleID]
+        causedBy:innerError]
+        inSimulator:simulator]
+        failBool:error];
+    }
     return YES;
   }];
 }

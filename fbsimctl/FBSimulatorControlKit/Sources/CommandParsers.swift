@@ -304,6 +304,7 @@ extension Action : Parsable {
         self.shutdownParser,
         self.tapParser,
         self.terminateParser,
+        self.uninstallParser,
         self.uploadParser,
       ])
   }}
@@ -428,6 +429,12 @@ extension Action : Parsable {
     return Parser
       .succeeded(EventName.Terminate.rawValue, Parser<Any>.ofBundleID)
       .fmap { Action.Terminate($0) }
+  }}
+
+  static var uninstallParser: Parser<Action> { get {
+    return Parser
+      .succeeded(EventName.Uninstall.rawValue, Parser<Any>.ofBundleID)
+      .fmap { Action.Uninstall($0) }
   }}
 
   static var uploadParser: Parser<Action> { get {

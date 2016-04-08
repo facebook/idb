@@ -148,4 +148,16 @@
   [self testApplication:self.tableSearchApplication relaunches:self.tableSearchAppLaunch];
 }
 
+- (void)testCanUninstallApplication
+{
+  FBSimulator *simulator = [self obtainSimulator];
+  FBSimulatorApplication *application = self.tableSearchApplication;
+  FBApplicationLaunchConfiguration *launch = self.tableSearchAppLaunch;
+
+  [self.assert consumeAllNotifications];
+  [self assertInteractionSuccessful:[[[simulator.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:application] launchApplication:launch]];
+  [self assertLastLaunchedApplicationIsRunning:simulator];
+  [self assertInteractionSuccessful:[simulator.interact uninstallApplicationWithBundleID:application.bundleID]];
+}
+
 @end

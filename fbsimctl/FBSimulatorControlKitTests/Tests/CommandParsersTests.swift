@@ -199,6 +199,7 @@ let validActions: [([String], Action)] = [
   (["shutdown"], Action.Shutdown),
   (["shutdown"], Action.Shutdown),
   (["terminate", "com.foo.bar"], Action.Terminate("com.foo.bar")),
+  (["uninstall", "com.foo.bar"], Action.Uninstall("com.foo.bar")),
   (["upload", Fixtures.photoPath, Fixtures.videoPath], Action.Upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic])),
 ]
 
