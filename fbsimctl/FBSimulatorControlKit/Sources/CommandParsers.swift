@@ -659,7 +659,7 @@ struct FBSimulatorConfigurationParser {
 
   static var deviceParser: Parser<FBSimulatorConfiguration_Device> { get {
     return Parser.single("A Device Name") { token in
-      let nameToDevice = FBSimulatorConfiguration.nameToDevice() as! [String : FBSimulatorConfiguration_Device]
+      let nameToDevice = FBSimulatorConfigurationVariants.nameToDevice()
       guard let device = nameToDevice[token] else {
         throw ParseError.Custom("\(token) is not a valid device name")
       }
@@ -669,7 +669,7 @@ struct FBSimulatorConfigurationParser {
 
   static var osVersionParser: Parser<FBSimulatorConfiguration_OS> { get {
     return Parser.single("An OS Version") { token in
-      let nameToOSVersion = FBSimulatorConfiguration.nameToOSVersion() as! [String : FBSimulatorConfiguration_OS]
+      let nameToOSVersion = FBSimulatorConfigurationVariants.nameToOSVersion()
       guard let osVersion = nameToOSVersion[token] else {
         throw ParseError.Custom("\(token) is not a valid device name")
       }
