@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 
+@class FBSimulator;
 @class FBSimulatorPool;
 @class FBSimulatorSet;
 
@@ -31,7 +32,7 @@
 /**
  Creates a Simulator Pool with an array of Specs for SimDevices.
  */
-- (NSArray *)createPoolWithExistingSimDeviceSpecs:(NSArray *)simulatorSpecs;
+- (NSArray<FBSimulator *> *)createPoolWithExistingSimDeviceSpecs:(NSArray<NSDictionary *> *)simulatorSpecs;
 
 /**
  Mocks the Allocation of Simulators based on their UDID.

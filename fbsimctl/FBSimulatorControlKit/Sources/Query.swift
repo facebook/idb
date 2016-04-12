@@ -130,10 +130,10 @@ extension Query {
       predicates.append(FBSimulatorPredicates.states(states))
     }
     if self.devices.count > 0 {
-      predicates.append(FBSimulatorPredicates.deviceNames(Array(self.devices)))
+      predicates.append(FBSimulatorPredicates.devicesNamed(Array(self.devices)))
     }
     if self.osVersions.count > 0 {
-      predicates.append(FBSimulatorPredicates.osVersions(Array(self.osVersions)))
+      predicates.append(FBSimulatorPredicates.osVersionsNamed(Array(self.osVersions)))
     }
     if predicates.count == 0 {
       return all as! [FBSimulator]

@@ -19,6 +19,7 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorConfigurationVariants.h"
 #import "FBSimulatorPool.h"
 
 @implementation FBSimulatorPredicates
@@ -83,21 +84,31 @@
   }];
 }
 
-+ (NSPredicate *)deviceNames:(NSArray<NSString *> *)names
++ (NSPredicate *)devices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices
 {
-  NSSet<NSString *> *nameSet = [NSSet setWithArray:names];
+  return [self devicesNamed:[devices valueForKey:@"deviceName"]];
+}
+
++ (NSPredicate *)devicesNamed:(NSArray<NSString *> *)deviceNames
+{
+  NSSet<NSString *> *nameSet = [NSSet setWithArray:deviceNames];
 
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
     return [nameSet containsObject:candidate.device.name];
   }];
 }
 
-+ (NSPredicate *)osVersions:(NSArray<NSString *> *)versions
++ (NSPredicate *)osVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)versions;
 {
-  NSSet<NSString *> *osVersionSet = [NSSet setWithArray:versions];
+  return [self osVersionsNamed:[versions valueForKey:@"name"]];
+}
+
++ (NSPredicate *)osVersionsNamed:(NSArray<NSString *> *)versionNames
+{
+  NSSet<NSString *> *nameSet = [NSSet setWithArray:versionNames];
 
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return [osVersionSet containsObject:candidate.device.runtime.versionString];
+    return [nameSet containsObject:candidate.device.runtime.name];
   }];
 }
 

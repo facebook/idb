@@ -26,9 +26,9 @@
   _pool = nil;
 }
 
-- (NSArray *)createPoolWithExistingSimDeviceSpecs:(NSArray *)simulatorSpecs
+- (NSArray<FBSimulator *> *)createPoolWithExistingSimDeviceSpecs:(NSArray<NSDictionary *> *)simulatorSpecs
 {
-  NSMutableArray *simulators = [NSMutableArray array];
+  NSMutableArray<SimDevice *> *simDevices = [NSMutableArray array];
   for (NSDictionary *simulatorSpec in simulatorSpecs) {
     NSString *name = simulatorSpec[@"name"];
     NSUUID *uuid = simulatorSpec[@"uuid"] ?: [NSUUID UUID];
@@ -50,17 +50,19 @@
     device.deviceType = deviceType;
     device.runtime = runtime;
 
-    [simulators addObject:device];
+    [simDevices addObject:(SimDevice *)device];
   }
 
   FBSimulatorControlTests_SimDeviceSet_Double *deviceSet = [FBSimulatorControlTests_SimDeviceSet_Double new];
-  deviceSet.availableDevices = [simulators copy];
+  deviceSet.availableDevices = [simDevices copy];
 
   FBSimulatorControlConfiguration *configuration = [FBSimulatorControlConfiguration configurationWithDeviceSetPath:nil options:0];
   _set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:(id)deviceSet control:nil logger:nil];
   _pool = [[FBSimulatorPool alloc] initWithSet:_set logger:nil];
 
-  return deviceSet.availableDevices;
+  NSArray<FBSimulator *> *simulators = _set.allSimulators;
+  XCTAssertEqual(simulators.count, simDevices.count);
+  return simulators;
 }
 
 - (void)mockAllocationOfSimulatorsUDIDs:(NSArray *)deviceUDIDs

@@ -10,9 +10,13 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorConfigurationVariants.h>
 
 @class FBSimulatorConfiguration;
 @class FBSimulatorPool;
+
+@protocol FBSimulatorConfiguration_Device;
+@protocol FBSimulatorConfiguration_OS;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -22,8 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
  All Prediates operate on collections of FBSimulator instances.
  */
 @interface FBSimulatorPredicates : NSObject
-
-#pragma mark Pools
 
 /**
  Predicate for Simulators that are allocated in a specific Pool.
@@ -40,8 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return an NSPredicate.
  */
 + (NSPredicate *)unallocatedByPool:(FBSimulatorPool *)pool;
-
-#pragma mark States
 
 /**
  Predicate for Simulators that are launched.
@@ -65,8 +65,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return an NSPredicate.
  */
 + (NSPredicate *)states:(NSArray<NSNumber *> *)states;
-
-#pragma mark Configurations
 
 /**
  Predicate for only the provided Simulator. Useful for negation.
@@ -93,12 +91,20 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSPredicate *)udids:(NSArray<NSString *> *)udids;
 
 /**
- Predicate for matching against one of multiple Simulator Device Names
+ Predicate for matching against one of multiple Simulator Devices.
 
- @param names the Device Names to match against.
+ @param devices the Device to match against.
  @return an NSPredicate.
  */
-+ (NSPredicate *)deviceNames:(NSArray<NSString *> *)names;
++ (NSPredicate *)devices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices;
+
+/**
+ Predicate for matching against one of multiple Simulator Devices.
+
+ @param deviceNames the Device Names to match against
+ @return an NSPredicate.
+ */
++ (NSPredicate *)devicesNamed:(NSArray<NSString *> *)deviceNames;
 
 /**
  Predicate for matching against one of multiple Simulator OS Versions.
@@ -106,7 +112,15 @@ NS_ASSUME_NONNULL_BEGIN
  @param versions the OS Versions to match against.
  @return an NSPredicate.
  */
-+ (NSPredicate *)osVersions:(NSArray<NSString *> *)versions;
++ (NSPredicate *)osVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)versions;
+
+/**
+ Predicate for matching against one of multiple Simulator OS Version Names
+
+ @param versionNames the OS Version Names to match against.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)osVersionsNamed:(NSArray<NSString *> *)versionNames;
 
 /**
  Predicate for matching Simulators against a Configuration.

@@ -14,15 +14,15 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBControlCoreValueTestCase.h"
 
-@interface FBConfigurationTests : FBControlCoreValueTestCase
+@interface FBSimulatorControlValueTypeTests : FBControlCoreValueTestCase
 
 @end
 
-@implementation FBConfigurationTests
+@implementation FBSimulatorControlValueTypeTests
 
 - (void)testVideoConfigurations
 {
-  NSArray *values = @[
+  NSArray<FBFramebufferVideoConfiguration *> *values = @[
     [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsAutorecord | FBFramebufferVideoOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
     [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
   ];
@@ -33,7 +33,7 @@
 
 - (void)testAppLaunchConfigurations
 {
-  NSArray *values = @[
+  NSArray<FBApplicationLaunchConfiguration *> *values = @[
     self.appLaunch1,
     self.appLaunch2,
   ];
@@ -45,7 +45,7 @@
 
 - (void)testAgentLaunchLaunchConfigurations
 {
-  NSArray *values = @[
+  NSArray<FBAgentLaunchConfiguration *> *values = @[
     self.agentLaunch1,
   ];
   [self assertEqualityOfCopy:values];
@@ -56,7 +56,7 @@
 
 - (void)testAgentLaunchConfigurations
 {
-  NSArray *values = @[self.agentLaunch1];
+  NSArray<FBAgentLaunchConfiguration *> *values = @[self.agentLaunch1];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
@@ -64,7 +64,7 @@
 
 - (void)testSimulatorConfigurations
 {
-  NSArray *values = @[
+  NSArray<FBSimulatorConfiguration *> *values = @[
     FBSimulatorConfiguration.defaultConfiguration,
     FBSimulatorConfiguration.iPhone5,
     FBSimulatorConfiguration.iPad2.iOS_8_3
@@ -76,7 +76,7 @@
 
 - (void)testControlConfigurations
 {
-  NSArray *values = @[
+  NSArray<FBSimulatorControlConfiguration *> *values = @[
     [FBSimulatorControlConfiguration
       configurationWithDeviceSetPath:nil
       options:FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart],
@@ -91,7 +91,7 @@
 
 - (void)testLaunchConfigurations
 {
-  NSArray *values = @[
+  NSArray<FBSimulatorLaunchConfiguration *> *values = @[
     [[[FBSimulatorLaunchConfiguration
       withLocaleNamed:@"en_US"]
       withOptions:FBSimulatorLaunchOptionsShowDebugWindow]
@@ -107,11 +107,28 @@
 
 - (void)testDiagnosticQueries
 {
-  NSArray *values = @[
+  NSArray<FBSimulatorDiagnosticQuery *> *values = @[
     [FBSimulatorDiagnosticQuery all],
     [FBSimulatorDiagnosticQuery named:@[@"foo", @"bar", @"baz"]],
     [FBSimulatorDiagnosticQuery filesInApplicationOfBundleID:@"foo.bar.baz" withFilenames:@[@"foo.txt", @"bar.log"]],
     [FBSimulatorDiagnosticQuery crashesOfType:FBCrashLogInfoProcessTypeCustomAgent | FBCrashLogInfoProcessTypeApplication since:[NSDate dateWithTimeIntervalSince1970:100]],
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
+}
+
+- (void)testSimulatorQuery
+{
+  NSArray *values = @[
+    [[FBSimulatorQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E"]] states:@[@(FBSimulatorStateBooted), @(FBSimulatorStateBooting)]],
+    [FBSimulatorQuery allSimulators],
+    [FBSimulatorQuery devices:@[FBSimulatorConfiguration_Device_iPad2.new, FBSimulatorConfiguration_Device_iPadAir.new]],
+    [FBSimulatorQuery osVersions:@[FBSimulatorConfiguration_iOS_9_0.new, FBSimulatorConfiguration_iOS_9_1.new]],
+    [FBSimulatorQuery states:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]],
+    [FBSimulatorQuery states:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]],
+    [FBSimulatorQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E", @"C5579925-158B-4802-96C3-58B564C901C1", @"41862F9E-A8CA-4816-B4C1-251DA57C1143"]],
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];

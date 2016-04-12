@@ -13,6 +13,7 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
+#import "FBSimulatorConfigurationVariants.h"
 #import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorError.h"
 
@@ -46,11 +47,11 @@
 
 + (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error;
 {
-  id<FBSimulatorConfiguration_OS> configOS = FBSimulatorConfiguration.nameToOSVersion[simDevice.runtime.name];
+  id<FBSimulatorConfiguration_OS> configOS = FBSimulatorConfigurationVariants.nameToOSVersion[simDevice.runtime.name];
   if (!configOS) {
     return [[FBSimulatorError describeFormat:@"Could not obtain OS Version for %@, perhaps it is unsupported by FBSimulatorControl", simDevice.runtime.name] fail:error];
   }
-  id<FBSimulatorConfiguration_Device> configDevice = FBSimulatorConfiguration.nameToDevice[simDevice.deviceType.name];
+  id<FBSimulatorConfiguration_Device> configDevice = FBSimulatorConfigurationVariants.nameToDevice[simDevice.deviceType.name];
   if (!configDevice) {
     return [[FBSimulatorError describeFormat:@"Could not obtain Device for for %@, perhaps it is unsupported by FBSimulatorControl", simDevice.deviceType.name] fail:error];
   }
@@ -128,7 +129,7 @@
 {
   NSMutableArray *array = [NSMutableArray array];
   for (SimRuntime *runtime in [self supportedRuntimesForDevice:device]) {
-    id<FBSimulatorConfiguration_OS> os = FBSimulatorConfiguration.nameToOSVersion[runtime.name];
+    id<FBSimulatorConfiguration_OS> os = FBSimulatorConfigurationVariants.nameToOSVersion[runtime.name];
     if (os) {
       [array addObject:os];
     }
