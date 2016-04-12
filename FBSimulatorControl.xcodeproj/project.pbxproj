@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2ACC1E9C1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 2ACC1E9A1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m */; };
+		2ACC1E9D1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h in Headers */ = {isa = PBXBuildFile; fileRef = 2ACC1E9B1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA017F581BD7787300F45E9D /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
 		AA0F6F2A1CA3DCF700926518 /* FBWeakFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -356,6 +358,8 @@
 		1DD70E29A6018C7A00000000 /* CoreGraphics.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		1DD70E29B67B6FA500000000 /* DVTFoundation.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = DVTFoundation.framework; path = ../SharedFrameworks/DVTFoundation.framework; sourceTree = DEVELOPER_DIR; };
 		1DD70E29B6970A5500000000 /* CoreSimulator.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = CoreSimulator.framework; path = Library/PrivateFrameworks/CoreSimulator.framework; sourceTree = DEVELOPER_DIR; };
+		2ACC1E9A1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBSimulatorInteraction+Keychain.m"; sourceTree = "<group>"; };
+		2ACC1E9B1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorInteraction+Keychain.h"; sourceTree = "<group>"; };
 		877123F21BDA797800530B1E /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
 		AA017F4C1BD7784700F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libShimulator.dylib; sourceTree = "<group>"; };
 		AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFrameworkLoader.h; sourceTree = "<group>"; };
@@ -1048,6 +1052,8 @@
 		AA9516DE1C15F54600A89CAD /* Interactions */ = {
 			isa = PBXGroup;
 			children = (
+				2ACC1E9A1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m */,
+				2ACC1E9B1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h */,
 				AA9516E01C15F54600A89CAD /* FBInteraction.h */,
 				AA9516E11C15F54600A89CAD /* FBInteraction.m */,
 				EE12774A1C931BDC00DE52A1 /* FBSimulatorControlOperator.h */,
@@ -1624,6 +1630,7 @@
 				AA9517B61C15F54600A89CAD /* FBSimDeviceWrapper.h in Headers */,
 				AA9517C21C15F60B00A89CAD /* FBCompositeSimulatorEventSink.h in Headers */,
 				AAD51EA31C3AEFEA00A763D0 /* FBSimulatorLaunchConfiguration+Helpers.h in Headers */,
+				2ACC1E9D1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h in Headers */,
 				AA791BA71C63668C00AE49EB /* CDStructures.h in Headers */,
 				AA791BA11C6364F500AE49EB /* FBSimulatorBridge.h in Headers */,
 				AA95175B1C15F54600A89CAD /* FBSimulatorEventSink.h in Headers */,
@@ -1985,6 +1992,7 @@
 				AA95177D1C15F54600A89CAD /* FBSimulator+Helpers.m in Sources */,
 				AA9517B91C15F54600A89CAD /* FBSimulatorError.m in Sources */,
 				AAD51EA01C3ADECA00A763D0 /* FBSimulatorLaunchConfiguration.m in Sources */,
+				2ACC1E9C1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m in Sources */,
 				AA9517861C15F54600A89CAD /* FBSimulatorPool.m in Sources */,
 				AA95176C1C15F54600A89CAD /* FBSimulatorInteraction+Diagnostics.m in Sources */,
 				AA9517981C15F54600A89CAD /* FBCoreSimulatorNotifier.m in Sources */,
