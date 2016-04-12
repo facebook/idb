@@ -71,6 +71,7 @@ public enum DiagnosticFormat : String {
 public enum Action {
   case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
+  case ClearKeychain(String)
   case Create(FBSimulatorConfiguration)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
@@ -145,6 +146,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftBundleIDs == rightBundleIDs
   case (.Boot(let leftConfiguration), .Boot(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
+  case (.ClearKeychain(let leftBundleID), .ClearKeychain(let rightBundleID)):
+    return leftBundleID == rightBundleID
   case (.Create(let leftConfiguration), .Create(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
   case (.Delete, .Delete):

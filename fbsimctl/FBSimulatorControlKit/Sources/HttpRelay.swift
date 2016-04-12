@@ -133,6 +133,13 @@ class HttpRelay : Relay {
     self.httpServer.stop()
   }
 
+  private var clearKeychainRoute: HttpRoute { get {
+    return HttpRoute(method: HttpMethod.POST, endpoint: "clear_keychain") { json in
+      let bundleID = try json.getValue("bundle_id").getString()
+      return Action.ClearKeychain(bundleID)
+    }
+  }}
+
   private var diagnoseRoute: HttpRoute { get {
     return HttpRoute(method: HttpMethod.POST, endpoint: "diagnose") { json in
       let query = try FBSimulatorDiagnosticQuery.inflateFromJSON(json.decode())
@@ -217,6 +224,7 @@ class HttpRelay : Relay {
 
   private var routes: [HttpRoute] { get {
     return [
+      self.clearKeychainRoute,
       self.diagnoseRoute,
       self.launchRoute,
       self.openRoute,

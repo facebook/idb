@@ -15,6 +15,7 @@ public typealias EventReporterSubject = protocol<JSONDescribeable, CustomStringC
 public enum EventName : String {
   case Approve = "approve"
   case Boot = "boot"
+  case ClearKeychain = "clear_keychain"
   case Create = "create"
   case Delete = "delete"
   case Diagnose = "diagnose"

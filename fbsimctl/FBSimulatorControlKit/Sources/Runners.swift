@@ -200,6 +200,10 @@ private struct SimulatorRunner : Runner {
       return SimulatorInteraction(reporter, EventName.Boot, ControlCoreSubject(launchConfiguration)) { interaction in
         interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
       }
+    case .ClearKeychain(let bundleID):
+      return SimulatorInteraction(reporter, EventName.ClearKeychain, bundleID) { interaction in
+        interaction.clearKeychainForApplication(bundleID)
+      }
     case .Delete:
       return SimulatorAction(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
         try simulator.set!.deleteSimulator(simulator)

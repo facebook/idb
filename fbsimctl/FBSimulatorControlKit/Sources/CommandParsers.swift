@@ -290,6 +290,7 @@ extension Action : Parsable {
       .alternative([
         self.approveParser,
         self.bootParser,
+        self.clearKeychainParser,
         self.createParser,
         self.deleteParser,
         self.diagnoseParser,
@@ -319,6 +320,12 @@ extension Action : Parsable {
     return Parser
       .succeeded(EventName.Boot.rawValue, FBSimulatorLaunchConfigurationParser.parser.optional())
       .fmap { Action.Boot($0) }
+  }}
+
+  static var clearKeychainParser: Parser<Action> { get {
+    return Parser
+      .succeeded(EventName.ClearKeychain.rawValue, Parser<Any>.ofBundleID)
+      .fmap { Action.ClearKeychain($0) }
   }}
 
   static var createParser: Parser<Action> { get {
