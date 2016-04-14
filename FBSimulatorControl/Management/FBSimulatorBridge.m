@@ -78,7 +78,7 @@
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"framebuffer" : self.framebuffer.jsonSerializableRepresentation,
+    @"framebuffer" : self.framebuffer.jsonSerializableRepresentation ?: NSNull.null,
     @"hid_port" : @(self.hidPort),
     @"bridge_exists" : @(self.bridge != nil)
   };
