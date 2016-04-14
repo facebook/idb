@@ -65,6 +65,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)devices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices;
 
 /**
+ A Query that matches the given Range.
+
+ @param range the range to match against.
+ @return a new Simulator Query.
+ */
++ (instancetype)range:(NSRange)range;
+- (instancetype)range:(NSRange)range;
+
+/**
  The UDIDs to Match against.
  An Empty Set means that no UDID filtering will occur.
  */

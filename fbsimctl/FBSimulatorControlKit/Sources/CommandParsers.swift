@@ -235,7 +235,7 @@ extension Command : Parsable {
     return Parser
       .ofFourSequenced(
         Configuration.parser,
-        Query.parser.optional(),
+        FBSimulatorQueryParsers.parser.optional(),
         Format.parser.optional(),
         Parser.manyCount(1, Action.parser)
       )
@@ -496,60 +496,6 @@ extension Action : Parsable {
   }}
 }
 
-extension Query : Parsable {
-  public static var parser: Parser<Query> { get {
-    return Parser.alternative([
-      self.allParser,
-      self.unionParser
-    ])
-  }}
-
-  static var allParser: Parser<Query> { get {
-    return Parser<Query>
-      .ofString("all", Query.all)
-  }}
-
-  static var unionParser: Parser<Query> { get {
-    return Parser<Query>.accumilate(1, [
-      self.firstParser,
-      self.uuidParser,
-      self.simulatorStateParser,
-      self.osVersionsParser,
-      self.deviceParser
-    ])
-  }}
-
-  static var firstParser: Parser<Query> { get {
-    return Parser
-      .succeeded("--first", Parser<Any>.ofInt)
-      .fmap { Query.ofCount($0) }
-  }}
-
-  static var uuidParser: Parser<Query> { get {
-    return Parser<Query>
-      .ofUDID
-      .fmap { Query.ofUDIDs([$0.UUIDString]) }
-  }}
-
-  static var simulatorStateParser: Parser<Query> { get {
-    return FBSimulatorState
-      .parser
-      .fmap { Query.ofStates([$0]) }
-  }}
-
-  static var osVersionsParser: Parser<Query> { get {
-    return FBSimulatorConfigurationParser
-      .osVersionParser
-      .fmap { Query.ofOSVersions([ $0.name ]) }
-  }}
-
-  static var deviceParser: Parser<Query> { get {
-    return FBSimulatorConfigurationParser
-      .deviceParser
-      .fmap { Query.ofDevices([ $0.deviceName ]) }
-    }}
-}
-
 extension Keyword : Parsable {
   public static var parser: Parser<Keyword> { get {
     return Parser
@@ -578,6 +524,60 @@ extension DiagnosticFormat : Parsable {
 extension SequenceType where Generator.Element == Keyword {
   public static var parser: Parser<Format> { get {
     return Parser.manyCount(1, Keyword.parser)
+  }}
+}
+
+public struct FBSimulatorQueryParsers {
+  public static var parser: Parser<FBSimulatorQuery> { get {
+    return Parser.alternative([
+      self.allParser,
+      self.unionParser
+    ])
+  }}
+
+  static var allParser: Parser<FBSimulatorQuery> { get {
+    return Parser<FBSimulatorQuery>
+      .ofString("all", FBSimulatorQuery.allSimulators())
+  }}
+
+  static var unionParser: Parser<FBSimulatorQuery> { get {
+    return Parser<FBSimulatorQuery>.accumilate(1, [
+      self.firstParser,
+      self.uuidParser,
+      self.simulatorStateParser,
+      self.osVersionsParser,
+      self.deviceParser
+    ])
+  }}
+
+  static var firstParser: Parser<FBSimulatorQuery> { get {
+    return Parser
+      .succeeded("--first", Parser<Any>.ofInt)
+      .fmap { FBSimulatorQuery.ofCount($0) }
+  }}
+
+  static var uuidParser: Parser<FBSimulatorQuery> { get {
+    return Parser<FBSimulatorQuery>
+      .ofUDID
+      .fmap { FBSimulatorQuery.udids([$0.UUIDString]) }
+  }}
+
+  static var simulatorStateParser: Parser<FBSimulatorQuery> { get {
+    return FBSimulatorState
+      .parser
+      .fmap { FBSimulatorQuery.simulatorStates([$0]) }
+  }}
+
+  static var osVersionsParser: Parser<FBSimulatorQuery> { get {
+    return FBSimulatorConfigurationParser
+      .osVersionParser
+      .fmap { FBSimulatorQuery.osVersions([$0]) }
+  }}
+
+  static var deviceParser: Parser<FBSimulatorQuery> { get {
+    return FBSimulatorConfigurationParser
+      .deviceParser
+      .fmap { FBSimulatorQuery.devices([$0]) }
   }}
 }
 

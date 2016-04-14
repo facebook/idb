@@ -22,7 +22,7 @@ protocol CommandPerformer {
 struct ActionPerformer {
   let commandPerformer: CommandPerformer
   let configuration: Configuration
-  let query: Query?
+  let query: FBSimulatorQuery?
   let format: Format?
 
   func perform(action: Action, reporter: EventReporter) -> CommandResult {

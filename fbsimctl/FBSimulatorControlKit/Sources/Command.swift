@@ -95,7 +95,7 @@ public enum Action {
  The entry point for all commands.
  */
 public indirect enum Command {
-  case Perform(Configuration, [Action], Query?, Format?)
+  case Perform(Configuration, [Action], FBSimulatorQuery?, Format?)
   case Help(OutputOptions, Bool, Command?)
 }
 

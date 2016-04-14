@@ -53,7 +53,7 @@ public class Defaults {
   let logWriter: Writer
   let format: Format
   let configuration: Configuration
-  private var query: Query?
+  private var query: FBSimulatorQuery?
 
   init(logWriter: Writer, format: Format, configuration: Configuration) {
     self.logWriter = logWriter
@@ -61,13 +61,13 @@ public class Defaults {
     self.configuration = configuration
   }
 
-  func updateLastQuery(query: Query) {
+  func updateLastQuery(query: FBSimulatorQuery) {
     // TODO: Create the CLI equivalent of the configuration and save.
     let _ = Defaults.queryHistoryLocation(configuration)
     self.query = query
   }
 
-  func queryForAction(action: Action) -> Query? {
+  func queryForAction(action: Action) -> FBSimulatorQuery? {
     // Always use the last query, if present
     if let query = self.query {
       return query
@@ -85,11 +85,11 @@ public class Defaults {
       case .Search:
         fallthrough
       case .Diagnose:
-        return Query.all
+        return FBSimulatorQuery.allSimulators()
       case .Approve:
-        return Query.ofStates([.Shutdown])
+        return FBSimulatorQuery.simulatorStates([.Shutdown])
       default:
-        return Query.ofStates([.Booted])
+        return FBSimulatorQuery.simulatorStates([.Booted])
     }
   }
 

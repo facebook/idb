@@ -22,6 +22,10 @@
 
 #pragma mark Initializers
 
+- (instancetype)init
+{
+  return [self initWithUDIDs:NSSet.new states:NSSet.new osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
+}
 
 - (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSSet<NSNumber *> *)states osVersions:(NSSet<id<FBSimulatorConfiguration_OS>> *)osVersions devices:(NSSet<id<FBSimulatorConfiguration_Device>> *)devices range:(NSRange)range
 {
@@ -43,7 +47,7 @@
 
 + (instancetype)allSimulators
 {
-  return [[self alloc] initWithUDIDs:NSSet.new states:NSSet.new osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
+  return [self new];
 }
 
 + (instancetype)udids:(NSArray<NSString *> *)udids
@@ -102,6 +106,20 @@
   return [[self.class alloc] initWithUDIDs:self.udids states:self.states osVersions:self.osVersions devices:[self.devices setByAddingObjectsFromArray:devices] range:self.range];
 }
 
++ (instancetype)range:(NSRange)range
+{
+  return [self.allSimulators range:range];
+}
+
+- (instancetype)range:(NSRange)range
+{
+  if (range.location == NSNotFound && range.length == 0) {
+    return self;
+  }
+
+  return [[self.class alloc] initWithUDIDs:self.udids states:self.states osVersions:self.osVersions devices:self.devices range:range];
+}
+
 - (NSArray<FBSimulator *> *)perform:(FBSimulatorSet *)set
 {
   NSMutableArray<NSPredicate *> *predicates = [NSMutableArray array];
@@ -120,7 +138,11 @@
 
   NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:predicates];
   NSArray<FBSimulator *> *simulators = [set.allSimulators filteredArrayUsingPredicate:predicate];
-  return simulators;
+  if (self.range.location == NSNotFound && self.range.length == 0) {
+    return simulators;
+  }
+  NSRange range = NSIntersectionRange(self.range, NSMakeRange(0, simulators.count - 1));
+  return [simulators subarrayWithRange:range];
 }
 
 #pragma mark NSCopying

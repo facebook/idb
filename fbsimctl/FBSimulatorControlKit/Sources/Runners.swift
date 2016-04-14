@@ -97,7 +97,7 @@ struct ActionRunner : Runner {
   let control: FBSimulatorControl
   let defaults: Defaults
   let format: Format?
-  let query: Query?
+  let query: FBSimulatorQuery?
 
   func run(reporter: EventReporter) -> CommandResult {
     switch self.action {
@@ -107,7 +107,7 @@ struct ActionRunner : Runner {
       return CreationRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, simulatorConfiguration: configuration).run(reporter)
     default:
       do {
-        let simulators = try Query.perform(self.control.set, query: self.query, defaults: self.defaults, action: self.action)
+        let simulators = try FBSimulatorQuery.perform(self.control.set, query: self.query, defaults: self.defaults, action: self.action)
         let format = self.format ?? defaults.format
         let runners: [Runner] = simulators.map { simulator in
           SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
@@ -130,7 +130,7 @@ struct ServerRunner : Runner, CommandPerformer {
   let control: FBSimulatorControl
   let defaults: Defaults
   let format: Format?
-  let query: Query?
+  let query: FBSimulatorQuery?
   let serverConfiguration: Server
 
   func run(reporter: EventReporter) -> CommandResult {
@@ -163,7 +163,7 @@ struct CreationRunner : Runner {
     do {
       reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
-      self.defaults.updateLastQuery(Query.ofUDIDs([simulator.udid]))
+      self.defaults.updateLastQuery(FBSimulatorQuery.udids([simulator.udid]))
       reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success
     } catch let error as NSError {
