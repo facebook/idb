@@ -52,11 +52,11 @@ private class HttpEventReporter : EventReporter, JSONDescribeable {
 }
 
 extension ActionPerformer {
-  func dispatchAction(action: Action) -> HttpResponse {
+  func dispatchAction(action: Action, queryOverride: FBSimulatorQuery? = nil, formatOverride: Format? = nil) -> HttpResponse {
     let reporter = HttpEventReporter()
     var result = CommandResult.Success
     dispatch_sync(dispatch_get_main_queue()) {
-      result = self.perform(action, reporter: reporter)
+      result = self.perform(reporter, action: action, queryOverride: queryOverride)
     }
 
     return reporter.interactionResultResponse(result)
@@ -77,8 +77,10 @@ struct HttpRoute {
     let actionParser = self.actionParser
     let handler: Swifter.HttpRequest -> Swifter.HttpResponse = { request in
       do {
-        let action = try HttpRoute.actionFromRequest(request, actionParser: actionParser)
-        return performer.dispatchAction(action)
+        let json = try HttpRoute.jsonBodyFromRequest(request)
+        let action = try actionParser(json)
+        let query = try? FBSimulatorQuery.inflateFromJSON(json.getValue("simulators").decode())
+        return performer.dispatchAction(action, queryOverride: query)
       } catch let error as JSONError {
         return HttpEventReporter.errorResponse(error.description)
       } catch let error as NSError {
@@ -96,11 +98,10 @@ struct HttpRoute {
     }
   }
 
-  static func actionFromRequest(request: HttpRequest, actionParser: JSON throws -> Action) throws -> Action {
+  static func jsonBodyFromRequest(request: HttpRequest) throws -> JSON {
     let body = request.body
     let data = NSData(bytes: body, length: body.count)
-    let json = try JSON.fromData(data)
-    return try actionParser(json)
+    return try JSON.fromData(data)
   }
 }
 

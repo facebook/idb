@@ -39,22 +39,6 @@ extension String : CustomStringConvertible {
   }}
 }
 
-public enum QueryError : CustomStringConvertible, ErrorType {
-  case NoMatches
-  case NoQueryProvided
-  case PoolIsEmpty
-
-  public var description: String {
-    get {
-      switch self {
-      case .NoMatches: return "No Matching Simulators"
-      case .NoQueryProvided: return "No Query Provided"
-      case .PoolIsEmpty: return "Device Set is Empty"
-      }
-    }
-  }
-}
-
 extension FBSimulatorQuery {
   public static func simulatorStates(states: [FBSimulatorState]) -> FBSimulatorQuery {
     return self.allSimulators().simulatorStates(states)
@@ -70,21 +54,6 @@ extension FBSimulatorQuery {
 
   public func ofCount(count: Int) -> FBSimulatorQuery {
     return self.range(NSRange(location: 0, length: count))
-  }
-
-  static func perform(set: FBSimulatorSet, query: FBSimulatorQuery?, defaults: Defaults, action: Action) throws -> [FBSimulator] {
-    guard let query = query ?? defaults.queryForAction(action) else {
-      throw QueryError.NoQueryProvided
-    }
-    if set.allSimulators.count == 0 {
-      throw QueryError.PoolIsEmpty
-    }
-    let matching = query.perform(set)
-    if matching.count == 0 {
-      throw QueryError.NoMatches
-    }
-    defaults.updateLastQuery(query)
-    return matching
   }
 }
 

@@ -70,6 +70,7 @@ private struct CommandRunner : Runner {
       do {
         let defaults = try self.defaults ?? Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
         let control = try self.control ?? defaults.configuration.buildSimulatorControl()
+        let format = format ?? defaults.format
         let runner = SequenceRunner(runners:
             actions.map { action in
               return ActionRunner(action: action, configuration: configuration, control: control, defaults: defaults, format: format, query: query)
@@ -96,31 +97,46 @@ struct ActionRunner : Runner {
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
-  let format: Format?
+  let format: Format
   let query: FBSimulatorQuery?
 
   func run(reporter: EventReporter) -> CommandResult {
     switch self.action {
     case .Listen(let server):
-      return ServerRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, query: self.query, serverConfiguration: server).run(reporter)
+      return ServerRunner(
+        configuration: self.configuration,
+        control: control,
+        defaults: self.defaults,
+        format: self.format,
+        query: self.query,
+        serverConfiguration: server
+      ).run(reporter)
     case .Create(let configuration):
-      return CreationRunner(configuration: self.configuration, control: control, defaults: self.defaults, format: self.format, simulatorConfiguration: configuration).run(reporter)
+      return CreationRunner(
+        configuration: self.configuration,
+        control: control,
+        defaults: self.defaults,
+        simulatorConfiguration: configuration
+      ).run(reporter)
     default:
-      do {
-        let simulators = try FBSimulatorQuery.perform(self.control.set, query: self.query, defaults: self.defaults, action: self.action)
-        let format = self.format ?? defaults.format
-        let runners: [Runner] = simulators.map { simulator in
-          SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
-        }
-        return SequenceRunner(runners: runners).run(reporter)
-      } catch QueryError.PoolIsEmpty {
-        reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "Pool is empty")
+      if control.set.allSimulators.count == 0 {
+        reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Devices in Device Set")
         return CommandResult.Success
-      } catch let error as QueryError {
-        return CommandResult.Failure(error.description)
-      } catch {
-        return CommandResult.Failure("Unknown Query Error")
       }
+      guard let query = self.query ?? self.defaults.queryForAction(self.action) else {
+        return CommandResult.Failure("No Query Provided")
+      }
+      let simulators = query.perform(self.control.set)
+      if simulators.count == 0 {
+        reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Matching Devices in Set")
+        return CommandResult.Success
+      }
+      let runners: [Runner] = simulators.map { simulator in
+        SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
+      }
+
+      defaults.updateLastQuery(query)
+      return SequenceRunner(runners: runners).run(reporter)
     }
   }
 }
@@ -135,13 +151,15 @@ struct ServerRunner : Runner, CommandPerformer {
 
   func run(reporter: EventReporter) -> CommandResult {
     let relayReporter = RelayReporter(reporter: reporter, subject: self.serverConfiguration)
-    switch serverConfiguration {
+    switch self.serverConfiguration {
     case .StdIO:
       StdIORelay(outputOptions: self.configuration.outputOptions, performer: self, reporter: relayReporter).start()
     case .Socket(let portNumber):
       SocketRelay(outputOptions: self.configuration.outputOptions, portNumber: portNumber, performer: self, reporter: relayReporter).start()
     case .Http(let portNumber):
-      let performer = ActionPerformer(commandPerformer: self, configuration: self.configuration, query: self.query, format: self.format)
+      let query = self.query ?? self.defaults.queryForAction(Action.Listen(self.serverConfiguration))!
+      let format = self.format ?? self.defaults.format
+      let performer = ActionPerformer(commandPerformer: self, configuration: self.configuration, query: query, format: format)
       HttpRelay(portNumber: portNumber, performer: performer, reporter: relayReporter).start()
     }
     return .Success
@@ -156,7 +174,6 @@ struct CreationRunner : Runner {
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
-  let format: Format?
   let simulatorConfiguration: FBSimulatorConfiguration
 
   func run(reporter: EventReporter) -> CommandResult {
