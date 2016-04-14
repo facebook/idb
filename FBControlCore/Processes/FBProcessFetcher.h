@@ -18,7 +18,7 @@
  Sharing a Query object and guaranteeing serialization of method calls
  can be an effective way to reduce the number of allocations that are required.
  */
-@interface FBProcessQuery : NSObject
+@interface FBProcessFetcher : NSObject
 
 /**
  A Query for obtaining all of the process information for a given processIdentifier.

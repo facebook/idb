@@ -22,7 +22,7 @@
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
 #import "FBFramebuffer.h"
-#import "FBProcessQuery+Simulators.h"
+#import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -199,7 +199,7 @@
   }
 
   // Expect the launch info for the process to exist.
-  FBProcessInfo *containerApplication = [self.simulator.processQuery simulatorApplicationProcessForSimDevice:self.simulator.device];
+  FBProcessInfo *containerApplication = [self.simulator.processFetcher simulatorApplicationProcessForSimDevice:self.simulator.device];
   if (!containerApplication) {
     return [[[FBSimulatorError
       describe:@"Could not obtain process info for container application"]
@@ -356,8 +356,8 @@
 
 - (FBProcessInfo *)launchdSimWithAllRequiredProcesses:(NSError **)error
 {
-  FBProcessQuery *processQuery = self.simulator.processQuery;
-  FBProcessInfo *launchdSimProcess = [processQuery launchdSimProcessForSimDevice:self.simulator.device];
+  FBProcessFetcher *processFetcher = self.simulator.processFetcher;
+  FBProcessInfo *launchdSimProcess = [processFetcher launchdSimProcessForSimDevice:self.simulator.device];
   if (!launchdSimProcess) {
     return [[[FBSimulatorError
       describe:@"Could not obtain process info for launchd_sim process"]
@@ -369,7 +369,7 @@
   // Waitng for all required processes to start
   NSSet *requiredProcessNames = self.simulator.requiredProcessNamesToVerifyBooted;
   BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-    NSSet *runningProcessNames = [NSSet setWithArray:[[processQuery subprocessesOf:launchdSimProcess.processIdentifier] valueForKey:@"processName"]];
+    NSSet *runningProcessNames = [NSSet setWithArray:[[processFetcher subprocessesOf:launchdSimProcess.processIdentifier] valueForKey:@"processName"]];
     return [requiredProcessNames isSubsetOfSet:runningProcessNames];
   }];
   if (!didStartAllRequiredProcesses) {

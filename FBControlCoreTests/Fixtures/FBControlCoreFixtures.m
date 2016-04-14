@@ -75,7 +75,7 @@
 
 - (FBProcessInfo *)launchCtlProcess
 {
-  return [[FBProcessQuery new] processInfoFor:NSProcessInfo.processInfo.processIdentifier];
+  return [[FBProcessFetcher new] processInfoFor:NSProcessInfo.processInfo.processIdentifier];
 }
 
 @end

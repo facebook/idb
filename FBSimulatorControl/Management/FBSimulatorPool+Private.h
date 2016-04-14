@@ -9,7 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulatorPool.h>
 
-@class FBProcessQuery;
+@class FBProcessFetcher;
 
 @interface FBSimulatorPool ()
 

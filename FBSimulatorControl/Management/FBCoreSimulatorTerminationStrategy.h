@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessQuery;
+@class FBProcessFetcher;
 @protocol FBControlCoreLogger;
 
 /**
@@ -20,10 +20,10 @@
 /**
  Creates and returns a new Core Simulator Termination Strategy from the arguments.
 
- @param processQuery the Process Query object to use.
+ @param processFetcher the Process Query object to use.
  @param logger the logger to use.
  */
-+ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)withprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Kills all of the 'com.apple.CoreSimulatorService' processes that are not used by the current `FBSimulatorControl` configuration.

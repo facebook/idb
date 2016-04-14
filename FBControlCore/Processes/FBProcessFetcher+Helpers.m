@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBProcessQuery+Helpers.h"
+#import "FBProcessFetcher+Helpers.h"
 
 #import <Cocoa/Cocoa.h>
 
@@ -15,7 +15,7 @@
 #import "FBControlCoreError.h"
 #import "NSRunLoop+FBControlCore.h"
 
-@implementation FBProcessQuery (Helpers)
+@implementation FBProcessFetcher (Helpers)
 
 - (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout
 {

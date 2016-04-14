@@ -14,7 +14,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessQuery+Simulators.h"
+#import "FBProcessFetcher+Simulators.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorApplication.h"
@@ -36,7 +36,7 @@
 
 - (FBSimDeviceWrapper *)simDeviceWrapper
 {
-  return [FBSimDeviceWrapper withSimulator:self configuration:self.set.configuration processQuery:self.processQuery];
+  return [FBSimDeviceWrapper withSimulator:self configuration:self.set.configuration processFetcher:self.processFetcher];
 }
 
 - (FBSimulatorLaunchCtl *)launchctl
@@ -55,7 +55,7 @@
   if (!launchdSim) {
     return @[];
   }
-  return [self.processQuery subprocessesOf:launchdSim.processIdentifier];
+  return [self.processFetcher subprocessesOf:launchdSim.processIdentifier];
 }
 
 #pragma mark Methods
@@ -253,7 +253,7 @@
 
 + (NSPredicate *)predicateForApplicationProcessOfApplication:(FBSimulatorApplication *)application
 {
-  NSPredicate *launchPathPredicate = [FBProcessQuery processesWithLaunchPath:application.binary.path];
+  NSPredicate *launchPathPredicate = [FBProcessFetcher processesWithLaunchPath:application.binary.path];
   NSPredicate *environmentPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSProcessInfo *processInfo, NSDictionary *_) {
     return [processInfo.environment[@"XPC_SERVICE_NAME"] containsString:application.bundleID];
   }];

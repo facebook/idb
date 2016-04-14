@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBProcessQuery.h"
+#import "FBProcessFetcher.h"
 
 #include <libproc.h>
 #include <limits.h>
@@ -152,7 +152,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   return proc_name(processIdentifier, buffer, (uint32_t) bufferSize) > 1;
 }
 
-@interface FBProcessQuery ()
+@interface FBProcessFetcher ()
 
 @property (nonatomic, assign, readonly) size_t argumentBufferSize;
 @property (nonatomic, assign, readonly) char *argumentBuffer;
@@ -162,7 +162,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
 
 @end
 
-@implementation FBProcessQuery
+@implementation FBProcessFetcher
 
 #pragma mark Lifecycle
 

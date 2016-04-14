@@ -22,8 +22,8 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBProcessInfo.h>
-#import <FBControlCore/FBProcessQuery+Helpers.h>
-#import <FBControlCore/FBProcessQuery.h>
+#import <FBControlCore/FBProcessFetcher+Helpers.h>
+#import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBTask+Private.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskExecutor+Convenience.h>

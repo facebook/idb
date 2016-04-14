@@ -19,7 +19,7 @@
 #import <XCTestBootstrap/FBTestManager.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBProcessQuery+Simulators.h"
+#import "FBProcessFetcher+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
@@ -37,7 +37,7 @@
 @interface FBSimulatorTerminationStrategy ()
 
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
@@ -47,15 +47,15 @@
 
 #pragma mark Initialization
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessQuery:processQuery logger:logger];
-  return [[self alloc] initWithConfiguration:configuration processQuery:processQuery processTerminationStrategy:processTerminationStrategy logger:logger];
+  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withprocessFetcher:processFetcher logger:logger];
+  return [[self alloc] initWithConfiguration:configuration processFetcher:processFetcher processTerminationStrategy:processTerminationStrategy logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
 {
-  NSParameterAssert(processQuery);
+  NSParameterAssert(processFetcher);
   NSParameterAssert(configuration);
   NSParameterAssert(processTerminationStrategy);
 
@@ -65,7 +65,7 @@
   }
 
   _configuration = configuration;
-  _processQuery = processQuery;
+  _processFetcher = processFetcher;
   _logger = logger;
   _processTerminationStrategy = processTerminationStrategy;
 
@@ -94,7 +94,7 @@
   for (FBSimulator *simulator in simulators) {
     // Get some preconditions
     NSError *innerError = nil;
-    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess ?: [self.processQuery launchdSimProcessForSimDevice:simulator.device];
+    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess ?: [self.processFetcher launchdSimProcessForSimDevice:simulator.device];
 
     // The Bridge should also be tidied up if one exists.
     FBSimulatorBridge *bridge = simulator.bridge;
@@ -116,7 +116,7 @@
 
     // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
     // This prevents 'Zombie' Simulator.app from existing.
-    FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processQuery simulatorApplicationProcessForSimDevice:simulator.device];
+    FBProcessInfo *simulatorProcess = simulator.containerApplication ?: [self.processFetcher simulatorApplicationProcessForSimDevice:simulator.device];
     if (simulatorProcess) {
       [self.logger.debug logFormat:@"Simulator %@ has a Simulator.app Process %@, terminating it now", simulator.shortDescription, simulatorProcess];
       if (![self.processTerminationStrategy killProcess:simulatorProcess error:&innerError]) {
@@ -158,8 +158,8 @@
 {
   NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
     [NSCompoundPredicate andPredicateWithSubpredicates:@[
-      [FBProcessQuery simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
-      [FBProcessQuery simulatorProcessesLaunchedBySimulatorControl]
+      [FBProcessFetcher simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
+      [FBProcessFetcher simulatorProcessesLaunchedBySimulatorControl]
     ]
   ]];
 
@@ -179,7 +179,7 @@
 
 - (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
 {
-  NSArray *processes = [self.processQuery.simulatorProcesses filteredArrayUsingPredicate:predicate];
+  NSArray *processes = [self.processFetcher.simulatorProcesses filteredArrayUsingPredicate:predicate];
   for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
     if (![self.processTerminationStrategy killProcess:process error:error]) {

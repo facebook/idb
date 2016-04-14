@@ -17,7 +17,7 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBDispatchSourceNotifier.h"
-#import "FBProcessQuery+Simulators.h"
+#import "FBProcessFetcher+Simulators.h"
 #import "FBSimulatorBridge.h"
 
 @interface FBSimulatorEventRelay ()
@@ -30,7 +30,7 @@
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
 
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
-@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) SimDevice *simDevice;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary *processTerminationNotifiers;
@@ -40,7 +40,7 @@
 
 @implementation FBSimulatorEventRelay
 
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice processQuery:(FBProcessQuery *)processQuery sink:(id<FBSimulatorEventSink>)sink
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink
 {
   self = [super init];
   if (!self) {
@@ -49,14 +49,14 @@
 
   _sink = sink;
   _simDevice = simDevice;
-  _processQuery = processQuery;
+  _processFetcher = processFetcher;
 
   _processTerminationNotifiers = [NSMutableDictionary dictionary];
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
 
-  _launchdSimProcess = [processQuery launchdSimProcessForSimDevice:simDevice];
-  _containerApplication = [processQuery simulatorApplicationProcessForSimDevice:simDevice];
+  _launchdSimProcess = [processFetcher launchdSimProcessForSimDevice:simDevice];
+  _containerApplication = [processFetcher simulatorApplicationProcessForSimDevice:simDevice];
 
   [self registerSimulatorLifecycleHandlers];
   [self createNotifierForSimDevice:simDevice];
@@ -279,7 +279,7 @@
     return;
   }
 
-  FBProcessInfo *launchdSim = [self.processQuery launchdSimProcessForSimDevice:self.simDevice];
+  FBProcessInfo *launchdSim = [self.processFetcher launchdSimProcessForSimDevice:self.simDevice];
   if (!launchdSim) {
     return;
   }
@@ -322,7 +322,7 @@
   // This Environment Variable exists to allow interested parties to know the UDID of the Launched Simulator,
   // without having to inspect the Simulator Application's launchd_sim first.
   NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  FBProcessInfo *simulatorProcess = [self.processQuery processInfoFor:launchedApplication.processIdentifier];
+  FBProcessInfo *simulatorProcess = [self.processFetcher processInfoFor:launchedApplication.processIdentifier];
   if (![simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID] isEqual:self.simDevice.UDID.UUIDString]) {
     return;
   }

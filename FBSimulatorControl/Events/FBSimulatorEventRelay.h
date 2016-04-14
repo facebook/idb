@@ -9,7 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
-@class FBProcessQuery;
+@class FBProcessFetcher;
 
 /**
  Automatically subscribes to event sources that create Simulator Events passively.
@@ -24,10 +24,10 @@
  The Designated Initializer.
 
  @param simDevice the SimDevice to relay events for.
- @param processQuery the Process Query for obtaining process information.
+ @param processFetcher the Process Query for obtaining process information.
  @param sink the sink to forward to.
  */
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice processQuery:(FBProcessQuery *)processQuery sink:(id<FBSimulatorEventSink>)sink;
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink;
 
 /**
  The current Simulator Launch Info.

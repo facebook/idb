@@ -7,15 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBControlCore/FBProcessQuery.h>
+#import <FBControlCore/FBProcessFetcher.h>
 
 @class FBProcessInfo;
 @class NSRunningApplication;
 
 /**
- Higher-Level wrappers around FBProcessQuery
+ Higher-Level wrappers around FBProcessFetcher
  */
-@interface FBProcessQuery (Helpers)
+@interface FBProcessFetcher (Helpers)
 
 /**
  A Query for obtaining all of the process information for a given processIdentifier, with a timeout.

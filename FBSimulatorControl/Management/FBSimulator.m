@@ -45,13 +45,13 @@
     initWithDevice:device
     configuration:configuration ?: [FBSimulatorConfiguration inferSimulatorConfigurationFromDevice:device error:nil]
     set:set
-    query:set.processQuery
+    processFetcher:set.processFetcher
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
     logger:set.logger]
     attachEventSinkComposition];
 }
 
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -61,7 +61,7 @@
   _device = device;
   _configuration = configuration;
   _set = set;
-  _processQuery = query;
+  _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;
 
@@ -78,7 +78,7 @@
   FBSimulatorResourceManager *resourceSink = [FBSimulatorResourceManager new];
 
   FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink, diagnosticsSink, mutableSink, resourceSink]];
-  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device processQuery:self.processQuery sink:compositeSink];
+  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device processFetcher:self.processFetcher sink:compositeSink];
 
   _historyGenerator = historyGenerator;
   _eventRelay = relay;

@@ -24,7 +24,7 @@
 @interface FBSimDeviceWrapper ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBProcessQuery *query;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 
 - (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error;
 
@@ -111,22 +111,22 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher
 {
   BOOL timeoutResiliance = (configuration.options & FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance) == FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance;
   return timeoutResiliance
-    ? [[FBSimDeviceWrapper_TimeoutResiliance alloc] initWithSimulator:simulator processQuery:processQuery]
-    : [[FBSimDeviceWrapper alloc] initWithSimulator:simulator processQuery:processQuery];
+    ? [[FBSimDeviceWrapper_TimeoutResiliance alloc] initWithSimulator:simulator processFetcher:processFetcher]
+    : [[FBSimDeviceWrapper alloc] initWithSimulator:simulator processFetcher:processFetcher];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator processQuery:(FBProcessQuery *)query
+- (instancetype)initWithSimulator:(FBSimulator *)simulator processFetcher:(FBProcessFetcher *)processFetcher
 {
   if (!(self = [self init])) {
     return nil;
   }
 
   _simulator = simulator;
-  _query = query;
+  _processFetcher = processFetcher;
 
   return self;
 }
@@ -284,7 +284,7 @@
     return nil;
   }
 
-  FBProcessInfo *processInfo = [self.query processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  FBProcessInfo *processInfo = [self.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
   if (!processInfo) {
     return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
   }

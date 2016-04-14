@@ -26,7 +26,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 /**
  Extension for obtaining Simulator Process information.
  */
-@interface FBProcessQuery (Simulators)
+@interface FBProcessFetcher (Simulators)
 
 #pragma mark Process Fetching
 

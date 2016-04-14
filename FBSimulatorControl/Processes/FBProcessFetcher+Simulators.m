@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBProcessQuery+Simulators.h"
+#import "FBProcessFetcher+Simulators.h"
 
 #import <CoreSimulator/SimDevice.h>
 
@@ -17,7 +17,7 @@
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBControlCore_SIM_UDID";
 
-@implementation FBProcessQuery (Simulators)
+@implementation FBProcessFetcher (Simulators)
 
 #pragma mark Process Fetching
 
@@ -42,7 +42,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 - (FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice
 {
   return [[[self simulatorProcesses]
-    filteredArrayUsingPredicate:[FBProcessQuery simulatorProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
+    filteredArrayUsingPredicate:[FBProcessFetcher simulatorProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
     firstObject];
 }
 
@@ -56,7 +56,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 - (FBProcessInfo *)launchdSimProcessForSimDevice:(SimDevice *)simDevice
 {
   return [[[self launchdSimProcesses]
-    filteredArrayUsingPredicate:[FBProcessQuery launchdSimProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
+    filteredArrayUsingPredicate:[FBProcessFetcher launchdSimProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
     firstObject];
 }
 

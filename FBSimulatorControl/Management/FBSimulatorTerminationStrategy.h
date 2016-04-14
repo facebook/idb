@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessQuery;
+@class FBProcessFetcher;
 @class FBSimulator;
 @class FBSimulatorControlConfiguration;
 
@@ -24,11 +24,11 @@
  Creates a FBSimulatorTerminationStrategy using the provided configuration.
 
  @param configuration the Configuration of FBSimulatorControl.
- @param processQuery the process query object to use. If nil, one will be created
+ @param processFetcher the process query object to use. If nil, one will be created
  @param logger the Logger to log all activities on.
  @return a configured FBSimulatorTerminationStrategy instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Kills the provided Simulators.

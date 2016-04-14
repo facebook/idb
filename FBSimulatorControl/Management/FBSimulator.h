@@ -14,8 +14,8 @@
 @protocol FBSimulatorEventSink;
 @protocol FBControlCoreLogger;
 @class FBControlCoreLogger;
+@class FBProcessFetcher;
 @class FBProcessInfo;
-@class FBProcessQuery;
 @class FBSimulatorBridge;
 @class FBSimulatorConfiguration;
 @class FBSimulatorDiagnostics;

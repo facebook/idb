@@ -12,7 +12,7 @@
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
 #import "FBProcessInfo.h"
-#import "FBProcessQuery.h"
+#import "FBProcessFetcher.h"
 
 NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 
@@ -137,11 +137,11 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return self;
 }
 
-- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier query:(FBProcessQuery *)query
+- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher
 {
   return [self
     extraInfo:[NSString stringWithFormat:@"%d_process", processIdentifier]
-    value:[query processInfoFor:processIdentifier] ?: @"No Process Info"];
+    value:[processFetcher processInfoFor:processIdentifier] ?: @"No Process Info"];
 }
 
 - (instancetype)logger:(id<FBControlCoreLogger>)logger

@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBProcessQuery;
+@class FBProcessFetcher;
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
@@ -101,9 +101,9 @@
 @property (nonatomic, strong, readonly) SimDeviceSet *deviceSet;
 
 /**
- The FBProcessQuery that is used to obtain Simulator Process Information.
+ The FBProcessFetcher that is used to obtain Simulator Process Information.
  */
-@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 
 /**
  An NSArray<FBSimulator> of all Simulators in the Set.

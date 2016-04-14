@@ -54,7 +54,7 @@
   FBProcessInfo *containerApplication = simulator.containerApplication;
   XCTAssertNotNil(containerApplication);
 
-  NSRunningApplication *workspaceApplication = [simulator.processQuery runningApplicationForProcess:containerApplication];
+  NSRunningApplication *workspaceApplication = [simulator.processFetcher runningApplicationForProcess:containerApplication];
   XCTAssertNotNil(workspaceApplication);
   [workspaceApplication forceTerminate];
 

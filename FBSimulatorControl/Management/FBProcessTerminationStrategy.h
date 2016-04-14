@@ -10,8 +10,8 @@
 #import <Foundation/Foundation.h>
 
 @protocol FBControlCoreLogger;
+@class FBProcessFetcher;
 @class FBProcessInfo;
-@class FBProcessQuery;
 
 /**
  An Option Set for Process Termination.
@@ -40,20 +40,20 @@ typedef struct {
  Creates and returns a strategy for the given configuration.
 
  @param configuration the configuration to use in the strategy.
- @param processQuery the Process Query object to use.
+ @param processFetcher the Process Query object to use.
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Creates and returns a strategy with the default configuration.
 
- @param processQuery the Process Query object to use.
+ @param processFetcher the Process Query object to use.
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)withprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Terminates a Process of the provided Process Info.

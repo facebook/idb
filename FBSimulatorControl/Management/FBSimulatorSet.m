@@ -59,7 +59,7 @@
   _configuration = configuration;
 
   _inflatedSimulators = [NSMutableDictionary dictionary];
-  _processQuery = [FBProcessQuery new];
+  _processFetcher = [FBProcessFetcher new];
 
   return self;
 }
@@ -371,12 +371,12 @@
 
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processQuery:self.processQuery logger:self.logger];
+  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
 }
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
 {
-  return [FBCoreSimulatorTerminationStrategy withProcessQuery:self.processQuery logger:self.logger];
+  return [FBCoreSimulatorTerminationStrategy withprocessFetcher:self.processFetcher logger:self.logger];
 }
 
 @end

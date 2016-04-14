@@ -11,7 +11,7 @@
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
 @class FBMutableSimulatorEventSink;
-@class FBProcessQuery;
+@class FBProcessFetcher;
 @class FBSimulatorEventRelay;
 @class FBSimulatorHistoryGenerator;
 @class FBSimulatorResourceManager;
@@ -23,12 +23,12 @@
 @property (nonatomic, strong, readonly) FBSimulatorHistoryGenerator *historyGenerator;
 @property (nonatomic, strong, readonly) FBMutableSimulatorEventSink *mutableSink;
 @property (nonatomic, strong, readonly) FBSimulatorResourceManager *resourceSink;
-@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
 @property (nonatomic, weak, readwrite) FBSimulatorPool *pool;
 
 + (instancetype)fromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set;
-- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set query:(FBProcessQuery *)query auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(id<FBControlCoreLogger>)logger;
 
 @end

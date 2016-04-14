@@ -11,12 +11,12 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessQuery+Simulators.h"
+#import "FBProcessFetcher+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
 
 @interface FBCoreSimulatorTerminationStrategy ()
 
-@property (nonatomic, strong, readonly) FBProcessQuery *processQuery;
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
@@ -26,21 +26,21 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
++ (instancetype)withprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithProcessQuery:processQuery logger:logger];
+  return [[self alloc] initWithprocessFetcher:processFetcher logger:logger];
 }
 
-- (instancetype)initWithProcessQuery:(FBProcessQuery *)processQuery logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _processQuery = processQuery;
+  _processFetcher = processFetcher;
   _logger = logger;
-  _processTerminationStrategy = [FBProcessTerminationStrategy withProcessQuery:processQuery logger:logger];
+  _processTerminationStrategy = [FBProcessTerminationStrategy withprocessFetcher:processFetcher logger:logger];
 
   return self;
 }
@@ -50,9 +50,9 @@
 - (BOOL)killSpuriousCoreSimulatorServicesWithError:(NSError **)error
 {
   NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
-    [FBProcessQuery coreSimulatorProcessesForCurrentXcode]
+    [FBProcessFetcher coreSimulatorProcessesForCurrentXcode]
   ];
-  NSArray *processes = [[self.processQuery coreSimulatorServiceProcesses] filteredArrayUsingPredicate:predicate];
+  NSArray *processes = [[self.processFetcher coreSimulatorServiceProcesses] filteredArrayUsingPredicate:predicate];
 
   if (processes.count == 0) {
     [self.logger.debug log:@"There are no spurious CoreSimulatorService processes to kill"];

@@ -15,7 +15,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBProcessLaunchConfiguration.h"
-#import "FBProcessQuery+Simulators.h"
+#import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
@@ -96,7 +96,7 @@
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess;
-    pid_t ppid = [simulator.processQuery parentOf:process.processIdentifier];
+    pid_t ppid = [simulator.processFetcher parentOf:process.processIdentifier];
     if (launchdSimProcess.processIdentifier != ppid) {
       return [[FBSimulatorError
         describeFormat:@"Process %@ has parent %d but should have parent %@", process.shortDescription, ppid, launchdSimProcess.shortDescription]
@@ -114,7 +114,7 @@
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBProcessInfo *processInfo = [[[simulator
       launchdSimSubprocesses]
-      filteredArrayUsingPredicate:[FBProcessQuery processesForBinary:binary]]
+      filteredArrayUsingPredicate:[FBProcessFetcher processesForBinary:binary]]
       firstObject];
 
     if (!processInfo) {
