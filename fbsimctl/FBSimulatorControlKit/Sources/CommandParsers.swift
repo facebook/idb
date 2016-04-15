@@ -191,7 +191,7 @@ extension Configuration : Parsable {
     let outputOptionsParsers = OutputOptions.parsers.map { $0.fmap(Configuration.ofOutputOptions) }
     let managementOptionsParsers = FBSimulatorManagementOptions.parsers.map { $0.fmap(Configuration.ofManagementOptions) }
     let parsers = Array([outputOptionsParsers, managementOptionsParsers, [self.deviceSetPathParser]].flatten())
-    return Parser<Configuration>.accumilate(0, parsers)
+    return Parser<Configuration>.accumulate(0, parsers)
   }}
 
   static var deviceSetPathParser: Parser<Configuration> { get {
@@ -541,7 +541,7 @@ public struct FBSimulatorQueryParsers {
   }}
 
   static var unionParser: Parser<FBSimulatorQuery> { get {
-    return Parser<FBSimulatorQuery>.accumilate(1, [
+    return Parser<FBSimulatorQuery>.accumulate(1, [
       self.firstParser,
       self.uuidParser,
       self.simulatorStateParser,

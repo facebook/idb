@@ -10,10 +10,10 @@
 import Foundation
 
 /**
- A means by which to accumilate state into a value (think Monoid-like).
- Accumilator.init() is the identity of the value.
+ A means by which to accumulate state into a value (think Monoid-like).
+ Accumulator.init() is the identity of the value.
  */
-public protocol Accumilator {
+public protocol Accumulator {
   init()
   func append(other: Self) -> Self
 }

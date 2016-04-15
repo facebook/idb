@@ -104,7 +104,7 @@ public func == (left: Configuration, right: Configuration) -> Bool {
   return left.outputOptions == right.outputOptions && left.deviceSetPath == right.deviceSetPath && left.managementOptions == right.managementOptions
 }
 
-extension Configuration : Accumilator {
+extension Configuration : Accumulator {
   public init() {
     self.outputOptions = OutputOptions()
     self.managementOptions = FBSimulatorManagementOptions()

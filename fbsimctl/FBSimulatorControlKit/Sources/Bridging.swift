@@ -57,7 +57,7 @@ extension FBSimulatorQuery {
   }
 }
 
-extension FBSimulatorQuery : Accumilator {
+extension FBSimulatorQuery : Accumulator {
   public func append(other: FBSimulatorQuery) -> Self {
     let deviceSet = other.devices as NSSet
     let deviceArray = Array(deviceSet) as! [FBSimulatorConfiguration_Device]

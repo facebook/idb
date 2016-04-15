@@ -288,15 +288,15 @@ extension Parser {
       }
   }
 
-  static func accumilate<B : Accumilator>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
+  static func accumulate<B : Accumulator>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
     return Parser<B>
       .alternativeMany(count, parsers)
       .fmap { values in
-        var accumilator = B()
+        var accumulator = B()
         for value in values {
-          accumilator = accumilator.append(value)
+          accumulator = accumulator.append(value)
         }
-        return accumilator
+        return accumulator
       }
   }
 }
