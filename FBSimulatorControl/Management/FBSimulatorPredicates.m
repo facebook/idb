@@ -51,15 +51,13 @@
 
 + (NSPredicate *)state:(FBSimulatorState)state
 {
-  return [self states:@[@(state)]];
+  return [self states:[NSIndexSet indexSetWithIndex:(NSUInteger)state]];
 }
 
-+ (NSPredicate *)states:(NSArray<NSString *> *)states
++ (NSPredicate *)states:(NSIndexSet *)states
 {
-  NSSet *statesSet = [NSSet setWithArray:states];
-
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return [statesSet containsObject:@(candidate.state)];
+    return [states containsIndex:(NSUInteger)candidate.state];
   }];
 }
 

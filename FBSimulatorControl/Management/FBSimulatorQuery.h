@@ -43,8 +43,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param states the UDIDs to match against.
  @return a new Simulator Query.
  */
-+ (instancetype)states:(NSArray<NSNumber *> *)states;
-- (instancetype)states:(NSArray<NSNumber *> *)states;
++ (instancetype)states:(NSIndexSet *)states;
+- (instancetype)states:(NSIndexSet *)states;
 
 /**
  A Query that matches the given OS Versions.
@@ -83,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
  The States to match against, coerced from FBSimulatorState to an NSNumber Representation.
  An Empty Set means that no State filtering will occur.
  */
-@property (nonatomic, readonly, copy) NSSet<NSNumber *> *states;
+@property (nonatomic, readonly, copy) NSIndexSet *states;
 
 /**
  The OS Versions to match against.

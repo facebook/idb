@@ -24,6 +24,7 @@
 #import <FBControlCore/FBProcessInfo.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>
 #import <FBControlCore/FBProcessFetcher.h>
+#import <FBControlCore/FBCollectionOperations.h>
 #import <FBControlCore/FBTask+Private.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskExecutor+Convenience.h>

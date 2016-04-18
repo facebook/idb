@@ -28,20 +28,20 @@
  Uses the known values of SimDevice State, to construct an enumeration.
  These mirror the values from -[SimDeviceState state].
  */
-typedef NS_ENUM(NSInteger, FBSimulatorState) {
+typedef NS_ENUM(NSUInteger, FBSimulatorState) {
   FBSimulatorStateCreating = 0,
   FBSimulatorStateShutdown = 1,
   FBSimulatorStateBooting = 2,
   FBSimulatorStateBooted = 3,
   FBSimulatorStateShuttingDown = 4,
-  FBSimulatorStateUnknown = -1,
+  FBSimulatorStateUnknown = 99,
 };
 
 /**
  Uses the known values of SimDeviceType ProductFamilyID, to construct an enumeration.
  These mirror the values from -[SimDeviceState productFamilyID].
  */
-typedef NS_ENUM(NSInteger, FBSimulatorProductFamily) {
+typedef NS_ENUM(NSUInteger, FBSimulatorProductFamily) {
   FBSimulatorProductFamilyUnknown = 0,
   FBSimulatorProductFamilyiPhone = 1,
   FBSimulatorProductFamilyiPad = 2,

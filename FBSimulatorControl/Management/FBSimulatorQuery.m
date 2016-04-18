@@ -24,10 +24,10 @@
 
 - (instancetype)init
 {
-  return [self initWithUDIDs:NSSet.new states:NSSet.new osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
+  return [self initWithUDIDs:NSSet.new states:NSIndexSet.new osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
 }
 
-- (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSSet<NSNumber *> *)states osVersions:(NSSet<id<FBSimulatorConfiguration_OS>> *)osVersions devices:(NSSet<id<FBSimulatorConfiguration_Device>> *)devices range:(NSRange)range
+- (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSIndexSet *)states osVersions:(NSSet<id<FBSimulatorConfiguration_OS>> *)osVersions devices:(NSSet<id<FBSimulatorConfiguration_Device>> *)devices range:(NSRange)range
 {
   self = [super init];
   if (!self) {
@@ -64,18 +64,20 @@
   return [[self.class alloc] initWithUDIDs:[self.udids setByAddingObjectsFromArray:udids] states:self.states osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
-+ (instancetype)states:(NSArray<NSNumber *> *)states
++ (instancetype)states:(NSIndexSet *)states
 {
   return [self.allSimulators states:states];
 }
 
-- (instancetype)states:(NSArray<NSNumber *> *)states
+- (instancetype)states:(NSIndexSet *)states
 {
   if (states.count == 0) {
     return self;
   }
 
-  return [[self.class alloc] initWithUDIDs:self.udids states:[self.states setByAddingObjectsFromArray:states] osVersions:self.osVersions devices:self.devices range:self.range];
+  NSMutableIndexSet *indexSet = [self.states mutableCopy];
+  [indexSet addIndexes:states];
+  return [[self.class alloc] initWithUDIDs:self.udids states:[indexSet copy] osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
 + (instancetype)osVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)osVersions
@@ -127,7 +129,7 @@
     [predicates addObject:[FBSimulatorPredicates udids:self.udids.allObjects]];
   }
   if (self.states.count > 0) {
-    [predicates addObject:[FBSimulatorPredicates states:self.states.allObjects]];
+    [predicates addObject:[FBSimulatorPredicates states:self.states]];
   }
   if (self.osVersions.count > 0) {
     [predicates addObject:[FBSimulatorPredicates osVersions:self.osVersions.allObjects]];
@@ -157,7 +159,7 @@
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
   NSSet<NSString *> *udids = [coder decodeObjectForKey:NSStringFromSelector(@selector(udids))];
-  NSSet<NSNumber *> *states = [coder decodeObjectForKey:NSStringFromSelector(@selector(states))];
+  NSIndexSet *states = [coder decodeObjectForKey:NSStringFromSelector(@selector(states))];
   NSSet<id<FBSimulatorConfiguration_OS>> *osVersions = [coder decodeObjectForKey:NSStringFromSelector(@selector(osVersions))];
   NSSet<id<FBSimulatorConfiguration_Device>> *devices = [coder decodeObjectForKey:NSStringFromSelector(@selector(devices))];
   NSRange range = [[coder decodeObjectForKey:NSStringFromSelector(@selector(range))] rangeValue];
@@ -179,7 +181,7 @@
 {
   return @{
     @"udids" : self.udids.allObjects,
-    @"states" : [FBSimulatorQuery stateStringsForStateNumbers:self.states.allObjects],
+    @"states" : [FBSimulatorQuery stateStringsForStateIndeces:self.states],
     @"os_versions" : [FBSimulatorQuery stringsFromOSVersions:self.osVersions.allObjects],
     @"devices" : [FBSimulatorQuery stringsFromDevices:self.devices.allObjects],
     @"range" : NSStringFromRange(self.range),
@@ -199,7 +201,7 @@
   if (![FBCollectionInformation isArrayHeterogeneous:udids withClass:NSString.class]) {
     return [[FBSimulatorError describeFormat:@"'states' %@ is not an NSArray<NSString>", udids] fail:error];
   }
-  NSArray<NSNumber *> *stateNumbers = [FBSimulatorQuery stateNumbersForStateStrings:stateStrings];
+  NSIndexSet *stateIndeces = [FBSimulatorQuery stateIndecesForStateStrings:stateStrings];
   NSArray<NSString *> *osVersionStrings = json[@"os_versions"] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:osVersionStrings withClass:NSString.class]) {
     return [[FBSimulatorError describeFormat:@"'os_versions' %@ is not an NSArray<NSString>", udids] fail:error];
@@ -222,7 +224,7 @@
 
   return [[FBSimulatorQuery alloc]
     initWithUDIDs:[NSSet setWithArray:udids]
-    states:[NSSet setWithArray:stateNumbers]
+    states:stateIndeces
     osVersions:[NSSet setWithArray:osVersions]
     devices:[NSSet setWithArray:devices]
     range:range];
@@ -237,7 +239,7 @@
   }
 
   return [self.udids isEqualToSet:query.udids] &&
-         [self.states isEqualToSet:query.states] &&
+         [self.states isEqualToIndexSet:query.states] &&
          [self.devices isEqualToSet:query.devices] &&
          [self.osVersions isEqualToSet:query.osVersions] &&
          NSEqualRanges(self.range, query.range);
@@ -253,7 +255,7 @@
   return [NSString stringWithFormat:
     @"UDIDs %@ | States %@ | Devices %@ | OS Versions %@ | Range %@",
     [FBCollectionInformation oneLineDescriptionFromArray:self.udids.allObjects],
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorQuery stateStringsForStateNumbers:self.states.allObjects]],
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorQuery stateStringsForStateIndeces:self.states]],
     [FBCollectionInformation oneLineDescriptionFromArray:self.devices.allObjects],
     [FBCollectionInformation oneLineDescriptionFromArray:self.osVersions.allObjects],
     NSStringFromRange(self.range)
@@ -262,25 +264,24 @@
 
 #pragma mark Private
 
-+ (NSArray<NSString *> *)stateStringsForStateNumbers:(NSArray<NSNumber *> *)stateNumbers
++ (NSArray<NSString *> *)stateStringsForStateIndeces:(NSIndexSet *)stateIndeces
 {
   NSMutableArray<NSString *> *stateStrings = [NSMutableArray array];
-  for (NSNumber *number in stateNumbers) {
-    FBSimulatorState state = (FBSimulatorState) number.unsignedIntegerValue;
-    NSString *string = [FBSimulator stateStringFromSimulatorState:state].lowercaseString;
+  [stateIndeces enumerateIndexesUsingBlock:^(NSUInteger state, BOOL *_Nonnull stop) {
+    NSString *string = [FBSimulator stateStringFromSimulatorState:(FBSimulatorState)state].lowercaseString;
     [stateStrings addObject:string];
-  }
+  }];
   return [stateStrings copy];
 }
 
-+ (NSArray<NSNumber *> *)stateNumbersForStateStrings:(NSArray<NSString *> *)stateStrings
++ (NSIndexSet *)stateIndecesForStateStrings:(NSArray<NSString *> *)stateStrings
 {
-  NSMutableArray<NSNumber *> *stateNumbers = [NSMutableArray array];
+  NSMutableIndexSet *stateIndeces = [NSMutableIndexSet indexSet];
   for (NSString *stateString in stateStrings) {
     FBSimulatorState state = [FBSimulator simulatorStateFromStateString:stateString];
-    [stateNumbers addObject:@(state)];
+    [stateIndeces addIndex:(NSUInteger)state];
   }
-  return stateNumbers;
+  return stateIndeces;
 }
 
 + (NSArray<id<FBSimulatorConfiguration_OS>> *)osVersionsFromStrings:(NSArray<NSString *> *)strings

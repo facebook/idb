@@ -34,7 +34,7 @@
 /**
  Enumeration to keep track of internal state.
  */
-typedef NS_ENUM(NSInteger, FBSimulatorFramebufferState) {
+typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   FBSimulatorFramebufferStateNotStarted = 0, /** Before the framebuffer is 'listening'. */
   FBSimulatorFramebufferStateStarting = 1, /** After the framebuffer has started, but before the first frame. */
   FBSimulatorFramebufferStateRunning = 2, /** After the framebuffer has started, but before the first frame. */

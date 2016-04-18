@@ -34,7 +34,7 @@
     NSUUID *uuid = simulatorSpec[@"uuid"] ?: [NSUUID UUID];
     NSString *os = simulatorSpec[@"os"] ?: @"iOS 9.0";
     NSString *version = [[os componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet] lastObject];
-    FBSimulatorState state = [(simulatorSpec[@"state"] ?: @(FBSimulatorStateShutdown)) integerValue];
+    FBSimulatorState state = [(simulatorSpec[@"state"] ?: @(FBSimulatorStateShutdown)) unsignedIntegerValue];
 
     FBSimulatorControlTests_SimDeviceType_Double *deviceType = [FBSimulatorControlTests_SimDeviceType_Double new];
     deviceType.name = name;

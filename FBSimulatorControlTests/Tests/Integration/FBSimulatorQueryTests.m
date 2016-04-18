@@ -71,7 +71,7 @@
 
 - (void)testFilterBySingleState
 {
-  FBSimulatorQuery *query = [FBSimulatorQuery states:@[@(FBSimulatorStateBooted)]];
+  FBSimulatorQuery *query = [FBSimulatorQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooted]];
   NSArray<FBSimulator *> *actual = [query perform:self.set];
   NSArray<FBSimulator *> *expected = @[self.simulators[0], self.simulators[5], self.simulators[7]];
   XCTAssertEqualObjects(expected, actual);
@@ -79,7 +79,8 @@
 
 - (void)testFilterBySingleMultipleStates
 {
-  FBSimulatorQuery *query = [FBSimulatorQuery states:@[@(FBSimulatorStateShutdown), @(FBSimulatorStateShuttingDown)]];
+  NSIndexSet *states = [FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateShutdown), @(FBSimulatorStateShuttingDown)]];
+  FBSimulatorQuery *query = [FBSimulatorQuery states:states];
   NSArray<FBSimulator *> *actual = [query perform:self.set];
   NSArray<FBSimulator *> *expected = @[self.simulators[2], self.simulators[4], self.simulators[6]];
   XCTAssertEqualObjects(expected, actual);
@@ -87,7 +88,7 @@
 
 - (void)testFilterByStateAndName
 {
-  FBSimulatorQuery *query = [[FBSimulatorQuery states:@[@(FBSimulatorStateCreating)]] devices:@[FBSimulatorConfiguration_Device_iPhone5.new]];
+  FBSimulatorQuery *query = [[FBSimulatorQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateCreating]] devices:@[FBSimulatorConfiguration_Device_iPhone5.new]];
   NSArray<FBSimulator *> *actual = [query perform:self.set];
   NSArray<FBSimulator *> *expected = @[self.simulators[1]];
   XCTAssertEqualObjects(expected, actual);
@@ -95,7 +96,7 @@
 
 - (void)testNoMatches
 {
-  FBSimulatorQuery *query = [[FBSimulatorQuery states:@[@(FBSimulatorStateBooting)]] devices:@[FBSimulatorConfiguration_Device_iPhone5.new]];
+  FBSimulatorQuery *query = [[FBSimulatorQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooting]] devices:@[FBSimulatorConfiguration_Device_iPhone5.new]];
   NSArray<FBSimulator *> *actual = [query perform:self.set];
   NSArray<FBSimulator *> *expected = @[];
   XCTAssertEqualObjects(expected, actual);

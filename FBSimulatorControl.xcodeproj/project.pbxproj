@@ -53,6 +53,8 @@
 		AA59E2871C85AA9400C17ED3 /* FBFramebufferFrame.m in Sources */ = {isa = PBXBuildFile; fileRef = AA59E2851C85AA9400C17ED3 /* FBFramebufferFrame.m */; };
 		AA5B7BCE1CBB8A5300F346A8 /* FBSimulatorConfigurationVariants.h in Headers */ = {isa = PBXBuildFile; fileRef = AA5B7BCC1CBB8A5300F346A8 /* FBSimulatorConfigurationVariants.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA5B7BCF1CBB8A5300F346A8 /* FBSimulatorConfigurationVariants.m in Sources */ = {isa = PBXBuildFile; fileRef = AA5B7BCD1CBB8A5300F346A8 /* FBSimulatorConfigurationVariants.m */; };
+		AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6A3B071CC0C96E00E016C4 /* FBCollectionOperations.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6A3B081CC0C96E00E016C4 /* FBCollectionOperations.m */; };
 		AA6F22441C916A31009F5CE4 /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AA6F22411C916A31009F5CE4 /* photo0.png */; };
 		AA6F22451C916A31009F5CE4 /* simulator_system.log in Resources */ = {isa = PBXBuildFile; fileRef = AA6F22421C916A31009F5CE4 /* simulator_system.log */; };
 		AA6F22461C916A31009F5CE4 /* tree.json in Resources */ = {isa = PBXBuildFile; fileRef = AA6F22431C916A31009F5CE4 /* tree.json */; };
@@ -452,6 +454,8 @@
 		AA59E2851C85AA9400C17ED3 /* FBFramebufferFrame.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFramebufferFrame.m; sourceTree = "<group>"; };
 		AA5B7BCC1CBB8A5300F346A8 /* FBSimulatorConfigurationVariants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorConfigurationVariants.h; sourceTree = "<group>"; };
 		AA5B7BCD1CBB8A5300F346A8 /* FBSimulatorConfigurationVariants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorConfigurationVariants.m; sourceTree = "<group>"; };
+		AA6A3B071CC0C96E00E016C4 /* FBCollectionOperations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCollectionOperations.h; sourceTree = "<group>"; };
+		AA6A3B081CC0C96E00E016C4 /* FBCollectionOperations.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCollectionOperations.m; sourceTree = "<group>"; };
 		AA6F22411C916A31009F5CE4 /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
 		AA6F22421C916A31009F5CE4 /* simulator_system.log */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = simulator_system.log; sourceTree = "<group>"; };
 		AA6F22431C916A31009F5CE4 /* tree.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = tree.json; sourceTree = "<group>"; };
@@ -1569,6 +1573,8 @@
 				EEBD604E1C9062E900298A07 /* FBCapacityQueue.m */,
 				EEBD60921C908F8500298A07 /* FBCollectionInformation.h */,
 				EEBD60931C908F8500298A07 /* FBCollectionInformation.m */,
+				AA6A3B071CC0C96E00E016C4 /* FBCollectionOperations.h */,
+				AA6A3B081CC0C96E00E016C4 /* FBCollectionOperations.m */,
 				EEBD60511C9062E900298A07 /* FBConcurrentCollectionOperations.h */,
 				EEBD60521C9062E900298A07 /* FBConcurrentCollectionOperations.m */,
 				EEBD60531C9062E900298A07 /* FBControlCoreError.h */,
@@ -1716,6 +1722,7 @@
 				AACA33581C96F8D100DC9704 /* FBFileFinder.h in Headers */,
 				EEBD60661C9062E900298A07 /* FBProcessFetcher+Helpers.h in Headers */,
 				EEBD605D1C9062E900298A07 /* FBCrashLogInfo.h in Headers */,
+				AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */,
 				EEBD60741C9062E900298A07 /* FBTerminationHandle.h in Headers */,
 				EEBD60941C908F8500298A07 /* FBCollectionInformation.h in Headers */,
 				EEBD60641C9062E900298A07 /* FBProcessInfo.h in Headers */,
@@ -2131,6 +2138,7 @@
 				EEBD60831C9062E900298A07 /* FBControlCoreLogger.m in Sources */,
 				EEBD60791C9062E900298A07 /* FBCapacityQueue.m in Sources */,
 				EEBD60731C9062E900298A07 /* FBTaskExecutor.m in Sources */,
+				AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */,
 				EEBD605E1C9062E900298A07 /* FBCrashLogInfo.m in Sources */,
 				EEBD605C1C9062E900298A07 /* FBASLParser.m in Sources */,
 				AA84EFFF1C9FE162000CDA41 /* NSPredicate+FBControlCore.m in Sources */,

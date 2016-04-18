@@ -45,7 +45,11 @@ extension FBSimulatorQuery {
   }
 
   public func simulatorStates(states: [FBSimulatorState]) -> FBSimulatorQuery {
-    return self.states(states.map{ NSNumber(integer: $0.rawValue) })
+    let indexSet = states.reduce(NSMutableIndexSet()) { (indexSet, state) in
+      indexSet.addIndex(Int(state.rawValue))
+      return indexSet
+    }
+    return self.states(indexSet)
   }
 
   public static func ofCount(count: Int) -> FBSimulatorQuery {
@@ -66,7 +70,7 @@ extension FBSimulatorQuery : Accumulator {
 
     return self
       .udids(Array(other.udids))
-      .states(Array(other.states))
+      .states(other.states)
       .devices(deviceArray)
       .osVersions(osVersionsArray)
       .range(other.range)

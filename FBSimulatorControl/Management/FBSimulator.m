@@ -102,7 +102,7 @@
 
 - (FBSimulatorState)state
 {
-  return (NSInteger) self.device.state;
+  return self.device.state;
 }
 
 - (FBSimulatorProductFamily)productFamily

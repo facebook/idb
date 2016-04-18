@@ -20,7 +20,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 
-typedef NS_ENUM(NSInteger, FBFramebufferVideoState) {
+typedef NS_ENUM(NSUInteger, FBFramebufferVideoState) {
   FBFramebufferVideoStateNotStarted = 0,
   FBFramebufferVideoStateWaitingForFirstFrame = 1,
   FBFramebufferVideoStateRunning = 2,

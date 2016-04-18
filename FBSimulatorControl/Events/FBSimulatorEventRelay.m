@@ -266,7 +266,7 @@
     if (!newStateNumber) {
       return;
     }
-    [weakSelf didChangeState:newStateNumber.integerValue];
+    [weakSelf didChangeState:newStateNumber.unsignedIntegerValue];
   }];
 }
 

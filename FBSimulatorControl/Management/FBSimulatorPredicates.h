@@ -61,10 +61,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Predicate for matching against a range of Simulator States.
 
- @param states Number representations of the states to match against. Must not be nil.
+ @param states An index set of the states to match against.. Must not be nil.
  @return an NSPredicate.
  */
-+ (NSPredicate *)states:(NSArray<NSNumber *> *)states;
++ (NSPredicate *)states:(NSIndexSet *)states;
 
 /**
  Predicate for only the provided Simulator. Useful for negation.
