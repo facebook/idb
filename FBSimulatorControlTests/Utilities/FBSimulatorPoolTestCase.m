@@ -65,12 +65,12 @@
   return simulators;
 }
 
-- (void)mockAllocationOfSimulatorsUDIDs:(NSArray *)deviceUDIDs
+- (void)mockAllocationOfSimulatorsUDIDs:(NSArray<NSString *> *)deviceUDIDs
 {
-  NSDictionary *simulatorsByUDID = [NSDictionary dictionaryWithObjects:self.set.allSimulators forKeys:[self.set.allSimulators valueForKey:@"udid"]];
-  for (NSUUID *udid in deviceUDIDs) {
-    [self.pool.allocatedUDIDs addObject:udid.UUIDString];
-    [simulatorsByUDID[udid.UUIDString] setPool:self.pool];
+  NSDictionary<NSString *, FBSimulator *> *simulatorsByUDID = [NSDictionary dictionaryWithObjects:self.set.allSimulators forKeys:[self.set.allSimulators valueForKey:@"udid"]];
+  for (NSString *udid in deviceUDIDs) {
+    [self.pool.allocatedUDIDs addObject:udid];
+    [simulatorsByUDID[udid] setPool:self.pool];
   }
 }
 

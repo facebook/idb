@@ -37,6 +37,6 @@
 /**
  Mocks the Allocation of Simulators based on their UDID.
  */
-- (void)mockAllocationOfSimulatorsUDIDs:(NSArray *)deviceUDIDs;
+- (void)mockAllocationOfSimulatorsUDIDs:(NSArray<NSString *> *)deviceUDIDs;
 
 @end

@@ -35,8 +35,8 @@
   ]];
 
   [self mockAllocationOfSimulatorsUDIDs:@[
-    [mockedSimulators[0] UDID],
-    [mockedSimulators[3] UDID]
+    [mockedSimulators[0] udid],
+    [mockedSimulators[3] udid]
   ]];
 
   NSArray *simulators = self.pool.allocatedSimulators;
