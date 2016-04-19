@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBProcessLaunchConfiguration+Helpers.h"
+#import "FBApplicationLaunchStrategy.h"
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
@@ -19,6 +20,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
+#import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction+Lifecycle.h"
@@ -93,45 +95,8 @@
   NSParameterAssert(appLaunch);
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    NSError *innerError = nil;
-    FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
-    if (!application) {
-      return [[[[FBSimulatorError
-        describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
-        causedBy:innerError]
-        inSimulator:simulator]
-        failBool:error];
-    }
-
-    // This check confirms that if there's a currently running process for the given Bundle ID it doesn't match one that has been recently launched.
-    // Since the Background Modes of a Simulator can cause an Application to be launched independently of our usage of CoreSimulator,
-    // it's possible that application processes will come to life before `launchApplication` is called, if it has been previously killed.
-    FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
-    if (process && [simulator.history.launchedApplicationProcesses containsObject:process]) {
-      return [[[[FBSimulatorError
-        describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
-        causedBy:innerError]
-        inSimulator:simulator]
-        failBool:error];
-    }
-
-    NSFileHandle *stdOut = nil;
-    NSFileHandle *stdErr = nil;
-    if (![appLaunch createFileHandlesWithStdOut:&stdOut stdErr:&stdErr error:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-
-    NSDictionary *options = [appLaunch simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
-    if (!options) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-
-    process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.bundleID options:options error:&innerError];
-    if (!process) {
-      return [[[[FBSimulatorError describeFormat:@"Failed to launch application %@", appLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
-    }
-    [simulator.eventSink applicationDidLaunch:appLaunch didStart:process stdOut:stdOut stdErr:stdErr];
-    return YES;
+    return [[FBApplicationLaunchStrategy withSimulator:simulator]
+      launchApplication:appLaunch error:error] != nil;
   }];
 }
 

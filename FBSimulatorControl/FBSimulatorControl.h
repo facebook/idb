@@ -40,6 +40,7 @@
 #import <FBSimulatorControl/FBSimulatorControl+PrincipalClass.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
+#import <FBSimulatorControl/FBApplicationLaunchStrategy.h>
 #import <FBSimulatorControl/FBSimulatorControlOperator.h>
 #import <FBSimulatorControl/FBSimulatorDiagnosticQuery.h>
 #import <FBSimulatorControl/FBSimulatorDiagnostics.h>
