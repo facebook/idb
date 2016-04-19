@@ -40,4 +40,28 @@ public extension XCTestCase {
       self.assertParseFails(parser, tokens)
     }
   }
+
+  func assertCLIRunsSuccessfully(arguments: [String]) -> [String] {
+    let writer = TestWriter()
+    let runner = CLIRunner(arguments: arguments, environment: [:], writer: writer)
+    let result = runner.run()
+    XCTAssertEqual(result, 0, "Expected a succesful result, but got \(result), output \(writer)")
+    return writer.output
+  }
+
+  func temporaryDirectory() -> NSURL {
+    return NSURL(fileURLWithPath: NSTemporaryDirectory()).URLByAppendingPathComponent("FBSimulatorControlKitTests")
+  }
+}
+
+class TestWriter : Writer, CustomStringConvertible {
+  var output: [String] = []
+
+  func write(string: String) {
+    output.append(string)
+  }
+
+  var description: String { get {
+    return output.joinWithSeparator("\n")
+  }}
 }

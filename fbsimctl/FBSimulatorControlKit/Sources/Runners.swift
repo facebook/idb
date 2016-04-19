@@ -23,19 +23,6 @@ extension Configuration {
   }
 }
 
-public extension Command {
-  func runFromCLI() -> Int32 {
-    let (reporter, result) = CommandRunner.bootstrap(self, writer: FileHandleWriter.stdOutWriter)
-    switch result {
-    case .Success:
-      return 0
-    case .Failure(let string):
-      reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, string as NSString)
-      return 1
-    }
-  }
-}
-
 private struct SequenceRunner : Runner {
   let runners: [Runner]
 
@@ -52,7 +39,7 @@ private struct SequenceRunner : Runner {
   }
 }
 
-private struct CommandRunner : Runner {
+struct CommandRunner : Runner {
   let command: Command
   var defaults: Defaults?
   var control: FBSimulatorControl?
