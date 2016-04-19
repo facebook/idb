@@ -16,6 +16,8 @@
 
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
+#import "FBProcessLaunchConfiguration.h"
+#import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimulatorHistory+Queries.h"
 
 NSString *const FBSimulatorLogNameSyslog = @"system_log";
@@ -114,6 +116,31 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     build];
 }
 
+- (FBDiagnostic *)stdOut:(FBProcessLaunchConfiguration *)configuration
+{
+  NSString *name = [NSString stringWithFormat:@"%@_out", configuration.identifiableName];
+  return [[[[self.logBuilder
+    updateStorageDirectory:[self stdOutErrContainersPath]]
+    updateShortName:name]
+    updateFileType:@"txt"]
+    build];
+}
+
+- (FBDiagnostic *)stdErr:(FBProcessLaunchConfiguration *)configuration
+{
+  NSString *name = [NSString stringWithFormat:@"%@_err", configuration.identifiableName];
+  return [[[[self.logBuilder
+    updateStorageDirectory:[self stdOutErrContainersPath]]
+    updateShortName:name]
+    updateFileType:@"txt"]
+    build];
+}
+
+- (NSArray<FBDiagnostic *> *)stdOutErrDiagnostics
+{
+  return [FBSimulatorDiagnostics diagnosticsForSubpathsOf:self.stdOutErrContainersPath];
+}
+
 - (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withProcessType:(FBCrashLogInfoProcessType)processType;
 {
   return [FBConcurrentCollectionOperations
@@ -195,6 +222,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   ]];
   [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
   [logs addObjectsFromArray:self.eventLogs.allValues];
+  [logs addObjectsFromArray:self.stdOutErrDiagnostics];
   return [logs filteredArrayUsingPredicate:FBSimulatorDiagnostics.predicateForHasContent];
 }
 
@@ -299,7 +327,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 + (NSString *)storageDirectoryForSimulator:(FBSimulator *)simulator
 {
-  return [simulator.auxillaryDirectory stringByAppendingPathComponent:@"logs"];
+  return [simulator.auxillaryDirectory stringByAppendingPathComponent:@"diagnostics"];
 }
 
 - (NSString *)systemLogPath
@@ -320,6 +348,11 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 - (NSString *)applicationContainersPath
 {
   return [self.simulator.dataDirectory stringByAppendingPathComponent:@"Containers/Data/Application"];
+}
+
+- (NSString *)stdOutErrContainersPath
+{
+  return [self.storageDirectory stringByAppendingPathComponent:@"out_err"];
 }
 
 - (NSString *)aslPath
@@ -393,6 +426,12 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 }
 
 #pragma mark Diagnostics
+
++ (NSArray<FBDiagnostic *> *)diagnosticsForSubpathsOf:(NSString *)container
+{
+  return [[self diagnosticsForPaths:[FBFileFinder contentsOfDirectoryWithBasePath:container]]
+    filteredArrayUsingPredicate:self.predicateForHasContent];
+}
 
 + (NSArray<FBDiagnostic *> *)diagnosticsForPaths:(NSArray<NSString *> *)paths
 {

@@ -61,4 +61,14 @@
   return [paths allValues];
 }
 
++ (NSArray<NSString *> *)contentsOfDirectoryWithBasePath:(NSString *)basePath
+{
+  NSMutableArray<NSString *> *contents = [NSMutableArray array];
+  for (NSString *file in [NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil] ?: @[]) {
+    NSString *path = [basePath stringByAppendingPathComponent:file];
+    [contents addObject:path];
+  }
+  return [contents copy];
+}
+
 @end

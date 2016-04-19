@@ -90,6 +90,21 @@ extern NSString *const FBSimulatorLogNameScreenshot;
 - (FBDiagnostic *)screenshot;
 
 /**
+ The 'stdout' diagnostic for a provided Application.
+ */
+- (FBDiagnostic *)stdOut:(FBProcessLaunchConfiguration *)configuration;
+
+/**
+ The 'stderr' diagnostic for a provided Application.
+ */
+- (FBDiagnostic *)stdErr:(FBProcessLaunchConfiguration *)configuration;
+
+/**
+ An Array of all non-empty stderr and stdout logs for launched processes.
+ */
+- (NSArray<FBDiagnostic *> *)stdOutErrDiagnostics;
+
+/**
  Crash logs of all the subprocesses that have crashed in the Simulator after the specified date.
 
  @param date the earliest to search for crash reports. If nil will find reports regardless of date.

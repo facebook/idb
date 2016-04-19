@@ -32,4 +32,12 @@
  */
 + (NSArray<NSString *> *)mostRecentFindFiles:(NSArray<NSString *> *)filenames inDirectory:(NSString *)directory;
 
+/**
+ Like -[NSFileManager contentsOfDirectoryAtPath:error:], except that the base path is prepended to all subpaths.
+
+ @param basePath the base path to construct
+ @return an array of all found files.
+ */
++ (NSArray<NSString *> *)contentsOfDirectoryWithBasePath:(NSString *)basePath;
+
 @end

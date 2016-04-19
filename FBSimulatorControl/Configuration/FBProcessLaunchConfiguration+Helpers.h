@@ -58,4 +58,9 @@
  */
 - (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
 
+/**
+ A Name used to distinguish between Launch Configurations.
+ */
+- (NSString *)identifiableName;
+
 @end

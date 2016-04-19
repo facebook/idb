@@ -111,6 +111,12 @@
   return [options copy];
 }
 
+- (NSString *)identifiableName
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
 @end
 
 @implementation FBAgentLaunchConfiguration (Helpers)
@@ -130,6 +136,20 @@
   NSMutableDictionary *modifiedOptions = [options mutableCopy];
   modifiedOptions[@"arguments"] = [modifiedArguments copy];
   return [modifiedOptions copy];
+}
+
+- (NSString *)identifiableName
+{
+  return self.agentBinary.name;
+}
+
+@end
+
+@implementation FBApplicationLaunchConfiguration (Helpers)
+
+- (NSString *)identifiableName
+{
+  return self.bundleID;
 }
 
 @end
