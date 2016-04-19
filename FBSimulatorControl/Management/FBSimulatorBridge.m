@@ -143,7 +143,7 @@
   NSDictionary<NSString *, id> *result = [self.bridge
    bksLaunchApplicationWithBundleId:configuration.bundleID
    arguments:configuration.arguments
-   environment:configuration.arguments
+   environment:configuration.environment
    standardOutPipe:stdOutPath
    standardErrorPipe:stdErrPath
    options:@{}];
