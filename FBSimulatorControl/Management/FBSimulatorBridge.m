@@ -23,6 +23,7 @@
 #import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
+#import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
@@ -36,7 +37,7 @@
 @property (nonatomic, strong, readonly) dispatch_group_t teardownGroup;
 
 @property (nonatomic, assign, readwrite) mach_port_t hidPort;
-@property (nonatomic, strong, readwrite) id<SimulatorBridge> bridge;
+@property (nonatomic, strong, readwrite) SimulatorBridge *bridge;
 
 @end
 
@@ -44,7 +45,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(id<SimulatorBridge>)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(SimulatorBridge *)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -135,6 +136,30 @@
       failBool:error];
   }
   return YES;
+}
+
+- (pid_t)launch:(FBApplicationLaunchConfiguration *)configuration stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
+{
+  NSDictionary<NSString *, id> *result = [self.bridge
+   bksLaunchApplicationWithBundleId:configuration.bundleID
+   arguments:configuration.arguments
+   environment:configuration.arguments
+   standardOutPipe:stdOutPath
+   standardErrorPipe:stdErrPath
+   options:@{}];
+
+  if ([result[@"result"] integerValue] != 0) {
+    [[FBSimulatorError describeFormat:@"Non-Zero result %@", result] fail:error];
+    return -1;
+  }
+
+  pid_t processIdentifier = [result[@"pid"] intValue];
+  if (processIdentifier <= 0) {
+    [[FBSimulatorError describeFormat:@"No Pid Value in result %@", result] fail:error];
+    return -1;
+  }
+
+  return processIdentifier;
 }
 
 @end

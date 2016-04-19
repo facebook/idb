@@ -16,6 +16,7 @@
 @class FBSimulatorLaunchConfiguration;
 @protocol SimulatorBridge;
 @protocol FBSimulatorEventSink;
+@class FBApplicationLaunchConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -67,6 +68,16 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  */
 - (BOOL)tapX:(double)x y:(double)y error:(NSError **)error;
+
+/**
+ Launches an Application.
+
+ @param configuration the Configuration of the App to Launch,
+ @param stdOutPath the Path of a File to write stdout to.
+ @param stdErrPath the path of a File to write stderr to.
+ @return the Process Identifeir of the Launched Application if successful, -1 otherwise.
+ */
+- (pid_t)launch:(FBApplicationLaunchConfiguration *)configuration stdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath error:(NSError **)error;
 
 #pragma mark Properties
 

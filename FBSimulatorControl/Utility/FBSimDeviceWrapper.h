@@ -59,17 +59,6 @@ typedef void (^FBSimDeviceWrapperCallback)(void);
 - (BOOL)shutdownWithError:(NSError **)error;
 
 /**
- Boots an Application on the Simulator.
- Will time out with an error if CoreSimulator gets stuck in a semaphore and timeout resiliance is enabled.
-
- @param appID the Application ID to use.
- @param options the Options to use in the launch.
- @param error an error out for any error that occured.
- @return the Process Identifier of the launched process, -1 otherwise.
- */
-- (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error;
-
-/**
  Installs an Application on the Simulator.
  Will time out with an error if CoreSimulator gets stuck in a semaphore and timeout resiliance is enabled.
 

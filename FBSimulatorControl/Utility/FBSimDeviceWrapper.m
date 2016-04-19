@@ -212,11 +212,6 @@
   return YES;
 }
 
-- (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
-{
-  return [self processInfoForProcessIdentifier:[self.simulator.device launchApplicationWithID:appID options:options error:error] error:error];
-}
-
 - (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error
 {
   // Calling -[SimDevice installApplication:withOptions:error:] will result in the Application unexpectedly terminating.

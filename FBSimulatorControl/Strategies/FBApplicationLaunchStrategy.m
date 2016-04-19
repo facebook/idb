@@ -14,12 +14,16 @@
 #import "FBSimulatorError.h"
 #import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator+Private.h"
 #import "FBApplicationLaunchStrategy.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory.h"
+#import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBProcessLaunchConfiguration.h"
+#import "FBSimulatorConnectStrategy.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 
@@ -62,6 +66,15 @@
       fail:error];
   }
 
+  // The Bridge must be connected in order for the launch to work.
+  FBSimulatorBridge *bridge = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
+  if (!bridge) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
+      causedBy:innerError]
+      fail:error];
+  }
+
   // This check confirms that if there's a currently running process for the given Bundle ID it doesn't match one that has been recently launched.
   // Since the Background Modes of a Simulator can cause an Application to be launched independently of our usage of CoreSimulator,
   // it's possible that application processes will come to life before `launchApplication` is called, if it has been previously killed.
@@ -74,20 +87,63 @@
       fail:error];
   }
 
-  NSDictionary *options = [appLaunch simDeviceLaunchOptionsWithStdOut:nil stdErr:nil];
-  if (!options) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+  // Make the stdout file.
+  BOOL writeStdout = (appLaunch.options & FBProcessLaunchOptionsWriteStdout) == FBProcessLaunchOptionsWriteStdout;
+  FBDiagnostic *stdOutDiagnostic = nil;
+  if (writeStdout) {
+    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.diagnostics stdOut:appLaunch]];
+    NSString *path = [builder createPath];
+    if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
+      return [[FBSimulatorError
+        describeFormat:@"Could not create stdout at path '%@' for config '%@'", path, appLaunch]
+        fail:error];
+    }
+    stdOutDiagnostic = [[builder updatePath:path] build];
   }
 
-  process = [simulator.simDeviceWrapper launchApplicationWithID:appLaunch.bundleID options:options error:&innerError];
-  if (!process) {
+  // Make the stderr file.
+  BOOL writeStderr = (appLaunch.options & FBProcessLaunchOptionsWriteStderr) == FBProcessLaunchOptionsWriteStderr;
+  FBDiagnostic *stdErrDiagnostic = nil;
+  if (writeStderr) {
+    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.diagnostics stdErr:appLaunch]];
+    NSString *path = [builder createPath];
+    if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
+      return [[FBSimulatorError
+        describeFormat:@"Could not create stdout at path '%@' for config '%@'", path, appLaunch]
+        fail:error];
+    }
+    stdErrDiagnostic = [[builder updatePath:path] build];
+  }
+
+  // Launch the Application.
+  pid_t processIdentifier = [bridge launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil) stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil) error:&innerError];
+  if (!processIdentifier) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to launch application %@", appLaunch]
       causedBy:innerError]
       inSimulator:simulator]
       fail:error];
   }
+
+  // Report the diagnostics to the event sink.
+  if (stdOutDiagnostic) {
+    [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
+  }
+  if (stdErrDiagnostic) {
+    [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
+  }
+
+  // Get the Process Info, report to the event sink
+  process = [simulator.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  if (!process) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Could not get Process Info for launched application process %d", processIdentifier]
+      causedBy:innerError]
+      inSimulator:simulator]
+      fail:error];
+  }
   [simulator.eventSink applicationDidLaunch:appLaunch didStart:process];
+
   return process;
 }
 
