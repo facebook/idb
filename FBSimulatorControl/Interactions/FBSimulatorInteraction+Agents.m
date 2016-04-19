@@ -18,6 +18,7 @@
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
+#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
@@ -32,30 +33,7 @@
   NSParameterAssert(agentLaunch);
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    NSError *innerError = nil;
-    NSFileHandle *stdOut = nil;
-    NSFileHandle *stdErr = nil;
-    if (![agentLaunch createFileHandlesWithStdOut:&stdOut stdErr:&stdErr error:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-
-    NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
-    if (!options) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-
-    FBProcessInfo *process = [simulator.simDeviceWrapper
-      spawnLongRunningWithPath:agentLaunch.agentBinary.path
-      options:options
-      terminationHandler:NULL
-      error:&innerError];
-
-    if (!process) {
-      return [[[[FBSimulatorError describeFormat:@"Failed to start Agent %@", agentLaunch] causedBy:innerError] inSimulator:simulator] failBool:error];
-    }
-
-    [simulator.eventSink agentDidLaunch:agentLaunch didStart:process stdOut:stdOut stdErr:stdErr];
-    return YES;
+    return [[FBAgentLaunchStrategy withSimulator:simulator] launchAgent:agentLaunch error:error] != nil;
   }];
 }
 

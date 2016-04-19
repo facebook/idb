@@ -12,6 +12,7 @@
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
+#import <FBSimulatorControl/FBAgentLaunchStrategy.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
 #import <FBSimulatorControl/FBFramebufferCompositeDelegate.h>
 #import <FBSimulatorControl/FBFramebufferDebugWindow.h>
