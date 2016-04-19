@@ -40,16 +40,6 @@
 - (instancetype)injectingShimulator;
 
 /**
- Creates the file handles for the reciever.
-
- @param stdOut an out param for the stdout file handle.
- @param stdErr an out param for the stderr file handle.
- @param error an out param for any error that occurred.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)createFileHandlesWithStdOut:(NSFileHandle **)stdOut stdErr:(NSFileHandle **)stdErr error:(NSError **)error;
-
-/**
  Creates the Dictionary of launch options for launching an Agent.
 
  @param stdOut the stdout to use, may be nil.

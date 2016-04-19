@@ -63,7 +63,7 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink {
     self.reportValue(EventName.Terminate, EventType.Discrete, agentProcess)
   }
 
-  public func applicationDidLaunch(launchConfig: FBApplicationLaunchConfiguration!, didStart applicationProcess: FBProcessInfo!, stdOut: NSFileHandle!, stdErr: NSFileHandle!) {
+  public func applicationDidLaunch(launchConfig: FBApplicationLaunchConfiguration!, didStart applicationProcess: FBProcessInfo!) {
     self.reportValue(EventName.Launch, EventType.Discrete, applicationProcess)
   }
 

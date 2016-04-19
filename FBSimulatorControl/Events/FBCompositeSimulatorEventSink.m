@@ -90,10 +90,10 @@
   }
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink applicationDidLaunch:launchConfig didStart:applicationProcess stdOut:stdOut stdErr:stdErr];
+    [sink applicationDidLaunch:launchConfig didStart:applicationProcess];
   }
 }
 

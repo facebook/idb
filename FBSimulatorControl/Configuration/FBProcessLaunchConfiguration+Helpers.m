@@ -53,47 +53,6 @@
   return [self injectingLibrary:[[NSBundle bundleForClass:self.class] pathForResource:@"libShimulator" ofType:@"dylib"]];
 }
 
-- (BOOL)createFileHandlesWithStdOut:(NSFileHandle **)stdOut stdErr:(NSFileHandle **)stdErr error:(NSError **)error
-{
-  if (self.stdOutPath) {
-    if (![NSFileManager.defaultManager createFileAtPath:self.stdOutPath contents:NSData.data attributes:nil]) {
-      return [[FBSimulatorError describeFormat:
-        @"Could not create stdout at path '%@' for config '%@'",
-        self.stdOutPath,
-        self
-      ] failBool:error];
-    }
-    NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.stdOutPath];
-    if (!fileHandle) {
-      return [[FBSimulatorError describeFormat:
-        @"Could not file handle for stdout at path '%@' for config '%@'",
-        self.stdOutPath,
-        self
-      ] failBool:error];
-    }
-    *stdOut = fileHandle;
-  }
-  if (self.stdErrPath) {
-    if (![NSFileManager.defaultManager createFileAtPath:self.stdErrPath contents:NSData.data attributes:nil]) {
-      return [[FBSimulatorError describeFormat:
-      @"Could not create stderr at path '%@' for config '%@'",
-      self.stdErrPath,
-      self
-      ] failBool:error];
-    }
-    NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.stdErrPath];
-    if (!fileHandle) {
-      return [[FBSimulatorError describeFormat:
-        @"Could not file handle for stderr at path '%@' for config '%@'",
-        self.stdErrPath,
-        self
-      ] failBool:error];
-    }
-    *stdErr = fileHandle;
-  }
-  return YES;
-}
-
 - (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
   NSMutableDictionary *options = [@{

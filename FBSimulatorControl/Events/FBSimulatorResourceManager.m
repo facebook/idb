@@ -106,14 +106,14 @@
   [self terminateHandlesAssociatedWithProcess:agentProcess];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
 {
-  [self addHandlesForProcess:applicationProcess stdOut:stdOut stdErr:stdErr];
+
 }
 
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
-  [self terminateHandlesAssociatedWithProcess:applicationProcess];
+
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager

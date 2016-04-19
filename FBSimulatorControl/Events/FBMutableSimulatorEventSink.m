@@ -51,9 +51,9 @@
   [self.eventSink agentDidTerminate:agentProcess expected:expected];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
 {
-  [self.eventSink applicationDidLaunch:launchConfig didStart:applicationProcess stdOut:stdOut stdErr:stdErr];
+  [self.eventSink applicationDidLaunch:launchConfig didStart:applicationProcess];
 }
 
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected

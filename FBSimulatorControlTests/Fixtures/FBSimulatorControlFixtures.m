@@ -72,7 +72,7 @@
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{}];
+  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} options:0];
 }
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
@@ -81,7 +81,7 @@
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{}];
+  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} options:0];
 }
 
 - (FBAgentLaunchConfiguration *)agentLaunch1
@@ -89,7 +89,8 @@
   return [FBAgentLaunchConfiguration
     configurationWithBinary:self.safariApplication.binary
     arguments:@[@"BINGBONG"]
-    environment:@{@"FIB" : @"BLE"}];
+    environment:@{@"FIB" : @"BLE"}
+    options:0];
 }
 
 - (FBApplicationLaunchConfiguration *)appLaunch1
@@ -97,7 +98,8 @@
   return [FBApplicationLaunchConfiguration
     configurationWithApplication:self.tableSearchApplication
     arguments:@[@"LAUNCH1"]
-    environment:@{@"FOO" : @"BAR"}];
+    environment:@{@"FOO" : @"BAR"}
+    options:0];
 }
 
 - (FBApplicationLaunchConfiguration *)appLaunch2
@@ -105,7 +107,8 @@
   return [FBApplicationLaunchConfiguration
     configurationWithApplication:self.safariApplication
     arguments:@[@"LAUNCH2"]
-    environment:@{@"BING" : @"BONG"}];
+    environment:@{@"BING" : @"BONG"}
+    options:0];
 }
 
 - (FBProcessInfo *)processInfo1

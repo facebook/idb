@@ -14,11 +14,14 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 
+static NSString *const OptionConnectStdout = @"connect_stdout";
+static NSString *const OptionConnectStderr = @"connect_stderr";
+
 @implementation FBProcessLaunchConfiguration
 
 #pragma mark Initializers
 
-- (instancetype)initWithArguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
+- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
 {
   self = [super init];
   if (!self) {
@@ -27,8 +30,7 @@
 
   _arguments = arguments;
   _environment = environment;
-  _stdOutPath = stdOutPath;
-  _stdErrPath = stdErrPath;
+  _options = options;
 
   return self;
 }
@@ -52,8 +54,7 @@
 
   _arguments = [coder decodeObjectForKey:NSStringFromSelector(@selector(arguments))];
   _environment = [coder decodeObjectForKey:NSStringFromSelector(@selector(environment))];
-  _stdOutPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(stdOutPath))];
-  _stdErrPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(stdErrPath))];
+  _options = [[coder decodeObjectForKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
 
   return self;
 }
@@ -62,15 +63,14 @@
 {
   [coder encodeObject:self.arguments forKey:NSStringFromSelector(@selector(arguments))];
   [coder encodeObject:self.environment forKey:NSStringFromSelector(@selector(environment))];
-  [coder encodeObject:self.stdOutPath forKey:NSStringFromSelector(@selector(stdOutPath))];
-  [coder encodeObject:self.stdErrPath forKey:NSStringFromSelector(@selector(stdErrPath))];
+  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
 }
 
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return self.arguments.hash | self.environment.hash | self.stdErrPath.hash | self.stdOutPath.hash;
+  return self.arguments.hash ^ self.environment.hash & self.options;
 }
 
 - (BOOL)isEqual:(FBProcessLaunchConfiguration *)object
@@ -80,8 +80,7 @@
   }
   return [self.arguments isEqual:object.arguments] &&
          [self.environment isEqual:object.environment] &&
-         ((self.stdErrPath == nil && object.stdErrPath == nil)  || [self.stdErrPath isEqual:object.stdErrPath]) &&
-         ((self.stdOutPath == nil && object.stdOutPath == nil)  || [self.stdOutPath isEqual:object.stdOutPath]);
+         self.options == object.options;
 }
 
 - (NSString *)launchPath
@@ -116,37 +115,56 @@
   return @{
     @"arguments" : self.arguments,
     @"environment" : self.environment,
-    @"stdout_path" : self.stdOutPath ?: NSNull.null,
-    @"stderr_path" : self.stdErrPath ?: NSNull.null,
+    @"options" : [FBProcessLaunchConfiguration optionNamesFromOptions:self.options],
   };
+}
+
++ (NSArray<NSString *> *)optionNamesFromOptions:(FBProcessLaunchOptions)options
+{
+  NSMutableArray<NSString *> *names = [NSMutableArray array];
+  if ((options & FBProcessLaunchOptionsWriteStdout) == FBProcessLaunchOptionsWriteStdout) {
+    [names addObject:OptionConnectStdout];
+  }
+  if ((options & FBProcessLaunchOptionsWriteStderr) == FBProcessLaunchOptionsWriteStderr) {
+    [names addObject:OptionConnectStderr];
+  }
+  return [names copy];
+}
+
++ (FBProcessLaunchOptions)optionsFromOptionNames:(NSArray<NSString *> *)names
+{
+  FBProcessLaunchOptions options = 0;
+  for (NSString *name in names) {
+    if ([name isEqualToString:OptionConnectStdout]) {
+      options = (options | FBProcessLaunchOptionsWriteStdout);
+    }
+    if ([name isEqualToString:OptionConnectStderr]) {
+      options = (options | FBProcessLaunchOptionsWriteStderr);
+    }
+  }
+  return options;
 }
 
 @end
 
 @implementation FBApplicationLaunchConfiguration
 
-+ (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment
-{
-  return [self configurationWithApplication:application arguments:arguments environment:environment stdOutPath:nil stdErrPath:nil];
-}
-
-+ (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
-{
-  return [self configurationWithBundleID:application.bundleID bundleName:application.name arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
-}
-
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment
-{
-  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment stdOutPath:nil stdErrPath:nil];
-}
-
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
 {
   if (!bundleID || !arguments || !environment) {
     return nil;
   }
 
-  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment options:options];
+}
+
++ (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
+{
+  if (!application) {
+    return nil;
+  }
+
+  return [self configurationWithBundleID:application.bundleID bundleName:application.name arguments:arguments environment:environment options:options];
 }
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
@@ -167,12 +185,17 @@
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
     return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
-  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment];
+  NSArray<NSString *> *optionNames = json[@"options"] ?: @[];
+  if (![FBCollectionInformation isArrayHeterogeneous:optionNames withClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
+  }
+  FBProcessLaunchOptions options = [FBProcessLaunchConfiguration optionsFromOptionNames:optionNames];
+  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment options:options];
 }
 
-- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
+- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
 {
-  self = [super initWithArguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  self = [super initWithArguments:arguments environment:environment options:options];
   if (!self) {
     return nil;
   }
@@ -188,12 +211,11 @@
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"%@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",
+    @"%@ | Arguments %@ | Environment %@ | Options %lu",
     self.shortDescription,
     self.arguments,
     self.environment,
-    self.stdOutPath,
-    self.stdErrPath
+    (unsigned long)self.options
   ];
 }
 
@@ -211,8 +233,7 @@
     bundleName:self.bundleName
     arguments:self.arguments
     environment:self.environment
-    stdOutPath:self.stdOutPath
-    stdErrPath:self.stdErrPath];
+    options:self.options];
 }
 
 #pragma mark NSCoding
@@ -266,17 +287,17 @@
 
 @implementation FBAgentLaunchConfiguration
 
-+ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment
++ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment
 {
-  return [self configurationWithBinary:agentBinary arguments:arguments environment:environment stdOutPath:nil stdErrPath:nil];
+  return [self configurationWithBinary:agentBinary arguments:arguments environment:environment options:0];
 }
 
-+ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
++ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
 {
   if (!agentBinary || !arguments || !environment) {
     return nil;
   }
-  return [[self alloc] initWithBinary:agentBinary arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  return [[self alloc] initWithBinary:agentBinary arguments:arguments environment:environment options:options];
 }
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
@@ -298,22 +319,17 @@
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
     return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
-
-  // These are both optional arguments.
-  NSString *stdOutPath = json[@"stdout_path"];
-  if (stdOutPath && ![stdOutPath isKindOfClass:NSNull.class] && ![stdOutPath isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a valid path for stdout", stdOutPath] fail:error];
+  NSArray<NSString *> *optionNames = json[@"options"] ?: @[];
+  if (![FBCollectionInformation isArrayHeterogeneous:optionNames withClass:NSString.class]) {
+    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
   }
-  NSString *stdErrPath = json[@"stderr_path"];
-  if (stdErrPath && ![stdOutPath isKindOfClass:NSNull.class] && ![stdErrPath isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a valid path for stderr", stdErrPath] fail:error];
-  }
-  return [self configurationWithBinary:binary arguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  FBProcessLaunchOptions options = [FBProcessLaunchConfiguration optionsFromOptionNames:optionNames];
+  return [self configurationWithBinary:binary arguments:arguments environment:environment options:options];
 }
 
-- (instancetype)initWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
+- (instancetype)initWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment options:(FBProcessLaunchOptions)options
 {
-  self = [super initWithArguments:arguments environment:environment stdOutPath:stdOutPath stdErrPath:stdErrPath];
+  self = [super initWithArguments:arguments environment:environment options:options];
   if (!self) {
     return nil;
   }
@@ -333,12 +349,11 @@
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | StdOut %@ | StdErr %@",
+    @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | Options %lu",
     self.agentBinary,
     self.arguments,
     self.environment,
-    self.stdOutPath,
-    self.stdErrPath
+    self.options
   ];
 }
 
@@ -355,8 +370,7 @@
     initWithBinary:self.agentBinary
     arguments:self.arguments
     environment:self.environment
-    stdOutPath:self.stdOutPath
-    stdErrPath:self.stdErrPath];
+    options:self.options];
 }
 
 #pragma mark NSCoding
@@ -393,8 +407,8 @@
     return NO;
   }
   return [self.agentBinary isEqual:object.agentBinary] &&
-  [self.arguments isEqual:object.arguments] &&
-  [self.environment isEqual:object.environment];
+         [self.arguments isEqual:object.arguments] &&
+         [self.environment isEqual:object.environment];
 }
 
 #pragma mark FBJSONSerializable

@@ -162,7 +162,7 @@
   [self.sink agentDidTerminate:agentProcess expected:expected];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
 {
   // De-duplicate known-launched applications.
   if ([self.knownLaunchedProcesses containsObject:applicationProcess]) {
@@ -173,7 +173,7 @@
   [self createNotifierForProcess:applicationProcess withHandler:^(FBSimulatorEventRelay *relay) {
     [relay applicationDidTerminate:applicationProcess expected:NO];
   }];
-  [self.sink applicationDidLaunch:launchConfig didStart:applicationProcess stdOut:stdOut stdErr:stdErr];
+  [self.sink applicationDidLaunch:launchConfig didStart:applicationProcess];
 }
 
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected

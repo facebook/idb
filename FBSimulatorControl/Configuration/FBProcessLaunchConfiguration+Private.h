@@ -13,8 +13,7 @@
 
 @property (nonatomic, copy, readwrite) NSArray *arguments;
 @property (nonatomic, copy, readwrite) NSDictionary *environment;
-@property (nonatomic, copy, readwrite) NSString *stdOutPath;
-@property (nonatomic, copy, readwrite) NSString *stdErrPath;
+@property (nonatomic, assign, readwrite) FBProcessLaunchOptions options;
 
 @end
 

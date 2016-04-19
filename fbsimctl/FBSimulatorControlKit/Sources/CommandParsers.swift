@@ -211,6 +211,15 @@ extension FBSimulatorState : Parsable {
   }}
 }
 
+extension FBProcessLaunchOptions : Parsable {
+  public static var parser: Parser<FBProcessLaunchOptions> { get {
+    return Parser<FBProcessLaunchOptions>.union([
+      Parser.ofString("--stdout", FBProcessLaunchOptions.WriteStdout),
+      Parser.ofString("--stderr", FBProcessLaunchOptions.WriteStderr),
+    ])
+  }}
+}
+
 extension FBCrashLogInfoProcessType : Parsable {
   public static var parser: Parser<FBCrashLogInfoProcessType> { get {
     return Parser<FBCrashLogInfoProcessType>
@@ -468,23 +477,25 @@ extension Action : Parsable {
 
   static var agentLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
     return Parser
-      .ofTwoSequenced(
+      .ofThreeSequenced(
+        FBProcessLaunchOptions.parser,
         Parser<Any>.ofBinary,
         self.argumentParser
       )
-      .fmap { (binary, arguments) in
-        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:])
+      .fmap { (options, binary, arguments) in
+        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:], options: options)
       }
   }}
 
   static var appLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
     return Parser
-      .ofTwoSequenced(
+      .ofThreeSequenced(
+        FBProcessLaunchOptions.parser,
         Parser<Any>.ofBundleID,
         self.argumentParser
       )
-      .fmap { (bundleID, arguments) in
-        return FBApplicationLaunchConfiguration(bundleID: bundleID, bundleName: nil, arguments: arguments, environment : [:])
+      .fmap { (options, bundleID, arguments) in
+        return FBApplicationLaunchConfiguration(bundleID: bundleID, bundleName: nil, arguments: arguments, environment : [:], options: options)
       }
   }}
 

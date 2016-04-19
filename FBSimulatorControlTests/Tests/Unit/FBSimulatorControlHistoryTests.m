@@ -40,8 +40,8 @@
 
 - (void)testHistoryCanBeArchived
 {
-  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2 stdOut:nil stdErr:nil];
-  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
+  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2];
+  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1];
 
   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:self.generator.history];
   FBSimulatorHistory *history = [NSKeyedUnarchiver unarchiveObjectWithData:data];

@@ -39,7 +39,8 @@
     FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration
       configurationWithApplication:application
       arguments:@[]
-      environment:@{@"SHIMULATOR_CLEAN_KEYCHAIN" : @"1"}]
+      environment:@{@"SHIMULATOR_CLEAN_KEYCHAIN" : @"1"}
+      options:0]
       injectingShimulator];
     if (![[simulator.interact launchApplication:appLaunch] perform:&innerError]) {
       return [[[[FBSimulatorError

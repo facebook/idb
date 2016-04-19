@@ -175,18 +175,18 @@ let validActions: [([String], Action)] = [
   (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
   (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
-  (["launch", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
-  (["launch", "com.foo.bar", "--foo", "--", "--something-else"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:]))),
-  (["launch", "com.foo.bar"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))),
-  (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
-  (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]))),
-  (["launch", Fixtures.binary.path, "--foo", "-b", "-a", "-r"], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
-  (["launch", Fixtures.binary.path], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:]))),
-  (["launch_xctest", "/usr/bin", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]), "/usr/bin")),
-  (["launch_xctest", "/usr/bin", "com.foo.bar", "--foo", "--", "--something-else"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:]), "/usr/bin")),
-  (["launch_xctest", "/usr/bin", "com.foo.bar"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]), "/usr/bin")),
-  (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]), "/usr/bin")),
-  (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:]), "/usr/bin")),
+  (["launch", "--stderr", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: .WriteStderr))),
+  (["launch", "--stdout", "com.foo.bar", "--foo", "--", "--something-else"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:], options: .WriteStdout))),
+  (["launch", "com.foo.bar"], Action.Launch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
+  (["launch", "--stderr", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: .WriteStderr))),
+  (["launch", Fixtures.application.path], Action.Launch(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
+  (["launch", Fixtures.binary.path, "--foo", "-b", "-a", "-r"], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: FBProcessLaunchOptions()))),
+  (["launch", Fixtures.binary.path], Action.Launch(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
+  (["launch_xctest", "/usr/bin", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
+  (["launch_xctest", "/usr/bin", "com.foo.bar", "--foo", "--", "--something-else"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
+  (["launch_xctest", "/usr/bin", "com.foo.bar"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
+  (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
+  (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
   (["list"], Action.List),
   (["listen", "--http", "43"], Action.Listen(Server.Http(43))),
   (["listen", "--socket", "42"], Action.Listen(Server.Socket(42))),
@@ -195,8 +195,8 @@ let validActions: [([String], Action)] = [
   (["open", "http://facebook.com"], Action.Open(NSURL(string: "http://facebook.com")!)),
   (["record", "start"], Action.Record(true)),
   (["record", "stop"], Action.Record(false)),
-  (["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:]))),
-  (["relaunch", "com.foo.bar"], Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:]))),
+  (["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: FBProcessLaunchOptions()))),
+  (["relaunch", "com.foo.bar"], Action.Relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
   (["shutdown"], Action.Shutdown),
   (["shutdown"], Action.Shutdown),
   (["terminate", "com.foo.bar"], Action.Terminate("com.foo.bar")),
@@ -264,10 +264,10 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesMultipleConsecutiveLaunches() {
-    let launchConfig1 = FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "--bar"], environment: [:])
-    let launchConfig2 = FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: ["--bing", "--bong"], environment: [:])
+    let launchConfig1 = FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "--bar"], environment: [:], options: .WriteStdout)
+    let launchConfig2 = FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: ["--bing", "--bong"], environment: [:], options: FBProcessLaunchOptions())
     let actions: [Action] = [Action.Launch(launchConfig1), Action.Launch(launchConfig2)]
-    let suffix: [String] = ["launch", "com.foo.bar", "--foo", "--bar", "--", "launch", Fixtures.application.path, "--bing", "--bong"]
+    let suffix: [String] = ["launch", "--stdout", "com.foo.bar", "--foo", "--bar", "--", "launch", Fixtures.application.path, "--bing", "--bong"]
     self.assertWithDefaultActions(actions, suffix: suffix)
   }
 

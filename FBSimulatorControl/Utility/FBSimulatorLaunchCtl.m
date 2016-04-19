@@ -54,7 +54,8 @@
   FBAgentLaunchConfiguration *launchConfiguration = [FBAgentLaunchConfiguration
     configurationWithBinary:FBSimulatorBinary.launchCtl
     arguments:@[@"list"]
-    environment:@{}];
+    environment:@{}
+    options:0];
 
   // Construct a pipe to stdout and read asynchronously from it.
   // Synchronize on the mutable string.

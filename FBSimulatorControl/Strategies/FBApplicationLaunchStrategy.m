@@ -74,13 +74,7 @@
       fail:error];
   }
 
-  NSFileHandle *stdOut = nil;
-  NSFileHandle *stdErr = nil;
-  if (![appLaunch createFileHandlesWithStdOut:&stdOut stdErr:&stdErr error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-
-  NSDictionary *options = [appLaunch simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
+  NSDictionary *options = [appLaunch simDeviceLaunchOptionsWithStdOut:nil stdErr:nil];
   if (!options) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -93,7 +87,7 @@
       inSimulator:simulator]
       fail:error];
   }
-  [simulator.eventSink applicationDidLaunch:appLaunch didStart:process stdOut:stdOut stdErr:stdErr];
+  [simulator.eventSink applicationDidLaunch:appLaunch didStart:process];
   return process;
 }
 

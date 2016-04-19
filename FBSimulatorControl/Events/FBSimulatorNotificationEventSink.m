@@ -108,7 +108,7 @@ NSString *const FBSimulatorTestManagerKey = @"testManager";
   }];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
 {
   [self materializeNotification:FBSimulatorApplicationProcessDidLaunchNotification userInfo:@{
     FBSimulatorProcessKey : applicationProcess,

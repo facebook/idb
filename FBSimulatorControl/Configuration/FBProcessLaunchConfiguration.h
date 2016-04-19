@@ -15,6 +15,16 @@
 @class FBSimulatorApplication;
 @class FBSimulatorBinary;
 
+NS_ASSUME_NONNULL_BEGIN
+
+/**
+ Options for the Launch of Processes.
+ */
+typedef NS_OPTIONS(NSUInteger, FBProcessLaunchOptions) {
+  FBProcessLaunchOptionsWriteStdout = 1 << 1, /** Writes the stdout of the launched process to a file. */
+  FBProcessLaunchOptionsWriteStderr = 1 << 2, /** Writes the stderr of the launched process to a file. */
+};
+
 /**
  An abstract value object for launching both agents and applications
  */
@@ -23,22 +33,17 @@
 /**
  An NSArray<NSString *> of arguments to the process. Will not be nil.
  */
-@property (nonatomic, copy, readonly) NSArray *arguments;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
 
 /**
  A NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Will not be nil.
  */
-@property (nonatomic, copy, readonly) NSDictionary *environment;
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
 
 /**
- The file path where the stdout of the launched process should be written. May be nil.
+ The option set for launching Applications.
  */
-@property (nonatomic, copy, readonly) NSString *stdOutPath;
-
-/**
- The file path where the stderr of the launched process should be written. May be nil.
- */
-@property (nonatomic, copy, readonly) NSString *stdErrPath;
+@property (nonatomic, assign, readonly) FBProcessLaunchOptions options;
 
 @end
 
@@ -50,35 +55,13 @@
 /**
  Creates and returns a new Configuration with the provided parameters.
 
- @param application the Application to Launch. Must not be nil.
- @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
- @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @returns a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment;
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
  @param application the Application to Launch.
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param stdOutPath the file path where the stderr of the launched process should be written. May be nil.
- @param stdErrPath The file path where the stderr of the launched process should be written. May be nil.
+ @param options the options of the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
- @param bundleID the Bundle ID of the App to Launch. Must not be nil.
- @param bundleName the BundleName (CFBundleName) of the App to Launch. Must not be nil.
- @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
- @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @returns a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment;
++ (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options;
 
 /**
  Creates and returns a new Configuration with the provided parameters.
@@ -87,21 +70,20 @@
  @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param stdOutPath the file path where the stderr of the launched process should be written. May be nil.
- @param stdErrPath The file path where the stderr of the launched process should be written. May be nil.
+ @param options the options of the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options;
 
 /**
  The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.
  */
-@property (nonatomic, copy, readonly) NSString *bundleID;
+@property (nonnull, nonatomic, copy, readonly) NSString *bundleID;
 
 /**
  The Name (CFBundleName) of the the Application to Launch. May be nil.
  */
-@property (nonatomic, copy, readonly) NSString *bundleName;
+@property (nullable, nonatomic, copy, readonly) NSString *bundleName;
 
 @end
 
@@ -116,21 +98,10 @@
  @param agentBinary the Binary Path of the agent to Launch. Must not be nil.
  @param arguments an array-of-strings of arguments to the process. Must not be nil.
  @param environment a Dictionary, mapping Strings to Strings of the Environment to set in the launched Application process. Must not be nil.
+ @param options the options of the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment;
-
-/**
- Creates and returns a new Configuration with the provided parameters
-
- @param agentBinary the Binary Path of the agent to Launch. Must not be nil.
- @param arguments an array-of-strings of arguments to the process. Must not be nil.
- @param environment a Dictionary, mapping Strings to Strings of the Environment to set in the launched Application process. Must not be nil.
- @param stdOutPath the file path where the stderr of the launched process should be written. May be nil.
- @param stdErrPath The file path where the stderr of the launched process should be written. May be nil.
- @returns a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath;
++ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options;
 
 /**
  The Binary Path of the agent to Launch.
@@ -138,3 +109,5 @@
 @property (nonatomic, copy, readonly) FBSimulatorBinary *agentBinary;
 
 @end
+
+NS_ASSUME_NONNULL_END

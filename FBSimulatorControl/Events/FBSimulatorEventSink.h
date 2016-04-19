@@ -94,10 +94,8 @@
 
  @param launchConfig the Application Launch Configuration that was used to launch the Application.
  @param applicationProcess the resulting Process Info from the launch.
- @param stdOut the stdout file handle of the launched agent, may be nil.
- @param stdErr the stderr file handle of the launched agent, may be nil.
  */
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess;
 
 /**
  Event for the termination of an Application.

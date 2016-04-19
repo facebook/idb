@@ -89,7 +89,8 @@
   FBApplicationLaunchConfiguration *appLaunch = [[FBApplicationLaunchConfiguration
     configurationWithApplication:photosApp
     arguments:@[]
-    environment:@{@"SHIMULATOR_UPLOAD_VIDEO" : joinedPaths}]
+    environment:@{@"SHIMULATOR_UPLOAD_VIDEO" : joinedPaths}
+    options:0]
     injectingShimulator];
 
   if (![[simulator.interact launchApplication:appLaunch] perform:&innerError]) {

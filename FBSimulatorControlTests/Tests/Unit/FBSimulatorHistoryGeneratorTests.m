@@ -46,9 +46,9 @@
 
 - (void)testLastAppLaunch
 {
-  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
+  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1];
   [self.generator applicationDidTerminate:self.processInfo1 expected:YES];
-  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2 stdOut:nil stdErr:nil];
+  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2];
   FBApplicationLaunchConfiguration *lastLaunchedApp = self.generator.history.lastLaunchedApplication;
 
   XCTAssertNotNil(lastLaunchedApp);
@@ -58,9 +58,9 @@
 
 - (void)testRecencyOfApplicationLaunchConfigurations
 {
-  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1 stdOut:nil stdErr:nil];
-  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2 stdOut:nil stdErr:nil];
-  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2a stdOut:nil stdErr:nil];
+  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1];
+  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2];
+  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2a];
 
   XCTAssertEqualObjects(self.generator.history.allApplicationLaunches, (@[self.appLaunch2, self.appLaunch2, self.appLaunch1]));
 }

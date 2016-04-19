@@ -83,7 +83,7 @@
   [self.logger logFormat:@"Agent Did Terminate => Expected %d %@", expected, agentProcess.shortDescription];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
 {
   [self.logger logFormat:@"Application Did Launch => %@", applicationProcess.shortDescription];
 }
