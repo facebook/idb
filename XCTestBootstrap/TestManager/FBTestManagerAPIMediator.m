@@ -43,6 +43,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 @property (nonatomic, assign) pid_t testRunnerPID;
 @property (nonatomic, copy) NSUUID *sessionIdentifier;
+@property (nonatomic, strong) NSMutableDictionary *tokenToBundleIDMap;
 
 @property (nonatomic, assign) BOOL finished;
 @property (nonatomic, assign) BOOL hasFailed;
@@ -84,6 +85,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   mediator.targetIsiOSSimulator = [self isKindOfClass:NSClassFromString(@"DVTiPhoneSimulator")];
   mediator.sessionIdentifier = sessionIdentifier;
   mediator.testRunnerPID = testRunnerPID;
+  mediator.tokenToBundleIDMap = [NSMutableDictionary new];
   return mediator;
 }
 
@@ -381,13 +383,16 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
+  [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
   NSError *error;
   DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
-  if(![self.delegate testManagerMediator:(FBTestManagerAPIMediator *)self launchProcessWithPath:path bundleID:bundleID arguments:arguments environmentVariables:environment error:&error]) {
+  if(![self.delegate testManagerMediator:self launchProcessWithPath:path bundleID:bundleID arguments:arguments environmentVariables:environment error:&error]) {
     [recepit invokeCompletionWithReturnValue:nil error:error];
   }
   else {
-    [recepit invokeCompletionWithReturnValue:@(recepit.hash) error:nil];
+    id token = @(recepit.hash);
+    self.tokenToBundleIDMap[token] = bundleID;
+    [recepit invokeCompletionWithReturnValue:token error:nil];
   }
   return recepit;
 }
@@ -397,6 +402,33 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [self.logger logFormat:@"Test process requested launch process status with token %@", token];
   DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
   [recepit invokeCompletionWithReturnValue:@1 error:nil];
+  return recepit;
+}
+
+- (id)_XCT_terminateProcess:(id)token
+{
+  [self.logger logFormat:@"Test process requested process termination with token %@", token];
+  NSError *error;
+  DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
+  if (!token) {
+    error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
+                                code:0x1
+                            userInfo:@{NSLocalizedDescriptionKey : @"API violation: token was nil."}];
+  }
+  else {
+    NSString *bundleID = self.tokenToBundleIDMap[token];
+    if (!bundleID) {
+      error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
+                                  code:0x2
+                              userInfo:@{NSLocalizedDescriptionKey : @"Invalid or expired token: no matching operation was found."}];
+    } else {
+      [self.delegate testManagerMediator:self killApplicationWithBundleID:bundleID error:&error];
+    }
+  }
+  if (error) {
+    [self.logger logFormat:@"Failed to kill process with token %@ dure to %@", token, error];
+  }
+  [recepit invokeCompletionWithReturnValue:token error:error];
   return recepit;
 }
 
@@ -557,11 +589,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
-{
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_terminateProcess:(id)arg1
 {
   return [self handleUnimplementedXCTRequest:_cmd];
 }

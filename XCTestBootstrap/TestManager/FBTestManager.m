@@ -63,4 +63,9 @@
   return YES;
 }
 
+- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  return [self.deviceOperator killApplicationWithBundleID:bundleID error:error];
+}
+
 @end

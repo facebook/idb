@@ -86,4 +86,16 @@
        environmentVariables:(NSDictionary *)environmentVariables
                       error:(NSError **)error;
 
+/**
+ Request to kill an application with bundle id
+
+ @param mediator a mediator requesting kill
+ @param bundleID a bundle id of application to kill
+ @param error error for error handling
+ @return YES if the request was successful, otherwise NO.
+ */
+- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator
+killApplicationWithBundleID:(NSString *)bundleID
+                      error:(NSError **)error;
+
 @end
