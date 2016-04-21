@@ -208,9 +208,14 @@ struct UploadInteraction : Runner {
   }
 
   func run() -> CommandResult {
-    let diagnosticLocations: [(FBDiagnostic, String)] = diagnostics.map { diagnostic in
-      return (diagnostic, diagnostic.asPath)
+    var diagnosticLocations: [(FBDiagnostic, String)] = []
+    for diagnostic in diagnostics {
+      guard let localPath = diagnostic.asPath else {
+        return .Failure("Could not get a local path for diagnostic \(diagnostic)")
+      }
+      diagnosticLocations.append((diagnostic, localPath))
     }
+
     let mediaPredicate = NSPredicate.predicateForMediaPaths()
     let media = diagnosticLocations.filter { mediaPredicate.evaluateWithObject($0.1) }
 

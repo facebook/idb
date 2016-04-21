@@ -12,6 +12,8 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBJSONConversion.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
@@ -21,49 +23,49 @@
 /**
  The name of the Log for uniquely identifying the log.
  */
-@property (nonatomic, readonly, copy) NSString *shortName;
+@property (nullable, nonatomic, readonly, copy) NSString *shortName;
 
 /**
  The File Extension of the log. The extension is used when writing to file.
  */
-@property (nonatomic, readonly, copy) NSString *fileType;
+@property (nullable, nonatomic, readonly, copy) NSString *fileType;
 
 /**
  A String representing this log's human readable name, as shown in error reports
  */
-@property (nonatomic, readonly, copy) NSString *humanReadableName;
+@property (nullable, nonatomic, readonly, copy) NSString *humanReadableName;
 
 /**
  A File Path repesenting the location where files will be stored if they are when they are converted to be backed by a file.
  */
-@property (nonatomic, readonly, copy) NSString *storageDirectory;
+@property (nullable, nonatomic, readonly, copy) NSString *storageDirectory;
 
 /**
  A String used to define where the log has been persisted to.
  This represents a more permenant or remote destination, as the File Path represented by `asPath` may be temporary.
  Can also be used to represent a URL or other identifier of a remote resource.
  */
-@property (nonatomic, readonly, copy) NSString *destination;
+@property (nullable, nonatomic, readonly, copy) NSString *destination;
 
 /**
  The content of the log, if representable as NSData.
  */
-@property (nonatomic, readonly, copy) NSData *asData;
+@property (nullable, nonatomic, readonly, copy) NSData *asData;
 
 /**
  The content of the log, if representable by String.
  */
-@property (nonatomic, readonly, copy) NSString *asString;
+@property (nullable, nonatomic, readonly, copy) NSString *asString;
 
 /**
  The content of the log, if representable as a File Path.
  */
-@property (nonatomic, readonly, copy) NSString *asPath;
+@property (nullable, nonatomic, readonly, copy) NSString *asPath;
 
 /**
  The content of the log, if representable as a JSON Object in Native Containers.
  */
-@property (nonatomic, readonly, copy) id asJSON;
+@property (nullable, nonatomic, readonly, copy) id asJSON;
 
 /**
  Whether the log has content or is missing/empty.
@@ -93,7 +95,7 @@
  @param error an error out for any error that occurs.
  @return the location of the file if successful, nil otherwise.
  */
-- (NSString *)writeOutToDirectory:(NSString *)directory error:(NSError **)error;
+- (nullable NSString *)writeOutToDirectory:(NSString *)directory error:(NSError **)error;
 
 @end
 
@@ -264,3 +266,5 @@
 - (FBDiagnostic *)build;
 
 @end
+
+NS_ASSUME_NONNULL_END

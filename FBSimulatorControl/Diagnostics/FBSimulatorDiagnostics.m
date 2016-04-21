@@ -119,20 +119,22 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 - (FBDiagnostic *)stdOut:(FBProcessLaunchConfiguration *)configuration
 {
   NSString *name = [NSString stringWithFormat:@"%@_out", configuration.identifiableName];
-  return [[[[self.logBuilder
+  return [[[[[self.logBuilder
     updateStorageDirectory:[self stdOutErrContainersPath]]
     updateShortName:name]
     updateFileType:@"txt"]
+    updatePathFromDefaultLocation]
     build];
 }
 
 - (FBDiagnostic *)stdErr:(FBProcessLaunchConfiguration *)configuration
 {
   NSString *name = [NSString stringWithFormat:@"%@_err", configuration.identifiableName];
-  return [[[[self.logBuilder
+  return [[[[[self.logBuilder
     updateStorageDirectory:[self stdOutErrContainersPath]]
     updateShortName:name]
     updateFileType:@"txt"]
+    updatePathFromDefaultLocation]
     build];
 }
 
