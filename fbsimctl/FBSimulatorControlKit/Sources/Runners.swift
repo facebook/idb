@@ -137,20 +137,34 @@ struct ServerRunner : Runner, CommandPerformer {
   let serverConfiguration: Server
 
   func run(reporter: EventReporter) -> CommandResult {
-    let relayReporter = RelayReporter(reporter: reporter, subject: self.serverConfiguration)
+    let relay = SynchronousRelay(relay: self.baseRelay, reporter: reporter)
+
+    do {
+      reporter.reportSimple(EventName.Listen, EventType.Started, serverConfiguration)
+      try relay.start()
+    } catch let error as CustomStringConvertible {
+      return .Failure(error.description)
+    } catch {
+      return .Failure("An unknown error occurred running the server")
+    }
+    let _ = try? relay.stop()
+    reporter.reportSimple(EventName.Listen, EventType.Ended, serverConfiguration)
+    return .Success
+  }
+
+  var baseRelay: Relay { get {
     switch self.serverConfiguration {
     case .StdIO:
-      StdIORelay(outputOptions: self.configuration.outputOptions, performer: self, reporter: relayReporter).start()
+      return StdIORelay(outputOptions: self.configuration.outputOptions, performer: self)
     case .Socket(let portNumber):
-      SocketRelay(outputOptions: self.configuration.outputOptions, portNumber: portNumber, performer: self, reporter: relayReporter).start()
+      return SocketRelay(outputOptions: self.configuration.outputOptions, portNumber: portNumber, performer: self)
     case .Http(let portNumber):
       let query = self.query ?? self.defaults.queryForAction(Action.Listen(self.serverConfiguration))!
       let format = self.format ?? self.defaults.format
       let performer = ActionPerformer(commandPerformer: self, configuration: self.configuration, query: query, format: format)
-      HttpRelay(portNumber: portNumber, performer: performer, reporter: relayReporter).start()
+      return HttpRelay(portNumber: portNumber, performer: performer)
     }
-    return .Success
-  }
+  }}
 
   func perform(command: Command, reporter: EventReporter) -> CommandResult {
     return CommandRunner(command: command, defaults: self.defaults, control: self.control).run(reporter)

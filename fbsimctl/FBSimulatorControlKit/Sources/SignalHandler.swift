@@ -45,7 +45,7 @@ class SignalHandler {
     self.callback = callback
   }
 
-  private func register() {
+  func register() {
     self.sources = signalPairs.map { info in
       signal(info.signo, ignoreSignal)
       let source = dispatch_source_create(
@@ -62,23 +62,9 @@ class SignalHandler {
     }
   }
 
-  private func unregister() {
+  func unregister() {
     for source in self.sources {
       dispatch_source_cancel(source)
     }
-  }
-}
-
-extension SignalHandler {
-  static func runUntilSignalled(reporter: EventReporter) {
-    var signalled = false
-    let handler = SignalHandler { info in
-      reporter.reportSimple(EventName.Signalled, EventType.Discrete, info)
-      signalled = true
-    }
-
-    handler.register()
-    NSRunLoop.currentRunLoop().spinRunLoopWithTimeout(DBL_MAX) { signalled }
-    handler.unregister()
   }
 }

@@ -170,14 +170,14 @@ class SocketConnection {
   private let writeStream: NSOutputStream
   private let writeStreamDelegate: OutputDelegate
 
-  private let relayConnection: RelayConnection
+  private let commandBuffer: CommandBuffer
 
   init(readStream: NSInputStream, writeStream: NSOutputStream, outputOptions: OutputOptions, delegate: SocketConnectionDelegate, performer: CommandPerformer) {
     self.writeStream = writeStream
     self.writeStreamDelegate = OutputDelegate(stream: writeStream)
-    self.relayConnection = RelayConnection(performer: performer, reporter: outputOptions.createReporter(self.writeStreamDelegate))
+    self.commandBuffer = CommandBuffer(performer: performer, reporter: outputOptions.createReporter(self.writeStreamDelegate))
     self.readStream = readStream
-    self.readStreamDelegate = InputDelegate(lineBuffer: self.relayConnection.lineBuffer)
+    self.readStreamDelegate = InputDelegate(lineBuffer: self.commandBuffer.lineBuffer)
   }
 
   func start() {
@@ -213,21 +213,16 @@ class SocketRelay : Relay, SocketConnectionDelegate {
   let outputOptions: OutputOptions
   let socketOptions: SocketRelay.Options
   let performer: CommandPerformer
-  let reporter: RelayReporter
   var registeredConnections: [SocketConnection] = []
 
-  init(outputOptions: OutputOptions, portNumber: in_port_t, performer: CommandPerformer, reporter: RelayReporter) {
+  init(outputOptions: OutputOptions, portNumber: in_port_t, performer: CommandPerformer) {
     self.socketOptions = SocketRelay.Options(portNumber: portNumber, bindIPv4: false, bindIPv6: true)
     self.outputOptions = outputOptions
     self.performer = performer
-    self.reporter = reporter
   }
 
   func start() {
-    self.reporter.started()
-    createSocketsAndRunInRunLoop()
-    SignalHandler.runUntilSignalled(self.reporter.reporter)
-    self.reporter.ended(nil)
+    self.createSocketsAndRunInRunLoop()
   }
 
   func stop() {

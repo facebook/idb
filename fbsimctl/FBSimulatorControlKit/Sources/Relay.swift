@@ -10,52 +10,40 @@
 import Foundation
 
 /**
- A Protocol for instances that act as sinks of and sources of lines.
+ A Protocol for defining
  */
 protocol Relay {
-  func start()
-  func stop()
+  func start() throws
+  func stop() throws
 }
 
 /**
-  A Class to report the Relay Lifecycle to.
-*/
-struct RelayReporter {
-  let reporter: EventReporter
-  let subject: EventReporterSubject
-
-  func started() {
-    self.reporter.reportSimple(EventName.Listen, EventType.Started, self.subject)
-  }
-
-  func ended(error: String?) {
-    if let error = error {
-      self.reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, error as NSString)
-    }
-    self.reporter.reportSimple(EventName.Listen, EventType.Ended, self.subject)
-  }
-}
-
-/**
- A Connection of Reporter-to-Transformer, linebuffering an input
+ Wraps an existing Relay, spinning the run loop after the underlying relay has started.
  */
-class RelayConnection : LineBufferDelegate {
-  let performer: CommandPerformer
+class SynchronousRelay : Relay {
+  let relay: Relay
   let reporter: EventReporter
-  lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
 
-  init (performer: CommandPerformer, reporter: EventReporter) {
-    self.performer = performer
+  init(relay: Relay, reporter: EventReporter) {
+    self.relay = relay
     self.reporter = reporter
   }
 
-  func buffer(lineAvailable: String) {
-    let result = self.performer.perform(lineAvailable, reporter: self.reporter)
-    switch result {
-    case .Failure(let error):
-      self.reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, error as NSString)
-    default:
-      break
+  func start() throws {
+    try self.relay.start()
+    var signalled = false
+
+    let handler = SignalHandler { info in
+      self.reporter.reportSimple(EventName.Signalled, EventType.Discrete, info)
+      signalled = true
     }
+
+    handler.register()
+    NSRunLoop.currentRunLoop().spinRunLoopWithTimeout(DBL_MAX) { signalled }
+    handler.unregister()
+  }
+
+  func stop() throws {
+    try self.relay.stop()
   }
 }

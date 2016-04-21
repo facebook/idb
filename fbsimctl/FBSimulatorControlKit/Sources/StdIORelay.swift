@@ -9,6 +9,9 @@
 
 import Foundation
 
+/**
+ A Writer Implementation for a File Handle
+ */
 public class FileHandleWriter : Writer {
   let fileHandle: NSFileHandle
 
@@ -40,30 +43,38 @@ public class FileHandleWriter : Writer {
   }
 }
 
-
+/**
+ A Relay that accepts input from stdin
+ */
 class StdIORelay : Relay {
-  let relayConnection: RelayConnection
-  let stdIn: NSFileHandle
-  let reporter: RelayReporter
+  let commandBuffer: CommandBuffer
+  let input: NSFileHandle
+  let output: NSFileHandle
 
-  init(outputOptions: OutputOptions, performer: CommandPerformer, reporter: RelayReporter) {
-    self.relayConnection = RelayConnection(performer: performer, reporter: outputOptions.createReporter(FileHandleWriter.stdOutWriter))
-    self.stdIn = NSFileHandle.fileHandleWithStandardInput()
-    self.reporter = reporter
+  init(outputOptions: OutputOptions, performer: CommandPerformer, input: NSFileHandle, output: NSFileHandle) {
+    self.commandBuffer = CommandBuffer(performer: performer, reporter: outputOptions.createReporter(FileHandleWriter.stdOutWriter))
+    self.input = input
+    self.output = output
   }
 
-  func start() {
-    let lineBuffer = self.relayConnection.lineBuffer
-    self.stdIn.readabilityHandler = { handle in
+  convenience init(outputOptions: OutputOptions, performer: CommandPerformer) {
+    self.init(
+      outputOptions: outputOptions,
+      performer: performer,
+      input: NSFileHandle.fileHandleWithStandardInput(),
+      output: NSFileHandle.fileHandleWithStandardOutput()
+    )
+  }
+
+  func start() throws {
+    let lineBuffer = self.commandBuffer.lineBuffer
+    self.input.readabilityHandler = { handle in
       let data = handle.availableData
       lineBuffer.appendData(data)
     }
-    self.reporter.started()
-    SignalHandler.runUntilSignalled(self.reporter.reporter)
-    self.reporter.ended(nil)
   }
 
   func stop() {
-    self.stdIn.readabilityHandler = nil
+    self.input.readabilityHandler = nil
   }
 }
