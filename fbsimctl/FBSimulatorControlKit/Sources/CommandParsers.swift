@@ -304,7 +304,8 @@ extension Action : Parsable {
         self.deleteParser,
         self.diagnoseParser,
         self.installParser,
-        self.launchParser,
+        self.launchAgentParser,
+        self.launchAppParser,
         self.launchXCTestParser,
         self.listenParser,
         self.listParser,
@@ -363,10 +364,22 @@ extension Action : Parsable {
       }
   }}
 
-  static var launchParser: Parser<Action> { get {
+  static var launchAgentParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Launch.rawValue, self.processLaunchParser)
-      .fmap { Action.Launch($0) }
+      .succeeded(
+        EventName.Launch.rawValue,
+        FBProcessLaunchConfigurationParsers.agentLaunchParser
+      )
+      .fmap { Action.LaunchAgent($0) }
+  }}
+
+  static var launchAppParser: Parser<Action> { get {
+    return Parser
+      .succeeded(
+        EventName.Launch.rawValue,
+        FBProcessLaunchConfigurationParsers.appLaunchParser
+      )
+      .fmap { Action.LaunchApp($0) }
   }}
 
   static var launchXCTestParser: Parser<Action> { get {
@@ -375,11 +388,11 @@ extension Action : Parsable {
         EventName.LaunchXCTest.rawValue,
         Parser.ofTwoSequenced(
           Parser<Any>.ofDirectory,
-          self.appLaunchParser
+          FBProcessLaunchConfigurationParsers.appLaunchParser
         )
       )
-      .fmap { (bundle, processLaunch) in
-        Action.LaunchXCTest(processLaunch as! FBApplicationLaunchConfiguration, bundle)
+      .fmap { (bundle, appLaunch) in
+        Action.LaunchXCTest(appLaunch, bundle)
       }
   }}
 
@@ -410,8 +423,8 @@ extension Action : Parsable {
 
   static var relaunchParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Relaunch.rawValue, self.appLaunchParser)
-      .fmap { Action.Relaunch($0 as! FBApplicationLaunchConfiguration) }
+      .succeeded(EventName.Relaunch.rawValue, FBProcessLaunchConfigurationParsers.appLaunchParser)
+      .fmap { Action.Relaunch($0) }
   }}
 
   static var recordParser: Parser<Action> { get {
@@ -465,45 +478,6 @@ extension Action : Parsable {
         }
         return Action.Upload(diagnostics)
       }
-  }}
-
-  static var processLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
-    return Parser<FBProcessLaunchConfiguration>
-      .alternative([
-        self.agentLaunchParser,
-        self.appLaunchParser,
-      ])
-  }}
-
-  static var agentLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
-    return Parser
-      .ofThreeSequenced(
-        FBProcessLaunchOptions.parser,
-        Parser<Any>.ofBinary,
-        self.argumentParser
-      )
-      .fmap { (options, binary, arguments) in
-        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:], options: options)
-      }
-  }}
-
-  static var appLaunchParser: Parser<FBProcessLaunchConfiguration> { get {
-    return Parser
-      .ofThreeSequenced(
-        FBProcessLaunchOptions.parser,
-        Parser<Any>.ofBundleID,
-        self.argumentParser
-      )
-      .fmap { (options, bundleID, arguments) in
-        return FBApplicationLaunchConfiguration(bundleID: bundleID, bundleName: nil, arguments: arguments, environment : [:], options: options)
-      }
-  }}
-
-  static var argumentParser: Parser<[String]> { get {
-    return Parser.manyTill(
-      Parser<String>.ofString("--", "--"),
-      Parser<String>.ofAny
-    )
   }}
 }
 
@@ -694,7 +668,7 @@ struct FBSimulatorConfigurationParser {
 }
 
 /**
- A separate struct for FBSimulatorLaunchConfigurationParser is needed as Parsable protcol conformance cannot be
+ A separate struct for FBSimulatorLaunchConfiguration is needed as Parsable protcol conformance cannot be
  applied to FBSimulatorLaunchConfiguration as it is a non-final class.
  */
 struct FBSimulatorLaunchConfigurationParser {
@@ -745,5 +719,42 @@ struct FBSimulatorLaunchConfigurationParser {
         Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])
+  }}
+}
+
+/**
+ A separate struct for FBProcessLaunchConfiguration is needed as Parsable protcol conformance cannot be
+ applied to FBProcessLaunchConfiguration as it is a non-final class.
+ */
+struct FBProcessLaunchConfigurationParsers {
+  static var appLaunchParser: Parser<FBApplicationLaunchConfiguration> { get {
+    return Parser
+      .ofThreeSequenced(
+        FBProcessLaunchOptions.parser,
+        Parser<Any>.ofBundleID,
+        self.argumentParser
+      )
+      .fmap { (options, bundleID, arguments) in
+        return FBApplicationLaunchConfiguration(bundleID: bundleID, bundleName: nil, arguments: arguments, environment : [:], options: options)
+      }
+  }}
+
+  static var agentLaunchParser: Parser<FBAgentLaunchConfiguration> { get {
+    return Parser
+      .ofThreeSequenced(
+        FBProcessLaunchOptions.parser,
+        Parser<Any>.ofBinary,
+        self.argumentParser
+      )
+      .fmap { (options, binary, arguments) in
+        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:], options: options)
+      }
+  }}
+
+  static var argumentParser: Parser<[String]> { get {
+    return Parser.manyTill(
+      Parser<String>.ofString("--", "--"),
+      Parser<String>.ofAny
+    )
   }}
 }

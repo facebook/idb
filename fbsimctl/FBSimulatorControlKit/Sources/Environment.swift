@@ -31,8 +31,14 @@ public extension Command {
 public extension Action {
   func appendEnvironment(environment: [String : String]) -> Action {
     switch self {
-    case .Launch(let configuration):
-      return .Launch(
+    case .LaunchApp(let configuration):
+      return .LaunchApp(
+        configuration.withEnvironmentAdditions(
+          Action.subprocessEnvironment(environment)
+        )
+      )
+    case .LaunchAgent(let configuration):
+      return .LaunchAgent(
         configuration.withEnvironmentAdditions(
           Action.subprocessEnvironment(environment)
         )

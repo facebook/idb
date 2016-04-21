@@ -19,8 +19,8 @@ class EnvironmentTests : XCTestCase {
       "FBSIMCTL_CHILD_BING" : "BONG",
     ]
     let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], options: FBProcessLaunchOptions())
-    let actual = Action.Launch(launchConfig).appendEnvironment(environment)
-    let expteced  = Action.Launch(launchConfig.withEnvironmentAdditions([
+    let actual = Action.LaunchApp(launchConfig).appendEnvironment(environment)
+    let expteced  = Action.LaunchApp(launchConfig.withEnvironmentAdditions([
       "FOO" : "BAR",
       "BING" : "BONG",
     ]))

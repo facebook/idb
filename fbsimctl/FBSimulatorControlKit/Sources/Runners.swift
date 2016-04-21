@@ -218,14 +218,13 @@ private struct SimulatorRunner : Runner {
       return SimulatorInteraction(reporter, EventName.Install, ControlCoreSubject(application)) { interaction in
         interaction.installApplication(application)
       }
-    case .Launch(let launch):
+    case .LaunchAgent(let launch):
       return SimulatorInteraction(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
-        if let appLaunch = launch as? FBApplicationLaunchConfiguration {
-          interaction.launchApplication(appLaunch)
-        }
-        else if let agentLaunch = launch as? FBAgentLaunchConfiguration {
-          interaction.launchAgent(agentLaunch)
-        }
+        interaction.launchAgent(launch)
+      }
+    case .LaunchApp(let launch):
+      return SimulatorInteraction(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
+        interaction.launchApplication(launch)
       }
     case .LaunchXCTest(let launch, let bundlePath):
       return SimulatorInteraction(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in

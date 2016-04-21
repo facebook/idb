@@ -165,11 +165,16 @@ class HttpRelay : Relay {
     }
   }}
 
-  // TODO - Attempt to inflate an ApplicationLaunchConfiguration if the AgentLaunchConfiguration fails.
   private var launchRoute: HttpRoute { get {
     return HttpRoute(method: HttpMethod.POST, endpoint: "launch") { json in
-      let launchConfiguration = try FBAgentLaunchConfiguration.inflateFromJSON(json.decode())
-      return Action.Launch(launchConfiguration)
+      if let agentLaunch = try? FBAgentLaunchConfiguration.inflateFromJSON(json.decode()) {
+        return Action.LaunchAgent(agentLaunch)
+      }
+      if let appLaunch = try? FBApplicationLaunchConfiguration.inflateFromJSON(json.decode()) {
+        return Action.LaunchApp(appLaunch)
+      }
+
+      throw JSONError.Parse("Could not parse \(json) either an Agent or App Launch")
     }
   }}
 
