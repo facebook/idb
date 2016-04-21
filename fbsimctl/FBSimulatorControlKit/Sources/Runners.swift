@@ -12,7 +12,7 @@ import FBSimulatorControl
 import FBControlCore
 
 protocol Runner {
-  func run(reporter: EventReporter) -> CommandResult
+  func run() -> CommandResult
 }
 
 extension Configuration {
@@ -26,10 +26,10 @@ extension Configuration {
 private struct SequenceRunner : Runner {
   let runners: [Runner]
 
-  func run(reporter: EventReporter) -> CommandResult {
+  func run() -> CommandResult {
     var output = CommandResult.Success
     for runner in runners {
-      output = output.append(runner.run(reporter))
+      output = output.append(runner.run())
       switch output {
       case .Failure: return output
       default: continue
@@ -40,11 +40,12 @@ private struct SequenceRunner : Runner {
 }
 
 struct CommandRunner : Runner {
+  let reporter: EventReporter
   let command: Command
   var defaults: Defaults?
   var control: FBSimulatorControl?
 
-  func run(reporter: EventReporter) -> CommandResult {
+  func run() -> CommandResult {
     switch (self.command) {
     case .Help(_, let userSpecified, _):
       reporter.reportSimpleBridge(EventName.Help, EventType.Discrete, Command.getHelp() as NSString)
@@ -58,12 +59,21 @@ struct CommandRunner : Runner {
         let defaults = try self.defaults ?? Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
         let control = try self.control ?? defaults.configuration.buildSimulatorControl()
         let format = format ?? defaults.format
+        let reporter = self.reporter
         let runner = SequenceRunner(runners:
             actions.map { action in
-              return ActionRunner(action: action, configuration: configuration, control: control, defaults: defaults, format: format, query: query)
+              return ActionRunner(
+                reporter: reporter,
+                action: action,
+                configuration: configuration,
+                control: control,
+                defaults: defaults,
+                format: format,
+                query: query
+              )
             }
         )
-        return runner.run(reporter)
+        return runner.run()
       } catch DefaultsError.UnreadableRCFile(let string) {
         return .Failure("Unreadable .rc file " + string)
       } catch let error as NSError {
@@ -74,12 +84,13 @@ struct CommandRunner : Runner {
 
   static func bootstrap(command: Command, writer: Writer) -> (EventReporter, CommandResult) {
     let reporter = command.createReporter(writer)
-    let runner = CommandRunner(command: command, defaults: nil, control: nil)
-    return (reporter, runner.run(reporter))
+    let runner = CommandRunner(reporter: reporter, command: command, defaults: nil, control: nil)
+    return (reporter, runner.run())
   }
 }
 
 struct ActionRunner : Runner {
+  let reporter: EventReporter
   let action: Action
   let configuration: Configuration
   let control: FBSimulatorControl
@@ -87,24 +98,26 @@ struct ActionRunner : Runner {
   let format: Format
   let query: FBSimulatorQuery?
 
-  func run(reporter: EventReporter) -> CommandResult {
+  func run() -> CommandResult {
     switch self.action {
     case .Listen(let server):
       return ServerRunner(
+        reporter: self.reporter,
         configuration: self.configuration,
         control: control,
         defaults: self.defaults,
         format: self.format,
         query: self.query,
         serverConfiguration: server
-      ).run(reporter)
+      ).run()
     case .Create(let configuration):
       return CreationRunner(
+        reporter: self.reporter,
         configuration: self.configuration,
         control: control,
         defaults: self.defaults,
         simulatorConfiguration: configuration
-      ).run(reporter)
+      ).run()
     default:
       if control.set.allSimulators.count == 0 {
         reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Devices in Device Set")
@@ -119,16 +132,22 @@ struct ActionRunner : Runner {
         return CommandResult.Success
       }
       let runners: [Runner] = simulators.map { simulator in
-        SimulatorRunner(simulator: simulator, action: action.appendEnvironment(NSProcessInfo.processInfo().environment), format: format)
+        SimulatorRunner(
+          reporter: self.reporter,
+          simulator: simulator,
+          action: action.appendEnvironment(NSProcessInfo.processInfo().environment),
+          format: format
+        )
       }
 
       defaults.updateLastQuery(query)
-      return SequenceRunner(runners: runners).run(reporter)
+      return SequenceRunner(runners: runners).run()
     }
   }
 }
 
 struct ServerRunner : Runner, CommandPerformer {
+  let reporter: EventReporter
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
@@ -136,9 +155,8 @@ struct ServerRunner : Runner, CommandPerformer {
   let query: FBSimulatorQuery?
   let serverConfiguration: Server
 
-  func run(reporter: EventReporter) -> CommandResult {
+  func run() -> CommandResult {
     let relay = SynchronousRelay(relay: self.baseRelay, reporter: reporter)
-
     do {
       reporter.reportSimple(EventName.Listen, EventType.Started, serverConfiguration)
       try relay.start()
@@ -167,22 +185,28 @@ struct ServerRunner : Runner, CommandPerformer {
   }}
 
   func perform(command: Command, reporter: EventReporter) -> CommandResult {
-    return CommandRunner(command: command, defaults: self.defaults, control: self.control).run(reporter)
+    return CommandRunner(
+      reporter: reporter,
+      command: command,
+      defaults: self.defaults,
+      control: self.control
+    ).run()
   }
 }
 
 struct CreationRunner : Runner {
+  let reporter: EventReporter
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
   let simulatorConfiguration: FBSimulatorConfiguration
 
-  func run(reporter: EventReporter) -> CommandResult {
+  func run() -> CommandResult {
     do {
-      reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
+      self.reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
       self.defaults.updateLastQuery(FBSimulatorQuery.udids([simulator.udid]))
-      reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
+      self.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success
     } catch let error as NSError {
       return CommandResult.Failure("Failed to Create Simulator \(error.description)")
@@ -191,24 +215,25 @@ struct CreationRunner : Runner {
 }
 
 private struct SimulatorRunner : Runner {
+  let reporter: EventReporter
   let simulator: FBSimulator
   let action: Action
   let format: Format
 
-  func run(reporter: EventReporter) -> CommandResult {
+  func run() -> CommandResult {
     do {
-      let translator = SimulatorReporter(simulator: self.simulator, format: self.format, reporter: reporter)
+      let reporter = SimulatorReporter(simulator: self.simulator, format: self.format, reporter: self.reporter)
       defer {
-        translator.simulator.userEventSink = nil
+        reporter.simulator.userEventSink = nil
       }
 
-      return SimulatorRunner.makeActionPerformer(self.action, translator).perform()
+      return self.runner(reporter).run()
     }
   }
 
-  static func makeActionPerformer(action : Action, _ reporter: SimulatorReporter) -> SimulatorControlActionPerformer {
+  func runner(reporter: SimulatorReporter) -> Runner {
     let simulator = reporter.simulator
-    switch action {
+    switch self.action {
     case .Approve(let bundleIDs):
       return SimulatorInteraction(reporter, EventName.Approve, ArraySubject(bundleIDs)) { interaction in
         interaction.authorizeLocationSettings(bundleIDs)

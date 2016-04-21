@@ -83,11 +83,7 @@ extension CommandResult : CustomStringConvertible, CustomDebugStringConvertible 
   }
 }
 
-protocol SimulatorControlActionPerformer {
-  func perform() -> CommandResult
-}
-
-struct SimulatorAction : SimulatorControlActionPerformer {
+struct SimulatorAction : Runner {
   let reporter: SimulatorReporter
   let name: EventName?
   let subject: EventReporterSubject
@@ -100,7 +96,7 @@ struct SimulatorAction : SimulatorControlActionPerformer {
     self.action = action
   }
 
-  func perform() -> CommandResult {
+  func run() -> CommandResult {
     do {
       if let name = self.name {
         self.reporter.report(name, EventType.Started, self.subject)
@@ -118,7 +114,7 @@ struct SimulatorAction : SimulatorControlActionPerformer {
   }
 }
 
-struct SimulatorInteraction : SimulatorControlActionPerformer {
+struct SimulatorInteraction : Runner {
   let reporter: SimulatorReporter
   let name: EventName
   let subject: EventReporterSubject
@@ -131,7 +127,7 @@ struct SimulatorInteraction : SimulatorControlActionPerformer {
     self.interaction = interaction
   }
 
-  func perform() -> CommandResult {
+  func run() -> CommandResult {
     let simulator = self.reporter.simulator
     let interaction = self.interaction
     let action = SimulatorAction(self.reporter, self.name, self.subject) {
@@ -139,11 +135,11 @@ struct SimulatorInteraction : SimulatorControlActionPerformer {
       try interaction(interact)
       try interact.perform()
     }
-    return action.perform()
+    return action.run()
   }
 }
 
-struct DiagnosticsInteraction : SimulatorControlActionPerformer {
+struct DiagnosticsInteraction : Runner {
   let reporter: SimulatorReporter
   let subject: ControlCoreValue
   let query: FBSimulatorDiagnosticQuery
@@ -156,7 +152,7 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
     self.format = format
   }
 
-  func perform() -> CommandResult {
+  func run() -> CommandResult {
     let diagnostics = self.fetchDiagnostics()
 
     reporter.reportValue(EventName.Diagnose, EventType.Started, query)
@@ -184,7 +180,7 @@ struct DiagnosticsInteraction : SimulatorControlActionPerformer {
   }
 }
 
-struct SearchInteraction : SimulatorControlActionPerformer {
+struct SearchInteraction : Runner {
   let reporter: SimulatorReporter
   let search: FBBatchLogSearch
 
@@ -193,7 +189,7 @@ struct SearchInteraction : SimulatorControlActionPerformer {
     self.search = search
   }
 
-  func perform() -> CommandResult {
+  func run() -> CommandResult {
     let simulator = self.reporter.simulator
     let diagnostics = simulator.diagnostics.allDiagnostics()
     let results = search.search(diagnostics)
@@ -202,7 +198,7 @@ struct SearchInteraction : SimulatorControlActionPerformer {
   }
 }
 
-struct UploadInteraction : SimulatorControlActionPerformer {
+struct UploadInteraction : Runner {
   let reporter: SimulatorReporter
   let diagnostics: [FBDiagnostic]
 
@@ -211,7 +207,7 @@ struct UploadInteraction : SimulatorControlActionPerformer {
     self.diagnostics = diagnostics
   }
 
-  func perform() -> CommandResult {
+  func run() -> CommandResult {
     let diagnosticLocations: [(FBDiagnostic, String)] = diagnostics.map { diagnostic in
       return (diagnostic, diagnostic.asPath)
     }
@@ -223,7 +219,7 @@ struct UploadInteraction : SimulatorControlActionPerformer {
       let interaction = SimulatorInteraction(self.reporter, EventName.Upload, ArraySubject(paths)) { interaction in
         interaction.uploadMedia(paths)
       }
-      let result = interaction.perform()
+      let result = interaction.run()
       switch result {
       case .Failure: return result
       default: break
