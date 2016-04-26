@@ -9,81 +9,132 @@
 
 import Foundation
 
-/**
- A Protocol for performing an Command producing an CommandResult.
- */
-protocol CommandPerformer {
-  func perform(command: Command, reporter: EventReporter) -> CommandResult
-}
-
-/**
- Forwards to a CommandPerformer based on Constructor Arguments
- */
-struct ActionPerformer {
-  let commandPerformer: CommandPerformer
+struct SimulatorCreationRunner : Runner {
+  let reporter: EventReporter
   let configuration: Configuration
-  let query: FBSimulatorQuery
-  let format: Format?
+  let control: FBSimulatorControl
+  let defaults: Defaults
+  let simulatorConfiguration: FBSimulatorConfiguration
 
-  func perform(reporter: EventReporter, action: Action, queryOverride: FBSimulatorQuery? = nil, formatOverride: Format? = nil) -> CommandResult {
-    let command = Command.Perform(self.configuration, [action], queryOverride ?? self.query, formatOverride ?? self.format)
-    return self.commandPerformer.perform(command, reporter: reporter)
-  }
-}
-
-extension CommandPerformer {
-  func perform(input: String, reporter: EventReporter) -> CommandResult {
+  func run() -> CommandResult {
     do {
-      let arguments = Arguments.fromString(input)
-      let (_, command) = try Command.parser.parse(arguments)
-      return self.perform(command, reporter: reporter)
-    } catch let error as ParseError {
-      return .Failure("Error: \(error.description)")
+      self.reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
+      let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
+      self.defaults.updateLastQuery(FBSimulatorQuery.udids([simulator.udid]))
+      self.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
+      return CommandResult.Success
     } catch let error as NSError {
-      return .Failure(error.description)
+      return CommandResult.Failure("Failed to Create Simulator \(error.description)")
     }
   }
 }
 
-/**
- Enum for defining the result of a translation.
- */
-public enum CommandResult {
-  case Success
-  case Failure(String)
+struct SimulatorActionRunner : Runner {
+  let reporter: EventReporter
+  let simulator: FBSimulator
+  let action: Action
+  let format: Format
 
-  func append(second: CommandResult) -> CommandResult {
-    switch (self, second) {
-    case (.Success, .Success):
-      return .Success
-    case (.Success, .Failure(let secondString)):
-      return .Failure(secondString)
-    case (.Failure(let firstString), .Success):
-      return .Failure(firstString)
-    case (.Failure(let firstString), .Failure(let secondString)):
-      return .Failure("\(firstString)\n\(secondString)")
+  func run() -> CommandResult {
+    do {
+      let reporter = SimulatorReporter(simulator: self.simulator, format: self.format, reporter: self.reporter)
+      defer {
+        reporter.simulator.userEventSink = nil
+      }
+
+      return self.runner(reporter).run()
     }
   }
-}
 
-extension CommandResult : CustomStringConvertible, CustomDebugStringConvertible {
-  public var description: String {
-    get {
-      switch self {
-      case .Success: return "Success"
-      case .Failure(let string): return "Failure '\(string)'"
+  func runner(reporter: SimulatorReporter) -> Runner {
+    let simulator = reporter.simulator
+    switch self.action {
+    case .Approve(let bundleIDs):
+      return SimulatorInteractionRunner(reporter, EventName.Approve, ArraySubject(bundleIDs)) { interaction in
+        interaction.authorizeLocationSettings(bundleIDs)
+      }
+    case .Boot(let maybeLaunchConfiguration):
+      let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
+      return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(launchConfiguration)) { interaction in
+        interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
+      }
+    case .ClearKeychain(let bundleID):
+      return SimulatorInteractionRunner(reporter, EventName.ClearKeychain, bundleID) { interaction in
+        interaction.clearKeychainForApplication(bundleID)
+      }
+    case .Delete:
+      return SimulatorRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
+        try simulator.set!.deleteSimulator(simulator)
+      }
+    case .Diagnose(let query, let format):
+      return DiagnosticsRunner(reporter, query, query, format)
+    case .Install(let application):
+      return SimulatorInteractionRunner(reporter, EventName.Install, ControlCoreSubject(application)) { interaction in
+        interaction.installApplication(application)
+      }
+    case .LaunchAgent(let launch):
+      return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
+        interaction.launchAgent(launch)
+      }
+    case .LaunchApp(let launch):
+      return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
+        interaction.launchApplication(launch)
+      }
+    case .LaunchXCTest(let launch, let bundlePath):
+      return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in
+        interaction.startTestRunnerLaunchConfiguration(launch, testBundlePath: bundlePath)
+      }
+    case .List:
+      let format = reporter.format
+      return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
+        let subject = SimulatorSubject(simulator: simulator, format: format)
+        reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
+      }
+    case .Open(let url):
+      return SimulatorInteractionRunner(reporter, EventName.Open, url.absoluteString) { interaction in
+        interaction.openURL(url)
+      }
+    case .Record(let start):
+      return SimulatorInteractionRunner(reporter, EventName.Record, start) { interaction in
+        if (start) {
+          interaction.startRecordingVideo()
+        } else {
+          interaction.stopRecordingVideo()
+        }
+      }
+    case .Relaunch(let appLaunch):
+      return SimulatorInteractionRunner(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) { interaction in
+        interaction.launchOrRelaunchApplication(appLaunch)
+      }
+    case .Search(let search):
+      return SearchRunner(reporter, search)
+    case .Shutdown:
+      return SimulatorRunner(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
+        try simulator.set!.killSimulator(simulator)
+      }
+    case .Tap(let x, let y):
+      return SimulatorInteractionRunner(reporter, EventName.Tap, ControlCoreSubject(simulator)) { interaction in
+        interaction.tap(x, y: y)
+      }
+    case .Terminate(let bundleID):
+      return SimulatorInteractionRunner(reporter, EventName.Record, bundleID) { interaction in
+        interaction.terminateApplicationWithBundleID(bundleID)
+      }
+    case .Uninstall(let bundleID):
+      return SimulatorInteractionRunner(reporter, EventName.Uninstall, bundleID) { interaction in
+        interaction.uninstallApplicationWithBundleID(bundleID)
+      }
+    case .Upload(let diagnostics):
+      return UploadRunner(reporter, diagnostics)
+    default:
+      return SimulatorRunner(reporter, EventName.Failure, ControlCoreSubject(simulator)) {
+        assertionFailure("Unimplemented")
       }
     }
   }
-
-  public var debugDescription: String {
-    get {
-      return self.description
-    }
-  }
 }
 
-struct SimulatorAction : Runner {
+private struct SimulatorRunner : Runner {
   let reporter: SimulatorReporter
   let name: EventName?
   let subject: EventReporterSubject
@@ -114,7 +165,7 @@ struct SimulatorAction : Runner {
   }
 }
 
-struct SimulatorInteraction : Runner {
+private struct SimulatorInteractionRunner : Runner {
   let reporter: SimulatorReporter
   let name: EventName
   let subject: EventReporterSubject
@@ -130,7 +181,7 @@ struct SimulatorInteraction : Runner {
   func run() -> CommandResult {
     let simulator = self.reporter.simulator
     let interaction = self.interaction
-    let action = SimulatorAction(self.reporter, self.name, self.subject) {
+    let action = SimulatorRunner(self.reporter, self.name, self.subject) {
       let interact = simulator.interact
       try interaction(interact)
       try interact.perform()
@@ -139,7 +190,7 @@ struct SimulatorInteraction : Runner {
   }
 }
 
-struct DiagnosticsInteraction : Runner {
+private struct DiagnosticsRunner : Runner {
   let reporter: SimulatorReporter
   let subject: ControlCoreValue
   let query: FBSimulatorDiagnosticQuery
@@ -180,7 +231,7 @@ struct DiagnosticsInteraction : Runner {
   }
 }
 
-struct SearchInteraction : Runner {
+private struct SearchRunner : Runner {
   let reporter: SimulatorReporter
   let search: FBBatchLogSearch
 
@@ -198,7 +249,7 @@ struct SearchInteraction : Runner {
   }
 }
 
-struct UploadInteraction : Runner {
+private struct UploadRunner : Runner {
   let reporter: SimulatorReporter
   let diagnostics: [FBDiagnostic]
 
@@ -221,7 +272,7 @@ struct UploadInteraction : Runner {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let interaction = SimulatorInteraction(self.reporter, EventName.Upload, ArraySubject(paths)) { interaction in
+      let interaction = SimulatorInteractionRunner(self.reporter, EventName.Upload, ArraySubject(paths)) { interaction in
         interaction.uploadMedia(paths)
       }
       let result = interaction.run()
