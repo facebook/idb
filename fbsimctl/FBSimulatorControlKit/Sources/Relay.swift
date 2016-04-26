@@ -47,3 +47,35 @@ class SynchronousRelay : Relay {
     try self.relay.stop()
   }
 }
+
+/**
+ A Relay that accepts input from stdin, writing it to the Line Buffer.
+ */
+class FileHandleRelay : Relay {
+  let commandBuffer: CommandBuffer
+  let input: NSFileHandle
+
+  init(commandBuffer: CommandBuffer, input: NSFileHandle) {
+    self.commandBuffer = commandBuffer
+    self.input = input
+  }
+
+  convenience init(commandBuffer: CommandBuffer) {
+    self.init(
+      commandBuffer: commandBuffer,
+      input: NSFileHandle.fileHandleWithStandardInput()
+    )
+  }
+
+  func start() throws {
+    let commandBuffer = self.commandBuffer
+    self.input.readabilityHandler = { handle in
+      let data = handle.availableData
+      commandBuffer.append(data)
+    }
+  }
+
+  func stop() {
+    self.input.readabilityHandler = nil
+  }
+}

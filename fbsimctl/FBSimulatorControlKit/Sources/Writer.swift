@@ -15,3 +15,37 @@ import Foundation
 public protocol Writer {
   func write(string: String)
 }
+
+/**
+ A Writer Implementation for a File Handle
+ */
+public class FileHandleWriter : Writer {
+  let fileHandle: NSFileHandle
+
+  init(fileHandle: NSFileHandle) {
+    self.fileHandle = fileHandle
+  }
+
+  public func write(string: String) {
+    var output = string
+    if (output.characters.last != "\n") {
+      output.append("\n" as Character)
+    }
+    guard let data = output.dataUsingEncoding(NSUTF8StringEncoding) else {
+      return
+    }
+    self.fileHandle.writeData(data)
+  }
+
+  public static var stdOutWriter: FileHandleWriter {
+    get {
+      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput())
+    }
+  }
+
+  public static var stdErrWriter: FileHandleWriter {
+    get {
+      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
+    }
+  }
+}

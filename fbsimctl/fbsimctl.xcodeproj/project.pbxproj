@@ -22,7 +22,6 @@
 		AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F661C2867EE0038C6A5 /* Runners.swift */; };
 		AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
 		AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
-		AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
 		AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
@@ -98,7 +97,6 @@
 		AA1B7F661C2867EE0038C6A5 /* Runners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Runners.swift; sourceTree = "<group>"; };
 		AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignalHandler.swift; sourceTree = "<group>"; };
 		AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketRelay.swift; sourceTree = "<group>"; };
-		AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StdIORelay.swift; sourceTree = "<group>"; };
 		AA2AFD741C294158000123BA /* TestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AbstractTypes.swift; sourceTree = "<group>"; };
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
@@ -184,7 +182,6 @@
 				AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */,
 				AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */,
 				AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */,
-				AA1B7F691C2867EE0038C6A5 /* StdIORelay.swift */,
 				AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */,
 				AAF2D34D1C32EA4D00434516 /* Writer.swift */,
 			);
@@ -434,7 +431,6 @@
 				AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */,
 				AAAD4A2F1CB3AF6C00B2068C /* Subjects.swift in Sources */,
 				AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */,
-				AA1B7F781C2867EE0038C6A5 /* StdIORelay.swift in Sources */,
 				AA1B7F6F1C2867EE0038C6A5 /* Bridging.m in Sources */,
 				AA6046901C7A96E500639DD5 /* SimulatorRunners.swift in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,

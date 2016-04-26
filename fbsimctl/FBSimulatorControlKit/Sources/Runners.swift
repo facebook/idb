@@ -39,6 +39,22 @@ private struct SequenceRunner : Runner {
   }
 }
 
+struct RelayRunner : Runner {
+  let relay: SynchronousRelay
+
+  func run() -> CommandResult {
+    do {
+      try relay.start()
+      try relay.stop()
+      return .Success
+    } catch let error as CustomStringConvertible {
+      return .Failure(error.description)
+    } catch {
+      return .Failure("An unknown error occurred running the server")
+    }
+  }
+}
+
 struct CommandRunner : Runner {
   let reporter: EventReporter
   let command: Command
@@ -156,18 +172,11 @@ struct ServerRunner : Runner, CommandPerformer {
   let serverConfiguration: Server
 
   func run() -> CommandResult {
-    let relay = SynchronousRelay(relay: self.baseRelay, reporter: reporter)
-    do {
-      reporter.reportSimple(EventName.Listen, EventType.Started, serverConfiguration)
-      try relay.start()
-    } catch let error as CustomStringConvertible {
-      return .Failure(error.description)
-    } catch {
-      return .Failure("An unknown error occurred running the server")
-    }
-    let _ = try? relay.stop()
+    reporter.reportSimple(EventName.Listen, EventType.Started, serverConfiguration)
+    let runner = RelayRunner(relay: SynchronousRelay(relay: self.baseRelay, reporter: reporter))
+    let result = runner.run()
     reporter.reportSimple(EventName.Listen, EventType.Ended, serverConfiguration)
-    return .Success
+    return result
   }
 
   var baseRelay: Relay { get {
