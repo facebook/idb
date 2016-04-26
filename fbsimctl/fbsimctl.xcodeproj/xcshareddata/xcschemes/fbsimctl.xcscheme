@@ -93,15 +93,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--state=booted"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "listen"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--http"
+            argument = "--socket"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

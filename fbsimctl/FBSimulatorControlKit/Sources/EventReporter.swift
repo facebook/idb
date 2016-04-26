@@ -23,6 +23,14 @@ extension EventReporter {
   func reportSimple(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     self.report(SimpleSubject(eventName, eventType, subject))
   }
+
+  func logDebug(string: String) {
+    self.report(LogSubject(logString: string, level: Constants.asl_level_debug()))
+  }
+
+  func logInfo(string: String) {
+    self.report(LogSubject(logString: string, level: Constants.asl_level_info()))
+  }
 }
 
 public class HumanReadableEventReporter : EventReporter {
@@ -51,7 +59,10 @@ public class JSONEventReporter : NSObject, EventReporter {
   }
 
   public func report(subject: EventReporterSubject) {
-    self.writer.write(try! subject.jsonDescription.serializeToString(pretty) as String)
+    guard let string = try? subject.jsonDescription.serializeToString(pretty) else {
+      return
+    }
+    self.writer.write(string as String)
   }
 }
 

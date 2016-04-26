@@ -44,33 +44,29 @@ public class FileHandleWriter : Writer {
 }
 
 /**
- A Relay that accepts input from stdin
+ A Relay that accepts input from stdin, writing it to the Line Buffer.
  */
-class StdIORelay : Relay {
+class FileHandleRelay : Relay {
   let commandBuffer: CommandBuffer
   let input: NSFileHandle
-  let output: NSFileHandle
 
-  init(outputOptions: OutputOptions, performer: CommandPerformer, input: NSFileHandle, output: NSFileHandle) {
-    self.commandBuffer = CommandBuffer(performer: performer, reporter: outputOptions.createReporter(FileHandleWriter.stdOutWriter))
+  init(commandBuffer: CommandBuffer, input: NSFileHandle) {
+    self.commandBuffer = commandBuffer
     self.input = input
-    self.output = output
   }
 
-  convenience init(outputOptions: OutputOptions, performer: CommandPerformer) {
+  convenience init(commandBuffer: CommandBuffer) {
     self.init(
-      outputOptions: outputOptions,
-      performer: performer,
-      input: NSFileHandle.fileHandleWithStandardInput(),
-      output: NSFileHandle.fileHandleWithStandardOutput()
+      commandBuffer: commandBuffer,
+      input: NSFileHandle.fileHandleWithStandardInput()
     )
   }
 
   func start() throws {
-    let lineBuffer = self.commandBuffer.lineBuffer
+    let commandBuffer = self.commandBuffer
     self.input.readabilityHandler = { handle in
       let data = handle.availableData
-      lineBuffer.appendData(data)
+      commandBuffer.append(data)
     }
   }
 

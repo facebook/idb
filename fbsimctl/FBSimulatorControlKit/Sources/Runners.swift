@@ -173,9 +173,11 @@ struct ServerRunner : Runner, CommandPerformer {
   var baseRelay: Relay { get {
     switch self.serverConfiguration {
     case .StdIO:
-      return StdIORelay(outputOptions: self.configuration.outputOptions, performer: self)
+      let commandBuffer = LineBuffer(performer: self, reporter: self.reporter)
+      return FileHandleRelay(commandBuffer: commandBuffer)
     case .Socket(let portNumber):
-      return SocketRelay(outputOptions: self.configuration.outputOptions, portNumber: portNumber, performer: self)
+      let commandBuffer = LineBuffer(performer: self, reporter: self.reporter)
+      return SocketRelay(portNumber: portNumber, commandBuffer: commandBuffer, localEventReporter: self.reporter, socketOutput: configuration.outputOptions)
     case .Http(let portNumber):
       let query = self.query ?? self.defaults.queryForAction(Action.Listen(self.serverConfiguration))!
       let format = self.format ?? self.defaults.format

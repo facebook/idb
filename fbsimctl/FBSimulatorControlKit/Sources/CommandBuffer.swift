@@ -10,45 +10,34 @@
 import Foundation
 
 /**
- Accepts a buffered command, performing a command when a newline is encountered.
+ A Sink of raw data, which will result in command/s occuring when a full command is encountered.
  */
-class CommandBuffer : LineBufferDelegate {
-  let performer: CommandPerformer
-  let reporter: EventReporter
-  lazy var lineBuffer: LineBuffer = LineBuffer(delegate: self)
+protocol CommandBuffer {
+  var performer: CommandPerformer { get }
+  var reporter: EventReporter { get }
+  func append(data: NSData) -> [CommandResult]
+}
+
+/**
+ A CommandBuffer that will dispatch a command when a newline is encountered.
+ */
+class LineBuffer : CommandBuffer {
+  internal let performer: CommandPerformer
+  internal let reporter: EventReporter
+  private var buffer: String = ""
 
   init (performer: CommandPerformer, reporter: EventReporter) {
     self.performer = performer
     self.reporter = reporter
   }
 
-  func buffer(lineAvailable: String) {
-    let result = self.performer.perform(lineAvailable, reporter: self.reporter)
-    switch result {
-    case .Failure(let error):
-      self.reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, error as NSString)
-    default:
-      break
-    }
-  }
-}
-
-class LineBuffer {
-  unowned let delegate: LineBufferDelegate
-
-  private var buffer: String = ""
-
-  init(delegate: LineBufferDelegate) {
-    self.delegate = delegate
-  }
-
-  func appendData(data: NSData) {
+  func append(data: NSData) -> [CommandResult] {
     let string = String(data: data, encoding: NSUTF8StringEncoding)!
     self.buffer.appendContentsOf(string)
-    self.runBuffer()
+    return self.runBuffer()
   }
 
-  private func runBuffer() {
+  private func runBuffer() -> [CommandResult] {
     let buffer = self.buffer
     let lines = buffer
       .componentsSeparatedByCharactersInSet(NSCharacterSet.newlineCharacterSet())
@@ -56,20 +45,20 @@ class LineBuffer {
         line != ""
     }
     if (lines.isEmpty) {
-      return
+      return []
     }
 
     self.buffer = ""
-    let delegate = self.delegate
-
-    dispatch_async(dispatch_get_main_queue()) {
+    var results: [CommandResult] = []
+    dispatch_sync(dispatch_get_main_queue()) {
       for line in lines {
-        delegate.buffer(line)
+        results.append(self.lineAvailable(line))
       }
     }
+    return results
   }
-}
 
-protocol LineBufferDelegate : class {
-  func buffer(lineAvailable: String)
+  private func lineAvailable(line: String) -> CommandResult {
+    return self.performer.perform(line, reporter: self.reporter)
+  }
 }
