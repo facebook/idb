@@ -9,17 +9,16 @@
 
 #import "NSError+XCTestBootstrap.h"
 
+NSString *const XCTestBootstrapErrorDomain = @"com.facebook.XCTestBootstrap";
+
 @implementation NSError (XCTestBootstrap)
 
 + (instancetype)XCTestBootstrapErrorWithDescription:(NSString *)description
 {
-  return
-  [NSError errorWithDomain:@"com.facebook.FBDeviceControl"
-                      code:XCTestBootstrapErrorCodeGeneral
-                  userInfo:@{
-                             NSLocalizedDescriptionKey : description,
-                             }
-   ];
+  return [NSError
+    errorWithDomain:XCTestBootstrapErrorDomain
+    code:XCTestBootstrapErrorCodeGeneral
+    userInfo:@{ NSLocalizedDescriptionKey : description}];
 }
 
 @end

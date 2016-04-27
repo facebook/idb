@@ -23,7 +23,6 @@
 
 @end
 
-
 /**
  Prepares FBTestBundle by:
  - coping it to workingDirectory, if set

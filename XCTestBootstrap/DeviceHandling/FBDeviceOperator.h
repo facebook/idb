@@ -17,6 +17,10 @@
  Operators are used to control devices
  */
 @protocol FBDeviceOperator <NSObject>
+
+/**
+ The Underlying DVT Device.
+ */
 @property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
 
 /**

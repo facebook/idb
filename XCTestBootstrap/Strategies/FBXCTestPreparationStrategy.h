@@ -12,6 +12,9 @@
 @class FBTestRunnerConfiguration;
 @protocol FBDeviceOperator;
 
+/**
+ A Protocol for preparing iOS for running an XCTest.
+ */
 @protocol FBXCTestPreparationStrategy
 
 /**

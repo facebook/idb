@@ -14,8 +14,14 @@
  */
 @interface FBFoundationInitializer : NSObject
 
+/**
+ Loads the Relevant Private Frameworks for ensuring the proper operation of XCTestBootsrap.
+ */
 + (void)initializeTestingEnvironment;
 
+/**
+ Raises the Log Level to debug for relevant Private Frameworks.
+ */
 + (void)enableDebugLogging;
 
 @end

@@ -10,7 +10,7 @@
 #import <XCTestBootstrap/FBCodesignProvider.h>
 
 /**
- Used for codesigning bundles
+ An concrete implementation of a codesigning provider.
  */
 @interface FBCodeSignCommand : NSObject <FBCodesignProvider>
 

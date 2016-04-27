@@ -9,12 +9,29 @@
 
 #import <Foundation/Foundation.h>
 
-typedef NS_ENUM(NSUInteger, XCTestBootstrapCode) {
+/**
+ Error Codes for XCTestBootstrap Errors.
+ */
+typedef NS_ENUM(NSUInteger, XCTestBootstrapErrorCode) {
   XCTestBootstrapErrorCodeGeneral,
 };
 
+/**
+ The Error Domain for XCTestBootstrap Errors.
+ */
+extern NSString *const XCTestBootstrapErrorDomain;
+
+/**
+ XCTestBootstrap Errors construction.
+ */
 @interface NSError (XCTestBootstrap)
 
+/**
+ Creates and returns a new Error with the provided description.
+
+ @param description the description for the error.
+ @return a new NSError.
+ */
 + (instancetype)XCTestBootstrapErrorWithDescription:(NSString *)description;
 
 @end

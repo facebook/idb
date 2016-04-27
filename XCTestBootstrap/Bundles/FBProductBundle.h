@@ -58,7 +58,6 @@
 
 @end
 
-
 /**
  Prepares FBProductBundle by:
  - coping it to workingDirectory, if set

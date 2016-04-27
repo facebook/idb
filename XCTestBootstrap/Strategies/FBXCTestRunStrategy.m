@@ -45,18 +45,14 @@
     return nil;
   }
 
-  NSMutableArray *mAttributes = (configuration.launchArguments ?: @[]).mutableCopy;
-  if (attributes) {
-    [mAttributes addObjectsFromArray:attributes];
-  }
-
+  NSArray *arguments = [(configuration.launchArguments ?: @[]) arrayByAddingObjectsFromArray:(attributes ?: @[])];
   NSMutableDictionary *mEnvironment = (configuration.launchEnvironment ?: @{}).mutableCopy;
   if (environment) {
     [mEnvironment addEntriesFromDictionary:environment];
   }
 
   if (![self.deviceOperator launchApplicationWithBundleID:configuration.testRunner.bundleID
-                                                arguments:mAttributes.copy
+                                                arguments:arguments
                                               environment:mEnvironment.copy
                                                     error:error]) {
     return nil;
@@ -70,13 +66,12 @@
     return nil;
   }
 
-  // Attach WDA
-  FBTestManager *testManager =
-  [FBTestManager testManagerWithOperator:self.deviceOperator
-                           testRunnerPID:testRunnerProcessID
-                       sessionIdentifier:configuration.sessionIdentifier
-                                  logger:self.logger
-   ];
+  // Attach to the XCTest Test Runner host Process.
+  FBTestManager *testManager = [FBTestManager testManagerWithOperator:self.deviceOperator
+    testRunnerPID:testRunnerProcessID
+    sessionIdentifier:configuration.sessionIdentifier
+    logger:self.logger];
+
   if (![testManager connectWithError:error]) {
     return nil;
   }

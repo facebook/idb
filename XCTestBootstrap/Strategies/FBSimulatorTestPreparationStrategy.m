@@ -64,31 +64,29 @@
 
   // Prepare XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle =
-  [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-      withBundlePath:self.testBundlePath]
-     withWorkingDirectory:self.workingDirectory]
+  FBTestBundle *testBundle = [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+    withBundlePath:self.testBundlePath]
+    withWorkingDirectory:self.workingDirectory]
     withSessionIdentifier:sessionIdentifier]
-   build];
+    build];
 
   // Prepare test runner
   FBProductBundle *application = [deviceOperator applicationBundleWithBundleID:self.testRunnerBundleID error:error];
 
-  NSString *IDEBundleInjectionFrameworkPath =
-  [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework"];
-  FBProductBundle *IDEBundleInjectionFramework =
-  [[[FBProductBundleBuilder builder]
-    withBundlePath:IDEBundleInjectionFrameworkPath]
-   build];
+  NSString *IDEBundleInjectionFrameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework"];
 
-  return
-  [[[[[[[FBTestRunnerConfigurationBuilder builder]
-        withSessionIdentifer:sessionIdentifier]
-       withTestRunnerApplication:application]
-      withIDEBundleInjectionFramework:IDEBundleInjectionFramework]
-     withWebDriverAgentTestBundle:testBundle]
+  FBProductBundle *IDEBundleInjectionFramework = [[[FBProductBundleBuilder builder]
+    withBundlePath:IDEBundleInjectionFrameworkPath]
+    build];
+
+  return [[[[[[[FBTestRunnerConfigurationBuilder builder]
+    withSessionIdentifer:sessionIdentifier]
+    withTestRunnerApplication:application]
+    withIDEBundleInjectionFramework:IDEBundleInjectionFramework]
+    withWebDriverAgentTestBundle:testBundle]
     withTestConfigurationPath:testBundle.configuration.path]
-   build];
+    build];
 }
 
 @end

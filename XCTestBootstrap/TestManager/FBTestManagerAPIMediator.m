@@ -93,7 +93,12 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 {
   if (self.finished) {
     if (error) {
-      *error = [NSError errorWithDomain:@"com.facebook.XCTestBootstrap" code:1 userInfo:@{NSLocalizedDescriptionKey : @"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"}];
+      *error = [NSError
+        errorWithDomain:@"com.facebook.XCTestBootstrap"
+        code:1
+        userInfo:@{
+          NSLocalizedDescriptionKey : @"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"
+        }];
     }
     return NO;
   }

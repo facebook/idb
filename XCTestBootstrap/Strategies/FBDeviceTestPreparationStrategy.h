@@ -12,8 +12,8 @@
 @protocol FBFileManager;
 
 /**
- Strategy used to run XCTest with CTScan devices
- It will load already prepared bundles and upload them to device
+ Strategy used to run XCTest iOS Devices.
+ Loads prepared bundles, then uploads them to device.
  */
 @interface FBDeviceTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 

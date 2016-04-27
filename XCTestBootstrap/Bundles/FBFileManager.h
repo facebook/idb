@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Used for file IO
+ A Protocol for File Operations.
  */
 @protocol FBFileManager <NSObject>
 

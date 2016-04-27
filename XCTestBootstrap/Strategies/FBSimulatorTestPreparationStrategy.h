@@ -14,8 +14,8 @@
 @protocol FBFileManager;
 
 /**
- Strategy used to run XCTest with simulators
- It will copy test bundle to workingDirectory and add .xctestconfiguration
+ Strategy used to run XCTest with Simulators.
+ It will copy the Test Bundle to a working directory and update with an appropriate xctestconfiguration.
  */
 @interface FBSimulatorTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 

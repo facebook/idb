@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 /**
- Used for codesigning bundles
+ Protocol for Codesigning Bundles.
  */
 @protocol FBCodesignProvider <NSObject>
 

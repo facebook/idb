@@ -14,6 +14,9 @@
 @class FBTestBundle;
 @class FBTestConfiguration;
 
+/**
+ A Configuration Value for the Test Runner.
+ */
 @interface FBTestRunnerConfiguration : NSObject
 
 /**

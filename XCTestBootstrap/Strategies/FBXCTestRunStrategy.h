@@ -16,7 +16,7 @@
 @protocol FBDeviceOperator;
 
 /**
- Strategy used to run XCTest and attach testmanagerd daemon to it.
+ Strategy used to run an injected XCTest bundle in an Application and attach the 'testmanagerd' daemon to it.
  */
 @interface FBXCTestRunStrategy : NSObject
 

@@ -38,7 +38,6 @@
 
 @end
 
-
 /**
  Creates FBTestConfiguration by:
  - creating object with requested values

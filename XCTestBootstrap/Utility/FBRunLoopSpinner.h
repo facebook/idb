@@ -20,9 +20,36 @@ typedef BOOL (^FBRunLoopSpinnerBlock)();
  */
 + (id)spinUntilBlockFinished:(id (^)())block;
 
+/**
+ Updates the message that is logged at an interval.
+
+ @param reminderInterval the time interval between reminder messages.
+ @return the reciever, for chaining.
+ */
 - (instancetype)reminderMessage:(NSString *)reminderMessage;
+
+/**
+ Updates the frequency with which the reciver logs the reminder message.
+
+ @param reminderInterval the time interval between reminder messages.
+ @return the reciever, for chaining.
+ */
 - (instancetype)reminderInterval:(NSTimeInterval)reminderInterval;
+
+/**
+ Updates the error message to print in the event of a timeout.
+
+ @param timeoutErrorMessage the Error Message to print.
+ @return the reciever, for chaining.
+ */
 - (instancetype)timeoutErrorMessage:(NSString *)timeoutErrorMessage;
+
+/**
+ Updates the timeout of the reciever.
+
+ @param timeout the amount of time to wait before timing out.
+ @return the reciever, for chaining.
+ */
 - (instancetype)timeout:(NSTimeInterval)timeout;
 
 /**

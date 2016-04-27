@@ -83,19 +83,17 @@
 
   // Load XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle =
-  [[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-     withBundlePath:self.testBundlePath]
+  FBTestBundle *testBundle = [[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+    withBundlePath:self.testBundlePath]
     withSessionIdentifier:sessionIdentifier]
-   build];
+    build];
 
   // Load tested app data package
-  FBApplicationDataPackage *dataPackage =
-  [[[[[FBApplicationDataPackageBuilder builderWithFileManager:self.fileManager]
-      withPackagePath:self.applicationDataPath]
-     withTestBundle:testBundle]
+  FBApplicationDataPackage *dataPackage = [[[[[FBApplicationDataPackageBuilder builderWithFileManager:self.fileManager]
+    withPackagePath:self.applicationDataPath]
+    withTestBundle:testBundle]
     withDeviceDataDirectory:dataContainterDirectory]
-   build];
+    build];
 
   // Inastall tested app data package
   if (![deviceOperator uploadApplicationDataAtPath:dataPackage.path bundleID:testRunner.bundleID error:error]) {
@@ -106,21 +104,18 @@
   [dataPackage.IDEBundleInjectionFramework copyLocatedInDirectory:dataPackage.bundlePathOnDevice];
   FBProductBundle *remoteTestRunner = [testRunner copyLocatedInDirectory:remotePath.stringByDeletingLastPathComponent];
 
-  NSString *remoteTestConfigurationPath =
-  [dataPackage.testConfiguration.path
-   stringByReplacingOccurrencesOfString:dataPackage.bundlePath
-   withString:dataPackage.bundlePathOnDevice
-   ];
+  NSString *remoteTestConfigurationPath = [dataPackage.testConfiguration.path
+    stringByReplacingOccurrencesOfString:dataPackage.bundlePath
+    withString:dataPackage.bundlePathOnDevice];
 
-  return
-  [[[[[[[[FBTestRunnerConfigurationBuilder builder]
-         withSessionIdentifer:dataPackage.testConfiguration.sessionIdentifier]
-        withTestRunnerApplication:remoteTestRunner]
-       withIDEBundleInjectionFramework:remoteIDEBundleInjectionFramework]
-      withWebDriverAgentTestBundle:testBundle]
-     withTestConfigurationPath:remoteTestConfigurationPath]
+  return [[[[[[[[FBTestRunnerConfigurationBuilder builder]
+    withSessionIdentifer:dataPackage.testConfiguration.sessionIdentifier]
+    withTestRunnerApplication:remoteTestRunner]
+    withIDEBundleInjectionFramework:remoteIDEBundleInjectionFramework]
+    withWebDriverAgentTestBundle:testBundle]
+    withTestConfigurationPath:remoteTestConfigurationPath]
     withFrameworkSearchPath:dataPackage.bundlePathOnDevice]
-   build];
+    build];
 }
 
 @end

@@ -11,6 +11,9 @@
 
 #import <XCTestBootstrap/FBFileManager.h>
 
+/**
+ Extends NSFileManager by implementing FBFileManager methods.
+ */
 @interface NSFileManager (FBFileManager) <FBFileManager>
 
 @end

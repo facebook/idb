@@ -15,8 +15,11 @@
 @protocol FBControlCoreLogger;
 
 /**
- This is massively simplified reimplementations of Apple's _IDETestManagerAPIMediator class,
- which is mediator (running on host) between test runner (app that executes XCTest bundle on device) and testmanagerd (running on device), that helps to launch tests.
+ This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.
+ The class mediates between:
+ - The Host
+ - The 'testmanagerd' daemon running on iOS.
+ - The 'Test Runner', the Appication in which the XCTest bundle is running.
  */
 @interface FBTestManagerAPIMediator : NSObject
 
@@ -65,7 +68,9 @@
 
 @end
 
-
+/**
+ A Delegate to provide the mediator with a way of interacting with processes on iOS.
+ */
 @protocol FBTestManagerMediatorDelegate <NSObject>
 
 /**
