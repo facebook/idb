@@ -23,7 +23,7 @@ typedef BOOL (^FBRunLoopSpinnerBlock)();
 /**
  Updates the message that is logged at an interval.
 
- @param reminderInterval the time interval between reminder messages.
+ @param reminderMessage the time interval between reminder messages.
  @return the reciever, for chaining.
  */
 - (instancetype)reminderMessage:(NSString *)reminderMessage;
