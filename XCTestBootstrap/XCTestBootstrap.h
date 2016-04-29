@@ -23,6 +23,6 @@
 #import <XCTestBootstrap/FBTestManagerAPIMediator.h>
 #import <XCTestBootstrap/FBTestRunnerConfiguration.h>
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
-#import <XCTestBootstrap/NSError+XCTestBootstrap.h>
+#import <XCTestBootstrap/XCTestBootstrapError.h>
 #import <XCTestBootstrap/NSFileManager+FBFileManager.h>
 #import <XCTestBootstrap/FBTestManagerProcessInteractionDelegate.h>

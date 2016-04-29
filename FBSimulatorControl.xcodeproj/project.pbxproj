@@ -236,8 +236,8 @@
 		EE4F0D881C91B82700608E89 /* FBXCTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D651C91B82700608E89 /* FBXCTestRunStrategy.m */; };
 		EE4F0D8B1C91B82700608E89 /* FBRunLoopSpinner.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D6A1C91B82700608E89 /* FBRunLoopSpinner.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE4F0D8C1C91B82700608E89 /* FBRunLoopSpinner.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D6B1C91B82700608E89 /* FBRunLoopSpinner.m */; };
-		EE4F0D8D1C91B82700608E89 /* NSError+XCTestBootstrap.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D6C1C91B82700608E89 /* NSError+XCTestBootstrap.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		EE4F0D8E1C91B82700608E89 /* NSError+XCTestBootstrap.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D6D1C91B82700608E89 /* NSError+XCTestBootstrap.m */; };
+		EE4F0D8D1C91B82700608E89 /* XCTestBootstrapError.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D6C1C91B82700608E89 /* XCTestBootstrapError.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		EE4F0D8E1C91B82700608E89 /* XCTestBootstrapError.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D6D1C91B82700608E89 /* XCTestBootstrapError.m */; };
 		EE4F0D901C91B82700608E89 /* XCTestBootstrap.h in Headers */ = {isa = PBXBuildFile; fileRef = EE4F0D6F1C91B82700608E89 /* XCTestBootstrap.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EE4F0D981C91B83300608E89 /* FBApplicationDataPackageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D911C91B83300608E89 /* FBApplicationDataPackageTests.m */; };
 		EE4F0D991C91B83300608E89 /* FBProductBundleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EE4F0D921C91B83300608E89 /* FBProductBundleTests.m */; };
@@ -643,8 +643,8 @@
 		EE4F0D651C91B82700608E89 /* FBXCTestRunStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunStrategy.m; sourceTree = "<group>"; };
 		EE4F0D6A1C91B82700608E89 /* FBRunLoopSpinner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBRunLoopSpinner.h; sourceTree = "<group>"; };
 		EE4F0D6B1C91B82700608E89 /* FBRunLoopSpinner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBRunLoopSpinner.m; sourceTree = "<group>"; };
-		EE4F0D6C1C91B82700608E89 /* NSError+XCTestBootstrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSError+XCTestBootstrap.h"; sourceTree = "<group>"; };
-		EE4F0D6D1C91B82700608E89 /* NSError+XCTestBootstrap.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSError+XCTestBootstrap.m"; sourceTree = "<group>"; };
+		EE4F0D6C1C91B82700608E89 /* XCTestBootstrapError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XCTestBootstrapError.h; sourceTree = "<group>"; };
+		EE4F0D6D1C91B82700608E89 /* XCTestBootstrapError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestBootstrapError.m; sourceTree = "<group>"; };
 		EE4F0D6E1C91B82700608E89 /* XCTestBootstrap-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "XCTestBootstrap-Info.plist"; sourceTree = "<group>"; };
 		EE4F0D6F1C91B82700608E89 /* XCTestBootstrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XCTestBootstrap.h; sourceTree = "<group>"; };
 		EE4F0D911C91B83300608E89 /* FBApplicationDataPackageTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBApplicationDataPackageTests.m; sourceTree = "<group>"; };
@@ -1418,8 +1418,8 @@
 				EE78FCB81C96F288007946B1 /* FBFoundationInitializer.m */,
 				EE4F0D6A1C91B82700608E89 /* FBRunLoopSpinner.h */,
 				EE4F0D6B1C91B82700608E89 /* FBRunLoopSpinner.m */,
-				EE4F0D6C1C91B82700608E89 /* NSError+XCTestBootstrap.h */,
-				EE4F0D6D1C91B82700608E89 /* NSError+XCTestBootstrap.m */,
+				EE4F0D6C1C91B82700608E89 /* XCTestBootstrapError.h */,
+				EE4F0D6D1C91B82700608E89 /* XCTestBootstrapError.m */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -1718,7 +1718,7 @@
 				AAEB9D961CD3585600151A9E /* FBTestManagerProcessInteractionDelegate.h in Headers */,
 				EE4F0D8B1C91B82700608E89 /* FBRunLoopSpinner.h in Headers */,
 				EE4F0D761C91B82700608E89 /* FBProductBundle+Private.h in Headers */,
-				EE4F0D8D1C91B82700608E89 /* NSError+XCTestBootstrap.h in Headers */,
+				EE4F0D8D1C91B82700608E89 /* XCTestBootstrapError.h in Headers */,
 				EE1277601C9338D700DE52A1 /* FBTestManager.h in Headers */,
 				EE4F0D751C91B82700608E89 /* FBFileManager.h in Headers */,
 				EE4F0D7B1C91B82700608E89 /* FBTestConfiguration.h in Headers */,
@@ -2115,7 +2115,7 @@
 				EE1277641C9338D700DE52A1 /* FBTestManagerAPIMediator.m in Sources */,
 				EE4F0D711C91B82700608E89 /* FBApplicationDataPackage.m in Sources */,
 				EE1277611C9338D700DE52A1 /* FBTestManager.m in Sources */,
-				EE4F0D8E1C91B82700608E89 /* NSError+XCTestBootstrap.m in Sources */,
+				EE4F0D8E1C91B82700608E89 /* XCTestBootstrapError.m in Sources */,
 				EE4F0D801C91B82700608E89 /* NSFileManager+FBFileManager.m in Sources */,
 				EE4F0D731C91B82700608E89 /* FBCodeSignCommand.m in Sources */,
 				EE4F0D831C91B82700608E89 /* FBDeviceTestPreparationStrategy.m in Sources */,

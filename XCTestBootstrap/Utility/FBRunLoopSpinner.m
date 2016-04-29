@@ -9,7 +9,7 @@
 
 #import "FBRunLoopSpinner.h"
 
-#import "NSError+XCTestBootstrap.h"
+#import "XCTestBootstrapError.h"
 
 @interface FBRunLoopSpinner ()
 @property (nonatomic, copy) NSString *timeoutErrorMessage;
@@ -80,15 +80,9 @@
   while (!untilTrue()) {
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     if (timeoutDate.timeIntervalSinceNow < 0) {
-      if (self.timeoutErrorMessage) {
-        NSString *message = (self.timeoutErrorMessage ?: @"FBRunLoopSpinner timeout");
-        if (error) {
-          *error = [NSError XCTestBootstrapErrorWithDescription:message];
-        } else {
-          NSLog(@"%@", message);
-        }
-      }
-      return NO;
+      return [[XCTestBootstrapError
+        describe:(self.timeoutErrorMessage ?: @"FBRunLoopSpinner timeout")]
+        failBool:error];
     }
     if (self.reminderMessage && messageTimeout.timeIntervalSinceNow < 0) {
       NSLog(@"%@", self.reminderMessage);

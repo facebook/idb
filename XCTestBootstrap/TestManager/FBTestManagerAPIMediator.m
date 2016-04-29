@@ -22,6 +22,7 @@
 
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
+#import "XCTestBootstrapError.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
 
 #define weakify(target) __weak __typeof__(target) weak_##target = target
@@ -94,15 +95,9 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 - (BOOL)connectTestRunnerWithTestManagerDaemonWithError:(NSError **)error
 {
   if (self.finished) {
-    if (error) {
-      *error = [NSError
-        errorWithDomain:@"com.facebook.XCTestBootstrap"
-        code:1
-        userInfo:@{
-          NSLocalizedDescriptionKey : @"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"
-        }];
-    }
-    return NO;
+    return [[XCTestBootstrapError
+      describe:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"]
+      failBool:error];
   }
   [self makeTransportWithSuccessBlock:^(DTXTransport *transport) {
     [self setupTestBundleConnectionWithTransport:transport];

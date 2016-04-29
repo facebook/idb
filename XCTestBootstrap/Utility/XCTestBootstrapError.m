@@ -7,18 +7,21 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "NSError+XCTestBootstrap.h"
+#import "XCTestBootstrapError.h"
 
 NSString *const XCTestBootstrapErrorDomain = @"com.facebook.XCTestBootstrap";
 
-@implementation NSError (XCTestBootstrap)
+@implementation XCTestBootstrapError
 
-+ (instancetype)XCTestBootstrapErrorWithDescription:(NSString *)description
+- (instancetype)init
 {
-  return [NSError
-    errorWithDomain:XCTestBootstrapErrorDomain
-    code:XCTestBootstrapErrorCodeGeneral
-    userInfo:@{ NSLocalizedDescriptionKey : description}];
-}
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
 
+  [self inDomain:XCTestBootstrapErrorDomain];
+
+  return self;
+}
 @end

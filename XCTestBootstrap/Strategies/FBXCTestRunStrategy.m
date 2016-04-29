@@ -16,7 +16,7 @@
 #import "FBTestManager.h"
 #import "FBTestRunnerConfiguration.h"
 #import "FBXCTestPreparationStrategy.h"
-#import "NSError+XCTestBootstrap.h"
+#import "XCTestBootstrapError.h"
 
 @interface FBXCTestRunStrategy ()
 @property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
@@ -60,10 +60,9 @@
 
   pid_t testRunnerProcessID = [self.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
   if (testRunnerProcessID <= 0) {
-    if (error) {
-      *error = [NSError XCTestBootstrapErrorWithDescription:@"Failed to determine launched process PID"];
-    }
-    return nil;
+    return [[XCTestBootstrapError
+      describe:@"Failed to determine launched process PID"]
+      fail:error];
   }
 
   // Attach to the XCTest Test Runner host Process.

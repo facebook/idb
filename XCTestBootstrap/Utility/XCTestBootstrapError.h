@@ -9,12 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-/**
- Error Codes for XCTestBootstrap Errors.
- */
-typedef NS_ENUM(NSUInteger, XCTestBootstrapErrorCode) {
-  XCTestBootstrapErrorCodeGeneral,
-};
+#import <FBControlCore/FBControlCore.h>
 
 /**
  The Error Domain for XCTestBootstrap Errors.
@@ -24,14 +19,6 @@ extern NSString *const XCTestBootstrapErrorDomain;
 /**
  XCTestBootstrap Errors construction.
  */
-@interface NSError (XCTestBootstrap)
-
-/**
- Creates and returns a new Error with the provided description.
-
- @param description the description for the error.
- @return a new NSError.
- */
-+ (instancetype)XCTestBootstrapErrorWithDescription:(NSString *)description;
+@interface XCTestBootstrapError : FBControlCoreError
 
 @end
