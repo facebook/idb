@@ -25,3 +25,4 @@
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
 #import <XCTestBootstrap/NSError+XCTestBootstrap.h>
 #import <XCTestBootstrap/NSFileManager+FBFileManager.h>
+#import <XCTestBootstrap/FBTestManagerProcessInteractionDelegate.h>

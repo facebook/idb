@@ -11,10 +11,13 @@
 
 #import "FBDeviceOperator.h"
 #import "FBTestManagerAPIMediator.h"
+#import "FBTestManagerProcessInteractionDelegate.h"
 
-@interface FBTestManager () <FBTestManagerMediatorDelegate>
+@interface FBTestManager () <FBTestManagerProcessInteractionDelegate>
+
 @property (nonatomic, strong) FBTestManagerAPIMediator *mediator;
 @property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
+
 @end
 
 @implementation FBTestManager
@@ -23,7 +26,7 @@
 {
   FBTestManager *testManager = [self.class new];
   testManager.mediator = [FBTestManagerAPIMediator mediatorWithDevice:deviceOperator.dvtDevice testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
-  testManager.mediator.delegate = testManager;
+  testManager.mediator.processDelegate = testManager;
   testManager.mediator.logger = logger;
   testManager.deviceOperator = deviceOperator;
   return testManager;

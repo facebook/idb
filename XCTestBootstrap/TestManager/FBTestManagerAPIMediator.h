@@ -11,7 +11,7 @@
 
 @class DVTAbstractiOSDevice;
 
-@protocol FBTestManagerMediatorDelegate;
+@protocol FBTestManagerProcessInteractionDelegate;
 @protocol FBControlCoreLogger;
 
 /**
@@ -36,7 +36,7 @@
 /**
  Delegate object used to handle application install & launch request
  */
-@property (nonatomic, weak) id<FBTestManagerMediatorDelegate> delegate;
+@property (nonatomic, weak) id<FBTestManagerProcessInteractionDelegate> processDelegate;
 
 /**
  Logger object to log events to, may be nil.
@@ -65,42 +65,5 @@
  Terminates connection between test runner(XCTest bundle) and testmanagerd
  */
 - (void)disconnectTestRunnerAndTestManagerDaemon;
-
-@end
-
-/**
- A Delegate to provide the mediator with a way of interacting with processes on iOS.
- */
-@protocol FBTestManagerMediatorDelegate <NSObject>
-
-/**
- Request to launch an application
-
- @param mediator a mediator requesting launch
- @param path a path for application to launch
- @param bundleID a bundleID for application to launch
- @param arguments arguments that application should be launched with
- @param environmentVariables environment variables that application should be launched with
- @param error error for error handling
- @return YES if the request was successful, otherwise NO.
- */
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-      launchProcessWithPath:(NSString *)path
-                   bundleID:(NSString *)bundleID
-                  arguments:(NSArray *)arguments
-       environmentVariables:(NSDictionary *)environmentVariables
-                      error:(NSError **)error;
-
-/**
- Request to kill an application with bundle id
-
- @param mediator a mediator requesting kill
- @param bundleID a bundle id of application to kill
- @param error error for error handling
- @return YES if the request was successful, otherwise NO.
- */
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-killApplicationWithBundleID:(NSString *)bundleID
-                      error:(NSError **)error;
 
 @end

@@ -22,6 +22,8 @@
 
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
+#import "FBTestManagerProcessInteractionDelegate.h"
+
 #define weakify(target) __weak __typeof__(target) weak_##target = target
 #define strongify(target) \
           _Pragma("clang diagnostic push") \
@@ -130,7 +132,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
   self.targetDevice = nil;
 }
-
 
 #pragma mark - Private
 
@@ -298,7 +299,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   });
 }
 
-
 #pragma mark Raporting
 
 - (void)reportStartupProgress:(NSString *)progress withTimeoutInterval:(NSTimeInterval)interval
@@ -391,7 +391,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
   NSError *error;
   DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
-  if(![self.delegate testManagerMediator:self launchProcessWithPath:path bundleID:bundleID arguments:arguments environmentVariables:environment error:&error]) {
+  if(![self.processDelegate testManagerMediator:self launchProcessWithPath:path bundleID:bundleID arguments:arguments environmentVariables:environment error:&error]) {
     [recepit invokeCompletionWithReturnValue:nil error:error];
   }
   else {
@@ -427,7 +427,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
                                   code:0x2
                               userInfo:@{NSLocalizedDescriptionKey : @"Invalid or expired token: no matching operation was found."}];
     } else {
-      [self.delegate testManagerMediator:self killApplicationWithBundleID:bundleID error:&error];
+      [self.processDelegate testManagerMediator:self killApplicationWithBundleID:bundleID error:&error];
     }
   }
   if (error) {
