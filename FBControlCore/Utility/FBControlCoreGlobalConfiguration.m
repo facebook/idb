@@ -96,6 +96,13 @@ static id<FBControlCoreLogger> logger;
   return 30;
 }
 
++ (dispatch_time_t)regularDispatchTimeout
+{
+  NSTimeInterval timeout = self.regularTimeout;
+  int64_t timeoutInt = ((int64_t) timeout) * ((int64_t) NSEC_PER_SEC);
+  return dispatch_time(DISPATCH_TIME_NOW, timeoutInt);
+}
+
 + (NSTimeInterval)slowTimeout
 {
   return 120;

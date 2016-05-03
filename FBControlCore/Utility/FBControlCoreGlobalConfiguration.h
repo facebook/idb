@@ -58,6 +58,11 @@ extern NSString *const FBControlCoreDebugLogging;
 + (NSTimeInterval)regularTimeout;
 
 /**
+ `regularTimeout` as a dispatch_time_t.
+ */
++ (dispatch_time_t)regularDispatchTimeout;
+
+/**
  A Timeout Value when waiting on events that will a longer period of time.
  */
 + (NSTimeInterval)slowTimeout;

@@ -74,12 +74,10 @@
     if (!block(error, simulator, video, waitGroup)) {
       return NO;
     }
-    NSTimeInterval timeout = FBControlCoreGlobalConfiguration.regularTimeout;
-    int64_t timeoutInt = ((int64_t) timeout) * ((int64_t) NSEC_PER_SEC);
-    long fail = dispatch_group_wait(waitGroup, dispatch_time(DISPATCH_TIME_NOW, timeoutInt));
+    long fail = dispatch_group_wait(waitGroup, FBControlCoreGlobalConfiguration.regularDispatchTimeout);
     if (fail) {
       return [[[FBSimulatorError
-        describeFormat:@"Timeout waiting for video interaction to complete in %f seconds", timeout]
+        describeFormat:@"Timeout waiting for video interaction to complete in %f seconds", FBControlCoreGlobalConfiguration.regularTimeout]
         inSimulator:simulator]
         failBool:error];
     }
