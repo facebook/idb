@@ -115,11 +115,13 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   self.testRunnerPID = 0;
   self.sessionIdentifier = nil;
 
+  [self.daemonConnection suspend];
   [self.daemonConnection cancel];
   self.daemonConnection = nil;
   self.daemonProxy = nil;
   self.daemonProtocolVersion = 0;
 
+  [self.testBundleConnection suspend];
   [self.testBundleConnection cancel];
   self.testBundleConnection = nil;
   self.testBundleProxy = nil;
