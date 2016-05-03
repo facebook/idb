@@ -87,6 +87,14 @@ extern NSString *const FBControlCoreErrorDomain;
 - (instancetype)inDomain:(NSString *)domain;
 
 /**
+ Updates the Error Code of the reciever.
+
+ @param code the Error Code to update with.
+ @return the reciever, for chaining.
+ */
+- (instancetype)code:(NSInteger)code;
+
+/**
  Builds the Error with the applied arguments.
  */
 - (NSError *)build;
