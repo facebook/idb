@@ -44,6 +44,11 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"tree" ofType:@"json"];
 }
 
++ (NSString *)applicationTestBundlePath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"SimpleTestTarget" ofType:@"xctest"];
+}
+
 @end
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
@@ -136,6 +141,11 @@
     launchPath:self.safariApplication.binary.path
     arguments:self.appLaunch2.arguments
     environment:self.appLaunch2.environment];
+}
+
+- (NSString *)applicationTestBundlePath
+{
+  return FBSimulatorControlFixtures.applicationTestBundlePath;
 }
 
 @end

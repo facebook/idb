@@ -95,4 +95,9 @@
  */
 - (FBProcessInfo *)processInfo2a;
 
+/**
+ An Application Test xctest bundle
+ */
+- (NSString *)applicationTestBundlePath;
+
 @end
