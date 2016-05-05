@@ -45,15 +45,10 @@
     return nil;
   }
 
-  NSArray *arguments = [(configuration.launchArguments ?: @[]) arrayByAddingObjectsFromArray:(attributes ?: @[])];
-  NSMutableDictionary *mEnvironment = (configuration.launchEnvironment ?: @{}).mutableCopy;
-  if (environment) {
-    [mEnvironment addEntriesFromDictionary:environment];
-  }
 
   if (![self.deviceOperator launchApplicationWithBundleID:configuration.testRunner.bundleID
-                                                arguments:arguments
-                                              environment:mEnvironment.copy
+                                                arguments:[self argumentsFromConfiguration:configuration attributes:attributes]
+                                              environment:[self environmentFromConfiguration:configuration environment:environment]
                                                     error:error]) {
     return nil;
   }
@@ -75,6 +70,22 @@
     return nil;
   }
   return testManager;
+}
+
+#pragma mark Private
+
+- (NSArray<NSString *> *)argumentsFromConfiguration:(FBTestRunnerConfiguration *)configuration attributes:(NSArray<NSString *> *)attributes
+{
+  return [(configuration.launchArguments ?: @[]) arrayByAddingObjectsFromArray:(attributes ?: @[])];
+}
+
+- (NSDictionary<NSString *, NSString *> *)environmentFromConfiguration:(FBTestRunnerConfiguration *)configuration environment:(NSDictionary<NSString *, NSString *> *)environment
+{
+  NSMutableDictionary<NSString *, NSString *> *mEnvironment = (configuration.launchEnvironment ?: @{}).mutableCopy;
+  if (environment) {
+    [mEnvironment addEntriesFromDictionary:environment];
+  }
+  return [mEnvironment copy];
 }
 
 @end
