@@ -12,6 +12,7 @@
 @class DVTAbstractiOSDevice;
 
 @protocol FBTestManagerProcessInteractionDelegate;
+@protocol FBTestManagerTestReporter;
 @protocol FBControlCoreLogger;
 
 /**
@@ -37,6 +38,11 @@
  Delegate object used to handle application install & launch request
  */
 @property (nonatomic, weak) id<FBTestManagerProcessInteractionDelegate> processDelegate;
+
+/**
+ Delegate to which test activity is reported.
+ */
+@property (nonatomic, weak, readwrite) id<FBTestManagerTestReporter> reporter;
 
 /**
  Logger object to log events to, may be nil.

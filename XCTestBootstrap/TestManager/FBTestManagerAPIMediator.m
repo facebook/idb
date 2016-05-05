@@ -23,6 +23,7 @@
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
 #import "XCTestBootstrapError.h"
+#import "FBTestManagerTestReporter.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
 
 #define weakify(target) __weak __typeof__(target) weak_##target = target
@@ -383,6 +384,8 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 #pragma mark - XCTestManager_IDEInterface protocol
 
+#pragma mark Process Launch Delegation
+
 - (id)_XCT_launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment
 {
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
@@ -434,6 +437,8 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   return recepit;
 }
 
+#pragma mark Test Suite Progress
+
 - (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
 {
   [self.logger logFormat:@"_XCT_testSuite:%@ didStartAt:%@", tests, time];
@@ -442,6 +447,8 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     NSError *error = [NSError errorWithDomain:@"IDETestOperationsObserverErrorDomain" code:0x9 userInfo:@{NSLocalizedDescriptionKey : @"Test reported a suite with nil or empty identifier. This is unsupported."}];
     [self finishWithError:error didCancel:NO];
   }
+
+  [self.reporter testManagerMediator:self testSuite:tests didStartAt:time];
   return nil;
 }
 
@@ -450,6 +457,8 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   self.testPlanDidStartExecuting = YES;
   [self.logger logFormat:@"Starting test plan, clearing initialization timeout timer."];
   [self.startupTimeoutTimer invalidate];
+
+  [self.reporter testManagerMediatorDidBeginExecutingTestPlan:self];
   return nil;
 }
 
@@ -475,12 +484,15 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     return nil;
   }
   [self _checkUITestingPermissionsForPID:self.testRunnerPID];
+
+  [self.reporter testManagerMediator:self testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
   return nil;
 }
 
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
   [self.logger logFormat:@"_XCT_testCaseDidStartForTestClass:%@ method:%@", testClass, method ?: @""];
+  [self.reporter testManagerMediator:self testCaseDidStartForTestClass:testClass method:method];
   return nil;
 }
 
@@ -497,6 +509,23 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   return nil;
 }
 
+- (id)_XCT_didFinishExecutingTestPlan
+{
+  [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self];
+  return nil;
+}
+
+- (id)_XCT_testCaseDidFinishForTestClass:(NSString *)arg1 method:(NSString *)arg2 withStatus:(NSString *)arg3 duration:(NSNumber *)arg4
+{
+  [self.reporter testManagerMediator:self testCaseDidFinishForTestClass:arg1 method:arg2 withStatus:arg3 duration:arg4];
+  return nil;
+}
+
+- (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
+{
+  [self.reporter testManagerMediator:self testSuite:arg1 didFinishAt:arg2 runCount:arg3 withFailures:arg4 unexpected:arg5 testDuration:arg6 totalDuration:arg7];
+  return nil;
+}
 
 #pragma mark - Unimplemented
 
@@ -575,22 +604,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   return [self handleUnimplementedXCTRequest:_cmd];
 }
 
-- (id)_XCT_testCaseDidFinishForTestClass:(NSString *)arg1 method:(NSString *)arg2 withStatus:(NSString *)arg3 duration:(NSNumber *)arg4
-{
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)arg1 method:(NSString *)arg2 withMessage:(NSString *)arg3 file:(NSString *)arg4 line:(NSNumber *)arg5
-{
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
-{
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_didFinishExecutingTestPlan
 {
   return [self handleUnimplementedXCTRequest:_cmd];
 }
