@@ -9,8 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-typedef BOOL (^FBRunLoopSpinnerBlock)();
-
 @interface FBRunLoopSpinner : NSObject
 
 /**
@@ -57,7 +55,7 @@ typedef BOOL (^FBRunLoopSpinnerBlock)();
  @param untilTrue the condition to meet.
  @return YES if the condition was met, NO if the timeout was reached first.
  */
-- (BOOL)spinUntilTrue:(FBRunLoopSpinnerBlock)untilTrue;
+- (BOOL)spinUntilTrue:( BOOL (^)(void) )untilTrue;
 
 /**
  Spins the Run Loop until `untilTrue` returns YES or a timeout is reached.
@@ -65,6 +63,31 @@ typedef BOOL (^FBRunLoopSpinnerBlock)();
  @param error to fill in case of timeout.
  @return YES if the condition was met, NO if the timeout was reached first.
  */
-- (BOOL)spinUntilTrue:(FBRunLoopSpinnerBlock)untilTrue error:(NSError **)error;
+- (BOOL)spinUntilTrue:( BOOL (^)(void) )untilTrue error:(NSError **)error;
+
+@end
+
+/**
+ Conveniences to aid synchronous waiting on events, whilst not blocking other event sources.
+ */
+@interface NSRunLoop (FBControlCore)
+
+/**
+ Spins the Run Loop until `untilTrue` returns YES or a timeout is reached.
+
+ @oaram timeout the Timeout in Seconds.
+ @param untilTrue the condition to meet.
+ @returns YES if the condition was met, NO if the timeout was reached first.
+ */
+- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue;
+
+/**
+ Spins the Run Loop until `untilTrue` returns a value, or a timeout is reached.
+
+ @oaram timeout the Timeout in Seconds.
+ @param untilExists the mapping to a value.
+ @returns the return value of untilTrue, or nil if a timeout was reached.
+ */
+- (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists;
 
 @end

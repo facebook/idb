@@ -13,7 +13,7 @@
 
 #import "FBProcessInfo.h"
 #import "FBControlCoreError.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBRunLoopSpinner.h"
 
 @implementation FBProcessFetcher (Helpers)
 

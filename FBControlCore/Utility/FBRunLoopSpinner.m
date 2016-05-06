@@ -9,7 +9,7 @@
 
 #import "FBRunLoopSpinner.h"
 
-#import "XCTestBootstrapError.h"
+#import "FBControlCoreError.h"
 
 @interface FBRunLoopSpinner ()
 @property (nonatomic, copy) NSString *timeoutErrorMessage;
@@ -68,28 +68,59 @@
   return self;
 }
 
-- (BOOL)spinUntilTrue:(FBRunLoopSpinnerBlock)untilTrue
+- (BOOL)spinUntilTrue:(BOOL (^)(void))untilTrue
 {
   return [self spinUntilTrue:untilTrue error:nil];
 }
 
-- (BOOL)spinUntilTrue:(FBRunLoopSpinnerBlock)untilTrue error:(NSError **)error
+- (BOOL)spinUntilTrue:(BOOL (^)(void))untilTrue error:(NSError **)error
 {
   NSDate *messageTimeout = [NSDate dateWithTimeIntervalSinceNow:self.reminderInterval];
   NSDate *timeoutDate = [NSDate dateWithTimeIntervalSinceNow:self.timeout];
   while (!untilTrue()) {
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     if (timeoutDate.timeIntervalSinceNow < 0) {
-      return [[XCTestBootstrapError
+      return [[FBControlCoreError
         describe:(self.timeoutErrorMessage ?: @"FBRunLoopSpinner timeout")]
         failBool:error];
     }
     if (self.reminderMessage && messageTimeout.timeIntervalSinceNow < 0) {
-      NSLog(@"%@", self.reminderMessage);
       messageTimeout = [NSDate dateWithTimeIntervalSinceNow:self.reminderInterval];
     }
   }
   return YES;
+}
+
+@end
+
+@implementation NSRunLoop (FBControlCore)
+
+- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue
+{
+  NSDate *date = [NSDate dateWithTimeIntervalSinceNow:timeout];
+  while (!untilTrue()) {
+    @autoreleasepool {
+      if ([date timeIntervalSinceNow] < 0) {
+        return NO;
+      }
+      // Wait for 100ms
+      [self runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+    }
+  }
+  return YES;
+}
+
+- (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists
+{
+  __block id value = nil;
+  BOOL success = [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
+    value = untilExists();
+    return value != nil;
+  }];
+  if (!success) {
+    return nil;
+  }
+  return value;
 }
 
 @end

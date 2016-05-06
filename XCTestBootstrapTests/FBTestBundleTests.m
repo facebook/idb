@@ -9,6 +9,8 @@
 
 #import <XCTest/XCTest.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <OCMock/OCMock.h>
 
 #import "FBTestBundle.h"

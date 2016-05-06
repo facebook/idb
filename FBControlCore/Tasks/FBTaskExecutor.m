@@ -14,7 +14,7 @@
 
 #import "FBTask+Private.h"
 #import "FBTask.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBRunLoopSpinner.h"
 
 NSString *const FBTaskExecutorErrorDomain = @"com.facebook.fbcontrolcore.task";
 

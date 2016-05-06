@@ -15,7 +15,6 @@
 #import <XCTestBootstrap/FBFileManager.h>
 #import <XCTestBootstrap/FBFoundationInitializer.h>
 #import <XCTestBootstrap/FBProductBundle.h>
-#import <XCTestBootstrap/FBRunLoopSpinner.h>
 #import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBTestBundle.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>

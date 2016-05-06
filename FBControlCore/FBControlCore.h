@@ -34,4 +34,4 @@
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
-#import <FBControlCore/NSRunLoop+FBControlCore.h>
+#import <FBControlCore/FBRunLoopSpinner.h>

@@ -11,7 +11,7 @@
 #import "FBTask+Private.h"
 
 #import "FBTaskExecutor.h"
-#import "NSRunLoop+FBControlCore.h"
+#import "FBRunLoopSpinner.h"
 
 @implementation FBTask
 
