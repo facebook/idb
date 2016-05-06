@@ -11,6 +11,7 @@
 
 @class FBTestManagerAPIMediator;
 
+
 /**
  A Delegate for providing callbacks for Test Reporting progress.
  */
@@ -42,6 +43,17 @@
  @param duration the duration of the test case.
  */
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)status duration:(NSNumber *)duration;
+
+/**
+ Called when a Test Case fails
+
+ @param testClass the Test Class.
+ @param method the Test Method.
+ @param message the failure message.
+ @param file the file name.
+ @param line the line number.
+ */
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line;
 
 /**
  Called when a Test Bundle is ready.

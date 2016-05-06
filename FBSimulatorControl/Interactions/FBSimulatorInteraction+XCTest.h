@@ -11,26 +11,38 @@
 
 @class FBApplicationLaunchConfiguration;
 @class FBTestBundle;
+@protocol FBTestManagerTestReporter;
 
 @interface FBSimulatorInteraction (XCTest)
 
 /**
  Starts testing application using test bundle. It will use simulator's auxillaryDirectory as working directory
 
- @param configuration configuration used to launch test runner application
- @param testBundlePath path to XCTest bundle used for testing
+ @param configuration configuration used to launch test runner application.
+ @param testBundlePath path to XCTest bundle used for testing.
  @return the reciever, for chaining.
  */
 - (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath;
 
 /**
- Starts testing application using test bundle
+ Starts testing application using test bundle. It will use simulator's auxillaryDirectory as working directory
 
- @param configuration configuration used to launch test runner application
- @param testBundlePath path to XCTest bundle used for testing
- @param workingDirectory xctest working directory
+ @param configuration configuration used to launch test runner application.
+ @param testBundlePath path to XCTest bundle used for testing.
+ @param reporter the reporter to report to.
  @return the reciever, for chaining.
  */
-- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath workingDirectory:(NSString *)workingDirectory;
+- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath reporter:(id<FBTestManagerTestReporter>)reporter;
+
+/**
+ Starts testing application using test bundle.
+
+ @param configuration configuration used to launch test runner application.
+ @param testBundlePath path to XCTest bundle used for testing
+ @param reporter the reporter to report to.
+ @param workingDirectory xctest working directory.
+ @return the reciever, for chaining.
+ */
+- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath reporter:(id<FBTestManagerTestReporter>)reporter workingDirectory:(NSString *)workingDirectory;
 
 @end

@@ -17,13 +17,22 @@
 
 - (void)setUp
 {
+  NSLog(@"Started running SimpleTestTarget");
 }
 
 - (void)testIsRunningOnIOS
 {
-  NSLog(@"A Message");
-  Class class = NSClassFromString(@"UIView");
-  XCTAssertNotNil(class);
+  XCTAssertNotNil(NSClassFromString(@"UIView"));
+}
+
+- (void)testIsRunningOnMacOSX
+{
+  XCTAssertNotNil(NSClassFromString(@"NSView"));
+}
+
+- (void)testIsSafari
+{
+  XCTAssertTrue([NSProcessInfo.processInfo.processName isEqualToString:@"MobileSafari"]);
 }
 
 @end

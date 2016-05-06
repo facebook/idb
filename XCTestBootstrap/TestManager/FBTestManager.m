@@ -15,22 +15,43 @@
 
 @interface FBTestManager () <FBTestManagerProcessInteractionDelegate>
 
-@property (nonatomic, strong) FBTestManagerAPIMediator *mediator;
-@property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
+@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
 
 @end
 
 @implementation FBTestManager
 
-+ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier logger:(id<FBControlCoreLogger>)logger
+#pragma mark Initializers
+
++ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBTestManager *testManager = [self.class new];
-  testManager.mediator = [FBTestManagerAPIMediator mediatorWithDevice:deviceOperator.dvtDevice testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
-  testManager.mediator.processDelegate = testManager;
-  testManager.mediator.logger = logger;
-  testManager.deviceOperator = deviceOperator;
-  return testManager;
+  FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
+    mediatorWithDevice:deviceOperator.dvtDevice
+    testRunnerPID:testRunnerPID
+    sessionIdentifier:sessionIdentifier];
+
+  FBTestManager *manager = [[self alloc] initWithMediator:mediator deviceOperator:deviceOperator];
+  mediator.processDelegate = manager;
+  mediator.reporter = reporter;
+
+  return manager;
 }
+
+- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator deviceOperator:(id<FBDeviceOperator>)deviceOperator
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _mediator = mediator;
+  _deviceOperator = deviceOperator;
+
+  return self;
+}
+
+#pragma mark Public
 
 - (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {

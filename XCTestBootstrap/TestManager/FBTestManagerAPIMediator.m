@@ -526,6 +526,12 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   return nil;
 }
 
+- (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
+{
+  [self.reporter testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line];
+  return nil;
+}
+
 // This looks like tested application logs
 - (id)_XCT_logDebugMessage:(NSString *)debugMessage
 {
@@ -630,11 +636,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 }
 
 - (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 didStallOnMainThreadInFile:(NSString *)arg3 line:(NSNumber *)arg4
-{
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_testCaseDidFailForTestClass:(NSString *)arg1 method:(NSString *)arg2 withMessage:(NSString *)arg3 file:(NSString *)arg4 line:(NSNumber *)arg5
 {
   return [self handleUnimplementedXCTRequest:_cmd];
 }

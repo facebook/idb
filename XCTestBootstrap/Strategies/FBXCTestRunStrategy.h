@@ -14,6 +14,7 @@
 @class FBTestManager;
 @protocol FBXCTestPreparationStrategy;
 @protocol FBDeviceOperator;
+@protocol FBTestManagerTestReporter;
 
 /**
  Strategy used to run an injected XCTest bundle in an Application and attach the 'testmanagerd' daemon to it.
@@ -25,10 +26,11 @@
 
  @param deviceOperator device operator used to run tests
  @param testPrepareStrategy test preparation strategy used to prepare device to test
+ @param reporter the Reporter to report test progress to.
  @param logger the logger object to log events to, may be nil.
  @return operator
  */
-+ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Starts testing session

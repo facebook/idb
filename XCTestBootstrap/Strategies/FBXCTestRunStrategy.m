@@ -21,21 +21,39 @@
 #import "XCTestBootstrapError.h"
 
 @interface FBXCTestRunStrategy ()
-@property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
-@property (nonatomic, strong) id<FBXCTestPreparationStrategy> prepareStrategy;
-@property (nonatomic, strong) id<FBControlCoreLogger> logger;
+
+@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) id<FBXCTestPreparationStrategy> prepareStrategy;
+@property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+
 @end
 
 @implementation FBXCTestRunStrategy
 
-+ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy logger:(id<FBControlCoreLogger>)logger
+#pragma mark Initializers
+
++ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBXCTestRunStrategy *strategy = [self.class new];
-  strategy.prepareStrategy = prepareStrategy;
-  strategy.deviceOperator = deviceOperator;
-  strategy.logger = logger;
-  return strategy;
+  return [[self alloc] initWithDeviceOperator:deviceOperator testPrepareStrategy:prepareStrategy reporter:reporter logger:logger];
 }
+
+- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _deviceOperator = deviceOperator;
+  _prepareStrategy = prepareStrategy;
+  _reporter = reporter;
+  _logger = logger;
+
+  return self;
+}
+
+#pragma mark Public
 
 - (FBTestManager *)startTestManagerWithAttributes:(NSArray *)attributes environment:(NSDictionary *)environment error:(NSError **)error
 {
@@ -46,7 +64,6 @@
   if (!configuration) {
     return nil;
   }
-
 
   if (![self.deviceOperator launchApplicationWithBundleID:configuration.testRunner.bundleID
                                                 arguments:[self argumentsFromConfiguration:configuration attributes:attributes]
@@ -66,6 +83,7 @@
   FBTestManager *testManager = [FBTestManager testManagerWithOperator:self.deviceOperator
     testRunnerPID:testRunnerProcessID
     sessionIdentifier:configuration.sessionIdentifier
+    reporter:self.reporter
     logger:self.logger];
 
   if (![testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
