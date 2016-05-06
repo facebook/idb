@@ -11,6 +11,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBDeviceOperator.h"
 #import "FBProductBundle.h"
 #import "FBTestManager.h"
@@ -66,7 +68,7 @@
     sessionIdentifier:configuration.sessionIdentifier
     logger:self.logger];
 
-  if (![testManager connectWithError:error]) {
+  if (![testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
     return nil;
   }
   return testManager;

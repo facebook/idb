@@ -37,7 +37,7 @@
 /**
  Delegate object used to handle application install & launch request
  */
-@property (nonatomic, weak) id<FBTestManagerProcessInteractionDelegate> processDelegate;
+@property (nonatomic, weak, readwrite) id<FBTestManagerProcessInteractionDelegate> processDelegate;
 
 /**
  Delegate to which test activity is reported.
@@ -47,7 +47,7 @@
 /**
  Logger object to log events to, may be nil.
  */
-@property (nonatomic, strong) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 
 /**
  Creates and returns a mediator with given paramenters
@@ -60,12 +60,12 @@
 + (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
 
 /**
- Starts test and establishes connection between test runner(XCTest bundle) and testmanagerd
+ Starts test and establishes connection between test runner(XCTest bundle) and testmanagerd, synchronously.
 
  @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return YES if connection request has started successfuly, NO otherwise
+ @return YES if connection connection has been established successfuly, NO otherwise.
  */
-- (BOOL)connectTestRunnerWithTestManagerDaemonWithError:(NSError **)error;
+- (BOOL)connectTestRunnerWithTestManagerDaemonWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
  Terminates connection between test runner(XCTest bundle) and testmanagerd

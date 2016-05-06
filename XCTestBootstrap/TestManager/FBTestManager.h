@@ -31,10 +31,11 @@
 /**
  Connects to the 'testmanagerd' daemon.
 
+ @param timeout the Time to wait for the connection to be established.
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return YES if operation was successful, NO otherwise.
  */
-- (BOOL)connectWithError:(NSError **)error;
+- (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
  Disconnects from the 'testmanagerd' daemon.

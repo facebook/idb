@@ -90,4 +90,13 @@
  */
 - (id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists;
 
+/**
+ Spins the Run Loop until the group completes, or a timeout is reached.
+
+ @param timeout the Timeout in Seconds.
+ @param group the group to wait on.
+ @return YES if the group completed before the timeout, NO otherwise.
+ */
+- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue;
+
 @end

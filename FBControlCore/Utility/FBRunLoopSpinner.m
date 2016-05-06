@@ -123,4 +123,16 @@
   return value;
 }
 
+- (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue
+{
+  __block volatile uint32_t didFinish = 0;
+  dispatch_group_notify(group, queue, ^{
+    OSAtomicOr32Barrier(1, &didFinish);
+  });
+
+  return [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
+    return didFinish == 1;
+  }];
+}
+
 @end

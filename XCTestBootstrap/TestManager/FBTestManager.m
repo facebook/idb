@@ -32,9 +32,9 @@
   return testManager;
 }
 
-- (BOOL)connectWithError:(NSError *__autoreleasing *)error
+- (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.mediator connectTestRunnerWithTestManagerDaemonWithError:error];
+  return [self.mediator connectTestRunnerWithTestManagerDaemonWithTimeout:timeout error:error];
 }
 
 - (void)disconnect
@@ -45,10 +45,10 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-          @"SessionID: %@ | Testrunner PID: %d",
-          self.mediator.sessionIdentifier,
-          self.mediator.testRunnerPID
-          ];
+    @"SessionID: %@ | Testrunner PID: %d",
+    self.mediator.sessionIdentifier,
+    self.mediator.testRunnerPID
+  ];
 }
 
 #pragma mark - FBTestManagerMediatorDelegate
