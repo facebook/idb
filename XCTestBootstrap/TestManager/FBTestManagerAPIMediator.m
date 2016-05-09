@@ -516,7 +516,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   }
   [self _checkUITestingPermissionsForPID:self.testRunnerPID];
 
-  [self.reporter testManagerMediator:self testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
+  [self.reporter testManagerMediator:self testBundleReadyWithProtocolVersion:protocolVersionInt minimumVersion:minimumVersionInt];
   return nil;
 }
 
@@ -529,7 +529,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-  [self.reporter testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line];
+  [self.reporter testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line.unsignedIntegerValue];
   return nil;
 }
 
@@ -555,7 +555,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
   FBTestReportStatus status = [FBTestManagerResultSummary statusForStatusString:statusString];
-  [self.reporter testManagerMediator:self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration];
+  [self.reporter testManagerMediator:self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration.doubleValue];
   return nil;
 }
 

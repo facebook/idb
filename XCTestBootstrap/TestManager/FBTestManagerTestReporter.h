@@ -51,7 +51,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param status the status of the test case.
  @param duration the duration of the test case.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSNumber *)duration;
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration;
 
 /**
  Called when a Test Case fails
@@ -62,7 +62,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param file the file name.
  @param line the line number.
  */
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line;
+- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line;
 
 /**
  Called when a Test Bundle is ready.
@@ -71,7 +71,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param protocolVersion ???
  @param minimumVersion ???
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testBundleReadyWithProtocolVersion:(NSNumber *)protocolVersion minimumVersion:(NSNumber *)minimumVersion;
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion minimumVersion:(NSInteger)minimumVersion;
 
 /**
  Called when a Test Bundle is ready.
