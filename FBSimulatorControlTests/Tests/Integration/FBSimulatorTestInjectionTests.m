@@ -85,12 +85,16 @@
 
 }
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)status duration:(NSNumber *)duration
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSNumber *)duration
 {
-  if ([status isEqualToString:@"passed"]) {
-    [self.passedMethods addObject:method];
-  } else if ([status isEqualToString:@"failed"]) {
-    [self.failedMethods addObject:method];
+  switch (status) {
+    case FBTestReportStatusPassed:
+      [self.passedMethods addObject:method];
+      break;
+    case FBTestReportStatusFailed:
+      [self.failedMethods addObject:method];
+    case FBTestReportStatusUnknown:
+      break;
   }
 }
 

@@ -552,9 +552,10 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   return nil;
 }
 
-- (id)_XCT_testCaseDidFinishForTestClass:(NSString *)arg1 method:(NSString *)arg2 withStatus:(NSString *)arg3 duration:(NSNumber *)arg4
+- (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
-  [self.reporter testManagerMediator:self testCaseDidFinishForTestClass:arg1 method:arg2 withStatus:arg3 duration:arg4];
+  FBTestReportStatus status = [FBTestManagerResultSummary statusForStatusString:statusString];
+  [self.reporter testManagerMediator:self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration];
   return nil;
 }
 

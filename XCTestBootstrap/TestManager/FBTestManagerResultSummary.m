@@ -59,4 +59,14 @@
   ];
 }
 
++ (FBTestReportStatus)statusForStatusString:(NSString *)statusString
+{
+  if ([statusString isEqualToString:@"passed"]) {
+    return FBTestReportStatusPassed;
+  } else if ([statusString isEqualToString:@"failed"]) {
+    return FBTestReportStatusFailed;
+  }
+  return FBTestReportStatusUnknown;
+ }
+
 @end

@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <XCTestBootstrap/FBTestManagerTestReporter.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -28,6 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) NSInteger unexpected;
 @property (nonatomic, assign, readonly) NSTimeInterval testDuration;
 @property (nonatomic, assign, readonly) NSTimeInterval totalDuration;
+
++ (FBTestReportStatus)statusForStatusString:(NSString *)statusString;
 
 @end
 

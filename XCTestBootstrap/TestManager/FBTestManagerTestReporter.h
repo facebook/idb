@@ -13,6 +13,15 @@
 @class FBTestManagerResultSummary;
 
 /**
+ An Enumerated Type for Test Report Results.
+ */
+typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
+  FBTestReportStatusUnknown = 0,
+  FBTestReportStatusPassed = 1,
+  FBTestReportStatusFailed = 2
+};
+
+/**
  A Delegate for providing callbacks for Test Reporting progress.
  */
 @protocol FBTestManagerTestReporter <NSObject>
@@ -42,7 +51,7 @@
  @param status the status of the test case.
  @param duration the duration of the test case.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)status duration:(NSNumber *)duration;
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSNumber *)duration;
 
 /**
  Called when a Test Case fails
