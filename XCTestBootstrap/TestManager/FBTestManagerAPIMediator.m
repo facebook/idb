@@ -24,6 +24,7 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBTestManagerTestReporter.h"
+#import "FBTestManagerResultSummary.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
 
 #define weakify(target) __weak __typeof__(target) weak_##target = target
@@ -559,7 +560,8 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
 {
-  [self.reporter testManagerMediator:self testSuite:arg1 didFinishAt:arg2 runCount:arg3 withFailures:arg4 unexpected:arg5 testDuration:arg6 totalDuration:arg7];
+  FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:arg1 finishingAt:arg2 runCount:arg3 failures:arg4 unexpected:arg5 testDuration:arg6 totalDuration:arg7];
+  [self.reporter testManagerMediator:self finishedWithSummary:summary];
   return nil;
 }
 

@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBTestManagerAPIMediator;
-
+@class FBTestManagerResultSummary;
 
 /**
  A Delegate for providing callbacks for Test Reporting progress.
@@ -77,15 +77,9 @@
  Called when a Test Suite has Finished.
 
  @param mediator the test mediator.
- @param testSuite the Test Suite
- @param finishTime the Time at which the suite finished.
- @param runCount the Number of Tests that were run.
- @param failuresCount the Number of tests that failed.
- @param unexpectedFailureCount the Number of Unexpected failures.
- @param testDuration the time taken to complete the test suite.
- @param totalDuration ???
+ @param summary the Test Result Summary.
  */
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testSuite:(NSString *)testSuite didFinishAt:(NSString *)finishTime runCount:(NSNumber *)runCount withFailures:(NSNumber *)failuresCount unexpected:(NSNumber *)unexpectedFailureCount testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration;
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator finishedWithSummary:(FBTestManagerResultSummary *)summary;
 
 /**
  Called when the Mediator finished it's 'Test Plan'.
