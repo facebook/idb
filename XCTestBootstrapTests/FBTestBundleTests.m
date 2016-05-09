@@ -15,6 +15,7 @@
 
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
+#import "FBXCTestBootstrapFixtures.h"
 #import "NSFileManager+FBFileManager.h"
 
 @interface FBTestBundleTests : XCTestCase
@@ -24,9 +25,9 @@
 
 - (void)testTestBundleLoadWithPath
 {
-  NSString *expectedTestConfigPath = @"/Deep/Deep/Darkness/XCTestBootstrapTests.xctest/XCTestBootstrapTests-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration";
+  NSString *expectedTestConfigPath = @"/Deep/Deep/Darkness/SimpleTestTarget.xctest/SimpleTestTarget-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration";
   NSUUID *sessionIdentifier = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
+  NSBundle *bundle = [FBTestBundleTests testBundleFixture];
 
   OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:bundle.bundlePath toPath:expectedTestConfigPath.stringByDeletingLastPathComponent error:[OCMArg anyObjectRef]];
@@ -45,7 +46,7 @@
   XCTAssertTrue([testBundle isKindOfClass:FBTestBundle.class]);
   XCTAssertNotNil(testBundle.configuration);
   XCTAssertEqualObjects(testBundle.configuration.sessionIdentifier, sessionIdentifier);
-  XCTAssertEqualObjects(testBundle.configuration.moduleName, @"XCTestBootstrapTests");
+  XCTAssertEqualObjects(testBundle.configuration.moduleName, @"SimpleTestTarget");
   XCTAssertEqualObjects(testBundle.configuration.testBundlePath, expectedTestConfigPath.stringByDeletingLastPathComponent);
   XCTAssertEqualObjects(testBundle.configuration.path, expectedTestConfigPath);
 

@@ -14,6 +14,7 @@
 #import "FBCodesignProvider.h"
 #import "FBFileManager.h"
 #import "FBProductBundle.h"
+#import "FBXCTestBootstrapFixtures.h"
 
 @interface FBProductBundleTests : XCTestCase
 @end
@@ -22,18 +23,18 @@
 
 - (void)testProductBundleLoadWithPath
 {
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
+  NSBundle *bundle = [FBProductBundleTests testBundleFixture];
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
     withBundlePath:bundle.bundlePath]
    build];
   XCTAssertTrue([productBundle isKindOfClass:FBProductBundle.class]);
-  XCTAssertEqualObjects(productBundle.name, @"XCTestBootstrapTests");
-  XCTAssertEqualObjects(productBundle.filename, @"XCTestBootstrapTests.xctest");
+  XCTAssertEqualObjects(productBundle.name, @"SimpleTestTarget");
+  XCTAssertEqualObjects(productBundle.filename, @"SimpleTestTarget.xctest");
   XCTAssertEqualObjects(productBundle.path, bundle.bundlePath);
-  XCTAssertEqualObjects(productBundle.bundleID, @"facebook.XCTestBootstrapTests");
-  XCTAssertEqualObjects(productBundle.binaryName, @"XCTestBootstrapTests");
-  XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"XCTestBootstrapTests"]);
+  XCTAssertEqualObjects(productBundle.bundleID, @"FB.SimpleTestTarget");
+  XCTAssertEqualObjects(productBundle.binaryName, @"SimpleTestTarget");
+  XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"SimpleTestTarget"]);
 }
 
 - (void)testNoBundlePath
@@ -43,13 +44,13 @@
 
 - (void)testWorkingDirectory
 {
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
+  NSBundle *bundle = [FBProductBundleTests testBundleFixture];
   NSDictionary *plist =
   @{
     @"CFBundleIdentifier" : @"bundleID",
     @"CFBundleExecutable" : @"exec",
   };
-  NSString *targetPath = @"/Heaven/XCTestBootstrapTests.xctest";
+  NSString *targetPath = @"/Heaven/SimpleTestTarget.xctest";
   OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
   [[[fileManagerMock expect] andReturnValue:@YES] copyItemAtPath:bundle.bundlePath toPath:targetPath error:[OCMArg anyObjectRef]];
   [[[fileManagerMock expect] andReturn:plist] dictionaryWithPath:[bundle.bundlePath stringByAppendingPathComponent:@"Info.plist"]];
