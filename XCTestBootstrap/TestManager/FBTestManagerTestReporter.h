@@ -62,7 +62,7 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param file the file name.
  @param line the line number.
  */
-- (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line;
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line;
 
 /**
  Called when a Test Bundle is ready.
