@@ -11,15 +11,31 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBDeviceOperator.h"
-#import "FBTestRunnerConfiguration.h"
-#import "FBXCTestPreparationStrategy.h"
-#import "FBXCTestRunStrategy.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBXCTestRunStrategyTests : XCTestCase
+
+@property (nonatomic, strong, readwrite) OCMockObject *testManagerMock;
+
 @end
 
 @implementation FBXCTestRunStrategyTests
+
+- (void)setUp
+{
+  [super setUp];
+
+  self.testManagerMock = [OCMockObject niceMockForClass:FBTestManager.class];
+  [[[self.testManagerMock stub] andReturn:self.testManagerMock] testManagerWithOperator:OCMArg.any testRunnerPID:13 sessionIdentifier:OCMArg.any reporter:OCMArg.any logger:OCMArg.any];
+  [[[[self.testManagerMock stub] ignoringNonObjectArgs] andReturnValue:@(YES)] connectWithTimeout:0 error:OCMArg.anyObjectRef];
+}
+
+- (void)tearDown
+{
+  [super tearDown];
+
+  [self.testManagerMock stopMocking];
+}
 
 - (void)testCallingStrategyWithMissingDevice
 {
@@ -49,7 +65,6 @@
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
   [[[deviceOperatorMock expect] andReturnValue:@13] processIDWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturnValue:@YES] launchApplicationWithBundleID:[OCMArg any] arguments:@[@4] environment:@{@"A" : @"B"} error:[OCMArg anyObjectRef]];
-  [[deviceOperatorMock expect] dvtDevice];
 
   id testConfigurationMock = [OCMockObject niceMockForClass:FBTestRunnerConfiguration.class];
 
