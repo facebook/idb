@@ -83,12 +83,12 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 #pragma mark - Initializers
 
-+ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
++ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
 {
-  return  [[self alloc] initWithDevice:device testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
+  return  [[self alloc] initWithDevice:device processDelegate:processDelegate reporter:reporter logger:logger testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
 }
 
-- (instancetype)initWithDevice:(DVTAbstractiOSDevice *)device testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
+- (instancetype)initWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
 {
   self = [super init];
   if (!self) {
@@ -96,6 +96,9 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   }
 
   _targetDevice = device;
+  _processDelegate = processDelegate;
+  _reporter = reporter;
+  _logger = logger;
   _testRunnerPID = testRunnerPID;
   _sessionIdentifier = sessionIdentifier;
 

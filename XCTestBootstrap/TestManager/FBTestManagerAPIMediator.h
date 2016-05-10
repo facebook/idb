@@ -15,6 +15,8 @@
 @protocol FBTestManagerTestReporter;
 @protocol FBControlCoreLogger;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.
  The class mediates between:
@@ -37,27 +39,30 @@
 /**
  Delegate object used to handle application install & launch request
  */
-@property (nonatomic, weak, readwrite) id<FBTestManagerProcessInteractionDelegate> processDelegate;
+@property (nonatomic, weak, readonly) id<FBTestManagerProcessInteractionDelegate> processDelegate;
 
 /**
  Delegate to which test activity is reported.
  */
-@property (nonatomic, weak, readwrite) id<FBTestManagerTestReporter> reporter;
+@property (nonatomic, nullable, weak, readonly) id<FBTestManagerTestReporter> reporter;
 
 /**
  Logger object to log events to, may be nil.
  */
-@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
+@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
  Creates and returns a mediator with given paramenters
 
  @param device a device that on which test runner is running
+ @param processDelegate the Delegate to handle application interactivity.
+ @param reporter the (optional) delegate to report test progress too.
+ @param logger the (optional) logger to events to.
  @param testRunnerPID a process id of test runner (XCTest bundle)
  @param sessionIdentifier a session identifier of test that should be started
  @return Prepared FBTestRunnerConfiguration
  */
-+ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
++ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
 
 /**
  Starts test and establishes connection between test runner(XCTest bundle) and testmanagerd, synchronously.
@@ -73,3 +78,5 @@
 - (void)disconnectTestRunnerAndTestManagerDaemon;
 
 @end
+
+NS_ASSUME_NONNULL_END
