@@ -23,6 +23,7 @@
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
 #import "XCTestBootstrapError.h"
+#import "FBXCTestManagerLoggingForwarder.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
@@ -47,6 +48,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 @property (nonatomic, strong, readonly) DVTDevice *targetDevice;
 @property (nonatomic, assign, readonly) BOOL targetIsiOSSimulator;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
+@property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *testManagerForwarder;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
@@ -106,6 +108,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   _targetIsiOSSimulator = [device.class isKindOfClass:NSClassFromString(@"DVTiPhoneSimulator")];
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
+  _testManagerForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:self logger:logger];
 
   return self;
 }
@@ -219,7 +222,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
    peerInterface:@protocol(XCTestDriverInterface)
    handler:^(DTXProxyChannel *channel){
      [self.logger logFormat:@"Got proxy channel request from test bundle"];
-     [channel setExportedObject:self queue:dispatch_get_main_queue()];
+     [channel setExportedObject:self.testManagerForwarder queue:dispatch_get_main_queue()];
      id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
      self.testBundleProxy = interface;
      completionBlock(interface, nil);
@@ -241,7 +244,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   DTXProxyChannel *proxyChannel = [self.testBundleConnection
     makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
     exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [proxyChannel setExportedObject:self queue:dispatch_get_main_queue()];
+  [proxyChannel setExportedObject:self.testManagerForwarder queue:dispatch_get_main_queue()];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) [proxyChannel remoteObjectProxy];
 
   NSString *bundlePath = NSBundle.mainBundle.bundlePath;
@@ -314,7 +317,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   DTXProxyChannel *channel =
   [connection makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
                                 exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [channel setExportedObject:self queue:dispatch_get_main_queue()];
+  [channel setExportedObject:self.testManagerForwarder queue:dispatch_get_main_queue()];
   self.daemonProxy = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
 
   [self.logger logFormat:@"Whitelisting test process ID %d", self.testRunnerPID];
@@ -475,7 +478,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
 {
-  [self.logger logFormat:@"_XCT_testSuite:%@ didStartAt:%@", tests, time];
   if (tests.length == 0) {
     [self.logger logFormat:@"Failing for nil suite identifier."];
     NSError *error = [NSError errorWithDomain:@"IDETestOperationsObserverErrorDomain" code:0x9 userInfo:@{NSLocalizedDescriptionKey : @"Test reported a suite with nil or empty identifier. This is unsupported."}];
@@ -525,7 +527,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
-  [self.logger logFormat:@"_XCT_testCaseDidStartForTestClass:%@ method:%@", testClass, method ?: @""];
   [self.reporter testManagerMediator:self testCaseDidStartForTestClass:testClass method:method];
   return nil;
 }
@@ -545,7 +546,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 // ?
 - (id)_XCT_logMessage:(NSString *)message
 {
-  [self.logger logFormat:@"MAGIC_MESSAGE: %@", message];
   return nil;
 }
 
