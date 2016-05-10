@@ -42,11 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, readonly) id<FBTestManagerProcessInteractionDelegate> processDelegate;
 
 /**
- Delegate to which test activity is reported.
- */
-@property (nonatomic, nullable, weak, readonly) id<FBTestManagerTestReporter> reporter;
-
-/**
  Logger object to log events to, may be nil.
  */
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;

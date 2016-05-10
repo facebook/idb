@@ -24,6 +24,7 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBXCTestManagerLoggingForwarder.h"
+#import "FBTestReporterForwarder.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
@@ -48,6 +49,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 @property (nonatomic, strong, readonly) DVTDevice *targetDevice;
 @property (nonatomic, assign, readonly) BOOL targetIsiOSSimulator;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
+@property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
 @property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *testManagerForwarder;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
@@ -99,7 +101,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
   _targetDevice = device;
   _processDelegate = processDelegate;
-  _reporter = reporter;
   _logger = logger;
   _testRunnerPID = testRunnerPID;
   _sessionIdentifier = sessionIdentifier;
@@ -108,7 +109,9 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   _targetIsiOSSimulator = [device.class isKindOfClass:NSClassFromString(@"DVTiPhoneSimulator")];
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
-  _testManagerForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:self logger:logger];
+
+  _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
+  _testManagerForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
 
   return self;
 }
@@ -484,7 +487,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     [self finishWithError:error didCancel:NO];
   }
 
-  [self.reporter testManagerMediator:self testSuite:tests didStartAt:time];
   return nil;
 }
 
@@ -494,7 +496,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [self.logger logFormat:@"Starting test plan, clearing initialization timeout timer."];
   [self.startupTimeoutTimer invalidate];
 
-  [self.reporter testManagerMediatorDidBeginExecutingTestPlan:self];
   return nil;
 }
 
@@ -521,19 +522,16 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   }
   [self _checkUITestingPermissionsForPID:self.testRunnerPID];
 
-  [self.reporter testManagerMediator:self testBundleReadyWithProtocolVersion:protocolVersionInt minimumVersion:minimumVersionInt];
   return nil;
 }
 
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
-  [self.reporter testManagerMediator:self testCaseDidStartForTestClass:testClass method:method];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-  [self.reporter testManagerMediator:self testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line.unsignedIntegerValue];
   return nil;
 }
 
@@ -551,21 +549,16 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
-  FBTestReportStatus status = [FBTestManagerResultSummary statusForStatusString:statusString];
-  [self.reporter testManagerMediator:self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration.doubleValue];
   return nil;
 }
 
 - (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
 {
-  FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:arg1 finishingAt:arg2 runCount:arg3 failures:arg4 unexpected:arg5 testDuration:arg6 totalDuration:arg7];
-  [self.reporter testManagerMediator:self finishedWithSummary:summary];
   return nil;
 }
 
