@@ -49,6 +49,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorProductFamily) {
   FBSimulatorProductFamilyAppleWatch = 4,
 };
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
@@ -157,3 +159,5 @@ typedef NS_ENUM(NSUInteger, FBSimulatorProductFamily) {
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *diagnostics;
 
 @end
+
+NS_ASSUME_NONNULL_END

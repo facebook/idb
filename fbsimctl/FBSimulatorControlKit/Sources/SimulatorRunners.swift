@@ -90,6 +90,11 @@ struct SimulatorActionRunner : Runner {
         let subject = SimulatorSubject(simulator: simulator, format: format)
         reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
       }
+    case .ListApps:
+      return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
+        let subject = ControlCoreSubject(simulator.installedApplications.map { $0.jsonSerializableRepresentation() } as NSArray)
+        reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
+      }
     case .Open(let url):
       return SimulatorInteractionRunner(reporter, EventName.Open, url.absoluteString) { interaction in
         interaction.openURL(url)

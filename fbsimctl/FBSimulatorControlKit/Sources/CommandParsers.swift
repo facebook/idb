@@ -309,6 +309,7 @@ extension Action : Parsable {
         self.launchXCTestParser,
         self.listenParser,
         self.listParser,
+        self.listAppsParser,
         self.openParser,
         self.recordParser,
         self.relaunchParser,
@@ -404,6 +405,10 @@ extension Action : Parsable {
 
   static var listParser: Parser<Action> { get {
     return Parser.ofString(EventName.List.rawValue, Action.List)
+  }}
+
+  static var listAppsParser: Parser<Action> { get {
+    return Parser.ofString(EventName.ListApps.rawValue, Action.ListApps)
   }}
 
   static var openParser: Parser<Action> { get {

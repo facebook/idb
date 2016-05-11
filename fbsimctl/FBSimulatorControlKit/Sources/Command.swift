@@ -80,6 +80,7 @@ public enum Action {
   case LaunchApp(FBApplicationLaunchConfiguration)
   case LaunchXCTest(FBApplicationLaunchConfiguration, String)
   case List
+  case ListApps
   case Listen(Server)
   case Open(NSURL)
   case Record(Bool)
@@ -164,6 +165,8 @@ public func == (left: Action, right: Action) -> Bool {
   case (.LaunchXCTest(let leftLaunch, let leftBundle), .LaunchXCTest(let rightLaunch, let rightBundle)):
     return leftLaunch == rightLaunch && leftBundle == rightBundle
   case (.List, .List):
+    return true
+  case (.ListApps, .ListApps):
     return true
   case (.Listen(let leftServer), .Listen(let rightServer)):
     return leftServer == rightServer

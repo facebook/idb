@@ -26,6 +26,7 @@ public enum EventName : String {
   case Launch = "launch"
   case LaunchXCTest = "launch_xctest"
   case List = "list"
+  case ListApps = "list_apps"
   case Listen = "listen"
   case Log = "log"
   case Open = "open"

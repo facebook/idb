@@ -188,6 +188,7 @@ let validActions: [([String], Action)] = [
   (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
   (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
   (["list"], Action.List),
+  (["list_apps"], Action.ListApps),
   (["listen", "--http", "43"], Action.Listen(Server.Http(43))),
   (["listen", "--socket", "42"], Action.Listen(Server.Socket(42))),
   (["listen"], Action.Listen(Server.StdIO)),
