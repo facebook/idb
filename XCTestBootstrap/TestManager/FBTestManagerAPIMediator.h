@@ -15,6 +15,9 @@
 @protocol FBTestManagerTestReporter;
 @protocol FBControlCoreLogger;
 
+extern const NSInteger FBProtocolVersion;
+extern const NSInteger FBProtocolMinimumVersion;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**

@@ -36,13 +36,8 @@
           __strong __typeof__(weak_##target) self = weak_##target; \
           _Pragma("clang diagnostic pop")
 
-
-static const NSInteger FBProtocolVersion = 0x10;
-static const NSInteger FBProtocolMinimumVersion = 0x8;
-
-static const NSInteger FBErrorCodeStartupFailure = 0x3;
-static const NSInteger FBErrorCodeLostConnection = 0x4;
-
+const NSInteger FBProtocolVersion = 0x10;
+const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
@@ -176,7 +171,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
     [self setupTestBundleConnectionWithTransport:transport group:group completion:^(id<XCTestDriverInterface> interface, NSError *bundleConnectionError) {
       if (!interface) {
-        completion(NO, [[[FBControlCoreError describe:@"Test Bundle connection failed, session was not started"] causedBy:bundleConnectionError] build]);
+        completion(NO, [[[XCTestBootstrapError describe:@"Test Bundle connection failed, session was not started"] causedBy:bundleConnectionError] build]);
         return;
       }
       completion(YES, nil);
@@ -213,7 +208,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     dispatch_async(dispatch_get_main_queue(), ^{
       strongify(self);
       if (self.testPlanDidStartExecuting) {
-        [self reportStartupFailure:@"Lost connection to test process" errorCode:FBErrorCodeLostConnection];
+        [self reportStartupFailure:@"Lost connection to test process" errorCode:XCTestBootstrapErrorCodeLostConnection];
       }
     });
   }];
@@ -239,7 +234,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 - (void)sendStartSessionRequestToTestManagerWithGroup:(dispatch_group_t)group completion:(void(^)(DTXProxyChannel *, NSError *))completionBlock
 {
   if (self.hasFailed) {
-    completionBlock(nil, [[FBControlCoreError describe:@"Mediator has already failed"] build]);
+    completionBlock(nil, [[XCTestBootstrapError describe:@"Mediator has already failed"] build]);
     return;
   }
 
@@ -267,7 +262,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [receipt handleCompletion:^(NSNumber *version, NSError *completionError){
     strongify(self);
     if (!self) {
-      completionBlock(proxyChannel, [[FBControlCoreError describe:@"Strong Self should be nil"] build]);
+      completionBlock(proxyChannel, [[XCTestBootstrapError describe:@"Strong Self should be nil"] build]);
       dispatch_group_leave(group);
       return;
     }
@@ -282,7 +277,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [proxyChannel cancel];
   if (error) {
     [self.logger logFormat:@"Error from testmanagerd: %@ (%@)", error.localizedDescription, error.localizedRecoverySuggestion];
-    [self reportStartupFailure:error.localizedDescription errorCode:FBErrorCodeStartupFailure];
+    [self reportStartupFailure:error.localizedDescription errorCode:XCTestBootstrapErrorCodeStartupFailure];
     return;
   }
   [self.logger logFormat:@"Testmanagerd handled session request."];
@@ -311,7 +306,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [connection registerDisconnectHandler:^{
     dispatch_async(dispatch_get_main_queue(), ^{
       strongify(self);
-      [self reportStartupFailure:@"Lost connection to test manager service." errorCode:FBErrorCodeLostConnection];
+      [self reportStartupFailure:@"Lost connection to test manager service." errorCode:XCTestBootstrapErrorCodeLostConnection];
     });
   }];
   [self.logger logFormat:@"Resuming the secondary connection."];
@@ -398,7 +393,7 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
       userInfo[NSLocalizedFailureReasonErrorKey] = message;
     }
     error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
-    if (error.code != FBErrorCodeLostConnection) {
+    if (error.code != XCTestBootstrapErrorCodeLostConnection) {
       [self.logger logFormat:@"\n\n*** %@\n\n", message];
     }
   }
@@ -509,11 +504,11 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
   [self.logger logFormat:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion];
   if (minimumVersionInt > FBProtocolVersion) {
-    [self reportStartupFailure:[NSString stringWithFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion] errorCode:FBErrorCodeStartupFailure];
+    [self reportStartupFailure:[NSString stringWithFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion] errorCode:XCTestBootstrapErrorCodeStartupFailure];
     return nil;
   }
   if (protocolVersionInt < FBProtocolMinimumVersion) {
-    [self reportStartupFailure:[NSString stringWithFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion,protocolVersionInt] errorCode:FBErrorCodeStartupFailure];
+    [self reportStartupFailure:[NSString stringWithFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion,protocolVersionInt] errorCode:XCTestBootstrapErrorCodeStartupFailure];
     return nil;
   }
   if (self.targetDevice.requiresTestDaemonMediationForTestHostConnection) {

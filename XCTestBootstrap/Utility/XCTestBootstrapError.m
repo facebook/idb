@@ -11,6 +11,9 @@
 
 NSString *const XCTestBootstrapErrorDomain = @"com.facebook.XCTestBootstrap";
 
+const NSInteger XCTestBootstrapErrorCodeStartupFailure = 0x3;
+const NSInteger XCTestBootstrapErrorCodeLostConnection = 0x4;
+
 @implementation XCTestBootstrapError
 
 - (instancetype)init
