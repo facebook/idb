@@ -19,6 +19,8 @@
 @class SimDeviceSet;
 @protocol FBControlCoreLogger;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Complements SimDeviceSet with additional functionality and more resiliant behaviours.
  Performs the preconditions necessary to call certain SimDeviceSet/SimDevice methods.
@@ -33,7 +35,7 @@
  @param error any error that occurred during the creation of the pool.
  @returns a new FBSimulatorPool.
  */
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Creates and returns a FBSimulator fbased on a configuration.
@@ -42,7 +44,7 @@
  @param error an error out for any error that occured.
  @return a FBSimulator if one could be allocated with the provided options, nil otherwise
  */
-- (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
+- (nullable FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
 
 /**
  Kills a Simulator in the Set.
@@ -80,7 +82,7 @@
  @param error an error out if any error occured.
  @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
-- (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error;
+- (nullable NSArray<FBSimulator *> *)killAllWithError:(NSError **)error;
 
 /**
  Kills all of the Simulators that belong to the reciever.
@@ -88,7 +90,7 @@
  @param error an error out if any error occured.
  @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
-- (NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error;
+- (nullable NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error;
 
 /**
  Delete all of the Simulators that belong to the reciever.
@@ -96,7 +98,7 @@
  @param error an error out if any error occured.
  @return an Array of the names of the Simulators that were deleted if successful, nil otherwise.
  */
-- (NSArray<NSString *> *)deleteAllWithError:(NSError **)error;
+- (nullable NSArray<NSString *> *)deleteAllWithError:(NSError **)error;
 
 /**
  The Logger to use.
@@ -129,3 +131,5 @@
 @property (nonatomic, copy, readonly) NSArray<FBSimulator *> *allSimulators;
 
 @end
+
+NS_ASSUME_NONNULL_END

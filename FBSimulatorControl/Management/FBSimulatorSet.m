@@ -135,7 +135,7 @@
 
 #pragma mark Public Methods
 
-- (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (nullable FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
   NSString *targetName = configuration.deviceName;
 
@@ -271,17 +271,17 @@
   return YES;
 }
 
-- (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
+- (nullable NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
 {
   return [self.simulatorTerminationStrategy killSimulators:self.allSimulators error:error];
 }
 
-- (NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error
+- (nullable NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error
 {
   return [self.eraseStrategy eraseSimulators:self.allSimulators error:error];
 }
 
-- (NSArray<NSString *> *)deleteAllWithError:(NSError **)error
+- (nullable NSArray<NSString *> *)deleteAllWithError:(NSError **)error
 {
   return [self deleteSimulators:self.allSimulators error:error];
 }
@@ -317,7 +317,7 @@
   return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
 }
 
-- (NSArray<NSString *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+- (nullable NSArray<NSString *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
 {
   NSError *innerError = nil;
   NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
