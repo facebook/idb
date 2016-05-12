@@ -75,6 +75,7 @@ public enum Action {
   case Create(FBSimulatorConfiguration)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
+  case Erase
   case Install(FBSimulatorApplication)
   case LaunchAgent(FBAgentLaunchConfiguration)
   case LaunchApp(FBApplicationLaunchConfiguration)
@@ -156,6 +157,8 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.Diagnose(let leftQuery, let leftFormat), .Diagnose(let rightQuery, let rightFormat)):
     return leftQuery == rightQuery && leftFormat == rightFormat
+  case (.Erase, .Erase):
+    return true
   case (.Install(let leftApp), .Install(let rightApp)):
     return leftApp == rightApp
   case (.LaunchAgent(let leftLaunch), .LaunchAgent(let rightLaunch)):

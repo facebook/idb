@@ -68,6 +68,10 @@ struct SimulatorActionRunner : Runner {
       }
     case .Diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
+    case .Erase:
+      return SimulatorRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
+        try simulator.erase()
+      }
     case .Install(let application):
       return SimulatorInteractionRunner(reporter, EventName.Install, ControlCoreSubject(application)) { interaction in
         interaction.installApplication(application)

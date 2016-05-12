@@ -303,6 +303,7 @@ extension Action : Parsable {
         self.createParser,
         self.deleteParser,
         self.diagnoseParser,
+        self.eraseParser,
         self.installParser,
         self.launchAgentParser,
         self.launchAppParser,
@@ -363,6 +364,10 @@ extension Action : Parsable {
       .fmap { (format, query) in
         Action.Diagnose(query, format)
       }
+  }}
+
+  static var eraseParser: Parser<Action> { get {
+    return Parser.ofString(EventName.Erase.rawValue, Action.Erase)
   }}
 
   static var launchAgentParser: Parser<Action> { get {
