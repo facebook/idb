@@ -16,12 +16,15 @@
 @class FBSimulatorControlConfiguration;
 @class SimDevice;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
- An Environment Variable that is inserted into launched Simulator.app processes
- in order to easily identify the Simulator UUID that they were launched to run against.
+ An Environment Variable that is inserted into Simulator.app processes launched by FBSimulatorControl.
+ This makes the process of determining launched Simulator.app processes far simpler
+ as otherwise it is difficult to determine the UDID corresponding to a Simulator.app based on information
+ available to external processes.
  */
 extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
-
 
 /**
  Extension for obtaining Simulator Process information.
@@ -33,17 +36,17 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 /**
  Fetches an NSArray<FBProcessInfo *> of all Simulator Application Processes.
  */
-- (NSArray *)simulatorProcesses;
+- (NSArray<FBProcessInfo *> *)simulatorProcesses;
 
 /**
  Fetches an NSArray<FBProcessInfo *> of all com.apple.CoreSimulator.CoreSimulatorService.
  */
-- (NSArray *)coreSimulatorServiceProcesses;
+- (NSArray<FBProcessInfo *> *)coreSimulatorServiceProcesses;
 
 /**
  Fetches an NSArray<FBProcessInfo *> of all launchd_sim processes.
  */
-- (NSArray *)launchdSimProcesses;
+- (NSArray<FBProcessInfo *> *)launchdSimProcesses;
 
 /**
  Fetches the Process Info for a given Simulator.
@@ -93,7 +96,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @param udids an NSArray<NSString *> of the Simulator UDIDs to match.
  @return an NSPredicate that operates on an Collection of FBProcessInfo *.
  */
-+ (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray *)udids;
++ (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray<NSString *> *)udids;
 
 /**
  Constructs a Predicate that matches Process Info for launchd_sim process for the given UDIDs.
@@ -101,7 +104,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @param udids an NSArray<NSString *> of the Simulator UDIDs to match.
  @return an NSPredicate that operates on an Collection of FBProcessInfo *.
  */
-+ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray *)udids;
++ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray<NSString *> *)udids;
 
 /**
  Constructs a Predicate that matches CoreSimulatorService Processes for the current xcode versions.
@@ -130,3 +133,5 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 + (NSPredicate *)processesForBinary:(FBSimulatorBinary *)binary;
 
 @end
+
+NS_ASSUME_NONNULL_END
