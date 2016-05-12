@@ -20,6 +20,7 @@
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorEraseStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
@@ -220,7 +221,7 @@
       failBool:error];
   }
 
-  return [self eraseSimulators:@[simulator] error:error] != nil;
+  return [self.eraseStrategy eraseSimulators:@[simulator] error:error] != nil;
 }
 
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -277,7 +278,7 @@
 
 - (NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error
 {
-  return [self eraseSimulators:self.allSimulators error:error];
+  return [self.eraseStrategy eraseSimulators:self.allSimulators error:error];
 }
 
 - (NSArray<NSString *> *)deleteAllWithError:(NSError **)error
@@ -330,23 +331,6 @@
   return [deletedSimulatorNames copy];
 }
 
-- (NSArray<FBSimulator *> *)eraseSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
-{
-  // Kill the Simulators before erasing them.
-  NSError *innerError = nil;
-  if (![self.simulatorTerminationStrategy killSimulators:simulators error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-
-  // Then Erase them.
-  for (FBSimulator *simulator in simulators) {
-    if (![simulator eraseWithError:&innerError]) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
-    }
-  }
-  return simulators;
-}
-
 + (NSDictionary<NSString *, FBSimulator *> *)keySimulatorsByUDID:(NSArray *)simulators
 {
   NSMutableDictionary<NSString *, FBSimulator *> *dictionary = [NSMutableDictionary dictionary];
@@ -397,6 +381,11 @@
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
 {
   return [FBCoreSimulatorTerminationStrategy withProcessFetcher:self.processFetcher logger:self.logger];
+}
+
+- (FBSimulatorEraseStrategy *)eraseStrategy
+{
+  return [FBSimulatorEraseStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
 }
 
 @end
