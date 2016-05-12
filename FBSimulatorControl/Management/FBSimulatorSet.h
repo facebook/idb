@@ -45,16 +45,6 @@
 - (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
 
 /**
- Deletes a Simulator in the Set.
- The Set to which the Simulator belongs must be the reciever.
-
- @param simulator the Simulator to delete. Must not be nil.
- @param error an error out for any error that occurs.
- @return an array of the Simulators that this were killed if successful, nil otherwise.
- */
-- (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error;
-
-/**
  Kills a Simulator in the Set.
  The Set to which the Simulator belongs must be the reciever.
 
@@ -65,7 +55,27 @@
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
 /**
- Kills all of the Simulators the reciever's Device Set.
+ Erases a Simulator in the Set.
+ The Set to which the Simulator belongs must be the reciever.
+
+ @param simulator the Simulator to erase. Must not be nil.
+ @param error an error out for any error that occurs.
+ @return an array of the Simulators that this were killed if successful, nil otherwise.
+ */
+- (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error;
+
+/**
+ Deletes a Simulator in the Set.
+ The Set to which the Simulator belongs must be the reciever.
+
+ @param simulator the Simulator to delete. Must not be nil.
+ @param error an error out for any error that occurs.
+ @return an array of the Simulators that this were killed if successful, nil otherwise.
+ */
+- (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error;
+
+/**
+ Kills all of the Simulators that belong to the reciever.
 
  @param error an error out if any error occured.
  @return an array of the Simulators that this were killed if successful, nil otherwise.
@@ -73,7 +83,15 @@
 - (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error;
 
 /**
- Delete all of the Simulators Managed by this Pool, killing them first.
+ Kills all of the Simulators that belong to the reciever.
+
+ @param error an error out if any error occured.
+ @return an array of the Simulators that this were killed if successful, nil otherwise.
+ */
+- (NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error;
+
+/**
+ Delete all of the Simulators that belong to the reciever.
 
  @param error an error out if any error occured.
  @return an Array of the names of the Simulators that were deleted if successful, nil otherwise.

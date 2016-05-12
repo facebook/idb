@@ -193,6 +193,36 @@
   return simulator;
 }
 
+- (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  NSParameterAssert(simulator);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@, cannot kill", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
+
+  return [self.simulatorTerminationStrategy killSimulators:@[simulator] withError:error] != nil;
+}
+
+- (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  NSParameterAssert(simulator);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@, cannot erase", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
+
+  return [self eraseSimulators:@[simulator] error:error] != nil;
+}
+
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
@@ -200,7 +230,7 @@
   // Confirm that this Simulator belongs to us.
   if (simulator.set != self) {
     return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
+      describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
       inSimulator:simulator]
       failBool:error];
   }
@@ -240,29 +270,19 @@
   return YES;
 }
 
-- (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
-{
-  NSParameterAssert(simulator);
-
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
-  return [self.simulatorTerminationStrategy killSimulators:@[simulator] withError:error] != nil;
-}
-
 - (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
 {
   return [self.simulatorTerminationStrategy killSimulators:self.allSimulators withError:error];
 }
 
+- (NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error
+{
+  return [self eraseSimulators:self.allSimulators error:error];
+}
+
 - (NSArray<NSString *> *)deleteAllWithError:(NSError **)error
 {
-  return [self deleteSimulators:self.allSimulators withError:error];
+  return [self deleteSimulators:self.allSimulators error:error];
 }
 
 #pragma mark FBDebugDescribeable Protocol
@@ -296,7 +316,7 @@
   return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
 }
 
-- (NSArray<NSString *> *)deleteSimulators:(NSArray *)simulators withError:(NSError **)error
+- (NSArray<NSString *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
 {
   NSError *innerError = nil;
   NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
@@ -310,7 +330,7 @@
   return [deletedSimulatorNames copy];
 }
 
-- (NSArray<FBSimulator *> *)eraseSimulators:(NSArray *)simulators withError:(NSError **)error
+- (NSArray<FBSimulator *> *)eraseSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
 {
   // Kill the Simulators before erasing them.
   NSError *innerError = nil;

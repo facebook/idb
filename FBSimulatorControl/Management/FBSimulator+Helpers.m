@@ -151,11 +151,7 @@
 
 - (BOOL)eraseWithError:(NSError **)error
 {
-  NSError *innerError = nil;
-  if (![self.device eraseContentsAndSettingsWithError:&innerError]) {
-    return [[[[FBSimulatorError describeFormat:@"Failed to Erase Contents and Settings %@", self] causedBy:innerError] inSimulator:self] failBool:error];
-  }
-  return YES;
+  return [self.set eraseSimulator:self error:error];
 }
 
 - (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
