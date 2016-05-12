@@ -28,6 +28,7 @@
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
+#import "FBTestDaemonConnection.h"
 
 #define weakify(target) __weak __typeof__(target) weak_##target = target
 #define strongify(target) \
@@ -58,9 +59,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @property (nonatomic, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
 @property (nonatomic, strong, readwrite) DTXConnection *testBundleConnection;
 
-@property (nonatomic, assign, readwrite) long long daemonProtocolVersion;
-@property (nonatomic, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
-@property (nonatomic, strong, readwrite) DTXConnection *daemonConnection;
+@property (nonatomic, strong, readwrite) FBTestDaemonConnection *daemonConnection;
 
 @property (nonatomic, assign, readwrite) NSTimeInterval timeout;
 @property (nonatomic, strong, readwrite) NSTimer *startupTimeoutTimer;
@@ -147,11 +146,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   self.finished = YES;
   self.testingIsFinished = YES;
 
-  [self.daemonConnection suspend];
-  [self.daemonConnection cancel];
+  [self.daemonConnection disconnect];
   self.daemonConnection = nil;
-  self.daemonProxy = nil;
-  self.daemonProtocolVersion = 0;
 
   [self.testBundleConnection suspend];
   [self.testBundleConnection cancel];
@@ -294,57 +290,17 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (void)whitelistTestProcessIDForUITesting
 {
   [self.logger logFormat:@"Creating secondary transport and connection for whitelisting test process PID."];
-  [self makeTransportWithGroup:dispatch_group_create() completion:^(DTXTransport *transport, NSError *error) {
-    [self setupDaemonConnectionWithTransport:transport];
-  }];
-}
+  dispatch_group_t group = dispatch_group_create();
 
-- (void)setupDaemonConnectionWithTransport:(DTXTransport *)transport
-{
-  DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
-  weakify(self);
-  [connection registerDisconnectHandler:^{
-    dispatch_async(dispatch_get_main_queue(), ^{
-      strongify(self);
-      [self reportStartupFailure:@"Lost connection to test manager service." errorCode:XCTestBootstrapErrorCodeLostConnection];
-    });
-  }];
-  [self.logger logFormat:@"Resuming the secondary connection."];
-  self.daemonConnection = connection;
-  [connection resume];
-  DTXProxyChannel *channel =
-  [connection makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
-                                exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [channel setExportedObject:self.testManagerForwarder queue:dispatch_get_main_queue()];
-  self.daemonProxy = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
-
-  [self.logger logFormat:@"Whitelisting test process ID %d", self.testRunnerPID];
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID) protocolVersion:@(FBProtocolVersion)];
-  [receipt handleCompletion:^(NSNumber *version, NSError *error) {
-    strongify(self);
-    if (error) {
-      [self setupDaemonConnectionViaLegacyProtocol];
-      return;
-    }
-    self.daemonProtocolVersion = version.integerValue;
-    [self.logger logFormat:@"Got whitelisting response and daemon protocol version %lld", self.daemonProtocolVersion];
-    [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:version];
-  }];
-}
-
-- (void)setupDaemonConnectionViaLegacyProtocol
-{
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID)];
-  weakify(self);
-  [receipt handleCompletion:^(NSNumber *version, NSError *error) {
-    strongify(self);
-    if (error) {
-      [self.logger logFormat:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];
-      return;
-    }
-    self.daemonProtocolVersion = version.integerValue;
-    [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
-    [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
+  [self makeTransportWithGroup:group completion:^(DTXTransport *transport, NSError *error) {
+    self.daemonConnection = [FBTestDaemonConnection
+      withTransport:transport
+      interface:self
+      testBundleProxy:self.testBundleProxy
+      testRunnerPID:self.testRunnerPID
+      queue:self.requestQueue
+      logger:self.logger];
+    [self.daemonConnection connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
   }];
 }
 
