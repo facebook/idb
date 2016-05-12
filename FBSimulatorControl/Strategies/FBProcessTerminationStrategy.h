@@ -31,6 +31,8 @@ typedef struct {
   FBProcessTerminationStrategyOptions options;
 } FBProcessTerminationStrategyConfiguration;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A Strategy that defines how to terminate Processes.
  */
@@ -53,7 +55,7 @@ typedef struct {
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)withProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Terminates a Process of the provided Process Info.
@@ -71,6 +73,8 @@ typedef struct {
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error;
+- (BOOL)killProcesses:(NSArray<FBProcessInfo *> *)processes error:(NSError **)error;
 
 @end
+
+NS_ASSUME_NONNULL_END

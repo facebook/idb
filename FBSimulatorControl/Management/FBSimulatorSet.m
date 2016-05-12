@@ -205,7 +205,7 @@
       failBool:error];
   }
 
-  return [self.simulatorTerminationStrategy killSimulators:@[simulator] withError:error] != nil;
+  return [self.simulatorTerminationStrategy killSimulators:@[simulator] error:error] != nil;
 }
 
 - (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -237,7 +237,7 @@
 
   // Kill the Simulators before deleting them.
   NSError *innerError = nil;
-  if (![self.simulatorTerminationStrategy killSimulators:@[simulator] withError:&innerError]) {
+  if (![self.simulatorTerminationStrategy killSimulators:@[simulator] error:&innerError]) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
@@ -272,7 +272,7 @@
 
 - (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
 {
-  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators withError:error];
+  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators error:error];
 }
 
 - (NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error
@@ -334,7 +334,7 @@
 {
   // Kill the Simulators before erasing them.
   NSError *innerError = nil;
-  if (![self.simulatorTerminationStrategy killSimulators:simulators withError:&innerError]) {
+  if (![self.simulatorTerminationStrategy killSimulators:simulators error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
@@ -396,7 +396,7 @@
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
 {
-  return [FBCoreSimulatorTerminationStrategy withprocessFetcher:self.processFetcher logger:self.logger];
+  return [FBCoreSimulatorTerminationStrategy withProcessFetcher:self.processFetcher logger:self.logger];
 }
 
 @end

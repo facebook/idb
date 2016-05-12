@@ -49,7 +49,7 @@
 
 + (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withprocessFetcher:processFetcher logger:logger];
+  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:processFetcher logger:logger];
   return [[self alloc] initWithConfiguration:configuration processFetcher:processFetcher processTerminationStrategy:processTerminationStrategy logger:logger];
 }
 
@@ -74,7 +74,7 @@
 
 #pragma mark Public Methods
 
-- (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error
+- (NSArray *)killSimulators:(NSArray *)simulators error:(NSError **)error
 {
   // It looks like there is a bug with El Capitan, where terminating multiple Applications quickly
   // can result in the dock getting into an inconsistent state displaying icons for terminated Applications.
