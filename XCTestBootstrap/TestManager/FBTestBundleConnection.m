@@ -29,12 +29,12 @@
 
 @interface FBTestBundleConnection () <XCTestManager_IDEInterface>
 
-@property (nonatomic, assign, readwrite) long long testBundleProtocolVersion;
-@property (nonatomic, nullable, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
-@property (nonatomic, nullable, strong, readwrite) DTXConnection *testBundleConnection;
+@property (atomic, assign, readwrite) FBTestBundleConnectionState state;
+@property (atomic, strong, readwrite) XCTestBootstrapError *error;
 
-@property (nonatomic, strong, readwrite) NSError *protocolError;
-@property (nonatomic, assign, readwrite) BOOL testPlanRunning;
+@property (atomic, assign, readwrite) long long testBundleProtocolVersion;
+@property (atomic, nullable, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
+@property (atomic, nullable, strong, readwrite) DTXConnection *testBundleConnection;
 
 @end
 
@@ -68,6 +68,8 @@
   _queue = queue;
   _logger = logger;
 
+  _state = FBTestBundleConnectionStateNotConnected;
+
   return self;
 }
 
@@ -97,28 +99,45 @@
 - (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   NSAssert(NSThread.isMainThread, @"-[%@ %@] should be called from the main thread", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  if (self.state != FBTestBundleConnectionStateNotConnected) {
+    return [[XCTestBootstrapError
+      describeFormat:@"Cannot connect, state must be %@ but is %@", [FBTestBundleConnection stateStringForState:FBTestBundleConnectionStateNotConnected], [FBTestBundleConnection stateStringForState:self.state]]
+      failBool:error];
+  }
 
-  dispatch_group_t group = dispatch_group_create();
-  __block BOOL success = NO;
-  __block NSError *innerError = nil;
-  [self connectWithGroup:group completion:^(BOOL startupSuccess, NSError *startupError) {
-    innerError = startupError;
-    success = startupSuccess;
+  [self connect];
+  BOOL success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+    return self.state == FBTestBundleConnectionStateTestBundleReady ||
+           self.state == FBTestBundleConnectionStateEnded;
   }];
-
-  if (![NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout notifiedBy:group onQueue:self.queue]) {
-    return [[[XCTestBootstrapError
-      describeFormat:@"Timed out waiting for connection"]
+  if (!success && self.state == FBTestBundleConnectionStateEnded) {
+    return [[[[XCTestBootstrapError
+      describeFormat:@"Error Establishing connection"]
       logger:self.logger]
+      causedBy:[self.error build]]
       failBool:error];
   }
   if (!success) {
-    return [[[[XCTestBootstrapError
-      describe:@"Failed to connect test runner"]
-      causedBy:innerError]
+    return [[[XCTestBootstrapError
+      describe:@"Timeout establishing connection"]
       logger:self.logger]
       failBool:error];
   }
+  return YES;
+}
+
+- (BOOL)startTestPlanWithError:(NSError **)error
+{
+  if (self.state != FBTestBundleConnectionStateTestBundleReady) {
+    return [[XCTestBootstrapError
+      describeFormat:@"State should be '%@' got '%@", [FBTestBundleConnection stateStringForState:FBTestBundleConnectionStateTestBundleReady], [FBTestBundleConnection stateStringForState:self.state]]
+      failBool:error];
+  }
+
+  self.state = FBTestBundleConnectionStateAwaitingStartOfTestPlan;
+  dispatch_async(self.queue, ^{
+    [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
+  });
   return YES;
 }
 
@@ -129,50 +148,42 @@
   self.testBundleConnection = nil;
   self.testBundleProxy = nil;
   self.testBundleProtocolVersion = 0;
-  self.testPlanRunning = NO;
+  self.state = FBTestBundleConnectionStateEnded;
 }
 
 #pragma mark Private
 
-- (void)connectWithGroup:(dispatch_group_t)group completion:(void (^)(BOOL, NSError *))completion
+- (void)connect
 {
-  dispatch_group_async(group, self.queue, ^{
+  dispatch_async(self.queue, ^{
     NSError *error;
     DTXTransport *transport = [self.device makeTransportForTestManagerService:&error];
     if (error || !transport) {
-      completion(NO, error);
+      [self failWithError:[[XCTestBootstrapError describe:@"Failed to create transport"] causedBy:error]];
+      return;
     }
 
-    [self setupTestBundleConnectionWithTransport:transport group:group completion:^(id<XCTestDriverInterface> interface, NSError *bundleConnectionError) {
-      if (!interface) {
-        completion(NO, [[[XCTestBootstrapError describe:@"Test Bundle connection failed, session was not started"] causedBy:bundleConnectionError] build]);
-        return;
-      }
-      completion(YES, nil);
-    }];
-    dispatch_group_async(group, dispatch_get_main_queue(), ^{
-      [self sendStartSessionRequestToTestManagerWithGroup:group completion:^(DTXProxyChannel *channel, NSError *sessionRequestError) {
-        if (!channel) {
-          [self.logger logFormat:@"Failed to start session with error %@", sessionRequestError];
-        }
-      }];
+    DTXConnection *connection = [self setupTestBundleConnectionWithTransport:transport];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [self sendStartSessionRequestToConnection:connection];
     });
   });
 }
 
-- (void)setupTestBundleConnectionWithTransport:(DTXTransport *)transport group:(dispatch_group_t)group completion:(void(^)( id<XCTestDriverInterface>, NSError *))completion
+- (DTXConnection *)setupTestBundleConnectionWithTransport:(DTXTransport *)transport
 {
   [self.logger logFormat:@"Creating the connection."];
   DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
-
   [connection registerDisconnectHandler:^{
-    if (self.testPlanRunning) {
-      completion(nil, [[[XCTestBootstrapError describe:@"Lost connection to test process"] code:XCTestBootstrapErrorCodeLostConnection] build]);
+    if (self.state == FBTestBundleConnectionStateFinishedTestPlan) {
+      return;
     }
+    [self failWithError:[[XCTestBootstrapError
+        describeFormat:@"Lost connection to test process with state %@", [FBTestBundleConnection stateStringForState:self.state]]
+        code:XCTestBootstrapErrorCodeLostConnection]];
   }];
-  [self.logger logFormat:@"Listening for proxy connection request from the test bundle (all platforms)"];
 
-  dispatch_group_enter(group);
+  [self.logger logFormat:@"Listening for proxy connection request from the test bundle (all platforms)"];
   [connection
    handleProxyRequestForInterface:@protocol(XCTestManager_IDEInterface)
    peerInterface:@protocol(XCTestDriverInterface)
@@ -181,15 +192,14 @@
      [channel setExportedObject:self queue:dispatch_get_main_queue()];
      id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
      self.testBundleProxy = interface;
-     completion(interface, nil);
-     dispatch_group_leave(group);
    }];
-  self.testBundleConnection = connection;
   [self.logger logFormat:@"Resuming the connection."];
+  self.testBundleConnection = connection;
   [self.testBundleConnection resume];
+  return self.testBundleConnection;
 }
 
-- (void)sendStartSessionRequestToTestManagerWithGroup:(dispatch_group_t)group completion:(void(^)(DTXProxyChannel *, NSError *))completion
+- (DTXRemoteInvocationReceipt *)sendStartSessionRequestToConnection:(DTXConnection *)connection
 {
   [self.logger log:@"Checking test manager availability..."];
   DTXProxyChannel *proxyChannel = [self.testBundleConnection
@@ -209,33 +219,50 @@
     forClient:self.class.clientProcessUniqueIdentifier
     atPath:bundlePath
     protocolVersion:@(FBProtocolVersion)];
-
-  dispatch_group_enter(group);
   [receipt handleCompletion:^(NSNumber *version, NSError *error){
     if (error || !version) {
-      completion(nil, [[[XCTestBootstrapError describe:@"Client Daemon Interface failed"] causedBy:error] build]);
+      [self failWithError:[[XCTestBootstrapError describe:@"Client Daemon Interface failed"] causedBy:error]];
       return;
     }
 
     [self.logger logFormat:@"testmanagerd handled session request."];
     [proxyChannel cancel];
-    dispatch_group_leave(group);
   }];
+  return receipt;
+}
+
+- (void)failWithError:(XCTestBootstrapError *)error
+{
+  if (self.error) {
+    return;
+  }
+  self.error = error;
+  self.state = FBTestBundleConnectionStateEnded;
 }
 
 #pragma mark XCTestDriverInterface
 
 - (id)_XCT_didBeginExecutingTestPlan
 {
+  if (self.state != FBTestBundleConnectionStateAwaitingStartOfTestPlan) {
+    [self failWithError:[XCTestBootstrapError
+      describeFormat:@"Test Plan Started, but state is %@", [FBTestBundleConnection stateStringForState:self.state]]];
+    return nil;
+  }
   [self.logger logFormat:@"Test Plan Started"];
-  self.testPlanRunning = YES;
+  self.state = FBTestBundleConnectionStateRunningTestPlan;
   return [self.interface _XCT_didBeginExecutingTestPlan];
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
+  if (self.state != FBTestBundleConnectionStateRunningTestPlan) {
+    [self failWithError:[XCTestBootstrapError
+      describeFormat:@"Test Plan Ended, but state is %@", [FBTestBundleConnection stateStringForState:self.state]]];
+    return nil;
+  }
   [self.logger logFormat:@"Test Plan Ended"];
-  self.testPlanRunning = NO;
+  self.state = FBTestBundleConnectionStateFinishedTestPlan;
   return [self.interface _XCT_didFinishExecutingTestPlan];
 }
 
@@ -248,28 +275,49 @@
 
   [self.logger logFormat:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion];
   if (minimumVersionInt > FBProtocolVersion) {
-    self.protocolError = [[[XCTestBootstrapError
+    self.error = [[XCTestBootstrapError
       describeFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion]
-      code:XCTestBootstrapErrorCodeStartupFailure]
-      build];
+      code:XCTestBootstrapErrorCodeStartupFailure];
     return nil;
   }
   if (protocolVersionInt < FBProtocolMinimumVersion) {
-    self.protocolError = [[[XCTestBootstrapError
+    self.error = [[XCTestBootstrapError
       describeFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion,protocolVersionInt]
-      code:XCTestBootstrapErrorCodeStartupFailure]
-      build];
+      code:XCTestBootstrapErrorCodeStartupFailure];
     return nil;
   }
   if (!self.device.requiresTestDaemonMediationForTestHostConnection) {
-    self.protocolError = [[[XCTestBootstrapError
+    self.error = [[XCTestBootstrapError
       describe:@"Test Bundle Connection cannot handle a Device that doesn't require daemon mediation"]
-      code:XCTestBootstrapErrorCodeStartupFailure]
-      build];
+      code:XCTestBootstrapErrorCodeStartupFailure];
     return nil;
   }
 
+  [self.logger logFormat:@"Test Bundle is Ready"];
+  self.state = FBTestBundleConnectionStateTestBundleReady;
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
+}
+
++ (NSString *)stateStringForState:(FBTestBundleConnectionState)state
+{
+  switch (state) {
+    case FBTestBundleConnectionStateNotConnected:
+      return @"not connected";
+    case FBTestBundleConnectionStateConnecting:
+      return @"connecting";
+    case FBTestBundleConnectionStateTestBundleReady:
+      return @"bundle ready";
+    case FBTestBundleConnectionStateAwaitingStartOfTestPlan:
+      return @"awaiting start of test plan";
+    case FBTestBundleConnectionStateRunningTestPlan:
+      return @"running test plan";
+    case FBTestBundleConnectionStateFinishedTestPlan:
+      return @"finished test plan";
+    case FBTestBundleConnectionStateEnded:
+      return @"ended";
+    default:
+      return @"unknown";
+  }
 }
 
 @end

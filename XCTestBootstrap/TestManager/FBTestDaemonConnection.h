@@ -10,11 +10,22 @@
 #import <Foundation/Foundation.h>
 
 @class DTXConnection;
-@class DTXTransport;
+@class DVTDevice;
 @protocol XCTestManager_DaemonConnectionInterface;
 @protocol XCTestManager_IDEInterface;
 @protocol FBControlCoreLogger;
 @protocol XCTestDriverInterface;
+
+/**
+ An Enumeration of Mutually-Exclusive Test Daemon States.
+ */
+typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
+  FBTestDaemonConnectionStateInactive = 0,
+  FBTestDaemonConnectionStateConnecting = 1,
+  FBTestDaemonConnectionStateReadyToExecuteTestPlan = 2,
+  FBTestDaemonConnectionStateExecutingTestPlan =3,
+  FBTestDaemonConnectionStateFinished = 4,
+};
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,15 +37,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Strategy for the provided Transport.
 
- @param transport the transport to connect with.
+ @param device the transport to connect to.
  @param interface the interface to delegate to.
- @param testBundleProxy the Bundle Proxy.
  @param queue the dispatch queue to serialize asynchronous events on.
  @param testRunnerPID the Process Identifier of the Test Runner.
  @param logger the logger to log to.
  @return a new Strategy
  */
-+ (instancetype)withTransport:(DTXTransport *)transport interface:(id<XCTestManager_IDEInterface, NSObject>)interface testBundleProxy:(id<XCTestDriverInterface>)testBundleProxy testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)withDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Synchronously Connects the Daemon.
@@ -53,21 +63,19 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Properties from the Constructor.
  */
-@property (nonatomic, strong, readonly) DTXTransport *transport;
+@property (nonatomic, strong, readonly) DVTDevice *device;
 @property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<XCTestDriverInterface> testBundleProxy;
 @property (nonatomic, assign, readonly) pid_t testRunnerPID;
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
  Properties populated during the connection.
  */
-@property (nonatomic, assign, readonly) long long daemonProtocolVersion;
-@property (nonatomic, nullable, strong, readonly) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
-@property (nonatomic, nullable, strong, readonly) DTXConnection *daemonConnection;
-@property (nonatomic, nullable, strong, readonly) NSError *error;
-@property (nonatomic, assign, readonly) BOOL connected;
+@property (atomic, assign, readonly) long long daemonProtocolVersion;
+@property (atomic, nullable, strong, readonly) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
+@property (atomic, nullable, strong, readonly) DTXConnection *daemonConnection;
+@property (atomic, assign, readonly) FBTestDaemonConnectionState state;
 
 @end
 

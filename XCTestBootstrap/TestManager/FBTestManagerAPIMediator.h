@@ -63,12 +63,26 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
 
 /**
- Starts test and establishes connection between test runner(XCTest bundle) and testmanagerd, synchronously.
+ Establishes a connection between the host, testmanagerd and the Test Bundle.
+ This connection is established synchronously, until a timeout occurs.
 
+ @param timeout a maximum time to wait for the connection to be established.
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return YES if connection connection has been established successfuly, NO otherwise.
  */
 - (BOOL)connectTestRunnerWithTestManagerDaemonWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+/**
+ Executes the Test Plan over the established connection.
+ This should be called after `-[FBTestManagerAPIMediator connectTestRunnerWithTestManagerDaemonWithTimeout:error:]`
+ has successfully completed.
+ Events will be delivered to the reporter asynchronously.
+
+ @param timeout a maximum time to wait for the connection to be established.
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return YES if the Test Plan execution has started succesfully, NO otherwise.
+ */
+- (BOOL)executeTestPlanWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
  Terminates connection between test runner(XCTest bundle) and testmanagerd

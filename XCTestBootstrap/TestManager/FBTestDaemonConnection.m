@@ -20,6 +20,8 @@
 #import <DTXConnectionServices/DTXRemoteInvocationReceipt.h>
 #import <DTXConnectionServices/DTXTransport.h>
 
+#import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
+
 #import "XCTestBootstrapError.h"
 #import "FBTestManagerAPIMediator.h"
 
@@ -29,9 +31,12 @@
 
 @interface FBTestDaemonConnection () <XCTestManager_IDEInterface>
 
-@property (nonatomic, assign, readwrite) long long daemonProtocolVersion;
-@property (nonatomic, nullable, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
-@property (nonatomic, nullable, strong, readwrite) DTXConnection *daemonConnection;
+@property (atomic, assign, readwrite) FBTestDaemonConnectionState state;
+@property (atomic, strong, readwrite) XCTestBootstrapError *error;
+
+@property (atomic, assign, readwrite) long long daemonProtocolVersion;
+@property (atomic, nullable, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
+@property (atomic, nullable, strong, readwrite) DTXConnection *daemonConnection;
 
 @end
 
@@ -39,24 +44,25 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withTransport:(DTXTransport *)transport interface:(id<XCTestManager_IDEInterface, NSObject>)interface testBundleProxy:(id<XCTestDriverInterface>)testBundleProxy testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)withDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithTransport:transport interface:interface testBundleProxy:testBundleProxy testRunnerPID:testRunnerPID queue:queue logger:logger];
+  return [[self alloc] initWithDevice:device interface:interface testRunnerPID:testRunnerPID queue:queue logger:logger];
 }
 
-- (instancetype)initWithTransport:(DTXTransport *)transport interface:(id<XCTestManager_IDEInterface, NSObject>)interface testBundleProxy:(id<XCTestDriverInterface>)testBundleProxy testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _transport = transport;
+  _device = device;
   _interface = interface;
-  _testBundleProxy = testBundleProxy;
   _queue = queue;
   _testRunnerPID = testRunnerPID;
   _logger = logger;
+
+  _state = FBTestDaemonConnectionStateInactive;
 
   return self;
 }
@@ -86,22 +92,27 @@
 
 - (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  dispatch_group_t group = dispatch_group_create();
-  __block BOOL success = NO;
-  __block NSError *innerError = nil;
-  [self setupDaemonConnectionWithGroup:group completion:^(BOOL connectionSuccess, NSError *connectionError) {
-    success = connectionSuccess;
-    innerError = connectionError;
-  }];
-  if (![NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout notifiedBy:group onQueue:self.queue]) {
+  if (self.state != FBTestDaemonConnectionStateInactive) {
     return [[XCTestBootstrapError
+      describeFormat:@"State should be '%@' got '%@", [FBTestDaemonConnection stringForDaemonConnectionState:FBTestDaemonConnectionStateInactive], [FBTestDaemonConnection stringForDaemonConnectionState:self.state]]
+      failBool:error];
+  }
+
+  [self connect];
+  BOOL success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+    return self.state != FBTestDaemonConnectionStateConnecting;
+  }];
+
+  if (!success) {
+    return [[[XCTestBootstrapError
       describeFormat:@"Timed out waiting for daemon connection"]
+      causedBy:self.error.build]
       failBool:error];
   }
   if (!success) {
     return [[[XCTestBootstrapError
       describe:@"Failed to connect daemon connection"]
-      causedBy:innerError]
+      causedBy:self.error.build]
       failBool:error];
   }
   return YES;
@@ -118,12 +129,32 @@
 
 #pragma mark Private
 
-- (void)setupDaemonConnectionWithGroup:(dispatch_group_t)group completion:(void (^)(BOOL, NSError *))completion
+- (void)connect
 {
-  DTXTransport *transport = self.transport;
+  self.state = FBTestDaemonConnectionStateConnecting;
+  dispatch_async(self.queue, ^{
+    NSError *innerError = nil;
+    DTXTransport *transport = [self.device makeTransportForTestManagerService:&innerError];
+    if (innerError || !transport) {
+      [self failWithError:[[XCTestBootstrapError
+        describe:@"Failed to created secondary test manager transport"]
+        causedBy:innerError]];
+    }
+    [self createDaemonConnectionWithTransport:transport];
+  });
+}
+
+- (DTXConnection *)createDaemonConnectionWithTransport:(DTXTransport *)transport
+{
+  self.state = FBTestDaemonConnectionStateConnecting;
+
   DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
   [connection registerDisconnectHandler:^{
-    completion(NO, [[[XCTestBootstrapError describe:@"Lost connection to test manager service."] code:XCTestBootstrapErrorCodeLostConnection] build]);
+    if (self.state == FBTestDaemonConnectionStateFinished) {
+      return;
+    }
+    [self failWithError:[XCTestBootstrapError
+      describeFormat:@"Disconnected with state %@", [FBTestDaemonConnection stringForDaemonConnectionState:self.state]]];
   }];
   [self.logger logFormat:@"Resuming the secondary connection."];
   self.daemonConnection = connection;
@@ -139,17 +170,17 @@
   DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID) protocolVersion:@(FBProtocolVersion)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     if (error) {
-      [self setupDaemonConnectionViaLegacyProtocolWithCompletion:completion];
+      [self setupDaemonConnectionViaLegacyProtocol];
       return;
     }
     self.daemonProtocolVersion = version.integerValue;
     [self.logger logFormat:@"Got whitelisting response and daemon protocol version %lld", self.daemonProtocolVersion];
-    [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:version];
-    completion(YES, nil);
+    self.state = FBTestDaemonConnectionStateReadyToExecuteTestPlan;
   }];
+  return connection;
 }
 
-- (void)setupDaemonConnectionViaLegacyProtocolWithCompletion:(void (^)(BOOL, NSError *))completion
+- (DTXRemoteInvocationReceipt *)setupDaemonConnectionViaLegacyProtocol
 {
   DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
@@ -159,8 +190,35 @@
     }
     self.daemonProtocolVersion = version.integerValue;
     [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
-    [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
   }];
+  return receipt;
+}
+
++ (NSString *)stringForDaemonConnectionState:(FBTestDaemonConnectionState)state
+{
+  switch (state) {
+    case FBTestDaemonConnectionStateInactive:
+      return @"inactive";
+    case FBTestDaemonConnectionStateConnecting:
+      return @"connecting";
+    case FBTestDaemonConnectionStateReadyToExecuteTestPlan:
+      return @"ready to execute test plan";
+    case FBTestDaemonConnectionStateExecutingTestPlan:
+      return @"executing test plan";
+    case FBTestDaemonConnectionStateFinished:
+      return @"finished";
+    default:
+      return @"unknown";
+  }
+}
+
+- (void)failWithError:(XCTestBootstrapError *)error
+{
+  if (self.state == FBTestDaemonConnectionStateFinished) {
+    return;
+  }
+  self.state = FBTestDaemonConnectionStateFinished;
+  self.error = error;
 }
 
 @end

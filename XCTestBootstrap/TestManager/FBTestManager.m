@@ -56,7 +56,8 @@
 
 - (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.mediator connectTestRunnerWithTestManagerDaemonWithTimeout:timeout error:error];
+  return [self.mediator connectTestRunnerWithTestManagerDaemonWithTimeout:timeout error:error]
+      && [self.mediator executeTestPlanWithTimeout:timeout error:error];
 }
 
 - (void)disconnect

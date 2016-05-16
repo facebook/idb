@@ -84,6 +84,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _loggingForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
 
   _bundleConnection = [FBTestBundleConnection withDevice:device interface:(id)_loggingForwarder sessionIdentifier:sessionIdentifier queue:_requestQueue logger:logger];
+  _daemonConnection = [FBTestDaemonConnection withDevice:device interface:(id)_loggingForwarder testRunnerPID:testRunnerPID queue:_requestQueue logger:logger];
 
   return self;
 }
@@ -97,7 +98,25 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
       describe:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"]
       failBool:error];
   }
-  return [self.bundleConnection connectWithTimeout:timeout error:error];
+  NSError *innerError = nil;
+  if (![self.bundleConnection connectWithTimeout:timeout error:&innerError]) {
+    return [[[XCTestBootstrapError
+      describe:@"Failed to connect to the bundle"]
+      causedBy:innerError]
+      failBool:error];
+  }
+  if (![self.daemonConnection connectWithTimeout:timeout error:&innerError]) {
+    return [[[XCTestBootstrapError
+      describe:@"Failed to connect to the daemon"]
+      causedBy:innerError]
+      failBool:error];
+  }
+  return YES;
+}
+
+- (BOOL)executeTestPlanWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return [self.bundleConnection startTestPlanWithError:error];
 }
 
 - (void)disconnectTestRunnerAndTestManagerDaemon
@@ -110,31 +129,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
   [self.daemonConnection disconnect];
   self.daemonConnection = nil;
-}
-
-#pragma mark Private
-
-- (void)whitelistTestProcessIDForUITesting
-{
-  [self.logger logFormat:@"Creating secondary transport and connection for whitelisting test process PID."];
-  dispatch_group_t group = dispatch_group_create();
-
-  dispatch_group_async(group, self.requestQueue, ^{
-    NSError *error;
-    DTXTransport *transport = [self.targetDevice  makeTransportForTestManagerService:&error];
-    if (error || !transport) {
-      [self.logger logFormat:@"Failed to create secondary transport with error %@", error];
-      return;
-    }
-    self.daemonConnection = [FBTestDaemonConnection
-      withTransport:transport
-      interface:(id<XCTestManager_IDEInterface, NSObject>)self.loggingForwarder
-      testBundleProxy:self.bundleConnection.testBundleProxy
-      testRunnerPID:self.testRunnerPID
-      queue:self.requestQueue
-      logger:self.logger];
-    [self.daemonConnection connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
-  });
 }
 
 #pragma mark Reporting
@@ -266,8 +260,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_testBundleReadyWithProtocolVersion:(NSNumber *)protocolVersion minimumVersion:(NSNumber *)minimumVersion
 {
-  [self.logger log:@"Test Bundle Ready, Whitelisting Process ID for Testing"];
-  [self whitelistTestProcessIDForUITesting];
   return nil;
 }
 

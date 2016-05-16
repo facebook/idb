@@ -15,6 +15,19 @@
 @protocol XCTestDriverInterface;
 @protocol XCTestManager_IDEInterface;
 
+/**
+ An Enumeration of mutually exclusive states of the connection
+ */
+typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
+  FBTestBundleConnectionStateNotConnected = 0,
+  FBTestBundleConnectionStateConnecting = 1,
+  FBTestBundleConnectionStateTestBundleReady = 2,
+  FBTestBundleConnectionStateAwaitingStartOfTestPlan = 3,
+  FBTestBundleConnectionStateRunningTestPlan = 4,
+  FBTestBundleConnectionStateFinishedTestPlan = 5,
+  FBTestBundleConnectionStateEnded = 6,
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -44,6 +57,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
+ Starts the Test Plan.
+ Test Events will be delivered asynchronously to the interface.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)startTestPlanWithError:(NSError **)error;
+
+/**
  Disconnects any active connection.
  */
 - (void)disconnect;
@@ -60,9 +82,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Properties set from a connection.
  */
-@property (nonatomic, assign, readonly) long long testBundleProtocolVersion;
-@property (nonatomic, nullable, strong, readonly) id<XCTestDriverInterface> testBundleProxy;
-@property (nonatomic, nullable, strong, readonly) DTXConnection *testBundleConnection;
+@property (atomic, assign, readonly) FBTestBundleConnectionState state;
+@property (atomic, assign, readonly) long long testBundleProtocolVersion;
+@property (atomic, nullable, strong, readonly) id<XCTestDriverInterface> testBundleProxy;
+@property (atomic, nullable, strong, readonly) DTXConnection *testBundleConnection;
 
 @end
 
