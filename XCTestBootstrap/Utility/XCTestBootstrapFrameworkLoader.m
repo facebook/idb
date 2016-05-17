@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBFoundationInitializer.h"
+#import "XCTestBootstrapFrameworkLoader.h"
 
 #import <DVTFoundation/DVTDeviceManager.h>
 #import <DVTFoundation/DVTDeviceType.h>
@@ -18,7 +18,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@implementation FBFoundationInitializer
+@implementation XCTestBootstrapFrameworkLoader
 
 #pragma mark Public
 

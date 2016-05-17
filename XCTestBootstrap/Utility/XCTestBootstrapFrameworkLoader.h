@@ -12,7 +12,7 @@
 /**
  Framework and Class Loading for XCTestBoostrap.
  */
-@interface FBFoundationInitializer : NSObject
+@interface XCTestBootstrapFrameworkLoader : NSObject
 
 /**
  Loads the Relevant Private Frameworks for ensuring the proper operation of XCTestBootsrap.
