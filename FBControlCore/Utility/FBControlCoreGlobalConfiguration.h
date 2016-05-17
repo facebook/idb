@@ -11,6 +11,8 @@
 
 @protocol FBControlCoreLogger;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  An Environment Variable: 'FBCONTROLCORE_LOGGING' to enable logging of Informational Messages to stderr.
  */
@@ -28,9 +30,14 @@ extern NSString *const FBControlCoreDebugLogging;
 @interface FBControlCoreGlobalConfiguration : NSObject
 
 /**
- The path to of Xcode's /Xcode.app/Contents/Developer directory.
+ The File Path to of Xcode's /Xcode.app/Contents/Developer directory.
  */
 + (NSString *)developerDirectory;
+
+/**
+ The File Path of Apple's 'Apple Configurator' Application, if installed.
+ */
++ (nullable NSString *)appleConfiguratorApplicationPath;
 
 /**
  The SDK Version of the current Xcode Version as a Decimal Number.
@@ -111,3 +118,5 @@ extern NSString *const FBControlCoreDebugLogging;
 + (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging;
 
 @end
+
+NS_ASSUME_NONNULL_END
