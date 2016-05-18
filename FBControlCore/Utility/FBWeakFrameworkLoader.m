@@ -26,20 +26,9 @@
 // 5) Provide a sanity check that any preloaded Private Frameworks match the current xcode-select version
 + (BOOL)loadPrivateFrameworks:(NSArray<FBWeakFramework *> *)weakFrameworks logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  // This will assert if the directory could not be found.
-  NSString *developerDirectory = FBControlCoreGlobalConfiguration.developerDirectory;
-  [logger logFormat:@"Using Developer Directory %@", developerDirectory];
-
-  NSArray *fallbackDirectories =
-  @[
-    [developerDirectory stringByAppendingPathComponent:@"../Frameworks"],
-    [developerDirectory stringByAppendingPathComponent:@"../SharedFrameworks"],
-    [developerDirectory stringByAppendingPathComponent:@"../Plugins"],
-  ];
-
   for (FBWeakFramework *framework in weakFrameworks) {
     NSError *innerError = nil;
-    if (![framework loadFromRelativeDirectory:developerDirectory fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
+    if (![framework loadWithLogger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
   }

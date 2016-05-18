@@ -13,74 +13,83 @@
 
 + (nonnull instancetype)CoreSimulator
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
 }
 
 + (nonnull instancetype)SimulatorKit
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[@"SimDeviceFramebufferService"]];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/SimulatorKit.framework" requiredClassNames:@[@"SimDeviceFramebufferService"]];
 }
 
 + (nonnull instancetype)DTXConnectionServices
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../SharedFrameworks/DTXConnectionServices.framework" requiredClassNames:@[@"DTXConnection", @"DTXRemoteInvocationReceipt"]];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DTXConnectionServices.framework" requiredClassNames:@[@"DTXConnection", @"DTXRemoteInvocationReceipt"]];
 }
 
 + (nonnull instancetype)DVTFoundation
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../SharedFrameworks/DVTFoundation.framework" requiredClassNames:@[@"DVTDevice"]];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../SharedFrameworks/DVTFoundation.framework" requiredClassNames:@[@"DVTDevice"]];
 }
 
 + (nonnull instancetype)IDEFoundation
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../Frameworks/IDEFoundation.framework" requiredClassNames:@[@"IDEFoundationTestInitializer"]];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/IDEFoundation.framework" requiredClassNames:@[@"IDEFoundationTestInitializer"]];
 }
 
 + (nonnull instancetype)IDEiOSSupportCore
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/IDEiOSSupportCore.ideplugin"
-                                 requiredClassNames:@[@"DVTiPhoneSimulator"]
-                                 requiredFrameworks:@[
-                                                      [FBWeakFramework DevToolsFoundation],
-                                                      [FBWeakFramework DevToolsSupport],
-                                                      [FBWeakFramework DevToolsCore],
-                                                    ]
-          ];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/IDEiOSSupportCore.ideplugin"
+    requiredClassNames:@[@"DVTiPhoneSimulator"]
+    requiredFrameworks:@[
+      FBWeakFramework.DevToolsFoundation,
+      FBWeakFramework.DevToolsSupport,
+      FBWeakFramework.DevToolsCore,
+  ]];
 }
 
 + (nonnull instancetype)DevToolsFoundation
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsFoundation.framework"];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsFoundation.framework"];
 }
 
 + (nonnull instancetype)DevToolsSupport
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsSupport.framework"];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsSupport.framework"];
 }
 
 + (nonnull instancetype)DevToolsCore
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsCore.framework"];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/Xcode3Core.ideplugin/Contents/Frameworks/DevToolsCore.framework"];
 }
 
 + (nonnull instancetype)XCTest
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework" requiredClassNames:@[@"XCTestConfiguration"]];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework" requiredClassNames:@[@"XCTestConfiguration"]];
 }
 
 + (nonnull instancetype)IBAutolayoutFoundation
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../Frameworks/IBAutolayoutFoundation.framework"];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/IBAutolayoutFoundation.framework"];
 }
 
 + (nonnull instancetype)IDEKit
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../Frameworks/IDEKit.framework"];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../Frameworks/IDEKit.framework"];
 }
 
 + (nonnull instancetype)IDESourceEditor
 {
-  return [FBWeakFramework frameworkWithRelativePath:@"../PlugIns/IDESourceEditor.ideplugin"];
+  return [FBWeakFramework xcodeFrameworkWithRelativePath:@"../PlugIns/IDESourceEditor.ideplugin"];
+}
+
++ (instancetype)ConfigurationUtilityKit
+{
+  return [FBWeakFramework appleConfigurationFrameworkWithRelativePath:@"Contents/Frameworks/ConfigurationUtilityKit.framework" requiredClassNames:@[@"MDKMobileDevice"]];
+}
+
++ (instancetype)ConfigurationProfile
+{
+  return [FBWeakFramework appleConfigurationFrameworkWithRelativePath:@"Contents/Frameworks/ConfigurationProfile.framework" requiredClassNames:@[]];
 }
 
 @end
