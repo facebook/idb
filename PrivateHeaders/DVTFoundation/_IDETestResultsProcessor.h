@@ -8,7 +8,7 @@
 
 @class DVTDevice, DVTStackBacktrace, IDERunOperation, IDETestRunner, NSMutableArray, NSString;
 
-@interface _IDETestResultsProcessor : NSObject //<DVTInvalidation>
+@interface _IDETestResultsProcessor : NSObject
 {
     BOOL _finished;
     IDETestRunner *_testRunner;
