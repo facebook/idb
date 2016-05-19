@@ -68,6 +68,10 @@ struct SimulatorActionRunner : Runner {
       }
     case .Diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
+    case .Erase:
+      return SimulatorRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
+        try simulator.erase()
+      }
     case .Install(let application):
       return SimulatorInteractionRunner(reporter, EventName.Install, ControlCoreSubject(application)) { interaction in
         interaction.installApplication(application)
@@ -89,6 +93,11 @@ struct SimulatorActionRunner : Runner {
       return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
         let subject = SimulatorSubject(simulator: simulator, format: format)
         reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
+      }
+    case .ListApps:
+      return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
+        let subject = ControlCoreSubject(simulator.installedApplications.map { $0.jsonSerializableRepresentation() } as NSArray)
+        reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
     case .Open(let url):
       return SimulatorInteractionRunner(reporter, EventName.Open, url.absoluteString) { interaction in

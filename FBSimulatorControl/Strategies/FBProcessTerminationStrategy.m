@@ -85,7 +85,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processFetcher:processFetcher logger:logger];
 }
 
-+ (instancetype)withprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)withProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   return [self withConfiguration:FBProcessTerminationStrategyConfigurationDefault processFetcher:processFetcher logger:logger];
 }
@@ -189,7 +189,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   return YES;
 }
 
-- (BOOL)killProcesses:(NSArray *)processes error:(NSError **)error
+- (BOOL)killProcesses:(NSArray<FBProcessInfo *> *)processes error:(NSError **)error
 {
   for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);

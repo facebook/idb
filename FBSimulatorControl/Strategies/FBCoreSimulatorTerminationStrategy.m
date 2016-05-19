@@ -26,7 +26,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)withProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithprocessFetcher:processFetcher logger:logger];
 }
@@ -40,7 +40,7 @@
 
   _processFetcher = processFetcher;
   _logger = logger;
-  _processTerminationStrategy = [FBProcessTerminationStrategy withprocessFetcher:processFetcher logger:logger];
+  _processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:processFetcher logger:logger];
 
   return self;
 }

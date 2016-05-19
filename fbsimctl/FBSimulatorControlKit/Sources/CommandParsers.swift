@@ -303,12 +303,14 @@ extension Action : Parsable {
         self.createParser,
         self.deleteParser,
         self.diagnoseParser,
+        self.eraseParser,
         self.installParser,
         self.launchAgentParser,
         self.launchAppParser,
         self.launchXCTestParser,
         self.listenParser,
         self.listParser,
+        self.listAppsParser,
         self.openParser,
         self.recordParser,
         self.relaunchParser,
@@ -364,6 +366,10 @@ extension Action : Parsable {
       }
   }}
 
+  static var eraseParser: Parser<Action> { get {
+    return Parser.ofString(EventName.Erase.rawValue, Action.Erase)
+  }}
+
   static var launchAgentParser: Parser<Action> { get {
     return Parser
       .succeeded(
@@ -404,6 +410,10 @@ extension Action : Parsable {
 
   static var listParser: Parser<Action> { get {
     return Parser.ofString(EventName.List.rawValue, Action.List)
+  }}
+
+  static var listAppsParser: Parser<Action> { get {
+    return Parser.ofString(EventName.ListApps.rawValue, Action.ListApps)
   }}
 
   static var openParser: Parser<Action> { get {

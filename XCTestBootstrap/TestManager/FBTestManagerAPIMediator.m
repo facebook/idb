@@ -23,72 +23,47 @@
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
 #import "XCTestBootstrapError.h"
+#import "FBXCTestManagerLoggingForwarder.h"
+#import "FBTestReporterForwarder.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
 
-#define weakify(target) __weak __typeof__(target) weak_##target = target
-#define strongify(target) \
-          _Pragma("clang diagnostic push") \
-          _Pragma("clang diagnostic ignored \"-Wshadow\"") \
-          __strong __typeof__(weak_##target) self = weak_##target; \
-          _Pragma("clang diagnostic pop")
+#import "FBTestBundleConnection.h"
+#import "FBTestDaemonConnection.h"
 
-
-static const NSInteger FBProtocolVersion = 0x10;
-static const NSInteger FBProtocolMinimumVersion = 0x8;
-
-static const NSInteger FBErrorCodeStartupFailure = 0x3;
-static const NSInteger FBErrorCodeLostConnection = 0x4;
-
+const NSInteger FBProtocolVersion = 0x10;
+const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
 @property (nonatomic, strong, readonly) DVTDevice *targetDevice;
 @property (nonatomic, assign, readonly) BOOL targetIsiOSSimulator;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
+@property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
+@property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *loggingForwarder;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary *tokenToBundleIDMap;
 
 @property (nonatomic, assign, readwrite) BOOL finished;
 @property (nonatomic, assign, readwrite) BOOL hasFailed;
 @property (nonatomic, assign, readwrite) BOOL testingIsFinished;
-@property (nonatomic, assign, readwrite) BOOL testPlanDidStartExecuting;
 
-@property (nonatomic, assign, readwrite) long long testBundleProtocolVersion;
-@property (nonatomic, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
-@property (nonatomic, strong, readwrite) DTXConnection *testBundleConnection;
-
-@property (nonatomic, assign, readwrite) long long daemonProtocolVersion;
-@property (nonatomic, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
-@property (nonatomic, strong, readwrite) DTXConnection *daemonConnection;
-
-@property (nonatomic, assign, readwrite) NSTimeInterval timeout;
-@property (nonatomic, strong, readwrite) NSTimer *startupTimeoutTimer;
+@property (nonatomic, strong, readwrite) FBTestBundleConnection *bundleConnection;
+@property (nonatomic, strong, readwrite) FBTestDaemonConnection *daemonConnection;
 
 @end
 
 @implementation FBTestManagerAPIMediator
 
-+ (NSString *)clientProcessUniqueIdentifier
-{
-  static dispatch_once_t onceToken;
-  static NSString *_clientProcessUniqueIdentifier;
-  dispatch_once(&onceToken, ^{
-    _clientProcessUniqueIdentifier = [NSProcessInfo processInfo].globallyUniqueString;
-  });
-  return _clientProcessUniqueIdentifier;
-}
-
-
 #pragma mark - Initializers
 
-+ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
++ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
 {
-  return  [[self alloc] initWithDevice:device testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
+  return  [[self alloc] initWithDevice:device processDelegate:processDelegate reporter:reporter logger:logger testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
 }
 
-- (instancetype)initWithDevice:(DVTAbstractiOSDevice *)device testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
+- (instancetype)initWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
 {
   self = [super init];
   if (!self) {
@@ -96,13 +71,20 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   }
 
   _targetDevice = device;
+  _processDelegate = processDelegate;
+  _logger = logger;
   _testRunnerPID = testRunnerPID;
   _sessionIdentifier = sessionIdentifier;
 
-  _timeout = 120;
   _targetIsiOSSimulator = [device.class isKindOfClass:NSClassFromString(@"DVTiPhoneSimulator")];
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
+
+  _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
+  _loggingForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
+
+  _bundleConnection = [FBTestBundleConnection withDevice:device interface:(id)_loggingForwarder sessionIdentifier:sessionIdentifier queue:_requestQueue logger:logger];
+  _daemonConnection = [FBTestDaemonConnection withDevice:device interface:(id)_loggingForwarder testRunnerPID:testRunnerPID queue:_requestQueue logger:logger];
 
   return self;
 }
@@ -116,26 +98,25 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
       describe:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"]
       failBool:error];
   }
-
-  dispatch_group_t group = dispatch_group_create();
-  __block BOOL success = NO;
-  __block NSError *innerError = nil;
-  [self connectTestRunnerWithGroup:group completion:^(BOOL startupSuccess, NSError *startupError) {
-    innerError = startupError;
-    success = startupSuccess;
-  }];
-  if (![NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout notifiedBy:group onQueue:self.requestQueue]) {
-    return [[XCTestBootstrapError
-      describeFormat:@"Timed out waiting for connection"]
+  NSError *innerError = nil;
+  if (![self.bundleConnection connectWithTimeout:timeout error:&innerError]) {
+    return [[[XCTestBootstrapError
+      describe:@"Failed to connect to the bundle"]
+      causedBy:innerError]
       failBool:error];
   }
-  if (!success) {
+  if (![self.daemonConnection connectWithTimeout:timeout error:&innerError]) {
     return [[[XCTestBootstrapError
-      describe:@"Failed to connect test runner"]
+      describe:@"Failed to connect to the daemon"]
       causedBy:innerError]
       failBool:error];
   }
   return YES;
+}
+
+- (BOOL)executeTestPlanWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return [self.bundleConnection startTestPlanWithError:error];
 }
 
 - (void)disconnectTestRunnerAndTestManagerDaemon
@@ -143,221 +124,14 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   self.finished = YES;
   self.testingIsFinished = YES;
 
-  [self.daemonConnection suspend];
-  [self.daemonConnection cancel];
+  [self.bundleConnection disconnect];
+  self.bundleConnection = nil;
+
+  [self.daemonConnection disconnect];
   self.daemonConnection = nil;
-  self.daemonProxy = nil;
-  self.daemonProtocolVersion = 0;
-
-  [self.testBundleConnection suspend];
-  [self.testBundleConnection cancel];
-  self.testBundleConnection = nil;
-  self.testBundleProxy = nil;
-  self.testBundleProtocolVersion = 0;
-}
-
-#pragma mark - Private
-
-- (void)connectTestRunnerWithGroup:(dispatch_group_t)group completion:(void (^)(BOOL, NSError *))completion
-{
-  [self makeTransportWithGroup:group completion:^(DTXTransport *transport, NSError *transportError) {
-    if (!transport) {
-      completion(NO, transportError);
-    }
-
-    [self setupTestBundleConnectionWithTransport:transport group:group completion:^(id<XCTestDriverInterface> interface, NSError *bundleConnectionError) {
-      if (!interface) {
-        completion(NO, [[[FBControlCoreError describe:@"Test Bundle connection failed, session was not started"] causedBy:bundleConnectionError] build]);
-        return;
-      }
-      completion(YES, nil);
-    }];
-    dispatch_group_async(group, dispatch_get_main_queue(), ^{
-      [self sendStartSessionRequestToTestManagerWithGroup:group completion:^(DTXProxyChannel *channel, NSError *sessionRequestError) {
-        if (!channel) {
-          [self.logger logFormat:@"Failed to start session with error %@", sessionRequestError];
-        }
-      }];
-    });
-  }];
-}
-
-- (void)makeTransportWithGroup:(dispatch_group_t)group completion:(void(^)(DTXTransport *, NSError *))completionBlock
-{
-  dispatch_group_async(group, self.requestQueue, ^{
-    NSError *error;
-    DTXTransport *transport = [self.targetDevice makeTransportForTestManagerService:&error];
-    if (error || !transport) {
-      completionBlock(nil, error);
-    }
-    completionBlock(transport, nil);
-  });
-}
-
-- (void)setupTestBundleConnectionWithTransport:(DTXTransport *)transport group:(dispatch_group_t)group completion:(void(^)( id<XCTestDriverInterface>, NSError *))completionBlock
-{
-  [self.logger logFormat:@"Creating the connection."];
-  DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
-
-  weakify(self);
-  [connection registerDisconnectHandler:^{
-    dispatch_async(dispatch_get_main_queue(), ^{
-      strongify(self);
-      if (self.testPlanDidStartExecuting) {
-        [self reportStartupFailure:@"Lost connection to test process" errorCode:FBErrorCodeLostConnection];
-      }
-    });
-  }];
-  [self.logger logFormat:@"Listening for proxy connection request from the test bundle (all platforms)"];
-
-  dispatch_group_enter(group);
-  [connection
-   handleProxyRequestForInterface:@protocol(XCTestManager_IDEInterface)
-   peerInterface:@protocol(XCTestDriverInterface)
-   handler:^(DTXProxyChannel *channel){
-     [self.logger logFormat:@"Got proxy channel request from test bundle"];
-     [channel setExportedObject:self queue:dispatch_get_main_queue()];
-     id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
-     self.testBundleProxy = interface;
-     completionBlock(interface, nil);
-     dispatch_group_leave(group);
-   }];
-  self.testBundleConnection = connection;
-  [self.logger logFormat:@"Resuming the connection."];
-  [self.testBundleConnection resume];
-}
-
-- (void)sendStartSessionRequestToTestManagerWithGroup:(dispatch_group_t)group completion:(void(^)(DTXProxyChannel *, NSError *))completionBlock
-{
-  if (self.hasFailed) {
-    completionBlock(nil, [[FBControlCoreError describe:@"Mediator has already failed"] build]);
-    return;
-  }
-
-  [self.logger log:@"Checking test manager availability..."];
-  DTXProxyChannel *proxyChannel = [self.testBundleConnection
-    makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
-    exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [proxyChannel setExportedObject:self queue:dispatch_get_main_queue()];
-  id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) [proxyChannel remoteObjectProxy];
-
-  NSString *bundlePath = NSBundle.mainBundle.bundlePath;
-  if (![NSBundle.mainBundle.bundlePath.pathExtension isEqualToString:@"app"]) {
-    bundlePath = NSBundle.mainBundle.executablePath;
-  }
-  [self.logger logFormat:@"Starting test session with ID %@", self.sessionIdentifier];
-
-  DTXRemoteInvocationReceipt *receipt = [remoteProxy
-    _IDE_initiateSessionWithIdentifier:self.sessionIdentifier
-    forClient:self.class.clientProcessUniqueIdentifier
-    atPath:bundlePath
-    protocolVersion:@(FBProtocolVersion)];
-
-  dispatch_group_enter(group);
-  weakify(self);
-  [receipt handleCompletion:^(NSNumber *version, NSError *completionError){
-    strongify(self);
-    if (!self) {
-      completionBlock(proxyChannel, [[FBControlCoreError describe:@"Strong Self should be nil"] build]);
-      dispatch_group_leave(group);
-      return;
-    }
-    [self finilzeConnectionWithProxyChannel:proxyChannel error:completionError];
-    completionBlock(proxyChannel, completionError);
-    dispatch_group_leave(group);
-  }];
-}
-
-- (void)finilzeConnectionWithProxyChannel:(DTXProxyChannel *)proxyChannel error:(NSError *)error
-{
-  [proxyChannel cancel];
-  if (error) {
-    [self.logger logFormat:@"Error from testmanagerd: %@ (%@)", error.localizedDescription, error.localizedRecoverySuggestion];
-    [self reportStartupFailure:error.localizedDescription errorCode:FBErrorCodeStartupFailure];
-    return;
-  }
-  [self.logger logFormat:@"Testmanagerd handled session request."];
-  [self.startupTimeoutTimer invalidate];
-  dispatch_async(dispatch_get_main_queue(), ^{
-    if (self.hasFailed) {
-      [self.logger logFormat:@"Mediator has already failed skipping."];
-      return;
-    }
-    [self.logger logFormat:@"Waiting for test process to launch."];
-  });
-}
-
-- (void)whitelistTestProcessIDForUITesting
-{
-  [self.logger logFormat:@"Creating secondary transport and connection for whitelisting test process PID."];
-  [self makeTransportWithGroup:dispatch_group_create() completion:^(DTXTransport *transport, NSError *error) {
-    [self setupDaemonConnectionWithTransport:transport];
-  }];
-}
-
-- (void)setupDaemonConnectionWithTransport:(DTXTransport *)transport
-{
-  DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
-  weakify(self);
-  [connection registerDisconnectHandler:^{
-    dispatch_async(dispatch_get_main_queue(), ^{
-      strongify(self);
-      [self reportStartupFailure:@"Lost connection to test manager service." errorCode:FBErrorCodeLostConnection];
-    });
-  }];
-  [self.logger logFormat:@"Resuming the secondary connection."];
-  self.daemonConnection = connection;
-  [connection resume];
-  DTXProxyChannel *channel =
-  [connection makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
-                                exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [channel setExportedObject:self queue:dispatch_get_main_queue()];
-  self.daemonProxy = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
-
-  [self.logger logFormat:@"Whitelisting test process ID %d", self.testRunnerPID];
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID) protocolVersion:@(FBProtocolVersion)];
-  [receipt handleCompletion:^(NSNumber *version, NSError *error) {
-    strongify(self);
-    if (error) {
-      [self setupDaemonConnectionViaLegacyProtocol];
-      return;
-    }
-    self.daemonProtocolVersion = version.integerValue;
-    [self.logger logFormat:@"Got whitelisting response and daemon protocol version %lld", self.daemonProtocolVersion];
-    [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:version];
-  }];
-}
-
-- (void)setupDaemonConnectionViaLegacyProtocol
-{
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID)];
-  weakify(self);
-  [receipt handleCompletion:^(NSNumber *version, NSError *error) {
-    strongify(self);
-    if (error) {
-      [self.logger logFormat:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];
-      return;
-    }
-    self.daemonProtocolVersion = version.integerValue;
-    [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
-    [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
-  }];
 }
 
 #pragma mark Reporting
-
-- (void)reportStartupFailure:(NSString *)failure errorCode:(NSInteger)errorCode
-{
-  dispatch_async(dispatch_get_main_queue(), ^{
-    if (!self.finished && !self.hasFailed) {
-      self.hasFailed = YES;
-      self.finished = YES;
-      [self.logger logFormat:@"Test operation failure: %@", failure];
-      [self.startupTimeoutTimer invalidate];
-      [self finishWithError:[NSError errorWithDomain:@"IDETestOperationsObserverErrorDomain" code:errorCode userInfo:@{NSLocalizedDescriptionKey : failure ?: @"Mystery"}] didCancel:YES];
-    }
-  });
-}
 
 - (void)finishWithError:(NSError *)error didCancel:(BOOL)didCancel
 {
@@ -389,12 +163,11 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
       userInfo[NSLocalizedFailureReasonErrorKey] = message;
     }
     error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
-    if (error.code != FBErrorCodeLostConnection) {
+    if (error.code != XCTestBootstrapErrorCodeLostConnection) {
       [self.logger logFormat:@"\n\n*** %@\n\n", message];
     }
   }
 }
-
 
 #pragma mark Others
 
@@ -411,7 +184,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
     [self.logger logFormat:@"Detected radar issue r17733855"];
   }
 }
-
 
 #pragma mark - XCTestManager_IDEInterface protocol
 
@@ -472,64 +244,32 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 
 - (id)_XCT_testSuite:(NSString *)tests didStartAt:(NSString *)time
 {
-  [self.logger logFormat:@"_XCT_testSuite:%@ didStartAt:%@", tests, time];
   if (tests.length == 0) {
     [self.logger logFormat:@"Failing for nil suite identifier."];
     NSError *error = [NSError errorWithDomain:@"IDETestOperationsObserverErrorDomain" code:0x9 userInfo:@{NSLocalizedDescriptionKey : @"Test reported a suite with nil or empty identifier. This is unsupported."}];
     [self finishWithError:error didCancel:NO];
   }
 
-  [self.reporter testManagerMediator:self testSuite:tests didStartAt:time];
   return nil;
 }
 
 - (id)_XCT_didBeginExecutingTestPlan
 {
-  self.testPlanDidStartExecuting = YES;
-  [self.logger logFormat:@"Starting test plan, clearing initialization timeout timer."];
-  [self.startupTimeoutTimer invalidate];
-
-  [self.reporter testManagerMediatorDidBeginExecutingTestPlan:self];
   return nil;
 }
 
 - (id)_XCT_testBundleReadyWithProtocolVersion:(NSNumber *)protocolVersion minimumVersion:(NSNumber *)minimumVersion
 {
-  [self.startupTimeoutTimer invalidate];
-  NSInteger protocolVersionInt = protocolVersion.integerValue;
-  NSInteger minimumVersionInt = minimumVersion.integerValue;
-
-  self.testBundleProtocolVersion = protocolVersionInt;
-
-  [self.logger logFormat:@"Test bundle is ready, running protocol %ld, requires at least version %ld. IDE is running %ld and requires at least %ld", protocolVersionInt, minimumVersionInt, FBProtocolVersion, FBProtocolMinimumVersion];
-  if (minimumVersionInt > FBProtocolVersion) {
-    [self reportStartupFailure:[NSString stringWithFormat:@"Protocol mismatch: test process requires at least version %ld, IDE is running version %ld", minimumVersionInt, FBProtocolVersion] errorCode:FBErrorCodeStartupFailure];
-    return nil;
-  }
-  if (protocolVersionInt < FBProtocolMinimumVersion) {
-    [self reportStartupFailure:[NSString stringWithFormat:@"Protocol mismatch: IDE requires at least version %ld, test process is running version %ld", FBProtocolMinimumVersion,protocolVersionInt] errorCode:FBErrorCodeStartupFailure];
-    return nil;
-  }
-  if (self.targetDevice.requiresTestDaemonMediationForTestHostConnection) {
-    [self whitelistTestProcessIDForUITesting];
-    return nil;
-  }
-  [self _checkUITestingPermissionsForPID:self.testRunnerPID];
-
-  [self.reporter testManagerMediator:self testBundleReadyWithProtocolVersion:protocolVersionInt minimumVersion:minimumVersionInt];
   return nil;
 }
 
 - (id)_XCT_testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
 {
-  [self.logger logFormat:@"_XCT_testCaseDidStartForTestClass:%@ method:%@", testClass, method ?: @""];
-  [self.reporter testManagerMediator:self testCaseDidStartForTestClass:testClass method:method];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-  [self.reporter testManagerMediator:self testCaseDidFailForTestClass:testClass method:method withMessage:message file:file line:line.unsignedIntegerValue];
   return nil;
 }
 
@@ -542,27 +282,21 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
 // ?
 - (id)_XCT_logMessage:(NSString *)message
 {
-  [self.logger logFormat:@"MAGIC_MESSAGE: %@", message];
   return nil;
 }
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self];
   return nil;
 }
 
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
-  FBTestReportStatus status = [FBTestManagerResultSummary statusForStatusString:statusString];
-  [self.reporter testManagerMediator:self testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration.doubleValue];
   return nil;
 }
 
 - (id)_XCT_testSuite:(NSString *)arg1 didFinishAt:(NSString *)arg2 runCount:(NSNumber *)arg3 withFailures:(NSNumber *)arg4 unexpected:(NSNumber *)arg5 testDuration:(NSNumber *)arg6 totalDuration:(NSNumber *)arg7
 {
-  FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:arg1 finishingAt:arg2 runCount:arg3 failures:arg4 unexpected:arg5 testDuration:arg6 totalDuration:arg7];
-  [self.reporter testManagerMediator:self finishedWithSummary:summary];
   return nil;
 }
 
@@ -664,12 +398,6 @@ static const NSInteger FBErrorCodeLostConnection = 0x4;
   [self.logger log:[self unknownMessageForSelector:aSelector]];
   NSAssert(nil, [self unknownMessageForSelector:_cmd]);
   return nil;
-}
-
-// This method name reflects method in _IDETestManagerAPIMediator
-- (void)_checkUITestingPermissionsForPID:(int)pid
-{
-  NSAssert(nil, [self unknownMessageForSelector:_cmd]);
 }
 
 #pragma mark - Unsupported partly disassembled

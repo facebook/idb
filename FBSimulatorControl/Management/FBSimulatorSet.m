@@ -20,6 +20,7 @@
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorEraseStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
@@ -134,7 +135,7 @@
 
 #pragma mark Public Methods
 
-- (FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
+- (nullable FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
   NSString *targetName = configuration.deviceName;
 
@@ -193,6 +194,36 @@
   return simulator;
 }
 
+- (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  NSParameterAssert(simulator);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@, cannot kill", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
+
+  return [self.simulatorTerminationStrategy killSimulators:@[simulator] error:error] != nil;
+}
+
+- (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  NSParameterAssert(simulator);
+
+  // Confirm that this Simulator belongs to us.
+  if (simulator.set != self) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator's set %@ is not %@, cannot erase", simulator.set, self]
+      inSimulator:simulator]
+      failBool:error];
+  }
+
+  return [self.eraseStrategy eraseSimulators:@[simulator] error:error] != nil;
+}
+
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
@@ -200,14 +231,14 @@
   // Confirm that this Simulator belongs to us.
   if (simulator.set != self) {
     return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
+      describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
       inSimulator:simulator]
       failBool:error];
   }
 
   // Kill the Simulators before deleting them.
   NSError *innerError = nil;
-  if (![self.simulatorTerminationStrategy killSimulators:@[simulator] withError:&innerError]) {
+  if (![self.simulatorTerminationStrategy killSimulators:@[simulator] error:&innerError]) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
@@ -240,29 +271,19 @@
   return YES;
 }
 
-- (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (nullable NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
 {
-  NSParameterAssert(simulator);
-
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
-  return [self.simulatorTerminationStrategy killSimulators:@[simulator] withError:error] != nil;
+  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators error:error];
 }
 
-- (NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
+- (nullable NSArray<FBSimulator *> *)eraseAllWithError:(NSError **)error
 {
-  return [self.simulatorTerminationStrategy killSimulators:self.allSimulators withError:error];
+  return [self.eraseStrategy eraseSimulators:self.allSimulators error:error];
 }
 
-- (NSArray<NSString *> *)deleteAllWithError:(NSError **)error
+- (nullable NSArray<NSString *> *)deleteAllWithError:(NSError **)error
 {
-  return [self deleteSimulators:self.allSimulators withError:error];
+  return [self deleteSimulators:self.allSimulators error:error];
 }
 
 #pragma mark FBDebugDescribeable Protocol
@@ -296,7 +317,7 @@
   return [self.simulatorTerminationStrategy killSpuriousSimulatorsWithError:error];
 }
 
-- (NSArray<NSString *> *)deleteSimulators:(NSArray *)simulators withError:(NSError **)error
+- (nullable NSArray<NSString *> *)deleteSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
 {
   NSError *innerError = nil;
   NSMutableArray *deletedSimulatorNames = [NSMutableArray array];
@@ -308,23 +329,6 @@
     [deletedSimulatorNames addObject:simulatorName];
   }
   return [deletedSimulatorNames copy];
-}
-
-- (NSArray<FBSimulator *> *)eraseSimulators:(NSArray *)simulators withError:(NSError **)error
-{
-  // Kill the Simulators before erasing them.
-  NSError *innerError = nil;
-  if (![self.simulatorTerminationStrategy killSimulators:simulators withError:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-
-  // Then Erase them.
-  for (FBSimulator *simulator in simulators) {
-    if (![simulator eraseWithError:&innerError]) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
-    }
-  }
-  return simulators;
 }
 
 + (NSDictionary<NSString *, FBSimulator *> *)keySimulatorsByUDID:(NSArray *)simulators
@@ -376,7 +380,12 @@
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
 {
-  return [FBCoreSimulatorTerminationStrategy withprocessFetcher:self.processFetcher logger:self.logger];
+  return [FBCoreSimulatorTerminationStrategy withProcessFetcher:self.processFetcher logger:self.logger];
+}
+
+- (FBSimulatorEraseStrategy *)eraseStrategy
+{
+  return [FBSimulatorEraseStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
 }
 
 @end

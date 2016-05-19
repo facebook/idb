@@ -9,6 +9,8 @@
 
 #import "FBControlCoreGlobalConfiguration.h"
 
+#import <Cocoa/Cocoa.h>
+
 #import "FBControlCoreLogger.h"
 #import "FBTaskExecutor.h"
 
@@ -31,6 +33,16 @@ static id<FBControlCoreLogger> logger;
     NSCAssert(directory, @"Xcode Path could not be determined from `xcode-select`");
   });
   return directory;
+}
+
++ (nullable NSString *)appleConfiguratorApplicationPath
+{
+  static dispatch_once_t onceToken;
+  static NSString *path = nil;
+  dispatch_once(&onceToken, ^{
+    path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier:@"com.apple.configurator.ui"];
+  });
+  return path;
 }
 
 + (NSDecimalNumber *)sdkVersionNumber

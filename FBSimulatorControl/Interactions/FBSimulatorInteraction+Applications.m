@@ -17,6 +17,7 @@
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
+#import "FBSimulator+Commands.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
@@ -35,24 +36,7 @@
   NSParameterAssert(application);
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    if ([simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
-      return YES;
-    }
-
-    NSError *innerError = nil;
-    NSDictionary *options = @{
-      @"CFBundleIdentifier" : application.bundleID
-    };
-    NSURL *appURL = [NSURL fileURLWithPath:application.path];
-
-    if (![simulator.simDeviceWrapper installApplication:appURL withOptions:options error:&innerError]) {
-      return [[[FBSimulatorError
-        describeFormat:@"Failed to install Application %@ with options %@", application, options]
-        causedBy:innerError]
-        failBool:error];
-    }
-
-    return YES;
+    return [simulator.application installApplicationWithPath:application.path error:error];
   }];
 }
 

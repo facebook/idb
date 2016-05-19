@@ -17,6 +17,12 @@
 extern NSString *const XCTestBootstrapErrorDomain;
 
 /**
+ Error Codes.
+ */
+extern const NSInteger XCTestBootstrapErrorCodeStartupFailure;
+extern const NSInteger XCTestBootstrapErrorCodeLostConnection;
+
+/**
  XCTestBootstrap Errors construction.
  */
 @interface XCTestBootstrapError : FBControlCoreError

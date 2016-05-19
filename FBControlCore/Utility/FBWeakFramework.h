@@ -19,31 +19,40 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBWeakFramework : NSObject
 
 /**
- Creates and returns FBWeakFramework with given relativePath
+ Creates and returns FBWeakFramework relative to Xcode with the given relativePath.
 
  @param relativePath Developer Directory relative path to the framework.
- @return Framework with given relativePath and list of checked class names
+ @return a Weak Framework with given relativePath and list of checked class names
  */
-+ (instancetype)frameworkWithRelativePath:(NSString *)relativePath;
++ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath;
 
 /**
- Creates and returns FBWeakFramework with given relativePath and list of checked class names
+ Creates and returns FBWeakFramework relative to Xcode with the given relativePath and list of checked class names.
 
  @param relativePath Developer Directory relative path to the framework.
  @param requiredClassNames list of class names used to determin if framework load was successful
- @return Framework with given relativePath and list of checked class names
+ @return a Weak Framework with given relativePath and list of checked class names
  */
-+ (instancetype)frameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames;
++ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames;
 
 /**
- Creates and returns FBWeakFramework with given relativePath, list of checked class names and list of pre-loaded frameworks
+ Creates and returns FBWeakFramework relative to Xcode with the given relativePath, list of checked class names and list of pre-loaded frameworks.
 
  @param relativePath Developer Directory relative path to the framework.
  @param requiredClassNames list of class names used to determin if framework load was successful
  @param requiredFrameworks list of frameworks, that should be loaded before this framework loads
- @return Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
+ @return a Weak Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
  */
-+ (instancetype)frameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks;
++ (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks;
+
+/**
+ Creates and returns FBWeakFramework relative to the 'Apple Configuration' App with the given relativePath, list of checked class names and list of pre-loaded frameworks.
+
+ @param relativePath Developer Directory relative path to the framework.
+ @param requiredClassNames list of class names used to determin if framework load was successful
+ @return a Weak Frameworkwith given relativePath, list of checked class names and list of pre-loaded frameworks
+ */
++ (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames;
 
 /**
  Loads framework by:
@@ -54,13 +63,11 @@ NS_ASSUME_NONNULL_BEGIN
  - Makes sanity check for existance of classes from requiredClassNames list
  - Provide a sanity check that any preloaded Private Frameworks match the current xcode-select version
 
- @param relativeDirectory a path to relative directory (eg. developer directory from `xcode-select -p`)
- @param fallbackDirectories list of directories used to load missing frameworks.
  @param logger a logger for logging framework loading activities.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)loadFromRelativeDirectory:(NSString *)relativeDirectory fallbackDirectories:(NSArray *)fallbackDirectories logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+- (BOOL)loadWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

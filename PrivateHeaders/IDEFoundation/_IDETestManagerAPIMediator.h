@@ -9,7 +9,7 @@
 
 @class DTXConnection, DVTDisallowFinishToken, DVTObservingToken, IDEConsoleAdaptor, NSArray, NSDateFormatter, NSMutableArray, NSMutableDictionary, NSMutableSet, NSMutableString, NSOutputStream, NSString, NSTimer;
 @protocol XCTestDriverInterface, XCTestManager_DaemonConnectionInterface;
-@interface _IDETestManagerAPIMediator : _IDETestResultsProcessor //<XCTestManager_IDEInterface, IDEConsoleAdaptorDelegateProtocol>
+@interface _IDETestManagerAPIMediator : _IDETestResultsProcessor
 {
     BOOL _testPlanDidStartExecuting;
     BOOL _hasFailed;

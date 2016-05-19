@@ -40,7 +40,7 @@
  @param error an error out if any error occured.
  @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
-- (NSArray *)killSimulators:(NSArray *)simulators withError:(NSError **)error;
+- (NSArray *)killSimulators:(NSArray *)simulators error:(NSError **)error;
 
 /**
  Kills all of the Simulators that are not launched by `FBSimulatorControl`.

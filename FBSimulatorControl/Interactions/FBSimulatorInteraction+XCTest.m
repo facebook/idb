@@ -39,7 +39,7 @@
   NSParameterAssert(configuration);
   NSParameterAssert(testBundlePath);
   NSParameterAssert(workingDirectory);
-  [FBFoundationInitializer initializeTestingEnvironment];
+  [XCTestBootstrapFrameworkLoader initializeTestingEnvironment];
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy

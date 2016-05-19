@@ -12,11 +12,12 @@
 #import "FBDeviceOperator.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
+#import "FBTestManagerProcessInteractionOperator.h"
 
-@interface FBTestManager () <FBTestManagerProcessInteractionDelegate>
+@interface FBTestManager ()
 
 @property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) FBTestManagerProcessInteractionOperator *processOperator;
 
 @end
 
@@ -26,19 +27,19 @@
 
 + (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
+  FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withDeviceOperator:deviceOperator];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
     mediatorWithDevice:deviceOperator.dvtDevice
+    processDelegate:processOperator
+    reporter:reporter
+    logger:logger
     testRunnerPID:testRunnerPID
     sessionIdentifier:sessionIdentifier];
 
-  FBTestManager *manager = [[self alloc] initWithMediator:mediator deviceOperator:deviceOperator];
-  mediator.processDelegate = manager;
-  mediator.reporter = reporter;
-
-  return manager;
+  return [[FBTestManager alloc] initWithMediator:mediator processOperator:processOperator];
 }
 
-- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator deviceOperator:(id<FBDeviceOperator>)deviceOperator
+- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator processOperator:(FBTestManagerProcessInteractionOperator *)processOperator
 {
   self = [super init];
   if (!self) {
@@ -46,7 +47,7 @@
   }
 
   _mediator = mediator;
-  _deviceOperator = deviceOperator;
+  _processOperator = processOperator;
 
   return self;
 }
@@ -55,7 +56,8 @@
 
 - (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.mediator connectTestRunnerWithTestManagerDaemonWithTimeout:timeout error:error];
+  return [self.mediator connectTestRunnerWithTestManagerDaemonWithTimeout:timeout error:error]
+      && [self.mediator executeTestPlanWithTimeout:timeout error:error];
 }
 
 - (void)disconnect
@@ -70,26 +72,6 @@
     self.mediator.sessionIdentifier,
     self.mediator.testRunnerPID
   ];
-}
-
-#pragma mark - FBTestManagerMediatorDelegate
-
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment error:(NSError **)error
-{
-  if (![self.deviceOperator isApplicationInstalledWithBundleID:bundleID error:error]) {
-    if (![self.deviceOperator installApplicationWithPath:path error:error]) {
-      return NO;
-    }
-  }
-  if (![self.deviceOperator launchApplicationWithBundleID:bundleID arguments:arguments environment:environment error:error]) {
-    return NO;
-  }
-  return YES;
-}
-
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  return [self.deviceOperator killApplicationWithBundleID:bundleID error:error];
 }
 
 @end

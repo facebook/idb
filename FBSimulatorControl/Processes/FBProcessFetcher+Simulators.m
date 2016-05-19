@@ -15,13 +15,13 @@
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorControlConfiguration.h"
 
-NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBControlCore_SIM_UDID";
+NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
 
 @implementation FBProcessFetcher (Simulators)
 
 #pragma mark Process Fetching
 
-- (NSArray *)simulatorProcesses
+- (NSArray<FBProcessInfo *> *)simulatorProcesses
 {
   // All Simulator Versions from Xcode 5-7, have Simulator.app in their path:
   // iOS Simulator.app/Contents/MacOS/iOS Simulator
@@ -29,12 +29,12 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   return [self processesWithLaunchPathSubstring:@"Simulator.app"];
 }
 
-- (NSArray *)coreSimulatorServiceProcesses
+- (NSArray<FBProcessInfo *> *)coreSimulatorServiceProcesses
 {
   return [self processesWithLaunchPathSubstring:@"Contents/MacOS/com.apple.CoreSimulator.CoreSimulatorService"];
 }
 
-- (NSArray *)launchdSimProcesses
+- (NSArray<FBProcessInfo *> *)launchdSimProcesses
 {
   return [self processesWithProcessName:@"launchd_sim"];
 }
@@ -94,15 +94,26 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   }];
 }
 
-+ (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray *)udids
++ (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray<NSString *> *)udids
 {
+  NSSet<NSString *> *udidSet = [NSSet setWithArray:udids];
+  NSString *defaultsUDID = FBProcessFetcher.simulatorApplicationPreferences[@"CurrentDeviceUDID"];
+  BOOL defaultsIntersection = [udidSet containsObject:defaultsUDID];
+
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    NSString *UDID = process.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
-    return (UDID && [udids containsObject:UDID]);
+    // When the UDID environment marker is present we can use it alone to determine which UDID
+    // corresponds to a running Simulator.app process.
+    NSString *udid = process.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
+    if (udid) {
+      return [udidSet containsObject:udid];
+    }
+
+    // Otherwise we should use the 'cached' value from the defaults of 'com.apple.iphonesimulator.plist'
+    return defaultsIntersection;
   }];
 }
 
-+ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray *)udids
++ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray<NSString *> *)udids
 {
   NSPredicate *processNamePredicate = [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
     return [process.launchPath rangeOfString:@"launchd_sim"].location != NSNotFound;
@@ -141,6 +152,14 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *processInfo, NSDictionary *_) {
     return [processInfo.launchPath.lastPathComponent isEqualToString:endPath];
   }];
+}
+
+#pragma mark Private
+
++ (NSDictionary *)simulatorApplicationPreferences
+{
+  NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Preferences/com.apple.iphonesimulator.plist"];
+  return [NSDictionary dictionaryWithContentsOfFile:path];
 }
 
 @end

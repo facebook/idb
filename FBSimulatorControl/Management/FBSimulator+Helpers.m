@@ -49,13 +49,26 @@
   return self.set.deviceSet.setPath;
 }
 
-- (NSArray *)launchdSimSubprocesses
+- (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
 {
   FBProcessInfo *launchdSim = self.launchdSimProcess;
   if (!launchdSim) {
     return @[];
   }
   return [self.processFetcher subprocessesOf:launchdSim.processIdentifier];
+}
+
+- (NSArray<FBSimulatorApplication *> *)installedApplications
+{
+  NSMutableArray<FBSimulatorApplication *> *applications = [NSMutableArray array];
+  for (NSDictionary *appInfo in [[self.device installedAppsWithError:nil] allValues]) {
+    FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:appInfo[@"Path"] error:nil];
+    if (!application) {
+      continue;
+    }
+    [applications addObject:application];
+  }
+  return [applications copy];
 }
 
 #pragma mark Methods
@@ -138,11 +151,7 @@
 
 - (BOOL)eraseWithError:(NSError **)error
 {
-  NSError *innerError = nil;
-  if (![self.device eraseContentsAndSettingsWithError:&innerError]) {
-    return [[[[FBSimulatorError describeFormat:@"Failed to Erase Contents and Settings %@", self] causedBy:innerError] inSimulator:self] failBool:error];
-  }
-  return YES;
+  return [self.set eraseSimulator:self error:error];
 }
 
 - (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error

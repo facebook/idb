@@ -14,6 +14,8 @@
 @class FBSimulatorInteraction;
 @class FBSimulatorLaunchCtl;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Helper Methods & Properties for FBSimulator.
  */
@@ -39,12 +41,17 @@
 /**
  The DeviceSetPath of the Simulator.
  */
-@property (nonatomic, copy, readonly) NSString *deviceSetPath;
+@property (nonatomic, nullable, copy, readonly) NSString *deviceSetPath;
 
 /*
  Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
  */
-@property (nonatomic, copy, readonly) NSArray *launchdSimSubprocesses;
+@property (nonatomic, copy, readonly) NSArray<FBProcessInfo *> *launchdSimSubprocesses;
+
+/**
+ Fetches a list of the installed applications=
+ */
+@property (nonatomic, copy, readonly) NSArray<FBSimulatorApplication *> *installedApplications;
 
 #pragma mark Methods
 
@@ -105,9 +112,9 @@
 
  @param bundleID the Bundle ID to fetch an installed application for.
  @param error an error out for any error that occurs.
- @return a FBSimulatorApplication instance if one could be obtained, NO otherwise.
+ @return a FBSimulatorApplication instance if one could be obtained, nil otherwise.
  */
-- (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Determines whether a provided Bundle ID represents a System Application
@@ -119,12 +126,13 @@
 - (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
- Determines the location of the Home Directory of an Application.
+ Determines the location of the Home Directory of an Application, it's chroot jail.
 
  @param bundleID the Bundle ID of the Application to search for,.
  @param error an error out for any error that occurs.
+ @return the Home Directory of the Application if one was found, nil otherwise.
  */
-- (NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Returns the Process Info for a Application by Bundle ID.
@@ -133,7 +141,7 @@
  @param error an error out for any error that occurs.
  @return An FBProcessInfo for the Application if one is running, nil otherwise.
  */
-- (FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /*
  A Set of process names that are used to determine whether all the Simulator OS services
@@ -148,3 +156,5 @@
 - (NSSet *)requiredProcessNamesToVerifyBooted;
 
 @end
+
+NS_ASSUME_NONNULL_END
