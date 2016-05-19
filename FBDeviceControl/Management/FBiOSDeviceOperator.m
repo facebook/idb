@@ -300,7 +300,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
     DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
-    DTXMessage *message = [[DTXMessage alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
+    DTXMessage *message = [[NSClassFromString(@"DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
         *error = responseMessage.error;
