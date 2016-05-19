@@ -52,7 +52,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
   [FBDeviceControlFrameworkLoader initializeFrameworks];
 
   DVTiOSDevice *device = [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] searchForDeviceWithType:nil options:@{@"id": deviceUDID} genericOnly:NO timeout:FBDeviceSearchTimeout error:error];
-  NSAssert([device isKindOfClass:DVTiOSDevice.class], @"UDID should point to iOS Device");
+  NSAssert([device isKindOfClass:NSClassFromString(@"DVTiOSDevice")], @"UDID should point to iOS Device");
   if (!device) {
     return nil;
   }
