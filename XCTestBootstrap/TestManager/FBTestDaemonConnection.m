@@ -190,6 +190,7 @@
     }
     self.daemonProtocolVersion = version.integerValue;
     [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
+    self.state = FBTestDaemonConnectionStateReadyToExecuteTestPlan;
   }];
   return receipt;
 }
