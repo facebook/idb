@@ -186,10 +186,10 @@
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     if (error) {
       [self.logger logFormat:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];
-      return;
+    } else {
+      self.daemonProtocolVersion = version.integerValue;
+      [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
     }
-    self.daemonProtocolVersion = version.integerValue;
-    [self.logger logFormat:@"Got legacy whitelisting response, daemon protocol version is 14"];
     self.state = FBTestDaemonConnectionStateReadyToExecuteTestPlan;
   }];
   return receipt;
