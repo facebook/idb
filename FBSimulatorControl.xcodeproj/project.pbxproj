@@ -66,6 +66,7 @@
 		AA682B1B1CEC9E8B009B6ECA /* FBDeviceSet.m in Sources */ = {isa = PBXBuildFile; fileRef = AA682B191CEC9E8B009B6ECA /* FBDeviceSet.m */; };
 		AA682B201CECD49B009B6ECA /* FBAMDevice.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B1E1CECD49B009B6ECA /* FBAMDevice.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA682B211CECD49B009B6ECA /* FBAMDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = AA682B1F1CECD49B009B6ECA /* FBAMDevice.m */; };
+		AA682B2F1CEDC4F3009B6ECA /* FBiOSTarget.h in Headers */ = {isa = PBXBuildFile; fileRef = AA682B2E1CEDC435009B6ECA /* FBiOSTarget.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6A3B071CC0C96E00E016C4 /* FBCollectionOperations.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA6A3B0A1CC0C96E00E016C4 /* FBCollectionOperations.m in Sources */ = {isa = PBXBuildFile; fileRef = AA6A3B081CC0C96E00E016C4 /* FBCollectionOperations.m */; };
 		AA6A3B3B1CC1597000E016C4 /* FBCoreSimulatorTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA6A3B311CC1596F00E016C4 /* FBCoreSimulatorTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -594,6 +595,7 @@
 		AA682B1E1CECD49B009B6ECA /* FBAMDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAMDevice.h; sourceTree = "<group>"; };
 		AA682B1F1CECD49B009B6ECA /* FBAMDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAMDevice.m; sourceTree = "<group>"; };
 		AA682B231CEDA237009B6ECA /* FBAMDevice+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBAMDevice+Private.h"; sourceTree = "<group>"; };
+		AA682B2E1CEDC435009B6ECA /* FBiOSTarget.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBiOSTarget.h; sourceTree = "<group>"; };
 		AA6A3B071CC0C96E00E016C4 /* FBCollectionOperations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCollectionOperations.h; sourceTree = "<group>"; };
 		AA6A3B081CC0C96E00E016C4 /* FBCollectionOperations.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCollectionOperations.m; sourceTree = "<group>"; };
 		AA6A3B311CC1596F00E016C4 /* FBCoreSimulatorTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCoreSimulatorTerminationStrategy.h; sourceTree = "<group>"; };
@@ -1223,6 +1225,14 @@
 				AA5DF6091CEA1EE400CF3876 /* NSURLSessionTaskDelegate-Protocol.h */,
 			);
 			path = MobileDeviceKit;
+			sourceTree = "<group>";
+		};
+		AA682B2D1CEDC422009B6ECA /* Management */ = {
+			isa = PBXGroup;
+			children = (
+				AA682B2E1CEDC435009B6ECA /* FBiOSTarget.h */,
+			);
+			path = Management;
 			sourceTree = "<group>";
 		};
 		AA6A3B301CC1596F00E016C4 /* Strategies */ = {
@@ -1858,6 +1868,7 @@
 				EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */,
 				AA1174B01CEA17DB00EB699E /* Commands */,
 				EEBD602B1C9062E900298A07 /* Diagnostics */,
+				AA682B2D1CEDC422009B6ECA /* Management */,
 				EEBD60351C9062E900298A07 /* Processes */,
 				EEBD603C1C9062E900298A07 /* Serialization */,
 				EEBD603F1C9062E900298A07 /* Tasks */,
@@ -2129,6 +2140,7 @@
 				AACA33581C96F8D100DC9704 /* FBFileFinder.h in Headers */,
 				EEBD60661C9062E900298A07 /* FBProcessFetcher+Helpers.h in Headers */,
 				EEBD605D1C9062E900298A07 /* FBCrashLogInfo.h in Headers */,
+				AA682B2F1CEDC4F3009B6ECA /* FBiOSTarget.h in Headers */,
 				AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */,
 				EEBD60741C9062E900298A07 /* FBTerminationHandle.h in Headers */,
 				EEBD60941C908F8500298A07 /* FBCollectionInformation.h in Headers */,

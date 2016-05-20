@@ -21,6 +21,7 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBFileFinder.h>
+#import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>

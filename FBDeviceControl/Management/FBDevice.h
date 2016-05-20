@@ -9,15 +9,18 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
-
 @protocol FBDeviceOperator;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  Class that wraps DVTAbstractiOSDevice and it's device operator that can perform actions on it.
  */
-@interface FBDevice : NSObject
+@interface FBDevice : NSObject <FBiOSTarget>
 
 /**
  Device operator used to control device
@@ -40,13 +43,10 @@
 @property (nonatomic, copy, readonly) NSString *systemVersion;
 
 /**
- Unique Device IDentifier
- */
-@property (nonatomic, copy, readonly) NSString *UDID;
-
-/**
  Architectures suported by device
  */
 @property (nonatomic, copy, readonly) NSSet *supportedArchitectures;
 
 @end
+
+NS_ASSUME_NONNULL_END

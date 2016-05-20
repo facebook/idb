@@ -54,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulator : NSObject <FBiOSTarget, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The Underlying SimDevice.
@@ -103,10 +103,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly, nonnull) NSString *name;
 
-/**
- The UDID of the allocated Simulator.
- */
-@property (nonatomic, copy, readonly, nonnull) NSString *udid;
 
 /**
  The State of the allocated Simulator.

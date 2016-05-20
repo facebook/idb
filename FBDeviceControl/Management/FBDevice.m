@@ -32,6 +32,13 @@
   return self;
 }
 
+#pragma mark FBiOSTarget
+
+- (NSString *)udid
+{
+  return self.dvtDevice.identifier;
+}
+
 #pragma mark Properties
 
 - (NSString *)name
@@ -49,11 +56,6 @@
   return self.dvtDevice.softwareVersion;
 }
 
-- (NSString *)UDID
-{
-  return self.dvtDevice.identifier;
-}
-
 - (NSSet *)supportedArchitectures
 {
   return self.dvtDevice.supportedArchitectures.set;
@@ -68,7 +70,7 @@
     self.name,
     self.modelName,
     self.systemVersion,
-    self.UDID
+    self.udid
   ];
 }
 

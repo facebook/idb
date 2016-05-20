@@ -121,7 +121,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 + (NSPredicate *)predicateDeviceWithUDID:(NSString *)udid
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBDevice *device, id _) {
-    return [device.UDID isEqualToString:udid];
+    return [device.udid isEqualToString:udid];
   }];
 }
 
