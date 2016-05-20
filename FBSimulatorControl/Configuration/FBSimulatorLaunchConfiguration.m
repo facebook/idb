@@ -142,9 +142,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Scale %@ | Locale %@ | Options %lu",
+    @"Scale %@ | Locale Identifier %@ | Options %lu",
     self.scaleString,
-    self.locale,
+    self.locale.localeIdentifier,
     self.options
   ];
 }
