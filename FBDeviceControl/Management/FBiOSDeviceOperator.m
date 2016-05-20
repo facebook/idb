@@ -8,6 +8,7 @@
  */
 
 #import "FBiOSDeviceOperator.h"
+#import "FBiOSDeviceOperator+Private.h"
 
 #import <objc/runtime.h>
 
@@ -30,7 +31,6 @@
 #import "FBDeviceControlFrameworkLoader.h"
 
 static const NSUInteger FBMaxConosleMarkerLength = 1000;
-static const float FBDeviceSearchTimeout = 3 * 60;
 
 @protocol DVTApplication <NSObject>
 - (NSString *)installedPath;
@@ -39,28 +39,30 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 - (NSString *)executableName;
 @end
 
-
-@interface FBiOSDeviceOperator ()
-@property (nonatomic, strong) DVTiOSDevice *dvtDevice;
-@property (nonatomic, copy) NSString *preLaunchConsoleString;
-@end
-
 @implementation FBiOSDeviceOperator
 
-+ (instancetype)operatorWithDeviceUDID:(NSString *)deviceUDID error:(NSError **)error
+@synthesize dvtDevice = _dvtDevice;
+
+- (instancetype)initWithiOSDevice:(DVTiOSDevice *)iosDevice
 {
   [FBDeviceControlFrameworkLoader initializeFrameworks];
 
-  DVTiOSDevice *device = [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] searchForDeviceWithType:nil options:@{@"id": deviceUDID} genericOnly:NO timeout:FBDeviceSearchTimeout error:error];
-  NSAssert([device isKindOfClass:NSClassFromString(@"DVTiOSDevice")], @"UDID should point to iOS Device");
-  if (!device) {
+  self = [super init];
+  if (!self) {
     return nil;
   }
-  FBiOSDeviceOperator *op = [self.class new];
-  op.dvtDevice = device;
-  return op;
+
+  _dvtDevice = iosDevice;
+
+  return self;
 }
 
+#pragma mark Type Coercions
+
+- (DVTiOSDevice *)iosDevice
+{
+  return (DVTiOSDevice *) self.dvtDevice;
+}
 
 #pragma mark - Device specific operations
 
@@ -78,14 +80,14 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 
 - (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
 {
-  if (!self.dvtDevice.applications) {
+  if (!self.iosDevice.applications) {
     [FBRunLoopSpinner spinUntilBlockFinished:^id{
-      DVTFuture *future = self.dvtDevice.token.fetchApplications;
+      DVTFuture *future = self.iosDevice.token.fetchApplications;
       [future waitUntilFinished];
       return nil;
     }];
   }
-  return [self.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
+  return [self.iosDevice installedApplicationWithBundleIdentifier:bundleID];
 }
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -109,7 +111,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 {
   return
   [[FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return @([self.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:error]);
+    return @([self.iosDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:error]);
   }] boolValue];
 }
 
@@ -117,8 +119,8 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 {
   id returnObject =
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    if ([self.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
-      return [self.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
+    if ([self.iosDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
+      return [self.iosDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
     }
     return nil;
   }];
@@ -156,7 +158,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
            timeout:5 * 60]
           timeoutErrorMessage:@"Failed to gain access to device"]
          reminderMessage:@"Allow device access!"]
-        spinUntilTrue:^BOOL{ return [self.dvtDevice deviceReady]; } error:error])
+        spinUntilTrue:^BOOL{ return [self.iosDevice deviceReady]; } error:error])
   {
     return NO;
   }
@@ -255,7 +257,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 
 - (NSString *)fullConsoleString
 {
-  return [self.dvtDevice.token.deviceConsoleController consoleString];
+  return [self.iosDevice.token.deviceConsoleController consoleString];
 }
 
 - (NSString *)consoleString

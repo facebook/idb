@@ -7,11 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <XCTestBootstrap/FBDeviceOperator.h>
+#import <FBDeviceControl/FBiOSDeviceOperator.h>
 
-/**
- Operator that uses DVTFoundation and IDEiOSSupportCore.ideplugin to control DVTiOSDevice directly
- */
-@interface FBiOSDeviceOperator : NSObject <FBDeviceOperator>
+@class DVTiOSDevice;
+
+@interface FBiOSDeviceOperator ()
+
+@property (nonatomic, copy, readwrite) NSString *preLaunchConsoleString;
+
+- (instancetype)initWithiOSDevice:(DVTiOSDevice *)iosDevice;
 
 @end

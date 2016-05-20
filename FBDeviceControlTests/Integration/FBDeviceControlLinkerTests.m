@@ -2,6 +2,8 @@
 
 #import <XCTest/XCTest.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <FBDeviceControl/FBDeviceControl.h>
 
 @interface FBDeviceControlLinkerTests : XCTestCase
@@ -13,6 +15,15 @@
 - (void)testLinksPrivateFrameworks
 {
   [FBDeviceControlFrameworkLoader initializeFrameworks];
+}
+
+- (void)testConstructsDeviceSet
+{
+  NSError *error = nil;
+  FBDeviceSet *deviceSet = [FBDeviceSet defaultSetWithLogger:FBControlCoreGlobalConfiguration.defaultLogger error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(deviceSet);
+  XCTAssertNotNil(deviceSet.allDevices);
 }
 
 @end

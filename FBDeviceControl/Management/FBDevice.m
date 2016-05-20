@@ -8,25 +8,30 @@
  */
 
 #import "FBDevice.h"
+#import "FBDevice+Private.h"
 
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-@interface FBDevice ()
-@property (nonatomic, strong) DVTAbstractiOSDevice *dvtDevice;
-@property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
-@end
-
 @implementation FBDevice
 
-+ (instancetype)deviceWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator
+#pragma mark Initializers
+
+- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)operator device:(DVTAbstractiOSDevice *)device
 {
-  FBDevice *device = [self.class new];
-  device.deviceOperator = deviceOperator;
-  device.dvtDevice = deviceOperator.dvtDevice;
-  return device;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _deviceOperator = operator;
+  _dvtDevice = device;
+
+  return self;
 }
+
+#pragma mark Properties
 
 - (NSString *)name
 {
@@ -51,6 +56,19 @@
 - (NSSet *)supportedArchitectures
 {
   return self.dvtDevice.supportedArchitectures.set;
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Device | %@ | %@ | %@ | %@",
+    self.name,
+    self.modelName,
+    self.systemVersion,
+    self.UDID
+  ];
 }
 
 @end

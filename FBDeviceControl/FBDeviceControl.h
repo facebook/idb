@@ -8,6 +8,7 @@
  */
 
 #import <FBDeviceControl/FBDevice.h>
-#import <FBDeviceControl/FBiOSDeviceOperator.h>
 #import <FBDeviceControl/FBDeviceControlError.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
+#import <FBDeviceControl/FBDeviceSet.h>
+#import <FBDeviceControl/FBiOSDeviceOperator.h>

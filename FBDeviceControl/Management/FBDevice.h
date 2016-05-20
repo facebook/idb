@@ -49,12 +49,4 @@
  */
 @property (nonatomic, copy, readonly) NSSet *supportedArchitectures;
 
-/**
- Convenience constructor
-
- @param deviceOperator device operator used to operate device
- @return instance of FBDevice.
- */
-+ (instancetype)deviceWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator;
-
 @end
