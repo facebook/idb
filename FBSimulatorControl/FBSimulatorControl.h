@@ -27,7 +27,6 @@
 #import <FBSimulatorControl/FBProcessFetcher+Simulators.h>
 #import <FBSimulatorControl/FBProcessTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimDeviceWrapper.h>
-#import <FBSimulatorControl/FBSimulator+Commands.h>
 #import <FBSimulatorControl/FBSimulator+Helpers.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>

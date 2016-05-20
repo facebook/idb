@@ -20,6 +20,7 @@
 
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
+#import "FBSimulatorApplicationCommands.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
@@ -34,6 +35,10 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorSet.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
 
 @implementation FBSimulator
 
@@ -64,6 +69,7 @@
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;
+  _commandResponders = [FBSimulator commandRespondersForSimulator:self];
 
   return self;
 }
@@ -85,6 +91,7 @@
   _mutableSink = mutableSink;
   _diagnostics = diagnosticsSink;
   _resourceSink = resourceSink;
+
   return self;
 }
 
@@ -225,7 +232,24 @@
   };
 }
 
-#pragma mark Private
+#pragma mark Forwarding
+
+- (id)forwardingTargetForSelector:(SEL)selector
+{
+  for (id target in self.commandResponders) {
+    if ([target respondsToSelector:selector]) {
+      return target;
+    }
+  }
+  return nil;
+}
+
++ (NSArray *)commandRespondersForSimulator:(FBSimulator *)simulator
+{
+  return @[
+    [FBSimulatorApplicationCommands withSimulator:simulator],
+  ];
+}
 
 + (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration
 {
@@ -236,3 +260,5 @@
 }
 
 @end
+
+#pragma clang diagnostic pop
