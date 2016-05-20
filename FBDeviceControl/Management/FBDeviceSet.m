@@ -27,6 +27,7 @@
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBiOSDeviceOperator+Private.h"
 #import "FBDevice+Private.h"
+#import "FBAMDevice.h"
 
 static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 
@@ -85,10 +86,31 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 
 - (NSArray<FBDevice *> *)allDevices
 {
+  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[NSClassFromString(@"DVTiOSDevice") alliOSDevices]];
+  NSDictionary<NSString *, FBAMDevice *> *amDevices = [FBDeviceSet keyAMDevicesByUDID:[FBAMDevice allDevices]];
+  if (![[NSSet setWithArray:dvtDevices.allKeys] isEqualToSet:[NSSet setWithArray:amDevices.allKeys]]) {
+    [self.logger.error logFormat:
+      @"DVT and MobileDevice Device UDIDs are inconsistent: DVT %@ MobileDevice %@",
+      [FBCollectionInformation oneLineDescriptionFromArray:dvtDevices.allKeys],
+      [FBCollectionInformation oneLineDescriptionFromArray:amDevices.allKeys]
+    ];
+    return @[];
+  }
+
   NSMutableArray<FBDevice *> *devices = [NSMutableArray array];
-  for (DVTiOSDevice *iOSDevice in [NSClassFromString(@"DVTiOSDevice") alliOSDevices]) {
+  for (DVTiOSDevice *iOSDevice in dvtDevices.allValues) {
     FBiOSDeviceOperator *operator = [[FBiOSDeviceOperator alloc] initWithiOSDevice:iOSDevice];
-    FBDevice *device = [[FBDevice alloc] initWithDeviceOperator:operator device:(id)iOSDevice];
+    FBAMDevice *amDevice = amDevices[iOSDevice.identifier];
+    if (!amDevice) {
+      [self.logger.error logFormat:
+        @"Expected to be able to find an AMDevice for %@. Available Devices %@",
+        iOSDevice.identifier,
+        [FBCollectionInformation oneLineDescriptionFromArray:amDevices.allKeys]
+      ];
+      continue;
+    }
+
+    FBDevice *device = [[FBDevice alloc] initWithDeviceOperator:operator dvtDevice:iOSDevice amDevce:amDevice];
     [devices addObject:device];
   }
   return [devices copy];
@@ -101,6 +123,26 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
   return [NSPredicate predicateWithBlock:^ BOOL (FBDevice *device, id _) {
     return [device.UDID isEqualToString:udid];
   }];
+}
+
+#pragma mark Private
+
++ (NSDictionary<NSString *, DVTiOSDevice *> *)keyDVTDevicesByUDID:(NSArray<DVTiOSDevice *> *)devices
+{
+  NSMutableDictionary<NSString *, DVTiOSDevice *> *dictionary = [NSMutableDictionary dictionary];
+  for (DVTiOSDevice *device in devices) {
+    dictionary[device.identifier] = device;
+  }
+  return [dictionary copy];
+}
+
++ (NSDictionary<NSString *, FBAMDevice *> *)keyAMDevicesByUDID:(NSArray<FBAMDevice *> *)devices
+{
+  NSMutableDictionary<NSString *, FBAMDevice *> *dictionary = [NSMutableDictionary dictionary];
+  for (FBAMDevice *device in devices) {
+    dictionary[device.name] = device;
+  }
+  return [dictionary copy];
 }
 
 @end

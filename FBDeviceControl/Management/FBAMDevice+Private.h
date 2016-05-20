@@ -8,8 +8,16 @@
  */
 
 #import <FBDeviceControl/FBAMDevice.h>
-#import <FBDeviceControl/FBDevice.h>
-#import <FBDeviceControl/FBDeviceControlError.h>
-#import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>
-#import <FBDeviceControl/FBDeviceSet.h>
-#import <FBDeviceControl/FBiOSDeviceOperator.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface FBAMDevice ()
+
+@property (nonatomic, assign, readonly) CFTypeRef amDevice;
+
+@property (nonatomic, nullable, copy, readwrite) NSString *name;
+@property (nonatomic, nullable, copy, readwrite) NSString *deviceName;
+
+@end
+
+NS_ASSUME_NONNULL_END

@@ -18,7 +18,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)operator device:(DVTAbstractiOSDevice *)device
+- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)operator dvtDevice:(DVTAbstractiOSDevice *)dvtDevice amDevce:(FBAMDevice *)amDevice
 {
   self = [super init];
   if (!self) {
@@ -26,7 +26,8 @@
   }
 
   _deviceOperator = operator;
-  _dvtDevice = device;
+  _dvtDevice = dvtDevice;
+  _amDevice = amDevice;
 
   return self;
 }

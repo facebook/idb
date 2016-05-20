@@ -10,12 +10,14 @@
 #import <FBDeviceControl/FBDevice.h>
 
 @class DVTAbstractiOSDevice;
+@class FBAMDevice;
 @protocol FBDeviceOperator;
 
 @interface FBDevice ()
 
 @property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
+@property (nonatomic, strong, readonly) FBAMDevice *amDevice;
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)operator device:(DVTAbstractiOSDevice *)device;
+- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)operator dvtDevice:(DVTAbstractiOSDevice *)dvtDevice amDevce:(FBAMDevice *)amDevice;
 
 @end

@@ -92,4 +92,9 @@
   return [FBWeakFramework appleConfigurationFrameworkWithRelativePath:@"Contents/Frameworks/ConfigurationProfile.framework" requiredClassNames:@[]];
 }
 
++ (instancetype)MobileDevice
+{
+  return [FBWeakFramework appleConfigurationFrameworkWithRelativePath:@"/System/Library/PrivateFrameworks/MobileDevice.framework" requiredClassNames:@[]];
+}
+
 @end

@@ -24,6 +24,13 @@
   XCTAssertNil(error);
   XCTAssertNotNil(deviceSet);
   XCTAssertNotNil(deviceSet.allDevices);
+  XCTAssertNotNil([deviceSet.allDevices valueForKey:@"description"]);
+}
+
+- (void)testReadsFromMobileDevice
+{
+  NSArray<FBAMDevice *> *devices = [FBAMDevice allDevices];
+  XCTAssertNotNil(devices);
 }
 
 @end

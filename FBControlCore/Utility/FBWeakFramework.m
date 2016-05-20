@@ -69,6 +69,16 @@
     requiredFrameworks:@[]];
 }
 
++ (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
+{
+  return [[FBWeakFramework alloc]
+    initWithBasePath:absolutePath
+    relativePath:@""
+    fallbackDirectories:@[]
+    requiredClassNames:@[]
+    requiredFrameworks:@[]];
+}
+
 - (instancetype)initWithBasePath:(NSString *)basePath relativePath:(NSString *)relativePath fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks
 {
   self = [super init];
