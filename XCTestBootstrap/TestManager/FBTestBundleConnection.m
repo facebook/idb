@@ -221,6 +221,27 @@
     protocolVersion:@(FBProtocolVersion)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error){
     if (error || !version) {
+      [self.logger logFormat:@"Client Daemon Interface failed, trying legacy format."];
+      [self setupLegacyProtocolConnectionViaRemoteProxy:remoteProxy proxyChannel:proxyChannel bundlePath:bundlePath];
+      return;
+    }
+
+    [self.logger logFormat:@"testmanagerd handled session request."];
+    [proxyChannel cancel];
+  }];
+  return receipt;
+}
+
+- (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy
+                                                               proxyChannel:(DTXProxyChannel *)proxyChannel
+                                                                 bundlePath:(NSString *)bundlePath
+{
+  DTXRemoteInvocationReceipt *receipt = [remoteProxy
+    _IDE_beginSessionWithIdentifier:self.sessionIdentifier
+    forClient:self.class.clientProcessUniqueIdentifier
+    atPath:bundlePath];
+  [receipt handleCompletion:^(NSNumber *version, NSError *error) {
+    if (error) {
       [self failWithError:[[XCTestBootstrapError describe:@"Client Daemon Interface failed"] causedBy:error]];
       return;
     }
