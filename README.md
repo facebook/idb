@@ -75,13 +75,15 @@ To launch Safari on an iPhone 5, you can use the following:
     FBSimulatorAllocationOptions allocationOptions = FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsEraseOnAllocate;
     
     // Obtain a Simulator from the Principal Class. If anything goes wrong, nil will be returned along with a descriptive error.
-    FBSimulator *simulator = [control obtainSimulatorWithConfiguration:simulatorConfiguration options:allocationOptions error:&error];
+    FBSimulator *simulator = [control.pool allocateSimulatorWithConfiguration:simulatorConfiguration options:allocationOptions error:&error];
+
     
     // Build a Launch Configuration.
     FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
       configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:&error]
       arguments:@[]
-      environment:@{}];
+      environment:@{}
+      options:0];
     
     // System Applications can be launched directly since they are already 'installed' in the Simulator.
     // Applications provided by the user must be installed after Booting with `installApplication:`.
