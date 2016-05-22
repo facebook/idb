@@ -69,7 +69,7 @@ extern NSString *const FBSimulatorTestManagerDidConnectNotification;
 /**
  Notification that is fired when Test Manager Disconnects.
  */
-extern NSString *const FBSimulatorTestManagerDidDiconnectNotification;
+extern NSString *const FBSimulatorTestManagerDidDisconnectNotification;
 
 /**
  Notification that is fired when diagnostic information is gained.
