@@ -695,7 +695,7 @@ struct FBSimulatorLaunchConfigurationParser {
         }
         var configuration = FBSimulatorLaunchConfiguration.defaultConfiguration().copy() as! FBSimulatorLaunchConfiguration
         if let locale = locale {
-          configuration = configuration.withLocale(locale)
+          configuration = configuration.withLocalizationOverride(FBLocalizationOverride.withLocale(locale))
         }
         if let scale = scale {
           configuration = configuration.withScale(scale)

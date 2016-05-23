@@ -11,8 +11,8 @@
 
 @interface FBProcessLaunchConfiguration ()
 
-@property (nonatomic, copy, readwrite) NSArray *arguments;
-@property (nonatomic, copy, readwrite) NSDictionary *environment;
+@property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
+@property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
 @property (nonatomic, assign, readwrite) FBProcessLaunchOptions options;
 
 @end

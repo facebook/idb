@@ -54,7 +54,7 @@ struct SimulatorActionRunner : Runner {
         interaction.authorizeLocationSettings(bundleIDs)
       }
     case .Boot(let maybeLaunchConfiguration):
-      let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
+      let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()
       return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(launchConfiguration)) { interaction in
         interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
       }

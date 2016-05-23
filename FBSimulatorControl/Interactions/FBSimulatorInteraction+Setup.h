@@ -27,12 +27,12 @@
 - (instancetype)prepareForLaunch:(FBSimulatorLaunchConfiguration *)configuration;
 
 /**
- Sets the locale for the simulator.
+ Overrides the Global Localization of the Simulator.
 
- @param locale the locale to set.
+ @param localizationOverride the Localization Override to set.
  @return the reciever, for chaining.
  */
-- (instancetype)setLocale:(NSLocale *)locale;
+- (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
 
 /**
  Authorizes the Location Settings for the provided bundleIDs

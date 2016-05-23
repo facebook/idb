@@ -93,7 +93,7 @@
 {
   NSArray<FBSimulatorLaunchConfiguration *> *values = @[
     [[[FBSimulatorLaunchConfiguration
-      withLocaleNamed:@"en_US"]
+      withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
       withOptions:FBSimulatorLaunchOptionsShowDebugWindow]
       scale75Percent],
     [[FBSimulatorLaunchConfiguration
