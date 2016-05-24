@@ -208,8 +208,12 @@
       return [self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error];
     }
   }
-  // If failed to load missing framework, fail
-  return NO;
+
+  // Uncategorizable Error, return the original error
+  return [[[FBControlCoreError
+    describeFormat:@"An error occured loading the framework for bundle %@", bundle.bundlePath]
+    causedBy:innerError]
+    failBool:error];
 }
 
 /**
