@@ -20,11 +20,13 @@
  An Enumeration of Mutually-Exclusive Test Daemon States.
  */
 typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
-  FBTestDaemonConnectionStateInactive = 0,
+  FBTestDaemonConnectionStateNotConnected = 0,
   FBTestDaemonConnectionStateConnecting = 1,
   FBTestDaemonConnectionStateReadyToExecuteTestPlan = 2,
-  FBTestDaemonConnectionStateExecutingTestPlan =3,
-  FBTestDaemonConnectionStateFinished = 4,
+  FBTestDaemonConnectionStateRunningTestPlan = 3,
+  FBTestDaemonConnectionStateEndedTestPlan = 4,
+  FBTestDaemonConnectionStateFinishedSuccessfully = 5,
+  FBTestDaemonConnectionStateFinishedInError = 6,
 };
 
 NS_ASSUME_NONNULL_BEGIN
@@ -59,6 +61,24 @@ NS_ASSUME_NONNULL_BEGIN
  Disconnects any active connection.
  */
 - (void)disconnect;
+
+/**
+ Notifies the Connection that the Test Plan has started.
+ Test Events will be delivered asynchronously to the interface.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)notifyTestPlanStartedWithError:(NSError **)error;
+
+/**
+ Notifies the Connection that the Test Plan has ended.
+ Test Events will be delivered asynchronously to the interface.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)notifyTestPlanEndedWithError:(NSError **)error;
 
 /**
  Properties from the Constructor.

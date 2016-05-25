@@ -116,7 +116,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (BOOL)executeTestPlanWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.bundleConnection startTestPlanWithError:error];
+  return [self.bundleConnection startTestPlanWithError:error] && [self.daemonConnection notifyTestPlanStartedWithError:error];
 }
 
 - (void)disconnectTestRunnerAndTestManagerDaemon
@@ -258,6 +258,12 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   return nil;
 }
 
+- (id)_XCT_didFinishExecutingTestPlan
+{
+  [self.daemonConnection notifyTestPlanEndedWithError:nil];
+  return nil;
+}
+
 - (id)_XCT_testBundleReadyWithProtocolVersion:(NSNumber *)protocolVersion minimumVersion:(NSNumber *)minimumVersion
 {
   return nil;
@@ -281,11 +287,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 // ?
 - (id)_XCT_logMessage:(NSString *)message
-{
-  return nil;
-}
-
-- (id)_XCT_didFinishExecutingTestPlan
 {
   return nil;
 }
