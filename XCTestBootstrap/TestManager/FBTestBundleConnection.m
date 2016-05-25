@@ -233,7 +233,7 @@
   if (![NSBundle.mainBundle.bundlePath.pathExtension isEqualToString:@"app"]) {
     bundlePath = NSBundle.mainBundle.executablePath;
   }
-  [self.logger logFormat:@"Starting test session with ID %@", self.sessionIdentifier];
+  [self.logger logFormat:@"Starting test session with ID %@", self.sessionIdentifier.UUIDString];
 
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
     _IDE_initiateSessionWithIdentifier:self.sessionIdentifier
@@ -247,7 +247,7 @@
       return;
     }
 
-    [self.logger logFormat:@"testmanagerd handled session request."];
+    [self.logger logFormat:@"testmanagerd handled session request using protcol version %ld.", (long)FBProtocolVersion];
     [proxyChannel cancel];
   }];
   return receipt;
@@ -265,7 +265,7 @@
       return;
     }
 
-    [self.logger logFormat:@"testmanagerd handled session request."];
+    [self.logger logFormat:@"testmanagerd handled session request using legacy protocol."];
     [proxyChannel cancel];
   }];
   return receipt;

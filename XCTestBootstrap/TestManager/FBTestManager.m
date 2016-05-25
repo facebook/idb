@@ -69,7 +69,7 @@
 {
   return [NSString stringWithFormat:
     @"SessionID: %@ | Testrunner PID: %d",
-    self.mediator.sessionIdentifier,
+    self.mediator.sessionIdentifier.UUIDString,
     self.mediator.testRunnerPID
   ];
 }
