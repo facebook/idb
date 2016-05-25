@@ -24,8 +24,9 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   FBTestBundleConnectionStateTestBundleReady = 2,
   FBTestBundleConnectionStateAwaitingStartOfTestPlan = 3,
   FBTestBundleConnectionStateRunningTestPlan = 4,
-  FBTestBundleConnectionStateFinishedTestPlan = 5,
-  FBTestBundleConnectionStateEnded = 6,
+  FBTestBundleConnectionStateEndedTestPlan = 5,
+  FBTestBundleConnectionStateFinishedSuccessfully = 6,
+  FBTestBundleConnectionStateFinishedInError = 7,
 };
 
 NS_ASSUME_NONNULL_BEGIN
