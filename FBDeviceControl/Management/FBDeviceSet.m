@@ -8,6 +8,7 @@
  */
 
 #import "FBDeviceSet.h"
+#import "FBDeviceSet+Private.h"
 
 #import <DTDeviceKitBase/DTDKRemoteDeviceConsoleController.h>
 #import <DTDeviceKitBase/DTDKRemoteDeviceToken.h>
@@ -30,13 +31,6 @@
 #import "FBAMDevice.h"
 
 static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
-
-@interface FBDeviceSet ()
-
-@property (nonatomic, strong, readonly) DVTDeviceManager *deviceManager;
-@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
-
-@end
 
 @implementation FBDeviceSet
 
@@ -82,35 +76,23 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
     firstObject];
 }
 
+#pragma mark Private
+
+- (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
+{
+  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[NSClassFromString(@"DVTiOSDevice") alliOSDevices]];
+  return dvtDevices[udid];
+}
+
 #pragma mark Properties
 
 - (NSArray<FBDevice *> *)allDevices
 {
-  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[NSClassFromString(@"DVTiOSDevice") alliOSDevices]];
   NSDictionary<NSString *, FBAMDevice *> *amDevices = [FBDeviceSet keyAMDevicesByUDID:[FBAMDevice allDevices]];
-  if (![[NSSet setWithArray:dvtDevices.allKeys] isEqualToSet:[NSSet setWithArray:amDevices.allKeys]]) {
-    [self.logger.error logFormat:
-      @"DVT and MobileDevice Device UDIDs are inconsistent: DVT %@ MobileDevice %@",
-      [FBCollectionInformation oneLineDescriptionFromArray:dvtDevices.allKeys],
-      [FBCollectionInformation oneLineDescriptionFromArray:amDevices.allKeys]
-    ];
-    return @[];
-  }
 
   NSMutableArray<FBDevice *> *devices = [NSMutableArray array];
-  for (DVTiOSDevice *iOSDevice in dvtDevices.allValues) {
-    FBiOSDeviceOperator *operator = [[FBiOSDeviceOperator alloc] initWithiOSDevice:iOSDevice];
-    FBAMDevice *amDevice = amDevices[iOSDevice.identifier];
-    if (!amDevice) {
-      [self.logger.error logFormat:
-        @"Expected to be able to find an AMDevice for %@. Available Devices %@",
-        iOSDevice.identifier,
-        [FBCollectionInformation oneLineDescriptionFromArray:amDevices.allKeys]
-      ];
-      continue;
-    }
-
-    FBDevice *device = [[FBDevice alloc] initWithDeviceOperator:operator dvtDevice:iOSDevice amDevce:amDevice];
+  for (FBAMDevice *amDevice in amDevices.allValues) {
+    FBDevice *device = [[FBDevice alloc] initWithSet:self amDevice:amDevice logger:self.logger];
     [devices addObject:device];
   }
   return [devices copy];

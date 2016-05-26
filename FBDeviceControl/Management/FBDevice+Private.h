@@ -9,15 +9,15 @@
 
 #import <FBDeviceControl/FBDevice.h>
 
-@class DVTAbstractiOSDevice;
+@class DVTiOSDevice;
 @class FBAMDevice;
 @protocol FBDeviceOperator;
 
 @interface FBDevice ()
 
-@property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
+@property (nonatomic, strong, readonly) DVTiOSDevice *dvtDevice;
 @property (nonatomic, strong, readonly) FBAMDevice *amDevice;
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)operator dvtDevice:(DVTAbstractiOSDevice *)dvtDevice amDevce:(FBAMDevice *)amDevice;
+- (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;
 
 @end

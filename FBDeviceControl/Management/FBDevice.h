@@ -11,9 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+@class FBDeviceSet;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
 @protocol FBDeviceOperator;
+@protocol FBControlCoreLogger;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,6 +23,16 @@ NS_ASSUME_NONNULL_BEGIN
  Class that wraps DVTAbstractiOSDevice and it's device operator that can perform actions on it.
  */
 @interface FBDevice : NSObject <FBiOSTarget>
+
+/**
+ The Device Set to which the Device Belongs.
+ */
+@property (nonatomic, weak, readonly) FBDeviceSet *set;
+
+/**
+ The Logger to Log events with.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
  Device operator used to control device

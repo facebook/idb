@@ -10,24 +10,31 @@
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
 
-#import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
+#import <IDEiOSSupportCore/DVTiOSDevice.h>
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBDeviceSet+Private.h"
+#import "FBAMDevice.h"
+#import "FBiOSDeviceOperator+Private.h"
+
 @implementation FBDevice
+
+@synthesize deviceOperator = _deviceOperator;
+@synthesize dvtDevice = _dvtDevice;
 
 #pragma mark Initializers
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)operator dvtDevice:(DVTAbstractiOSDevice *)dvtDevice amDevce:(FBAMDevice *)amDevice
+- (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)amDevice logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _deviceOperator = operator;
-  _dvtDevice = dvtDevice;
+  _set = set;
   _amDevice = amDevice;
+  _logger = logger;
 
   return self;
 }
@@ -36,14 +43,30 @@
 
 - (NSString *)udid
 {
-  return self.dvtDevice.identifier;
+  return self.amDevice.udid;
 }
 
 #pragma mark Properties
 
+- (DVTiOSDevice *)dvtDevice
+{
+  if (_dvtDevice == nil) {
+    _dvtDevice = [self.set dvtDeviceWithUDID:self.udid];
+  }
+  return _dvtDevice;
+}
+
+- (id<FBDeviceOperator>)deviceOperator
+{
+  if (_deviceOperator == nil) {
+    _deviceOperator = [[FBiOSDeviceOperator alloc] initWithiOSDevice:self.dvtDevice];
+  }
+  return _deviceOperator;
+}
+
 - (NSString *)name
 {
-  return self.dvtDevice.name;
+  return self.amDevice.deviceName;
 }
 
 - (NSString *)modelName
