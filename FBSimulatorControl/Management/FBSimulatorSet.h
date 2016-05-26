@@ -27,6 +27,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorSet : NSObject <FBDebugDescribeable, FBJSONSerializable>
 
+#pragma mark Intializers
+
 /**
  Creates and returns an FBSimulatorSet, performing the preconditions defined in the configuration.
 
@@ -36,6 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
  @returns a new FBSimulatorPool.
  */
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+#pragma mark Destructive Methods
 
 /**
  Creates and returns a FBSimulator fbased on a configuration.

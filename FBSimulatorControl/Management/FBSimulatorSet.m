@@ -21,6 +21,7 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorEraseStrategy.h"
+#import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
@@ -236,39 +237,7 @@
       failBool:error];
   }
 
-  // Kill the Simulators before deleting them.
-  NSError *innerError = nil;
-  if (![self.simulatorTerminationStrategy killSimulators:@[simulator] error:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-
-  // Delete the Device from the Underlying DeviceSet
-  NSString *udid = simulator.udid;
-  if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
-    return [[[[[FBSimulatorError
-      describeFormat:@"Failed to Delete simulator %@", simulator]
-      causedBy:innerError]
-      inSimulator:simulator]
-      logger:self.logger]
-      failBool:error];
-  }
-
-  // Deleting the device from the set can still leave it around for a few seconds.
-  // This could race with methods that may reallocate the newly-deleted device
-  // So we should wait for the device to no longer be present in the underlying set.
-  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout untilTrue:^ BOOL {
-    NSOrderedSet *udidSet = [self.allSimulators valueForKey:@"udid"];
-    return ![udidSet containsObject:udid];
-  }];
-  if (!wasRemovedFromDeviceSet) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Simulator with UDID %@ should have been removed from set but wasn't.", udid]
-      inSimulator:simulator]
-      logger:self.logger]
-      failBool:error];
-  }
-
-  return YES;
+  return [self.deletionStrategy deleteSimulators:@[simulator] error:error] != nil;
 }
 
 - (nullable NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
@@ -386,6 +355,11 @@
 - (FBSimulatorEraseStrategy *)eraseStrategy
 {
   return [FBSimulatorEraseStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
+}
+
+- (FBSimulatorDeletionStrategy *)deletionStrategy
+{
+  return [FBSimulatorDeletionStrategy strategyFromSet:self logger:self.logger];
 }
 
 @end
