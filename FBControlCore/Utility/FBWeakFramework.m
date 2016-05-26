@@ -61,12 +61,17 @@
 
 + (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
 {
+  return [self appleConfigurationFrameworkWithRelativePath:relativePath requiredClassNames:requiredClassNames requiredFrameworks:@[]];
+}
+
++ (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks
+{
   return [[FBWeakFramework alloc]
     initWithBasePath:FBControlCoreGlobalConfiguration.appleConfiguratorApplicationPath
     relativePath:relativePath
     fallbackDirectories:@[]
-    requiredClassNames:@[]
-    requiredFrameworks:@[]];
+    requiredClassNames:requiredClassNames
+    requiredFrameworks:requiredFrameworks];
 }
 
 + (instancetype)frameworkWithPath:(NSString *)absolutePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames
@@ -91,7 +96,7 @@
   _fallbackDirectories = fallbackDirectories;
   _requiredClassNames = requiredClassNames;
   _requiredFrameworks = requiredFrameworks;
-  _name = relativePath.lastPathComponent.stringByDeletingPathExtension;
+  _name = [basePath stringByAppendingPathComponent:relativePath].lastPathComponent.stringByDeletingPathExtension;
 
   return self;
 }
@@ -258,8 +263,9 @@
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"Name %@ | relativePath %@ | required classes %@ | required frameworks [%@]",
+    @"Name %@ | Base Path %@ | Relative Path %@ | Required Classes %@ | Required Frameworks [%@]",
     self.name,
+    self.basePath,
     self.relativePath,
     self.requiredClassNames,
     self.requiredFrameworks

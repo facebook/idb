@@ -46,13 +46,23 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks;
 
 /**
- Creates and returns FBWeakFramework relative to the 'Apple Configuration' App with the given relativePath, list of checked class names and list of pre-loaded frameworks.
+ Creates and returns FBWeakFramework relative to the 'Apple Configuration' App with the given relativePath, list of checked class names.
 
  @param relativePath Developer Directory relative path to the framework.
  @param requiredClassNames list of class names used to determin if framework load was successful
  @return a Weak Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
  */
 + (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames;
+
+/**
+ Creates and returns FBWeakFramework relative to the 'Apple Configuration' App with the given relativePath, list of checked class names and list of pre-loaded frameworks.
+
+ @param relativePath Developer Directory relative path to the framework.
+ @param requiredClassNames list of class names used to determin if framework load was successful
+ @param requiredFrameworks list of frameworks, that should be loaded before this framework loads
+ @return a Weak Framework with given relativePath, list of checked class names and list of pre-loaded frameworks
+ */
++ (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks;
 
 /**
   Creates and returns FBWeakFramework with the provided absolute path

@@ -84,7 +84,12 @@
 
 + (instancetype)ConfigurationUtilityKit
 {
-  return [FBWeakFramework appleConfigurationFrameworkWithRelativePath:@"Contents/Frameworks/ConfigurationUtilityKit.framework" requiredClassNames:@[@"MDKMobileDevice"]];
+  return [FBWeakFramework
+    appleConfigurationFrameworkWithRelativePath:@"Contents/Frameworks/ConfigurationUtilityKit.framework"
+    requiredClassNames:@[@"MDKMobileDevice"]
+    requiredFrameworks:@[
+      FBWeakFramework.ConfigurationProfile,
+    ]];
 }
 
 + (instancetype)ConfigurationProfile
@@ -94,7 +99,7 @@
 
 + (instancetype)MobileDevice
 {
-  return [FBWeakFramework appleConfigurationFrameworkWithRelativePath:@"/System/Library/PrivateFrameworks/MobileDevice.framework" requiredClassNames:@[]];
+  return [FBWeakFramework frameworkWithPath:@"/System/Library/PrivateFrameworks/MobileDevice.framework" requiredClassNames:@[]];
 }
 
 @end
