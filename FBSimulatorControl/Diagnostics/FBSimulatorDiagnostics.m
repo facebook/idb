@@ -58,7 +58,16 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return self;
 }
 
-#pragma mark Accessors
+#pragma mark Paths
+
+- (NSString *)coreSimulatorLogsDirectory
+{
+  return [[NSHomeDirectory()
+    stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
+    stringByAppendingPathComponent:self.simulator.udid];
+}
+
+#pragma mark Diagnostic Accessors
 
 - (FBDiagnostic *)base
 {
@@ -197,7 +206,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [logs copy];
 }
 
-- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback
+- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback
 {
   NSString *directory = nil;
   if (bundleID) {
@@ -359,10 +368,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (NSString *)aslPath
 {
-  return [[[NSHomeDirectory()
-    stringByAppendingPathComponent:@"Library/Logs/CoreSimulator"]
-    stringByAppendingPathComponent:self.simulator.udid]
-    stringByAppendingPathComponent:@"asl"];
+  return [self.coreSimulatorLogsDirectory stringByAppendingPathComponent:@"asl"];
 }
 
 + (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension
