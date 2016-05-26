@@ -38,30 +38,42 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 
 + (void)initialize
 {
-  [FBDeviceControlFrameworkLoader initializeFrameworks];
+  [FBDeviceControlFrameworkLoader initializeEssentialFrameworks];
+}
+
+- (void)primeDeviceManager
+{
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    // It seems that searching for a device that does not exist will cause all available devices/simulators etc. to be cached.
+    // There's probably a better way of fetching all the available devices, but this appears to work well enough.
+    // This means that all the cached available devices can then be found.
+    [FBDeviceControlFrameworkLoader initializeXCodeFrameworks];
+
+    DVTDeviceManager *deviceManager = [NSClassFromString(@"DVTDeviceManager") defaultDeviceManager];
+    [self.logger.debug logFormat:@"Quering device manager for %f seconds to cache devices", FBDeviceSetDeviceManagerTickleTime];
+    [deviceManager searchForDevicesWithType:nil options:@{@"id" : @"I_DONT_EXIST_AT_ALL"} timeout:FBDeviceSetDeviceManagerTickleTime error:nil];
+    [self.logger.debug log:@"Finished querying devices to cache them"];
+  });
 }
 
 + (instancetype)defaultSetWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  DVTDeviceManager *deviceManager = [NSClassFromString(@"DVTDeviceManager") defaultDeviceManager];
-  // It seems that searching for a device that does not exist will cause all available devices/simulators etc. to be cached.
-  // There's probably a better way of fetching all the available devices, but this appears to work well enough.
-  // This means that all the cached available devices can then be found.
-  [logger.debug logFormat:@"Quering device manager for %f seconds to cache devices", FBDeviceSetDeviceManagerTickleTime];
-  [deviceManager searchForDevicesWithType:nil options:@{@"id" : @"I_DONT_EXIST_AT_ALL"} timeout:FBDeviceSetDeviceManagerTickleTime error:nil];
-  [logger.debug log:@"Finished querying devices to cache them"];
-
-  return [[FBDeviceSet alloc] initWithDeviceSet:deviceManager logger:logger];
+  static dispatch_once_t onceToken;
+  static FBDeviceSet *deviceSet = nil;
+  dispatch_once(&onceToken, ^{
+    deviceSet = [[FBDeviceSet alloc] initWithLogger:logger];
+  });
+  return deviceSet;
 }
 
-- (instancetype)initWithDeviceSet:(DVTDeviceManager *)deviceManager logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _deviceManager = deviceManager;
   _logger = logger;
 
   return self;
@@ -80,6 +92,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 
 - (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
 {
+  [self primeDeviceManager];
   NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[NSClassFromString(@"DVTiOSDevice") alliOSDevices]];
   return dvtDevices[udid];
 }

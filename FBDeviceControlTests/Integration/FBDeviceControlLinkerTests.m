@@ -14,7 +14,8 @@
 
 - (void)testLinksPrivateFrameworks
 {
-  [FBDeviceControlFrameworkLoader initializeFrameworks];
+  [FBDeviceControlFrameworkLoader initializeEssentialFrameworks];
+  [FBDeviceControlFrameworkLoader initializeXCodeFrameworks];
 }
 
 - (void)testConstructsDeviceSet

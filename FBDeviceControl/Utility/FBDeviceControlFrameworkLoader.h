@@ -15,8 +15,13 @@
 @interface FBDeviceControlFrameworkLoader : NSObject
 
 /**
- Loads the Relevant Private Frameworks for ensuring the proper operation of FBDeviceControl.
+ Loads the Relevant Private Frameworks for ensuring the essential operation of FBDeviceControl.
  */
-+ (void)initializeFrameworks;
++ (void)initializeEssentialFrameworks;
+
+/**
+ Loads the Relevant Private Frameworks for ensuring the essential operation of FBDeviceControl.
+ */
++ (void)initializeXCodeFrameworks;
 
 @end

@@ -45,8 +45,6 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 
 - (instancetype)initWithiOSDevice:(DVTiOSDevice *)iosDevice
 {
-  [FBDeviceControlFrameworkLoader initializeFrameworks];
-
   self = [super init];
   if (!self) {
     return nil;
