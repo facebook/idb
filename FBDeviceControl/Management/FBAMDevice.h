@@ -22,7 +22,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSArray<FBAMDevice *> *)allDevices;
 
-@property (nonatomic, nullable, copy, readonly) NSString *name;
+/**
+ The Unique Identifier of the Device.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *udid;
+
+/**
+ The User-Defined name of the Device, e.g. "Ada's iPhone".
+ */
 @property (nonatomic, nullable, copy, readonly) NSString *deviceName;
 
 @end

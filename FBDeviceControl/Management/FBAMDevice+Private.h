@@ -11,11 +11,26 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Getting a full Device List
+CF_RETURNS_RETAINED CFArrayRef FBAMDCreateDeviceList(void);
+
+// Managing a Connection to a Device
+int FBAMDeviceConnect(CFTypeRef device);
+int FBAMDeviceDisconnect(CFTypeRef device);
+int FBAMDeviceIsPaired(CFTypeRef device);
+int FBAMDeviceValidatePairing(CFTypeRef device);
+int FBAMDeviceStartSession(CFTypeRef device);
+int FBAMDeviceStopSession(CFTypeRef device);
+
+// Getting Properties of a Device.
+CFStringRef FBAMDeviceGetName(CFTypeRef device);
+CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
+
 @interface FBAMDevice ()
 
 @property (nonatomic, assign, readonly) CFTypeRef amDevice;
 
-@property (nonatomic, nullable, copy, readwrite) NSString *name;
+@property (nonatomic, nullable, copy, readwrite) NSString *udid;
 @property (nonatomic, nullable, copy, readwrite) NSString *deviceName;
 
 @end

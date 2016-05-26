@@ -13,7 +13,6 @@
 #include <dlfcn.h>
 
 static const char *MobileDeviceDylibPath = "/System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/MobileDevice";
-
 static void *FBGetMobileDeviceFunction(const char *name)
 {
   void *handle = dlopen(MobileDeviceDylibPath, RTLD_LAZY);
@@ -23,31 +22,55 @@ static void *FBGetMobileDeviceFunction(const char *name)
   return function;
 }
 
-static int FBAMDConnect(CFTypeRef device)
+int FBAMDeviceConnect(CFTypeRef device)
 {
   int (*Connect) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceConnect");
   return Connect(device);
 }
 
-static int FBAMDDisconnect(CFTypeRef device)
+int FBAMDeviceDisconnect(CFTypeRef device)
 {
   int (*Disconnect) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceDisconnect");
   return Disconnect(device);
 }
 
-static CFArrayRef FBAMDCreateDeviceList(void)
+int FBAMDeviceIsPaired(CFTypeRef device)
+{
+  int (*IsPaired) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceIsPaired");
+  return IsPaired(device);
+}
+
+int FBAMDeviceValidatePairing(CFTypeRef device)
+{
+  int (*ValidatePairing) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceValidatePairing");
+  return ValidatePairing(device);
+}
+
+int FBAMDeviceStartSession(CFTypeRef device)
+{
+  int (*StartSession) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceStartSession");
+  return StartSession(device);
+}
+
+int FBAMDeviceStopSession(CFTypeRef device)
+{
+  int (*StopSession) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceStopSession");
+  return StopSession(device);
+}
+
+CFArrayRef FBAMDCreateDeviceList(void)
 {
   CFArrayRef (*CreateDeviceList) (void) = FBGetMobileDeviceFunction("AMDCreateDeviceList");
   return CreateDeviceList();
 }
 
-static CFStringRef FBAMDGetName(CFTypeRef device)
+CFStringRef FBAMDeviceGetName(CFTypeRef device)
 {
   CFStringRef (*GetName) (CFTypeRef) = FBGetMobileDeviceFunction("AMDeviceGetName");
   return GetName(device);
 }
 
-static CFStringRef FBAMDGetValue(CFTypeRef device, CFStringRef domain, CFStringRef name)
+CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name)
 {
   CFStringRef (*CopyValue) (CFTypeRef, CFStringRef, CFStringRef) = FBGetMobileDeviceFunction("AMDeviceCopyValue");
   return CopyValue(device, domain, name);
@@ -93,14 +116,25 @@ static CFStringRef FBAMDGetValue(CFTypeRef device, CFStringRef domain, CFStringR
 
 - (BOOL)cacheAllValues
 {
-  if (FBAMDConnect(_amDevice) != 0) {
+  if (FBAMDeviceConnect(_amDevice) != 0) {
+    return NO;
+  }
+  if (FBAMDeviceIsPaired(_amDevice) != 1) {
+    return NO;
+  }
+  if (FBAMDeviceValidatePairing(_amDevice) != 0) {
+    return NO;
+  }
+  if (FBAMDeviceStartSession(_amDevice) != 0) {
     return NO;
   }
 
-  self.name = (__bridge NSString *)(FBAMDGetName(_amDevice));
-  self.deviceName = (__bridge NSString *)(FBAMDGetValue(_amDevice, NULL, (__bridge CFStringRef) @"DeviceName"));
+  self.udid = (__bridge NSString *)(FBAMDeviceGetName(_amDevice));
+  self.deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, (__bridge CFStringRef) @"DeviceName"));
 
-  FBAMDDisconnect(_amDevice);
+  FBAMDeviceStopSession(_amDevice);
+  FBAMDeviceDisconnect(_amDevice);
+
   return YES;
 }
 
@@ -110,7 +144,7 @@ static CFStringRef FBAMDGetValue(CFTypeRef device, CFStringRef domain, CFStringR
 {
   return [NSString stringWithFormat:
     @"AMDevice %@ | %@",
-    self.name,
+    self.udid,
     self.deviceName
   ];
 }

@@ -140,7 +140,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 {
   NSMutableDictionary<NSString *, FBAMDevice *> *dictionary = [NSMutableDictionary dictionary];
   for (FBAMDevice *device in devices) {
-    dictionary[device.name] = device;
+    dictionary[device.udid] = device;
   }
   return [dictionary copy];
 }
