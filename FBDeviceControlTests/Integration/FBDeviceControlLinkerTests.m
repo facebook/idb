@@ -12,6 +12,16 @@
 
 @implementation FBDeviceControlLinkerTests
 
++ (void)initialize
+{
+  if (!NSProcessInfo.processInfo.environment[FBControlCoreStderrLogging]) {
+    setenv(FBControlCoreStderrLogging.UTF8String, "YES", 1);
+  }
+  if (!NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging]) {
+    setenv(FBControlCoreDebugLogging.UTF8String, "NO", 1);
+  }
+}
+
 - (void)testLinksPrivateFrameworks
 {
   [FBDeviceControlFrameworkLoader initializeEssentialFrameworks];
