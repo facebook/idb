@@ -43,7 +43,7 @@
 
   FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet control:control logger:logger];
   if (![set performSetPreconditionsWithConfiguration:configuration Error:&innerError]) {
-    return [[[FBSimulatorError describe:@"Failed meet pool preconditions"] causedBy:innerError] fail:error];
+    return [[[FBSimulatorError describe:@"Failed meet simulator set preconditions"] causedBy:innerError] fail:error];
   }
   return set;
 }

@@ -17,6 +17,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorSet.h"
+#import "FBSimulatorDiagnostics.h"
 #import "FBSimulator+Helpers.h"
 
 @interface FBSimulatorDeletionStrategy ()
@@ -65,17 +66,16 @@
   // Keep the UDIDs around for confirmation
   NSSet *deletedDeviceUDIDs = [NSSet setWithArray:[simulators valueForKey:@"udid"]];
 
-  // Kill the Simulators before deleting them.
   for (FBSimulator *simulator in simulators) {
-    // Erasing the Simulator will also ensure that the Simulator is shutdown.
-    // In addition it will ensure that the files in ~/Library/Logs/CoreSimulator/<UDID>
-    // are also erased.
-    // Deleting a Simulator will not delete it's logs unless it is erased first.
-    [self.logger logFormat:@"Erasing Simulator, in preparation for deletion %@", simulator];
+    // Get the Log Directory ahead of time as the Simulator will dissapear on deletion.
+    NSString *coreSimulatorLogsDirectory = simulator.diagnostics.coreSimulatorLogsDirectory;
+
+    // Kill the Simulators before deleting them.
+    [self.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];
     NSError *innerError = nil;
-    if (![self.set eraseSimulator:simulator error:&innerError]) {
+    if (![self.set killSimulator:simulator error:&innerError]) {
       return [[[[[FBSimulatorError
-        describe:@"Failed to erase simulator."]
+        describe:@"Failed to kill simulator."]
         inSimulator:simulator]
         causedBy:innerError]
         logger:self.logger]
@@ -93,6 +93,20 @@
         fail:error];
     }
     [self.logger logFormat:@"Simulator Deleted Successfully %@", simulator];
+
+    // The Logfiles now need disposing of. 'erasing' a Simulator will cull the logfiles,
+    // but deleting a Simulator will not. There's no sense in letting this directory accumilate files.
+    if ([NSFileManager.defaultManager fileExistsAtPath:coreSimulatorLogsDirectory]) {
+      [self.logger logFormat:@"Deleting Log Directory at %@", coreSimulatorLogsDirectory];
+      if (![NSFileManager.defaultManager removeItemAtPath:coreSimulatorLogsDirectory error:&innerError]) {
+        return [[[[FBSimulatorError
+          describeFormat:@"Failed to delete Simulator Log Directory %@.", coreSimulatorLogsDirectory]
+          causedBy:innerError]
+          logger:self.logger]
+          fail:error];
+      }
+      [self.logger logFormat:@"Deleted Log Directory at %@", coreSimulatorLogsDirectory];
+    }
   }
 
   // Deleting the device from the set can still leave it around for a few seconds.
