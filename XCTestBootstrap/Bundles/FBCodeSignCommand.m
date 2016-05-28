@@ -23,6 +23,7 @@
 
 - (BOOL)signBundleAtPath:(NSString *)bundlePath
 {
+    NSAssert(self.identityName != nil, @"Can not have a codesign command without an identity name");
   NSTask *signTask = [NSTask new];
   signTask.launchPath = @"/usr/bin/codesign";
   signTask.arguments = @[@"-s", self.identityName, @"-f", bundlePath];

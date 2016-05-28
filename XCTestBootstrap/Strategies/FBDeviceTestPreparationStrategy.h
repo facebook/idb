@@ -8,6 +8,7 @@
  */
 
 #import <XCTestBootstrap/FBXCTestPreparationStrategy.h>
+#import "FBCodesignProvider.h"
 
 @protocol FBFileManager;
 
@@ -17,30 +18,41 @@
  */
 @interface FBDeviceTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 
-/**
- Creates and returns a strategy with given paramenters
+@property (nonatomic, strong) NSString *workingDirectory;
+@property (nonatomic, strong) NSString *pathToXcodePlatformDir;
 
- @param applicationPath path to tested application (.app)
+/**
+ Creates and returns a strategy with given parameters
+
+ @param applicationPath path to test runner application
  @param applicationDataPath path to application data bundle (.xcappdata)
  @param testBundlePath path to test bundle (.xctest)
+ @param pathToXcodePlatformDir directory which contains platform SDKs within Xcode.app
+ @param workingDirectory directory used to prepare all bundles
  @returns Prepared FBLocalDeviceTestRunStrategy
  */
-+ (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
-                        applicationDataPath:(NSString *)applicationDataPath
-                             testBundlePath:(NSString *)testBundlePath;
++ (instancetype)strategyWithTestRunnerApplicationPath:(NSString *)applicationPath
+                                  applicationDataPath:(NSString *)applicationDataPath
+                                       testBundlePath:(NSString *)testBundlePath
+                               pathToXcodePlatformDir:(NSString *)pathToXcodePlatformDir
+                                     workingDirectory:(NSString *)workingDirectory;
 
 /**
- Creates and returns a strategy with given paramenters
+ Creates and returns a strategy with given parameters
 
- @param applicationPath path to tested application (.app)
+ @param applicationPath path to test runner application
  @param applicationDataPath path to application data bundle (.xcappdata)
  @param testBundlePath path to test bundle (.xctest)
+ @param pathToXcodePlatformDir directory which contains platform SDKs within Xcode.app
  @param fileManager file manager used to prepare all bundles
+ @param workingDirectory directory used to prepare all bundles
  @returns Prepared FBLocalDeviceTestRunStrategy
  */
-+ (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
-                        applicationDataPath:(NSString *)applicationDataPath
-                             testBundlePath:(NSString *)testBundlePath
-                                fileManager:(id<FBFileManager>)fileManager;
++ (instancetype)strategyWithTestRunnerApplicationPath:(NSString *)applicationPath
+                                  applicationDataPath:(NSString *)applicationDataPath
+                                       testBundlePath:(NSString *)testBundlePath
+                               pathToXcodePlatformDir:(NSString *)pathToXcodePlatformDir
+                                     workingDirectory:(NSString *)workingDirectory
+                                          fileManager:(id<FBFileManager>)fileManager;
 
 @end

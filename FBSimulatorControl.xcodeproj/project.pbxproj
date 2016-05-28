@@ -10,6 +10,7 @@
 		2ACC1E9C1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 2ACC1E9A1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m */; };
 		2ACC1E9D1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h in Headers */ = {isa = PBXBuildFile; fileRef = 2ACC1E9B1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
+		89AFD2DC1CF858D8003D365E /* FBDeviceControl.h in Headers */ = {isa = PBXBuildFile; fileRef = AAC8B22D1CEC51120034A865 /* FBDeviceControl.h */; };
 		AA017F581BD7787300F45E9D /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
 		AA0333421CC54C59009567E3 /* FBApplicationLaunchStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0333401CC54C59009567E3 /* FBApplicationLaunchStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0333431CC54C59009567E3 /* FBApplicationLaunchStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0333411CC54C59009567E3 /* FBApplicationLaunchStrategy.m */; };
@@ -2058,6 +2059,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				89AFD2DC1CF858D8003D365E /* FBDeviceControl.h in Headers */,
 				EE4F0D901C91B82700608E89 /* XCTestBootstrap.h in Headers */,
 				AA7FA7B21CE075DD00614A61 /* FBXCTestManagerLoggingForwarder.h in Headers */,
 				AA1F2C8A1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.h in Headers */,
@@ -3777,6 +3779,7 @@
 				AAC8B23E1CEC51120034A865 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		AAC8B2431CEC51120034A865 /* Build configuration list for PBXNativeTarget "FBDeviceControlTests" */ = {
 			isa = XCConfigurationList;
@@ -3786,6 +3789,7 @@
 				AAC8B2411CEC51120034A865 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		EE4F0D471C91B7DB00608E89 /* Build configuration list for PBXNativeTarget "XCTestBootstrap" */ = {
 			isa = XCConfigurationList;

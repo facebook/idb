@@ -47,18 +47,33 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 
 @implementation FBiOSDeviceOperator
 
-+ (instancetype)operatorWithDeviceUDID:(NSString *)deviceUDID error:(NSError **)error
+@synthesize codesignProvider;
+
++ (instancetype)operatorWithDeviceUDID:(NSString *)deviceUDID
+                      codesignProvider:(id<FBCodesignProvider>)codesignProvider
+                                 error:(NSError **)error
 {
   [FBDeviceControlFrameworkLoader initializeFrameworks];
+    DVTDeviceManager *manager = [NSClassFromString(@"DVTDeviceManager") defaultDeviceManager];
 
-  DVTiOSDevice *device = [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] searchForDeviceWithType:nil options:@{@"id": deviceUDID} genericOnly:NO timeout:FBDeviceSearchTimeout error:error];
-  NSAssert([device isKindOfClass:DVTiOSDevice.class], @"UDID should point to iOS Device");
-  if (!device) {
-    return nil;
-  }
-  FBiOSDeviceOperator *op = [self.class new];
-  op.dvtDevice = device;
-  return op;
+    DVTiOSDevice *device = [manager searchForDeviceWithType:nil
+                                                    options:@{@"id": deviceUDID}
+                                                genericOnly:NO
+                                                    timeout:FBDeviceSearchTimeout
+                                                      error:error];
+    
+    NSAssert(device, @"No device found for UDID: %@", deviceUDID);
+    NSAssert([device isKindOfClass:NSClassFromString(@"DVTiOSDevice")],
+             @"UDID should point to iOS Device. Instead got: %@",
+             [device class]);
+    if (!device) {
+        return nil;
+    }
+    FBiOSDeviceOperator *op = [self.class new];
+    op.dvtDevice = device;
+    op.codesignProvider = codesignProvider;
+    NSLog(@"[%@ %@] => %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), op);
+    return op;
 }
 
 
@@ -300,7 +315,10 @@ static const float FBDeviceSearchTimeout = 3 * 60;
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
     DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
-    DTXMessage *message = [[DTXMessage alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
+      DTXMessage *message = [[NSClassFromString(@"DTXMessage") alloc] initWithSelector:aSelector
+                                                                              firstArg:arg
+                                                                   remainingObjectArgs:(__bridge NSString *)(*arguments)];
+      
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
         *error = responseMessage.error;

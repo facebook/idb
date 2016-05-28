@@ -8,6 +8,7 @@
  */
 
 #import <FBDeviceControl/FBDevice.h>
+#import <XCTestBootstrap/FBCodesignProvider.h>
 #import <FBDeviceControl/FBiOSDeviceOperator.h>
 #import <FBDeviceControl/FBDeviceControlError.h>
 #import <FBDeviceControl/FBDeviceControlFrameworkLoader.h>

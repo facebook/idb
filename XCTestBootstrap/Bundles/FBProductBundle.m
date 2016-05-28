@@ -120,9 +120,13 @@
     return nil;
   }
 
-  NSDictionary *infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Info.plist"]];
+    NSString *plistPath = [self.bundlePath stringByAppendingPathComponent:@"Info.plist"];
+  NSDictionary *infoPlist = [self.fileManager dictionaryWithPath:plistPath];
   if (!infoPlist) {
-    infoPlist = [self.fileManager dictionaryWithPath:[self.bundlePath stringByAppendingPathComponent:@"Contents/Info.plist"]];
+      plistPath = [self.bundlePath stringByAppendingPathComponent:@"Contents/Info.plist"];
+      NSLog(@"Couldn't find Info.plist at %@, checking %@", self.bundlePath, plistPath);
+    infoPlist = [self.fileManager dictionaryWithPath:plistPath];
+      NSLog(@"No Info.plist found");
   }
   FBProductBundle *bundleProduct = [self.productClass new];
   bundleProduct.path = targetBundlePath;

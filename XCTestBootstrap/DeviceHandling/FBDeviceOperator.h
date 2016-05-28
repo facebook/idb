@@ -8,7 +8,7 @@
  */
 
 #import <Foundation/Foundation.h>
-
+#import "FBCodesignProvider.h"
 #import <FBControlCore/FBControlCore.h>
 
 @class DVTAbstractiOSDevice;
@@ -24,6 +24,11 @@
  The Underlying DVT Device.
  */
 @property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
+
+/**
+ Devices require executables to be codesigned before they can be used.
+ */
+@property (nonatomic, strong) id<FBCodesignProvider> codesignProvider;
 
 /**
  Waits for device to become ready. (eg. unlocked, loaded, available console data)

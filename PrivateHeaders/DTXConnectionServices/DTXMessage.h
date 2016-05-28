@@ -6,8 +6,6 @@
 
 #import <Foundation/Foundation.h>
 
-@class NSDictionary, NSError;
-
 @interface DTXMessage : NSObject
 {
     int _messageType;

@@ -8,6 +8,7 @@
  */
 
 #import <XCTestBootstrap/FBDeviceOperator.h>
+#import "FBCodesignProvider.h"
 
 /**
  Operator that uses DVTFoundation and IDEiOSSupportCore.ideplugin to control DVTiOSDevice directly
@@ -21,6 +22,8 @@
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return operator if device is found, otherwise nil
  */
-+ (instancetype)operatorWithDeviceUDID:(NSString *)deviceUDID error:(NSError **)error;
++ (instancetype)operatorWithDeviceUDID:(NSString *)deviceUDID
+                      codesignProvider:(id<FBCodesignProvider>)codesignProvider
+                                 error:(NSError **)error;
 
 @end

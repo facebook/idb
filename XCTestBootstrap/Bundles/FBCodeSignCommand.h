@@ -17,12 +17,12 @@
 /**
  Identity used to codesign bundle
  */
-@property (nonatomic, copy, readonly) NSString *identityName;
+@property (nonatomic, copy, readonly) NSString *_Nonnull identityName;
 
 /**
  @param identityName identity used to codesign bundle
  @return code sign command that signs bundles with given identity
  */
-+ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName;
++ (instancetype _Nonnull)codeSignCommandWithIdentityName:(NSString *_Nonnull)identityName;
 
 @end
