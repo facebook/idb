@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessFetcher;
 @class FBSimulator;
-@class FBSimulatorControlConfiguration;
-
+@class FBSimulatorSet;
 @protocol FBControlCoreLogger;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  A class for terminating Simulators.
@@ -23,12 +23,10 @@
 /**
  Creates a FBSimulatorTerminationStrategy using the provided configuration.
 
- @param configuration the Configuration of FBSimulatorControl.
- @param processFetcher the process query object to use. If nil, one will be created
- @param logger the Logger to log all activities on.
+ @param set the Simulator Set to log.
  @return a configured FBSimulatorTerminationStrategy instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyForSet:(FBSimulatorSet *)set;
 
 /**
  Kills the provided Simulators.
@@ -40,7 +38,7 @@
  @param error an error out if any error occured.
  @return an array of the Simulators that this were killed if successful, nil otherwise.
  */
-- (NSArray *)killSimulators:(NSArray *)simulators error:(NSError **)error;
+- (nullable NSArray<FBSimulator *> *)killSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
 
 /**
  Kills all of the Simulators that are not launched by `FBSimulatorControl`.
@@ -57,3 +55,5 @@
 - (BOOL)killSpuriousSimulatorsWithError:(NSError **)error;
 
 @end
+
+NS_ASSUME_NONNULL_END

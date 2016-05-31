@@ -198,15 +198,6 @@
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@, cannot kill", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
   return [self.simulatorTerminationStrategy killSimulators:@[simulator] error:error] != nil;
 }
 
@@ -326,7 +317,7 @@
 
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
+  return [FBSimulatorTerminationStrategy strategyForSet:self];
 }
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy

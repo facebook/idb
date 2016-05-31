@@ -80,7 +80,7 @@
 
 - (FBSimulatorTerminationStrategy *)terminationStrategy
 {
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
+  return [FBSimulatorTerminationStrategy strategyForSet:self.set];
 }
 
 @end
