@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
-#pragma mark Destructive Methods
+#pragma mark Creation Methods
 
 /**
  Creates and returns a FBSimulator fbased on a configuration.
@@ -50,13 +50,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error;
 
+#pragma mark Creation Methods
+
 /**
  Kills a Simulator in the Set.
  The Set to which the Simulator belongs must be the reciever.
 
  @param simulator the Simulator to delete. Must not be nil.
  @param error an error out for any error that occurs.
- @return an array of the Simulators that this were killed if successful, nil otherwise.
+ @return YES if successful, nil otherwise.
  */
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
@@ -66,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param simulator the Simulator to erase. Must not be nil.
  @param error an error out for any error that occurs.
- @return an array of the Simulators that this were killed if successful, nil otherwise.
+ @return YES if successful, nil otherwise.
  */
 - (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
@@ -76,9 +78,39 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param simulator the Simulator to delete. Must not be nil.
  @param error an error out for any error that occurs.
- @return an array of the Simulators that this were killed if successful, nil otherwise.
+ @return YES if successful, nil otherwise.
  */
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error;
+
+/**
+ Kills all provided Simulators.
+ The Set to which the Simulators belong must be the reciever.
+
+ @param simulators the Simulators to kill. Must not be nil.
+ @param error an error out for any error that occurs.
+ @return an array of the Simulators passed to the reciever if successful, nil otherwise.
+ */
+- (nullable NSArray<FBSimulator *> *)killAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
+
+/**
+ Erases all provided Simulators.
+ The Set to which the Simulators belong must be the reciever.
+
+ @param simulators the Simulators to erase. Must not be nil.
+ @param error an error out for any error that occurs.
+ @return an array of the Simulators passed to the reciever if successful, nil otherwise.
+ */
+- (nullable NSArray<FBSimulator *> *)eraseAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
+
+/**
+ Erases all provided Simulators.
+ The Set to which the Simulators belong must be the reciever.
+
+ @param simulators the Simulators to delete. Must not be nil.
+ @param error an error out for any error that occurs.
+ @return an array of the UDIDs of the Simulators passed to the reciever if successful, nil otherwise.
+ */
+- (nullable NSArray<NSString *> *)deleteAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
 
 /**
  Kills all of the Simulators that belong to the reciever.

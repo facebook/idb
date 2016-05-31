@@ -213,6 +213,24 @@
   return [self.deletionStrategy deleteSimulators:@[simulator] error:error] != nil;
 }
 
+- (nullable NSArray<FBSimulator *> *)killAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+{
+  NSParameterAssert(simulators);
+  return [self.simulatorTerminationStrategy killSimulators:simulators error:error];
+}
+
+- (nullable NSArray<FBSimulator *> *)eraseAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+{
+  NSParameterAssert(simulators);
+  return [self.eraseStrategy eraseSimulators:simulators error:error];
+}
+
+- (nullable NSArray<NSString *> *)deleteAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+{
+  NSParameterAssert(simulators);
+  return [self.deletionStrategy deleteSimulators:simulators error:error];
+}
+
 - (nullable NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
 {
   return [self.simulatorTerminationStrategy killSimulators:self.allSimulators error:error];
