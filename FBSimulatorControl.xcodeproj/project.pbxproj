@@ -597,6 +597,7 @@
 		AA5DF6081CEA1EE400CF3876 /* NSURLSessionDelegate-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSURLSessionDelegate-Protocol.h"; sourceTree = "<group>"; };
 		AA5DF6091CEA1EE400CF3876 /* NSURLSessionTaskDelegate-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSURLSessionTaskDelegate-Protocol.h"; sourceTree = "<group>"; };
 		AA6198B71CDA664800749D3A /* SimpleTestTarget.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SimpleTestTarget.xctest; sourceTree = "<group>"; };
+		AA633F8B1CFD788F00A59C5F /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		AA682B181CEC9E8B009B6ECA /* FBDeviceSet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceSet.h; sourceTree = "<group>"; };
 		AA682B191CEC9E8B009B6ECA /* FBDeviceSet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceSet.m; sourceTree = "<group>"; };
 		AA682B1C1CECB025009B6ECA /* FBiOSDeviceOperator+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBiOSDeviceOperator+Private.h"; sourceTree = "<group>"; };
@@ -1238,6 +1239,14 @@
 			path = MobileDeviceKit;
 			sourceTree = "<group>";
 		};
+		AA633F8A1CFD788F00A59C5F /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				AA633F8B1CFD788F00A59C5F /* Shared.xcconfig */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
 		AA682B2D1CEDC422009B6ECA /* Management */ = {
 			isa = PBXGroup;
 			children = (
@@ -1654,6 +1663,7 @@
 		B401C979EFB6AC4600000000 /* mainGroup */ = {
 			isa = PBXGroup;
 			children = (
+				AA633F8A1CFD788F00A59C5F /* Configuration */,
 				AA48775A1BAC74DC007F7D23 /* PrivateHeaders */,
 				EEBD600F1C90628F00298A07 /* FBControlCore */,
 				EEBD601B1C90628F00298A07 /* FBControlCoreTests */,
