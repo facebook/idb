@@ -31,9 +31,9 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyFromSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
-  return [[self alloc] initWithSet:set logger:logger];
+  return [[self alloc] initWithSet:set logger:set.logger];
 }
 
 - (instancetype)initWithSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger

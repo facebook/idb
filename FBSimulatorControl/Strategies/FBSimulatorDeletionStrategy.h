@@ -23,10 +23,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a FBSimulatorEraseStrategy.
 
- @param logger the Logger to log all activities on.
+ @param set the Simulator Set to log.
  @return a configured FBSimulatorTerminationStrategy instance.
  */
-+ (instancetype)strategyFromSet:(FBSimulatorSet *)set logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)strategyForSet:(FBSimulatorSet *)set;
 
 /**
  Intelligently Deletes Simulators.

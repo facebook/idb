@@ -228,15 +228,6 @@
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
   return [self.deletionStrategy deleteSimulators:@[simulator] error:error] != nil;
 }
 
@@ -359,7 +350,7 @@
 
 - (FBSimulatorDeletionStrategy *)deletionStrategy
 {
-  return [FBSimulatorDeletionStrategy strategyFromSet:self logger:self.logger];
+  return [FBSimulatorDeletionStrategy strategyForSet:self];
 }
 
 @end
