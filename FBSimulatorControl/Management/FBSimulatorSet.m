@@ -213,15 +213,6 @@
 - (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@, cannot erase", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
   return [self.eraseStrategy eraseSimulators:@[simulator] error:error] != nil;
 }
 
@@ -345,7 +336,7 @@
 
 - (FBSimulatorEraseStrategy *)eraseStrategy
 {
-  return [FBSimulatorEraseStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
+  return [FBSimulatorEraseStrategy strategyForSet:self];
 }
 
 - (FBSimulatorDeletionStrategy *)deletionStrategy
