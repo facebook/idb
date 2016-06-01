@@ -30,9 +30,6 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
 
 @property (nonatomic, assign, readonly) CFTypeRef amDevice;
 
-@property (nonatomic, nullable, copy, readwrite) NSString *udid;
-@property (nonatomic, nullable, copy, readwrite) NSString *deviceName;
-
 @end
 
 NS_ASSUME_NONNULL_END

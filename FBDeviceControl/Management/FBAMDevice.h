@@ -32,6 +32,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, nullable, copy, readonly) NSString *deviceName;
 
+/**
+ The Device's 'Model Name'.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *modelName;
+
+/**
+ The Device's 'System Version'.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *systemVersion;
+
 @end
 
 NS_ASSUME_NONNULL_END

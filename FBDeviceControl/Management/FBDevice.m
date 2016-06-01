@@ -71,12 +71,12 @@
 
 - (NSString *)modelName
 {
-  return self.dvtDevice.modelName;
+  return self.amDevice.modelName;
 }
 
 - (NSString *)systemVersion
 {
-  return self.dvtDevice.softwareVersion;
+  return self.amDevice.systemVersion;
 }
 
 - (NSSet *)supportedArchitectures

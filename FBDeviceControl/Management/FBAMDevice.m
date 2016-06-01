@@ -129,8 +129,10 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
     return NO;
   }
 
-  self.udid = (__bridge NSString *)(FBAMDeviceGetName(_amDevice));
-  self.deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, (__bridge CFStringRef) @"DeviceName"));
+  _udid = (__bridge NSString *)(FBAMDeviceGetName(_amDevice));
+  _deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("DeviceName")));
+  _modelName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("DeviceClass")));
+  _systemVersion = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductVersion")));
 
   FBAMDeviceStopSession(_amDevice);
   FBAMDeviceDisconnect(_amDevice);
