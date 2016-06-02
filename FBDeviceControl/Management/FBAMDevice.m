@@ -10,6 +10,8 @@
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #include <dlfcn.h>
 
 static const char *MobileDeviceDylibPath = "/System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/MobileDevice";
@@ -133,9 +135,12 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
   _deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("DeviceName")));
   _modelName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("DeviceClass")));
   _systemVersion = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductVersion")));
+  _productType = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductType")));
 
   FBAMDeviceStopSession(_amDevice);
   FBAMDeviceDisconnect(_amDevice);
+
+  _configurationDevice = FBControlCoreConfigurationVariants.productTypeToDevice[_productType];
 
   return YES;
 }

@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+@protocol FBControlCoreConfiguration_Device;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -33,6 +35,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, readonly) NSString *deviceName;
 
 /**
+ The Product Type. e.g 'iPhone8,1'
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *productType;
+
+/**
  The Device's 'Model Name'.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *modelName;
@@ -41,6 +48,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Device's 'System Version'.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *systemVersion;
+
+/**
+ The FBControlCore Configuration Variant representing the Device.
+ */
+@property (nonatomic, nullable, copy, readonly) id<FBControlCoreConfiguration_Device> configurationDevice;
 
 @end
 
