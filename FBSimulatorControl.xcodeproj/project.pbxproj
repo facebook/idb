@@ -634,6 +634,7 @@
 		AA791BA51C63668C00AE49EB /* SimulatorBridge-Protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "SimulatorBridge-Protocol.h"; sourceTree = "<group>"; };
 		AA791BA61C63668C00AE49EB /* SimulatorBridge.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimulatorBridge.h; sourceTree = "<group>"; };
 		AA79A1CD1C77666000D5C685 /* FBSimulatorSet+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorSet+Private.h"; sourceTree = "<group>"; };
+		AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBDeviceControlTests.xcconfig; sourceTree = "<group>"; };
 		AA7FA7A81CDCF26E00614A61 /* FBTestManagerResultSummary.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerResultSummary.h; sourceTree = "<group>"; };
 		AA7FA7A91CDCF26E00614A61 /* FBTestManagerResultSummary.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerResultSummary.m; sourceTree = "<group>"; };
 		AA7FA7AC1CE0726900614A61 /* FBTestManagerProcessInteractionOperator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerProcessInteractionOperator.h; sourceTree = "<group>"; };
@@ -1538,8 +1539,8 @@
 		AAC8B22C1CEC51120034A865 /* FBDeviceControl */ = {
 			isa = PBXGroup;
 			children = (
-				AAC8B22D1CEC51120034A865 /* FBDeviceControl.h */,
 				AAC8B22F1CEC51120034A865 /* FBDeviceControl-Info.plist */,
+				AAC8B22D1CEC51120034A865 /* FBDeviceControl.h */,
 				AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */,
 				AAC8B2441CEC51520034A865 /* Management */,
 				AAC8B2491CEC51520034A865 /* TestManager */,
@@ -1551,8 +1552,9 @@
 		AAC8B2381CEC51120034A865 /* FBDeviceControlTests */ = {
 			isa = PBXGroup;
 			children = (
-				AAC8B2651CEC57F10034A865 /* Integration */,
 				AAC8B23B1CEC51120034A865 /* FBDeviceControlTests-Info.plist */,
+				AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */,
+				AAC8B2651CEC57F10034A865 /* Integration */,
 			);
 			path = FBDeviceControlTests;
 			sourceTree = "<group>";
@@ -2893,12 +2895,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				DEFINES_MODULE = YES;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
@@ -2906,12 +2904,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				DEFINES_MODULE = YES;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Profile;
 		};
@@ -2919,48 +2913,32 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				DEFINES_MODULE = YES;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		AAC8B23F1CEC51120034A865 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
+			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		AAC8B2401CEC51120034A865 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
+			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Profile;
 		};
 		AAC8B2411CEC51120034A865 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
+			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
