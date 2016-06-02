@@ -14,7 +14,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulator.h"
 #import "FBSimulatorSet.h"
-#import "FBSimulatorConfigurationVariants.h"
 #import "FBSimulatorPredicates.h"
 #import "FBSimulator+Helpers.h"
 
@@ -27,7 +26,7 @@
   return [self initWithUDIDs:NSSet.new states:NSIndexSet.new osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
 }
 
-- (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSIndexSet *)states osVersions:(NSSet<id<FBSimulatorConfiguration_OS>> *)osVersions devices:(NSSet<id<FBSimulatorConfiguration_Device>> *)devices range:(NSRange)range
+- (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSIndexSet *)states osVersions:(NSSet<id<FBControlCoreConfiguration_OS>> *)osVersions devices:(NSSet<id<FBControlCoreConfiguration_Device>> *)devices range:(NSRange)range
 {
   self = [super init];
   if (!self) {
@@ -80,12 +79,12 @@
   return [[self.class alloc] initWithUDIDs:self.udids states:[indexSet copy] osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
-+ (instancetype)osVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)osVersions
++ (instancetype)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions
 {
   return [self.allSimulators osVersions:osVersions];
 }
 
-- (instancetype)osVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)osVersions
+- (instancetype)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions
 {
   if (osVersions.count == 0) {
     return self;
@@ -94,12 +93,12 @@
   return [[self.class alloc] initWithUDIDs:self.udids states:self.states osVersions:[self.osVersions setByAddingObjectsFromArray:osVersions] devices:self.devices range:self.range];
 }
 
-+ (instancetype)devices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices
++ (instancetype)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices
 {
   return [self.allSimulators devices:devices];
 }
 
-- (instancetype)devices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices
+- (instancetype)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices
 {
   if (devices.count == 0) {
     return self;
@@ -160,8 +159,8 @@
 {
   NSSet<NSString *> *udids = [coder decodeObjectForKey:NSStringFromSelector(@selector(udids))];
   NSIndexSet *states = [coder decodeObjectForKey:NSStringFromSelector(@selector(states))];
-  NSSet<id<FBSimulatorConfiguration_OS>> *osVersions = [coder decodeObjectForKey:NSStringFromSelector(@selector(osVersions))];
-  NSSet<id<FBSimulatorConfiguration_Device>> *devices = [coder decodeObjectForKey:NSStringFromSelector(@selector(devices))];
+  NSSet<id<FBControlCoreConfiguration_OS>> *osVersions = [coder decodeObjectForKey:NSStringFromSelector(@selector(osVersions))];
+  NSSet<id<FBControlCoreConfiguration_Device>> *devices = [coder decodeObjectForKey:NSStringFromSelector(@selector(devices))];
   NSRange range = [[coder decodeObjectForKey:NSStringFromSelector(@selector(range))] rangeValue];
   return [self initWithUDIDs:udids states:states osVersions:osVersions devices:devices range:range];
 }
@@ -206,12 +205,12 @@
   if (![FBCollectionInformation isArrayHeterogeneous:osVersionStrings withClass:NSString.class]) {
     return [[FBSimulatorError describeFormat:@"'os_versions' %@ is not an NSArray<NSString>", udids] fail:error];
   }
-  NSArray<id<FBSimulatorConfiguration_OS>> *osVersions = [FBSimulatorQuery osVersionsFromStrings:osVersionStrings];
+  NSArray<id<FBControlCoreConfiguration_OS>> *osVersions = [FBSimulatorQuery osVersionsFromStrings:osVersionStrings];
   NSArray<NSString *> *devicesStrings = json[@"devices"] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:osVersionStrings withClass:NSString.class]) {
     return [[FBSimulatorError describeFormat:@"'devices' %@ is not an NSArray<NSString>", udids] fail:error];
   }
-  NSArray<id<FBSimulatorConfiguration_Device>> *devices = [FBSimulatorQuery devicesFromStrings:devicesStrings];
+  NSArray<id<FBControlCoreConfiguration_Device>> *devices = [FBSimulatorQuery devicesFromStrings:devicesStrings];
 
   NSString *rangeString = json[@"range"];
   if (![rangeString isKindOfClass:NSString.class]) {
@@ -284,11 +283,11 @@
   return stateIndeces;
 }
 
-+ (NSArray<id<FBSimulatorConfiguration_OS>> *)osVersionsFromStrings:(NSArray<NSString *> *)strings
++ (NSArray<id<FBControlCoreConfiguration_OS>> *)osVersionsFromStrings:(NSArray<NSString *> *)strings
 {
-  NSMutableArray<id<FBSimulatorConfiguration_OS>> *osVersions = [NSMutableArray array];
+  NSMutableArray<id<FBControlCoreConfiguration_OS>> *osVersions = [NSMutableArray array];
   for (NSString *string in strings) {
-    id<FBSimulatorConfiguration_OS> osVersion = FBSimulatorConfigurationVariants.nameToOSVersion[string];
+    id<FBControlCoreConfiguration_OS> osVersion = FBControlCoreConfigurationVariants.nameToOSVersion[string];
     if (!osVersion) {
       continue;
     }
@@ -297,16 +296,16 @@
   return [osVersions copy];
 }
 
-+ (NSArray<NSString *> *)stringsFromOSVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)osVersions
++ (NSArray<NSString *> *)stringsFromOSVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions
 {
   return [osVersions valueForKey:@"name"];
 }
 
-+ (NSArray<id<FBSimulatorConfiguration_Device>> *)devicesFromStrings:(NSArray<NSString *> *)strings
++ (NSArray<id<FBControlCoreConfiguration_Device>> *)devicesFromStrings:(NSArray<NSString *> *)strings
 {
-  NSMutableArray<id<FBSimulatorConfiguration_Device>> *devices = [NSMutableArray array];
+  NSMutableArray<id<FBControlCoreConfiguration_Device>> *devices = [NSMutableArray array];
   for (NSString *string in strings) {
-    id<FBSimulatorConfiguration_Device> device = FBSimulatorConfigurationVariants.nameToDevice[string];
+    id<FBControlCoreConfiguration_Device> device = FBControlCoreConfigurationVariants.nameToDevice[string];
     if (!device) {
       continue;
     }
@@ -315,7 +314,7 @@
   return [devices copy];
 }
 
-+ (NSArray<NSString *> *)stringsFromDevices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices
++ (NSArray<NSString *> *)stringsFromDevices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices
 {
   return [devices valueForKey:@"deviceName"];
 }

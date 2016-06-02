@@ -26,7 +26,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithNamedDevice:(id<FBSimulatorConfiguration_Device>)device os:(id<FBSimulatorConfiguration_OS>)os auxillaryDirectory:(NSString *)auxillaryDirectory
+- (instancetype)initWithNamedDevice:(id<FBControlCoreConfiguration_Device>)device os:(id<FBControlCoreConfiguration_OS>)os auxillaryDirectory:(NSString *)auxillaryDirectory
 {
   NSParameterAssert(device);
   NSParameterAssert(os);
@@ -48,8 +48,8 @@
   static dispatch_once_t onceToken;
   static FBSimulatorConfiguration *configuration;
   dispatch_once(&onceToken, ^{
-    id<FBSimulatorConfiguration_Device> device = FBSimulatorConfiguration_Device_iPhone5.new;
-    id<FBSimulatorConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
+    id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone5.new;
+    id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
     configuration = [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
   });
   return configuration;
@@ -69,8 +69,8 @@
 
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
-  id<FBSimulatorConfiguration_Device> device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
-  id<FBSimulatorConfiguration_OS> os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
+  id<FBControlCoreConfiguration_Device> device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
+  id<FBControlCoreConfiguration_OS> os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
   NSString *auxillaryDirectory = [coder decodeObjectForKey:NSStringFromSelector(@selector(auxillaryDirectory))];
   return [self initWithNamedDevice:device os:os auxillaryDirectory:auxillaryDirectory];
 }
@@ -154,7 +154,7 @@
 
 - (instancetype)iPhone4s
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone4s.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone4s.class];
 }
 
 + (instancetype)iPhone5
@@ -164,7 +164,7 @@
 
 - (instancetype)iPhone5
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone5.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone5.class];
 }
 
 + (instancetype)iPhone5s
@@ -174,7 +174,7 @@
 
 - (instancetype)iPhone5s
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone5s.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone5s.class];
 }
 
 + (instancetype)iPhone6
@@ -184,7 +184,7 @@
 
 - (instancetype)iPhone6
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone6.class];
 }
 
 + (instancetype)iPhone6s
@@ -194,7 +194,7 @@
 
 - (instancetype)iPhone6s
 {
-    return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6S.class];
+    return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone6S.class];
 }
 
 + (instancetype)iPhone6Plus
@@ -204,7 +204,7 @@
 
 - (instancetype)iPhone6Plus
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6Plus.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone6Plus.class];
 }
 
 + (instancetype)iPhone6sPlus
@@ -214,7 +214,7 @@
 
 - (instancetype)iPhone6sPlus
 {
-    return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPhone6SPlus.class];
+    return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone6SPlus.class];
 }
 
 + (instancetype)iPad2
@@ -224,7 +224,7 @@
 
 - (instancetype)iPad2
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPad2.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPad2.class];
 }
 
 + (instancetype)iPadRetina
@@ -234,7 +234,7 @@
 
 - (instancetype)iPadRetina
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPadRetina.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadRetina.class];
 }
 
 + (instancetype)iPadPro
@@ -244,7 +244,7 @@
 
 - (instancetype)iPadPro
 {
-    return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPadPro.class];
+    return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadPro.class];
 }
 
 + (instancetype)iPadAir
@@ -254,7 +254,7 @@
 
 - (instancetype)iPadAir
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPadAir.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadAir.class];
 }
 
 + (instancetype)iPadAir2
@@ -264,7 +264,7 @@
 
 - (instancetype)iPadAir2
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_iPadAir2.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadAir2.class];
 }
 
 + (instancetype)watch38mm
@@ -274,7 +274,7 @@
 
 - (instancetype)watch38mm
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_AppleWatch38mm.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_AppleWatch38mm.class];
 }
 
 + (instancetype)watch42mm
@@ -284,7 +284,7 @@
 
 - (instancetype)watch42mm
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_AppleWatch42mm.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_AppleWatch42mm.class];
 }
 
 + (instancetype)appleTV1080p
@@ -294,7 +294,7 @@
 
 - (instancetype)appleTV1080p
 {
-  return [self updateNamedDeviceClass:FBSimulatorConfiguration_Device_AppleTV1080p.class];
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_AppleTV1080p.class];
 }
 
 + (instancetype)withDeviceNamed:(NSString *)deviceName
@@ -304,89 +304,89 @@
 
 - (instancetype)withDeviceNamed:(NSString *)deviceName
 {
-  return [self updateNamedDevice:FBSimulatorConfigurationVariants.nameToDevice[deviceName]];
+  return [self updateNamedDevice:FBControlCoreConfigurationVariants.nameToDevice[deviceName]];
 }
 
 #pragma mark OS Versions
 
 - (instancetype)iOS_7_1
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_7_1.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_7_1.class];
 }
 
 - (instancetype)iOS_8_0
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_8_0.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_8_0.class];
 }
 
 - (instancetype)iOS_8_1
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_8_1.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_8_1.class];
 }
 
 - (instancetype)iOS_8_2
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_8_2.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_8_2.class];
 }
 
 - (instancetype)iOS_8_3
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_8_3.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_8_3.class];
 }
 
 - (instancetype)iOS_8_4
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_8_4.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_8_4.class];
 }
 
 - (instancetype)iOS_9_0
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_9_0.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_9_0.class];
 }
 
 - (instancetype)iOS_9_1
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_9_1.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_9_1.class];
 }
 
 - (instancetype)iOS_9_2
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_9_2.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_9_2.class];
 }
 
 - (instancetype)iOS_9_3
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_iOS_9_3.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_9_3.class];
 }
 
 - (instancetype)tvOS_9_0
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_tvOS_9_0.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_tvOS_9_0.class];
 }
 
 - (instancetype)tvOS_9_1
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_tvOS_9_1.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_tvOS_9_1.class];
 }
 
 - (instancetype)tvOS_9_2
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_tvOS_9_2.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_tvOS_9_2.class];
 }
 
 - (instancetype)watchOS_2_0
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_watchOS_2_0.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_watchOS_2_0.class];
 }
 
 - (instancetype)watchOS_2_1
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_watchOS_2_1.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_watchOS_2_1.class];
 }
 
 - (instancetype)watchOS_2_2
 {
-  return [self updateOSVersionClass:FBSimulatorConfiguration_watchOS_2_2.class];
+  return [self updateOSVersionClass:FBControlCoreConfiguration_watchOS_2_2.class];
 }
 
 + (instancetype)withOSNamed:(NSString *)osName
@@ -396,7 +396,7 @@
 
 - (instancetype)withOSNamed:(NSString *)osName
 {
-  return [self updateOSVersion:FBSimulatorConfigurationVariants.nameToOSVersion[osName]];
+  return [self updateOSVersion:FBControlCoreConfigurationVariants.nameToOSVersion[osName]];
 }
 
 #pragma mark Auxillary Directory
@@ -417,7 +417,7 @@
   return [self updateNamedDevice:[class new]];
 }
 
-- (instancetype)updateNamedDevice:(id<FBSimulatorConfiguration_Device>)device
+- (instancetype)updateNamedDevice:(id<FBControlCoreConfiguration_Device>)device
 {
   if (!device) {
     return nil;
@@ -435,7 +435,7 @@
   return [self updateOSVersion:[class new]];
 }
 
-- (instancetype)updateOSVersion:(id<FBSimulatorConfiguration_OS>)os
+- (instancetype)updateOSVersion:(id<FBControlCoreConfiguration_OS>)os
 {
   if (!os) {
     return nil;
@@ -445,7 +445,7 @@
   return configuration;
 }
 
-+ (BOOL)device:(id<FBSimulatorConfiguration_Device>)device andOSPairSupported:(id<FBSimulatorConfiguration_OS>)os
++ (BOOL)device:(id<FBControlCoreConfiguration_Device>)device andOSPairSupported:(id<FBControlCoreConfiguration_OS>)os
 {
   return [os.families containsObject:device.family];
 }

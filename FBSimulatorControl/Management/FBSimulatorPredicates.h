@@ -9,14 +9,15 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorConfigurationVariants.h>
 
 @class FBSimulatorConfiguration;
 @class FBSimulatorPool;
 
-@protocol FBSimulatorConfiguration_Device;
-@protocol FBSimulatorConfiguration_OS;
+@protocol FBControlCoreConfiguration_Device;
+@protocol FBControlCoreConfiguration_OS;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -96,7 +97,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param devices the Device to match against.
  @return an NSPredicate.
  */
-+ (NSPredicate *)devices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices;
++ (NSPredicate *)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices;
 
 /**
  Predicate for matching against one of multiple Simulator Devices.
@@ -112,7 +113,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param versions the OS Versions to match against.
  @return an NSPredicate.
  */
-+ (NSPredicate *)osVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)versions;
++ (NSPredicate *)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)versions;
 
 /**
  Predicate for matching against one of multiple Simulator OS Version Names

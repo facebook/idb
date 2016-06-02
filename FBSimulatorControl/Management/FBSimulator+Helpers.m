@@ -223,7 +223,7 @@
 
 - (NSSet *)requiredProcessNamesToVerifyBooted
 {
-  if (self.productFamily == FBSimulatorProductFamilyiPhone || self.productFamily == FBSimulatorProductFamilyiPad) {
+  if (self.productFamily == FBControlCoreProductFamilyiPhone || self.productFamily == FBControlCoreProductFamilyiPad) {
     return [NSSet setWithArray:@[
        @"SpringBoard",
        @"SimulatorBridge",
@@ -231,7 +231,7 @@
        @"installd",
     ]];
   }
-  if (self.productFamily == FBSimulatorProductFamilyAppleWatch || self.productFamily == FBSimulatorProductFamilyAppleTV) {
+  if (self.productFamily == FBControlCoreProductFamilyAppleWatch || self.productFamily == FBControlCoreProductFamilyAppleTV) {
     return [NSSet setWithArray:@[
        @"backboardd",
        @"networkd",

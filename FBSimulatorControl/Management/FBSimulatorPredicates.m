@@ -19,7 +19,6 @@
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorControlConfiguration.h"
-#import "FBSimulatorConfigurationVariants.h"
 #import "FBSimulatorPool.h"
 
 @implementation FBSimulatorPredicates
@@ -82,7 +81,7 @@
   }];
 }
 
-+ (NSPredicate *)devices:(NSArray<id<FBSimulatorConfiguration_Device>> *)devices
++ (NSPredicate *)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices
 {
   return [self devicesNamed:[devices valueForKey:@"deviceName"]];
 }
@@ -96,7 +95,7 @@
   }];
 }
 
-+ (NSPredicate *)osVersions:(NSArray<id<FBSimulatorConfiguration_OS>> *)versions;
++ (NSPredicate *)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)versions;
 {
   return [self osVersionsNamed:[versions valueForKey:@"name"]];
 }

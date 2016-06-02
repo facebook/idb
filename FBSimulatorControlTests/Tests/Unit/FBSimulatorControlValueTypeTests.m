@@ -124,8 +124,8 @@
   NSArray *values = @[
     [[FBSimulatorQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E"]] states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateBooted), @(FBSimulatorStateBooting)]]],
     [FBSimulatorQuery allSimulators],
-    [FBSimulatorQuery devices:@[FBSimulatorConfiguration_Device_iPad2.new, FBSimulatorConfiguration_Device_iPadAir.new]],
-    [FBSimulatorQuery osVersions:@[FBSimulatorConfiguration_iOS_9_0.new, FBSimulatorConfiguration_iOS_9_1.new]],
+    [FBSimulatorQuery devices:@[FBControlCoreConfiguration_Device_iPad2.new, FBControlCoreConfiguration_Device_iPadAir.new]],
+    [FBSimulatorQuery osVersions:@[FBControlCoreConfiguration_iOS_9_0.new, FBControlCoreConfiguration_iOS_9_1.new]],
     [FBSimulatorQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
     [FBSimulatorQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
     [FBSimulatorQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E", @"C5579925-158B-4802-96C3-58B564C901C1", @"41862F9E-A8CA-4816-B4C1-251DA57C1143"]],

@@ -64,9 +64,9 @@ extension FBSimulatorQuery {
 extension FBSimulatorQuery : Accumulator {
   public func append(other: FBSimulatorQuery) -> Self {
     let deviceSet = other.devices as NSSet
-    let deviceArray = Array(deviceSet) as! [FBSimulatorConfiguration_Device]
+    let deviceArray = Array(deviceSet) as! [FBControlCoreConfiguration_Device]
     let osVersionsSet = other.osVersions as NSSet
-    let osVersionsArray = Array(osVersionsSet) as! [FBSimulatorConfiguration_OS]
+    let osVersionsArray = Array(osVersionsSet) as! [FBControlCoreConfiguration_OS]
 
     return self
       .udids(Array(other.udids))

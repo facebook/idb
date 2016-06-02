@@ -112,20 +112,20 @@
   return self.device.state;
 }
 
-- (FBSimulatorProductFamily)productFamily
+- (FBControlCoreProductFamily)productFamily
 {
   int familyID = self.device.deviceType.productFamilyID;
   switch (familyID) {
     case 1:
-      return FBSimulatorProductFamilyiPhone;
+      return FBControlCoreProductFamilyiPhone;
     case 2:
-      return FBSimulatorProductFamilyiPad;
+      return FBControlCoreProductFamilyiPad;
     case 3:
-      return FBSimulatorProductFamilyAppleTV;
+      return FBControlCoreProductFamilyAppleTV;
     case 4:
-      return FBSimulatorProductFamilyAppleWatch;
+      return FBControlCoreProductFamilyAppleWatch;
     default:
-      return FBSimulatorProductFamilyUnknown;
+      return FBControlCoreProductFamilyUnknown;
   }
 }
 
