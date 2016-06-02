@@ -2777,10 +2777,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
-				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2807,10 +2805,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
-				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2834,10 +2830,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				DEFINES_MODULE = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
-				INSTALL_PATH = "@rpath";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2861,8 +2855,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
@@ -2877,8 +2869,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -2891,8 +2881,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -2944,7 +2932,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -2957,7 +2944,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -2970,7 +2956,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -2983,8 +2968,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -2992,12 +2975,10 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = "XCTestBootstrap/XCTestBootstrap-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -3007,8 +2988,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -3016,12 +2995,10 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = "XCTestBootstrap/XCTestBootstrap-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -3031,8 +3008,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -3040,12 +3015,10 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = "XCTestBootstrap/XCTestBootstrap-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.XCTestBootstrap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -3055,8 +3028,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
@@ -3073,8 +3044,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
@@ -3091,8 +3060,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
@@ -3109,8 +3076,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -3119,12 +3084,10 @@
 				FRAMEWORK_VERSION = A;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = "FBControlCore/FBControlCore-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCore;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -3134,8 +3097,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -3144,12 +3105,10 @@
 				FRAMEWORK_VERSION = A;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = "FBControlCore/FBControlCore-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCore;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -3159,8 +3118,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -3169,12 +3126,10 @@
 				FRAMEWORK_VERSION = A;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = "FBControlCore/FBControlCore-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCore;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -3184,8 +3139,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBControlCoreTests/FBControlCoreTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -3198,8 +3151,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBControlCoreTests/FBControlCoreTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -3212,8 +3163,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = "FBControlCoreTests/FBControlCoreTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
