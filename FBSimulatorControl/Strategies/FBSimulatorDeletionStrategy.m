@@ -17,6 +17,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorSet.h"
+#import "FBSimulatorSet+Private.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulator+Helpers.h"
 
@@ -84,7 +85,7 @@
 
     // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
     [self.logger logFormat:@"Deleting Simulator %@", simulator];
-    if (![simulator.device.deviceSet deleteDevice:simulator.device error:&innerError]) {
+    if (![self.set.deviceSet deleteDevice:simulator.device error:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Failed to delete simulator."]
         inSimulator:simulator]
