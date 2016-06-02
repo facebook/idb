@@ -507,6 +507,7 @@
 		AA2DDC391C284044000689C6 /* SimVerifier.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimVerifier.h; sourceTree = "<group>"; };
 		AA3230C91BDA387700C5BA01 /* FBSimulatorControlAssertions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlAssertions.h; sourceTree = "<group>"; };
 		AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlAssertions.m; sourceTree = "<group>"; };
+		AA38D7721CFEC8C30078A0DA /* FBSimulatorControlTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControlTests.xcconfig; sourceTree = "<group>"; };
 		AA391AD01CEF4CBC00817691 /* FBLocalizationOverride.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBLocalizationOverride.h; sourceTree = "<group>"; };
 		AA391AD11CEF4CBC00817691 /* FBLocalizationOverride.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLocalizationOverride.m; sourceTree = "<group>"; };
 		AA3FD0311C872E26001093CA /* FBFramebufferVideoConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFramebufferVideoConfiguration.h; sourceTree = "<group>"; };
@@ -1304,6 +1305,7 @@
 			isa = PBXGroup;
 			children = (
 				AA819E0B1B9FB427002F58CA /* FBSimulatorControlTests-Info.plist */,
+				AA38D7721CFEC8C30078A0DA /* FBSimulatorControlTests.xcconfig */,
 				AAAA67C31BC4FEBA00075197 /* Fixtures */,
 				AA51E48F1BA1CA3C0053141E /* Tests */,
 				AA8DFB0B1BAC76B60076A6C2 /* Utilities */,
@@ -2779,15 +2781,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				DEFINES_MODULE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Shims/Binaries",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.facebook.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = FBSimulatorControl;
 			};
 			name = Debug;
 		};
@@ -2807,15 +2800,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				DEFINES_MODULE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Shims/Binaries",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.facebook.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = FBSimulatorControl;
 			};
 			name = Profile;
 		};
@@ -2832,15 +2816,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
-				DEFINES_MODULE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Shims/Binaries",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.facebook.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = FBSimulatorControl;
 			};
 			name = Release;
 		};
@@ -2855,39 +2830,22 @@
 		};
 		AA819DBB1B9FB40D002F58CA /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
+			baseConfigurationReference = AA38D7721CFEC8C30078A0DA /* FBSimulatorControlTests.xcconfig */;
 			buildSettings = {
-				GCC_OPTIMIZATION_LEVEL = 0;
-				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		AA819DBC1B9FB40D002F58CA /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
+			baseConfigurationReference = AA38D7721CFEC8C30078A0DA /* FBSimulatorControlTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Profile;
 		};
 		AA819DBD1B9FB40D002F58CA /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
+			baseConfigurationReference = AA38D7721CFEC8C30078A0DA /* FBSimulatorControlTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
