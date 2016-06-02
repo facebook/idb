@@ -723,6 +723,7 @@
 		AA9517C11C15F60B00A89CAD /* FBCompositeSimulatorEventSink.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBCompositeSimulatorEventSink.m; sourceTree = "<group>"; };
 		AA98351B1CEF55C20038F432 /* FBLocalizationOverrideTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLocalizationOverrideTests.m; sourceTree = "<group>"; };
 		AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControl.xcconfig; sourceTree = "<group>"; };
+		AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBControlCoreTests.xcconfig; sourceTree = "<group>"; };
 		AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFixtures.h; sourceTree = "<group>"; };
 		AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFixtures.m; sourceTree = "<group>"; };
 		AAAA67C71BC5018500075197 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = TableSearch.app; sourceTree = "<group>"; };
@@ -1918,8 +1919,9 @@
 			isa = PBXGroup;
 			children = (
 				EEBD60271C9062CB00298A07 /* FBControlCoreTests-Info.plist */,
-				AAB68D791C90C2F200D20416 /* Templates */,
+				AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */,
 				AAEA3A8F1C90B5E4004F8409 /* Fixtures */,
+				AAB68D791C90C2F200D20416 /* Templates */,
 				AAEA3A921C90B5E4004F8409 /* Tests */,
 			);
 			path = FBControlCoreTests;
@@ -3012,20 +3014,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_VERSION = A;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = "FBControlCore/FBControlCore-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
-				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCore;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
 			};
 			name = Debug;
 		};
@@ -3033,20 +3021,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_VERSION = A;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = "FBControlCore/FBControlCore-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCore;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
 			};
 			name = Profile;
 		};
@@ -3054,56 +3028,27 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_VERSION = A;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				INFOPLIST_FILE = "FBControlCore/FBControlCore-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCore;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
 		EEBD60241C90628F00298A07 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
+			baseConfigurationReference = AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBControlCoreTests/FBControlCoreTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCoreTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		EEBD60251C90628F00298A07 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
+			baseConfigurationReference = AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBControlCoreTests/FBControlCoreTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCoreTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Profile;
 		};
 		EEBD60261C90628F00298A07 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
+			baseConfigurationReference = AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */;
 			buildSettings = {
-				INFOPLIST_FILE = "FBControlCoreTests/FBControlCoreTests-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBControlCoreTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
