@@ -2937,23 +2937,6 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-weak_framework",
-					DTXConnectionServices,
-					"-weak_framework",
-					DVTFoundation,
-					"-weak_framework",
-					IBAutolayoutFoundation,
-					"-weak_framework",
-					IDEFoundation,
-					"-weak_framework",
-					IDEKit,
-					"-weak_library",
-					"'$DEVELOPER_DIR/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore'",
-					"-weak_library",
-					"'$DEVELOPER_DIR/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor'",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -2972,23 +2955,6 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-weak_framework",
-					DTXConnectionServices,
-					"-weak_framework",
-					DVTFoundation,
-					"-weak_framework",
-					IBAutolayoutFoundation,
-					"-weak_framework",
-					IDEFoundation,
-					"-weak_framework",
-					IDEKit,
-					"-weak_library",
-					"'$DEVELOPER_DIR/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore'",
-					"-weak_library",
-					"'$DEVELOPER_DIR/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor'",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3007,23 +2973,6 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-weak_framework",
-					DTXConnectionServices,
-					"-weak_framework",
-					DVTFoundation,
-					"-weak_framework",
-					IBAutolayoutFoundation,
-					"-weak_framework",
-					IDEFoundation,
-					"-weak_framework",
-					IDEKit,
-					"-weak_library",
-					"'$DEVELOPER_DIR/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore'",
-					"-weak_library",
-					"'$DEVELOPER_DIR/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor'",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
