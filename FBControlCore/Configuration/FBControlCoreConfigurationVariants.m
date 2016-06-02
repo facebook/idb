@@ -94,8 +94,13 @@
   return nil;
 }
 
-
 - (NSSet<NSString *> *)productTypes
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSString *)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -122,6 +127,11 @@
   return [NSSet setWithArray:@[@"iPhone4,1"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"armv7";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPhone5
@@ -134,6 +144,11 @@
 - (NSSet<NSString *> *)productTypes
 {
   return [NSSet setWithArray:@[@"iPhone5,1", @"iPhone5,2"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"armv7s";
 }
 
 @end
@@ -150,6 +165,11 @@
   return [NSSet setWithArray:@[@"iPhone6,1", @"iPhone6,2"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPhone6
@@ -162,6 +182,11 @@
 - (NSSet<NSString *> *)productTypes
 {
   return [NSSet setWithArray:@[@"iPhone7,2"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
 }
 
 @end
@@ -178,6 +203,11 @@
   return [NSSet setWithArray:@[@"iPhone7,1"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPhone6S
@@ -190,6 +220,11 @@
 - (NSSet<NSString *> *)productTypes
 {
   return [NSSet setWithArray:@[@"iPhone8,1"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
 }
 
 @end
@@ -206,6 +241,11 @@
   return [NSSet setWithArray:@[@"iPhone8,2"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPad_Base
@@ -217,6 +257,12 @@
 }
 
 - (NSSet<NSString *> *)productTypes
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSString *)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -241,6 +287,11 @@
   return [NSSet setWithArray:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"armv7";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPadRetina
@@ -254,6 +305,11 @@
 {
   // Both 'iPad 3' and 'iPad 4'.
   return [NSSet setWithArray:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"armv7";
 }
 
 @end
@@ -270,6 +326,11 @@
   return [NSSet setWithArray:@[@"iPad4,1", @"iPad4,2", @"iPad4,3"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPadAir2
@@ -282,6 +343,11 @@
 - (NSSet<NSString *> *)productTypes
 {
   return [NSSet setWithArray:@[@"iPad5,3", @"iPad5,4"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
 }
 
 @end
@@ -299,6 +365,11 @@
   return [NSSet setWithArray:@[@"iPad6,7", @"iPad6,8", @"iPad6,3", @"iPad6,4"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_tvOS_Base
@@ -310,6 +381,12 @@
 }
 
 - (NSSet<NSString *> *)productTypes
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSString *)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -334,6 +411,11 @@
   return [NSSet setWithArray:@[@"AppleTV5,3"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_watchOS_Base
@@ -345,6 +427,12 @@
 }
 
 - (NSSet<NSString *> *)productTypes
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSString *)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -369,6 +457,11 @@
   return [NSSet setWithArray:@[@"Watch1,1"]];
 }
 
+- (NSString *)deviceArchitecture
+{
+  return @"armv7";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_AppleWatch42mm
@@ -381,6 +474,11 @@
 - (NSSet<NSString *> *)productTypes
 {
   return [NSSet setWithArray:@[@"Watch1,2"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"armv7";
 }
 
 @end
@@ -681,6 +779,15 @@
     mapping = [dictionary copy];
   });
   return mapping;
+}
+
++ (NSDictionary<NSString *, NSSet<NSString *> *> *)baseArchToCompatibleArch
+{
+  return @{
+    @"arm64" : [NSSet setWithArray:@[@"arm64", @"armv7s", @"armv7"]],
+    @"armv7s" : [NSSet setWithArray:@[@"armv7s", @"armv7"]],
+    @"armv7" : [NSSet setWithArray:@[@"armv7"]],
+  };
 }
 
 @end

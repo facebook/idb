@@ -54,6 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, nullable, copy, readonly) id<FBControlCoreConfiguration_Device> configurationDevice;
 
+/**
+ The Architechture of the Device's CPU.
+ */
+@property (nonatomic, nullable, copy, readonly) NSString *architechture;
+
 @end
 
 NS_ASSUME_NONNULL_END

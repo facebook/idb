@@ -55,7 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreConfiguration_Device <NSObject>
 
 @property (nonatomic, copy, readonly) NSString *deviceName;
-@property (nonatomic, copy, readonly) NSSet<NSArray *> *productTypes;
+@property (nonatomic, copy, readonly) NSSet<NSString *> *productTypes;
+@property (nonatomic, copy, readonly) NSString *deviceArchitecture;
 @property (nonatomic, strong, readonly) id<FBSimulatorConfiguration_Family> family;
 
 @end
@@ -202,6 +203,11 @@ NS_ASSUME_NONNULL_BEGIN
  OS Version names to OS Versions.
  */
 + (NSDictionary<NSString *, id<FBControlCoreConfiguration_OS>> *)nameToOSVersion;
+
+/**
+ Maps the architechture of the target to the compatible architechtures for binaries on the target.
+ */
++ (NSDictionary<NSString *, NSSet<NSString *> *> *)baseArchToCompatibleArch;
 
 @end
 

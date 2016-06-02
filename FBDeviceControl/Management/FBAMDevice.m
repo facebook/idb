@@ -136,6 +136,7 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
   _modelName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("DeviceClass")));
   _systemVersion = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductVersion")));
   _productType = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductType")));
+  _architechture = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("CPUArchitecture")));
 
   FBAMDeviceStopSession(_amDevice);
   FBAMDeviceDisconnect(_amDevice);
