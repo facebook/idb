@@ -2786,23 +2786,10 @@
 		4952437303EDA63300000002 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_TESTABILITY = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(APPLE_FRAMEWORKS_DIR)",
-					"$(APPLE_PLUGINS_DIR)",
-					"$(APPLE_OTHER_FRAMEWORKS_DIR)",
-					"$(APPLE_SHARED_FRAMEWORKS_DIR)",
-					"$(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks",
-					"$(SDKROOT)/System/Library/PrivateFrameworks",
-				);
 				GCC_OPTIMIZATION_LEVEL = 0;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/PrivateHeaders",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
@@ -2840,22 +2827,9 @@
 		4952437350C7218900000002 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(APPLE_FRAMEWORKS_DIR)",
-					"$(APPLE_PLUGINS_DIR)",
-					"$(APPLE_OTHER_FRAMEWORKS_DIR)",
-					"$(APPLE_SHARED_FRAMEWORKS_DIR)",
-					"$(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks",
-					"$(SDKROOT)/System/Library/PrivateFrameworks",
-				);
 				GCC_OPTIMIZATION_LEVEL = s;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/PrivateHeaders",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -2892,22 +2866,9 @@
 		49524373A439BFE700000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(APPLE_FRAMEWORKS_DIR)",
-					"$(APPLE_PLUGINS_DIR)",
-					"$(APPLE_OTHER_FRAMEWORKS_DIR)",
-					"$(APPLE_SHARED_FRAMEWORKS_DIR)",
-					"$(DEVELOPER_LIBRARY_DIR)/PrivateFrameworks",
-					"$(SDKROOT)/System/Library/PrivateFrameworks",
-				);
 				GCC_OPTIMIZATION_LEVEL = s;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/PrivateHeaders",
-				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -2943,10 +2904,6 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-				);
 				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -2970,10 +2927,6 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-				);
 				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -2996,10 +2949,6 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-				);
 				INFOPLIST_FILE = "FBSimulatorControlTests/FBSimulatorControlTests-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -3194,10 +3143,6 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
 				FRAMEWORK_VERSION = A;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3237,10 +3182,6 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
 				FRAMEWORK_VERSION = A;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -3275,10 +3216,6 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
 				FRAMEWORK_VERSION = A;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
