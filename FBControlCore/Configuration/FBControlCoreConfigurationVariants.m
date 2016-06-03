@@ -106,6 +106,12 @@
   return nil;
 }
 
+- (NSString *)simulatorArchitecture
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
 - (id<FBSimulatorConfiguration_Family>)family
 {
   return FBSimulatorConfiguration_Family_iPhone.new;
@@ -132,6 +138,11 @@
   return @"armv7";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"i386";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPhone5
@@ -149,6 +160,11 @@
 - (NSString *)deviceArchitecture
 {
   return @"armv7s";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"i386";
 }
 
 @end
@@ -170,6 +186,11 @@
   return @"arm64";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPhone6
@@ -187,6 +208,11 @@
 - (NSString *)deviceArchitecture
 {
   return @"arm64";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
 }
 
 @end
@@ -208,6 +234,11 @@
   return @"arm64";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPhone6S
@@ -225,6 +256,11 @@
 - (NSString *)deviceArchitecture
 {
   return @"arm64";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
 }
 
 @end
@@ -246,6 +282,11 @@
   return @"arm64";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPad_Base
@@ -263,6 +304,12 @@
 }
 
 - (NSString *)deviceArchitecture
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSString *)simulatorArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -292,6 +339,11 @@
   return @"armv7";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"i386";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPadRetina
@@ -310,6 +362,11 @@
 - (NSString *)deviceArchitecture
 {
   return @"armv7";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"i386";
 }
 
 @end
@@ -331,6 +388,11 @@
   return @"arm64";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_iPadAir2
@@ -348,6 +410,11 @@
 - (NSString *)deviceArchitecture
 {
   return @"arm64";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
 }
 
 @end
@@ -370,6 +437,11 @@
   return @"arm64";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_tvOS_Base
@@ -387,6 +459,12 @@
 }
 
 - (NSString *)deviceArchitecture
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSString *)simulatorArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -416,6 +494,11 @@
   return @"arm64";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_watchOS_Base
@@ -433,6 +516,12 @@
 }
 
 - (NSString *)deviceArchitecture
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSString *)simulatorArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -462,6 +551,11 @@
   return @"armv7";
 }
 
+- (NSString *)simulatorArchitecture
+{
+  return @"i386";
+}
+
 @end
 
 @implementation FBControlCoreConfiguration_Device_AppleWatch42mm
@@ -479,6 +573,11 @@
 - (NSString *)deviceArchitecture
 {
   return @"armv7";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"i386";
 }
 
 @end
@@ -787,6 +886,8 @@
     @"arm64" : [NSSet setWithArray:@[@"arm64", @"armv7s", @"armv7"]],
     @"armv7s" : [NSSet setWithArray:@[@"armv7s", @"armv7"]],
     @"armv7" : [NSSet setWithArray:@[@"armv7"]],
+    @"i386" : [NSSet setWithObject:@"i386"],
+    @"x86_64" : [NSSet setWithArray:@[@"x86_64", @"i386"]],
   };
 }
 

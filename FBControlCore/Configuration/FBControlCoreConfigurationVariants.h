@@ -57,6 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *deviceName;
 @property (nonatomic, copy, readonly) NSSet<NSString *> *productTypes;
 @property (nonatomic, copy, readonly) NSString *deviceArchitecture;
+@property (nonatomic, copy, readonly) NSString *simulatorArchitecture;
 @property (nonatomic, strong, readonly) id<FBSimulatorConfiguration_Family> family;
 
 @end
