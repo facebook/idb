@@ -54,8 +54,8 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
   func testParsesOSAlone() {
     self.assertParses(
       FBSimulatorConfigurationParser.parser,
-      ["iOS 9.2"],
-      FBSimulatorConfiguration.defaultConfiguration().iOS_9_2()
+      ["iOS 9.3"],
+      FBSimulatorConfiguration.defaultConfiguration().iOS_9_3()
     )
   }
 
@@ -77,7 +77,7 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
 
   func parsesOSAndDevice(){
     self.assertParsesAll(FBSimulatorConfigurationParser.parser, [
-      (["iPhone 6", "iOS 9.2"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2()),
+      (["iPhone 6", "iOS 9.3"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_3()),
       (["iPad 2", "iOS 9.0"], FBSimulatorConfiguration.defaultConfiguration().iPad2().iOS_9_0()),
     ])
   }
@@ -164,8 +164,8 @@ let validActions: [([String], Action)] = [
   (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale25Percent().withOptions(FBSimulatorLaunchOptions.ConnectBridge.union(FBSimulatorLaunchOptions.UseNSWorkspace)))),
   (["boot"], Action.Boot(nil)),
   (["clear_keychain", "com.foo.bar"], Action.ClearKeychain("com.foo.bar")),
-  (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
-  (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
+  (["create", "iOS 9.3"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_3())),
+  (["create", "iPhone 6", "iOS 9.3"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_3())),
   (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
   (["delete"], Action.Delete),
   (["diagnose", "--content", "--crashes-since", "200", "--system"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.System, since: NSDate(timeIntervalSince1970: 200)), DiagnosticFormat.Content)),

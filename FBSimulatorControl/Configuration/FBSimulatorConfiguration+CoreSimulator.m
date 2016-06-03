@@ -15,7 +15,6 @@
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
 
-#import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorError.h"
 
 @implementation FBSimulatorConfiguration (CoreSimulator)
@@ -31,7 +30,7 @@
 {
   id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:self.device];
   NSAssert(os, @"Expected to be able to find any runtime for device %@", self.device);
-  return [self updateOSVersion:os];
+  return [self withOS:os];
 }
 
 + (id<FBControlCoreConfiguration_OS>)oldestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device
@@ -43,7 +42,7 @@
 {
   id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration oldestAvailableOSForDevice:self.device];
   NSAssert(os, @"Expected to be able to find any runtime for device %@", self.device);
-  return [self updateOSVersion:os];
+  return [self withOS:os];
 }
 
 + (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error;
@@ -56,7 +55,7 @@
   if (!configDevice) {
     return [[FBSimulatorError describeFormat:@"Could not obtain Device for for %@, perhaps it is unsupported by FBSimulatorControl", simDevice.deviceType.name] fail:error];
   }
-  return [[FBSimulatorConfiguration.defaultConfiguration updateOSVersion:configOS] updateNamedDevice:configDevice];
+  return [[FBSimulatorConfiguration.defaultConfiguration withOS:configOS] withDevice:configDevice];
 }
 
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError **)error

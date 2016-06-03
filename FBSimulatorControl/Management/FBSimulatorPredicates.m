@@ -17,7 +17,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
-#import "FBSimulatorConfiguration+Private.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorPool.h"
 

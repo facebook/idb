@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBSimulatorControl/FBSimulatorConfiguration+Private.h>
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration.h>
 
 @protocol FBSimulatorLaunchConfiguration_Scale <NSObject>

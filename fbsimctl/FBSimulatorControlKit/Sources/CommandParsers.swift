@@ -638,15 +638,15 @@ struct FBSimulatorConfigurationParser {
         if device == nil && os == nil && auxDirectory == nil {
           throw ParseError.Custom("Simulator Configuration must contain at least one of: Device Name, OS Version or Aux Directory")
         }
-        let configuration = FBSimulatorConfiguration.defaultConfiguration().copy() as! FBSimulatorConfiguration
+        var configuration = FBSimulatorConfiguration.defaultConfiguration()
         if let device = device {
-          configuration.device = device
+          configuration = configuration.withDevice(device)
         }
         if let os = os {
-          configuration.os = os
+          configuration = configuration.withOS(os)
         }
         if let auxDirectory = auxDirectory {
-          configuration.auxillaryDirectory = auxDirectory
+          configuration = configuration.withAuxillaryDirectory(auxDirectory)
         }
         return configuration
       }
