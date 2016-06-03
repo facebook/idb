@@ -16,6 +16,7 @@
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlConfiguration;
+@class FBiOSTargetQuery;
 @class SimDeviceSet;
 @protocol FBControlCoreLogger;
 
@@ -38,6 +39,16 @@ NS_ASSUME_NONNULL_BEGIN
  @returns a new FBSimulatorPool.
  */
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+#pragma mark Querying
+
+/**
+ Fetches the Simulators from the Set, matching the query.
+
+ @param query the Query to query with.
+ @return an array of matching Simulators.
+ */
+- (NSArray<FBSimulator *> *)query:(FBiOSTargetQuery *)query;
 
 #pragma mark Creation Methods
 

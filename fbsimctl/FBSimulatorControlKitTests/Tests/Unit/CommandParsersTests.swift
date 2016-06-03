@@ -127,22 +127,22 @@ let validConfigurations: [([String], Configuration)] = [
   (["--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin"))
 ]
 
-let validQueries: [([String], FBSimulatorQuery)] = [
-  (["all"], FBSimulatorQuery.allSimulators()),
-  (["iPhone 5"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPhone5()])),
-  (["iPad 2"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPad2()])),
-  (["iOS 9.0", "iOS 9.1"], FBSimulatorQuery.osVersions([FBControlCoreConfiguration_iOS_9_0(), FBControlCoreConfiguration_iOS_9_1()])),
-  (["--state=creating"], FBSimulatorQuery.simulatorStates([.Creating])),
-  (["--state=shutdown"], FBSimulatorQuery.simulatorStates([.Shutdown])),
-  (["--state=booted"], FBSimulatorQuery.simulatorStates([.Booted])),
-  (["--state=booting"], FBSimulatorQuery.simulatorStates([.Booting])),
-  (["--state=shutting-down"], FBSimulatorQuery.simulatorStates([.ShuttingDown])),
-  (["--first", "2", "iPhone 6"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).ofCount(2)),
-  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
-  (["iPhone 5", "iPad 2"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPad2()])),
-  (["--state=creating", "--state=booting", "--state=shutdown"], FBSimulatorQuery.simulatorStates([.Creating, .Booting, .Shutdown])),
-  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
-  (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
+let validQueries: [([String], FBiOSTargetQuery)] = [
+  (["all"], FBiOSTargetQuery.allSimulators()),
+  (["iPhone 5"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5()])),
+  (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()])),
+  (["iOS 9.0", "iOS 9.1"], FBiOSTargetQuery.osVersions([FBControlCoreConfiguration_iOS_9_0(), FBControlCoreConfiguration_iOS_9_1()])),
+  (["--state=creating"], FBiOSTargetQuery.simulatorStates([.Creating])),
+  (["--state=shutdown"], FBiOSTargetQuery.simulatorStates([.Shutdown])),
+  (["--state=booted"], FBiOSTargetQuery.simulatorStates([.Booted])),
+  (["--state=booting"], FBiOSTargetQuery.simulatorStates([.Booting])),
+  (["--state=shutting-down"], FBiOSTargetQuery.simulatorStates([.ShuttingDown])),
+  (["--first", "2", "iPhone 6"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).ofCount(2)),
+  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
+  (["iPhone 5", "iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPad2()])),
+  (["--state=creating", "--state=booting", "--state=shutdown"], FBiOSTargetQuery.simulatorStates([.Creating, .Booting, .Shutdown])),
+  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
+  (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
 ]
 
 let invalidQueries: [[String]] = [
@@ -225,11 +225,11 @@ class ConfigurationParserTests : XCTestCase {
 
 class QueryParserTests : XCTestCase {
   func testParsesValidQueries() {
-    self.assertParsesAll(FBSimulatorQueryParsers.parser, validQueries)
+    self.assertParsesAll(FBiOSTargetQueryParsers.parser, validQueries)
   }
 
   func testParsesInvalidQueries() {
-    self.assertFailsToParseAll(FBSimulatorQueryParsers.parser, invalidQueries)
+    self.assertFailsToParseAll(FBiOSTargetQueryParsers.parser, invalidQueries)
   }
 }
 
@@ -280,16 +280,16 @@ class CommandParserTests : XCTestCase {
   func assertWithDefaultActions(actions: [Action], suffix: [String]) {
     return self.unzipAndAssert(actions, suffix: suffix, extras: [
       ([], nil, nil),
-      (["all"], FBSimulatorQuery.allSimulators(), nil),
-      (["iPad 2"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), nil),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
-      (["iPhone 5", "--state=shutdown", "iPhone 6"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPhone6()]).simulatorStates([.Shutdown]), nil),
-      (["iPad 2", "--device-name", "--os"], FBSimulatorQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), [.DeviceName, .OSVersion]),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
+      (["all"], FBiOSTargetQuery.allSimulators(), nil),
+      (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), nil),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
+      (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPhone6()]).simulatorStates([.Shutdown]), nil),
+      (["iPad 2", "--device-name", "--os"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), [.DeviceName, .OSVersion]),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }
 
-  func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], FBSimulatorQuery?, Format?)]) {
+  func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], FBiOSTargetQuery?, Format?)]) {
     let pairs = extras.map { (tokens, query, format) in
       return (tokens + suffix, Command.Perform(Configuration.defaultValue, actions, query, format))
     }

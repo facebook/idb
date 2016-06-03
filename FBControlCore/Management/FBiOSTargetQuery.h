@@ -9,7 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBJSONConversion.h>
+
+@protocol FBControlCoreConfiguration_OS;
+@protocol FBControlCoreConfiguration_Device;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value representing a way of fetching Simulators.
  */
-@interface FBSimulatorQuery : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable>
+@interface FBiOSTargetQuery : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  A Query that matches all Simulators.
@@ -102,13 +105,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, readonly, assign) NSRange range;
 
-/**
- Returns the Simulators in the Set, matching against the query.
-
- @param set the Set to perform against.
- @return an Array of the Matching Simulators.
- */
-- (NSArray<FBSimulator *> *)perform:(FBSimulatorSet *)set;
 
 @end
 

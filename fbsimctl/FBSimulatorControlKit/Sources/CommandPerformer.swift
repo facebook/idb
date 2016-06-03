@@ -22,10 +22,10 @@ protocol CommandPerformer {
 struct ActionPerformer {
   let commandPerformer: CommandPerformer
   let configuration: Configuration
-  let query: FBSimulatorQuery
+  let query: FBiOSTargetQuery
   let format: Format?
 
-  func perform(reporter: EventReporter, action: Action, queryOverride: FBSimulatorQuery? = nil, formatOverride: Format? = nil) -> CommandResult {
+  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: Format? = nil) -> CommandResult {
     let command = Command.Perform(self.configuration, [action], queryOverride ?? self.query, formatOverride ?? self.format)
     return self.commandPerformer.perform(command, reporter: reporter)
   }

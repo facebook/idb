@@ -39,12 +39,12 @@ extension String : CustomStringConvertible {
   }}
 }
 
-extension FBSimulatorQuery {
-  public static func simulatorStates(states: [FBSimulatorState]) -> FBSimulatorQuery {
+extension FBiOSTargetQuery {
+  public static func simulatorStates(states: [FBSimulatorState]) -> FBiOSTargetQuery {
     return self.allSimulators().simulatorStates(states)
   }
 
-  public func simulatorStates(states: [FBSimulatorState]) -> FBSimulatorQuery {
+  public func simulatorStates(states: [FBSimulatorState]) -> FBiOSTargetQuery {
     let indexSet = states.reduce(NSMutableIndexSet()) { (indexSet, state) in
       indexSet.addIndex(Int(state.rawValue))
       return indexSet
@@ -52,17 +52,17 @@ extension FBSimulatorQuery {
     return self.states(indexSet)
   }
 
-  public static func ofCount(count: Int) -> FBSimulatorQuery {
+  public static func ofCount(count: Int) -> FBiOSTargetQuery {
     return self.allSimulators().ofCount(count)
   }
 
-  public func ofCount(count: Int) -> FBSimulatorQuery {
+  public func ofCount(count: Int) -> FBiOSTargetQuery {
     return self.range(NSRange(location: 0, length: count))
   }
 }
 
-extension FBSimulatorQuery : Accumulator {
-  public func append(other: FBSimulatorQuery) -> Self {
+extension FBiOSTargetQuery : Accumulator {
+  public func append(other: FBiOSTargetQuery) -> Self {
     let deviceSet = other.devices as NSSet
     let deviceArray = Array(deviceSet) as! [FBControlCoreConfiguration_Device]
     let osVersionsSet = other.osVersions as NSSet

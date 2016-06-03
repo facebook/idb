@@ -75,44 +75,12 @@
 
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
 {
-  stateString = [[stateString lowercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@" "];
-  if ([stateString isEqualToString:@"creating"]) {
-    return FBSimulatorStateCreating;
-  }
-  if ([stateString isEqualToString:@"shutdown"]) {
-    return FBSimulatorStateShutdown;
-  }
-  if ([stateString isEqualToString:@"booting"]) {
-    return FBSimulatorStateBooting;
-  }
-  if ([stateString isEqualToString:@"booted"]) {
-    return FBSimulatorStateBooted;
-  }
-  if ([stateString isEqualToString:@"creating"]) {
-    return FBSimulatorStateCreating;
-  }
-  if ([stateString isEqualToString:@"shutting down"]) {
-    return FBSimulatorStateShuttingDown;
-  }
-  return FBSimulatorStateUnknown;
+  return FBSimulatorStateFromStateString(stateString);
 }
 
 + (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state
 {
-  switch (state) {
-    case FBSimulatorStateCreating:
-      return @"Creating";
-    case FBSimulatorStateShutdown:
-      return @"Shutdown";
-    case FBSimulatorStateBooting:
-      return @"Booting";
-    case FBSimulatorStateBooted:
-      return @"Booted";
-    case FBSimulatorStateShuttingDown:
-      return @"Shutting Down";
-    default:
-      return @"Unknown";
-  }
+  return FBSimulatorStateStringFromState(state);
 }
 
 - (BOOL)waitOnState:(FBSimulatorState)state

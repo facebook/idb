@@ -24,19 +24,6 @@
 @class FBSimulatorSet;
 @class SimDevice;
 
-/**
- Uses the known values of SimDevice State, to construct an enumeration.
- These mirror the values from -[SimDeviceState state].
- */
-typedef NS_ENUM(NSUInteger, FBSimulatorState) {
-  FBSimulatorStateCreating = 0,
-  FBSimulatorStateShutdown = 1,
-  FBSimulatorStateBooting = 2,
-  FBSimulatorStateBooted = 3,
-  FBSimulatorStateShuttingDown = 4,
-  FBSimulatorStateUnknown = 99,
-};
-
 NS_ASSUME_NONNULL_BEGIN
 
 /**

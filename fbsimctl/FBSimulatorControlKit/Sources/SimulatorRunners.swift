@@ -20,7 +20,7 @@ struct SimulatorCreationRunner : Runner {
     do {
       self.reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
-      self.defaults.updateLastQuery(FBSimulatorQuery.udids([simulator.udid]))
+      self.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
       self.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success
     } catch let error as NSError {

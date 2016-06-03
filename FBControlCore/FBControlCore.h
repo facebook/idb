@@ -23,6 +23,7 @@
 #import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBiOSTarget.h>
+#import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogSearch.h>

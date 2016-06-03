@@ -244,7 +244,7 @@ extension Command : Parsable {
     return Parser
       .ofFourSequenced(
         Configuration.parser,
-        FBSimulatorQueryParsers.parser.optional(),
+        FBiOSTargetQueryParsers.parser.optional(),
         Format.parser.optional(),
         Parser.manyCount(1, Action.parser)
       )
@@ -522,21 +522,21 @@ extension SequenceType where Generator.Element == Keyword {
   }}
 }
 
-public struct FBSimulatorQueryParsers {
-  public static var parser: Parser<FBSimulatorQuery> { get {
+public struct FBiOSTargetQueryParsers {
+  public static var parser: Parser<FBiOSTargetQuery> { get {
     return Parser.alternative([
       self.allParser,
       self.unionParser
     ])
   }}
 
-  static var allParser: Parser<FBSimulatorQuery> { get {
-    return Parser<FBSimulatorQuery>
-      .ofString("all", FBSimulatorQuery.allSimulators())
+  static var allParser: Parser<FBiOSTargetQuery> { get {
+    return Parser<FBiOSTargetQuery>
+      .ofString("all", FBiOSTargetQuery.allSimulators())
   }}
 
-  static var unionParser: Parser<FBSimulatorQuery> { get {
-    return Parser<FBSimulatorQuery>.accumulate(1, [
+  static var unionParser: Parser<FBiOSTargetQuery> { get {
+    return Parser<FBiOSTargetQuery>.accumulate(1, [
       self.firstParser,
       self.uuidParser,
       self.simulatorStateParser,
@@ -545,34 +545,34 @@ public struct FBSimulatorQueryParsers {
     ])
   }}
 
-  static var firstParser: Parser<FBSimulatorQuery> { get {
+  static var firstParser: Parser<FBiOSTargetQuery> { get {
     return Parser
       .succeeded("--first", Parser<Any>.ofInt)
-      .fmap { FBSimulatorQuery.ofCount($0) }
+      .fmap { FBiOSTargetQuery.ofCount($0) }
   }}
 
-  static var uuidParser: Parser<FBSimulatorQuery> { get {
-    return Parser<FBSimulatorQuery>
+  static var uuidParser: Parser<FBiOSTargetQuery> { get {
+    return Parser<FBiOSTargetQuery>
       .ofUDID
-      .fmap { FBSimulatorQuery.udids([$0.UUIDString]) }
+      .fmap { FBiOSTargetQuery.udids([$0.UUIDString]) }
   }}
 
-  static var simulatorStateParser: Parser<FBSimulatorQuery> { get {
+  static var simulatorStateParser: Parser<FBiOSTargetQuery> { get {
     return FBSimulatorState
       .parser
-      .fmap { FBSimulatorQuery.simulatorStates([$0]) }
+      .fmap { FBiOSTargetQuery.simulatorStates([$0]) }
   }}
 
-  static var osVersionsParser: Parser<FBSimulatorQuery> { get {
+  static var osVersionsParser: Parser<FBiOSTargetQuery> { get {
     return FBSimulatorConfigurationParser
       .osVersionParser
-      .fmap { FBSimulatorQuery.osVersions([$0]) }
+      .fmap { FBiOSTargetQuery.osVersions([$0]) }
   }}
 
-  static var deviceParser: Parser<FBSimulatorQuery> { get {
+  static var deviceParser: Parser<FBiOSTargetQuery> { get {
     return FBSimulatorConfigurationParser
       .deviceParser
-      .fmap { FBSimulatorQuery.devices([$0]) }
+      .fmap { FBiOSTargetQuery.devices([$0]) }
   }}
 }
 

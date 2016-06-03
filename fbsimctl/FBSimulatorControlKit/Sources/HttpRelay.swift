@@ -52,7 +52,7 @@ private class HttpEventReporter : EventReporter, JSONDescribeable {
 }
 
 extension ActionPerformer {
-  func dispatchAction(action: Action, queryOverride: FBSimulatorQuery? = nil, formatOverride: Format? = nil) -> HttpResponse {
+  func dispatchAction(action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: Format? = nil) -> HttpResponse {
     let reporter = HttpEventReporter()
     var result = CommandResult.Success
     dispatch_sync(dispatch_get_main_queue()) {
@@ -79,7 +79,7 @@ struct HttpRoute {
       do {
         let json = try HttpRoute.jsonBodyFromRequest(request)
         let action = try actionParser(json)
-        let query = try? FBSimulatorQuery.inflateFromJSON(json.getValue("simulators").decode())
+        let query = try? FBiOSTargetQuery.inflateFromJSON(json.getValue("simulators").decode())
         return performer.dispatchAction(action, queryOverride: query)
       } catch let error as JSONError {
         return HttpEventReporter.errorResponse(error.description)
