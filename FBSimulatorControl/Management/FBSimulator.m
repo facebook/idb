@@ -95,17 +95,29 @@
   return self;
 }
 
-#pragma mark Properties
+#pragma mark FBiOSTarget
+
+- (NSString *)udid
+{
+  return self.device.UDID.UUIDString;
+}
 
 - (NSString *)name
 {
   return self.device.name;
 }
 
-- (NSString *)udid
+- (id<FBControlCoreConfiguration_Device>)deviceConfiguration
 {
-  return self.device.UDID.UUIDString;
+  return self.configuration.device;
 }
+
+- (id<FBControlCoreConfiguration_OS>)osConfiguration
+{
+  return self.configuration.os;
+}
+
+#pragma mark Properties
 
 - (FBSimulatorState)state
 {

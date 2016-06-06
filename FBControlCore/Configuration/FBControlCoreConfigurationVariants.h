@@ -161,6 +161,12 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBControlCoreConfiguration_iOS_9_3 : FBControlCoreConfiguration_iOS_Base
 @end
 
+@interface FBControlCoreConfiguration_iOS_9_3_1 : FBControlCoreConfiguration_iOS_Base
+@end
+
+@interface FBControlCoreConfiguration_iOS_9_3_2 : FBControlCoreConfiguration_iOS_Base
+@end
+
 @interface FBControlCoreConfiguration_tvOS_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_OS>
 @end
 

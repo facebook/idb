@@ -138,10 +138,13 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
   _productType = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductType")));
   _architechture = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("CPUArchitecture")));
 
+  NSString *osVersion = [FBAMDevice osVersionForDevice:_amDevice];
+
   FBAMDeviceStopSession(_amDevice);
   FBAMDeviceDisconnect(_amDevice);
 
-  _configurationDevice = FBControlCoreConfigurationVariants.productTypeToDevice[_productType];
+  _deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[_productType];
+  _osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[osVersion];
 
   return YES;
 }
@@ -155,6 +158,23 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
     self.udid,
     self.deviceName
   ];
+}
+
+#pragma mark Private
+
++ (NSString *)osVersionForDevice:(CFTypeRef)amDevice
+{
+  NSString *deviceClass = (__bridge NSString *)(FBAMDeviceCopyValue(amDevice, NULL, CFSTR("DeviceClass")));
+  NSString *productVersion = (__bridge NSString *)(FBAMDeviceCopyValue(amDevice, NULL, CFSTR("ProductVersion")));
+  NSDictionary<NSString *, NSString *> *deviceClassOSPrefixMapping = @{
+    @"iPhone" : @"iOS",
+    @"iPad" : @"iOS",
+  };
+  NSString *osPrefix = deviceClassOSPrefixMapping[deviceClass];
+  if (!osPrefix) {
+    return productVersion;
+  }
+  return [NSString stringWithFormat:@"%@ %@", osPrefix, productVersion];
 }
 
 @end

@@ -74,12 +74,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorHistory *history;
 
 /**
- The Name of the allocated Simulator.
- */
-@property (nonatomic, copy, readonly, nonnull) NSString *name;
-
-
-/**
  The State of the allocated Simulator.
  */
 @property (nonatomic, assign, readonly) FBSimulatorState state;

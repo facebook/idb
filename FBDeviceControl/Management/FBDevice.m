@@ -46,6 +46,21 @@
   return self.amDevice.udid;
 }
 
+- (NSString *)name
+{
+  return self.amDevice.deviceName;
+}
+
+- (id<FBControlCoreConfiguration_Device>)deviceConfiguration
+{
+  return self.amDevice.deviceConfiguration;
+}
+
+- (id<FBControlCoreConfiguration_OS>)osConfiguration
+{
+  return self.amDevice.osConfiguration;
+}
+
 #pragma mark Properties
 
 - (DVTiOSDevice *)dvtDevice
@@ -62,11 +77,6 @@
     _deviceOperator = [[FBiOSDeviceOperator alloc] initWithiOSDevice:self.dvtDevice];
   }
   return _deviceOperator;
-}
-
-- (NSString *)name
-{
-  return self.amDevice.deviceName;
 }
 
 - (NSString *)modelName
@@ -91,9 +101,9 @@
   return [NSString stringWithFormat:
     @"Device | %@ | %@ | %@ | %@",
     self.name,
-    self.modelName,
-    self.systemVersion,
-    self.udid
+    self.udid,
+    self.osConfiguration,
+    self.deviceConfiguration
   ];
 }
 

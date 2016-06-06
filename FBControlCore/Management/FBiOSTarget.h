@@ -9,6 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+@protocol FBControlCoreConfiguration_Device;
+@protocol FBControlCoreConfiguration_OS;
+
 /**
  Uses the known values of SimDevice State, to construct an enumeration.
  These mirror the values from -[SimDeviceState state].
@@ -32,7 +35,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Unique Device Identifier of the iOS Target.
  */
-@property (nonatomic, copy, readonly, nonnull) NSString *udid;
+@property (nonatomic, copy, readonly) NSString *udid;
+
+/**
+ The Name of the iOS Target. This is the name given by the user, such as "Ada's iPhone"
+ */
+@property (nonatomic, copy, readonly) NSString *name;
+
+/**
+ The Configuration of the iOS Target's Device.
+ */
+@property (nonatomic, copy, readonly) id<FBControlCoreConfiguration_Device> deviceConfiguration;
+
+/**
+ The Configuration of the iOS Target's OS.
+ */
+@property (nonatomic, copy, readonly) id<FBControlCoreConfiguration_OS> osConfiguration;
 
 @end
 
