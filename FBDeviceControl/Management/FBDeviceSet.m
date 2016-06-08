@@ -57,7 +57,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
   });
 }
 
-+ (instancetype)defaultSetWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   static dispatch_once_t onceToken;
   static FBDeviceSet *deviceSet = nil;
@@ -79,22 +79,17 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
   return self;
 }
 
-#pragma mark Public
+#pragma mark Querying
+
+- (NSArray<FBDevice *> *)query:(FBiOSTargetQuery *)query
+{
+  return (NSArray<FBDevice *> *)[query filter:self.allDevices];
+}
 
 - (nullable FBDevice *)deviceWithUDID:(NSString *)udid
 {
-  return [[self.allDevices
-    filteredArrayUsingPredicate:[FBDeviceSet predicateDeviceWithUDID:udid]]
-    firstObject];
-}
-
-#pragma mark Private
-
-- (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
-{
-  [self primeDeviceManager];
-  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[NSClassFromString(@"DVTiOSDevice") alliOSDevices]];
-  return dvtDevices[udid];
+  FBiOSTargetQuery *query = [FBiOSTargetQuery udids:@[udid]];
+  return [[self query:query] firstObject];
 }
 
 #pragma mark Properties
@@ -121,6 +116,13 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 }
 
 #pragma mark Private
+
+- (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
+{
+  [self primeDeviceManager];
+  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[NSClassFromString(@"DVTiOSDevice") alliOSDevices]];
+  return dvtDevices[udid];
+}
 
 + (NSDictionary<NSString *, DVTiOSDevice *> *)keyDVTDevicesByUDID:(NSArray<DVTiOSDevice *> *)devices
 {

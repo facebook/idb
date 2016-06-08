@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBDevice;
+@class FBiOSTargetQuery;
 @protocol FBControlCoreLogger;
 
 /**
@@ -19,13 +20,25 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBDeviceSet : NSObject
 
+#pragma mark Initializers
+
 /**
  Returns the Default Device Set.
 
  @param error an error out for any error that occurs constructing the set.
- @return the Default Device Set if successful, NO otherwise.
+ @return the Default Device Set if successful, nil otherwise.
  */
-+ (instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)defaultSetWithLogger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+#pragma mark Querying
+
+/**
+ Fetches the Simulators from the Set, matching the query.
+
+ @param query the Query to query with.
+ @return an array of matching Simulators.
+ */
+- (NSArray<FBDevice *> *)query:(FBiOSTargetQuery *)query;
 
 /**
  Fetches a Device with by a UDID.
@@ -34,6 +47,8 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Device with the specified UDID, if one exists.
  */
 - (nullable FBDevice *)deviceWithUDID:(NSString *)udid;
+
+#pragma mark Properties
 
 /**
  All of the Available Devices.
