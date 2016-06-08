@@ -34,12 +34,12 @@ class IntegrationTests : XCTestCase {
     self.assertCLIRunsSuccessfully(["--set", set1.path!, "all", "delete"])
     XCTAssertEqual(
       self.assertCLIRunsSuccessfully(["--set", set2.path!, "--device-name", "--state", "list"]),
-      ["\'iPad 2\' Booted"]
+      ["iPad 2 | Booted"]
     )
     self.assertCLIRunsSuccessfully(["--set", set2.path!, "all", "shutdown"])
     XCTAssertEqual(
       self.assertCLIRunsSuccessfully(["--set", set2.path!, "--device-name", "--state", "list"]),
-      ["\'iPad 2\' Shutdown"]
+      ["iPad 2 | Shutdown"]
     )
     self.assertCLIRunsSuccessfully(["--set", set2.path!, "all", "delete"])
   }
