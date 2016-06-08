@@ -218,30 +218,19 @@
 
 - (NSString *)debugDescription
 {
-  return [NSString stringWithFormat:
-    @"Name %@ | UUID %@ | State %@ | %@ | %@",
-    self.name,
-    self.udid,
-    self.device.stateString,
-    self.launchdProcess,
-    self.containerApplication
-  ];
+  return [FBiOSTargetFormat.fullFormat format:self];
 }
 
 - (NSString *)shortDescription
 {
-  return [NSString stringWithFormat:@"Simulator %@", self.udid];
+  return [FBiOSTargetFormat.defaultFormat format:self];
 }
 
 #pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
-  return @{
-    @"name" : self.device.name,
-    @"state" : self.device.stateString,
-    @"udid" : self.udid
-  };
+  return [FBiOSTargetFormat.fullFormat extractFrom:self];
 }
 
 #pragma mark Forwarding

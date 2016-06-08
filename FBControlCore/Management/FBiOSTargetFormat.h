@@ -59,6 +59,20 @@ extern NSString *const FBiOSTargetFormatProcessIdentifier;
 + (instancetype)formatWithFields:(NSArray<NSString *> *)fields;
 
 /**
+ Creates and returns the Default Target Format.
+
+ @return the Default Target Format.
+ */
++ (instancetype)defaultFormat;
+
+/**
+ Creates and returns the Full Target Format.
+
+ @return the Full Target Format.
+ */
++ (instancetype)fullFormat;
+
+/**
  An ordering of the fields to format targets with.
  */
 @property (nonatomic, copy, readonly) NSArray<NSString *> *fields;

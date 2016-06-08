@@ -32,6 +32,39 @@ NSString *const FBiOSTargetFormatProcessIdentifier = @"pid";
   return [[self alloc] initWithFields:fields];
 }
 
++ (instancetype)defaultFormat
+{
+  static dispatch_once_t onceToken;
+  static FBiOSTargetFormat *format;
+  dispatch_once(&onceToken, ^{
+    format = [FBiOSTargetFormat formatWithFields:@[
+      FBiOSTargetFormatUDID,
+      FBiOSTargetFormatName,
+      FBiOSTargetFormatState,
+      FBiOSTargetFormatDeviceName,
+      FBiOSTargetFormatOSVersion,
+    ]];
+  });
+  return format;
+}
+
++ (instancetype)fullFormat
+{
+  static dispatch_once_t onceToken;
+  static FBiOSTargetFormat *format;
+  dispatch_once(&onceToken, ^{
+    format = [FBiOSTargetFormat formatWithFields:@[
+      FBiOSTargetFormatUDID,
+      FBiOSTargetFormatName,
+      FBiOSTargetFormatState,
+      FBiOSTargetFormatDeviceName,
+      FBiOSTargetFormatOSVersion,
+      FBiOSTargetFormatProcessIdentifier,
+    ]];
+  });
+  return format;
+}
+
 - (instancetype)initWithFields:(NSArray<NSString *> *)fields
 {
   self = [super init];
