@@ -319,6 +319,7 @@ extension Action : Parsable {
         self.terminateParser,
         self.uninstallParser,
         self.uploadParser,
+        self.watchdogOverrideParser,
       ])
   }}
 
@@ -488,6 +489,18 @@ extension Action : Parsable {
         }
         return Action.Upload(diagnostics)
       }
+  }}
+
+  static var watchdogOverrideParser: Parser<Action> { get {
+    return Parser
+      .succeeded(
+        EventName.WatchdogOverride.rawValue,
+        Parser.ofTwoSequenced(
+          Parser<Any>.ofDouble,
+          Parser.manyCount(1, Parser<Any>.ofBundleID)
+        )
+      )
+      .fmap { Action.WatchdogOverride($1, $0) }
   }}
 }
 

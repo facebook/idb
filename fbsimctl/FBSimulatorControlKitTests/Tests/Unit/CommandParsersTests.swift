@@ -204,6 +204,7 @@ let validActions: [([String], Action)] = [
   (["terminate", "com.foo.bar"], Action.Terminate("com.foo.bar")),
   (["uninstall", "com.foo.bar"], Action.Uninstall("com.foo.bar")),
   (["upload", Fixtures.photoPath, Fixtures.videoPath], Action.Upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic])),
+  (["watchdog_override", "60", "com.foo.bar", "com.bar.baz"], Action.WatchdogOverride(["com.foo.bar", "com.bar.baz"], 60)),
 ]
 
 let invalidActions: [[String]] = [
