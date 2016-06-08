@@ -11,6 +11,7 @@
 
 #import <FBControlCore/FBJSONConversion.h>
 
+@protocol FBiOSTarget;
 @protocol FBControlCoreConfiguration_OS;
 @protocol FBControlCoreConfiguration_Device;
 
@@ -76,6 +77,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)range:(NSRange)range;
 
 /**
+ Filters iOS Targets based on the reciver.
+
+ @param targets the targets to filter.
+ @return a filtered array of targets.
+ */
+- (NSArray<id<FBiOSTarget>> *)filter:(NSArray<id<FBiOSTarget>> *)targets;
+
+/**
  The UDIDs to Match against.
  An Empty Set means that no UDID filtering will occur.
  */
@@ -104,7 +113,6 @@ NS_ASSUME_NONNULL_BEGIN
  A Location of NSNotFound means that all matching Simulators will be fetched.
  */
 @property (nonatomic, readonly, assign) NSRange range;
-
 
 @end
 

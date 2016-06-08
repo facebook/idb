@@ -13,6 +13,7 @@
 #import "FBControlCoreError.h"
 #import "FBCollectionInformation.h"
 #import "FBControlCoreConfigurationVariants.h"
+#import "FBiOSTargetPredicates.h"
 
 @implementation FBiOSTargetQuery
 
@@ -116,6 +117,31 @@
   }
 
   return [[self.class alloc] initWithUDIDs:self.udids states:self.states osVersions:self.osVersions devices:self.devices range:range];
+}
+
+- (NSArray<id<FBiOSTarget>> *)filter:(NSArray<id<FBiOSTarget>> *)targets
+{
+  NSMutableArray<NSPredicate *> *predicates = [NSMutableArray array];
+  if (self.udids.count > 0) {
+    [predicates addObject:[FBiOSTargetPredicates udids:self.udids.allObjects]];
+  }
+  if (self.states.count > 0) {
+    [predicates addObject:[FBiOSTargetPredicates states:self.states]];
+  }
+  if (self.osVersions.count > 0) {
+    [predicates addObject:[FBiOSTargetPredicates osVersions:self.osVersions.allObjects]];
+  }
+  if (self.devices.count > 0) {
+    [predicates addObject:[FBiOSTargetPredicates devices:self.devices.allObjects]];
+  }
+
+  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:predicates];
+  targets = [targets filteredArrayUsingPredicate:predicate];
+  if (self.range.location == NSNotFound && self.range.length == 0) {
+    return targets;
+  }
+  NSRange range = NSIntersectionRange(self.range, NSMakeRange(0, targets.count - 1));
+  return [targets subarrayWithRange:range];
 }
 
 #pragma mark NSCopying

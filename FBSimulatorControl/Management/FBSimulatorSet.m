@@ -140,27 +140,7 @@
 
 - (NSArray<FBSimulator *> *)query:(FBiOSTargetQuery *)query
 {
-  NSMutableArray<NSPredicate *> *predicates = [NSMutableArray array];
-  if (query.udids.count > 0) {
-    [predicates addObject:[FBSimulatorPredicates udids:query.udids.allObjects]];
-  }
-  if (query.states.count > 0) {
-    [predicates addObject:[FBSimulatorPredicates states:query.states]];
-  }
-  if (query.osVersions.count > 0) {
-    [predicates addObject:[FBSimulatorPredicates osVersions:query.osVersions.allObjects]];
-  }
-  if (query.devices.count > 0) {
-    [predicates addObject:[FBSimulatorPredicates devices:query.devices.allObjects]];
-  }
-
-  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:predicates];
-  NSArray<FBSimulator *> *simulators = [self.allSimulators filteredArrayUsingPredicate:predicate];
-  if (query.range.location == NSNotFound && query.range.length == 0) {
-    return simulators;
-  }
-  NSRange range = NSIntersectionRange(query.range, NSMakeRange(0, simulators.count - 1));
-  return [simulators subarrayWithRange:range];
+  return (NSArray<FBSimulator *> *) [query filter:self.allSimulators];
 }
 
 #pragma mark Creation
