@@ -51,6 +51,16 @@
   return self.amDevice.deviceName;
 }
 
+- (FBSimulatorState)state
+{
+  return FBSimulatorStateUnknown;
+}
+
+- (FBProcessInfo *)launchdProcess
+{
+  return nil;
+}
+
 - (id<FBControlCoreConfiguration_Device>)deviceConfiguration
 {
   return self.amDevice.deviceConfiguration;

@@ -107,7 +107,7 @@
   for (FBSimulator *simulator in simulators) {
     // Get some preconditions
     NSError *innerError = nil;
-    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess ?: [self.processFetcher launchdSimProcessForSimDevice:simulator.device];
+    FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
 
     // The Bridge should also be tidied up if one exists.
     FBSimulatorBridge *bridge = simulator.bridge;
@@ -160,8 +160,8 @@
         logger:self.logger]
         fail:error];
     }
-    if (launchdSimProcess) {
-      [simulator.eventSink simulatorDidTerminate:launchdSimProcess expected:YES];
+    if (launchdProcess) {
+      [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
     }
   }
   return simulators;

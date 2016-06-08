@@ -271,12 +271,12 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 }
 
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
 
 }
 
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
 
 }
@@ -405,7 +405,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (NSArray<FBCrashLogInfo *> *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
 {
-  FBProcessInfo *launchdProcess = self.simulator.launchdSimProcess;
+  FBProcessInfo *launchdProcess = self.simulator.launchdProcess;
   if (!launchdProcess) {
     return @[];
   }

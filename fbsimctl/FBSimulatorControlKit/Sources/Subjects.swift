@@ -135,7 +135,7 @@ struct SimulatorSubject: JSONDescribeable, CustomStringConvertible {
           case .State:
             return ("state", simulator.stateString)
           case .ProcessIdentifier:
-            return ("pid", simulator.launchdSimProcess?.processIdentifier.description)
+            return ("pid", simulator.launchdProcess?.processIdentifier.description)
           }
       }
     }

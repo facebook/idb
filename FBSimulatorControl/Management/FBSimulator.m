@@ -159,9 +159,9 @@
   return [self.pool.allocatedSimulators containsObject:self];
 }
 
-- (FBProcessInfo *)launchdSimProcess
+- (FBProcessInfo *)launchdProcess
 {
-  return self.eventRelay.launchdSimProcess;
+  return self.eventRelay.launchdProcess;
 }
 
 - (FBSimulatorBridge *)bridge
@@ -223,7 +223,7 @@
     self.name,
     self.udid,
     self.device.stateString,
-    self.launchdSimProcess,
+    self.launchdProcess,
     self.containerApplication
   ];
 }

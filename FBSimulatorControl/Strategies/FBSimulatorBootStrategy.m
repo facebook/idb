@@ -355,19 +355,19 @@
 - (FBProcessInfo *)launchdSimWithAllRequiredProcesses:(NSError **)error
 {
   FBProcessFetcher *processFetcher = self.simulator.processFetcher;
-  FBProcessInfo *launchdSimProcess = [processFetcher launchdSimProcessForSimDevice:self.simulator.device];
-  if (!launchdSimProcess) {
+  FBProcessInfo *launchdProcess = [processFetcher launchdProcessForSimDevice:self.simulator.device];
+  if (!launchdProcess) {
     return [[[FBSimulatorError
       describe:@"Could not obtain process info for launchd_sim process"]
       inSimulator:self.simulator]
       fail:error];
   }
-  [self.simulator.eventSink simulatorDidLaunch:launchdSimProcess];
+  [self.simulator.eventSink simulatorDidLaunch:launchdProcess];
 
   // Waitng for all required processes to start
   NSSet *requiredProcessNames = self.simulator.requiredProcessNamesToVerifyBooted;
   BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-    NSSet *runningProcessNames = [NSSet setWithArray:[[processFetcher subprocessesOf:launchdSimProcess.processIdentifier] valueForKey:@"processName"]];
+    NSSet *runningProcessNames = [NSSet setWithArray:[[processFetcher subprocessesOf:launchdProcess.processIdentifier] valueForKey:@"processName"]];
     return [requiredProcessNames isSubsetOfSet:runningProcessNames];
   }];
   if (!didStartAllRequiredProcesses) {
@@ -377,7 +377,7 @@
       fail:error];
   }
 
-  return launchdSimProcess;
+  return launchdProcess;
 }
 
 @end

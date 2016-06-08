@@ -46,7 +46,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 /**
  Fetches an NSArray<FBProcessInfo *> of all launchd_sim processes.
  */
-- (NSArray<FBProcessInfo *> *)launchdSimProcesses;
+- (NSArray<FBProcessInfo *> *)launchdProcesses;
 
 /**
  Fetches the Process Info for a given Simulator.
@@ -71,7 +71,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @param simDevice the Simulator to fetch Process Info for.
  @return Process Info if any could be obtained, nil otherwise.
  */
-- (FBProcessInfo *)launchdSimProcessForSimDevice:(SimDevice *)simDevice;
+- (FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice;
 
 #pragma mark Predicates
 
@@ -104,7 +104,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @param udids an NSArray<NSString *> of the Simulator UDIDs to match.
  @return an NSPredicate that operates on an Collection of FBProcessInfo *.
  */
-+ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray<NSString *> *)udids;
++ (NSPredicate *)launchdProcessesMatchingUDIDs:(NSArray<NSString *> *)udids;
 
 /**
  Constructs a Predicate that matches CoreSimulatorService Processes for the current xcode versions.

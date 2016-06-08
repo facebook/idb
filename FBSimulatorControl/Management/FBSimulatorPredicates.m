@@ -43,7 +43,7 @@
 + (NSPredicate *)launched
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
-    return simulator.launchdSimProcess.processIdentifier > 1;
+    return simulator.launchdProcess.processIdentifier > 1;
   }];
 }
 

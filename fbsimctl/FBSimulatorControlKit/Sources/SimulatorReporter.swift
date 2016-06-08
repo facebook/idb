@@ -47,12 +47,12 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink {
 
   }
 
-  public func simulatorDidLaunch(launchdSimProcess: FBProcessInfo!) {
-    self.reportValue(EventName.Launch, EventType.Discrete, launchdSimProcess)
+  public func simulatorDidLaunch(launchdProcess: FBProcessInfo!) {
+    self.reportValue(EventName.Launch, EventType.Discrete, launchdProcess)
   }
 
-  public func simulatorDidTerminate(launchdSimProcess: FBProcessInfo!, expected: Bool) {
-    self.reportValue(EventName.Terminate, EventType.Discrete, launchdSimProcess)
+  public func simulatorDidTerminate(launchdProcess: FBProcessInfo!, expected: Bool) {
+    self.reportValue(EventName.Terminate, EventType.Discrete, launchdProcess)
   }
 
   public func agentDidLaunch(launchConfig: FBAgentLaunchConfiguration!, didStart agentProcess: FBProcessInfo!, stdOut: NSFileHandle!, stdErr: NSFileHandle!) {

@@ -34,7 +34,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   return [self processesWithLaunchPathSubstring:@"Contents/MacOS/com.apple.CoreSimulator.CoreSimulatorService"];
 }
 
-- (NSArray<FBProcessInfo *> *)launchdSimProcesses
+- (NSArray<FBProcessInfo *> *)launchdProcesses
 {
   return [self processesWithProcessName:@"launchd_sim"];
 }
@@ -53,10 +53,10 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   }];
 }
 
-- (FBProcessInfo *)launchdSimProcessForSimDevice:(SimDevice *)simDevice
+- (FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice
 {
-  return [[[self launchdSimProcesses]
-    filteredArrayUsingPredicate:[FBProcessFetcher launchdSimProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
+  return [[[self launchdProcesses]
+    filteredArrayUsingPredicate:[FBProcessFetcher launchdProcessesMatchingUDIDs:@[simDevice.UDID.UUIDString]]]
     firstObject];
 }
 
@@ -113,7 +113,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   }];
 }
 
-+ (NSPredicate *)launchdSimProcessesMatchingUDIDs:(NSArray<NSString *> *)udids
++ (NSPredicate *)launchdProcessesMatchingUDIDs:(NSArray<NSString *> *)udids
 {
   NSPredicate *processNamePredicate = [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
     return [process.launchPath rangeOfString:@"launchd_sim"].location != NSNotFound;

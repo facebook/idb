@@ -104,11 +104,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
 
 /**
- The launchd_sim process info for the Simulator, if launched.
- */
-@property (nonatomic, copy, readonly, nullable) FBProcessInfo *launchdSimProcess;
-
-/**
  The FBProcessInfo associated with the Container Application that launched the Simulator.
  */
 @property (nonatomic, copy, readonly, nullable) FBProcessInfo *containerApplication;

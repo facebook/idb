@@ -94,7 +94,7 @@
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   FBSimulatorApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
-  return [[FBProcessFetcher new] subprocessOf:self.simulator.launchdSimProcess.processIdentifier withName:app.binary.name];
+  return [[FBProcessFetcher new] subprocessOf:self.simulator.launchdProcess.processIdentifier withName:app.binary.name];
 }
 
 

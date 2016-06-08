@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBProcessInfo;
 @protocol FBControlCoreConfiguration_Device;
 @protocol FBControlCoreConfiguration_OS;
 
@@ -41,6 +42,16 @@ NS_ASSUME_NONNULL_BEGIN
  The Name of the iOS Target. This is the name given by the user, such as "Ada's iPhone"
  */
 @property (nonatomic, copy, readonly) NSString *name;
+
+/**
+ The State of the iOS Target. Currently only applies to Simulators.
+ */
+@property (nonatomic, assign, readonly) FBSimulatorState state;
+
+/**
+ Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
+ */
+@property (nonatomic, assign, nullable, readonly) FBProcessInfo *launchdProcess;
 
 /**
  The Configuration of the iOS Target's Device.

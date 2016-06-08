@@ -63,14 +63,14 @@
   [self.logger logFormat:@"Bridge Did Disconnect => %@ Expected %d", bridge, expected];
 }
 
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
-  [self.logger logFormat:@"Simulator Did launch => %@", launchdSimProcess.shortDescription];
+  [self.logger logFormat:@"Simulator Did launch => %@", launchdProcess.shortDescription];
 }
 
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
-  [self.logger logFormat:@"Simulator Did Terminate => %@ Expected %d", launchdSimProcess.shortDescription, expected];
+  [self.logger logFormat:@"Simulator Did Terminate => %@ Expected %d", launchdProcess.shortDescription, expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr

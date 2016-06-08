@@ -51,7 +51,7 @@
 
 - (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
 {
-  FBProcessInfo *launchdSim = self.launchdSimProcess;
+  FBProcessInfo *launchdSim = self.launchdProcess;
   if (!launchdSim) {
     return @[];
   }

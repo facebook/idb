@@ -86,12 +86,12 @@
 
 }
 
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
 
 }
 
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
   [self terminateAllHandles];
 }
