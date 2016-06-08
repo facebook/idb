@@ -43,7 +43,7 @@
   }];
 }
 
-- (instancetype)authorizeLocationSettings:(NSArray *)bundleIDs
+- (instancetype)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
 {
   NSParameterAssert(bundleIDs);
 
@@ -74,7 +74,7 @@
   return [self authorizeLocationSettings:@[application.bundleID]];
 }
 
-- (instancetype)overrideWatchDogTimerForApplications:(NSArray *)bundleIDs withTimeout:(NSTimeInterval)timeout
+- (instancetype)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
 {
   NSParameterAssert(bundleIDs);
   NSParameterAssert(timeout);

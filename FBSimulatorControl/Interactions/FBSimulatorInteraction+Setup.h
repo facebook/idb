@@ -11,6 +11,8 @@
 
 @class FBSimulatorLaunchConfiguration;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Interactions for Simulators that should occur Prior to the launch of the Simulator.
  */
@@ -40,7 +42,7 @@
  @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
  @return the reciever, for chaining.
  */
-- (instancetype)authorizeLocationSettings:(NSArray *)bundleIDs;
+- (instancetype)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs;
 
 /**
  Authorizes the Location Settings for the provided application.
@@ -58,7 +60,7 @@
  @param timeout The new startup timeout.
  @return the receiver, for chaining.
  */
-- (instancetype)overrideWatchDogTimerForApplications:(NSArray *)bundleIDs withTimeout:(NSTimeInterval)timeout;
+- (instancetype)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout;
 
 /**
  Prepares the Simulator Keyboard, prior to launch.
@@ -71,3 +73,5 @@
 - (instancetype)setupKeyboard;
 
 @end
+
+NS_ASSUME_NONNULL_END
