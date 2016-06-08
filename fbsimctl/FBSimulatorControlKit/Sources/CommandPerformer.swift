@@ -23,9 +23,9 @@ struct ActionPerformer {
   let commandPerformer: CommandPerformer
   let configuration: Configuration
   let query: FBiOSTargetQuery
-  let format: Format?
+  let format: FBiOSTargetFormat?
 
-  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: Format? = nil) -> CommandResult {
+  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> CommandResult {
     let command = Command.Perform(self.configuration, [action], queryOverride ?? self.query, formatOverride ?? self.format)
     return self.commandPerformer.perform(command, reporter: reporter)
   }

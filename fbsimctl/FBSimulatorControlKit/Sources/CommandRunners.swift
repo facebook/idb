@@ -74,7 +74,7 @@ struct ActionRunner : Runner {
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
-  let format: Format
+  let format: FBiOSTargetFormat
   let query: FBiOSTargetQuery?
 
   func run() -> CommandResult {
@@ -130,7 +130,7 @@ struct ServerRunner : Runner, CommandPerformer {
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
-  let format: Format?
+  let format: FBiOSTargetFormat?
   let query: FBiOSTargetQuery?
   let serverConfiguration: Server
 

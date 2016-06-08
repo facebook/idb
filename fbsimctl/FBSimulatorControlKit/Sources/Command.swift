@@ -85,7 +85,7 @@ public enum Action {
  The entry point for all commands.
  */
 public indirect enum Command {
-  case Perform(Configuration, [Action], FBiOSTargetQuery?, Format?)
+  case Perform(Configuration, [Action], FBiOSTargetQuery?, FBiOSTargetFormat?)
   case Help(OutputOptions, Bool, Command?)
 }
 

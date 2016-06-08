@@ -74,7 +74,7 @@ struct ControlCoreSubject : JSONDescribeable, CustomStringConvertible {
 
 struct SimulatorSubject: JSONDescribeable, CustomStringConvertible {
   let simulator: FBSimulator
-  let format: Format
+  let format: FBiOSTargetFormat
 
   var jsonDescription: JSON {
     get {

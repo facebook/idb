@@ -52,7 +52,7 @@ private class HttpEventReporter : EventReporter, JSONDescribeable {
 }
 
 extension ActionPerformer {
-  func dispatchAction(action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: Format? = nil) -> HttpResponse {
+  func dispatchAction(action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> HttpResponse {
     let reporter = HttpEventReporter()
     var result = CommandResult.Success
     dispatch_sync(dispatch_get_main_queue()) {

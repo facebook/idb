@@ -33,7 +33,7 @@ struct SimulatorActionRunner : Runner {
   let reporter: EventReporter
   let simulator: FBSimulator
   let action: Action
-  let format: Format
+  let format: FBiOSTargetFormat
 
   func run() -> CommandResult {
     do {

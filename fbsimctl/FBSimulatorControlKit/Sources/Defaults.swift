@@ -50,11 +50,11 @@ let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPat
 */
 public class Defaults {
   let logWriter: Writer
-  let format: Format
+  let format: FBiOSTargetFormat
   let configuration: Configuration
   private var query: FBiOSTargetQuery?
 
-  init(logWriter: Writer, format: Format, configuration: Configuration) {
+  init(logWriter: Writer, format: FBiOSTargetFormat, configuration: Configuration) {
     self.logWriter = logWriter
     self.format = format
     self.configuration = configuration
@@ -95,7 +95,7 @@ public class Defaults {
   static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
     do {
       var configuration: Configuration = configuration
-      var format: Format? = nil
+      var format: FBiOSTargetFormat? = nil
 
       if let rcContents = try? String(contentsOfURL: DefaultsRCFile) {
         let rcTokens = Arguments.fromString(rcContents)
@@ -110,7 +110,7 @@ public class Defaults {
 
       return Defaults(
         logWriter: logWriter,
-        format: format ?? Format.defaultFormat(),
+        format: format ?? FBiOSTargetFormat.defaultFormat(),
         configuration: configuration
       )
     } catch let error as ParseError {
@@ -118,7 +118,7 @@ public class Defaults {
     }
   }
 
-  private static var rcFileParser: Parser<(Configuration?, Format?)> { get {
+  private static var rcFileParser: Parser<(Configuration?, FBiOSTargetFormat?)> { get {
     return Parser
       .ofTwoSequenced(
         Configuration.parser.optional(),

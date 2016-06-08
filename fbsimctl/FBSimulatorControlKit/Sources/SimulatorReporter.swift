@@ -13,9 +13,9 @@ import FBSimulatorControl
 public class SimulatorReporter : NSObject, FBSimulatorEventSink {
   unowned let simulator: FBSimulator
   let reporter: EventReporter
-  let format: Format
+  let format: FBiOSTargetFormat
 
-  init(simulator: FBSimulator, format: Format, reporter: EventReporter) {
+  init(simulator: FBSimulator, format: FBiOSTargetFormat, reporter: EventReporter) {
     self.simulator = simulator
     self.reporter = reporter
     self.format = format

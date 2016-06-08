@@ -95,5 +95,3 @@ extension FBiOSTargetFormat : Accumulator {
     return self.appendFields(other.fields)
   }
 }
-
-public typealias Format = FBiOSTargetFormat
