@@ -135,6 +135,10 @@ struct SimulatorActionRunner : Runner {
       }
     case .Upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
+    case .WatchdogOverride(let bundleIDs, let timeout):
+      return SimulatorInteractionRunner(reporter, EventName.WatchdogOverride, ArraySubject(bundleIDs)) { interaction in
+        interaction.overrideWatchDogTimerForApplications(bundleIDs, withTimeout: timeout)
+      }
     default:
       return SimulatorRunner(reporter, EventName.Failure, ControlCoreSubject(simulator)) {
         assertionFailure("Unimplemented")

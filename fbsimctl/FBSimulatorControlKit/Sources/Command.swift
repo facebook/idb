@@ -79,6 +79,7 @@ public enum Action {
   case Terminate(String)
   case Uninstall(String)
   case Upload([FBDiagnostic])
+  case WatchdogOverride([String], NSTimeInterval)
 }
 
 /**
@@ -178,6 +179,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftBundleID == rightBundleID
   case (.Upload(let leftPaths), .Upload(let rightPaths)):
     return leftPaths == rightPaths
+  case (.WatchdogOverride(let leftBundleIDs, let leftTimeout), .WatchdogOverride(let rightBundleIDs, let rightTimeout)):
+    return leftBundleIDs == rightBundleIDs && leftTimeout == rightTimeout
   default:
     return false
   }
