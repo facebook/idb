@@ -35,19 +35,6 @@ public struct Configuration {
 }
 
 /**
- Defines a the Keywords for specifying the formatting of the Simulator.
-*/
-public enum Keyword : String {
-  case UDID = "--udid"
-  case Name = "--name"
-  case DeviceName = "--device-name"
-  case OSVersion = "--os"
-  case State = "--state"
-  case ProcessIdentifier = "--pid"
-}
-public typealias Format = [Keyword]
-
-/**
  Options for Creating a Server for listening to commands on.
  */
 public enum Server {

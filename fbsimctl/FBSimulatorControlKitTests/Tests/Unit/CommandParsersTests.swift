@@ -11,15 +11,15 @@ import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
 
-class KeywordParserTests : XCTestCase {
+class FBiOSTargetFormatParserTests : XCTestCase {
   func testParsesKeywords() {
-    self.assertParsesAll(Keyword.parser, [
-      (["--udid"], Keyword.UDID),
-      (["--name"], Keyword.Name),
-      (["--device-name"], Keyword.DeviceName),
-      (["--os"], Keyword.OSVersion),
-      (["--state"], Keyword.State),
-      (["--pid"], Keyword.ProcessIdentifier)
+    self.assertParsesAll(FBiOSTargetFormatParsers.parser, [
+      (["--udid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatUDID])),
+      (["--name"], FBiOSTargetFormat(fields: [FBiOSTargetFormatName])),
+      (["--device-name"], FBiOSTargetFormat(fields: [FBiOSTargetFormatDeviceName])),
+      (["--os"], FBiOSTargetFormat(fields: [FBiOSTargetFormatOSVersion])),
+      (["--state"], FBiOSTargetFormat(fields: [FBiOSTargetFormatState])),
+      (["--pid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatProcessIdentifier]))
     ])
   }
 }
@@ -284,7 +284,7 @@ class CommandParserTests : XCTestCase {
       (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPhone6()]).simulatorStates([.Shutdown]), nil),
-      (["iPad 2", "--device-name", "--os"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), [.DeviceName, .OSVersion]),
+      (["iPad 2", "--device-name", "--os"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), FBiOSTargetFormat(fields: [FBiOSTargetFormatDeviceName, FBiOSTargetFormatOSVersion])),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }

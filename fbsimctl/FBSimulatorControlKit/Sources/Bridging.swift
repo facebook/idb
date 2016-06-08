@@ -76,3 +76,24 @@ extension FBiOSTargetQuery : Accumulator {
       .range(other.range)
   }
 }
+
+extension FBiOSTargetFormat {
+  public static var allFields: [String] { get {
+    return [
+      FBiOSTargetFormatUDID,
+      FBiOSTargetFormatName,
+      FBiOSTargetFormatDeviceName,
+      FBiOSTargetFormatOSVersion,
+      FBiOSTargetFormatState,
+      FBiOSTargetFormatProcessIdentifier,
+    ]
+  }}
+}
+
+extension FBiOSTargetFormat : Accumulator {
+  public func append(other: FBiOSTargetFormat) -> Self {
+    return self.appendFields(other.fields)
+  }
+}
+
+public typealias Format = FBiOSTargetFormat

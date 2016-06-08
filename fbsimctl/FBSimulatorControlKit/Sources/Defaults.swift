@@ -26,7 +26,6 @@ public enum DefaultsError : ErrorType, CustomStringConvertible {
 public protocol Defaultable {
   static var defaultValue: Self { get }
 }
-private let defaultFormat: Format = [ .UDID, .Name, .OSVersion, .State]
 
 extension Configuration : Defaultable {
   public static var defaultValue: Configuration { get {
@@ -111,7 +110,7 @@ public class Defaults {
 
       return Defaults(
         logWriter: logWriter,
-        format: format ?? defaultFormat,
+        format: format ?? Format.defaultFormat(),
         configuration: configuration
       )
     } catch let error as ParseError {
@@ -123,7 +122,7 @@ public class Defaults {
     return Parser
       .ofTwoSequenced(
         Configuration.parser.optional(),
-        Format.parser.optional()
+        FBiOSTargetFormatParsers.parser.optional()
       )
   }}
 

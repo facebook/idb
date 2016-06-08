@@ -245,7 +245,7 @@ extension Command : Parsable {
       .ofFourSequenced(
         Configuration.parser,
         FBiOSTargetQueryParsers.parser.optional(),
-        Format.parser.optional(),
+        FBiOSTargetFormatParsers.parser.optional(),
         Parser.manyCount(1, Action.parser)
       )
       .fmap { (configuration, query, format, actions) in
@@ -491,20 +491,6 @@ extension Action : Parsable {
   }}
 }
 
-extension Keyword : Parsable {
-  public static var parser: Parser<Keyword> { get {
-    return Parser
-      .alternative([
-        Parser.ofString(Keyword.UDID.rawValue, Keyword.UDID),
-        Parser.ofString(Keyword.Name.rawValue, Keyword.Name),
-        Parser.ofString(Keyword.DeviceName.rawValue, Keyword.DeviceName),
-        Parser.ofString(Keyword.OSVersion.rawValue, Keyword.OSVersion),
-        Parser.ofString(Keyword.State.rawValue, Keyword.State),
-        Parser.ofString(Keyword.ProcessIdentifier.rawValue, Keyword.ProcessIdentifier)
-      ])
-  }}
-}
-
 extension DiagnosticFormat : Parsable {
   public static var parser: Parser<DiagnosticFormat> { get {
     return Parser
@@ -516,10 +502,15 @@ extension DiagnosticFormat : Parsable {
   }}
 }
 
-extension SequenceType where Generator.Element == Keyword {
-  public static var parser: Parser<Format> { get {
-    return Parser.manyCount(1, Keyword.parser)
-  }}
+public struct FBiOSTargetFormatParsers {
+  public static var parser: Parser<FBiOSTargetFormat> { get {
+    let parsers = FBiOSTargetFormat.allFields.map { field in
+      return Parser.ofString("--" + field, field)
+    }
+    return Parser
+      .alternativeMany(1, parsers)
+      .fmap { FBiOSTargetFormat(fields: $0) }
+    }}
 }
 
 public struct FBiOSTargetQueryParsers {
