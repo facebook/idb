@@ -24,6 +24,7 @@
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
+#import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLocalizationOverride.h>

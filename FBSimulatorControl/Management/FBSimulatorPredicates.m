@@ -38,8 +38,6 @@
   ]];
 }
 
-#pragma mark States
-
 + (NSPredicate *)launched
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *simulator, NSDictionary *_) {
@@ -47,66 +45,7 @@
   }];
 }
 
-+ (NSPredicate *)state:(FBSimulatorState)state
-{
-  return [self states:[NSIndexSet indexSetWithIndex:(NSUInteger)state]];
-}
-
-+ (NSPredicate *)states:(NSIndexSet *)states
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return [states containsIndex:(NSUInteger)candidate.state];
-  }];
-}
-
 #pragma mark Configurations
-
-+ (NSPredicate *)only:(FBSimulator *)simulator
-{
-  return [self udid:simulator.udid];
-}
-
-+ (NSPredicate *)udid:(NSString *)udid
-{
-  return [self udids:@[udid]];
-}
-
-+ (NSPredicate *)udids:(NSArray<NSString *> *)udids
-{
-  NSSet<NSString *> *udidsSet = [NSSet setWithArray:udids];
-
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return [udidsSet containsObject:candidate.udid];
-  }];
-}
-
-+ (NSPredicate *)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices
-{
-  return [self devicesNamed:[devices valueForKey:@"deviceName"]];
-}
-
-+ (NSPredicate *)devicesNamed:(NSArray<NSString *> *)deviceNames
-{
-  NSSet<NSString *> *nameSet = [NSSet setWithArray:deviceNames];
-
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return [nameSet containsObject:candidate.device.name];
-  }];
-}
-
-+ (NSPredicate *)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)versions;
-{
-  return [self osVersionsNamed:[versions valueForKey:@"name"]];
-}
-
-+ (NSPredicate *)osVersionsNamed:(NSArray<NSString *> *)versionNames
-{
-  NSSet<NSString *> *nameSet = [NSSet setWithArray:versionNames];
-
-  return [NSPredicate predicateWithBlock:^ BOOL (FBSimulator *candidate, NSDictionary *_) {
-    return [nameSet containsObject:candidate.device.runtime.name];
-  }];
-}
 
 + (NSPredicate *)configuration:(FBSimulatorConfiguration *)configuration
 {
