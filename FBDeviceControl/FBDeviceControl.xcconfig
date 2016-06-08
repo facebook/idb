@@ -6,7 +6,7 @@ OTHER_LDFLAGS = $(inherited) -weak_framework DTXConnectionServices -weak_framewo
 
 // Target-Specific Settings
 DEFINES_MODULE = YES;
-INFOPLIST_FILE = FBDeviceControl/FBDeviceControl-Info.plist
+INFOPLIST_FILE = $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
 LD_RUNPATH_SEARCH_PATHS = @loader_path/Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl
 PRODUCT_NAME = FBDeviceControl
