@@ -10,17 +10,17 @@
 import Foundation
 import FBSimulatorControl
 
-public class SimulatorReporter : NSObject, FBSimulatorEventSink {
-  unowned let simulator: FBSimulator
-  let reporter: EventReporter
-  let format: FBiOSTargetFormat
+public class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
+  unowned public let target: FBSimulator
+  public let reporter: EventReporter
+  public let format: FBiOSTargetFormat
 
   init(simulator: FBSimulator, format: FBiOSTargetFormat, reporter: EventReporter) {
-    self.simulator = simulator
+    self.target = simulator
     self.reporter = reporter
     self.format = format
     super.init()
-    self.simulator.userEventSink = self
+    simulator.userEventSink = self
   }
 
   public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {
@@ -85,18 +85,5 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink {
 }
 
 extension SimulatorReporter {
-  public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    let simulatorSubject = iOSTargetSubject(target: self.simulator, format: self.format)
-    self.reporter.report(iOSTargetWithSubject(
-      targetSubject: simulatorSubject,
-      eventName: eventName,
-      eventType: eventType,
-      subject: subject
-    ))
-  }
-
-  public func reportValue(eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
-    self.report(eventName, eventType, ControlCoreSubject(value))
-  }
 
 }

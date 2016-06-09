@@ -39,7 +39,7 @@ struct SimulatorActionRunner : Runner {
     do {
       let reporter = SimulatorReporter(simulator: self.simulator, format: self.format, reporter: self.reporter)
       defer {
-        reporter.simulator.userEventSink = nil
+        reporter.target.userEventSink = nil
       }
 
       return self.runner(reporter).run()
@@ -47,7 +47,7 @@ struct SimulatorActionRunner : Runner {
   }
 
   func runner(reporter: SimulatorReporter) -> Runner {
-    let simulator = reporter.simulator
+    let simulator = reporter.target
     switch self.action {
     case .Approve(let bundleIDs):
       return SimulatorInteractionRunner(reporter, EventName.Approve, ArraySubject(bundleIDs)) { interaction in
@@ -192,7 +192,7 @@ private struct SimulatorInteractionRunner : Runner {
   }
 
   func run() -> CommandResult {
-    let simulator = self.reporter.simulator
+    let simulator = self.reporter.target
     let interaction = self.interaction
     let action = SimulatorRunner(self.reporter, self.name, self.subject) {
       let interact = simulator.interact
@@ -228,7 +228,7 @@ private struct DiagnosticsRunner : Runner {
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {
-    let diagnostics = self.reporter.simulator.diagnostics
+    let diagnostics = self.reporter.target.diagnostics
     let format = self.format
 
     return query.perform(diagnostics).map { diagnostic in
@@ -254,7 +254,7 @@ private struct SearchRunner : Runner {
   }
 
   func run() -> CommandResult {
-    let simulator = self.reporter.simulator
+    let simulator = self.reporter.target
     let diagnostics = simulator.diagnostics.allDiagnostics()
     let results = search.search(diagnostics)
     self.reporter.report(EventName.Search, EventType.Discrete, ControlCoreSubject(results))
@@ -295,8 +295,8 @@ private struct UploadRunner : Runner {
       }
     }
 
-    guard let basePath: NSString = self.reporter.simulator.auxillaryDirectory else {
-        return CommandResult.Failure("Could not determine aux directory for simulator \(self.reporter.simulator) to path")
+    guard let basePath: NSString = self.reporter.target.auxillaryDirectory else {
+        return CommandResult.Failure("Could not determine aux directory for simulator \(self.reporter.target) to path")
     }
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)
     let arbitrary = diagnosticLocations.filter{ arbitraryPredicate.evaluateWithObject($0.1) }

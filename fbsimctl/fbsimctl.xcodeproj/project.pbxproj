@@ -32,6 +32,7 @@
 		AA6046901C7A96E500639DD5 /* SimulatorRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */; };
 		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
 		AA83D5EC1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
+		AAA6C3AB1D08899600720BF6 /* iOSReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */; };
 		AAA6EC531C933DAE0083A62C /* Fixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6EC521C933DAE0083A62C /* Fixtures.swift */; };
 		AAA6EC561C933DDA0083A62C /* photo0.png in Resources */ = {isa = PBXBuildFile; fileRef = AAA6EC541C933DDA0083A62C /* photo0.png */; };
 		AAA6EC571C933DDA0083A62C /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = AAA6EC551C933DDA0083A62C /* video0.mp4 */; };
@@ -111,6 +112,7 @@
 		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iOSReporter.swift; sourceTree = "<group>"; };
 		AAA6EC521C933DAE0083A62C /* Fixtures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fixtures.swift; sourceTree = "<group>"; };
 		AAA6EC541C933DDA0083A62C /* photo0.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo0.png; sourceTree = "<group>"; };
 		AAA6EC551C933DDA0083A62C /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
@@ -180,6 +182,7 @@
 				AA83D5EA1C58E368003B253E /* Events.swift */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
 				AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */,
+				AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */,
 				AA54EF741C48275B006D5118 /* JSON.swift */,
 				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
 				AA1B7F651C2867EE0038C6A5 /* Relay.swift */,
@@ -438,6 +441,7 @@
 				AAAD4A2F1CB3AF6C00B2068C /* Subjects.swift in Sources */,
 				AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */,
 				AA1B7F6F1C2867EE0038C6A5 /* Bridging.m in Sources */,
+				AAA6C3AB1D08899600720BF6 /* iOSReporter.swift in Sources */,
 				AA6046901C7A96E500639DD5 /* SimulatorRunners.swift in Sources */,
 				AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */,
 				AA54EF751C48275B006D5118 /* JSON.swift in Sources */,
