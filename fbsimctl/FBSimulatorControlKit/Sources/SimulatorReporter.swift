@@ -86,9 +86,9 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink {
 
 extension SimulatorReporter {
   public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    let simulatorSubject = SimulatorSubject(simulator: self.simulator, format: self.format)
-    self.reporter.report(SimulatorWithSubject(
-      simulatorSubject: simulatorSubject,
+    let simulatorSubject = iOSTargetSubject(target: self.simulator, format: self.format)
+    self.reporter.report(iOSTargetWithSubject(
+      targetSubject: simulatorSubject,
       eventName: eventName,
       eventType: eventType,
       subject: subject

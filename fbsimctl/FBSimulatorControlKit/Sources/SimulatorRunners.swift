@@ -91,7 +91,7 @@ struct SimulatorActionRunner : Runner {
     case .List:
       let format = reporter.format
       return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
-        let subject = SimulatorSubject(simulator: simulator, format: format)
+        let subject = iOSTargetSubject(target: simulator, format: format)
         reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
       }
     case .ListApps:
