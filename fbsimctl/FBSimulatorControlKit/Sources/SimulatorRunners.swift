@@ -63,13 +63,13 @@ struct SimulatorActionRunner : Runner {
         interaction.clearKeychainForApplication(bundleID)
       }
     case .Delete:
-      return SimulatorRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
         try simulator.set!.deleteSimulator(simulator)
       }
     case .Diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
     case .Erase:
-      return SimulatorRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
     case .Install(let application):
@@ -90,12 +90,12 @@ struct SimulatorActionRunner : Runner {
       }
     case .List:
       let format = reporter.format
-      return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
         let subject = iOSTargetSubject(target: simulator, format: format)
         reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
       }
     case .ListApps:
-      return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
         let subject = ControlCoreSubject(simulator.installedApplications.map { $0.jsonSerializableRepresentation() } as NSArray)
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
@@ -118,7 +118,7 @@ struct SimulatorActionRunner : Runner {
     case .Search(let search):
       return SearchRunner(reporter, search)
     case .Shutdown:
-      return SimulatorRunner(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.killSimulator(simulator)
       }
     case .Tap(let x, let y):
@@ -140,41 +140,10 @@ struct SimulatorActionRunner : Runner {
         interaction.overrideWatchDogTimerForApplications(bundleIDs, withTimeout: timeout)
       }
     default:
-      return SimulatorRunner(reporter, EventName.Failure, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, EventName.Failure, ControlCoreSubject(simulator)) {
         assertionFailure("Unimplemented")
       }
     }
-  }
-}
-
-private struct SimulatorRunner : Runner {
-  let reporter: SimulatorReporter
-  let name: EventName?
-  let subject: EventReporterSubject
-  let action: Void throws -> Void
-
-  init(_ reporter: SimulatorReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: Void throws -> Void) {
-    self.reporter = reporter
-    self.name = name
-    self.subject = subject
-    self.action = action
-  }
-
-  func run() -> CommandResult {
-    do {
-      if let name = self.name {
-        self.reporter.report(name, EventType.Started, self.subject)
-      }
-      try self.action()
-      if let name = self.name {
-        self.reporter.report(name, EventType.Ended, self.subject)
-      }
-    } catch let error as NSError {
-      return .Failure(error.description)
-    } catch let error as JSONError {
-      return .Failure(error.description)
-    }
-    return .Success
   }
 }
 
@@ -194,7 +163,7 @@ private struct SimulatorInteractionRunner : Runner {
   func run() -> CommandResult {
     let simulator = self.reporter.target
     let interaction = self.interaction
-    let action = SimulatorRunner(self.reporter, self.name, self.subject) {
+    let action = iOSTargetRunner(self.reporter, self.name, self.subject) {
       let interact = simulator.interact
       try interaction(interact)
       try interact.perform()
