@@ -71,6 +71,30 @@
   return self.amDevice.osConfiguration;
 }
 
+#pragma mark FBDebugDescribeable
+
+- (NSString *)description
+{
+  return [self debugDescription];
+}
+
+- (NSString *)debugDescription
+{
+  return [FBiOSTargetFormat.fullFormat format:self];
+}
+
+- (NSString *)shortDescription
+{
+  return [FBiOSTargetFormat.defaultFormat format:self];
+}
+
+#pragma mark FBJSONSerializable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return [FBiOSTargetFormat.fullFormat extractFrom:self];
+}
+
 #pragma mark Properties
 
 - (DVTiOSDevice *)dvtDevice
@@ -102,19 +126,6 @@
 - (NSSet *)supportedArchitectures
 {
   return self.dvtDevice.supportedArchitectures.set;
-}
-
-#pragma mark NSObject
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"Device | %@ | %@ | %@ | %@",
-    self.name,
-    self.udid,
-    self.osConfiguration,
-    self.deviceConfiguration
-  ];
 }
 
 @end

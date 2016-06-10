@@ -9,6 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBDebugDescribeable.h>
+
 @class FBProcessInfo;
 @protocol FBControlCoreConfiguration_Device;
 @protocol FBControlCoreConfiguration_OS;
@@ -31,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Common Properties of Devices & Simulators.
  */
-@protocol FBiOSTarget <NSObject>
+@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  The Unique Device Identifier of the iOS Target.

@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulator : NSObject <FBiOSTarget>
 
 /**
  The Underlying SimDevice.
