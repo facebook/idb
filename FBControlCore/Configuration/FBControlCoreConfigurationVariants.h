@@ -23,7 +23,7 @@ typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FBControlCoreConfigurationVariant_Base : NSObject <NSCoding>
+@interface FBControlCoreConfigurationVariant_Base : NSObject <NSCoding, NSCopying>
 @end
 
 #pragma mark Families

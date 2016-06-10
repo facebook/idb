@@ -46,6 +46,13 @@
   return NSStringFromClass(self.class);
 }
 
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
 @end
 
 #pragma mark Families
