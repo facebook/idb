@@ -119,21 +119,4 @@
   [self assertJSONDeserialization:values];
 }
 
-- (void)testSimulatorQuery
-{
-  NSArray *values = @[
-    [[FBiOSTargetQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E"]] states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateBooted), @(FBSimulatorStateBooting)]]],
-    [FBiOSTargetQuery allSimulators],
-    [FBiOSTargetQuery devices:@[FBControlCoreConfiguration_Device_iPad2.new, FBControlCoreConfiguration_Device_iPadAir.new]],
-    [FBiOSTargetQuery osVersions:@[FBControlCoreConfiguration_iOS_9_0.new, FBControlCoreConfiguration_iOS_9_1.new]],
-    [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
-    [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
-    [FBiOSTargetQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E", @"C5579925-158B-4802-96C3-58B564C901C1", @"41862F9E-A8CA-4816-B4C1-251DA57C1143"]],
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
 @end
