@@ -140,9 +140,7 @@ struct SimulatorActionRunner : Runner {
         interaction.overrideWatchDogTimerForApplications(bundleIDs, withTimeout: timeout)
       }
     default:
-      return iOSTargetRunner(reporter, EventName.Failure, ControlCoreSubject(simulator)) {
-        assertionFailure("Unimplemented")
-      }
+      return UnimplementedRunner()
     }
   }
 }

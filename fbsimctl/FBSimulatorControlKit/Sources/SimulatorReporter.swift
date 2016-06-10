@@ -83,7 +83,3 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
 
   }
 }
-
-extension SimulatorReporter {
-
-}

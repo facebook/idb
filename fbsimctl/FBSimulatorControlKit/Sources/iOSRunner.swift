@@ -39,3 +39,9 @@ struct iOSTargetRunner<A : iOSReporter> : Runner {
     return .Success
   }
 }
+
+struct UnimplementedRunner : Runner {
+  func run() -> CommandResult {
+    return CommandResult.Failure("Unimplemented")
+  }
+}
