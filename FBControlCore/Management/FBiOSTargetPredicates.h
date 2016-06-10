@@ -37,6 +37,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSPredicate *)state:(FBSimulatorState)state;
 
 /**
+ Predicate for matching against Simulator based on a Option Set Target Type.
+
+ @param targetType the Target Type Option Set to match against.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)targetType:(FBiOSTargetType)targetType;
+
+/**
  Predicate for matching against a range of Simulator States.
 
  @param states An index set of the states to match against.. Must not be nil.

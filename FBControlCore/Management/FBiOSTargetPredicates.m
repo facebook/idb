@@ -28,6 +28,13 @@
   }];
 }
 
++ (NSPredicate *)targetType:(FBiOSTargetType)targetType
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
+    return (candidate.targetType & targetType) != FBiOSTargetTypeNone;
+  }];
+}
+
 + (NSPredicate *)udid:(NSString *)udid
 {
   return [self udids:@[udid]];

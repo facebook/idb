@@ -536,7 +536,7 @@ public struct FBiOSTargetQueryParsers {
 
   static var allParser: Parser<FBiOSTargetQuery> { get {
     return Parser<FBiOSTargetQuery>
-      .ofString("all", FBiOSTargetQuery.allSimulators())
+      .ofString("all", FBiOSTargetQuery.allTargets())
   }}
 
   static var unionParser: Parser<FBiOSTargetQuery> { get {

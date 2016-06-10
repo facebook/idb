@@ -9,11 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBJSONConversion.h>
-
-@protocol FBiOSTarget;
-@protocol FBControlCoreConfiguration_OS;
-@protocol FBControlCoreConfiguration_Device;
+#import <FBControlCore/FBControlCoreConfigurationVariants.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,17 +23,17 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBiOSTargetQuery : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable>
 
 /**
- A Query that matches all Simulators.
+ A Query that matches all iOS Targets.
 
- @return a new Simulator Query.
+ @return a new Query matching all Targets.
  */
-+ (instancetype)allSimulators;
++ (instancetype)allTargets;
 
 /**
  A Query that matches the given UDIDs.
 
  @param udids the UDIDs to match against.
- @return a new Simulator Query.
+ @return a new Target Query.
  */
 + (instancetype)udids:(NSArray<NSString *> *)udids;
 - (instancetype)udids:(NSArray<NSString *> *)udids;
@@ -44,16 +42,25 @@ NS_ASSUME_NONNULL_BEGIN
  A Query that matches the given States.
 
  @param states the UDIDs to match against.
- @return a new Simulator Query.
+ @return a new Target Query.
  */
 + (instancetype)states:(NSIndexSet *)states;
 - (instancetype)states:(NSIndexSet *)states;
 
 /**
+ A Query that matches the given Target Tyep.
+
+ @param targetType the target type to
+ @return a new Target Query.
+ */
++ (instancetype)targetType:(FBiOSTargetType)targetType;
+- (instancetype)targetType:(FBiOSTargetType)targetType;
+
+/**
  A Query that matches the given OS Versions.
 
  @param osVersions the OS Versions to match against.
- @return a new Simulator Query.
+ @return a new Target Query.
  */
 + (instancetype)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions;
 - (instancetype)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions;
@@ -62,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
  A Query that matches the given Devices.
 
  @param devices the Devices to match against.
- @return a new Simulator Query.
+ @return a new Target Query.
  */
 + (instancetype)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices;
 - (instancetype)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices;
@@ -71,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  A Query that matches the given Range.
 
  @param range the range to match against.
- @return a new Simulator Query.
+ @return a new Target Query.
  */
 + (instancetype)range:(NSRange)range;
 - (instancetype)range:(NSRange)range;
@@ -95,6 +102,12 @@ NS_ASSUME_NONNULL_BEGIN
  An Empty Set means that no State filtering will occur.
  */
 @property (nonatomic, readonly, copy) NSIndexSet *states;
+
+/**
+ The Target Types to match against.
+ FBiOSTargetTypeNone means no Target Type filtering with occur.
+ */
+@property (nonatomic, readonly, assign) FBiOSTargetType targetType;
 
 /**
  The OS Versions to match against.

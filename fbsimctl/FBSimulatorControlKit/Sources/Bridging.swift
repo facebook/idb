@@ -41,7 +41,7 @@ extension String : CustomStringConvertible {
 
 extension FBiOSTargetQuery {
   public static func simulatorStates(states: [FBSimulatorState]) -> FBiOSTargetQuery {
-    return self.allSimulators().simulatorStates(states)
+    return self.allTargets().simulatorStates(states)
   }
 
   public func simulatorStates(states: [FBSimulatorState]) -> FBiOSTargetQuery {
@@ -53,7 +53,7 @@ extension FBiOSTargetQuery {
   }
 
   public static func ofCount(count: Int) -> FBiOSTargetQuery {
-    return self.allSimulators().ofCount(count)
+    return self.allTargets().ofCount(count)
   }
 
   public func ofCount(count: Int) -> FBiOSTargetQuery {

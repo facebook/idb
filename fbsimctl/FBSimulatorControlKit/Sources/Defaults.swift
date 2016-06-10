@@ -84,7 +84,7 @@ public class Defaults {
       case .Search:
         fallthrough
       case .Diagnose:
-        return FBiOSTargetQuery.allSimulators()
+        return FBiOSTargetQuery.allTargets()
       case .Approve:
         return FBiOSTargetQuery.simulatorStates([.Shutdown])
       default:

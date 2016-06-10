@@ -107,6 +107,16 @@
   return self.device.name;
 }
 
+- (FBSimulatorState)state
+{
+  return self.device.state;
+}
+
+- (FBiOSTargetType)targetType
+{
+  return FBiOSTargetTypeSimulator;
+}
+
 - (id<FBControlCoreConfiguration_Device>)deviceConfiguration
 {
   return self.configuration.device;
@@ -118,11 +128,6 @@
 }
 
 #pragma mark Properties
-
-- (FBSimulatorState)state
-{
-  return self.device.state;
-}
 
 - (FBControlCoreProductFamily)productFamily
 {

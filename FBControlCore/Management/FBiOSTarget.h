@@ -29,6 +29,15 @@ typedef NS_ENUM(NSUInteger, FBSimulatorState) {
   FBSimulatorStateUnknown = 99,
 };
 
+/**
+ Represents the kind of a target, device or simulator.
+ */
+typedef NS_OPTIONS(NSUInteger, FBiOSTargetType) {
+  FBiOSTargetTypeNone = 0,
+  FBiOSTargetTypeSimulator = 1 << 0,
+  FBiOSTargetTypeDevice = 1 << 1,
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -50,6 +59,11 @@ NS_ASSUME_NONNULL_BEGIN
  The State of the iOS Target. Currently only applies to Simulators.
  */
 @property (nonatomic, assign, readonly) FBSimulatorState state;
+
+/**
+ The Type of the iOS Target
+ */
+@property (nonatomic, assign, readonly) FBiOSTargetType targetType;
 
 /**
  Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
@@ -77,5 +91,15 @@ extern NSString *FBSimulatorStateStringFromState(FBSimulatorState state);
  The canonical enum representation of the state string.
  */
 extern FBSimulatorState FBSimulatorStateFromStateString(NSString *stateString);
+
+/**
+ The canonical string representations of the target type Option Set.
+ */
+NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType);
+
+/**
+ The canonical enum representation of the state string.
+ */
+extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> *targetTypeStrings);
 
 NS_ASSUME_NONNULL_END

@@ -29,7 +29,7 @@ NSString *FBSimulatorStateStringFromState(FBSimulatorState state)
 
 FBSimulatorState FBSimulatorStateFromStateString(NSString *stateString)
 {
-  stateString = [[stateString lowercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@" "];
+  stateString = [stateString.lowercaseString stringByReplacingOccurrencesOfString:@"-" withString:@" "];
   if ([stateString isEqualToString:@"creating"]) {
     return FBSimulatorStateCreating;
   }
@@ -49,4 +49,32 @@ FBSimulatorState FBSimulatorStateFromStateString(NSString *stateString)
     return FBSimulatorStateShuttingDown;
   }
   return FBSimulatorStateUnknown;
+}
+
+NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType targetType)
+{
+  NSMutableArray<NSString *> *strings = [NSMutableArray array];
+  if ((targetType & FBiOSTargetTypeDevice) == FBiOSTargetTypeDevice) {
+    [strings addObject:@"Device"];
+  }
+  if ((targetType & FBiOSTargetTypeSimulator) == FBiOSTargetTypeSimulator) {
+    [strings addObject:@"Simulator"];
+  }
+  return [strings copy];
+}
+
+extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> *targetTypeStrings)
+{
+  FBiOSTargetType targetType = FBiOSTargetTypeNone;
+  for (NSString *string in targetTypeStrings) {
+    NSString *targetTypeString = [string.lowercaseString stringByReplacingOccurrencesOfString:@"-" withString:@" "];
+    if ([targetTypeString isEqualToString:@"simulator"]) {
+      targetType = targetType | FBiOSTargetTypeSimulator;
+    }
+    if ([targetTypeString isEqualToString:@"device"]) {
+      targetType = targetType | FBiOSTargetTypeDevice;
+    }
+  }
+
+  return FBiOSTargetTypeNone;
 }

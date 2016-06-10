@@ -128,7 +128,7 @@ let validConfigurations: [([String], Configuration)] = [
 ]
 
 let validQueries: [([String], FBiOSTargetQuery)] = [
-  (["all"], FBiOSTargetQuery.allSimulators()),
+  (["all"], FBiOSTargetQuery.allTargets()),
   (["iPhone 5"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5()])),
   (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()])),
   (["iOS 9.0", "iOS 9.1"], FBiOSTargetQuery.osVersions([FBControlCoreConfiguration_iOS_9_0(), FBControlCoreConfiguration_iOS_9_1()])),
@@ -281,7 +281,7 @@ class CommandParserTests : XCTestCase {
   func assertWithDefaultActions(actions: [Action], suffix: [String]) {
     return self.unzipAndAssert(actions, suffix: suffix, extras: [
       ([], nil, nil),
-      (["all"], FBiOSTargetQuery.allSimulators(), nil),
+      (["all"], FBiOSTargetQuery.allTargets(), nil),
       (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPhone6()]).simulatorStates([.Shutdown]), nil),

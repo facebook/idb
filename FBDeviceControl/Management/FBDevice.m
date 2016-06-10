@@ -56,6 +56,11 @@
   return FBSimulatorStateUnknown;
 }
 
+- (FBiOSTargetType)targetType
+{
+  return FBiOSTargetTypeDevice;
+}
+
 - (FBProcessInfo *)launchdProcess
 {
   return nil;
