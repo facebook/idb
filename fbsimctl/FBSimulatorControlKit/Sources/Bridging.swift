@@ -67,10 +67,12 @@ extension FBiOSTargetQuery : Accumulator {
     let deviceArray = Array(deviceSet) as! [FBControlCoreConfiguration_Device]
     let osVersionsSet = other.osVersions as NSSet
     let osVersionsArray = Array(osVersionsSet) as! [FBControlCoreConfiguration_OS]
+    let targetType = self.targetType.union(other.targetType)
 
     return self
       .udids(Array(other.udids))
       .states(other.states)
+      .targetType(targetType)
       .devices(deviceArray)
       .osVersions(osVersionsArray)
       .range(other.range)

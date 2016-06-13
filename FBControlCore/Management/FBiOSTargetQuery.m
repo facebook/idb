@@ -262,6 +262,7 @@
 
   return [self.udids isEqualToSet:query.udids] &&
          [self.states isEqualToIndexSet:query.states] &&
+         self.targetType == query.targetType &&
          [self.devices isEqualToSet:query.devices] &&
          [self.osVersions isEqualToSet:query.osVersions] &&
          NSEqualRanges(self.range, query.range);
@@ -269,15 +270,16 @@
 
 - (NSUInteger)hash
 {
-  return self.udids.hash ^ self.states.hash ^ self.devices.hash ^ self.osVersions.hash ^ self.range.length ^ self.range.location;
+  return self.udids.hash ^ self.states.hash ^ self.targetType ^ self.devices.hash ^ self.osVersions.hash ^ self.range.length ^ self.range.location;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"UDIDs %@ | States %@ | Devices %@ | OS Versions %@ | Range %@",
+    @"UDIDs %@ | States %@ | Target Types %@ | Devices %@ | OS Versions %@ | Range %@",
     [FBCollectionInformation oneLineDescriptionFromArray:self.udids.allObjects],
     [FBCollectionInformation oneLineDescriptionFromArray:[FBiOSTargetQuery stateStringsForStateIndeces:self.states]],
+    [FBCollectionInformation oneLineDescriptionFromArray:FBiOSTargetTypeStringsFromTargetType(self.targetType)],
     [FBCollectionInformation oneLineDescriptionFromArray:self.devices.allObjects],
     [FBCollectionInformation oneLineDescriptionFromArray:self.osVersions.allObjects],
     NSStringFromRange(self.range)

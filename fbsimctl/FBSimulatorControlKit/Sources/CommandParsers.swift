@@ -220,6 +220,15 @@ extension FBProcessLaunchOptions : Parsable {
   }}
 }
 
+extension FBiOSTargetType : Parsable {
+  public static var parser: Parser<FBiOSTargetType> { get {
+    return Parser<FBiOSTargetType>.alternative([
+      Parser.ofString("--simulators", FBiOSTargetType.Simulator),
+      Parser.ofString("--devices", FBiOSTargetType.Device),
+    ])
+  }}
+}
+
 extension FBCrashLogInfoProcessType : Parsable {
   public static var parser: Parser<FBCrashLogInfoProcessType> { get {
     return Parser<FBCrashLogInfoProcessType>
@@ -544,6 +553,7 @@ public struct FBiOSTargetQueryParsers {
       self.firstParser,
       self.uuidParser,
       self.simulatorStateParser,
+      self.targetTypeParser,
       self.osVersionsParser,
       self.deviceParser
     ])
@@ -565,6 +575,12 @@ public struct FBiOSTargetQueryParsers {
     return FBSimulatorState
       .parser
       .fmap { FBiOSTargetQuery.simulatorStates([$0]) }
+  }}
+
+  static var targetTypeParser: Parser<FBiOSTargetQuery> { get {
+    return FBiOSTargetType
+      .parser
+      .fmap { FBiOSTargetQuery.targetType($0) }
   }}
 
   static var osVersionsParser: Parser<FBiOSTargetQuery> { get {
