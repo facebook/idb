@@ -591,13 +591,29 @@
 
 #pragma mark OS Versions
 
-@implementation FBControlCoreConfiguration_iOS_Base
+@implementation FBControlCoreConfiguration_OS_Base
 
 - (NSString *)name
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
+
+- (NSDecimalNumber *)versionNumber
+{
+  NSString *versionString = [self.name componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet][1];
+  return [NSDecimalNumber decimalNumberWithString:versionString];
+}
+
+- (NSSet *)families
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+@end
+
+@implementation FBControlCoreConfiguration_iOS_Base
 
 - (NSSet *)families
 {
@@ -713,6 +729,15 @@
 - (NSString *)name
 {
   return @"iOS 9.3.2";
+}
+
+@end
+
+@implementation FBControlCoreConfiguration_iOS_10_0
+
+- (NSString *)name
+{
+  return @"iOS 10.0";
 }
 
 @end
@@ -849,6 +874,7 @@
       FBControlCoreConfiguration_iOS_9_3.new,
       FBControlCoreConfiguration_iOS_9_3_1.new,
       FBControlCoreConfiguration_iOS_9_3_2.new,
+      FBControlCoreConfiguration_iOS_10_0.new,
       FBControlCoreConfiguration_tvOS_9_0.new,
       FBControlCoreConfiguration_tvOS_9_1.new,
       FBControlCoreConfiguration_tvOS_9_2.new,

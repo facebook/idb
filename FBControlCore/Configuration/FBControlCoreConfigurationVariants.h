@@ -124,11 +124,15 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreConfiguration_OS <NSObject>
 
 @property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, copy, readonly) NSDecimalNumber *versionNumber;
 @property (nonatomic, copy, readonly) NSSet *families;
 
 @end
 
-@interface FBControlCoreConfiguration_iOS_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_OS>
+@interface FBControlCoreConfiguration_OS_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_OS>
+@end
+
+@interface FBControlCoreConfiguration_iOS_Base : FBControlCoreConfiguration_OS_Base
 @end
 
 @interface FBControlCoreConfiguration_iOS_7_1 : FBControlCoreConfiguration_iOS_Base
@@ -167,7 +171,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBControlCoreConfiguration_iOS_9_3_2 : FBControlCoreConfiguration_iOS_Base
 @end
 
-@interface FBControlCoreConfiguration_tvOS_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_OS>
+@interface FBControlCoreConfiguration_iOS_10_0 : FBControlCoreConfiguration_iOS_Base
+@end
+
+@interface FBControlCoreConfiguration_tvOS_Base : FBControlCoreConfiguration_OS_Base
 @end
 
 @interface FBControlCoreConfiguration_tvOS_9_0 : FBControlCoreConfiguration_tvOS_Base
@@ -179,7 +186,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBControlCoreConfiguration_tvOS_9_2 : FBControlCoreConfiguration_tvOS_Base
 @end
 
-@interface FBControlCoreConfiguration_watchOS_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_OS>
+@interface FBControlCoreConfiguration_watchOS_Base : FBControlCoreConfiguration_OS_Base
 @end
 
 @interface FBControlCoreConfiguration_watchOS_2_0 : FBControlCoreConfiguration_watchOS_Base

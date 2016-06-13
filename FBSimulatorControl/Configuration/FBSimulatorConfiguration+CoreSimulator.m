@@ -121,7 +121,9 @@
   return [[self.supportedRuntimes
     filteredArrayUsingPredicate:[FBSimulatorConfiguration runtimeProductFamilyPredicate:device]]
     sortedArrayUsingComparator:^ NSComparisonResult (SimRuntime *left, SimRuntime *right) {
-      return [left.versionString compare:right.versionString];
+      NSDecimalNumber *leftVersionNumber = [NSDecimalNumber decimalNumberWithString:left.versionString];
+      NSDecimalNumber *rightVersionNumber = [NSDecimalNumber decimalNumberWithString:right.versionString];
+      return [leftVersionNumber compare:rightVersionNumber];
     }];
 }
 
