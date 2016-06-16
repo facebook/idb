@@ -14,8 +14,8 @@
 #import "FBControlCoreLogger.h"
 #import "FBTaskExecutor.h"
 
-NSString *const FBControlCoreStderrLogging = @"FBControlCore_LOGGING";
-NSString *const FBControlCoreDebugLogging = @"FBControlCore_DEBUG_LOGGING";
+NSString *const FBControlCoreStderrLogging = @"FBCONTROLCORE_LOGGING";
+NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
 
 static id<FBControlCoreLogger> logger;
 
