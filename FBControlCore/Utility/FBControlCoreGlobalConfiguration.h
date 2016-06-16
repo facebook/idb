@@ -40,19 +40,19 @@ extern NSString *const FBControlCoreDebugLogging;
 + (nullable NSString *)appleConfiguratorApplicationPath;
 
 /**
- The SDK Version of the current Xcode Version as a Decimal Number.
+ The SDK Version for the Xcode defined by the Developer Directory.
  */
-+ (NSDecimalNumber *)sdkVersionNumber;
++ (NSDecimalNumber *)iosSDKVersionNumber;
 
 /**
  Formatter for the SDK Version a string
  */
-+ (NSNumberFormatter *)sdkVersionNumberFormatter;
++ (NSNumberFormatter *)iosSDKVersionNumberFormatter;
 
 /**
  The SDK Version of the current Xcode Version as a String.
  */
-+ (NSString *)sdkVersion;
++ (NSString *)iosSDKVersion;
 
 /**
  A Timeout Value when waiting on events that should happen 'fast'

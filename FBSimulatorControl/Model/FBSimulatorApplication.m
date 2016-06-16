@@ -302,7 +302,7 @@
 
 + (NSString *)pathForSimulatorApplication
 {
-  NSString *simulatorBinaryName = [FBControlCoreGlobalConfiguration.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
+  NSString *simulatorBinaryName = [FBControlCoreGlobalConfiguration.iosSDKVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
     ? @"Simulator"
     : @"iOS Simulator";
 

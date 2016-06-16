@@ -45,12 +45,12 @@ static id<FBControlCoreLogger> logger;
   return path;
 }
 
-+ (NSDecimalNumber *)sdkVersionNumber
++ (NSDecimalNumber *)iosSDKVersionNumber
 {
-  return [NSDecimalNumber decimalNumberWithString:self.sdkVersion];
+  return [NSDecimalNumber decimalNumberWithString:self.iosSDKVersion];
 }
 
-+ (NSNumberFormatter *)sdkVersionNumberFormatter
++ (NSNumberFormatter *)iosSDKVersionNumberFormatter
 {
   static dispatch_once_t onceToken;
   static NSNumberFormatter *formatter;
@@ -63,7 +63,7 @@ static id<FBControlCoreLogger> logger;
   return formatter;
 }
 
-+ (NSString *)sdkVersion
++ (NSString *)iosSDKVersion
 {
   static dispatch_once_t onceToken;
   static NSString *sdkVersion;
@@ -125,7 +125,7 @@ static id<FBControlCoreLogger> logger;
   // Prior to Xcode 7, 'iOS Simulator.app' calls `+[SimDeviceSet defaultSet]` directly
   // This means that the '-DeviceSetPath' won't do anything for Simulators booted with prior to Xcode 7.
   // It should be possible to fix this by injecting a shim that swizzles this method in these Xcode versions.
-  return [self.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
+  return [self.iosSDKVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
 }
 
 + (id<FBControlCoreLogger>)defaultLogger
@@ -140,9 +140,9 @@ static id<FBControlCoreLogger> logger;
 + (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Developer Directory %@ | SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
+    @"Developer Directory %@ | iOS SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
     self.developerDirectory,
-    self.sdkVersion,
+    self.iosSDKVersion,
     self.supportsCustomDeviceSets,
     self.debugLoggingEnabled
   ];
