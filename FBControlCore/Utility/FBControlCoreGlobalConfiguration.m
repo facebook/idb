@@ -35,6 +35,20 @@ static id<FBControlCoreLogger> logger;
   return directory;
 }
 
++ (NSString *)xcodeInfoPlistPath
+{
+  static dispatch_once_t onceToken;
+  static NSString *infoPlistPath;
+  dispatch_once(&onceToken, ^{
+    NSString *path = [[self.developerDirectory
+      stringByDeletingLastPathComponent]
+      stringByAppendingPathComponent:@"Info.plist"];
+    NSCAssert([NSFileManager.defaultManager fileExistsAtPath:path], @"Info.plist for Xcode does not exist at path '%@'", path);
+    infoPlistPath = path;
+  });
+  return infoPlistPath;
+}
+
 + (nullable NSString *)appleConfiguratorApplicationPath
 {
   static dispatch_once_t onceToken;
@@ -43,6 +57,20 @@ static id<FBControlCoreLogger> logger;
     path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier:@"com.apple.configurator.ui"];
   });
   return path;
+}
+
++ (NSDecimalNumber *)xcodeVersionNumber
+{
+  static dispatch_once_t onceToken;
+  static NSDecimalNumber *versionNumber;
+  dispatch_once(&onceToken, ^{
+    NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:self.xcodeInfoPlistPath];
+    NSCAssert(infoPlist, @"Could not read Info.plist at '%@'", infoPlist);
+    NSString *versionNumberString = infoPlist[@"CFBundleShortVersionString"];
+    NSCAssert([versionNumberString isKindOfClass:NSString.class], @"Could not read Info.plist at '%@'", infoPlist);
+    versionNumber = [NSDecimalNumber decimalNumberWithString:versionNumberString];
+  });
+  return versionNumber;
 }
 
 + (NSDecimalNumber *)iosSDKVersionNumber
