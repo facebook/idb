@@ -148,7 +148,7 @@
   // Checking if classes are already loaded. Error here is irrelevant (returning NO means something is not loaded)
   if ([self allRequiredClassesExistsWithError:nil] && self.requiredClassNames.count > 0) {
     // The Class exists, therefore has been loaded
-    [logger logFormat:@"%@: Already loaded, skipping", self.name];
+    [logger.debug logFormat:@"%@: Already loaded, skipping", self.name];
     NSError *innerError = nil;
     if (![self verifyIfLoadedWithLogger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
@@ -166,16 +166,25 @@
 
   // Load frameworks
   NSString *path = [[relativeDirectory stringByAppendingPathComponent:self.relativePath] stringByStandardizingPath];
+  if (![NSFileManager.defaultManager fileExistsAtPath:path isDirectory:nil]) {
+    return [[FBControlCoreError
+      describeFormat:@"Attempting to load a file at path '%@', but it does not exist", path]
+      failBool:error];
+  }
+
   NSBundle *bundle = [NSBundle bundleWithPath:path];
   if (!bundle) {
     return [[FBControlCoreError
       describeFormat:@"Failed to load the bundle for path %@", path]
       failBool:error];
   }
+
   NSError *innerError;
+  [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
   if (![self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
     return [FBControlCoreError failBoolWithError:innerError errorOut:error];
   }
+
   [logger logFormat:@"%@: Successfully loaded", self.name];
   if (![self allRequiredClassesExistsWithError:&innerError]) {
     [logger logFormat:@"Failed to load %@", path.lastPathComponent];
@@ -196,28 +205,38 @@
 
   BOOL isLinkingIssue = ([innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSExecutableLoadError);
   if (!isLinkingIssue) {
-    return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+    return [[[FBControlCoreError
+      describeFormat:@"Error loading bundle at %@ and it was not a linking issue", bundle.bundlePath]
+      causedBy:innerError]
+      failBool:error];
   }
 
-  // If it is linking issue, try to determin missing framework
-  NSString *frameworkName = [self.class missingFrameworkNameWithRPathError:innerError];
-  if (!frameworkName) {
-    return NO;
+  // If it is linking issue, try to determine missing framework
+  [logger.debug logFormat:@"%@: Bundle could not be loaded from %@, attempting to find the Framework name", self.name, bundle.bundlePath];
+  NSString *missingFrameworkName = [self.class missingFrameworkNameWithRPathError:innerError];
+  if (!missingFrameworkName) {
+    return [[[FBControlCoreError
+      describeFormat:@"Could not determine the missing framework name from %@", bundle.bundlePath]
+      causedBy:innerError]
+      failBool:error];
   }
 
   // Try to load missing framework with locations from
-  FBWeakFramework *framework = [FBWeakFramework xcodeFrameworkWithRelativePath:frameworkName];
+  FBWeakFramework *missingFramework = [FBWeakFramework xcodeFrameworkWithRelativePath:missingFrameworkName];
+  [logger.debug logFormat:@"Attempting to load missing framework %@", missingFrameworkName];
   for (NSString *directory in fallbackDirectories) {
-    if ([framework loadFromRelativeDirectory:directory fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
-      // If successfully loaded missing library, re-try
-      return [self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error];
+    NSError *missingFrameworkLoadError = nil;
+    if (![missingFramework loadFromRelativeDirectory:directory fallbackDirectories:fallbackDirectories logger:logger error:&missingFrameworkLoadError]) {
+      [logger.debug logFormat:@"%@ could not be loaded from fallback directory %@", missingFrameworkName, directory];
+      continue;
     }
+    [logger.debug logFormat:@"%@ has been loaded from fallback directory '%@', re-attempting to load %@", missingFrameworkName, directory, self.name];
+    return [self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error];
   }
 
   // Uncategorizable Error, return the original error
-  return [[[FBControlCoreError
-    describeFormat:@"An error occured loading the framework for bundle %@", bundle.bundlePath]
-    causedBy:innerError]
+  return [[FBControlCoreError
+    describeFormat:@"Missing Framework %@ could not be loaded from any fallback directories", missingFrameworkName]
     failBool:error];
 }
 
