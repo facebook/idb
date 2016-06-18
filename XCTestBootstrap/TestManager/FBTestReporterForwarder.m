@@ -108,7 +108,7 @@
 - (id)_XCT_testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(NSString *)statusString duration:(NSNumber *)duration
 {
   FBTestReportStatus status = [FBTestManagerResultSummary statusForStatusString:statusString];
-  [self.reporter testManagerMediator:self.mediator testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration.integerValue];
+  [self.reporter testManagerMediator:self.mediator testCaseDidFinishForTestClass:testClass method:method withStatus:status duration:duration.doubleValue];
   return [self.mediator _XCT_testCaseDidFinishForTestClass:testClass method:method withStatus:statusString duration:duration];
 }
 
