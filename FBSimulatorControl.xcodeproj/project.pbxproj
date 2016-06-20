@@ -217,8 +217,6 @@
 		AAC8B2521CEC51520034A865 /* FBDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC8B2461CEC51520034A865 /* FBDevice.m */; };
 		AAC8B2531CEC51520034A865 /* FBiOSDeviceOperator.h in Headers */ = {isa = PBXBuildFile; fileRef = AAC8B2471CEC51520034A865 /* FBiOSDeviceOperator.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAC8B2541CEC51520034A865 /* FBiOSDeviceOperator.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC8B2481CEC51520034A865 /* FBiOSDeviceOperator.m */; };
-		AAC8B2551CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.h in Headers */ = {isa = PBXBuildFile; fileRef = AAC8B24A1CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		AAC8B2561CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC8B24B1CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.m */; };
 		AAC8B2571CEC51520034A865 /* FBDeviceControlError.h in Headers */ = {isa = PBXBuildFile; fileRef = AAC8B24D1CEC51520034A865 /* FBDeviceControlError.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAC8B2581CEC51520034A865 /* FBDeviceControlError.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC8B24E1CEC51520034A865 /* FBDeviceControlError.m */; };
 		AAC8B2591CEC51520034A865 /* FBDeviceControlFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AAC8B24F1CEC51520034A865 /* FBDeviceControlFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -769,8 +767,6 @@
 		AAC8B2461CEC51520034A865 /* FBDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDevice.m; sourceTree = "<group>"; };
 		AAC8B2471CEC51520034A865 /* FBiOSDeviceOperator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSDeviceOperator.h; sourceTree = "<group>"; };
 		AAC8B2481CEC51520034A865 /* FBiOSDeviceOperator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSDeviceOperator.m; sourceTree = "<group>"; };
-		AAC8B24A1CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAugmentedTestManagerAPIMediator.h; sourceTree = "<group>"; };
-		AAC8B24B1CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAugmentedTestManagerAPIMediator.m; sourceTree = "<group>"; };
 		AAC8B24D1CEC51520034A865 /* FBDeviceControlError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceControlError.h; sourceTree = "<group>"; };
 		AAC8B24E1CEC51520034A865 /* FBDeviceControlError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceControlError.m; sourceTree = "<group>"; };
 		AAC8B24F1CEC51520034A865 /* FBDeviceControlFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDeviceControlFrameworkLoader.h; sourceTree = "<group>"; };
@@ -1574,7 +1570,6 @@
 				AAC8B22D1CEC51120034A865 /* FBDeviceControl.h */,
 				AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */,
 				AAC8B2441CEC51520034A865 /* Management */,
-				AAC8B2491CEC51520034A865 /* TestManager */,
 				AAC8B24C1CEC51520034A865 /* Utility */,
 			);
 			path = FBDeviceControl;
@@ -1607,15 +1602,6 @@
 				AA682B1C1CECB025009B6ECA /* FBiOSDeviceOperator+Private.h */,
 			);
 			path = Management;
-			sourceTree = "<group>";
-		};
-		AAC8B2491CEC51520034A865 /* TestManager */ = {
-			isa = PBXGroup;
-			children = (
-				AAC8B24A1CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.h */,
-				AAC8B24B1CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.m */,
-			);
-			path = TestManager;
 			sourceTree = "<group>";
 		};
 		AAC8B24C1CEC51520034A865 /* Utility */ = {
@@ -2072,7 +2058,6 @@
 				AAC8B2591CEC51520034A865 /* FBDeviceControlFrameworkLoader.h in Headers */,
 				AA682B1A1CEC9E8B009B6ECA /* FBDeviceSet.h in Headers */,
 				AAC8B2531CEC51520034A865 /* FBiOSDeviceOperator.h in Headers */,
-				AAC8B2551CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.h in Headers */,
 				AAC8B2511CEC51520034A865 /* FBDevice.h in Headers */,
 				AAC8B22E1CEC51120034A865 /* FBDeviceControl.h in Headers */,
 				AAC8B2571CEC51520034A865 /* FBDeviceControlError.h in Headers */,
@@ -2646,7 +2631,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAC8B2581CEC51520034A865 /* FBDeviceControlError.m in Sources */,
-				AAC8B2561CEC51520034A865 /* FBAugmentedTestManagerAPIMediator.m in Sources */,
 				AA682B1B1CEC9E8B009B6ECA /* FBDeviceSet.m in Sources */,
 				AAC8B2521CEC51520034A865 /* FBDevice.m in Sources */,
 				AAC8B2541CEC51520034A865 /* FBiOSDeviceOperator.m in Sources */,
