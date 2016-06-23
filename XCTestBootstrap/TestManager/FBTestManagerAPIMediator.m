@@ -38,7 +38,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
 @property (nonatomic, strong, readonly) DVTDevice *targetDevice;
-@property (nonatomic, assign, readonly) BOOL targetIsiOSSimulator;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
 @property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *loggingForwarder;
@@ -76,7 +75,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _testRunnerPID = testRunnerPID;
   _sessionIdentifier = sessionIdentifier;
 
-  _targetIsiOSSimulator = [device.class isKindOfClass:NSClassFromString(@"DVTiPhoneSimulator")];
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
 
@@ -143,7 +141,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   self.finished = YES;
   self.testingIsFinished = YES;
 
-  [self detect_r17733855_fromError:error];
   if (error) {
     NSString *message = @"";
     NSMutableDictionary *userInfo = error.userInfo.mutableCopy;
@@ -161,22 +158,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     if (error.code != XCTestBootstrapErrorCodeLostConnection) {
       [self.logger logFormat:@"\n\n*** %@\n\n", message];
     }
-  }
-}
-
-#pragma mark Others
-
-- (void)detect_r17733855_fromError:(NSError *)error
-{
-  if (!self.targetIsiOSSimulator) {
-    return;
-  }
-  if (!error) {
-    return;
-  }
-  NSString *message = error.localizedDescription;
-  if ([message rangeOfString:@"Unable to run app in Simulator"].location != NSNotFound || [message rangeOfString:@"Test session exited(-1) without checking in"].location != NSNotFound ) {
-    [self.logger logFormat:@"Detected radar issue r17733855"];
   }
 }
 
