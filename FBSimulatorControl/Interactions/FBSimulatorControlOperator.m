@@ -70,7 +70,15 @@
      fail:error];
   }
 
-  NSString *testManagerSocketString = [self.dvtDevice _waitForSimLaunchdToLoadENVAndReturnTestConnectionSocketPath:error];
+  NSString *testManagerSocketString = [self testConnectionSocketPathWithLogger:logger];
+  if(testManagerSocketString.length == 0) {
+    return
+    [[[FBSimulatorError
+       describe:@"Failed to retrieve testmanagerd socket path"]
+      logger:logger]
+     fail:error];
+  }
+
   if(![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
     return
     [[[FBSimulatorError
@@ -104,6 +112,21 @@
     [logger logFormat:@"Disconnected socket %@", testManagerSocketString];
   }];
   return transport;
+}
+
+- (NSString *)testConnectionSocketPathWithLogger:(id<FBControlCoreLogger>)logger
+{
+  const NSUInteger maxTryCount = 10;
+  NSUInteger tryCount = 0;
+  do {
+    NSString *socketPath = [self.simulator.device getenv:@"TESTMANAGERD_SIM_SOCK" error:nil];
+    if (socketPath.length > 0) {
+      return socketPath;
+    }
+    [logger logFormat:@"Simulator is booted but getenv returned nil for test connection socket path.\n Will retry in 1s (%lu attempts so far).", (unsigned long)tryCount];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+  } while (tryCount++ >= maxTryCount);
+  return nil;
 }
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection
