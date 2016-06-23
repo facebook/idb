@@ -29,10 +29,11 @@
 /**
  Starts test manager daemon and creates DTXTransport connection with it
 
+ @param logger the Logger to Log to.
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return DTXTransport if the operation succeeds, otherwise nil.
  */
-- (DTXTransport *)makeTransportForTestManagerService:(NSError **)error;
+- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Waits for device to become ready. (eg. unlocked, loaded, available console data)

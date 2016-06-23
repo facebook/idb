@@ -179,7 +179,7 @@
   [self.logger log:@"Starting the daemon connection"];
   dispatch_async(self.queue, ^{
     NSError *innerError = nil;
-    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerService:&innerError];
+    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&innerError];
     if (innerError || !transport) {
       [self failWithError:[[XCTestBootstrapError
         describe:@"Failed to created secondary test manager transport"]

@@ -9,11 +9,20 @@
 
 #import "FBSimulatorControlOperator.h"
 
+#import <CoreSimulator/SimDevice.h>
+
+#import <DTXConnectionServices/DTXSocketTransport.h>
+
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import <IDEiOSSupportCore/DVTiPhoneSimulator.h>
 
+#import <sys/socket.h>
+#import <sys/un.h>
+
 #import <XCTestBootstrap/FBProductBundle.h>
+
+#import "FBSimulatorError.h"
 
 @interface FBSimulatorControlOperator ()
 @property (nonatomic, strong) DVTiPhoneSimulator *dvtDevice;
@@ -33,9 +42,68 @@
 
 #pragma mark - FBDeviceOperator protocol
 
-- (DTXTransport *)makeTransportForTestManagerService:(NSError *__autoreleasing *)error
+- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  return [self.dvtDevice makeTransportForTestManagerService:error];
+  if ([NSThread isMainThread]) {
+    return
+    [[[FBSimulatorError
+       describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
+      logger:logger]
+     fail:error];
+  }
+
+  const BOOL simulatorIsBooted = (self.simulator.device.state == 0x3);
+  if (!simulatorIsBooted) {
+    return
+    [[[FBSimulatorError
+       describe:@"Simulator should be already booted"]
+      logger:logger]
+     fail:error];
+  }
+
+  int testManagerSocketFD = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (testManagerSocketFD == -1) {
+    return
+    [[[FBSimulatorError
+       describe:@"Unable to create a unix domain socket"]
+      logger:logger]
+     fail:error];
+  }
+
+  NSString *testManagerSocketString = [self.dvtDevice _waitForSimLaunchdToLoadENVAndReturnTestConnectionSocketPath:error];
+  if(![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
+    return
+    [[[FBSimulatorError
+       describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
+      logger:logger]
+     fail:error];
+  }
+
+  const char *testManagerSocketPath = testManagerSocketString.UTF8String;
+  if(strlen(testManagerSocketPath) >= 0x68) {
+    return
+    [[[FBSimulatorError
+       describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
+      logger:logger]
+     fail:error];
+  }
+
+  struct sockaddr_un remote;
+  remote.sun_family = AF_UNIX;
+  strcpy(remote.sun_path, testManagerSocketPath);
+  socklen_t length = (socklen_t)(strlen(remote.sun_path) + sizeof(remote.sun_family) + sizeof(remote.sun_len));
+  if (connect(testManagerSocketFD, (struct sockaddr *)&remote, length) == -1) {
+    return
+    [[[FBSimulatorError
+       describe:@"Failed to connect to testmangerd socket"]
+      logger:logger]
+     fail:error];
+  }
+
+  DTXSocketTransport *transport = [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocketFD disconnectAction:^{
+    [logger logFormat:@"Disconnected socket %@", testManagerSocketString];
+  }];
+  return transport;
 }
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection

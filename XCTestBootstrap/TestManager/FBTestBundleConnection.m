@@ -175,7 +175,7 @@
   [self.logger log:@"Connecting Test Bundle"];
   dispatch_async(self.queue, ^{
     NSError *error;
-    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerService:&error];
+    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
     if (error || !transport) {
       [self failWithError:[[XCTestBootstrapError describe:@"Failed to create transport"] causedBy:error]];
       return;

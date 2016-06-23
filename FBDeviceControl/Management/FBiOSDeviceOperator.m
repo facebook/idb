@@ -127,7 +127,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 
 #pragma mark - FBDeviceOperator protocol
 
-- (DTXTransport *)makeTransportForTestManagerService:(NSError *__autoreleasing *)error
+- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   return [self.iosDevice makeTransportForTestManagerService:error];
 }
