@@ -33,6 +33,16 @@
 
 #pragma mark - FBDeviceOperator protocol
 
+- (DTXTransport *)makeTransportForTestManagerService:(NSError *__autoreleasing *)error
+{
+  return [self.dvtDevice makeTransportForTestManagerService:error];
+}
+
+- (BOOL)requiresTestDaemonMediationForTestHostConnection
+{
+  return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
+}
+
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
 {
   return YES;

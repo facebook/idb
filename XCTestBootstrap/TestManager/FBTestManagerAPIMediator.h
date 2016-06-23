@@ -14,6 +14,7 @@
 @protocol FBTestManagerProcessInteractionDelegate;
 @protocol FBTestManagerTestReporter;
 @protocol FBControlCoreLogger;
+@protocol FBDeviceOperator;
 
 extern const NSInteger FBProtocolVersion;
 extern const NSInteger FBProtocolMinimumVersion;
@@ -52,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a mediator with given paramenters
 
- @param device a device that on which test runner is running
+ @param deviceOperator a device operator for device that test runner is running on
  @param processDelegate the Delegate to handle application interactivity.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
@@ -60,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param sessionIdentifier a session identifier of test that should be started
  @return Prepared FBTestRunnerConfiguration
  */
-+ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
++ (instancetype)mediatorWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
 
 /**
  Establishes a connection between the host, testmanagerd and the Test Bundle.

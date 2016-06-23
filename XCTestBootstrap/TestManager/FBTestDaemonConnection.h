@@ -15,6 +15,7 @@
 @protocol XCTestManager_IDEInterface;
 @protocol FBControlCoreLogger;
 @protocol XCTestDriverInterface;
+@protocol FBDeviceOperator;
 
 /**
  An Enumeration of Mutually-Exclusive Test Daemon States.
@@ -39,14 +40,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Strategy for the provided Transport.
 
- @param device the transport to connect to.
+ @param deviceOperator the device operator used to connect with device.
  @param interface the interface to delegate to.
  @param queue the dispatch queue to serialize asynchronous events on.
  @param testRunnerPID the Process Identifier of the Test Runner.
  @param logger the logger to log to.
  @return a new Strategy
  */
-+ (instancetype)withDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Synchronously Connects the Daemon.
@@ -83,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Properties from the Constructor.
  */
-@property (nonatomic, strong, readonly) DVTDevice *device;
+@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
 @property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, assign, readonly) pid_t testRunnerPID;

@@ -21,6 +21,7 @@
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
 #import "XCTestBootstrapError.h"
+#import "FBDeviceOperator.h"
 #import "FBTestManagerAPIMediator.h"
 
 #pragma clang diagnostic push
@@ -50,19 +51,19 @@
   return _clientProcessUniqueIdentifier;
 }
 
-+ (instancetype)withDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDevice:device interface:interface sessionIdentifier:sessionIdentifier queue:queue logger:logger];
+  return [[self alloc] initWithDeviceOperator:deviceOperator interface:interface sessionIdentifier:sessionIdentifier queue:queue logger:logger];
 }
 
-- (instancetype)initWithDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _device = device;
+  _deviceOperator = deviceOperator;
   _interface = interface;
   _sessionIdentifier = sessionIdentifier;
   _queue = queue;
@@ -174,7 +175,7 @@
   [self.logger log:@"Connecting Test Bundle"];
   dispatch_async(self.queue, ^{
     NSError *error;
-    DTXTransport *transport = [self.device makeTransportForTestManagerService:&error];
+    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerService:&error];
     if (error || !transport) {
       [self failWithError:[[XCTestBootstrapError describe:@"Failed to create transport"] causedBy:error]];
       return;
@@ -324,7 +325,7 @@
       code:XCTestBootstrapErrorCodeStartupFailure];
     return nil;
   }
-  if (!self.device.requiresTestDaemonMediationForTestHostConnection) {
+  if (!self.deviceOperator.requiresTestDaemonMediationForTestHostConnection) {
     self.error = [[XCTestBootstrapError
       describe:@"Test Bundle Connection cannot handle a Device that doesn't require daemon mediation"]
       code:XCTestBootstrapErrorCodeStartupFailure];

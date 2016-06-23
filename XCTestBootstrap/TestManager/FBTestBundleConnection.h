@@ -14,6 +14,7 @@
 @protocol FBControlCoreLogger;
 @protocol XCTestDriverInterface;
 @protocol XCTestManager_IDEInterface;
+@protocol FBDeviceOperator;
 
 /**
  An Enumeration of mutually exclusive states of the connection
@@ -39,14 +40,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Constructs a Test Bundle Connection.
 
- @param device the device to connect to.
+ @param deviceOperator the device operator used to connect with device.
  @param interface the interface to delegate to.
  @param sessionIdentifier the Session Identifier.
  @param queue the queue for asynchronous deliver.
  @param logger the Logger to Log to.
  @return a new Bundle Connection instance.
  */
-+ (instancetype)withDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Synchonously Connects the to the Bundle
@@ -78,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) DVTDevice *device;
+@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
 
 /**
  Properties set from a connection.

@@ -24,6 +24,7 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBTestManagerAPIMediator.h"
+#import "FBDeviceOperator.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -44,19 +45,19 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDevice:device interface:interface testRunnerPID:testRunnerPID queue:queue logger:logger];
+  return [[self alloc] initWithDeviceOperator:deviceOperator interface:interface testRunnerPID:testRunnerPID queue:queue logger:logger];
 }
 
-- (instancetype)initWithDevice:(DVTDevice *)device interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _device = device;
+  _deviceOperator = deviceOperator;
   _interface = interface;
   _queue = queue;
   _testRunnerPID = testRunnerPID;
@@ -178,7 +179,7 @@
   [self.logger log:@"Starting the daemon connection"];
   dispatch_async(self.queue, ^{
     NSError *innerError = nil;
-    DTXTransport *transport = [self.device makeTransportForTestManagerService:&innerError];
+    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerService:&innerError];
     if (innerError || !transport) {
       [self failWithError:[[XCTestBootstrapError
         describe:@"Failed to created secondary test manager transport"]

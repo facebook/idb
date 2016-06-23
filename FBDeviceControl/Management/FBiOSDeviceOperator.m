@@ -132,6 +132,16 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 
 #pragma mark - FBDeviceOperator protocol
 
+- (DTXTransport *)makeTransportForTestManagerService:(NSError *__autoreleasing *)error
+{
+  return [self.dvtDevice makeTransportForTestManagerService:error];
+}
+
+- (BOOL)requiresTestDaemonMediationForTestHostConnection
+{
+  return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
+}
+
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
 {
   if (![[[[[FBRunLoopSpinner new]

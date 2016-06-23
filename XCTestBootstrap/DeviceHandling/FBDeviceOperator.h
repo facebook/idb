@@ -11,6 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+@class DTXTransport;
 @class DVTAbstractiOSDevice;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
@@ -24,6 +25,19 @@
  The Underlying DVT Device.
  */
 @property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
+
+/**
+ Determines whether device supports testing with test manager daemon
+ */
+@property (nonatomic, assign, readonly) BOOL requiresTestDaemonMediationForTestHostConnection;
+
+/**
+ Starts test manager daemon and creates DTXTransport connection with it
+
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return DTXTransport if the operation succeeds, otherwise nil.
+ */
+- (DTXTransport *)makeTransportForTestManagerService:(NSError **)error;
 
 /**
  Waits for device to become ready. (eg. unlocked, loaded, available console data)

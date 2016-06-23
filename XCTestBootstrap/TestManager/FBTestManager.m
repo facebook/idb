@@ -29,7 +29,7 @@
 {
   FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withDeviceOperator:deviceOperator];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
-    mediatorWithDevice:deviceOperator.dvtDevice
+    mediatorWithDeviceOperator:deviceOperator
     processDelegate:processOperator
     reporter:reporter
     logger:logger
