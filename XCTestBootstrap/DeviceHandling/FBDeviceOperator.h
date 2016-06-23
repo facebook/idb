@@ -22,11 +22,6 @@
 @protocol FBDeviceOperator <NSObject, FBApplicationCommands>
 
 /**
- The Underlying DVT Device.
- */
-@property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
-
-/**
  Determines whether device supports testing with test manager daemon
  */
 @property (nonatomic, assign, readonly) BOOL requiresTestDaemonMediationForTestHostConnection;

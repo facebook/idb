@@ -39,9 +39,11 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 - (NSString *)executableName;
 @end
 
-@implementation FBiOSDeviceOperator
+@interface FBiOSDeviceOperator ()
+@property (nonatomic, strong, readonly) DVTiOSDevice *iosDevice;
+@end
 
-@synthesize dvtDevice = _dvtDevice;
+@implementation FBiOSDeviceOperator
 
 - (instancetype)initWithiOSDevice:(DVTiOSDevice *)iosDevice
 {
@@ -50,16 +52,9 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
     return nil;
   }
 
-  _dvtDevice = iosDevice;
+  _iosDevice = iosDevice;
 
   return self;
-}
-
-#pragma mark Type Coercions
-
-- (DVTiOSDevice *)iosDevice
-{
-  return (DVTiOSDevice *) self.dvtDevice;
 }
 
 #pragma mark - Device specific operations
@@ -134,12 +129,12 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 
 - (DTXTransport *)makeTransportForTestManagerService:(NSError *__autoreleasing *)error
 {
-  return [self.dvtDevice makeTransportForTestManagerService:error];
+  return [self.iosDevice makeTransportForTestManagerService:error];
 }
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection
 {
-  return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
+  return self.iosDevice.requiresTestDaemonMediationForTestHostConnection;
 }
 
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
@@ -148,7 +143,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
            timeout:5 * 60]
           timeoutErrorMessage:@"Device was locked"]
          reminderMessage:@"Please unlock device!"]
-        spinUntilTrue:^BOOL{ return ![self.dvtDevice isPasscodeLocked]; } error:error])
+        spinUntilTrue:^BOOL{ return ![self.iosDevice isPasscodeLocked]; } error:error])
   {
     return NO;
   }
@@ -157,7 +152,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
            timeout:5 * 60]
           timeoutErrorMessage:@"Device did not become available"]
          reminderMessage:@"Waiting for device to become available!"]
-        spinUntilTrue:^BOOL{ return [self.dvtDevice isAvailable]; }])
+        spinUntilTrue:^BOOL{ return [self.iosDevice isAvailable]; }])
   {
     return NO;
   }
@@ -192,13 +187,13 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
     return NO;
   }
 
-  if (!self.dvtDevice.supportsXPCServiceDebugging) {
+  if (!self.iosDevice.supportsXPCServiceDebugging) {
     return [[FBDeviceControlError
       describe:@"Device does not support XPC service debugging"]
       failBool:error];
   }
 
-  if (!self.dvtDevice.serviceHubProcessControlChannel) {
+  if (!self.iosDevice.serviceHubProcessControlChannel) {
     return [[FBDeviceControlError
       describe:@"Failed to create HUB control channel"]
       failBool:error];
@@ -209,7 +204,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   id object = [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return [self.dvtDevice installApplicationSync:path options:nil];
+    return [self.iosDevice installApplicationSync:path options:nil];
   }];
   if ([object isKindOfClass:NSError.class]) {
     if (error) {
@@ -309,7 +304,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
   return
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
-    DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
+    DTXChannel *channel = self.iosDevice.serviceHubProcessControlChannel;
     DTXMessage *message = [[NSClassFromString(@"DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
