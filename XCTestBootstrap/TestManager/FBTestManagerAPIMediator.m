@@ -143,11 +143,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   self.finished = YES;
   self.testingIsFinished = YES;
 
-  if (getenv("XCS")) {
-    [self __finishXCS];
-    return;
-  }
-
   [self detect_r17733855_fromError:error];
   if (error) {
     NSString *message = @"";
@@ -399,24 +394,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   [self.logger log:[self unknownMessageForSelector:aSelector]];
   NSAssert(nil, [self unknownMessageForSelector:_cmd]);
   return nil;
-}
-
-#pragma mark - Unsupported partly disassembled
-
-- (void)__finishXCS
-{
-  NSAssert(nil, [self unknownMessageForSelector:_cmd]);
-  [self.targetDevice _syncDeviceCrashLogsDirectoryWithCompletionHandler:^(NSError *crashLogsSyncError){
-    dispatch_async(dispatch_get_main_queue(), ^{
-      CFAbsoluteTime time = CFAbsoluteTimeGetCurrent();
-      if (crashLogsSyncError) {
-        [self.logger logFormat:@"Error syncing device diagnostic logs after %.1fs: %@", time, crashLogsSyncError];
-      }
-      else {
-        [self.logger logFormat:@"Finished syncing device diagnostic logs after %.1fs.", time];
-      }
-    });
-  }];
 }
 
 @end
