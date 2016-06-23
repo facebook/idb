@@ -15,8 +15,6 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import <IDEiOSSupportCore/DVTiPhoneSimulator.h>
-
 #import <sys/socket.h>
 #import <sys/un.h>
 
@@ -25,7 +23,6 @@
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorControlOperator ()
-@property (nonatomic, strong) DVTiPhoneSimulator *dvtDevice;
 @property (nonatomic, strong) FBSimulator *simulator;
 @end
 
@@ -34,7 +31,6 @@
 + (instancetype)operatorWithSimulator:(FBSimulator *)simulator
 {
   FBSimulatorControlOperator *operator = [self.class new];
-  operator.dvtDevice = [NSClassFromString(@"DVTiPhoneSimulator") simulatorWithDevice:simulator.device];
   operator.simulator = simulator;
   return operator;
 }
@@ -131,7 +127,7 @@
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection
 {
-  return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
+  return YES;
 }
 
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
