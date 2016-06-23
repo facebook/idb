@@ -26,8 +26,16 @@
 {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
+    [self loadPrivateTestingFrameworksOrAbort];
+  });
+}
+
++ (void)initializeDVTEnvironment
+{
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
     // First load the Frameworks.
-    [self loadPrivateFrameworksOrAbort];
+    [self loadPrivateDVTFrameworksOrAbort];
 
     // Then confirm the important classes exist.
     NSError *error = nil;
@@ -40,7 +48,7 @@
   });
 }
 
-+ (void)enableDebugLogging
++ (void)enableDVTDebugLogging
 {
   [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSupport"] setLogLevel:10];
   [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSimulator"] setLogLevel:10];
@@ -52,26 +60,34 @@
 
 #pragma mark Private
 
-+ (void)loadPrivateFrameworksOrAbort
++ (void)loadPrivateTestingFrameworksOrAbort
 {
-  NSArray<FBWeakFramework *> *frameworks = @[
+  [self loadFrameworksOrAbort:@[
     [FBWeakFramework DTXConnectionServices],
+    [FBWeakFramework XCTest],
+  ] groupName:@"Testing frameworks"];
+}
+
++ (void)loadPrivateDVTFrameworksOrAbort
+{
+  [self loadFrameworksOrAbort:@[
     [FBWeakFramework DVTFoundation],
     [FBWeakFramework IDEFoundation],
     [FBWeakFramework IDEiOSSupportCore],
-    [FBWeakFramework XCTest],
     [FBWeakFramework IBAutolayoutFoundation],
     [FBWeakFramework IDEKit],
-    [FBWeakFramework IDESourceEditor],
-  ];
+    [FBWeakFramework IDESourceEditor]
+  ] groupName:@"DVT frameworks"];
+}
 
++ (void)loadFrameworksOrAbort:(NSArray<FBWeakFramework *> *)frameworks groupName:(NSString *)groupName
+{
   NSError *error = nil;
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  BOOL success = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:&error];
-  if (success) {
+  if ([FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:&error]) {
     return;
   }
-  [logger.error logFormat:@"Failed to load private frameworks for XCTBoostrap with error %@", error];
+  [logger.error logFormat:@"Failed to load private %@ for XCTBoostrap with error %@", groupName, error];
   abort();
 }
 
