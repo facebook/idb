@@ -57,60 +57,75 @@
      fail:error];
   }
 
-  int testManagerSocketFD = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (testManagerSocketFD == -1) {
+  NSError *innerError;
+  int testManagerSocket = [self makeTestManagerDaemonSocketWithLogger:logger error:&innerError];
+  if (testManagerSocket == 1) {
     return
+    [[[[FBSimulatorError
+        describe:@"Falied to create test manager dameon socket"]
+       causedBy:innerError]
+      logger:logger]
+     fail:error];
+  }
+
+  DTXSocketTransport *transport = [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocket disconnectAction:^{
+    [logger log:@"Disconnected from test manager daemon socket"];
+  }];
+  return transport;
+}
+
+- (int)makeTestManagerDaemonSocketWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  int socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (socketFD == -1) {
     [[[FBSimulatorError
        describe:@"Unable to create a unix domain socket"]
       logger:logger]
-     fail:error];
+     failUInt:error];
+    return -1;
   }
 
-  NSString *testManagerSocketString = [self testConnectionSocketPathWithLogger:logger];
+  NSString *testManagerSocketString = [self testManagerDaemonSocketPathWithLogger:logger];
   if(testManagerSocketString.length == 0) {
-    return
     [[[FBSimulatorError
        describe:@"Failed to retrieve testmanagerd socket path"]
       logger:logger]
-     fail:error];
+     failUInt:error];
+    return -1;
   }
 
   if(![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
-    return
     [[[FBSimulatorError
        describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
       logger:logger]
      fail:error];
+    return -1;
   }
 
   const char *testManagerSocketPath = testManagerSocketString.UTF8String;
   if(strlen(testManagerSocketPath) >= 0x68) {
-    return
     [[[FBSimulatorError
        describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
       logger:logger]
      fail:error];
+    return -1;
   }
 
   struct sockaddr_un remote;
   remote.sun_family = AF_UNIX;
   strcpy(remote.sun_path, testManagerSocketPath);
   socklen_t length = (socklen_t)(strlen(remote.sun_path) + sizeof(remote.sun_family) + sizeof(remote.sun_len));
-  if (connect(testManagerSocketFD, (struct sockaddr *)&remote, length) == -1) {
-    return
+  if (connect(socketFD, (struct sockaddr *)&remote, length) == -1) {
     [[[FBSimulatorError
        describe:@"Failed to connect to testmangerd socket"]
       logger:logger]
      fail:error];
+    return -1;
   }
-
-  DTXSocketTransport *transport = [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocketFD disconnectAction:^{
-    [logger logFormat:@"Disconnected socket %@", testManagerSocketString];
-  }];
-  return transport;
+  return socketFD;
 }
 
-- (NSString *)testConnectionSocketPathWithLogger:(id<FBControlCoreLogger>)logger
+- (NSString *)testManagerDaemonSocketPathWithLogger:(id<FBControlCoreLogger>)logger
 {
   const NSUInteger maxTryCount = 10;
   NSUInteger tryCount = 0;
