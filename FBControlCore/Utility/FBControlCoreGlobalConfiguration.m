@@ -14,8 +14,8 @@
 #import "FBControlCoreLogger.h"
 #import "FBTaskExecutor.h"
 
-NSString *const FBControlCoreStderrLogging = @"FBControlCore_LOGGING";
-NSString *const FBControlCoreDebugLogging = @"FBControlCore_DEBUG_LOGGING";
+NSString *const FBControlCoreStderrLogging = @"FBCONTROLCORE_LOGGING";
+NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
 
 static id<FBControlCoreLogger> logger;
 
@@ -35,6 +35,20 @@ static id<FBControlCoreLogger> logger;
   return directory;
 }
 
++ (NSString *)xcodeInfoPlistPath
+{
+  static dispatch_once_t onceToken;
+  static NSString *infoPlistPath;
+  dispatch_once(&onceToken, ^{
+    NSString *path = [[self.developerDirectory
+      stringByDeletingLastPathComponent]
+      stringByAppendingPathComponent:@"Info.plist"];
+    NSCAssert([NSFileManager.defaultManager fileExistsAtPath:path], @"Info.plist for Xcode does not exist at path '%@'", path);
+    infoPlistPath = path;
+  });
+  return infoPlistPath;
+}
+
 + (nullable NSString *)appleConfiguratorApplicationPath
 {
   static dispatch_once_t onceToken;
@@ -45,12 +59,26 @@ static id<FBControlCoreLogger> logger;
   return path;
 }
 
-+ (NSDecimalNumber *)sdkVersionNumber
++ (NSDecimalNumber *)xcodeVersionNumber
 {
-  return [NSDecimalNumber decimalNumberWithString:self.sdkVersion];
+  static dispatch_once_t onceToken;
+  static NSDecimalNumber *versionNumber;
+  dispatch_once(&onceToken, ^{
+    NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:self.xcodeInfoPlistPath];
+    NSCAssert(infoPlist, @"Could not read Info.plist at '%@'", infoPlist);
+    NSString *versionNumberString = infoPlist[@"CFBundleShortVersionString"];
+    NSCAssert([versionNumberString isKindOfClass:NSString.class], @"Could not read Info.plist at '%@'", infoPlist);
+    versionNumber = [NSDecimalNumber decimalNumberWithString:versionNumberString];
+  });
+  return versionNumber;
 }
 
-+ (NSNumberFormatter *)sdkVersionNumberFormatter
++ (NSDecimalNumber *)iosSDKVersionNumber
+{
+  return [NSDecimalNumber decimalNumberWithString:self.iosSDKVersion];
+}
+
++ (NSNumberFormatter *)iosSDKVersionNumberFormatter
 {
   static dispatch_once_t onceToken;
   static NSNumberFormatter *formatter;
@@ -63,7 +91,7 @@ static id<FBControlCoreLogger> logger;
   return formatter;
 }
 
-+ (NSString *)sdkVersion
++ (NSString *)iosSDKVersion
 {
   static dispatch_once_t onceToken;
   static NSString *sdkVersion;
@@ -125,7 +153,7 @@ static id<FBControlCoreLogger> logger;
   // Prior to Xcode 7, 'iOS Simulator.app' calls `+[SimDeviceSet defaultSet]` directly
   // This means that the '-DeviceSetPath' won't do anything for Simulators booted with prior to Xcode 7.
   // It should be possible to fix this by injecting a shim that swizzles this method in these Xcode versions.
-  return [self.sdkVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
+  return [self.iosSDKVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
 }
 
 + (id<FBControlCoreLogger>)defaultLogger
@@ -140,9 +168,9 @@ static id<FBControlCoreLogger> logger;
 + (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Developer Directory %@ | SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
+    @"Developer Directory %@ | iOS SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
     self.developerDirectory,
-    self.sdkVersion,
+    self.iosSDKVersion,
     self.supportsCustomDeviceSets,
     self.debugLoggingEnabled
   ];

@@ -14,13 +14,15 @@
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
 #import <CoreSimulator/SimRuntime.h>
+#import <CoreSimulator/SimServiceContext.h>
 
-#import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorEraseStrategy.h"
+#import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @implementation FBSimulatorSet
@@ -42,7 +44,7 @@
 
   FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet control:control logger:logger];
   if (![set performSetPreconditionsWithConfiguration:configuration Error:&innerError]) {
-    return [[[FBSimulatorError describe:@"Failed meet pool preconditions"] causedBy:innerError] fail:error];
+    return [[[FBSimulatorError describe:@"Failed meet simulator set preconditions"] causedBy:innerError] fail:error];
   }
   return set;
 }
@@ -75,9 +77,25 @@
     }
   }
 
-  return deviceSetPath
-    ? [NSClassFromString(@"SimDeviceSet") setForSetPath:configuration.deviceSetPath]
-    : [NSClassFromString(@"SimDeviceSet") defaultSet];
+  // Xcode 8's Simulator.app uses the SimServiceContext to fetch the Device Set, rather than instantiating it directly.
+  // Xcode 7's Simulator.app just creates the SimDeviceSet directly.
+  SimDeviceSet *deviceSet = nil;
+  Class serviceContextClass = NSClassFromString(@"SimServiceContext");
+  if ([serviceContextClass respondsToSelector:@selector(sharedServiceContextForDeveloperDir:error:)]) {
+    SimServiceContext *serviceContext = [serviceContextClass sharedServiceContextForDeveloperDir:FBControlCoreGlobalConfiguration.developerDirectory error:&innerError];
+    deviceSet = deviceSetPath
+      ? [serviceContext deviceSetWithPath:configuration.deviceSetPath error:&innerError]
+      : [serviceContext defaultDeviceSetWithError:&innerError];
+  } else {
+    deviceSet = deviceSetPath
+      ? [NSClassFromString(@"SimDeviceSet") setForSetPath:configuration.deviceSetPath]
+      : [NSClassFromString(@"SimDeviceSet") defaultSet];
+  }
+
+  if (!deviceSet) {
+    return [[[FBSimulatorError describeFormat:@"Failed to get device set for %@", deviceSetPath] causedBy:innerError] fail:error];
+  }
+  return deviceSet;
 }
 
 - (BOOL)performSetPreconditionsWithConfiguration:(FBSimulatorControlConfiguration *)configuration Error:(NSError **)error
@@ -133,7 +151,16 @@
   return YES;
 }
 
-#pragma mark Public Methods
+#pragma mark - Public Methods
+
+#pragma mark Querying
+
+- (NSArray<FBSimulator *> *)query:(FBiOSTargetQuery *)query
+{
+  return (NSArray<FBSimulator *> *) [query filter:self.allSimulators];
+}
+
+#pragma mark Creation
 
 - (nullable FBSimulator *)createSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration error:(NSError **)error
 {
@@ -194,81 +221,42 @@
   return simulator;
 }
 
+#pragma mark Destructive Methods
+
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@, cannot kill", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
   return [self.simulatorTerminationStrategy killSimulators:@[simulator] error:error] != nil;
 }
 
 - (BOOL)eraseSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
-
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@, cannot erase", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
   return [self.eraseStrategy eraseSimulators:@[simulator] error:error] != nil;
 }
 
 - (BOOL)deleteSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSParameterAssert(simulator);
+  return [self.deletionStrategy deleteSimulators:@[simulator] error:error] != nil;
+}
 
-  // Confirm that this Simulator belongs to us.
-  if (simulator.set != self) {
-    return [[[FBSimulatorError
-      describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
-      inSimulator:simulator]
-      failBool:error];
-  }
+- (nullable NSArray<FBSimulator *> *)killAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+{
+  NSParameterAssert(simulators);
+  return [self.simulatorTerminationStrategy killSimulators:simulators error:error];
+}
 
-  // Kill the Simulators before deleting them.
-  NSError *innerError = nil;
-  if (![self.simulatorTerminationStrategy killSimulators:@[simulator] error:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
+- (nullable NSArray<FBSimulator *> *)eraseAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+{
+  NSParameterAssert(simulators);
+  return [self.eraseStrategy eraseSimulators:simulators error:error];
+}
 
-  // Delete the Device from the Underlying DeviceSet
-  NSString *udid = simulator.udid;
-  if (![self.deviceSet deleteDevice:simulator.device error:&innerError]) {
-    return [[[[[FBSimulatorError
-      describeFormat:@"Failed to Delete simulator %@", simulator]
-      causedBy:innerError]
-      inSimulator:simulator]
-      logger:self.logger]
-      failBool:error];
-  }
-
-  // Deleting the device from the set can still leave it around for a few seconds.
-  // This could race with methods that may reallocate the newly-deleted device
-  // So we should wait for the device to no longer be present in the underlying set.
-  BOOL wasRemovedFromDeviceSet = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout untilTrue:^ BOOL {
-    NSOrderedSet *udidSet = [self.allSimulators valueForKey:@"udid"];
-    return ![udidSet containsObject:udid];
-  }];
-  if (!wasRemovedFromDeviceSet) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Simulator with UDID %@ should have been removed from set but wasn't.", udid]
-      inSimulator:simulator]
-      logger:self.logger]
-      failBool:error];
-  }
-
-  return YES;
+- (nullable NSArray<NSString *> *)deleteAll:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
+{
+  NSParameterAssert(simulators);
+  return [self.deletionStrategy deleteSimulators:simulators error:error];
 }
 
 - (nullable NSArray<FBSimulator *> *)killAllWithError:(NSError **)error
@@ -375,7 +363,7 @@
 
 - (FBSimulatorTerminationStrategy *)simulatorTerminationStrategy
 {
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
+  return [FBSimulatorTerminationStrategy strategyForSet:self];
 }
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
@@ -385,7 +373,12 @@
 
 - (FBSimulatorEraseStrategy *)eraseStrategy
 {
-  return [FBSimulatorEraseStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
+  return [FBSimulatorEraseStrategy strategyForSet:self];
+}
+
+- (FBSimulatorDeletionStrategy *)deletionStrategy
+{
+  return [FBSimulatorDeletionStrategy strategyForSet:self];
 }
 
 @end

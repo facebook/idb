@@ -29,6 +29,16 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
+ The Device Configuration.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreConfiguration_Device> device;
+
+/**
+ The OS Configuration.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreConfiguration_OS> os;
+
+/**
  The Name of the Device to Simulate. Must not be nil.
  */
 @property (nonatomic, copy, readonly) NSString *deviceName;
@@ -43,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
  Auxillary files are stored per-simulator, so will be nested inside directories for each Simulator.
  If no path is provided, a default Auxillary directory inside the Simulator's data directory will be used.
  */
-@property (nonatomic, copy, readonly) NSString *auxillaryDirectory;
+@property (nonatomic, copy, nullable, readonly) NSString *auxillaryDirectory;
 
 /**
  Returns the Default Configuration.
@@ -51,7 +61,22 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)defaultConfiguration;
 
-#pragma mark Devices
+#pragma mark - Devices
+
+/**
+ An OS with the given configuration.
+ */
++ (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device;
+- (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device;
+
+/**
+ A Device with the provided name.
+ Will return nil, if no device with the given name could be found.
+ */
++ (nullable instancetype)withDeviceNamed:(NSString *)deviceName;
+- (nullable instancetype)withDeviceNamed:(NSString *)deviceName;
+
+#pragma mark iPhone Devices
 
 /**
  An iPhone 4s.
@@ -95,6 +120,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)iPhone6sPlus;
 - (instancetype)iPhone6sPlus;
 
+#pragma mark iPad Devices
+
 /**
  An iPad 2.
  */
@@ -125,6 +152,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)iPadAir2;
 - (instancetype)iPadAir2;
 
+#pragma mark Watch Devices
+
 /**
  The 38mm Apple Watch.
  */
@@ -137,18 +166,33 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)watch42mm;
 - (instancetype)watch42mm;
 
+#pragma mark Apple TV Devices
+
 /**
  The 1080p Apple TV.
  */
 + (instancetype)appleTV1080p;
 - (instancetype)appleTV1080p;
 
+#pragma mark - OS Versions
+
 /**
- A Device with the provided name.
- Will return nil, if no device with the given name could be found.
+ An OS with the given configuration.
  */
-+ (instancetype)withDeviceNamed:(NSString *)deviceName;
-- (instancetype)withDeviceNamed:(NSString *)deviceName;
++ (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os;
+- (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os;
+
+/**
+ Device with the given OS version.
+ Will return nil, if no OS with the given name could be found.
+ */
++ (nullable instancetype)withOSNamed:(NSString *)osName;
+
+/**
+ Device with the given OS version.
+ Will return nil, if no OS with the given name could be found.
+ */
+- (nullable instancetype)withOSNamed:(NSString *)osName;
 
 #pragma mark iOS Versions
 
@@ -201,18 +245,6 @@ NS_ASSUME_NONNULL_BEGIN
  iOS 9.3
  */
 - (instancetype)iOS_9_3;
-
-/**
- Device with the given OS version.
- Will return nil, if no OS with the given name could be found.
- */
-+ (instancetype)withOSNamed:(NSString *)osName;
-
-/**
- Device with the given OS version.
- Will return nil, if no OS with the given name could be found.
- */
-- (instancetype)withOSNamed:(NSString *)osName;
 
 #pragma mark tvOS Versions
 

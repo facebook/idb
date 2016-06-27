@@ -30,7 +30,6 @@
 #import "FBDeviceControlFrameworkLoader.h"
 
 static const NSUInteger FBMaxConosleMarkerLength = 1000;
-static const float FBDeviceSearchTimeout = 3 * 60;
 
 @protocol DVTApplication <NSObject>
 - (NSString *)installedPath;
@@ -39,10 +38,8 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 - (NSString *)executableName;
 @end
 
-
 @interface FBiOSDeviceOperator ()
-@property (nonatomic, strong) DVTiOSDevice *dvtDevice;
-@property (nonatomic, copy) NSString *preLaunchConsoleString;
+@property (nonatomic, strong, readonly) DVTiOSDevice *iosDevice;
 @end
 
 @implementation FBiOSDeviceOperator
@@ -76,6 +73,17 @@ static const float FBDeviceSearchTimeout = 3 * 60;
     return op;
 }
 
+- (instancetype)initWithiOSDevice:(DVTiOSDevice *)iosDevice
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _iosDevice = iosDevice;
+
+  return self;
+}
 
 #pragma mark - Device specific operations
 
@@ -93,14 +101,14 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 
 - (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
 {
-  if (!self.dvtDevice.applications) {
+  if (!self.iosDevice.applications) {
     [FBRunLoopSpinner spinUntilBlockFinished:^id{
-      DVTFuture *future = self.dvtDevice.token.fetchApplications;
+      DVTFuture *future = self.iosDevice.token.fetchApplications;
       [future waitUntilFinished];
       return nil;
     }];
   }
-  return [self.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
+  return [self.iosDevice installedApplicationWithBundleIdentifier:bundleID];
 }
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -115,7 +123,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
       withBundlePath:[application installedPath]]
      withBundleID:[application identifier]]
     withBinaryName:[application executableName]]
-   build];
+   buildWithError:error];
 
   return productBundle;
 }
@@ -124,7 +132,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 {
   return
   [[FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return @([self.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:error]);
+    return @([self.iosDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:error]);
   }] boolValue];
 }
 
@@ -132,8 +140,8 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 {
   id returnObject =
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    if ([self.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
-      return [self.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
+    if ([self.iosDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
+      return [self.iosDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
     }
     return nil;
   }];
@@ -147,13 +155,23 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 
 #pragma mark - FBDeviceOperator protocol
 
+- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  return [self.iosDevice makeTransportForTestManagerService:error];
+}
+
+- (BOOL)requiresTestDaemonMediationForTestHostConnection
+{
+  return self.iosDevice.requiresTestDaemonMediationForTestHostConnection;
+}
+
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
 {
   if (![[[[[FBRunLoopSpinner new]
            timeout:5 * 60]
           timeoutErrorMessage:@"Device was locked"]
          reminderMessage:@"Please unlock device!"]
-        spinUntilTrue:^BOOL{ return ![self.dvtDevice isPasscodeLocked]; } error:error])
+        spinUntilTrue:^BOOL{ return ![self.iosDevice isPasscodeLocked]; } error:error])
   {
     return NO;
   }
@@ -162,7 +180,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
            timeout:5 * 60]
           timeoutErrorMessage:@"Device did not become available"]
          reminderMessage:@"Waiting for device to become available!"]
-        spinUntilTrue:^BOOL{ return [self.dvtDevice isAvailable]; }])
+        spinUntilTrue:^BOOL{ return [self.iosDevice isAvailable]; }])
   {
     return NO;
   }
@@ -171,7 +189,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
            timeout:5 * 60]
           timeoutErrorMessage:@"Failed to gain access to device"]
          reminderMessage:@"Allow device access!"]
-        spinUntilTrue:^BOOL{ return [self.dvtDevice deviceReady]; } error:error])
+        spinUntilTrue:^BOOL{ return [self.iosDevice deviceReady]; } error:error])
   {
     return NO;
   }
@@ -197,13 +215,13 @@ static const float FBDeviceSearchTimeout = 3 * 60;
     return NO;
   }
 
-  if (!self.dvtDevice.supportsXPCServiceDebugging) {
+  if (!self.iosDevice.supportsXPCServiceDebugging) {
     return [[FBDeviceControlError
       describe:@"Device does not support XPC service debugging"]
       failBool:error];
   }
 
-  if (!self.dvtDevice.serviceHubProcessControlChannel) {
+  if (!self.iosDevice.serviceHubProcessControlChannel) {
     return [[FBDeviceControlError
       describe:@"Failed to create HUB control channel"]
       failBool:error];
@@ -214,7 +232,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   id object = [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return [self.dvtDevice installApplicationSync:path options:nil];
+    return [self.iosDevice installApplicationSync:path options:nil];
   }];
   if ([object isKindOfClass:NSError.class]) {
     if (error) {
@@ -270,7 +288,7 @@ static const float FBDeviceSearchTimeout = 3 * 60;
 
 - (NSString *)fullConsoleString
 {
-  return [self.dvtDevice.token.deviceConsoleController consoleString];
+  return [self.iosDevice.token.deviceConsoleController consoleString];
 }
 
 - (NSString *)consoleString
@@ -314,11 +332,9 @@ static const float FBDeviceSearchTimeout = 3 * 60;
   return
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
-    DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
-      DTXMessage *message = [[NSClassFromString(@"DTXMessage") alloc] initWithSelector:aSelector
-                                                                              firstArg:arg
-                                                                   remainingObjectArgs:(__bridge NSString *)(*arguments)];
-      
+
+    DTXChannel *channel = self.iosDevice.serviceHubProcessControlChannel;
+    DTXMessage *message = [[NSClassFromString(@"DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
         *error = responseMessage.error;

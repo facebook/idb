@@ -24,37 +24,12 @@
 @class FBSimulatorSet;
 @class SimDevice;
 
-/**
- Uses the known values of SimDevice State, to construct an enumeration.
- These mirror the values from -[SimDeviceState state].
- */
-typedef NS_ENUM(NSUInteger, FBSimulatorState) {
-  FBSimulatorStateCreating = 0,
-  FBSimulatorStateShutdown = 1,
-  FBSimulatorStateBooting = 2,
-  FBSimulatorStateBooted = 3,
-  FBSimulatorStateShuttingDown = 4,
-  FBSimulatorStateUnknown = 99,
-};
-
-/**
- Uses the known values of SimDeviceType ProductFamilyID, to construct an enumeration.
- These mirror the values from -[SimDeviceState productFamilyID].
- */
-typedef NS_ENUM(NSUInteger, FBSimulatorProductFamily) {
-  FBSimulatorProductFamilyUnknown = 0,
-  FBSimulatorProductFamilyiPhone = 1,
-  FBSimulatorProductFamilyiPad = 2,
-  FBSimulatorProductFamilyAppleTV = 3,
-  FBSimulatorProductFamilyAppleWatch = 4,
-};
-
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulator : NSObject <FBiOSTarget>
 
 /**
  The Underlying SimDevice.
@@ -99,16 +74,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorHistory *history;
 
 /**
- The Name of the allocated Simulator.
- */
-@property (nonatomic, copy, readonly, nonnull) NSString *name;
-
-/**
- The UDID of the allocated Simulator.
- */
-@property (nonatomic, copy, readonly, nonnull) NSString *udid;
-
-/**
  The State of the allocated Simulator.
  */
 @property (nonatomic, assign, readonly) FBSimulatorState state;
@@ -116,7 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Product Family of the Simulator.
  */
-@property (nonatomic, assign, readonly) FBSimulatorProductFamily productFamily;
+@property (nonatomic, assign, readonly) FBControlCoreProductFamily productFamily;
 
 /**
  A string representation of the Simulator State.
@@ -139,11 +104,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
 
 /**
- The launchd_sim process info for the Simulator, if launched.
- */
-@property (nonatomic, copy, readonly, nullable) FBProcessInfo *launchdSimProcess;
-
-/**
  The FBProcessInfo associated with the Container Application that launched the Simulator.
  */
 @property (nonatomic, copy, readonly, nullable) FBProcessInfo *containerApplication;
@@ -157,6 +117,13 @@ NS_ASSUME_NONNULL_BEGIN
  The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
  */
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *diagnostics;
+
+@end
+
+/**
+ Command Conformances.
+ */
+@interface FBSimulator (Commands) <FBApplicationCommands>
 
 @end
 

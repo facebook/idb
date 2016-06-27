@@ -100,8 +100,8 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   return self.timestamp.hash |
          (unsigned long) self.simulatorState |
          self.mutableLaunchedProcesses.hash |
-         self.mutableProcessLaunchConfigurations.hash ^
-         self.mutableProcessMetadata.hash;
+        (self.mutableProcessLaunchConfigurations.hash ^
+         self.mutableProcessMetadata.hash);
 }
 
 - (BOOL)isEqual:(FBSimulatorHistory *)object

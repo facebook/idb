@@ -17,6 +17,7 @@
 #import "FBTestRunnerConfiguration.h"
 #import "NSFileManager+FBFileManager.h"
 #import "FBCodeSignCommand.h"
+#import "XCTestBootstrapError.h"
 
 @interface FBDeviceTestPreparationStrategy ()
 @property (nonatomic, copy) NSString *applicationPath;
@@ -76,35 +77,45 @@
   NSAssert(self.testBundlePath, @"Path to test bundle is needed to load bundles");
     NSAssert(self.pathToXcodePlatformDir, @"Path to Xcode Platform Dir is needed to load test frameworks");
 
+  NSError *innerError;
   // Load tested application
   FBProductBundle *testRunner =
   [[[[FBProductBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.applicationPath]
-   withCodesignProvider:deviceOperator.codesignProvider]
-   build];
+      withCodesignProvider:deviceOperator.codesignProvider]
+   buildWithError:&innerError];
+  if (!testRunner) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to prepare test runner app"]
+      causedBy:innerError]
+     fail:error];
+  }
 
-  if (![deviceOperator isApplicationInstalledWithBundleID:testRunner.bundleID error:error]) {
-    NSLog(@"[%@ %@] => %@ Test Runner app (%@) must be installed on device",
-          NSStringFromClass(self.class),
-          NSStringFromSelector(_cmd),
-          nil,
-          testRunner.bundleID);
-      return nil;
+  if (![deviceOperator isApplicationInstalledWithBundleID:testRunner.bundleID error:&innerError]) {
+    if (![deviceOperator installApplicationWithPath:testRunner.path error:&innerError]) {
+      return
+      [[[XCTestBootstrapError describe:@"Failed to install test runner app"]
+        causedBy:innerError]
+       fail:error];
+    }
   }
 
   // Get tested app path on device
-  NSString *remotePath = [deviceOperator applicationPathForApplicationWithBundleID:testRunner.bundleID error:error];
+  NSString *remotePath = [deviceOperator applicationPathForApplicationWithBundleID:testRunner.bundleID error:&innerError];
   if (!remotePath) {
-      NSLog(@"[%@ %@] => %@ (unable to get remote path for test runner bundle)",
-            NSStringFromClass(self.class), NSStringFromSelector(_cmd), nil);
-    return nil;
+    return
+    [[[XCTestBootstrapError describe:@"Failed to fetch test runner's path on device"]
+      causedBy:innerError]
+     fail:error];
   }
 
   // Get tested app document container path
-  NSString *dataContainterDirectory = [deviceOperator containerPathForApplicationWithBundleID:testRunner.bundleID error:error];
+  NSString *dataContainterDirectory = [deviceOperator containerPathForApplicationWithBundleID:testRunner.bundleID error:&innerError];
   if (!dataContainterDirectory) {
-      NSLog(@"[%@ %@] => %@ (No data container directory)", NSStringFromClass(self.class), NSStringFromSelector(_cmd), nil);
-    return nil;
+    return
+    [[[XCTestBootstrapError describe:@"Failed to fetch test runner's data container path"]
+      causedBy:innerError]
+     fail:error];
   }
 
   // Load XCTest bundle
@@ -113,10 +124,14 @@
     withBundlePath:self.testBundlePath]
                                withCodesignProvider:deviceOperator.codesignProvider]
     withSessionIdentifier:sessionIdentifier]
-                              
-    build];
-    NSString *platformDirectory = [self.pathToXcodePlatformDir stringByAppendingPathComponent:@"Platforms/iPhoneOS.platform"];
+    buildWithError:&innerError];
 
+  if (!testBundle) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to prepare test bundle"]
+      causedBy:innerError]
+     fail:error];
+  }
   // Load tested app data package
   FBApplicationDataPackage *dataPackage = [[[[[[[[FBApplicationDataPackageBuilder builderWithFileManager:self.fileManager]
     withPackagePath:self.applicationDataPath]
@@ -125,17 +140,21 @@
     withWorkingDirectory:self.workingDirectory]
     withPlatformDirectory:platformDirectory]
     withDeviceDataDirectory:dataContainterDirectory]
-    build];
+    buildWithError:&innerError];
+
+  if (!dataPackage) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to prepare data package"]
+      causedBy:innerError]
+     fail:error];
+  }
 
   // Inastall tested app data package
-  if (![deviceOperator uploadApplicationDataAtPath:dataPackage.path
-                                          bundleID:testRunner.bundleID
-                                             error:error]) {
-      NSLog(@"[%@ %@] => %@ (Unable to upload application data)",
-            NSStringFromClass(self.class),
-            NSStringFromSelector(_cmd),
-            nil);
-    return nil;
+  if (![deviceOperator uploadApplicationDataAtPath:dataPackage.path bundleID:testRunner.bundleID error:&innerError]) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to upload data package to device"]
+      causedBy:innerError]
+     fail:error];
   }
 
   FBProductBundle *remoteIDEBundleInjectionFramework =

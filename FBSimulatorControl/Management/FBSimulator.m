@@ -20,6 +20,7 @@
 
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
+#import "FBSimulatorApplicationCommands.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
@@ -34,6 +35,10 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorSet.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
 
 @implementation FBSimulator
 
@@ -64,6 +69,7 @@
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;
+  _commandResponders = [FBSimulator commandRespondersForSimulator:self];
 
   return self;
 }
@@ -85,19 +91,20 @@
   _mutableSink = mutableSink;
   _diagnostics = diagnosticsSink;
   _resourceSink = resourceSink;
+
   return self;
 }
 
-#pragma mark Properties
-
-- (NSString *)name
-{
-  return self.device.name;
-}
+#pragma mark FBiOSTarget
 
 - (NSString *)udid
 {
   return self.device.UDID.UUIDString;
+}
+
+- (NSString *)name
+{
+  return self.device.name;
 }
 
 - (FBSimulatorState)state
@@ -105,20 +112,37 @@
   return self.device.state;
 }
 
-- (FBSimulatorProductFamily)productFamily
+- (FBiOSTargetType)targetType
+{
+  return FBiOSTargetTypeSimulator;
+}
+
+- (id<FBControlCoreConfiguration_Device>)deviceConfiguration
+{
+  return self.configuration.device;
+}
+
+- (id<FBControlCoreConfiguration_OS>)osConfiguration
+{
+  return self.configuration.os;
+}
+
+#pragma mark Properties
+
+- (FBControlCoreProductFamily)productFamily
 {
   int familyID = self.device.deviceType.productFamilyID;
   switch (familyID) {
     case 1:
-      return FBSimulatorProductFamilyiPhone;
+      return FBControlCoreProductFamilyiPhone;
     case 2:
-      return FBSimulatorProductFamilyiPad;
+      return FBControlCoreProductFamilyiPad;
     case 3:
-      return FBSimulatorProductFamilyAppleTV;
+      return FBControlCoreProductFamilyAppleTV;
     case 4:
-      return FBSimulatorProductFamilyAppleWatch;
+      return FBControlCoreProductFamilyAppleWatch;
     default:
-      return FBSimulatorProductFamilyUnknown;
+      return FBControlCoreProductFamilyUnknown;
   }
 }
 
@@ -140,9 +164,9 @@
   return [self.pool.allocatedSimulators containsObject:self];
 }
 
-- (FBProcessInfo *)launchdSimProcess
+- (FBProcessInfo *)launchdProcess
 {
-  return self.eventRelay.launchdSimProcess;
+  return self.eventRelay.launchdProcess;
 }
 
 - (FBSimulatorBridge *)bridge
@@ -199,33 +223,39 @@
 
 - (NSString *)debugDescription
 {
-  return [NSString stringWithFormat:
-    @"Name %@ | UUID %@ | State %@ | %@ | %@",
-    self.name,
-    self.udid,
-    self.device.stateString,
-    self.launchdSimProcess,
-    self.containerApplication
-  ];
+  return [FBiOSTargetFormat.fullFormat format:self];
 }
 
 - (NSString *)shortDescription
 {
-  return [NSString stringWithFormat:@"Simulator %@", self.udid];
+  return [FBiOSTargetFormat.defaultFormat format:self];
 }
 
 #pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
-  return @{
-    @"name" : self.device.name,
-    @"state" : self.device.stateString,
-    @"udid" : self.udid
-  };
+  return [FBiOSTargetFormat.fullFormat extractFrom:self];
 }
 
-#pragma mark Private
+#pragma mark Forwarding
+
+- (id)forwardingTargetForSelector:(SEL)selector
+{
+  for (id target in self.commandResponders) {
+    if ([target respondsToSelector:selector]) {
+      return target;
+    }
+  }
+  return nil;
+}
+
++ (NSArray *)commandRespondersForSimulator:(FBSimulator *)simulator
+{
+  return @[
+    [FBSimulatorApplicationCommands withSimulator:simulator],
+  ];
+}
 
 + (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration
 {
@@ -236,3 +266,5 @@
 }
 
 @end
+
+#pragma clang diagnostic pop

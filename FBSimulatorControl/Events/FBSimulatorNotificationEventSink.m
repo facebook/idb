@@ -78,18 +78,18 @@ NSString *const FBSimulatorTestManagerKey = @"testManager";
   }];
 }
 
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
   [self materializeNotification:FBSimulatorDidLaunchNotification userInfo:@{
-    FBSimulatorProcessKey : launchdSimProcess
+    FBSimulatorProcessKey : launchdProcess
   }];
 }
 
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
   [self materializeNotification:FBSimulatorDidTerminateNotification userInfo:@{
     FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorProcessKey : launchdSimProcess
+    FBSimulatorProcessKey : launchdProcess
   }];
 }
 

@@ -39,8 +39,9 @@
 - (instancetype)withSessionIdentifier:(NSUUID *)sessionIdentifier;
 
 /**
- @return prepared test bundle
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return prepared test bundle if the operation succeeds, otherwise nil.
  */
-- (FBTestBundle *)build;
+- (FBTestBundle *)buildWithError:(NSError **)error;
 
 @end

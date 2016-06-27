@@ -20,7 +20,7 @@ struct SimulatorCreationRunner : Runner {
     do {
       self.reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
       let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
-      self.defaults.updateLastQuery(FBSimulatorQuery.udids([simulator.udid]))
+      self.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
       self.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success
     } catch let error as NSError {
@@ -33,13 +33,13 @@ struct SimulatorActionRunner : Runner {
   let reporter: EventReporter
   let simulator: FBSimulator
   let action: Action
-  let format: Format
+  let format: FBiOSTargetFormat
 
   func run() -> CommandResult {
     do {
       let reporter = SimulatorReporter(simulator: self.simulator, format: self.format, reporter: self.reporter)
       defer {
-        reporter.simulator.userEventSink = nil
+        reporter.target.userEventSink = nil
       }
 
       return self.runner(reporter).run()
@@ -47,14 +47,14 @@ struct SimulatorActionRunner : Runner {
   }
 
   func runner(reporter: SimulatorReporter) -> Runner {
-    let simulator = reporter.simulator
+    let simulator = reporter.target
     switch self.action {
     case .Approve(let bundleIDs):
       return SimulatorInteractionRunner(reporter, EventName.Approve, ArraySubject(bundleIDs)) { interaction in
         interaction.authorizeLocationSettings(bundleIDs)
       }
     case .Boot(let maybeLaunchConfiguration):
-      let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()!
+      let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.defaultConfiguration()
       return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(launchConfiguration)) { interaction in
         interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
       }
@@ -63,13 +63,13 @@ struct SimulatorActionRunner : Runner {
         interaction.clearKeychainForApplication(bundleID)
       }
     case .Delete:
-      return SimulatorRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
         try simulator.set!.deleteSimulator(simulator)
       }
     case .Diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
     case .Erase:
-      return SimulatorRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
     case .Install(let application):
@@ -90,12 +90,12 @@ struct SimulatorActionRunner : Runner {
       }
     case .List:
       let format = reporter.format
-      return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
-        let subject = SimulatorSubject(simulator: simulator, format: format)
+      return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
+        let subject = iOSTargetSubject(target: simulator, format: format)
         reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
       }
     case .ListApps:
-      return SimulatorRunner(reporter, nil, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
         let subject = ControlCoreSubject(simulator.installedApplications.map { $0.jsonSerializableRepresentation() } as NSArray)
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
@@ -118,7 +118,7 @@ struct SimulatorActionRunner : Runner {
     case .Search(let search):
       return SearchRunner(reporter, search)
     case .Shutdown:
-      return SimulatorRunner(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.killSimulator(simulator)
       }
     case .Tap(let x, let y):
@@ -135,42 +135,13 @@ struct SimulatorActionRunner : Runner {
       }
     case .Upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
+    case .WatchdogOverride(let bundleIDs, let timeout):
+      return SimulatorInteractionRunner(reporter, EventName.WatchdogOverride, ArraySubject(bundleIDs)) { interaction in
+        interaction.overrideWatchDogTimerForApplications(bundleIDs, withTimeout: timeout)
+      }
     default:
-      return SimulatorRunner(reporter, EventName.Failure, ControlCoreSubject(simulator)) {
-        assertionFailure("Unimplemented")
-      }
+      return UnimplementedRunner()
     }
-  }
-}
-
-private struct SimulatorRunner : Runner {
-  let reporter: SimulatorReporter
-  let name: EventName?
-  let subject: EventReporterSubject
-  let action: Void throws -> Void
-
-  init(_ reporter: SimulatorReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: Void throws -> Void) {
-    self.reporter = reporter
-    self.name = name
-    self.subject = subject
-    self.action = action
-  }
-
-  func run() -> CommandResult {
-    do {
-      if let name = self.name {
-        self.reporter.report(name, EventType.Started, self.subject)
-      }
-      try self.action()
-      if let name = self.name {
-        self.reporter.report(name, EventType.Ended, self.subject)
-      }
-    } catch let error as NSError {
-      return .Failure(error.description)
-    } catch let error as JSONError {
-      return .Failure(error.description)
-    }
-    return .Success
   }
 }
 
@@ -188,9 +159,9 @@ private struct SimulatorInteractionRunner : Runner {
   }
 
   func run() -> CommandResult {
-    let simulator = self.reporter.simulator
+    let simulator = self.reporter.target
     let interaction = self.interaction
-    let action = SimulatorRunner(self.reporter, self.name, self.subject) {
+    let action = iOSTargetRunner(self.reporter, self.name, self.subject) {
       let interact = simulator.interact
       try interaction(interact)
       try interact.perform()
@@ -224,7 +195,7 @@ private struct DiagnosticsRunner : Runner {
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {
-    let diagnostics = self.reporter.simulator.diagnostics
+    let diagnostics = self.reporter.target.diagnostics
     let format = self.format
 
     return query.perform(diagnostics).map { diagnostic in
@@ -250,7 +221,7 @@ private struct SearchRunner : Runner {
   }
 
   func run() -> CommandResult {
-    let simulator = self.reporter.simulator
+    let simulator = self.reporter.target
     let diagnostics = simulator.diagnostics.allDiagnostics()
     let results = search.search(diagnostics)
     self.reporter.report(EventName.Search, EventType.Discrete, ControlCoreSubject(results))
@@ -291,8 +262,8 @@ private struct UploadRunner : Runner {
       }
     }
 
-    guard let basePath: NSString = self.reporter.simulator.auxillaryDirectory else {
-        return CommandResult.Failure("Could not determine aux directory for simulator \(self.reporter.simulator) to path")
+    guard let basePath: NSString = self.reporter.target.auxillaryDirectory else {
+        return CommandResult.Failure("Could not determine aux directory for simulator \(self.reporter.target) to path")
     }
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)
     let arbitrary = diagnosticLocations.filter{ arbitraryPredicate.evaluateWithObject($0.1) }

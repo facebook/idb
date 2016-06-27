@@ -53,7 +53,6 @@
 @implementation FBSimulatorLaunchConfiguration
 
 @synthesize scale = _scale;
-@synthesize locale = _locale;
 
 #pragma mark Initializers
 
@@ -65,13 +64,13 @@
     configuration = [[self alloc]
       initWithOptions:FBSimulatorLaunchOptionsConnectBridge
       scale:FBSimulatorLaunchConfiguration_Scale_100.new
-      locale:nil
+      localizationOverride:nil
       video:FBFramebufferVideoConfiguration.defaultConfiguration];
   });
   return configuration;
 }
 
-- (instancetype)initWithOptions:(FBSimulatorLaunchOptions)options scale:(id<FBSimulatorLaunchConfiguration_Scale>)scale locale:(NSLocale *)locale video:(FBFramebufferVideoConfiguration *)video
+- (instancetype)initWithOptions:(FBSimulatorLaunchOptions)options scale:(id<FBSimulatorLaunchConfiguration_Scale>)scale localizationOverride:(FBLocalizationOverride *)localizationOverride video:(FBFramebufferVideoConfiguration *)video
 {
   self = [super init];
   if (!self) {
@@ -80,7 +79,7 @@
 
   _options = options;
   _scale = scale;
-  _locale = locale;
+  _localizationOverride = localizationOverride;
   _video = video;
 
   return self;
@@ -90,7 +89,7 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[self.class alloc] initWithOptions:self.options scale:self.scale locale:self.locale video:self.video];
+  return [[self.class alloc] initWithOptions:self.options scale:self.scale localizationOverride:self.localizationOverride video:self.video];
 }
 
 #pragma mark NSCoding
@@ -104,7 +103,7 @@
 
   _options = [[coder decodeObjectForKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
   _scale = [coder decodeObjectForKey:NSStringFromSelector(@selector(scale))];
-  _locale = [coder decodeObjectForKey:NSStringFromSelector(@selector(locale))];
+  _localizationOverride = [coder decodeObjectForKey:NSStringFromSelector(@selector(localizationOverride))];
   _video = [coder decodeObjectForKey:NSStringFromSelector(@selector(video))];
 
   return self;
@@ -114,7 +113,7 @@
 {
   [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
   [coder encodeObject:self.scale forKey:NSStringFromSelector(@selector(scale))];
-  [coder encodeObject:self.locale forKey:NSStringFromSelector(@selector(locale))];
+  [coder encodeObject:self.localizationOverride forKey:NSStringFromSelector(@selector(localizationOverride))];
   [coder encodeObject:self.video forKey:NSStringFromSelector(@selector(video))];
 }
 
@@ -128,13 +127,13 @@
 
   return self.options == configuration.options &&
          [self.scaleString isEqualToString:configuration.scaleString] &&
-         (self.locale == configuration.locale || [self.locale isEqual:configuration.locale]) &&
+         (self.localizationOverride == configuration.localizationOverride || [self.localizationOverride isEqual:configuration.localizationOverride]) &&
          (self.video == configuration.video || [self.video isEqual:configuration.video]);
 }
 
 - (NSUInteger)hash
 {
-  return self.options ^ self.scaleString.hash ^ self.locale.hash ^ self.video.hash;
+  return self.options ^ self.scaleString.hash ^ self.localizationOverride.hash ^ self.video.hash;
 }
 
 #pragma mark FBDebugDescribeable
@@ -142,9 +141,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Scale %@ | Locale %@ | Options %lu",
+    @"Scale %@ | %@ | Options %lu",
     self.scaleString,
-    self.locale,
+    self.localizationOverride,
     self.options
   ];
 }
@@ -165,7 +164,7 @@
 {
   return @{
     NSStringFromSelector(@selector(scale)) : self.scaleString,
-    NSStringFromSelector(@selector(locale)) : self.locale.localeIdentifier ?: NSNull.null
+    NSStringFromSelector(@selector(localizationOverride)) : self.localizationOverride.jsonSerializableRepresentation ?: NSNull.null
   };
 }
 
@@ -185,7 +184,7 @@
 
 - (instancetype)withOptions:(FBSimulatorLaunchOptions)options
 {
-  return [[self.class alloc] initWithOptions:options scale:self.scale locale:self.locale video:self.video];
+  return [[self.class alloc] initWithOptions:options scale:self.scale localizationOverride:self.localizationOverride video:self.video];
 }
 
 #pragma mark Scale
@@ -235,7 +234,7 @@
   if (!scale) {
     return nil;
   }
-  return [[self.class alloc] initWithOptions:self.options scale:scale locale:self.locale video:self.video];
+  return [[self.class alloc] initWithOptions:self.options scale:scale localizationOverride:self.localizationOverride video:self.video];
 }
 
 - (CGSize)scaleSize:(CGSize)size
@@ -247,24 +246,14 @@
 
 #pragma mark Locale
 
-+ (instancetype)withLocale:(NSLocale *)locale
++ (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride
 {
-  return [self.defaultConfiguration withLocale:locale];
+  return [self.defaultConfiguration withLocalizationOverride:localizationOverride];
 }
 
-- (instancetype)withLocale:(NSLocale *)locale
+- (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride
 {
-  return [[self.class alloc] initWithOptions:self.options scale:self.scale locale:locale video:self.video];
-}
-
-+ (instancetype)withLocaleNamed:(NSString *)localeName
-{
-  return [self.defaultConfiguration withLocaleNamed:localeName];
-}
-
-- (instancetype)withLocaleNamed:(NSString *)localeIdentifier
-{
-  return [self withLocale:[NSLocale localeWithLocaleIdentifier:localeIdentifier]];
+  return [[self.class alloc] initWithOptions:self.options scale:self.scale localizationOverride:localizationOverride video:self.video];
 }
 
 #pragma mark Video
@@ -276,7 +265,7 @@
 
 - (instancetype)withVideo:(FBFramebufferVideoConfiguration *)video
 {
-  return [[self.class alloc] initWithOptions:self.options scale:self.scale locale:self.locale video:video];
+  return [[self.class alloc] initWithOptions:self.options scale:self.scale localizationOverride:self.localizationOverride video:video];
 }
 
 @end

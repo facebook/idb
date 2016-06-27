@@ -187,10 +187,10 @@
     return YES;
   }
 
-  // Code 159 (Xcode 7) or 146 (Xcode 6) is 'Unable to shutdown device in current state: Shutdown'
-  // We can safely ignore these codes and then confirm that the simulator is truly shutdown.
+  // The error code for 'Unable to shutdown device in current state: Shutdown'
+  // can be safely ignored since these codes confirm that the simulator is already shutdown.
   [logger.debug logFormat:@"Shutting down Simulator %@", simulator.udid];
-  if (![simulator.device shutdownWithError:&innerError] && innerError.code != 159 && innerError.code != 146) {
+  if (![simulator.device shutdownWithError:&innerError] && innerError.code != FBSimDeviceWrapper.errorCodeForShutdownWhenShuttingDown) {
     return [[[[[FBSimulatorError
       describe:@"Simulator could not be shutdown"]
       causedBy:innerError]
@@ -284,6 +284,18 @@
     return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
   }
   return processInfo;
+}
+
++ (NSInteger)errorCodeForShutdownWhenShuttingDown
+{
+  NSDecimalNumber *xcodeVersion = FBControlCoreGlobalConfiguration.xcodeVersionNumber;
+  if ([xcodeVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"8.0"]]) {
+    return 162;
+  }
+  if ([xcodeVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"7.0"]]) {
+    return 159;
+  }
+  return 146;
 }
 
 @end

@@ -13,8 +13,8 @@
 @class SimDeviceType;
 @class SimRuntime;
 
-@protocol FBSimulatorConfiguration_Device;
-@protocol FBSimulatorConfiguration_OS;
+@protocol FBControlCoreConfiguration_Device;
+@protocol FBControlCoreConfiguration_OS;
 
 /**
  Adapting FBSimulatorConfiguration to CoreSimulator.
@@ -29,7 +29,7 @@
  @param device the Device to obtain the OS Configuration for
  @return the newest OS Configuration for the provided Device Configuration, or nil if none is available.
  */
-+ (id<FBSimulatorConfiguration_OS>)newestAvailableOSForDevice:(id<FBSimulatorConfiguration_Device>)device;
++ (id<FBControlCoreConfiguration_OS>)newestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device;
 
 /**
  Returns a new Simulator Configuration, for the newest available OS for the current Device.
@@ -45,7 +45,7 @@
  @param device the Device to obtain the OS Configuration for
  @return the newest OS Configuration for the provided Device Configuration, or nil if none is available.
  */
-+ (id<FBSimulatorConfiguration_OS>)oldestAvailableOSForDevice:(id<FBSimulatorConfiguration_Device>)device;
++ (id<FBControlCoreConfiguration_OS>)oldestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device;
 
 /**
  Returns a new Simulator Configuration, for the oldest available OS for the current Device.

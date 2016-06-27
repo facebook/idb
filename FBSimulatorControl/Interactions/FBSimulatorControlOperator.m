@@ -9,14 +9,20 @@
 
 #import "FBSimulatorControlOperator.h"
 
+#import <CoreSimulator/SimDevice.h>
+
+#import <DTXConnectionServices/DTXSocketTransport.h>
+
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import <IDEiOSSupportCore/DVTiPhoneSimulator.h>
+#import <sys/socket.h>
+#import <sys/un.h>
 
 #import <XCTestBootstrap/FBProductBundle.h>
 
+#import "FBSimulatorError.h"
+
 @interface FBSimulatorControlOperator ()
-@property (nonatomic, strong) DVTiPhoneSimulator *dvtDevice;
 @property (nonatomic, strong) FBSimulator *simulator;
 @end
 
@@ -27,13 +33,119 @@
 + (instancetype)operatorWithSimulator:(FBSimulator *)simulator
 {
   FBSimulatorControlOperator *operator = [self.class new];
-  operator.dvtDevice = [NSClassFromString(@"DVTiPhoneSimulator") simulatorWithDevice:simulator.device];
   operator.simulator = simulator;
   return operator;
 }
 
 
 #pragma mark - FBDeviceOperator protocol
+
+- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  if ([NSThread isMainThread]) {
+    return
+    [[[FBSimulatorError
+       describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
+      logger:logger]
+     fail:error];
+  }
+
+  const BOOL simulatorIsBooted = (self.simulator.state == FBSimulatorStateBooted);
+  if (!simulatorIsBooted) {
+    return
+    [[[FBSimulatorError
+       describe:@"Simulator should be already booted"]
+      logger:logger]
+     fail:error];
+  }
+
+  NSError *innerError;
+  int testManagerSocket = [self makeTestManagerDaemonSocketWithLogger:logger error:&innerError];
+  if (testManagerSocket == 1) {
+    return
+    [[[[FBSimulatorError
+        describe:@"Falied to create test manager dameon socket"]
+       causedBy:innerError]
+      logger:logger]
+     fail:error];
+  }
+
+  DTXSocketTransport *transport = [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocket disconnectAction:^{
+    [logger log:@"Disconnected from test manager daemon socket"];
+  }];
+  return transport;
+}
+
+- (int)makeTestManagerDaemonSocketWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  int socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (socketFD == -1) {
+    [[[FBSimulatorError
+       describe:@"Unable to create a unix domain socket"]
+      logger:logger]
+     failUInt:error];
+    return -1;
+  }
+
+  NSString *testManagerSocketString = [self testManagerDaemonSocketPathWithLogger:logger];
+  if(testManagerSocketString.length == 0) {
+    [[[FBSimulatorError
+       describe:@"Failed to retrieve testmanagerd socket path"]
+      logger:logger]
+     failUInt:error];
+    return -1;
+  }
+
+  if(![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
+    [[[FBSimulatorError
+       describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
+      logger:logger]
+     fail:error];
+    return -1;
+  }
+
+  const char *testManagerSocketPath = testManagerSocketString.UTF8String;
+  if(strlen(testManagerSocketPath) >= 0x68) {
+    [[[FBSimulatorError
+       describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
+      logger:logger]
+     fail:error];
+    return -1;
+  }
+
+  struct sockaddr_un remote;
+  remote.sun_family = AF_UNIX;
+  strcpy(remote.sun_path, testManagerSocketPath);
+  socklen_t length = (socklen_t)(strlen(remote.sun_path) + sizeof(remote.sun_family) + sizeof(remote.sun_len));
+  if (connect(socketFD, (struct sockaddr *)&remote, length) == -1) {
+    [[[FBSimulatorError
+       describe:@"Failed to connect to testmangerd socket"]
+      logger:logger]
+     fail:error];
+    return -1;
+  }
+  return socketFD;
+}
+
+- (NSString *)testManagerDaemonSocketPathWithLogger:(id<FBControlCoreLogger>)logger
+{
+  const NSUInteger maxTryCount = 10;
+  NSUInteger tryCount = 0;
+  do {
+    NSString *socketPath = [self.simulator.device getenv:@"TESTMANAGERD_SIM_SOCK" error:nil];
+    if (socketPath.length > 0) {
+      return socketPath;
+    }
+    [logger logFormat:@"Simulator is booted but getenv returned nil for test connection socket path.\n Will retry in 1s (%lu attempts so far).", (unsigned long)tryCount];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+  } while (tryCount++ >= maxTryCount);
+  return nil;
+}
+
+- (BOOL)requiresTestDaemonMediationForTestHostConnection
+{
+  return YES;
+}
 
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
 {
@@ -64,7 +176,7 @@
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
     withBundlePath:application.path]
-   build];
+   buildWithError:error];
 
   return productBundle;
 }
@@ -96,7 +208,7 @@
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   FBSimulatorApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
-  return [[FBProcessFetcher new] subprocessOf:self.simulator.launchdSimProcess.processIdentifier withName:app.binary.name];
+  return [[FBProcessFetcher new] subprocessOf:self.simulator.launchdProcess.processIdentifier withName:app.binary.name];
 }
 
 

@@ -37,8 +37,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
-@property (nonatomic, strong, readonly) DVTDevice *targetDevice;
-@property (nonatomic, assign, readonly) BOOL targetIsiOSSimulator;
+@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
 @property (nonatomic, strong, readonly) FBXCTestManagerLoggingForwarder *loggingForwarder;
@@ -58,33 +57,32 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Initializers
 
-+ (instancetype)mediatorWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
++ (instancetype)mediatorWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
 {
-  return  [[self alloc] initWithDevice:device processDelegate:processDelegate reporter:reporter logger:logger testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
+  return  [[self alloc] initWithDeviceOperator:deviceOperator processDelegate:processDelegate reporter:reporter logger:logger testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
 }
 
-- (instancetype)initWithDevice:(DVTAbstractiOSDevice *)device processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
+- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _targetDevice = device;
+  _deviceOperator = deviceOperator;
   _processDelegate = processDelegate;
   _logger = logger;
   _testRunnerPID = testRunnerPID;
   _sessionIdentifier = sessionIdentifier;
 
-  _targetIsiOSSimulator = [device.class isKindOfClass:NSClassFromString(@"DVTiPhoneSimulator")];
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
 
   _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
   _loggingForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
 
-  _bundleConnection = [FBTestBundleConnection withDevice:device interface:(id)_loggingForwarder sessionIdentifier:sessionIdentifier queue:_requestQueue logger:logger];
-  _daemonConnection = [FBTestDaemonConnection withDevice:device interface:(id)_loggingForwarder testRunnerPID:testRunnerPID queue:_requestQueue logger:logger];
+  _bundleConnection = [FBTestBundleConnection connectionWithDeviceOperator:deviceOperator interface:(id)_loggingForwarder sessionIdentifier:sessionIdentifier queue:_requestQueue logger:logger];
+  _daemonConnection = [FBTestDaemonConnection connectionWithDeviceOperator:deviceOperator interface:(id)_loggingForwarder testRunnerPID:testRunnerPID queue:_requestQueue logger:logger];
 
   return self;
 }
@@ -116,7 +114,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (BOOL)executeTestPlanWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.bundleConnection startTestPlanWithError:error];
+  return [self.bundleConnection startTestPlanWithError:error] && [self.daemonConnection notifyTestPlanStartedWithError:error];
 }
 
 - (void)disconnectTestRunnerAndTestManagerDaemon
@@ -143,12 +141,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   self.finished = YES;
   self.testingIsFinished = YES;
 
-  if (getenv("XCS")) {
-    [self __finishXCS];
-    return;
-  }
-
-  [self detect_r17733855_fromError:error];
   if (error) {
     NSString *message = @"";
     NSMutableDictionary *userInfo = error.userInfo.mutableCopy;
@@ -166,22 +158,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     if (error.code != XCTestBootstrapErrorCodeLostConnection) {
       [self.logger logFormat:@"\n\n*** %@\n\n", message];
     }
-  }
-}
-
-#pragma mark Others
-
-- (void)detect_r17733855_fromError:(NSError *)error
-{
-  if (!self.targetIsiOSSimulator) {
-    return;
-  }
-  if (!error) {
-    return;
-  }
-  NSString *message = error.localizedDescription;
-  if ([message rangeOfString:@"Unable to run app in Simulator"].location != NSNotFound || [message rangeOfString:@"Test session exited(-1) without checking in"].location != NSNotFound ) {
-    [self.logger logFormat:@"Detected radar issue r17733855"];
   }
 }
 
@@ -258,6 +234,12 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   return nil;
 }
 
+- (id)_XCT_didFinishExecutingTestPlan
+{
+  [self.daemonConnection notifyTestPlanEndedWithError:nil];
+  return nil;
+}
+
 - (id)_XCT_testBundleReadyWithProtocolVersion:(NSNumber *)protocolVersion minimumVersion:(NSNumber *)minimumVersion
 {
   return nil;
@@ -281,11 +263,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 // ?
 - (id)_XCT_logMessage:(NSString *)message
-{
-  return nil;
-}
-
-- (id)_XCT_didFinishExecutingTestPlan
 {
   return nil;
 }
@@ -398,24 +375,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   [self.logger log:[self unknownMessageForSelector:aSelector]];
   NSAssert(nil, [self unknownMessageForSelector:_cmd]);
   return nil;
-}
-
-#pragma mark - Unsupported partly disassembled
-
-- (void)__finishXCS
-{
-  NSAssert(nil, [self unknownMessageForSelector:_cmd]);
-  [self.targetDevice _syncDeviceCrashLogsDirectoryWithCompletionHandler:^(NSError *crashLogsSyncError){
-    dispatch_async(dispatch_get_main_queue(), ^{
-      CFAbsoluteTime time = CFAbsoluteTimeGetCurrent();
-      if (crashLogsSyncError) {
-        [self.logger logFormat:@"Error syncing device diagnostic logs after %.1fs: %@", time, crashLogsSyncError];
-      }
-      else {
-        [self.logger logFormat:@"Finished syncing device diagnostic logs after %.1fs.", time];
-      }
-    });
-  }];
 }
 
 @end

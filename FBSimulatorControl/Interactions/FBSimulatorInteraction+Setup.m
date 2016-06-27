@@ -22,37 +22,28 @@
 - (instancetype)prepareForLaunch:(FBSimulatorLaunchConfiguration *)configuration
 {
   return [[self
-    setLocale:configuration.locale]
+    overridingLocalization:configuration.localizationOverride]
     setupKeyboard];
 }
 
-- (instancetype)setLocale:(NSLocale *)locale
+- (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride
 {
-  if (!locale) {
+  if (!localizationOverride) {
     return [self succeed];
   }
 
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    NSString *localeIdentifier = [locale localeIdentifier];
-    NSString *languageIdentifier = [NSLocale canonicalLanguageIdentifierFromString:localeIdentifier];
-
     return [FBSimulatorInteraction
       forSimulator:simulator
       relativeFromRootPath:@"Library/Preferences/.GlobalPreferences.plist"
       error:error
       amendWithBlock:^(NSMutableDictionary *dictionary) {
-        [dictionary addEntriesFromDictionary:@{
-          @"AppleLocale": localeIdentifier,
-          @"AppleLanguages": @[ languageIdentifier ],
-          // We force the simulator to have a US keyboard for automation's sake.
-          @"AppleKeyboards": @[ @"en_US@hw=US;sw=QWERTY" ],
-          @"AppleKeyboardsExpanded": @1,
-        }];
+        [dictionary addEntriesFromDictionary:localizationOverride.defaultsDictionary];
       }];
   }];
 }
 
-- (instancetype)authorizeLocationSettings:(NSArray *)bundleIDs
+- (instancetype)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
 {
   NSParameterAssert(bundleIDs);
 
@@ -83,7 +74,7 @@
   return [self authorizeLocationSettings:@[application.bundleID]];
 }
 
-- (instancetype)overrideWatchDogTimerForApplications:(NSArray *)bundleIDs withTimeout:(NSTimeInterval)timeout
+- (instancetype)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
 {
   NSParameterAssert(bundleIDs);
   NSParameterAssert(timeout);

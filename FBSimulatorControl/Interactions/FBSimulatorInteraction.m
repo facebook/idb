@@ -95,11 +95,11 @@
   NSParameterAssert(block);
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess;
+    FBProcessInfo *launchdProcess = simulator.launchdProcess;
     pid_t ppid = [simulator.processFetcher parentOf:process.processIdentifier];
-    if (launchdSimProcess.processIdentifier != ppid) {
+    if (launchdProcess.processIdentifier != ppid) {
       return [[FBSimulatorError
-        describeFormat:@"Process %@ has parent %d but should have parent %@", process.shortDescription, ppid, launchdSimProcess.shortDescription]
+        describeFormat:@"Process %@ has parent %d but should have parent %@", process.shortDescription, ppid, launchdProcess.shortDescription]
         failBool:error];
     }
     return block(error, simulator);

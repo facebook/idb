@@ -51,7 +51,7 @@
 
 - (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
 {
-  FBProcessInfo *launchdSim = self.launchdSimProcess;
+  FBProcessInfo *launchdSim = self.launchdProcess;
   if (!launchdSim) {
     return @[];
   }
@@ -75,44 +75,12 @@
 
 + (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
 {
-  stateString = [[stateString lowercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@" "];
-  if ([stateString isEqualToString:@"creating"]) {
-    return FBSimulatorStateCreating;
-  }
-  if ([stateString isEqualToString:@"shutdown"]) {
-    return FBSimulatorStateShutdown;
-  }
-  if ([stateString isEqualToString:@"booting"]) {
-    return FBSimulatorStateBooting;
-  }
-  if ([stateString isEqualToString:@"booted"]) {
-    return FBSimulatorStateBooted;
-  }
-  if ([stateString isEqualToString:@"creating"]) {
-    return FBSimulatorStateCreating;
-  }
-  if ([stateString isEqualToString:@"shutting down"]) {
-    return FBSimulatorStateShuttingDown;
-  }
-  return FBSimulatorStateUnknown;
+  return FBSimulatorStateFromStateString(stateString);
 }
 
 + (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state
 {
-  switch (state) {
-    case FBSimulatorStateCreating:
-      return @"Creating";
-    case FBSimulatorStateShutdown:
-      return @"Shutdown";
-    case FBSimulatorStateBooting:
-      return @"Booting";
-    case FBSimulatorStateBooted:
-      return @"Booted";
-    case FBSimulatorStateShuttingDown:
-      return @"Shutting Down";
-    default:
-      return @"Unknown";
-  }
+  return FBSimulatorStateStringFromState(state);
 }
 
 - (BOOL)waitOnState:(FBSimulatorState)state
@@ -223,7 +191,7 @@
 
 - (NSSet *)requiredProcessNamesToVerifyBooted
 {
-  if (self.productFamily == FBSimulatorProductFamilyiPhone || self.productFamily == FBSimulatorProductFamilyiPad) {
+  if (self.productFamily == FBControlCoreProductFamilyiPhone || self.productFamily == FBControlCoreProductFamilyiPad) {
     return [NSSet setWithArray:@[
        @"SpringBoard",
        @"SimulatorBridge",
@@ -231,7 +199,7 @@
        @"installd",
     ]];
   }
-  if (self.productFamily == FBSimulatorProductFamilyAppleWatch || self.productFamily == FBSimulatorProductFamilyAppleTV) {
+  if (self.productFamily == FBControlCoreProductFamilyAppleWatch || self.productFamily == FBControlCoreProductFamilyAppleTV) {
     return [NSSet setWithArray:@[
        @"backboardd",
        @"networkd",

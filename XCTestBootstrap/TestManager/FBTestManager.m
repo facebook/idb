@@ -29,7 +29,7 @@
 {
   FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withDeviceOperator:deviceOperator];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
-    mediatorWithDevice:deviceOperator.dvtDevice
+    mediatorWithDeviceOperator:deviceOperator
     processDelegate:processOperator
     reporter:reporter
     logger:logger
@@ -69,7 +69,7 @@
 {
   return [NSString stringWithFormat:
     @"SessionID: %@ | Testrunner PID: %d",
-    self.mediator.sessionIdentifier,
+    self.mediator.sessionIdentifier.UUIDString,
     self.mediator.testRunnerPID
   ];
 }

@@ -6,8 +6,6 @@
 
 #import <DTXConnectionServices/DTXTransport.h>
 
-@class NSObject<OS_dispatch_queue>, NSObject<OS_dispatch_source>;
-
 @interface DTXFileDescriptorTransport : DTXTransport
 {
     int _inFD;
@@ -31,4 +29,3 @@
 - (id)init;
 
 @end
-

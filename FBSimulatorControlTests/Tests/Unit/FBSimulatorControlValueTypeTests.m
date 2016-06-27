@@ -93,7 +93,7 @@
 {
   NSArray<FBSimulatorLaunchConfiguration *> *values = @[
     [[[FBSimulatorLaunchConfiguration
-      withLocaleNamed:@"en_US"]
+      withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
       withOptions:FBSimulatorLaunchOptionsShowDebugWindow]
       scale75Percent],
     [[FBSimulatorLaunchConfiguration
@@ -112,23 +112,6 @@
     [FBSimulatorDiagnosticQuery named:@[@"foo", @"bar", @"baz"]],
     [FBSimulatorDiagnosticQuery filesInApplicationOfBundleID:@"foo.bar.baz" withFilenames:@[@"foo.txt", @"bar.log"]],
     [FBSimulatorDiagnosticQuery crashesOfType:FBCrashLogInfoProcessTypeCustomAgent | FBCrashLogInfoProcessTypeApplication since:[NSDate dateWithTimeIntervalSince1970:100]],
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
-- (void)testSimulatorQuery
-{
-  NSArray *values = @[
-    [[FBSimulatorQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E"]] states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateBooted), @(FBSimulatorStateBooting)]]],
-    [FBSimulatorQuery allSimulators],
-    [FBSimulatorQuery devices:@[FBSimulatorConfiguration_Device_iPad2.new, FBSimulatorConfiguration_Device_iPadAir.new]],
-    [FBSimulatorQuery osVersions:@[FBSimulatorConfiguration_iOS_9_0.new, FBSimulatorConfiguration_iOS_9_1.new]],
-    [FBSimulatorQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
-    [FBSimulatorQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
-    [FBSimulatorQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E", @"C5579925-158B-4802-96C3-58B564C901C1", @"41862F9E-A8CA-4816-B4C1-251DA57C1143"]],
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];

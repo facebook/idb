@@ -7,20 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/Foundation.h>
+#import <FBDeviceControl/FBiOSDeviceOperator.h>
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
+@class DVTiOSDevice;
 
-@protocol FBApplicationCommands;
+@interface FBiOSDeviceOperator ()
 
-/**
- Access Commands for a Simulator
- */
-@interface FBSimulator (Commands)
+@property (nonatomic, copy, readwrite) NSString *preLaunchConsoleString;
 
-/**
- Application Commands for the reciever.
- */
-@property (nonatomic, strong, readonly) id<FBApplicationCommands> application;
+- (instancetype)initWithiOSDevice:(DVTiOSDevice *)iosDevice;
 
 @end

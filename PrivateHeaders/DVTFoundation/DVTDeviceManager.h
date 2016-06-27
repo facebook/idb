@@ -27,7 +27,7 @@
 - (BOOL)locateOnlyLocalComputerWithError:(id *)arg1;
 - (void)locateOnlyLocalComputer;
 - (void)stopLocating;
-- (BOOL)startLocatingWithError:(id *)arg1;
+- (BOOL)startLocatingWithError:(NSError **)arg1;
 - (void)startLocating;
 - (void)_adjustAvailableDevicesForChangeKind:(unsigned long long)arg1 addedObjects:(id)arg2 removedObjects:(id)arg3;
 - (void)_stopObservingDevice:(id)arg1;

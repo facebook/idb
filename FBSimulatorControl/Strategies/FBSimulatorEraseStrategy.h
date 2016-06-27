@@ -9,27 +9,23 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessFetcher;
 @class FBSimulator;
-@class FBSimulatorControlConfiguration;
-@protocol FBControlCoreLogger;
+@class FBSimulatorSet;
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A Strategy for Erasing
+ A Strategy for Erasing Simulator Contents.
  */
 @interface FBSimulatorEraseStrategy : NSObject
 
 /**
  Creates a FBSimulatorEraseStrategy.
 
- @param configuration the Configuration of FBSimulatorControl.
- @param processFetcher the process query object to use. If nil, one will be created
- @param logger the Logger to log all activities on.
+ @param set the Simulator Set to create the strategy for,
  @return a configured FBSimulatorTerminationStrategy instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyForSet:(FBSimulatorSet *)set;
 
 /**
  Erases the provided Simulators, satisfying the relevant precondition of ensuring it is shutdown.

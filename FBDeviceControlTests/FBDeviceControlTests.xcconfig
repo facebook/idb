@@ -1,0 +1,10 @@
+// Import Shared Configuration
+#include "../Configuration/Shared.xcconfig"
+
+// Target-Specific Settings
+DEFINES_MODULE = YES
+DYLIB_INSTALL_NAME_BASE = @rpath
+INFOPLIST_FILE = $(SRCROOT)/FBDeviceControlTests/FBDeviceControlTests-Info.plist
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks
+PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests
+PRODUCT_NAME = $(TARGET_NAME)

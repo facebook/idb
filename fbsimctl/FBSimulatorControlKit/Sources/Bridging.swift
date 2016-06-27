@@ -39,12 +39,12 @@ extension String : CustomStringConvertible {
   }}
 }
 
-extension FBSimulatorQuery {
-  public static func simulatorStates(states: [FBSimulatorState]) -> FBSimulatorQuery {
-    return self.allSimulators().simulatorStates(states)
+extension FBiOSTargetQuery {
+  public static func simulatorStates(states: [FBSimulatorState]) -> FBiOSTargetQuery {
+    return self.allTargets().simulatorStates(states)
   }
 
-  public func simulatorStates(states: [FBSimulatorState]) -> FBSimulatorQuery {
+  public func simulatorStates(states: [FBSimulatorState]) -> FBiOSTargetQuery {
     let indexSet = states.reduce(NSMutableIndexSet()) { (indexSet, state) in
       indexSet.addIndex(Int(state.rawValue))
       return indexSet
@@ -52,27 +52,48 @@ extension FBSimulatorQuery {
     return self.states(indexSet)
   }
 
-  public static func ofCount(count: Int) -> FBSimulatorQuery {
-    return self.allSimulators().ofCount(count)
+  public static func ofCount(count: Int) -> FBiOSTargetQuery {
+    return self.allTargets().ofCount(count)
   }
 
-  public func ofCount(count: Int) -> FBSimulatorQuery {
+  public func ofCount(count: Int) -> FBiOSTargetQuery {
     return self.range(NSRange(location: 0, length: count))
   }
 }
 
-extension FBSimulatorQuery : Accumulator {
-  public func append(other: FBSimulatorQuery) -> Self {
+extension FBiOSTargetQuery : Accumulator {
+  public func append(other: FBiOSTargetQuery) -> Self {
     let deviceSet = other.devices as NSSet
-    let deviceArray = Array(deviceSet) as! [FBSimulatorConfiguration_Device]
+    let deviceArray = Array(deviceSet) as! [FBControlCoreConfiguration_Device]
     let osVersionsSet = other.osVersions as NSSet
-    let osVersionsArray = Array(osVersionsSet) as! [FBSimulatorConfiguration_OS]
+    let osVersionsArray = Array(osVersionsSet) as! [FBControlCoreConfiguration_OS]
+    let targetType = self.targetType.union(other.targetType)
 
     return self
       .udids(Array(other.udids))
       .states(other.states)
+      .targetType(targetType)
       .devices(deviceArray)
       .osVersions(osVersionsArray)
       .range(other.range)
+  }
+}
+
+extension FBiOSTargetFormat {
+  public static var allFields: [String] { get {
+    return [
+      FBiOSTargetFormatUDID,
+      FBiOSTargetFormatName,
+      FBiOSTargetFormatDeviceName,
+      FBiOSTargetFormatOSVersion,
+      FBiOSTargetFormatState,
+      FBiOSTargetFormatProcessIdentifier,
+    ]
+  }}
+}
+
+extension FBiOSTargetFormat : Accumulator {
+  public func append(other: FBiOSTargetFormat) -> Self {
+    return self.appendFields(other.fields)
   }
 }

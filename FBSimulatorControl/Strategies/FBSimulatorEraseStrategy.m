@@ -13,30 +13,33 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorSet.h"
 #import "FBSimulatorTerminationStrategy.h"
 
 @interface FBSimulatorEraseStrategy ()
 
+@property (nonatomic, weak, readonly) FBSimulatorSet *set;
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
 @implementation FBSimulatorEraseStrategy
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyForSet:(FBSimulatorSet *)set;
 {
-  return [[self alloc] initWithConfiguration:configuration processFetcher:processFetcher logger:logger];
+  return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher logger:set.logger];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _set = set;
   _configuration = configuration;
   _processFetcher = processFetcher;
   _logger = logger;
@@ -46,6 +49,16 @@
 
 - (nullable NSArray<FBSimulator *> *)eraseSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error
 {
+  // Confirm that the Simulators belong to the Set.
+  for (FBSimulator *simulator in simulators) {
+    if (simulator.set != self.set) {
+      return [[[FBSimulatorError
+        describeFormat:@"Simulator's set %@ is not %@, cannot erase", simulator.set, self]
+        inSimulator:simulator]
+        fail:error];
+    }
+  }
+
   // Kill the Simulators before erasing them.
   NSError *innerError = nil;
   if (![self.terminationStrategy killSimulators:simulators error:&innerError]) {
@@ -67,7 +80,7 @@
 
 - (FBSimulatorTerminationStrategy *)terminationStrategy
 {
-  return [FBSimulatorTerminationStrategy withConfiguration:self.configuration processFetcher:self.processFetcher logger:self.logger];
+  return [FBSimulatorTerminationStrategy strategyForSet:self.set];
 }
 
 @end

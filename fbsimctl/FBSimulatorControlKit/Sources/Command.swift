@@ -35,19 +35,6 @@ public struct Configuration {
 }
 
 /**
- Defines a the Keywords for specifying the formatting of the Simulator.
-*/
-public enum Keyword : String {
-  case UDID = "--udid"
-  case Name = "--name"
-  case DeviceName = "--device-name"
-  case OSVersion = "--os"
-  case State = "--state"
-  case ProcessIdentifier = "--pid"
-}
-public typealias Format = [Keyword]
-
-/**
  Options for Creating a Server for listening to commands on.
  */
 public enum Server {
@@ -92,13 +79,14 @@ public enum Action {
   case Terminate(String)
   case Uninstall(String)
   case Upload([FBDiagnostic])
+  case WatchdogOverride([String], NSTimeInterval)
 }
 
 /**
  The entry point for all commands.
  */
 public indirect enum Command {
-  case Perform(Configuration, [Action], FBSimulatorQuery?, Format?)
+  case Perform(Configuration, [Action], FBiOSTargetQuery?, FBiOSTargetFormat?)
   case Help(OutputOptions, Bool, Command?)
 }
 
@@ -191,6 +179,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftBundleID == rightBundleID
   case (.Upload(let leftPaths), .Upload(let rightPaths)):
     return leftPaths == rightPaths
+  case (.WatchdogOverride(let leftBundleIDs, let leftTimeout), .WatchdogOverride(let rightBundleIDs, let rightTimeout)):
+    return leftBundleIDs == rightBundleIDs && leftTimeout == rightTimeout
   default:
     return false
   }

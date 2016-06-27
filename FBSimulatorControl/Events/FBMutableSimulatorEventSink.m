@@ -31,14 +31,14 @@
   [self.eventSink bridgeDidDisconnect:bridge expected:expected];
 }
 
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
-  [self.eventSink simulatorDidLaunch:launchdSimProcess];
+  [self.eventSink simulatorDidLaunch:launchdProcess];
 }
 
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
-  [self.eventSink simulatorDidTerminate:launchdSimProcess expected:expected];
+  [self.eventSink simulatorDidTerminate:launchdProcess expected:expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr

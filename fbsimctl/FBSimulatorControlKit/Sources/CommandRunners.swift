@@ -74,8 +74,8 @@ struct ActionRunner : Runner {
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
-  let format: Format
-  let query: FBSimulatorQuery?
+  let format: FBiOSTargetFormat
+  let query: FBiOSTargetQuery?
 
   func run() -> CommandResult {
     switch self.action {
@@ -105,7 +105,7 @@ struct ActionRunner : Runner {
       guard let query = self.query ?? self.defaults.queryForAction(self.action) else {
         return CommandResult.Failure("No Query Provided")
       }
-      let simulators = query.perform(self.control.set)
+      let simulators = control.set.query(query)
       if simulators.count == 0 {
         reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Matching Devices in Set")
         return CommandResult.Success
@@ -130,8 +130,8 @@ struct ServerRunner : Runner, CommandPerformer {
   let configuration: Configuration
   let control: FBSimulatorControl
   let defaults: Defaults
-  let format: Format?
-  let query: FBSimulatorQuery?
+  let format: FBiOSTargetFormat?
+  let query: FBiOSTargetQuery?
   let serverConfiguration: Server
 
   func run() -> CommandResult {

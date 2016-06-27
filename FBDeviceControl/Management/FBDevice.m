@@ -8,44 +8,124 @@
  */
 
 #import "FBDevice.h"
+#import "FBDevice+Private.h"
 
-#import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
+#import <IDEiOSSupportCore/DVTiOSDevice.h>
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-@interface FBDevice ()
-@property (nonatomic, strong) DVTAbstractiOSDevice *dvtDevice;
-@property (nonatomic, strong) id<FBDeviceOperator> deviceOperator;
-@end
+#import "FBDeviceSet+Private.h"
+#import "FBAMDevice.h"
+#import "FBiOSDeviceOperator+Private.h"
 
 @implementation FBDevice
 
-+ (instancetype)deviceWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator
+@synthesize deviceOperator = _deviceOperator;
+@synthesize dvtDevice = _dvtDevice;
+
+#pragma mark Initializers
+
+- (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)amDevice logger:(id<FBControlCoreLogger>)logger
 {
-  FBDevice *device = [self.class new];
-  device.deviceOperator = deviceOperator;
-  device.dvtDevice = deviceOperator.dvtDevice;
-  return device;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _set = set;
+  _amDevice = amDevice;
+  _logger = logger;
+
+  return self;
+}
+
+#pragma mark FBiOSTarget
+
+- (NSString *)udid
+{
+  return self.amDevice.udid;
 }
 
 - (NSString *)name
 {
-  return self.dvtDevice.name;
+  return self.amDevice.deviceName;
+}
+
+- (FBSimulatorState)state
+{
+  return FBSimulatorStateUnknown;
+}
+
+- (FBiOSTargetType)targetType
+{
+  return FBiOSTargetTypeDevice;
+}
+
+- (FBProcessInfo *)launchdProcess
+{
+  return nil;
+}
+
+- (id<FBControlCoreConfiguration_Device>)deviceConfiguration
+{
+  return self.amDevice.deviceConfiguration;
+}
+
+- (id<FBControlCoreConfiguration_OS>)osConfiguration
+{
+  return self.amDevice.osConfiguration;
+}
+
+#pragma mark FBDebugDescribeable
+
+- (NSString *)description
+{
+  return [self debugDescription];
+}
+
+- (NSString *)debugDescription
+{
+  return [FBiOSTargetFormat.fullFormat format:self];
+}
+
+- (NSString *)shortDescription
+{
+  return [FBiOSTargetFormat.defaultFormat format:self];
+}
+
+#pragma mark FBJSONSerializable
+
+- (NSDictionary *)jsonSerializableRepresentation
+{
+  return [FBiOSTargetFormat.fullFormat extractFrom:self];
+}
+
+#pragma mark Properties
+
+- (DVTiOSDevice *)dvtDevice
+{
+  if (_dvtDevice == nil) {
+    _dvtDevice = [self.set dvtDeviceWithUDID:self.udid];
+  }
+  return _dvtDevice;
+}
+
+- (id<FBDeviceOperator>)deviceOperator
+{
+  if (_deviceOperator == nil) {
+    _deviceOperator = [[FBiOSDeviceOperator alloc] initWithiOSDevice:self.dvtDevice];
+  }
+  return _deviceOperator;
 }
 
 - (NSString *)modelName
 {
-  return self.dvtDevice.modelName;
+  return self.amDevice.modelName;
 }
 
 - (NSString *)systemVersion
 {
-  return self.dvtDevice.softwareVersion;
-}
-
-- (NSString *)UDID
-{
-  return self.dvtDevice.identifier;
+  return self.amDevice.systemVersion;
 }
 
 - (NSSet *)supportedArchitectures

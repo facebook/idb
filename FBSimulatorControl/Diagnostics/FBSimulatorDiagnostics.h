@@ -17,6 +17,8 @@
 @class FBDiagnosticBuilder;
 @class FBSimulator;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  The Name of the Syslog.
  */
@@ -58,6 +60,15 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  @return A new `FBSimulatorDiagnostics` instance for the provided Simulator.
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator;
+
+#pragma mark Paths
+
+/**
+ The directory path of the expected location of the CoreSimulator logs directory.
+ */
+- (NSString *)coreSimulatorLogsDirectory;
+
+#pragma mark Diagnostic Accessors
 
 /**
  The FBDiagnostic Instance from which all other logs are derived.
@@ -136,7 +147,7 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  @param globalFallback if YES, the entire Simulator will be searched in the event that the Application's Home Directory cannot be found.
  @return an Dictionary of all the successfully found diagnostics.
  */
-- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback;
+- (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback;
 
 /**
  All of the FBDiagnostic instances for the Simulator.
@@ -155,3 +166,5 @@ extern NSString *const FBSimulatorLogNameScreenshot;
 - (NSDictionary<NSString *, FBDiagnostic *> *)namedDiagnostics;
 
 @end
+
+NS_ASSUME_NONNULL_END

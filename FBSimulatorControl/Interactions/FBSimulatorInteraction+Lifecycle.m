@@ -78,9 +78,9 @@
     // The interaction should restrict itself to simulator processes so this is a guard
     // to ensure that this interaction can't go around killing random processes.
     pid_t parentProcessIdentifier = [simulator.processFetcher parentOf:process.processIdentifier];
-    if (parentProcessIdentifier != simulator.launchdSimProcess.processIdentifier) {
+    if (parentProcessIdentifier != simulator.launchdProcess.processIdentifier) {
       return [[FBSimulatorError
-        describeFormat:@"Parent of %@ is not the launchd_sim (%@) it has a pid %d", process.shortDescription, simulator.launchdSimProcess.shortDescription, parentProcessIdentifier]
+        describeFormat:@"Parent of %@ is not the launchd_sim (%@) it has a pid %d", process.shortDescription, simulator.launchdProcess.shortDescription, parentProcessIdentifier]
         failBool:error];
     }
 

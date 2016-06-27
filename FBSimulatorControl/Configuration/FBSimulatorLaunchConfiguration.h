@@ -23,6 +23,8 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
   FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 3, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
 };
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A Value Object for defining how to launch a Simulator.
  */
@@ -36,7 +38,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 /**
  The Locale in which to Simulate, may be nil.
  */
-@property (nonatomic, strong, readonly) NSLocale *locale;
+@property (nonatomic, nullable, strong, readonly) FBLocalizationOverride *localizationOverride;
 
 /**
  A String representing the Scaling Factor at which to launch the Simulator.
@@ -98,12 +100,10 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 #pragma mark Locale
 
 /**
- Set the Locale
+ Set the Localization Override
  */
-+ (instancetype)withLocaleNamed:(NSString *)localeName;
-- (instancetype)withLocaleNamed:(NSString *)localeName;
-+ (instancetype)withLocale:(NSLocale *)locale;
-- (instancetype)withLocale:(NSLocale *)locale;
++ (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride;
+- (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride;
 
 #pragma mark Video
 
@@ -114,3 +114,5 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
 - (instancetype)withVideo:(FBFramebufferVideoConfiguration *)video;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -17,7 +17,6 @@
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulator+Commands.h"
 #import "FBSimulator.h"
 #import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
@@ -36,7 +35,7 @@
   NSParameterAssert(application);
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    return [simulator.application installApplicationWithPath:application.path error:error];
+    return [simulator installApplicationWithPath:application.path error:error];
   }];
 }
 

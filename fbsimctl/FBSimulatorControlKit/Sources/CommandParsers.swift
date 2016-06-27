@@ -220,6 +220,15 @@ extension FBProcessLaunchOptions : Parsable {
   }}
 }
 
+extension FBiOSTargetType : Parsable {
+  public static var parser: Parser<FBiOSTargetType> { get {
+    return Parser<FBiOSTargetType>.alternative([
+      Parser.ofString("--simulators", FBiOSTargetType.Simulator),
+      Parser.ofString("--devices", FBiOSTargetType.Device),
+    ])
+  }}
+}
+
 extension FBCrashLogInfoProcessType : Parsable {
   public static var parser: Parser<FBCrashLogInfoProcessType> { get {
     return Parser<FBCrashLogInfoProcessType>
@@ -244,8 +253,8 @@ extension Command : Parsable {
     return Parser
       .ofFourSequenced(
         Configuration.parser,
-        FBSimulatorQueryParsers.parser.optional(),
-        Format.parser.optional(),
+        FBiOSTargetQueryParsers.parser.optional(),
+        FBiOSTargetFormatParsers.parser.optional(),
         Parser.manyCount(1, Action.parser)
       )
       .fmap { (configuration, query, format, actions) in
@@ -319,6 +328,7 @@ extension Action : Parsable {
         self.terminateParser,
         self.uninstallParser,
         self.uploadParser,
+        self.watchdogOverrideParser,
       ])
   }}
 
@@ -489,19 +499,17 @@ extension Action : Parsable {
         return Action.Upload(diagnostics)
       }
   }}
-}
 
-extension Keyword : Parsable {
-  public static var parser: Parser<Keyword> { get {
+  static var watchdogOverrideParser: Parser<Action> { get {
     return Parser
-      .alternative([
-        Parser.ofString(Keyword.UDID.rawValue, Keyword.UDID),
-        Parser.ofString(Keyword.Name.rawValue, Keyword.Name),
-        Parser.ofString(Keyword.DeviceName.rawValue, Keyword.DeviceName),
-        Parser.ofString(Keyword.OSVersion.rawValue, Keyword.OSVersion),
-        Parser.ofString(Keyword.State.rawValue, Keyword.State),
-        Parser.ofString(Keyword.ProcessIdentifier.rawValue, Keyword.ProcessIdentifier)
-      ])
+      .succeeded(
+        EventName.WatchdogOverride.rawValue,
+        Parser.ofTwoSequenced(
+          Parser<Any>.ofDouble,
+          Parser.manyCount(1, Parser<Any>.ofBundleID)
+        )
+      )
+      .fmap { Action.WatchdogOverride($1, $0) }
   }}
 }
 
@@ -516,63 +524,75 @@ extension DiagnosticFormat : Parsable {
   }}
 }
 
-extension SequenceType where Generator.Element == Keyword {
-  public static var parser: Parser<Format> { get {
-    return Parser.manyCount(1, Keyword.parser)
-  }}
+public struct FBiOSTargetFormatParsers {
+  public static var parser: Parser<FBiOSTargetFormat> { get {
+    let parsers = FBiOSTargetFormat.allFields.map { field in
+      return Parser.ofString("--" + field, field)
+    }
+    return Parser
+      .alternativeMany(1, parsers)
+      .fmap { FBiOSTargetFormat(fields: $0) }
+    }}
 }
 
-public struct FBSimulatorQueryParsers {
-  public static var parser: Parser<FBSimulatorQuery> { get {
+public struct FBiOSTargetQueryParsers {
+  public static var parser: Parser<FBiOSTargetQuery> { get {
     return Parser.alternative([
       self.allParser,
       self.unionParser
     ])
   }}
 
-  static var allParser: Parser<FBSimulatorQuery> { get {
-    return Parser<FBSimulatorQuery>
-      .ofString("all", FBSimulatorQuery.allSimulators())
+  static var allParser: Parser<FBiOSTargetQuery> { get {
+    return Parser<FBiOSTargetQuery>
+      .ofString("all", FBiOSTargetQuery.allTargets())
   }}
 
-  static var unionParser: Parser<FBSimulatorQuery> { get {
-    return Parser<FBSimulatorQuery>.accumulate(1, [
+  static var unionParser: Parser<FBiOSTargetQuery> { get {
+    return Parser<FBiOSTargetQuery>.accumulate(1, [
       self.firstParser,
       self.uuidParser,
       self.simulatorStateParser,
+      self.targetTypeParser,
       self.osVersionsParser,
       self.deviceParser
     ])
   }}
 
-  static var firstParser: Parser<FBSimulatorQuery> { get {
+  static var firstParser: Parser<FBiOSTargetQuery> { get {
     return Parser
       .succeeded("--first", Parser<Any>.ofInt)
-      .fmap { FBSimulatorQuery.ofCount($0) }
+      .fmap { FBiOSTargetQuery.ofCount($0) }
   }}
 
-  static var uuidParser: Parser<FBSimulatorQuery> { get {
-    return Parser<FBSimulatorQuery>
+  static var uuidParser: Parser<FBiOSTargetQuery> { get {
+    return Parser<FBiOSTargetQuery>
       .ofUDID
-      .fmap { FBSimulatorQuery.udids([$0.UUIDString]) }
+      .fmap { FBiOSTargetQuery.udids([$0.UUIDString]) }
   }}
 
-  static var simulatorStateParser: Parser<FBSimulatorQuery> { get {
+  static var simulatorStateParser: Parser<FBiOSTargetQuery> { get {
     return FBSimulatorState
       .parser
-      .fmap { FBSimulatorQuery.simulatorStates([$0]) }
+      .fmap { FBiOSTargetQuery.simulatorStates([$0]) }
   }}
 
-  static var osVersionsParser: Parser<FBSimulatorQuery> { get {
+  static var targetTypeParser: Parser<FBiOSTargetQuery> { get {
+    return FBiOSTargetType
+      .parser
+      .fmap { FBiOSTargetQuery.targetType($0) }
+  }}
+
+  static var osVersionsParser: Parser<FBiOSTargetQuery> { get {
     return FBSimulatorConfigurationParser
       .osVersionParser
-      .fmap { FBSimulatorQuery.osVersions([$0]) }
+      .fmap { FBiOSTargetQuery.osVersions([$0]) }
   }}
 
-  static var deviceParser: Parser<FBSimulatorQuery> { get {
+  static var deviceParser: Parser<FBiOSTargetQuery> { get {
     return FBSimulatorConfigurationParser
       .deviceParser
-      .fmap { FBSimulatorQuery.devices([$0]) }
+      .fmap { FBiOSTargetQuery.devices([$0]) }
   }}
 }
 
@@ -638,23 +658,23 @@ struct FBSimulatorConfigurationParser {
         if device == nil && os == nil && auxDirectory == nil {
           throw ParseError.Custom("Simulator Configuration must contain at least one of: Device Name, OS Version or Aux Directory")
         }
-        let configuration = FBSimulatorConfiguration.defaultConfiguration().copy() as! FBSimulatorConfiguration
+        var configuration = FBSimulatorConfiguration.defaultConfiguration()
         if let device = device {
-          configuration.device = device
+          configuration = configuration.withDevice(device)
         }
         if let os = os {
-          configuration.os = os
+          configuration = configuration.withOS(os)
         }
         if let auxDirectory = auxDirectory {
-          configuration.auxillaryDirectory = auxDirectory
+          configuration = configuration.withAuxillaryDirectory(auxDirectory)
         }
         return configuration
       }
   }}
 
-  static var deviceParser: Parser<FBSimulatorConfiguration_Device> { get {
+  static var deviceParser: Parser<FBControlCoreConfiguration_Device> { get {
     return Parser.single("A Device Name") { token in
-      let nameToDevice = FBSimulatorConfigurationVariants.nameToDevice()
+      let nameToDevice = FBControlCoreConfigurationVariants.nameToDevice()
       guard let device = nameToDevice[token] else {
         throw ParseError.Custom("\(token) is not a valid device name")
       }
@@ -662,9 +682,9 @@ struct FBSimulatorConfigurationParser {
     }
   }}
 
-  static var osVersionParser: Parser<FBSimulatorConfiguration_OS> { get {
+  static var osVersionParser: Parser<FBControlCoreConfiguration_OS> { get {
     return Parser.single("An OS Version") { token in
-      let nameToOSVersion = FBSimulatorConfigurationVariants.nameToOSVersion()
+      let nameToOSVersion = FBControlCoreConfigurationVariants.nameToOSVersion()
       guard let osVersion = nameToOSVersion[token] else {
         throw ParseError.Custom("\(token) is not a valid device name")
       }
@@ -695,7 +715,7 @@ struct FBSimulatorLaunchConfigurationParser {
         }
         var configuration = FBSimulatorLaunchConfiguration.defaultConfiguration().copy() as! FBSimulatorLaunchConfiguration
         if let locale = locale {
-          configuration = configuration.withLocale(locale)
+          configuration = configuration.withLocalizationOverride(FBLocalizationOverride.withLocale(locale))
         }
         if let scale = scale {
           configuration = configuration.withScale(scale)

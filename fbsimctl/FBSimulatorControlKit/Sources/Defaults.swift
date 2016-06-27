@@ -26,7 +26,6 @@ public enum DefaultsError : ErrorType, CustomStringConvertible {
 public protocol Defaultable {
   static var defaultValue: Self { get }
 }
-private let defaultFormat: Format = [ .UDID, .Name, .OSVersion, .State]
 
 extension Configuration : Defaultable {
   public static var defaultValue: Configuration { get {
@@ -51,23 +50,23 @@ let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPat
 */
 public class Defaults {
   let logWriter: Writer
-  let format: Format
+  let format: FBiOSTargetFormat
   let configuration: Configuration
-  private var query: FBSimulatorQuery?
+  private var query: FBiOSTargetQuery?
 
-  init(logWriter: Writer, format: Format, configuration: Configuration) {
+  init(logWriter: Writer, format: FBiOSTargetFormat, configuration: Configuration) {
     self.logWriter = logWriter
     self.format = format
     self.configuration = configuration
   }
 
-  func updateLastQuery(query: FBSimulatorQuery) {
+  func updateLastQuery(query: FBiOSTargetQuery) {
     // TODO: Create the CLI equivalent of the configuration and save.
     let _ = Defaults.queryHistoryLocation(configuration)
     self.query = query
   }
 
-  func queryForAction(action: Action) -> FBSimulatorQuery? {
+  func queryForAction(action: Action) -> FBiOSTargetQuery? {
     // Always use the last query, if present
     if let query = self.query {
       return query
@@ -85,18 +84,18 @@ public class Defaults {
       case .Search:
         fallthrough
       case .Diagnose:
-        return FBSimulatorQuery.allSimulators()
+        return FBiOSTargetQuery.allTargets()
       case .Approve:
-        return FBSimulatorQuery.simulatorStates([.Shutdown])
+        return FBiOSTargetQuery.simulatorStates([.Shutdown])
       default:
-        return FBSimulatorQuery.simulatorStates([.Booted])
+        return FBiOSTargetQuery.simulatorStates([.Booted])
     }
   }
 
   static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
     do {
       var configuration: Configuration = configuration
-      var format: Format? = nil
+      var format: FBiOSTargetFormat? = nil
 
       if let rcContents = try? String(contentsOfURL: DefaultsRCFile) {
         let rcTokens = Arguments.fromString(rcContents)
@@ -111,7 +110,7 @@ public class Defaults {
 
       return Defaults(
         logWriter: logWriter,
-        format: format ?? defaultFormat,
+        format: format ?? FBiOSTargetFormat.defaultFormat(),
         configuration: configuration
       )
     } catch let error as ParseError {
@@ -119,11 +118,11 @@ public class Defaults {
     }
   }
 
-  private static var rcFileParser: Parser<(Configuration?, Format?)> { get {
+  private static var rcFileParser: Parser<(Configuration?, FBiOSTargetFormat?)> { get {
     return Parser
       .ofTwoSequenced(
         Configuration.parser.optional(),
-        Format.parser.optional()
+        FBiOSTargetFormatParsers.parser.optional()
       )
   }}
 

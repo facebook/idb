@@ -11,6 +11,7 @@
 #import "FBCodesignProvider.h"
 #import <FBControlCore/FBControlCore.h>
 
+@class DTXTransport;
 @class DVTAbstractiOSDevice;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
@@ -21,9 +22,18 @@
 @protocol FBDeviceOperator <NSObject, FBApplicationCommands>
 
 /**
- The Underlying DVT Device.
+ Determines whether device supports testing with test manager daemon
  */
-@property (nonatomic, strong, readonly) DVTAbstractiOSDevice *dvtDevice;
+@property (nonatomic, assign, readonly) BOOL requiresTestDaemonMediationForTestHostConnection;
+
+/**
+ Starts test manager daemon and creates DTXTransport connection with it
+
+ @param logger the Logger to Log to.
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return DTXTransport if the operation succeeds, otherwise nil.
+ */
+- (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Devices require executables to be codesigned before they can be used.

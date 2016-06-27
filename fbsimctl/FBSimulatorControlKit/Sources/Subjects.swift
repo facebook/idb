@@ -72,85 +72,29 @@ struct ControlCoreSubject : JSONDescribeable, CustomStringConvertible {
   }
 }
 
-struct SimulatorSubject: JSONDescribeable, CustomStringConvertible {
-  let simulator: FBSimulator
-  let format: Format
+struct iOSTargetSubject: JSONDescribeable, CustomStringConvertible {
+  let target: FBiOSTarget
+  let format: FBiOSTargetFormat
 
-  var jsonDescription: JSON {
-    get {
-      return self.simulatorJSON
-    }
-  }
+  var jsonDescription: JSON { get {
+    let dictionary = self.format.extractFrom(self.target)
+    return try! JSON.encode(dictionary)
+  }}
 
-  var description: String {
-    get {
-      return self.formattedSimulator
-    }
-  }
-
-  private var formattedSimulator: String {
-    get {
-      return self.simulatorValuePairs
-        .map { (_, token) in
-          guard let token = token else {
-            return ""
-          }
-          if token.rangeOfCharacterFromSet(NSCharacterSet.whitespaceCharacterSet(), options: NSStringCompareOptions(), range: nil) == nil {
-            return token
-          }
-          return "'\(token)'"
-        }
-        .joinWithSeparator(" ")
-    }
-  }
-
-  private var simulatorJSON: JSON {
-    get {
-      var dictionary: [String : JSON] = [:]
-      for (key, maybeValue) in self.simulatorValuePairs {
-        guard let value = maybeValue else {
-          dictionary[key] = JSON.JNull
-          continue
-        }
-        dictionary[key] = JSON.JString(value)
-      }
-      return JSON.JDictionary(dictionary)
-    }
-  }
-
-  private var simulatorValuePairs: [(String, String?)] {
-    get {
-      let simulator = self.simulator
-      return self.format
-        .map { keyword in
-          switch keyword {
-          case .UDID:
-            return ("udid", simulator.udid)
-          case .Name:
-            return ("name", simulator.name)
-          case .DeviceName:
-            return ("device", simulator.configuration?.deviceName)
-          case .OSVersion:
-            return ("os", simulator.configuration?.osVersionString)
-          case .State:
-            return ("state", simulator.stateString)
-          case .ProcessIdentifier:
-            return ("pid", simulator.launchdSimProcess?.processIdentifier.description)
-          }
-      }
-    }
-  }
+  var description: String { get {
+    return self.format.format(self.target)
+  }}
 }
 
-struct SimulatorWithSubject : JSONDescribeable, CustomStringConvertible {
-  let simulatorSubject: SimulatorSubject
+struct iOSTargetWithSubject : JSONDescribeable, CustomStringConvertible {
+  let targetSubject: iOSTargetSubject
   let eventName: EventName
   let eventType: EventType
   let subject: EventReporterSubject
   let timestamp: NSDate
 
-  init(simulatorSubject: SimulatorSubject, eventName: EventName, eventType: EventType, subject: EventReporterSubject) {
-    self.simulatorSubject = simulatorSubject
+  init(targetSubject: iOSTargetSubject, eventName: EventName, eventType: EventType, subject: EventReporterSubject) {
+    self.targetSubject = targetSubject
     self.eventName = eventName
     self.eventType = eventType
     self.subject = subject
@@ -162,7 +106,7 @@ struct SimulatorWithSubject : JSONDescribeable, CustomStringConvertible {
       return JSON.JDictionary([
         "event_name" : JSON.JString(self.eventName.rawValue),
         "event_type" : JSON.JString(self.eventType.rawValue),
-        "simulator" : self.simulatorSubject.jsonDescription,
+        "target" : self.targetSubject.jsonDescription,
         "subject" : self.subject.jsonDescription,
         "timestamp" : JSON.JNumber(NSNumber(double: round(self.timestamp.timeIntervalSince1970))),
       ])
@@ -173,7 +117,7 @@ struct SimulatorWithSubject : JSONDescribeable, CustomStringConvertible {
     get {
       switch self.eventType {
       case .Discrete:
-        return "\(self.simulatorSubject): \(self.eventName.rawValue): \(self.subject.description)"
+        return "\(self.targetSubject): \(self.eventName.rawValue): \(self.subject.description)"
       default:
         return ""
       }
