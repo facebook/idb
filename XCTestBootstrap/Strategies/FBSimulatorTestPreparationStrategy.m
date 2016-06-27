@@ -18,6 +18,7 @@
 #import "FBTestConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
 #import "NSFileManager+FBFileManager.h"
+#import "XCTestBootstrapError.h"
 
 @interface FBSimulatorTestPreparationStrategy ()
 @property (nonatomic, copy) NSString *workingDirectory;
@@ -62,23 +63,43 @@
   NSAssert(self.testRunnerBundleID, @"Test runner bundle ID is needed to load bundles");
   NSAssert(self.testBundlePath, @"Path to test bundle is needed to load bundles");
 
+  NSError *innerError;
   // Prepare XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-    withBundlePath:self.testBundlePath]
-    withWorkingDirectory:self.workingDirectory]
+  FBTestBundle *testBundle =
+  [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+      withBundlePath:self.testBundlePath]
+     withWorkingDirectory:self.workingDirectory]
     withSessionIdentifier:sessionIdentifier]
-    build];
+   buildWithError:&innerError];
+  if (!testBundle) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to prepare test bundle"]
+      causedBy:innerError]
+     fail:error];
+  }
 
   // Prepare test runner
   FBProductBundle *application = [deviceOperator applicationBundleWithBundleID:self.testRunnerBundleID error:error];
+  if (!application) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to prepare test runner"]
+      causedBy:innerError]
+     fail:error];
+  }
 
   NSString *IDEBundleInjectionFrameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework"];
 
   FBProductBundle *IDEBundleInjectionFramework = [[[FBProductBundleBuilder builder]
     withBundlePath:IDEBundleInjectionFrameworkPath]
-    build];
+    buildWithError:&innerError];
+  if (!IDEBundleInjectionFramework) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to prepare IDEBundleInjectionFramework"]
+      causedBy:innerError]
+     fail:error];
+  }
 
   return [[[[[[[FBTestRunnerConfigurationBuilder builder]
     withSessionIdentifer:sessionIdentifier]

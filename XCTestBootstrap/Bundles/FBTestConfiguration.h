@@ -81,8 +81,9 @@
 - (instancetype)saveAs:(NSString *)savePath;
 
 /**
- @return test configuration
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return prepared test configuration if the operation succeeds, otherwise nil.
  */
-- (FBTestConfiguration *)build;
+- (FBTestConfiguration *)buildWithError:(NSError **)error;
 
 @end

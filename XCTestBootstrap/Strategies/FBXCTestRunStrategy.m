@@ -59,23 +59,29 @@
 {
   NSAssert(self.deviceOperator, @"Device operator is needed to perform meaningful test");
   NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
-
-  FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithDeviceOperator:self.deviceOperator error:error];
+  NSError *innerError;
+  FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithDeviceOperator:self.deviceOperator error:&innerError];
   if (!configuration) {
-    return nil;
+    return
+    [[[XCTestBootstrapError describe:@"Failed to prepare test runner configuration"]
+      causedBy:innerError]
+     fail:error];
   }
 
   if (![self.deviceOperator launchApplicationWithBundleID:configuration.testRunner.bundleID
                                                 arguments:[self argumentsFromConfiguration:configuration attributes:attributes]
                                               environment:[self environmentFromConfiguration:configuration environment:environment]
-                                                    error:error]) {
-    return nil;
+                                                    error:&innerError]) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed launch test runner"]
+      causedBy:innerError]
+     fail:error];
   }
 
   pid_t testRunnerProcessID = [self.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
   if (testRunnerProcessID <= 0) {
     return [[XCTestBootstrapError
-      describe:@"Failed to determine launched process PID"]
+      describe:@"Failed to determine test runner process PID"]
       fail:error];
   }
 
@@ -87,7 +93,10 @@
     logger:self.logger];
 
   if (![testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
-    return nil;
+    return
+    [[[XCTestBootstrapError describe:@"Failed connect to test runner or test manager daemon"]
+      causedBy:innerError]
+     fail:error];
   }
   return testManager;
 }

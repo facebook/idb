@@ -22,31 +22,37 @@
 
 - (void)testSessionIdentifier
 {
+  NSError *error;
   NSUUID *sessionIdentifier = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
   FBTestConfiguration *testConfiguration =
   [[[FBTestConfigurationBuilder builder]
     withSessionIdentifier:sessionIdentifier]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
   XCTAssertEqual(testConfiguration.sessionIdentifier, sessionIdentifier);
 }
 
 - (void)testModuleName
 {
+  NSError *error;
   FBTestConfiguration *testConfiguration =
   [[[FBTestConfigurationBuilder builder]
     withModuleName:@"Franek"]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
   XCTAssertEqual(testConfiguration.moduleName, @"Franek");
 }
 
 - (void)testBundlePath
 {
+  NSError *error;
   FBTestConfiguration *testConfiguration =
   [[[FBTestConfigurationBuilder builder]
     withTestBundlePath:@"MagicPath"]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertTrue([testConfiguration isKindOfClass:FBTestConfiguration.class]);
   XCTAssertEqual(testConfiguration.testBundlePath, @"MagicPath");
   XCTAssertNil(testConfiguration.path);
@@ -58,10 +64,12 @@
   OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:path options:0 error:[OCMArg anyObjectRef]];
 
+  NSError *error;
   FBTestConfiguration *testConfiguration =
   [[[FBTestConfigurationBuilder builderWithFileManager:fileManagerMock]
     saveAs:path]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertEqual(testConfiguration.path, path);
   [fileManagerMock verify];
 }

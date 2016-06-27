@@ -23,11 +23,13 @@
 
 - (void)testProductBundleLoadWithPath
 {
+  NSError *error;
   NSBundle *bundle = [FBProductBundleTests testBundleFixture];
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
     withBundlePath:bundle.bundlePath]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertTrue([productBundle isKindOfClass:FBProductBundle.class]);
   XCTAssertEqualObjects(productBundle.name, @"SimpleTestTarget");
   XCTAssertEqualObjects(productBundle.filename, @"SimpleTestTarget.xctest");
@@ -39,7 +41,7 @@
 
 - (void)testNoBundlePath
 {
-  XCTAssertThrows([[FBProductBundleBuilder builder] build]);
+  XCTAssertThrows([[FBProductBundleBuilder builder] buildWithError:nil]);
 }
 
 - (void)testWorkingDirectory
@@ -57,11 +59,13 @@
   [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Heaven" withIntermediateDirectories:NO attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
 
+  NSError *error;
   FBProductBundle *productBundle =
   [[[[FBProductBundleBuilder builderWithFileManager:fileManagerMock]
      withBundlePath:bundle.bundlePath]
     withWorkingDirectory:@"/Heaven"]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertEqualObjects(productBundle.path, targetPath);
   XCTAssertEqualObjects(productBundle.binaryName, @"exec");
   XCTAssertEqualObjects(productBundle.bundleID, @"bundleID");
@@ -74,22 +78,26 @@
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
 
   OCMockObject<FBCodesignProvider> *codesignerMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
-  [[codesignerMock expect] signBundleAtPath:bundle.bundlePath];
+  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:bundle.bundlePath];
 
+  NSError *error;
   [[[[FBProductBundleBuilder builder]
      withBundlePath:bundle.bundlePath]
     withCodesignProvider:codesignerMock]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   [codesignerMock verify];
 }
 
 - (void)testCopyAtLocation
 {
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
+  NSError *error;
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
     withBundlePath:bundle.bundlePath]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   FBProductBundle *productBundleCopy = [productBundle copyLocatedInDirectory:@"/Magic"];
   XCTAssertEqualObjects(productBundleCopy.name, productBundle.name);
   XCTAssertEqualObjects(productBundleCopy.filename, productBundle.filename);

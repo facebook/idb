@@ -174,7 +174,7 @@
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
     withBundlePath:application.path]
-   build];
+   buildWithError:error];
 
   return productBundle;
 }

@@ -13,6 +13,7 @@
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 #import "NSFileManager+FBFileManager.h"
+#import "XCTestBootstrapError.h"
 
 static NSString *const FBTestPlanDirectoryName = @"TestPlans";
 
@@ -90,7 +91,7 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
   return self;
 }
 
-- (FBApplicationDataPackage *)build
+- (FBApplicationDataPackage *)buildWithError:(NSError **)error
 {
   NSAssert(self.testBundle, @"testBundle is required to create data package");
   NSAssert(self.deviceDataDirectory, @"deviceDataDirectory is required to create data package");
@@ -119,23 +120,28 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
     workingDirectory = packageBundlePath;
   }
 
-  NSError *error;
   FBApplicationDataPackage *package = [FBApplicationDataPackage new];
   package.path = packagePath;
   package.bundlePath = packageBundlePath;
   package.bundlePathOnDevice = packageBundlePathOnDevice;
 
-  if (![self.fileManager createDirectoryAtPath:localTestPlanDirPath withIntermediateDirectories:YES attributes:nil error:&error]) {
+  if (![self.fileManager createDirectoryAtPath:localTestPlanDirPath withIntermediateDirectories:YES attributes:nil error:error]) {
     return nil;
   }
-
+  NSError *innerError;
   package.testConfiguration =
   [[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
        withModuleName:self.testBundle.name]
       withSessionIdentifier:self.testBundle.configuration.sessionIdentifier]
      withTestBundlePath:deviceTestBundlePath]
     saveAs:[localTestPlanDirPath stringByAppendingPathComponent:testConfigurationFileName]]
-   build];
+   buildWithError:&innerError];
+  if (!package.testConfiguration) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to generate test configuration"]
+      causedBy:innerError]
+     fail:error];
+  }
 
   package.testBundle =
   [[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
@@ -143,21 +149,39 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
      withSessionIdentifier:self.testBundle.configuration.sessionIdentifier]
      withWorkingDirectory:workingDirectory]
     withCodesignProvider:self.codesignProvider]
-   build];
+   buildWithError:&innerError];
+  if (!package.testBundle) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to generate test bundle"]
+      causedBy:innerError]
+     fail:error];
+  }
 
   package.XCTestFramework =
   [[[[[FBProductBundleBuilder builderWithFileManager:self.fileManager]
       withBundlePath:XCTestFrameworkPath]
      withWorkingDirectory:workingDirectory]
     withCodesignProvider:self.codesignProvider]
-   build];
+   buildWithError:&innerError];
+  if (!package.XCTestFramework) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to generate XCTestFramework bundle"]
+      causedBy:innerError]
+     fail:error];
+  }
 
   package.IDEBundleInjectionFramework =
   [[[[[FBProductBundleBuilder builderWithFileManager:self.fileManager]
       withBundlePath:IDEBundleInjectionFrameworkPath]
      withWorkingDirectory:workingDirectory]
     withCodesignProvider:self.codesignProvider]
-   build];
+   buildWithError:&innerError];
+  if (!package.IDEBundleInjectionFramework) {
+    return
+    [[[XCTestBootstrapError describe:@"Failed to generate IDEBundleInjectionFramework bundle"]
+      causedBy:innerError]
+     fail:error];
+  }
   return package;
 }
 

@@ -114,8 +114,9 @@
 - (instancetype)withCodesignProvider:(id<FBCodesignProvider>)codesignProvider;
 
 /**
- @return prepared product bundle
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return prepared product bundle if the operation succeeds, otherwise nil.
  */
-- (FBProductBundle *)build;
+- (FBProductBundle *)buildWithError:(NSError **)error;
 
 @end

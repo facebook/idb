@@ -95,7 +95,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
       withBundlePath:[application installedPath]]
      withBundleID:[application identifier]]
     withBinaryName:[application executableName]]
-   build];
+   buildWithError:error];
 
   return productBundle;
 }

@@ -126,8 +126,9 @@
 - (instancetype)withCodesignProvider:(id<FBCodesignProvider>)codesignProvider;
 
 /**
- @return prepared application data package
+ @param error If there is an error, upon return contains an NSError object that describes the problem.
+ @return prepared application data package if the operation succeeds, otherwise nil.
  */
-- (FBApplicationDataPackage *)build;
+- (FBApplicationDataPackage *)buildWithError:(NSError **)error;
 
 @end

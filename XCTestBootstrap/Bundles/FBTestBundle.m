@@ -11,6 +11,7 @@
 
 #import "FBProductBundle+Private.h"
 #import "FBTestConfiguration.h"
+#import "XCTestBootstrapError.h"
 
 @interface FBTestBundle ()
 @property (nonatomic, strong) FBTestConfiguration *configuration;
@@ -37,10 +38,14 @@
   return FBTestBundle.class;
 }
 
-- (FBTestBundle *)build
+- (FBTestBundle *)buildWithError:(NSError **)error
 {
-  FBTestBundle *testBundle = (FBTestBundle *)[super build];
+  FBTestBundle *testBundle = (FBTestBundle *)[super buildWithError:error];
+  if (!testBundle) {
+    return nil;
+  }
   if (self.sessionIdentifier) {
+    NSError *innerError;
     NSString *testConfigurationFileName = [NSString stringWithFormat:@"%@-%@.xctestconfiguration", testBundle.name, self.sessionIdentifier.UUIDString];
     testBundle.configuration =
     [[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
@@ -48,7 +53,13 @@
         withSessionIdentifier:self.sessionIdentifier]
        withTestBundlePath:testBundle.path]
       saveAs:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]]
-     build];
+     buildWithError:&innerError];
+    if (!testBundle.configuration) {
+      return
+      [[[XCTestBootstrapError describe:@"Failed to generate xtestconfiguration"]
+        causedBy:innerError]
+       fail:error];
+    }
   }
   return testBundle;
 }
