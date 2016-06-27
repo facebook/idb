@@ -23,9 +23,9 @@
     FBCodeSignCommand *codesigner = [FBCodeSignCommand codeSignCommandWithIdentityName:@"iPhone Developer: Chris Fuentes (G7R46E5NX7)"];
     
     FBDeviceTestPreparationStrategy *testPrepareStrategy =
-    [FBDeviceTestPreparationStrategy strategyWithTestRunnerApplicationPath:@"/Users/chrisf/scratch/CBX-Runner.app"
+    [FBDeviceTestPreparationStrategy strategyWithTestRunnerApplicationPath:@"/Users/chrisf/calabash-xcuitest-server/Products/ipa/DeviceAgent/CBX-Runner.app"
                                                        applicationDataPath:@"/Users/chrisf/scratch/appData.xcappdata"
-                                                            testBundlePath:@"/Users/chrisf/scratch/PlugIns/CBX.xctest"
+                                                            testBundlePath:@"/Users/chrisf/calabash-xcuitest-server/Products/ipa/DeviceAgent/CBX-Runner.app/PlugIns/CBX.xctest"
                                                     pathToXcodePlatformDir:@"/Applications/Xcode.app/Contents/Developer"
                                                           workingDirectory:@"/Users/chrisf"];
     
