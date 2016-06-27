@@ -10,7 +10,7 @@
 #import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-
+#import <XCTestBootstrap/XCTestBootstrap.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
 @interface FBDeviceControlLinkerTests : XCTestCase
@@ -22,23 +22,26 @@
 - (void)testTheTest {
     FBCodeSignCommand *codesigner = [FBCodeSignCommand codeSignCommandWithIdentityName:@"iPhone Developer: Chris Fuentes (G7R46E5NX7)"];
     
+    setenv("DEVELOPER_DIR", "/Users/chrisf/Xcodes/8b1/Xcode-beta.app/Contents/Developer", YES);
+    
     FBDeviceTestPreparationStrategy *testPrepareStrategy =
     [FBDeviceTestPreparationStrategy strategyWithTestRunnerApplicationPath:@"/Users/chrisf/calabash-xcuitest-server/Products/ipa/DeviceAgent/CBX-Runner.app"
                                                        applicationDataPath:@"/Users/chrisf/scratch/appData.xcappdata"
                                                             testBundlePath:@"/Users/chrisf/calabash-xcuitest-server/Products/ipa/DeviceAgent/CBX-Runner.app/PlugIns/CBX.xctest"
-                                                    pathToXcodePlatformDir:@"/Applications/Xcode.app/Contents/Developer"
+                                                    pathToXcodePlatformDir:@"/Users/chrisf/Xcodes/8b1/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform"
                                                           workingDirectory:@"/Users/chrisf"];
     
     NSError *err;
-    FBiOSDeviceOperator *op = [FBiOSDeviceOperator operatorWithDeviceUDID:@"49a29c9e61998623e7909e35e8bae50dd07ef85f"
-                                                         codesignProvider:codesigner
-                                                                    error:&err];
+    FBDevice *device = [[FBDeviceSet defaultSetWithLogger:nil
+                                                    error:&err] deviceWithUDID:@"49a29c9e61998623e7909e35e8bae50dd07ef85f"];
     
     if (err) {
         NSLog(@"Error creating device operator: %@", err);
         return;
     }
-    FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy strategyWithDeviceOperator:op
+    device.deviceOperator.codesignProvider = codesigner;
+    
+    FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy strategyWithDeviceOperator:device.deviceOperator
                                                                        testPrepareStrategy:testPrepareStrategy
                                                                                   reporter:nil
                                                                                     logger:nil];
@@ -50,6 +53,7 @@
     } else {
         NSLog(@"Err: %@", innerError);
     }
+}
 
 + (void)initialize
 {

@@ -138,7 +138,7 @@
     withTestBundle:testBundle]
     withCodesignProvider:deviceOperator.codesignProvider]
     withWorkingDirectory:self.workingDirectory]
-    withPlatformDirectory:platformDirectory]
+    withPlatformDirectory:self.pathToXcodePlatformDir]
     withDeviceDataDirectory:dataContainterDirectory]
     buildWithError:&innerError];
 

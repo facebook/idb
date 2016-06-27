@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBiOSDeviceOperator.h"
+#import "FBiOSDeviceOperator+Private.h"
 
 #import <objc/runtime.h>
 
@@ -46,32 +46,6 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 
 @synthesize codesignProvider;
 
-+ (instancetype)operatorWithDeviceUDID:(NSString *)deviceUDID
-                      codesignProvider:(id<FBCodesignProvider>)codesignProvider
-                                 error:(NSError **)error
-{
-  [FBDeviceControlFrameworkLoader initializeFrameworks];
-    DVTDeviceManager *manager = [NSClassFromString(@"DVTDeviceManager") defaultDeviceManager];
-
-    DVTiOSDevice *device = [manager searchForDeviceWithType:nil
-                                                    options:@{@"id": deviceUDID}
-                                                genericOnly:NO
-                                                    timeout:FBDeviceSearchTimeout
-                                                      error:error];
-    
-    NSAssert(device, @"No device found for UDID: %@", deviceUDID);
-    NSAssert([device isKindOfClass:NSClassFromString(@"DVTiOSDevice")],
-             @"UDID should point to iOS Device. Instead got: %@",
-             [device class]);
-    if (!device) {
-        return nil;
-    }
-    FBiOSDeviceOperator *op = [self.class new];
-    op.dvtDevice = device;
-    op.codesignProvider = codesignProvider;
-    NSLog(@"[%@ %@] => %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), op);
-    return op;
-}
 
 - (instancetype)initWithiOSDevice:(DVTiOSDevice *)iosDevice
 {

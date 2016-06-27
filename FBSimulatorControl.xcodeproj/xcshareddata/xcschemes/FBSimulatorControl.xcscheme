@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E66DC04E390C419500000000"
-               BuildableName = ".framework"
+               BuildableName = "FBSimulatorControl.framework"
                BlueprintName = "FBSimulatorControl"
                ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
             </BuildableReference>
@@ -63,7 +63,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E66DC04E390C419500000000"
-            BuildableName = ".framework"
+            BuildableName = "FBSimulatorControl.framework"
             BlueprintName = "FBSimulatorControl"
             ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
          </BuildableReference>
@@ -92,7 +92,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E66DC04E390C419500000000"
-            BuildableName = ".framework"
+            BuildableName = "FBSimulatorControl.framework"
             BlueprintName = "FBSimulatorControl"
             ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
          </BuildableReference>
@@ -110,7 +110,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E66DC04E390C419500000000"
-            BuildableName = ".framework"
+            BuildableName = "FBSimulatorControl.framework"
             BlueprintName = "FBSimulatorControl"
             ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
          </BuildableReference>
