@@ -48,7 +48,7 @@
      fail:error];
   }
 
-  const BOOL simulatorIsBooted = (self.simulator.device.state == 0x3);
+  const BOOL simulatorIsBooted = (self.simulator.state == FBSimulatorStateBooted);
   if (!simulatorIsBooted) {
     return
     [[[FBSimulatorError
