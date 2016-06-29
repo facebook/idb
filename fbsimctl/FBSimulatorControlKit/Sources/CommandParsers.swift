@@ -240,16 +240,31 @@ extension FBCrashLogInfoProcessType : Parsable {
   }}
 }
 
-extension Command : Parsable {
-  public static var parser: Parser<Command> { get {
+extension CLI : Parsable {
+  public static var parser: Parser<CLI> { get {
     return Parser
       .alternative([
-        self.helpParser,
-        self.performParser,
+        Command.parser.fmap { CLI.Run($0) } ,
+        Help.parser.fmap { CLI.Show($0) },
       ])
   }}
+}
 
-  static var performParser: Parser<Command> { get {
+extension Help : Parsable {
+  public static var parser: Parser<Help> { get {
+    return Parser
+      .ofTwoSequenced(
+        OutputOptions.parser,
+        Parser.ofString("help", NSNull())
+      )
+      .fmap { (output, _) in
+        return Help(outputOptions: output, userInitiated: true, command: nil)
+      }
+  }}
+}
+
+extension Command : Parsable {
+  public static var parser: Parser<Command> { get {
     return Parser
       .ofFourSequenced(
         Configuration.parser,
@@ -258,21 +273,17 @@ extension Command : Parsable {
         Parser.manyCount(1, Action.parser)
       )
       .fmap { (configuration, query, format, actions) in
-        return Command.Perform(configuration, actions, query, format)
+        return Command(
+          configuration: configuration,
+          actions: actions,
+          query: query,
+          format: format
+        )
       }
-  }}
-
-  static var helpParser: Parser<Command> { get {
-    return Parser
-      .ofTwoSequenced(
-        OutputOptions.parser,
-        Parser.ofString("help", NSNull())
-      )
-      .fmap { (output, _) in
-        return Command.Help(output, true, nil)
-      }
-  }}
+    }
+  }
 }
+
 
 extension Server : Parsable {
   public static var parser: Parser<Server> { get {

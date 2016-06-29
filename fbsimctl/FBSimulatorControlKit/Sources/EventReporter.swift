@@ -80,13 +80,25 @@ public extension OutputOptions {
   }
 }
 
+public extension Help {
+  public func createReporter(writer: Writer) -> EventReporter {
+    return self.outputOptions.createReporter(writer)
+  }
+}
+
 public extension Command {
   public func createReporter(writer: Writer) -> EventReporter {
+    return self.configuration.outputOptions.createReporter(writer)
+  }
+}
+
+public extension CLI {
+  public func createReporter(writer: Writer) -> EventReporter {
     switch self {
-    case .Help(let outputOptions, _, _):
-      return outputOptions.createReporter(writer)
-    case .Perform(let configuration, _, _, _):
-      return configuration.outputOptions.createReporter(writer)
+    case .Run(let command):
+      return command.createReporter(writer)
+    case .Show(let help):
+      return help.createReporter(writer)
     }
   }
 }

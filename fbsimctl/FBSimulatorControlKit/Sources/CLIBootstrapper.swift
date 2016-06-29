@@ -14,17 +14,7 @@ import FBSimulatorControl
   public static func bootstrap() -> Int32 {
     let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
     let environment = NSProcessInfo.processInfo().environment
-    let runner = CLIRunner(arguments: arguments, environment: environment, writer: FileHandleWriter.stdOutWriter)
-    return runner.run()
-  }
-}
 
-struct CLIRunner {
-  let arguments: [String]
-  let environment: [String : String]
-  let writer: Writer
-
-  func run() -> Int32 {
     // The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
     do {
       let (_, configuration) = try FBSimulatorControlKit.Configuration.parser.parse(arguments)
@@ -37,19 +27,31 @@ struct CLIRunner {
     } catch {
       // Parse errors will be handled by the full parse
     }
+    let cli = CLI.fromArguments(arguments, environment: environment)
+    let writer = FileHandleWriter.stdOutWriter
+    return CLIRunner(cli: cli, writer: writer).runForStatus()
+  }
+}
 
-    let command = Command.fromArguments(arguments, environment: self.environment)
-    return self.runFromCLI(command)
+struct CLIRunner : Runner {
+  let cli: CLI
+  let writer: Writer
+
+  func run() -> CommandResult {
+    let reporter = self.cli.createReporter(writer)
+
+    switch self.cli {
+    case .Run(let command):
+      return CommandRunner(reporter: reporter, command: command, defaults: nil, control: nil).run()
+    case .Show(let help):
+      return HelpRunner(reporter: reporter, help: help).run()
+    }
   }
 
-  func runFromCLI(command: Command) -> Int32 {
-    let (reporter, result) = CommandRunner.bootstrap(command, writer: self.writer)
-    switch result {
-    case .Success:
-      return 0
-    case .Failure(let string):
-      reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, string as NSString)
-      return 1
+  func runForStatus() -> Int32 {
+    switch self.run() {
+      case .Failure: return 1
+      case .Success: return 0
     }
   }
 }

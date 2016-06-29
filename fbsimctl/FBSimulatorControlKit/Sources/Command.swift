@@ -12,20 +12,6 @@ import FBSimulatorControl
 import FBControlCore
 
 /**
-  Base Options that are also used in Help.
-*/
-public struct OutputOptions : OptionSetType {
-  public let rawValue : Int
-  public init(rawValue: Int) {
-    self.rawValue = rawValue
-  }
-
-  public static let DebugLogging = OutputOptions(rawValue: 1 << 0)
-  public static let JSON = OutputOptions(rawValue: 1 << 1)
-  public static let Pretty = OutputOptions(rawValue: 1 << 2)
-}
-
-/**
   Describes the Configuration for the running FBSimulatorControl Commands
 */
 public struct Configuration {
@@ -83,11 +69,18 @@ public enum Action {
 }
 
 /**
- The entry point for all commands.
+ Some Actions performed on some targets.
  */
-public indirect enum Command {
-  case Perform(Configuration, [Action], FBiOSTargetQuery?, FBiOSTargetFormat?)
-  case Help(OutputOptions, Bool, Command?)
+public struct Command {
+  let configuration: Configuration
+  let actions: [Action]
+  let query: FBiOSTargetQuery?
+  let format: FBiOSTargetFormat?
+}
+
+extension Command : Equatable {}
+public func == (left: Command, right: Command) -> Bool {
+  return left.configuration == right.configuration && left.actions == right.actions && left.query == right.query && left.format == right.format
 }
 
 extension Configuration : Equatable {}
@@ -181,31 +174,6 @@ public func == (left: Action, right: Action) -> Bool {
     return leftPaths == rightPaths
   case (.WatchdogOverride(let leftBundleIDs, let leftTimeout), .WatchdogOverride(let rightBundleIDs, let rightTimeout)):
     return leftBundleIDs == rightBundleIDs && leftTimeout == rightTimeout
-  default:
-    return false
-  }
-}
-
-extension Command : Equatable {}
-public func == (left: Command, right: Command) -> Bool {
-  switch (left, right) {
-  case (.Perform(let leftConfiguration, let leftActions, let leftQuery, let leftMaybeFormat), .Perform(let rightConfiguration, let rightActions, let rightQuery, let rightMaybeFormat)):
-    if leftConfiguration != rightConfiguration || leftActions != rightActions || leftQuery != rightQuery {
-      return false
-    }
-
-    // The == function isn't as concise as it could be as Format? isn't automatically Equatable
-    // This is despite [Equatable] Equatable? and Format all being Equatable
-    switch (leftMaybeFormat, rightMaybeFormat) {
-    case (.Some(let leftFormat), .Some(let rightFormat)):
-      return leftFormat == rightFormat
-    case (.None, .None):
-      return true
-    default:
-      return false
-    }
-  case (.Help(let leftOutput, let leftSuccess, let leftCommand), .Help(let rightOutput, let rightSuccess, let rightCommand)):
-    return leftOutput == rightOutput && leftSuccess == rightSuccess && leftCommand == rightCommand
   default:
     return false
   }

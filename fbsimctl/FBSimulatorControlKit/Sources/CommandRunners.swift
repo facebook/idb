@@ -25,46 +25,40 @@ struct CommandRunner : Runner {
   var control: FBSimulatorControl?
 
   func run() -> CommandResult {
-    switch (self.command) {
-    case .Help(_, let userSpecified, _):
-      reporter.reportSimpleBridge(EventName.Help, EventType.Discrete, Command.getHelp() as NSString)
-      if userSpecified {
-        return .Success
-      } else {
-        return .Failure("")
-      }
-    case .Perform(let configuration, let actions, let query, let format):
-      do {
-        let defaults = try self.defaults ?? Defaults.create(configuration, logWriter: FileHandleWriter.stdOutWriter)
-        let control = try self.control ?? defaults.configuration.buildSimulatorControl()
-        let format = format ?? defaults.format
-        let reporter = self.reporter
-        let runner = SequenceRunner(runners:
-          actions.map { action in
-            return ActionRunner(
-              reporter: reporter,
-              action: action,
-              configuration: configuration,
-              control: control,
-              defaults: defaults,
-              format: format,
-              query: query
-            )
-          }
-        )
-        return runner.run()
-      } catch DefaultsError.UnreadableRCFile(let string) {
-        return .Failure("Unreadable .rc file " + string)
-      } catch let error as NSError {
-        return .Failure(error.description)
-      }
+    do {
+      let defaults = try self.defaults ?? Defaults.create(self.command.configuration, logWriter: FileHandleWriter.stdOutWriter)
+      let control = try self.control ?? defaults.configuration.buildSimulatorControl()
+      let format = self.command.format ?? defaults.format
+      let reporter = self.reporter
+      let runner = SequenceRunner(runners:
+        self.command.actions.map { action in
+          return ActionRunner(
+            reporter: reporter,
+            action: action,
+            configuration: self.command.configuration,
+            control: control,
+            defaults: defaults,
+            format: format,
+            query: self.command.query
+          )
+        }
+      )
+      return runner.run()
+    } catch DefaultsError.UnreadableRCFile(let string) {
+      return .Failure("Unreadable .rc file " + string)
+    } catch let error as NSError {
+      return .Failure(error.description)
     }
   }
+}
 
-  static func bootstrap(command: Command, writer: Writer) -> (EventReporter, CommandResult) {
-    let reporter = command.createReporter(writer)
-    let runner = CommandRunner(reporter: reporter, command: command, defaults: nil, control: nil)
-    return (reporter, runner.run())
+struct HelpRunner : Runner {
+  let reporter: EventReporter
+  let help: Help
+
+  func run() -> CommandResult {
+    reporter.reportSimpleBridge(EventName.Help, EventType.Discrete, self.help.description as NSString)
+    return self.help.userInitiated ? CommandResult.Success : CommandResult.Failure("")
   }
 }
 

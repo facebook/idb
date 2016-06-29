@@ -295,7 +295,7 @@ class CommandParserTests : XCTestCase {
 
   func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], FBiOSTargetQuery?, FBiOSTargetFormat?)]) {
     let pairs = extras.map { (tokens, query, format) in
-      return (tokens + suffix, Command.Perform(Configuration.defaultValue, actions, query, format))
+      return (tokens + suffix, Command(configuration: Configuration.defaultValue, actions: actions, query: query, format: format))
     }
     self.assertParsesAll(Command.parser, pairs)
   }

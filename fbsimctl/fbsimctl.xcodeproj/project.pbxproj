@@ -22,6 +22,7 @@
 		AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F661C2867EE0038C6A5 /* Runners.swift */; };
 		AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */; };
 		AA1B7F771C2867EE0038C6A5 /* SocketRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */; };
+		AA23910E1D1922EE00905C7F /* CLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA23910D1D1922EE00905C7F /* CLI.swift */; };
 		AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2AFD741C294158000123BA /* TestHelpers.swift */; };
 		AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
@@ -101,6 +102,7 @@
 		AA1B7F661C2867EE0038C6A5 /* Runners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Runners.swift; sourceTree = "<group>"; };
 		AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignalHandler.swift; sourceTree = "<group>"; };
 		AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketRelay.swift; sourceTree = "<group>"; };
+		AA23910D1D1922EE00905C7F /* CLI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLI.swift; sourceTree = "<group>"; };
 		AA2AFD741C294158000123BA /* TestHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AbstractTypes.swift; sourceTree = "<group>"; };
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
@@ -172,6 +174,7 @@
 				AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */,
 				AA1B7F601C2867EE0038C6A5 /* Bridging.m */,
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
+				AA23910D1D1922EE00905C7F /* CLI.swift */,
 				AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F621C2867EE0038C6A5 /* CommandBuffer.swift */,
@@ -456,6 +459,7 @@
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
 				AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */,
 				AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */,
+				AA23910E1D1922EE00905C7F /* CLI.swift in Sources */,
 				AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */,
 				AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */,
 				AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */,

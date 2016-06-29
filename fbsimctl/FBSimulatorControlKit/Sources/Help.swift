@@ -9,8 +9,8 @@
 
 import Foundation
 
-public extension Command {
-  static func getHelp() -> String {
+extension Help : CustomStringConvertible {
+  public var description: String { get {
     return "Help"
-  }
+  }}
 }
