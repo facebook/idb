@@ -10,7 +10,7 @@
 import Foundation
 import FBSimulatorControl
 
-@objc public class CLI : NSObject {
+@objc public class CLIBootstrapper : NSObject {
   public static func bootstrap() -> Int32 {
     let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
     let environment = NSProcessInfo.processInfo().environment

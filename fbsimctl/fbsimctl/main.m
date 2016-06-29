@@ -20,6 +20,6 @@
 int main(int argc, const char *argv[]) {
   @autoreleasepool
   {
-    return [CLI bootstrap];
+    return [CLIBootstrapper bootstrap];
   }
 }

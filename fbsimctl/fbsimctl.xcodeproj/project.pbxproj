@@ -50,7 +50,7 @@
 		AAFD4A371CC5082D00FF38FA /* EnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A351CC5082D00FF38FA /* EnvironmentTests.swift */; };
 		AAFD4A391CC5084600FF38FA /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFD4A381CC5084600FF38FA /* IntegrationTests.swift */; };
 		AAFE7AB11C92F01300D92E46 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
-		AAFE7AB31C92F19D00D92E46 /* CLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFE7AB21C92F19D00D92E46 /* CLI.swift */; };
+		AAFE7AB31C92F19D00D92E46 /* CLIBootstrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -132,7 +132,7 @@
 		AAFD4A341CC5082D00FF38FA /* CommandParsersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CommandParsersTests.swift; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		AAFD4A351CC5082D00FF38FA /* EnvironmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnvironmentTests.swift; sourceTree = "<group>"; };
 		AAFD4A381CC5084600FF38FA /* IntegrationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
-		AAFE7AB21C92F19D00D92E46 /* CLI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLI.swift; sourceTree = "<group>"; };
+		AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIBootstrapper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -172,7 +172,7 @@
 				AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */,
 				AA1B7F601C2867EE0038C6A5 /* Bridging.m */,
 				AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */,
-				AAFE7AB21C92F19D00D92E46 /* CLI.swift */,
+				AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F621C2867EE0038C6A5 /* CommandBuffer.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
@@ -437,7 +437,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAFE7AB31C92F19D00D92E46 /* CLI.swift in Sources */,
+				AAFE7AB31C92F19D00D92E46 /* CLIBootstrapper.swift in Sources */,
 				AA1B7F711C2867EE0038C6A5 /* CommandBuffer.swift in Sources */,
 				AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */,
 				AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */,
