@@ -10,18 +10,14 @@
 import Foundation
 
 struct SimulatorCreationRunner : Runner {
-  let reporter: EventReporter
-  let configuration: Configuration
-  let control: FBSimulatorControl
-  let defaults: Defaults
-  let simulatorConfiguration: FBSimulatorConfiguration
+  let context: iOSRunnerContext<FBSimulatorConfiguration>
 
   func run() -> CommandResult {
     do {
-      self.reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.simulatorConfiguration)
-      let simulator = try self.control.set.createSimulatorWithConfiguration(simulatorConfiguration)
-      self.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
-      self.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
+      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.context.value)
+      let simulator = try self.context.simulatorControl.set.createSimulatorWithConfiguration(self.context.value)
+      self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
+      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success
     } catch let error as NSError {
       return CommandResult.Failure("Failed to Create Simulator \(error.description)")
@@ -30,14 +26,11 @@ struct SimulatorCreationRunner : Runner {
 }
 
 struct SimulatorActionRunner : Runner {
-  let reporter: EventReporter
-  let simulator: FBSimulator
-  let action: Action
-  let format: FBiOSTargetFormat
+  let context: iOSRunnerContext<(Action, FBSimulator)>
 
   func run() -> CommandResult {
     do {
-      let reporter = SimulatorReporter(simulator: self.simulator, format: self.format, reporter: self.reporter)
+      let reporter = SimulatorReporter(simulator: self.context.value.1, format: self.context.format, reporter: self.context.reporter)
       defer {
         reporter.target.userEventSink = nil
       }
@@ -48,7 +41,9 @@ struct SimulatorActionRunner : Runner {
 
   func runner(reporter: SimulatorReporter) -> Runner {
     let simulator = reporter.target
-    switch self.action {
+    let action = self.context.value.0
+
+    switch action {
     case .Approve(let bundleIDs):
       return SimulatorInteractionRunner(reporter, EventName.Approve, ArraySubject(bundleIDs)) { interaction in
         interaction.authorizeLocationSettings(bundleIDs)

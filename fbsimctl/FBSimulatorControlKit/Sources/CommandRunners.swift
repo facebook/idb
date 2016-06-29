@@ -18,7 +18,38 @@ extension Configuration {
   }
 }
 
-struct CommandRunner : Runner {
+struct iOSRunnerContext<A> {
+  let value: A
+  let configuration: Configuration
+  let defaults: Defaults
+  let format: FBiOSTargetFormat
+  let reporter: EventReporter
+  let simulatorControl: FBSimulatorControl
+
+  func map<B>(f: A -> B) -> iOSRunnerContext<B> {
+    return iOSRunnerContext<B>(
+      value: f(self.value),
+      configuration: self.configuration,
+      defaults: self.defaults,
+      format: self.format,
+      reporter: self.reporter,
+      simulatorControl: self.simulatorControl
+    )
+  }
+
+  func replace<B>(v: B) -> iOSRunnerContext<B> {
+    return iOSRunnerContext<B>(
+      value: v,
+      configuration: self.configuration,
+      defaults: self.defaults,
+      format: self.format,
+      reporter: self.reporter,
+      simulatorControl: self.simulatorControl
+    )
+  }
+}
+
+struct BaseCommandRunner : Runner {
   let reporter: EventReporter
   let command: Command
   var defaults: Defaults?
@@ -27,23 +58,18 @@ struct CommandRunner : Runner {
   func run() -> CommandResult {
     do {
       let defaults = try self.defaults ?? Defaults.create(self.command.configuration, logWriter: FileHandleWriter.stdOutWriter)
-      let control = try self.control ?? defaults.configuration.buildSimulatorControl()
+      let simulatorControl = try self.control ?? defaults.configuration.buildSimulatorControl()
       let format = self.command.format ?? defaults.format
       let reporter = self.reporter
-      let runner = SequenceRunner(runners:
-        self.command.actions.map { action in
-          return ActionRunner(
-            reporter: reporter,
-            action: action,
-            configuration: self.command.configuration,
-            control: control,
-            defaults: defaults,
-            format: format,
-            query: self.command.query
-          )
-        }
+      let context = iOSRunnerContext(
+        value: command,
+        configuration: command.configuration,
+        defaults: defaults,
+        format: format,
+        reporter: reporter,
+        simulatorControl: simulatorControl
       )
-      return runner.run()
+      return CommandRunner(context: context).run()
     } catch DefaultsError.UnreadableRCFile(let string) {
       return .Failure("Unreadable .rc file " + string)
     } catch let error as NSError {
@@ -62,102 +88,96 @@ struct HelpRunner : Runner {
   }
 }
 
-struct ActionRunner : Runner {
-  let reporter: EventReporter
-  let action: Action
-  let configuration: Configuration
-  let control: FBSimulatorControl
-  let defaults: Defaults
-  let format: FBiOSTargetFormat
-  let query: FBiOSTargetQuery?
+struct CommandRunner : Runner {
+  let context: iOSRunnerContext<Command>
 
   func run() -> CommandResult {
-    switch self.action {
-    case .Listen(let server):
-      return ServerRunner(
-        reporter: self.reporter,
-        configuration: self.configuration,
-        control: control,
-        defaults: self.defaults,
-        format: self.format,
-        query: self.query,
-        serverConfiguration: server
-      ).run()
-    case .Create(let configuration):
-      return SimulatorCreationRunner(
-        reporter: self.reporter,
-        configuration: self.configuration,
-        control: control,
-        defaults: self.defaults,
-        simulatorConfiguration: configuration
-      ).run()
-    default:
-      if control.set.allSimulators.count == 0 {
-        reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Devices in Device Set")
-        return CommandResult.Success
-      }
-      guard let query = self.query ?? self.defaults.queryForAction(self.action) else {
+    for action in self.context.value.actions {
+      guard let query = self.context.value.query ?? self.context.defaults.queryForAction(action) else {
         return CommandResult.Failure("No Query Provided")
       }
-      let simulators = control.set.query(query)
-      if simulators.count == 0 {
-        reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Matching Devices in Set")
+      let context = self.context.replace((action, query))
+      let runner = ActionRunner(context: context)
+      let result = runner.run()
+      if case .Failure = result {
+        return result
+      }
+    }
+    return .Success
+  }
+}
+
+struct ActionRunner : Runner {
+  let context: iOSRunnerContext<(Action, FBiOSTargetQuery)>
+
+  func run() -> CommandResult {
+    let action = self.context.value.0
+    let query = self.context.value.1
+
+    switch action {
+    case .Listen(let server):
+      let context = self.context.replace((server, query))
+      return ServerRunner(context: context).run()
+    case .Create(let configuration):
+      let context = self.context.replace(configuration)
+      return SimulatorCreationRunner(context: context).run()
+    default:
+      if self.context.simulatorControl.set.allSimulators.count == 0 {
+        self.context.reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Devices in Device Set")
         return CommandResult.Success
       }
-      let runners: [Runner] = simulators.map { simulator in
-        SimulatorActionRunner(
-          reporter: self.reporter,
-          simulator: simulator,
-          action: action.appendEnvironment(NSProcessInfo.processInfo().environment),
-          format: format
-        )
+      let simulators = self.context.simulatorControl.set.query(query)
+      if simulators.count == 0 {
+        self.context.reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Matching Devices in Set")
+        return CommandResult.Success
       }
+      let action = action.appendEnvironment(NSProcessInfo.processInfo().environment)
+      let runner = SequenceRunner(runners: simulators.map { simulator in
+        let context = self.context.replace((action, simulator))
+        return SimulatorActionRunner(context: context)
+      })
 
-      defaults.updateLastQuery(query)
-      return SequenceRunner(runners: runners).run()
+      self.context.defaults.updateLastQuery(query)
+      return runner.run()
     }
   }
 }
 
 struct ServerRunner : Runner, CommandPerformer {
-  let reporter: EventReporter
-  let configuration: Configuration
-  let control: FBSimulatorControl
-  let defaults: Defaults
-  let format: FBiOSTargetFormat?
-  let query: FBiOSTargetQuery?
-  let serverConfiguration: Server
+  let context: iOSRunnerContext<(Server, FBiOSTargetQuery)>
 
   func run() -> CommandResult {
-    reporter.reportSimple(EventName.Listen, EventType.Started, serverConfiguration)
-    let runner = RelayRunner(relay: SynchronousRelay(relay: self.baseRelay, reporter: reporter))
+    self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
+    let runner = RelayRunner(relay: SynchronousRelay(relay: self.baseRelay, reporter: self.context.reporter))
     let result = runner.run()
-    reporter.reportSimple(EventName.Listen, EventType.Ended, serverConfiguration)
+    self.context.reporter.reportSimple(EventName.Listen, EventType.Ended, self.context.value.0)
     return result
   }
 
   var baseRelay: Relay { get {
-    switch self.serverConfiguration {
+    switch self.context.value.0 {
     case .StdIO:
-      let commandBuffer = LineBuffer(performer: self, reporter: self.reporter)
+      let commandBuffer = LineBuffer(performer: self, reporter: self.context.reporter)
       return FileHandleRelay(commandBuffer: commandBuffer)
     case .Socket(let portNumber):
-      let commandBuffer = LineBuffer(performer: self, reporter: self.reporter)
-      return SocketRelay(portNumber: portNumber, commandBuffer: commandBuffer, localEventReporter: self.reporter, socketOutput: configuration.outputOptions)
+      let commandBuffer = LineBuffer(performer: self, reporter: self.context.reporter)
+      return SocketRelay(portNumber: portNumber, commandBuffer: commandBuffer, localEventReporter: self.context.reporter, socketOutput: self.context.configuration.outputOptions)
     case .Http(let portNumber):
-      let query = self.query ?? self.defaults.queryForAction(Action.Listen(self.serverConfiguration))!
-      let format = self.format ?? self.defaults.format
-      let performer = ActionPerformer(commandPerformer: self, configuration: self.configuration, query: query, format: format)
+      let query = self.context.value.1 ?? self.context.defaults.queryForAction(Action.Listen(self.context.value.0))!
+      let performer = ActionPerformer(commandPerformer: self, configuration: self.context.configuration, query: query, format: self.context.format)
       return HttpRelay(portNumber: portNumber, performer: performer)
     }
   }}
 
   func perform(command: Command, reporter: EventReporter) -> CommandResult {
-    return CommandRunner(
+    let context = iOSRunnerContext(
+      value: command,
+      configuration: self.context.configuration,
+      defaults: self.context.defaults,
+      format: self.context.format,
       reporter: reporter,
-      command: command,
-      defaults: self.defaults,
-      control: self.control
-    ).run()
+      simulatorControl: self.context.simulatorControl
+    )
+    return CommandRunner(context: context).run()
   }
 }
