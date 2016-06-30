@@ -35,17 +35,17 @@
   [FBSimulatorControl loadPrivateFrameworksOrAbort];
 }
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
++ (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
 {
   return [self withConfiguration:configuration logger:FBControlCoreGlobalConfiguration.defaultLogger error:error];
 }
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration logger:logger error:error];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+- (nullable instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   self = [super init];
   if (!self) {

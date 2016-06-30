@@ -18,6 +18,8 @@
 @class FBSimulatorSet;
 @protocol FBControlCoreLogger;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  The Root Class for the FBSimulatorControl Framework.
  */
@@ -33,7 +35,7 @@
  @param error any error that occurred during instantiation.
  @returns a new FBSimulatorControl instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Creates and returns a new `FBSimulatorControl` instance.
@@ -42,7 +44,7 @@
  @param error any error that occurred during instantiation.
  @returns a new FBSimulatorControl instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
++ (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 
 #pragma mark Framework Loading
 
@@ -80,3 +82,5 @@
 @property (nonatomic, copy, readwrite) FBSimulatorControlConfiguration *configuration;
 
 @end
+
+NS_ASSUME_NONNULL_END

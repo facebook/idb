@@ -53,7 +53,7 @@
 
 #pragma mark - Public Methods
 
-- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
+- (nullable FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 {
   NSError *innerError = nil;
   FBSimulator *simulator = [self obtainSimulatorWithConfiguration:configuration options:options error:&innerError];
