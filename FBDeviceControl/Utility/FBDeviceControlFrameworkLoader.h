@@ -24,4 +24,9 @@
  */
 + (void)initializeXCodeFrameworks;
 
+/**
+ Raises the Log Level to debug for DVT relevant Private Frameworks.
+ */
++ (void)enableDVTDebugLogging;
+
 @end
