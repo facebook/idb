@@ -55,6 +55,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		AA75CD1C1D244313003C45B0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA93B7A81BE8351000CF6A56 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AAE35AC11C2865C10073CC70;
+			remoteInfo = FBSimulatorControlKit;
+		};
 		AAE35ACD1C2865C10073CC70 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA93B7A81BE8351000CF6A56 /* Project object */;
@@ -332,6 +339,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				AA75CD1D1D244313003C45B0 /* PBXTargetDependency */,
 			);
 			name = fbsimctl;
 			productName = fbsimctl;
@@ -487,6 +495,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		AA75CD1D1D244313003C45B0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AAE35AC11C2865C10073CC70 /* FBSimulatorControlKit */;
+			targetProxy = AA75CD1C1D244313003C45B0 /* PBXContainerItemProxy */;
+		};
 		AAE35ACE1C2865C10073CC70 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = AAE35AC11C2865C10073CC70 /* FBSimulatorControlKit */;

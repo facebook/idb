@@ -189,6 +189,11 @@
 		AA9517C21C15F60B00A89CAD /* FBCompositeSimulatorEventSink.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9517C01C15F60B00A89CAD /* FBCompositeSimulatorEventSink.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9517C31C15F60B00A89CAD /* FBCompositeSimulatorEventSink.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9517C11C15F60B00A89CAD /* FBCompositeSimulatorEventSink.m */; };
 		AA98351C1CEF55C20038F432 /* FBLocalizationOverrideTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA98351B1CEF55C20038F432 /* FBLocalizationOverrideTests.m */; };
+		AA98ECAA1D0559D000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA98ECAC1D0559DF00916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA98ECAD1D0559E100916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA98ECAE1D0559E400916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA98ECB01D055A0000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AA9B24D81D07F9BB00CEE14F /* FBiOSTargetPredicates.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9B24D61D07F9BB00CEE14F /* FBiOSTargetPredicates.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9B24D91D07F9BB00CEE14F /* FBiOSTargetPredicates.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */; };
 		AAAA67C61BC4FED200075197 /* FBSimulatorControlFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */; };
@@ -436,6 +441,38 @@
 			files = (
 				AA3714861CEDF56D00C29CCB /* XCTestBootstrap.framework in CopyFiles */,
 				AA3714851CEDF52F00C29CCB /* FBDeviceControl.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA98ECA81D0559B200916AED /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AA98ECAA1D0559D000916AED /* FBControlCore.framework in CopyFiles */,
+				AA98ECAE1D0559E400916AED /* XCTestBootstrap.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA98ECAB1D0559D900916AED /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AA98ECAC1D0559DF00916AED /* FBControlCore.framework in CopyFiles */,
+				AA98ECAD1D0559E100916AED /* XCTestBootstrap.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA98ECAF1D0559F800916AED /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AA98ECB01D055A0000916AED /* FBControlCore.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2256,6 +2293,7 @@
 				AAC8B2271CEC51120034A865 /* Frameworks */,
 				AAC8B2281CEC51120034A865 /* Headers */,
 				AAC8B2291CEC51120034A865 /* Resources */,
+				AA98ECAB1D0559D900916AED /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -2295,12 +2333,13 @@
 				4F426D880000000000000000 /* Frameworks */,
 				E54FBF041BA8A63900ACDD15 /* Headers */,
 				AA017F571BD7786200F45E9D /* Resources */,
+				AA98ECA81D0559B200916AED /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				EE1277531C931C5A00DE52A1 /* PBXTargetDependency */,
 				EEBD60871C90636500298A07 /* PBXTargetDependency */,
+				EE1277531C931C5A00DE52A1 /* PBXTargetDependency */,
 			);
 			name = FBSimulatorControl;
 			productName = FBSimulatorControl;
@@ -2315,6 +2354,7 @@
 				EE4F0D2C1C91B7DA00608E89 /* Frameworks */,
 				EE4F0D2D1C91B7DA00608E89 /* Headers */,
 				EE4F0D2E1C91B7DA00608E89 /* Resources */,
+				AA98ECAF1D0559F800916AED /* CopyFiles */,
 			);
 			buildRules = (
 			);
