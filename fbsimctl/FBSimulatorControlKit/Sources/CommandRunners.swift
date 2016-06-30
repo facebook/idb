@@ -52,13 +52,11 @@ struct iOSRunnerContext<A> {
 struct BaseCommandRunner : Runner {
   let reporter: EventReporter
   let command: Command
-  var defaults: Defaults?
-  var control: FBSimulatorControl?
 
   func run() -> CommandResult {
     do {
-      let defaults = try self.defaults ?? Defaults.create(self.command.configuration, logWriter: FileHandleWriter.stdOutWriter)
-      let simulatorControl = try self.control ?? defaults.configuration.buildSimulatorControl()
+      let defaults = try Defaults.create(self.command.configuration, logWriter: FileHandleWriter.stdOutWriter)
+      let simulatorControl = try defaults.configuration.buildSimulatorControl()
       let format = self.command.format ?? defaults.format
       let reporter = self.reporter
       let context = iOSRunnerContext(

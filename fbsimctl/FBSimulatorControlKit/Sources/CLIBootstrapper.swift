@@ -42,7 +42,7 @@ struct CLIRunner : Runner {
 
     switch self.cli {
     case .Run(let command):
-      return BaseCommandRunner(reporter: reporter, command: command, defaults: nil, control: nil).run()
+      return BaseCommandRunner(reporter: reporter, command: command).run()
     case .Show(let help):
       return HelpRunner(reporter: reporter, help: help).run()
     }
