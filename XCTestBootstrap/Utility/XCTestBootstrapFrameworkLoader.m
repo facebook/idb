@@ -35,20 +35,17 @@
 
 + (void)loadPrivateTestingFrameworksOrAbort
 {
-  [self loadFrameworksOrAbort:@[
+  NSArray<FBWeakFramework *> *frameworks = @[
     [FBWeakFramework DTXConnectionServices],
-    [FBWeakFramework XCTest],
-  ] groupName:@"Testing frameworks"];
-}
+    [FBWeakFramework XCTest]
+  ];
 
-+ (void)loadFrameworksOrAbort:(NSArray<FBWeakFramework *> *)frameworks groupName:(NSString *)groupName
-{
   NSError *error = nil;
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
   if ([FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:&error]) {
     return;
   }
-  [logger.error logFormat:@"Failed to load private %@ for XCTBoostrap with error %@", groupName, error];
+  [logger.error logFormat:@"Failed to load the xcode frameworks for XCTBoostrap with error %@", error];
   abort();
 }
 
