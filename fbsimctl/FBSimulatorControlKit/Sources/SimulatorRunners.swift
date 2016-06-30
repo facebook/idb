@@ -29,19 +29,16 @@ struct SimulatorActionRunner : Runner {
   let context: iOSRunnerContext<(Action, FBSimulator)>
 
   func run() -> CommandResult {
-    do {
-      let reporter = SimulatorReporter(simulator: self.context.value.1, format: self.context.format, reporter: self.context.reporter)
-      defer {
-        reporter.target.userEventSink = nil
-      }
-
-      return self.runner(reporter).run()
+    let reporter = SimulatorReporter(simulator: self.context.value.1, format: self.context.format, reporter: self.context.reporter)
+    defer {
+      reporter.target.userEventSink = nil
     }
+
+    return self.runner(reporter).run()
   }
 
   func runner(reporter: SimulatorReporter) -> Runner {
-    let simulator = reporter.target
-    let action = self.context.value.0
+    let (action, simulator) = self.context.value
 
     switch action {
     case .Approve(let bundleIDs):
