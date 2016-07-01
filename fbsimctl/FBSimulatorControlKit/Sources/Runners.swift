@@ -38,6 +38,27 @@ struct SequenceRunner : Runner {
 }
 
 /**
+ Wraps a CommandResult in a runner
+ */
+struct CommandResultRunner : Runner {
+  let result: CommandResult
+
+  func run() -> CommandResult {
+    return self.result
+  }
+
+  static var unimplemented: Runner { get {
+    return CommandResultRunner(result: CommandResult.Failure("Unimplemented"))
+  }}
+}
+
+extension CommandResult {
+  func asRunner() -> Runner {
+    return CommandResultRunner(result: self)
+  }
+}
+
+/**
  Wraps a Synchronous Relay in a Runner.
  */
 struct RelayRunner : Runner {
