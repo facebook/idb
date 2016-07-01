@@ -9,12 +9,18 @@
 
 import Foundation
 import FBSimulatorControl
+import FBDeviceControl
 
 extension Configuration {
   func buildSimulatorControl() throws -> FBSimulatorControl {
     let controlConfiguration = FBSimulatorControlConfiguration(deviceSetPath: self.deviceSetPath, options: self.managementOptions)
     let logger = FBControlCoreGlobalConfiguration.defaultLogger()
     return try FBSimulatorControl.withConfiguration(controlConfiguration, logger: logger)
+  }
+
+  func buildDeviceControl() throws -> FBDeviceSet {
+    let logger = FBControlCoreGlobalConfiguration.defaultLogger()
+    return try FBDeviceSet.defaultSetWithLogger(logger)
   }
 }
 
@@ -25,6 +31,7 @@ struct iOSRunnerContext<A> {
   let format: FBiOSTargetFormat
   let reporter: EventReporter
   let simulatorControl: FBSimulatorControl
+  let deviceControl: FBDeviceSet
 
   func map<B>(f: A -> B) -> iOSRunnerContext<B> {
     return iOSRunnerContext<B>(
@@ -33,7 +40,8 @@ struct iOSRunnerContext<A> {
       defaults: self.defaults,
       format: self.format,
       reporter: self.reporter,
-      simulatorControl: self.simulatorControl
+      simulatorControl: self.simulatorControl,
+      deviceControl: self.deviceControl
     )
   }
 
@@ -44,13 +52,16 @@ struct iOSRunnerContext<A> {
       defaults: self.defaults,
       format: self.format,
       reporter: self.reporter,
-      simulatorControl: self.simulatorControl
+      simulatorControl: self.simulatorControl,
+      deviceControl: self.deviceControl
     )
   }
 
   func query(query: FBiOSTargetQuery) -> [FBiOSTarget] {
+    let devices: [FBiOSTarget] = self.deviceControl.query(query)
     let simulators: [FBiOSTarget] = self.simulatorControl.set.query(query)
-    return simulators
+    let targets = devices + simulators
+    return targets
   }
 }
 
@@ -62,6 +73,7 @@ struct BaseCommandRunner : Runner {
     do {
       let defaults = try Defaults.create(self.command.configuration, logWriter: FileHandleWriter.stdOutWriter)
       let simulatorControl = try defaults.configuration.buildSimulatorControl()
+      let deviceControl = try defaults.configuration.buildDeviceControl()
       let format = self.command.format ?? defaults.format
       let reporter = self.reporter
       let context = iOSRunnerContext(
@@ -70,7 +82,8 @@ struct BaseCommandRunner : Runner {
         defaults: defaults,
         format: format,
         reporter: reporter,
-        simulatorControl: simulatorControl
+        simulatorControl: simulatorControl,
+        deviceControl: deviceControl
       )
       return CommandRunner(context: context).run()
     } catch DefaultsError.UnreadableRCFile(let string) {
@@ -125,13 +138,18 @@ struct ActionRunner : Runner {
       let context = self.context.replace(configuration)
       return SimulatorCreationRunner(context: context).run()
     default:
+      let action = action.appendEnvironment(NSProcessInfo.processInfo().environment)
       let targets = self.context.query(query)
       let runner = SequenceRunner(runners: targets.map { target in
         if let simulator = target as? FBSimulator {
           let context = self.context.replace((action, simulator))
           return SimulatorActionRunner(context: context)
         }
-        return CommandResult.Failure("\(target) is not a recognizable iOS Target").asRunner()
+        if let device = target as? FBDevice {
+          let context = self.context.replace((action, device))
+          return DeviceActionRunner(context: context)
+        }
+        return CommandResult.Failure("Unrecognizable Target \(target)").asRunner()
       })
       return runner.run()
     }
@@ -171,7 +189,8 @@ struct ServerRunner : Runner, CommandPerformer {
       defaults: self.context.defaults,
       format: self.context.format,
       reporter: reporter,
-      simulatorControl: self.context.simulatorControl
+      simulatorControl: self.context.simulatorControl,
+      deviceControl: self.context.deviceControl
     )
     return CommandRunner(context: context).run()
   }
