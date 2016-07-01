@@ -8,6 +8,7 @@
  */
 
 import Foundation
+import FBSimulatorControl
 
 struct SimulatorCreationRunner : Runner {
   let context: iOSRunnerContext<FBSimulatorConfiguration>
@@ -29,16 +30,21 @@ struct SimulatorActionRunner : Runner {
   let context: iOSRunnerContext<(Action, FBSimulator)>
 
   func run() -> CommandResult {
-    let reporter = SimulatorReporter(simulator: self.context.value.1, format: self.context.format, reporter: self.context.reporter)
+    let (action, simulator) = self.context.value
+    let reporter = SimulatorReporter(simulator: simulator, format: self.context.format, reporter: self.context.reporter)
     defer {
-      reporter.target.userEventSink = nil
+      simulator.userEventSink = nil
     }
-
-    return self.runner(reporter).run()
+    let context = self.context.replace((action, simulator, reporter))
+    return SimulatorActionRunner.makeRunner(context).run()
   }
 
-  func runner(reporter: SimulatorReporter) -> Runner {
-    let (action, simulator) = self.context.value
+  static func makeRunner(context: iOSRunnerContext<(Action, FBSimulator, SimulatorReporter)>) -> Runner {
+    let (action, simulator, reporter) = context.value
+    let covariantTuple: (Action, FBiOSTarget, iOSReporter) = (action, simulator, reporter)
+    if let runner = iOSActionProvider(context: context.replace(covariantTuple)).makeRunner() {
+      return runner
+    }
 
     switch action {
     case .Approve(let bundleIDs):
@@ -79,12 +85,6 @@ struct SimulatorActionRunner : Runner {
     case .LaunchXCTest(let launch, let bundlePath):
       return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in
         interaction.startTestRunnerLaunchConfiguration(launch, testBundlePath: bundlePath)
-      }
-    case .List:
-      let format = reporter.format
-      return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
-        let subject = iOSTargetSubject(target: simulator, format: format)
-        reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
       }
     case .ListApps:
       return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
@@ -151,7 +151,7 @@ private struct SimulatorInteractionRunner : Runner {
   }
 
   func run() -> CommandResult {
-    let simulator = self.reporter.target
+    let simulator = self.reporter.simulator
     let interaction = self.interaction
     let action = iOSTargetRunner(self.reporter, self.name, self.subject) {
       let interact = simulator.interact
@@ -187,7 +187,7 @@ private struct DiagnosticsRunner : Runner {
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {
-    let diagnostics = self.reporter.target.diagnostics
+    let diagnostics = self.reporter.simulator.diagnostics
     let format = self.format
 
     return query.perform(diagnostics).map { diagnostic in
@@ -213,7 +213,7 @@ private struct SearchRunner : Runner {
   }
 
   func run() -> CommandResult {
-    let simulator = self.reporter.target
+    let simulator = self.reporter.simulator
     let diagnostics = simulator.diagnostics.allDiagnostics()
     let results = search.search(diagnostics)
     self.reporter.report(EventName.Search, EventType.Discrete, ControlCoreSubject(results))
@@ -254,7 +254,7 @@ private struct UploadRunner : Runner {
       }
     }
 
-    guard let basePath: NSString = self.reporter.target.auxillaryDirectory else {
+    guard let basePath: NSString = self.reporter.simulator.auxillaryDirectory else {
         return CommandResult.Failure("Could not determine aux directory for simulator \(self.reporter.target) to path")
     }
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)

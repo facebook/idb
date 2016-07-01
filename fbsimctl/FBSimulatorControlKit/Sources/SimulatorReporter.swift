@@ -11,17 +11,21 @@ import Foundation
 import FBSimulatorControl
 
 public class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
-  unowned public let target: FBSimulator
+  unowned public let simulator: FBSimulator
   public let reporter: EventReporter
   public let format: FBiOSTargetFormat
 
   init(simulator: FBSimulator, format: FBiOSTargetFormat, reporter: EventReporter) {
-    self.target = simulator
+    self.simulator = simulator
     self.reporter = reporter
     self.format = format
     super.init()
     simulator.userEventSink = self
   }
+
+  public var target: FBiOSTarget { get {
+    return self.simulator
+  }}
 
   public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {
     self.reportValue(EventName.Launch, EventType.Discrete, applicationProcess)

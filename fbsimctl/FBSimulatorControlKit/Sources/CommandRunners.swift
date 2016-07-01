@@ -47,6 +47,11 @@ struct iOSRunnerContext<A> {
       simulatorControl: self.simulatorControl
     )
   }
+
+  func query(query: FBiOSTargetQuery) -> [FBiOSTarget] {
+    let simulators: [FBiOSTarget] = self.simulatorControl.set.query(query)
+    return simulators
+  }
 }
 
 struct BaseCommandRunner : Runner {
@@ -109,7 +114,7 @@ struct ActionRunner : Runner {
   let context: iOSRunnerContext<(Action, FBiOSTargetQuery)>
 
   func run() -> CommandResult {
-    let action = self.context.value.0
+    let action = self.context.value.0.appendEnvironment(NSProcessInfo.processInfo().environment)
     let query = self.context.value.1
 
     switch action {
@@ -120,22 +125,14 @@ struct ActionRunner : Runner {
       let context = self.context.replace(configuration)
       return SimulatorCreationRunner(context: context).run()
     default:
-      if self.context.simulatorControl.set.allSimulators.count == 0 {
-        self.context.reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Devices in Device Set")
-        return CommandResult.Success
-      }
-      let simulators = self.context.simulatorControl.set.query(query)
-      if simulators.count == 0 {
-        self.context.reporter.reportSimpleBridge(EventName.Query, EventType.Discrete, "No Matching Devices in Set")
-        return CommandResult.Success
-      }
-      let action = action.appendEnvironment(NSProcessInfo.processInfo().environment)
-      let runner = SequenceRunner(runners: simulators.map { simulator in
-        let context = self.context.replace((action, simulator))
-        return SimulatorActionRunner(context: context)
+      let targets = self.context.query(query)
+      let runner = SequenceRunner(runners: targets.map { target in
+        if let simulator = target as? FBSimulator {
+          let context = self.context.replace((action, simulator))
+          return SimulatorActionRunner(context: context)
+        }
+        return CommandResult.Failure("\(target) is not a recognizable iOS Target").asRunner()
       })
-
-      self.context.defaults.updateLastQuery(query)
       return runner.run()
     }
   }
