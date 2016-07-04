@@ -25,22 +25,27 @@ class IntegrationTests : XCTestCase {
       XCTFail("Could not create directory at \(set2)")
     }
 
-    self.assertCLIRunsSuccessfully(["--set", set1.path!, "all", "delete"])
-    self.assertCLIRunsSuccessfully(["--set", set2.path!, "all", "delete"])
-    self.assertCLIRunsSuccessfully(["--set", set1.path!, "create", "iPhone 5s"])
-    self.assertCLIRunsSuccessfully(["--set", set2.path!, "create", "iPad 2"])
-    self.assertCLIRunsSuccessfully(["--set", set1.path!, "iPhone 5s", "boot"])
-    self.assertCLIRunsSuccessfully(["--set", set2.path!, "iPad 2", "boot"])
-    self.assertCLIRunsSuccessfully(["--set", set1.path!, "all", "delete"])
+    self.assertCLIRunsSuccessfully(set1, ["delete"])
+    self.assertCLIRunsSuccessfully(set2, ["delete"])
+    self.assertCLIRunsSuccessfully(set1, ["create", "iPhone 5s"])
+    self.assertCLIRunsSuccessfully(set2, ["create", "iPad 2"])
+    self.assertCLIRunsSuccessfully(set1, ["iPhone 5s", "boot"])
+    self.assertCLIRunsSuccessfully(set2, ["iPad 2", "boot"])
+    self.assertCLIRunsSuccessfully(set1, ["delete"])
     XCTAssertEqual(
-      self.assertCLIRunsSuccessfully(["--set", set2.path!, "--device-name", "--state", "list"]),
+      self.assertCLIRunsSuccessfully(set2, ["--device-name", "--state", "list"]),
       ["iPad 2 | Booted"]
     )
-    self.assertCLIRunsSuccessfully(["--set", set2.path!, "all", "shutdown"])
+    self.assertCLIRunsSuccessfully(set2, ["shutdown"])
     XCTAssertEqual(
-      self.assertCLIRunsSuccessfully(["--set", set2.path!, "--device-name", "--state", "list"]),
+      self.assertCLIRunsSuccessfully(set2, ["--device-name", "--state", "list"]),
       ["iPad 2 | Shutdown"]
     )
-    self.assertCLIRunsSuccessfully(["--set", set2.path!, "all", "delete"])
+    self.assertCLIRunsSuccessfully(set2, ["delete"])
+  }
+
+  func assertCLIRunsSuccessfully(simulatorSet: NSURL, _ command: [String]) -> [String] {
+    let arguments = ["--set", simulatorSet.path!, "--simulators"] + command
+    return self.assertCLIRunsSuccessfully(arguments)
   }
 }
