@@ -24,6 +24,7 @@
 #import "FBSimulatorEraseStrategy.h"
 #import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
+#import "FBSimulatorControlFrameworkLoader.h"
 
 @implementation FBSimulatorSet
 
@@ -31,7 +32,7 @@
 
 + (void)initialize
 {
-  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
 }
 
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error

@@ -46,24 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 
-#pragma mark Framework Loading
-
-/**
- Loads all of the Frameworks upon which FBSimulatorControl depends.
- This method *must* be called before any class in FBSimulatorControl can be used.
- In order to do this automatically, set `FBSIMULATORCONTROL_AUTOMATICALLY_LOAD_FRAMEWORKS`.
-
- @param logger the Logger to log events to.
- @param error any error that occurred during performing the preconditions.
- @returns YES if FBSimulatorControl is usable, NO otherwise.
- */
-+ (BOOL)loadPrivateFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error;
-
-/**
- Calls +[FBSimulatorControl loadPrivateFrameworks:error], aborting in the event the Frameworks could not be loaded
- */
-+ (void)loadPrivateFrameworksOrAbort;
-
 #pragma mark Properties
 
 /**
