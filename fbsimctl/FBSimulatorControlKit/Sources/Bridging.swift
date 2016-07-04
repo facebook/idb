@@ -97,3 +97,19 @@ extension FBiOSTargetFormat : Accumulator {
     return self.appendFields(other.fields)
   }
 }
+
+extension CreationConfiguration {
+  public var simulatorConfiguration : FBSimulatorConfiguration { get {
+    var configuration = FBSimulatorConfiguration.defaultConfiguration()
+    if let device = self.deviceType {
+      configuration = configuration.withDevice(device)
+    }
+    if let os = self.osVersion {
+      configuration = configuration.withOS(os)
+    }
+    if let auxDirectory = self.auxDirectory {
+      configuration = configuration.withAuxillaryDirectory(auxDirectory)
+    }
+    return configuration
+  }}
+}

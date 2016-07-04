@@ -30,6 +30,15 @@ public enum Server {
 }
 
 /**
+ A Configuration for Creating a Simulator.
+ */
+public struct CreationConfiguration {
+  let osVersion: FBControlCoreConfiguration_OS?
+  let deviceType: FBControlCoreConfiguration_Device?
+  let auxDirectory : String?
+}
+
+/**
   An Enumeration specifying the output format of diagnostics.
 */
 public enum DiagnosticFormat : String {
@@ -45,7 +54,7 @@ public enum Action {
   case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
   case ClearKeychain(String)
-  case Create(FBSimulatorConfiguration)
+  case Create(CreationConfiguration)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Erase
@@ -120,6 +129,27 @@ extension Configuration : Accumulator {
   public static func ofDeviceSetPath(deviceSetPath: String) -> Configuration {
     let query = self.identity
     return Configuration(outputOptions: query.outputOptions, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: deviceSetPath)
+  }
+}
+
+extension CreationConfiguration : Equatable {}
+public func == (left: CreationConfiguration, right: CreationConfiguration) -> Bool {
+  return left.osVersion?.name == right.osVersion?.name &&
+         left.deviceType?.deviceName == right.deviceType?.deviceName &&
+         left.auxDirectory == right.auxDirectory
+}
+
+extension CreationConfiguration : Accumulator {
+  public init() {
+    self.init(osVersion: nil, deviceType: nil, auxDirectory: nil)
+  }
+
+  public func append(other: CreationConfiguration) -> CreationConfiguration {
+    return CreationConfiguration(
+      osVersion: other.osVersion ?? self.osVersion,
+      deviceType: other.deviceType ?? self.deviceType,
+      auxDirectory: other.auxDirectory ?? self.auxDirectory
+    )
   }
 }
 

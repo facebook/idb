@@ -199,6 +199,74 @@ extension Configuration : Parsable {
   }}
 }
 
+/**
+ A separate struct for FBSimulatorConfiguration is needed as Parsable protcol conformance cannot be
+ applied to FBSimulatorConfiguration as it is a non-final.
+ */
+extension CreationConfiguration : Parsable {
+  public static var parser: Parser<CreationConfiguration> { get {
+    return Parser<CreationConfiguration>.accumulate(0, [
+      self.deviceConfigurationParser,
+      self.osVersionConfigurationParser,
+      self.auxDirectoryConfigurationParser,
+    ])
+  }}
+
+  static var deviceParser: Parser<FBControlCoreConfiguration_Device> { get {
+    return Parser.single("A Device Name") { token in
+      let nameToDevice = FBControlCoreConfigurationVariants.nameToDevice()
+      guard let device = nameToDevice[token] else {
+        throw ParseError.Custom("\(token) is not a valid device name")
+      }
+      return device
+    }
+  }}
+
+  static var deviceConfigurationParser: Parser<CreationConfiguration> { get {
+    return self.deviceParser.fmap { device in
+      return CreationConfiguration(
+        osVersion: nil,
+        deviceType: device,
+        auxDirectory: nil
+      )
+    }
+  }}
+
+  static var osVersionParser: Parser<FBControlCoreConfiguration_OS> { get {
+    return Parser.single("An OS Version") { token in
+      let nameToOSVersion = FBControlCoreConfigurationVariants.nameToOSVersion()
+      guard let osVersion = nameToOSVersion[token] else {
+        throw ParseError.Custom("\(token) is not a valid device name")
+      }
+      return osVersion
+    }
+  }}
+
+  static var osVersionConfigurationParser: Parser<CreationConfiguration> { get {
+    return self.osVersionParser.fmap { osVersion in
+      return CreationConfiguration(
+        osVersion: osVersion,
+        deviceType: nil,
+        auxDirectory: nil
+      )
+    }
+  }}
+
+  static var auxDirectoryParser: Parser<String> { get {
+    return Parser.succeeded("--aux", Parser<Any>.ofDirectory)
+  }}
+
+  static var auxDirectoryConfigurationParser: Parser<CreationConfiguration> { get {
+    return self.auxDirectoryParser.fmap { auxDirectory in
+      return CreationConfiguration(
+        osVersion: nil,
+        deviceType: nil,
+        auxDirectory: auxDirectory
+      )
+    }
+  }}
+}
+
 extension FBSimulatorState : Parsable {
   public static var parser: Parser<FBSimulatorState> { get {
     return Parser.alternative([
@@ -284,7 +352,6 @@ extension Command : Parsable {
   }
 }
 
-
 extension Server : Parsable {
   public static var parser: Parser<Server> { get {
     return Parser
@@ -363,7 +430,7 @@ extension Action : Parsable {
 
   static var createParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Create.rawValue, FBSimulatorConfigurationParser.parser)
+      .succeeded(EventName.Create.rawValue, CreationConfiguration.parser)
       .fmap { configuration in
         return Action.Create(configuration)
       }
@@ -595,13 +662,13 @@ public struct FBiOSTargetQueryParsers {
   }}
 
   static var osVersionsParser: Parser<FBiOSTargetQuery> { get {
-    return FBSimulatorConfigurationParser
+    return CreationConfiguration
       .osVersionParser
       .fmap { FBiOSTargetQuery.osVersions([$0]) }
   }}
 
   static var deviceParser: Parser<FBiOSTargetQuery> { get {
-    return FBSimulatorConfigurationParser
+    return CreationConfiguration
       .deviceParser
       .fmap { FBiOSTargetQuery.devices([$0]) }
   }}
@@ -650,61 +717,6 @@ struct FBSimulatorDiagnosticQueryParser {
       .fmap { (bundleID, fileNames) in
         FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID(bundleID, withFilenames: fileNames)
       }
-  }}
-}
-
-/**
- A separate struct for FBSimulatorConfiguration is needed as Parsable protcol conformance cannot be
- applied to FBSimulatorConfiguration as it is a non-final.
- */
-struct FBSimulatorConfigurationParser {
-  internal static var parser: Parser<FBSimulatorConfiguration> { get {
-    return Parser
-      .ofThreeSequenced(
-        self.deviceParser.optional(),
-        self.osVersionParser.optional(),
-        self.auxDirectoryParser.optional()
-      )
-      .fmap { (device, os, auxDirectory) in
-        if device == nil && os == nil && auxDirectory == nil {
-          throw ParseError.Custom("Simulator Configuration must contain at least one of: Device Name, OS Version or Aux Directory")
-        }
-        var configuration = FBSimulatorConfiguration.defaultConfiguration()
-        if let device = device {
-          configuration = configuration.withDevice(device)
-        }
-        if let os = os {
-          configuration = configuration.withOS(os)
-        }
-        if let auxDirectory = auxDirectory {
-          configuration = configuration.withAuxillaryDirectory(auxDirectory)
-        }
-        return configuration
-      }
-  }}
-
-  static var deviceParser: Parser<FBControlCoreConfiguration_Device> { get {
-    return Parser.single("A Device Name") { token in
-      let nameToDevice = FBControlCoreConfigurationVariants.nameToDevice()
-      guard let device = nameToDevice[token] else {
-        throw ParseError.Custom("\(token) is not a valid device name")
-      }
-      return device
-    }
-  }}
-
-  static var osVersionParser: Parser<FBControlCoreConfiguration_OS> { get {
-    return Parser.single("An OS Version") { token in
-      let nameToOSVersion = FBControlCoreConfigurationVariants.nameToOSVersion()
-      guard let osVersion = nameToOSVersion[token] else {
-        throw ParseError.Custom("\(token) is not a valid device name")
-      }
-      return osVersion
-    }
-  }}
-
-  static var auxDirectoryParser: Parser<String> { get {
-    return Parser.succeeded("--aux", Parser<Any>.ofDirectory)
   }}
 }
 

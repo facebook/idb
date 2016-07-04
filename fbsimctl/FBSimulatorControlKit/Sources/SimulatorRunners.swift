@@ -11,12 +11,13 @@ import Foundation
 import FBSimulatorControl
 
 struct SimulatorCreationRunner : Runner {
-  let context: iOSRunnerContext<FBSimulatorConfiguration>
+  let context: iOSRunnerContext<CreationConfiguration>
 
   func run() -> CommandResult {
     do {
-      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Started, self.context.value)
-      let simulator = try self.context.simulatorControl.set.createSimulatorWithConfiguration(self.context.value)
+      let configuration = self.context.value.simulatorConfiguration
+      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Started, configuration)
+      let simulator = try self.context.simulatorControl.set.createSimulatorWithConfiguration(configuration)
       self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
       self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       return CommandResult.Success
