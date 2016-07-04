@@ -171,6 +171,14 @@
   return YES;
 }
 
+- (BOOL)hasFinishedExecution
+{
+  FBTestDaemonConnectionState state = self.state;
+  return (state == FBTestDaemonConnectionStateEndedTestPlan ||
+          state == FBTestDaemonConnectionStateFinishedSuccessfully ||
+          state == FBTestDaemonConnectionStateFinishedInError);
+}
+
 #pragma mark Private
 
 - (void)connect
@@ -195,9 +203,7 @@
   [connection registerDisconnectHandler:^{
     FBTestDaemonConnectionState state = self.state;
     [self.logger logFormat:@"Daemon Connection Disconnected in state '%@'", [FBTestDaemonConnection stringForDaemonConnectionState:state]];
-    if (state == FBTestDaemonConnectionStateEndedTestPlan ||
-        state == FBTestDaemonConnectionStateFinishedSuccessfully ||
-        state == FBTestDaemonConnectionStateFinishedInError) {
+    if (self.hasFinishedExecution) {
       return;
     }
     [self failWithError:[XCTestBootstrapError

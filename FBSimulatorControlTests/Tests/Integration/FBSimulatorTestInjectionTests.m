@@ -42,10 +42,10 @@
 - (void)testInjectsApplicationTestIntoSampleApp
 {
   FBSimulator *simulator = [self obtainBootedSimulator];
-  id<FBInteraction> interaction = [[simulator.interact
+  id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
-    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self];
-
+    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
   [self assertPassed:@[@"testIsRunningOnIOS"] failed:@[@"testIsRunningOnMacOSX", @"testIsSafari"]];
 
@@ -55,10 +55,10 @@
 {
   self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_8_1;
   FBSimulator *simulator = [self obtainBootedSimulator];
-  id<FBInteraction> interaction = [[simulator.interact
+  id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
-    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self];
-
+    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
   [self assertPassed:@[@"testIsRunningOnIOS"] failed:@[@"testIsRunningOnMacOSX", @"testIsSafari"]];
 }
@@ -66,8 +66,9 @@
 - (void)testInjectsApplicationTestIntoSafari
 {
   FBSimulator *simulator = [self obtainBootedSimulator];
-  id<FBInteraction> interaction = [simulator.interact
-    startTestRunnerLaunchConfiguration:self.safariAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self];
+  id<FBInteraction> interaction = [[simulator.interact
+    startTestRunnerLaunchConfiguration:self.safariAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
 
   [self assertInteractionSuccessful:interaction];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsSafari"] failed:@[@"testIsRunningOnMacOSX"]];
@@ -75,14 +76,8 @@
 
 - (void)assertPassed:(NSArray<NSString *> *)passed failed:(NSArray<NSString *> *)failed
 {
-  BOOL success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout untilTrue:^BOOL{
-    return [self.passedMethods isEqualToSet:[NSSet setWithArray:passed]];
-  }];
-  XCTAssertTrue(success);
-  success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    return [self.failedMethods isEqualToSet:[NSSet setWithArray:failed]];
-  }];
-  XCTAssertTrue(success);
+  XCTAssertEqualObjects(self.passedMethods, [NSSet setWithArray:passed]);
+  XCTAssertEqualObjects(self.failedMethods, [NSSet setWithArray:failed]);
 }
 
 #pragma mark FBTestManagerTestReporter

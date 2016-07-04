@@ -129,6 +129,16 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   self.daemonConnection = nil;
 }
 
+- (BOOL)waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:(NSTimeInterval)timeout
+{
+  return
+  [[[FBRunLoopSpinner new]
+    timeout:timeout]
+   spinUntilTrue:^BOOL{
+     return self.daemonConnection.hasFinishedExecution && self.bundleConnection.hasFinishedExecution;
+   }];
+}
+
 #pragma mark Reporting
 
 - (void)finishWithError:(NSError *)error didCancel:(BOOL)didCancel

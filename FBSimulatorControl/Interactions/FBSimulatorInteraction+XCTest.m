@@ -21,6 +21,7 @@
 #import "FBSimulatorControlOperator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorResourceManager.h"
 
 @implementation FBSimulatorInteraction (XCTest)
 
@@ -66,5 +67,20 @@
     return YES;
   }];
 }
+
+- (instancetype)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout
+{
+  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    for (FBTestManager *testManager in simulator.resourceSink.testManagers.copy) {
+      if (![testManager waitUntilTestingHasFinishedWithTimeout:timeout]) {
+        return [[FBSimulatorError
+                 describeFormat:@"Timeout waiting for test to finish"]
+                failBool:error];
+      }
+    }
+    return YES;
+  }];
+}
+
 
 @end
