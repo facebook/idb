@@ -18,6 +18,10 @@
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
+
 @implementation FBDevice
 
 @synthesize deviceOperator = _deviceOperator;
@@ -133,4 +137,16 @@
   return self.dvtDevice.supportedArchitectures.set;
 }
 
+#pragma mark Forwarding
+
+- (id)forwardingTargetForSelector:(SEL)selector
+{
+  if ([self.deviceOperator respondsToSelector:selector]) {
+    return self.deviceOperator;
+  }
+  return nil;
+}
+
 @end
+
+#pragma clang diagnostic pop

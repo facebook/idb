@@ -1607,8 +1607,8 @@
 		AAC8B22C1CEC51120034A865 /* FBDeviceControl */ = {
 			isa = PBXGroup;
 			children = (
-				AAC8B22F1CEC51120034A865 /* FBDeviceControl-Info.plist */,
 				AAC8B22D1CEC51120034A865 /* FBDeviceControl.h */,
+				AAC8B22F1CEC51120034A865 /* FBDeviceControl-Info.plist */,
 				AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */,
 				AAC8B2441CEC51520034A865 /* Management */,
 				AAC8B24C1CEC51520034A865 /* Utility */,

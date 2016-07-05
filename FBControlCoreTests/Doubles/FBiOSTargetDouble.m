@@ -35,4 +35,16 @@
   return [FBiOSTargetFormat.fullFormat extractFrom:self];
 }
 
+#pragma mark Protocol Inheritance
+
+- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
+{
+  return NO;
+}
+
+- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  return NO;
+}
+
 @end

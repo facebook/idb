@@ -257,6 +257,8 @@
   ];
 }
 
+#pragma mark Private
+
 + (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration
 {
   if (!configuration.auxillaryDirectory) {

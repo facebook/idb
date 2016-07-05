@@ -120,11 +120,4 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-/**
- Command Conformances.
- */
-@interface FBSimulator (Commands) <FBApplicationCommands>
-
-@end
-
 NS_ASSUME_NONNULL_END
