@@ -35,20 +35,6 @@ static id<FBControlCoreLogger> logger;
   return directory;
 }
 
-+ (NSString *)xcodeInfoPlistPath
-{
-  static dispatch_once_t onceToken;
-  static NSString *infoPlistPath;
-  dispatch_once(&onceToken, ^{
-    NSString *path = [[self.developerDirectory
-      stringByDeletingLastPathComponent]
-      stringByAppendingPathComponent:@"Info.plist"];
-    NSCAssert([NSFileManager.defaultManager fileExistsAtPath:path], @"Info.plist for Xcode does not exist at path '%@'", path);
-    infoPlistPath = path;
-  });
-  return infoPlistPath;
-}
-
 + (nullable NSString *)appleConfiguratorApplicationPath
 {
   static dispatch_once_t onceToken;
@@ -64,13 +50,24 @@ static id<FBControlCoreLogger> logger;
   static dispatch_once_t onceToken;
   static NSDecimalNumber *versionNumber;
   dispatch_once(&onceToken, ^{
-    NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:self.xcodeInfoPlistPath];
-    NSCAssert(infoPlist, @"Could not read Info.plist at '%@'", infoPlist);
-    NSString *versionNumberString = infoPlist[@"CFBundleShortVersionString"];
-    NSCAssert([versionNumberString isKindOfClass:NSString.class], @"Could not read Info.plist at '%@'", infoPlist);
+    NSString *versionNumberString = [FBControlCoreGlobalConfiguration
+      readValueForKey:@"CFBundleShortVersionString"
+      fromPlistAtPath:FBControlCoreGlobalConfiguration.xcodeInfoPlistPath];
     versionNumber = [NSDecimalNumber decimalNumberWithString:versionNumberString];
   });
   return versionNumber;
+}
+
++ (NSString *)iosSDKVersion
+{
+  static dispatch_once_t onceToken;
+  static NSString *sdkVersion;
+  dispatch_once(&onceToken, ^{
+    sdkVersion = [FBControlCoreGlobalConfiguration
+      readValueForKey:@"Version"
+      fromPlistAtPath:FBControlCoreGlobalConfiguration.iPhoneSimulatorPlatformInfoPlistPath];
+  });
+  return sdkVersion;
 }
 
 + (NSDecimalNumber *)iosSDKVersionNumber
@@ -89,41 +86,6 @@ static id<FBControlCoreLogger> logger;
     formatter.maximumFractionDigits = 3;
   });
   return formatter;
-}
-
-+ (NSString *)iosSDKVersion
-{
-  static dispatch_once_t onceToken;
-  static NSString *sdkVersion;
-  dispatch_once(&onceToken, ^{
-    NSString *showSdks= [[[FBTaskExecutor.sharedInstance
-      taskWithLaunchPath:@"/usr/bin/xcodebuild" arguments:@[@"-showsdks"]]
-      startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout]
-      stdOut];
-
-    NSString *pattern = @"iphonesimulator(.*)";
-    NSRegularExpression *regex = [NSRegularExpression
-      regularExpressionWithPattern:pattern
-      options:(NSRegularExpressionOptions) 0
-      error:nil];
-
-    NSArray *matches = [regex
-      matchesInString:showSdks
-      options:(NSMatchingOptions) 0
-      range:NSMakeRange(0, showSdks.length)];
-
-    // If xcode license is not accepted, no sdk is shown.
-    NSCAssert(matches.count >= 1, @"Could not find a match for the SDK version");
-
-    NSTextCheckingResult *match = [matches lastObject];
-    NSCAssert(
-      match.numberOfRanges == 2, @"We expect to have exactly 1 match. Text is %@",
-      [showSdks substringWithRange:match.range]
-    );
-
-    sdkVersion = [showSdks substringWithRange:[match rangeAtIndex:1]];
-  });
-  return sdkVersion;
 }
 
 + (NSTimeInterval)fastTimeout
@@ -181,6 +143,15 @@ static id<FBControlCoreLogger> logger;
   return [NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging] boolValue];
 }
 
++ (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath
+{
+  NSCAssert([NSFileManager.defaultManager fileExistsAtPath:plistPath], @"plist does not exist at path '%@'", plistPath);
+  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:plistPath];
+  NSCAssert(infoPlist, @"Could not read plist at '%@'", plistPath);
+  id value = infoPlist[key];
+  NSCAssert(value, @"'%@' does not exist in plist '%@'", key, infoPlist.allKeys);
+  return value;
+}
 
 #pragma mark Private
 
@@ -192,6 +163,20 @@ static id<FBControlCoreLogger> logger;
 + (BOOL)stderrLoggingEnabled
 {
   return [NSProcessInfo.processInfo.environment[FBControlCoreStderrLogging] boolValue] || self.debugLoggingEnabled;
+}
+
++ (NSString *)iPhoneSimulatorPlatformInfoPlistPath
+{
+  return [[self.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
+    stringByAppendingPathComponent:@"Info.plist"];
+}
+
++ (NSString *)xcodeInfoPlistPath
+{
+  return [[self.developerDirectory
+    stringByDeletingLastPathComponent]
+    stringByAppendingPathComponent:@"Info.plist"];
 }
 
 @end
