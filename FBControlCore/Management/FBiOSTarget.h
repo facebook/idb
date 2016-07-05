@@ -68,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
  */
-@property (nonatomic, assign, nullable, readonly) FBProcessInfo *launchdProcess;
+@property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;
 
 /**
  The Configuration of the iOS Target's Device.
