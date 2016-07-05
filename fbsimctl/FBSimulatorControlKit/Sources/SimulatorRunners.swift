@@ -71,10 +71,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
-    case .Install(let application):
-      return SimulatorInteractionRunner(reporter, EventName.Install, ControlCoreSubject(application)) { interaction in
-        interaction.installApplication(application)
-      }
     case .LaunchAgent(let launch):
       return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
         interaction.launchAgent(launch)

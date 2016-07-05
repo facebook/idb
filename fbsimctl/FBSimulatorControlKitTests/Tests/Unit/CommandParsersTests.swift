@@ -161,7 +161,7 @@ let validActions: [([String], Action)] = [
   (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
   (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["erase"], Action.Erase),
-  (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
+  (["install", Fixtures.application.path], Action.Install(Fixtures.application.path)),
   (["launch", "--stderr", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: .WriteStderr))),
   (["launch", "--stdout", "com.foo.bar", "--foo", "--", "--something-else"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:], options: .WriteStdout))),
   (["launch", "com.foo.bar"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
@@ -198,7 +198,6 @@ let invalidActions: [[String]] = [
   ["approve", "dontadddotstome"],
   ["approve"],
   ["ddshutdown"],
-  ["install", "/dev/null"],
   ["install"],
   ["listaa"],
 ]

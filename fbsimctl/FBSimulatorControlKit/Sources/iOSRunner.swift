@@ -24,6 +24,10 @@ struct iOSActionProvider {
         let subject = iOSTargetSubject(target: target, format: format)
         reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
       }
+    case .Install(let appPath):
+      return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
+        try target.installApplicationWithPath(appPath)
+      }
     default:
       return nil
     }
@@ -56,6 +60,8 @@ struct iOSTargetRunner : Runner {
       return .Failure(error.description)
     } catch let error as JSONError {
       return .Failure(error.description)
+    } catch {
+      return .Failure("Unknown Error")
     }
     return .Success
   }

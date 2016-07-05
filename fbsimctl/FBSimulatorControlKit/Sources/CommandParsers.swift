@@ -515,7 +515,7 @@ extension Action : Parsable {
 
   static var installParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Install.rawValue, Parser<Any>.ofApplication)
+      .succeeded(EventName.Install.rawValue, Parser<Any>.ofAny)
       .fmap { Action.Install($0) }
   }}
 

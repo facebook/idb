@@ -58,7 +58,7 @@ public enum Action {
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Erase
-  case Install(FBSimulatorApplication)
+  case Install(String)
   case LaunchAgent(FBAgentLaunchConfiguration)
   case LaunchApp(FBApplicationLaunchConfiguration)
   case LaunchXCTest(FBApplicationLaunchConfiguration, String)
