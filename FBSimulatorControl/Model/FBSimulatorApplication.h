@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Concrete value wrapper around a binary artifact.
  */
@@ -32,9 +34,9 @@
  @param name The name of the executable. May be nil.
  @param path The path to the executable. May be nil.
  @param architectures The supported architectures of the executable. Must not be nil.
- @returns a new FBSimulatorBinary instance, if all arguments are non-nil.
+ @returns a new FBSimulatorBinary instance, if all arguments are non-nil. Nil otherwise.
  */
-+ (instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures;
++ (nullable instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures;
 
 /**
  The Name of the Executable.
@@ -76,9 +78,9 @@
  @param path The Path to the Application Bundle. May be nil.
  @param bundleID the Bundle ID of the Application. May be nil.
  @param binary the Path to the binary inside the Application. May be nil.
- @returns a new FBSimulatorApplication instance, if all arguments are non-nil.
+ @returns a new FBSimulatorApplication instance, if all arguments are non-nil. Nil otherwise
  */
-+ (instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary;
++ (nullable instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary;
 
 /**
  The name of the Application. See CFBundleName.
@@ -114,7 +116,7 @@
  @param error an error out.
  @returns a FBSimulatorApplication instance if one could be constructed, nil otherwise.
  */
-+ (instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
 
 /**
  Returns the FBSimulatorApplication for the current version of Xcode's Simulator.app.
@@ -131,7 +133,7 @@
  @param error any error that occurred in fetching the application.
  @returns FBSimulatorApplication instance if one could for the given name could be found, nil otherwise.
  */
-+ (instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error;
++ (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error;
 
 @end
 
@@ -143,7 +145,7 @@
 /**
  Returns the FBSimulatorBinary for the given binary path
  */
-+ (instancetype)binaryWithPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)binaryWithPath:(NSString *)path error:(NSError **)error;
 
 /**
  Returns the launchctl for the current version of Xcode's of the Simulator Platform.
@@ -154,3 +156,5 @@
 + (instancetype)launchCtl;
 
 @end
+
+NS_ASSUME_NONNULL_END

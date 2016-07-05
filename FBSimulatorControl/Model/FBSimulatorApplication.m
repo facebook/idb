@@ -31,7 +31,7 @@
   return self;
 }
 
-+ (instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures
++ (nullable instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures
 {
   if (!name || !path || !architectures) {
     return nil;
@@ -101,9 +101,9 @@
     FBSimulatorBinary *binary = [FBSimulatorBinary binaryWithPath:path error:&innerError];
     if (!binary) {
         return [[[FBSimulatorError
-                  describeFormat:@"Could not create binary from path %@", path]
-                 causedBy:innerError]
-                fail:error];
+          describeFormat:@"Could not create binary from path %@", path]
+          causedBy:innerError]
+          fail:error];
     }
     return binary;
 }
@@ -165,7 +165,7 @@
   return self;
 }
 
-+ (instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary
++ (nullable instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBSimulatorBinary *)binary
 {
   if (!name || !path || !bundleID || !binary) {
     return nil;
@@ -268,7 +268,7 @@
 
 @implementation FBSimulatorApplication (Helpers)
 
-+ (instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
 {
   NSMutableDictionary *applicationCache = self.applicationCache;
   FBSimulatorApplication *application = applicationCache[path];
@@ -285,7 +285,7 @@
   return application;
 }
 
-+ (instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
++ (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
 {
   return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] error:error];
 }
@@ -421,7 +421,7 @@
 
 @implementation FBSimulatorBinary (Helpers)
 
-+ (instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
++ (nullable instancetype)binaryWithPath:(NSString *)binaryPath error:(NSError **)error;
 {
   NSError *innerError = nil;
   if (![NSFileManager.defaultManager fileExistsAtPath:binaryPath]) {
