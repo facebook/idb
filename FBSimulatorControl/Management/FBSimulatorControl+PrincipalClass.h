@@ -46,6 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 
+
 #pragma mark Properties
 
 /**

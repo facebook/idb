@@ -19,8 +19,12 @@ extension Configuration {
     return try FBSimulatorControl.withConfiguration(controlConfiguration, logger: logger)
   }
 
-  func buildDeviceControl() throws -> FBDeviceSet {
+  func buildDeviceControl() throws -> FBDeviceSet? {
+    if case .Some = self.deviceSetPath {
+      return nil
+    }
     let logger = FBControlCoreGlobalConfiguration.defaultLogger()
+    try FBDeviceControlFrameworkLoader.loadEssentialFrameworks(logger)
     return try FBDeviceSet.defaultSetWithLogger(logger)
   }
 }
@@ -32,7 +36,7 @@ struct iOSRunnerContext<A> {
   let format: FBiOSTargetFormat
   let reporter: EventReporter
   let simulatorControl: FBSimulatorControl
-  let deviceControl: FBDeviceSet
+  let deviceControl: FBDeviceSet?
 
   func map<B>(f: A -> B) -> iOSRunnerContext<B> {
     return iOSRunnerContext<B>(
@@ -59,7 +63,7 @@ struct iOSRunnerContext<A> {
   }
 
   func query(query: FBiOSTargetQuery) -> [FBiOSTarget] {
-    let devices: [FBiOSTarget] = self.deviceControl.query(query)
+    let devices: [FBiOSTarget] = self.deviceControl?.query(query) ?? []
     let simulators: [FBiOSTarget] = self.simulatorControl.set.query(query)
     let targets = devices + simulators
     return targets

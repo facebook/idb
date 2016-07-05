@@ -20,6 +20,10 @@
 
 @implementation FBDeviceControlFrameworkLoader
 
+#pragma mark - Public
+
+#pragma mark Essential Frameworks
+
 + (void)initializeEssentialFrameworks
 {
   static dispatch_once_t onceToken;
@@ -27,6 +31,29 @@
     [self loadEssentialFrameworksOrAbort];
   });
 }
+
++ (void)loadEssentialFrameworksOrAbort
+{
+  NSError *error = nil;
+  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+  BOOL success = [self loadEssentialFrameworks:logger error:&error];
+  if (success) {
+    return;
+  }
+
+  [logger.error logFormat:@"Failed to load the essential frameworks for FBDeviceControl with error %@", error];
+  abort();
+}
+
++ (BOOL)loadEssentialFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  NSArray<FBWeakFramework *> *frameworks = @[
+    FBWeakFramework.MobileDevice,
+  ];
+  return [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
+}
+
+#pragma mark Xcode Frameworks
 
 + (void)initializeXCodeFrameworks
 {
@@ -36,25 +63,6 @@
     [self confirmExistenceOfClasses];
     [self initializePrincipalClasses];
   });
-}
-
-#pragma mark Private
-
-+ (void)loadEssentialFrameworksOrAbort
-{
-  NSArray<FBWeakFramework *> *frameworks = @[
-    FBWeakFramework.MobileDevice,
-  ];
-
-  NSError *error = nil;
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  BOOL success = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:&error];
-  if (success) {
-    return;
-  }
-
-  [logger.error logFormat:@"Failed to load the essential frameworks for FBDeviceControl with error %@", error];
-  abort();
 }
 
 + (void)loadXcodeFrameworksOrAbort

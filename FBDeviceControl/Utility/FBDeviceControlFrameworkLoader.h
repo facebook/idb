@@ -9,18 +9,33 @@
 
 #import <Foundation/Foundation.h>
 
+@protocol FBControlCoreLogger;
+
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Loads Frameworks that FBDeviceControl depends on.
  */
 @interface FBDeviceControlFrameworkLoader : NSObject
 
 /**
- Loads the Relevant Private Frameworks for ensuring the essential operation of FBDeviceControl.
+ Loads the Private Frameworks that are essential for the basic operation of FBDeviceControl.
+ Aborts if the loading fails.
  */
 + (void)initializeEssentialFrameworks;
 
 /**
  Loads the Relevant Private Frameworks for ensuring the essential operation of FBDeviceControl.
+
+ @param logger the logger to log to for Framework Loading activity.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
++ (BOOL)loadEssentialFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+/**
+ Loads the Private Frameworks that are necessary for the interaction of XCTest Targets with FBDeviceControl
+ Aborts if the loading fails.
  */
 + (void)initializeXCodeFrameworks;
 
@@ -30,3 +45,5 @@
 + (void)enableDVTDebugLogging;
 
 @end
+
+NS_ASSUME_NONNULL_END
