@@ -14,9 +14,9 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBiOSDeviceOperator.h"
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
-#import "FBiOSDeviceOperator+Private.h"
 
 @implementation FBDevice
 
@@ -113,7 +113,7 @@
 - (id<FBDeviceOperator>)deviceOperator
 {
   if (_deviceOperator == nil) {
-    _deviceOperator = [[FBiOSDeviceOperator alloc] initWithiOSDevice:self.dvtDevice];
+    _deviceOperator = [FBiOSDeviceOperator forDevice:self];
   }
   return _deviceOperator;
 }

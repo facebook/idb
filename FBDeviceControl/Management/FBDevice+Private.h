@@ -15,7 +15,6 @@
 
 @interface FBDevice ()
 
-@property (nonatomic, strong, readonly) DVTiOSDevice *dvtDevice;
 @property (nonatomic, strong, readonly) FBAMDevice *amDevice;
 
 - (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;

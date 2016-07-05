@@ -26,7 +26,6 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBDeviceControlFrameworkLoader.h"
-#import "FBiOSDeviceOperator+Private.h"
 #import "FBDevice+Private.h"
 #import "FBAMDevice.h"
 
