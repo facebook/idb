@@ -20,33 +20,27 @@ struct SimpleSubject : JSONDescribeable, CustomStringConvertible {
     self.subject = subject
   }
 
-  var jsonDescription: JSON {
-    get {
-      return JSON.JDictionary([
-        "event_name" : JSON.JString(self.eventName.rawValue),
-        "event_type" : JSON.JString(self.eventType.rawValue),
-        "subject" : self.subject.jsonDescription,
-        "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
-      ])
-    }
-  }
+  var jsonDescription: JSON { get {
+    return JSON.JDictionary([
+      "event_name" : JSON.JString(self.eventName.rawValue),
+      "event_type" : JSON.JString(self.eventType.rawValue),
+      "subject" : self.subject.jsonDescription,
+      "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
+    ])
+  }}
 
-  var shortDescription: String {
-    get {
-      switch self.eventType {
-      case .Discrete:
-        return self.subject.description
-      default:
-        return "\(self.eventName) \(self.eventType): \(self.subject.description)"
-      }
+  var shortDescription: String { get {
+    switch self.eventType {
+    case .Discrete:
+      return self.subject.description
+    default:
+      return "\(self.eventName) \(self.eventType): \(self.subject.description)"
     }
-  }
+  }}
 
-  var description: String {
-    get {
+  var description: String { get {
       return self.shortDescription
-    }
-  }
+  }}
 }
 
 struct ControlCoreSubject : JSONDescribeable, CustomStringConvertible {
@@ -56,20 +50,16 @@ struct ControlCoreSubject : JSONDescribeable, CustomStringConvertible {
     self.value = value
   }
 
-  var jsonDescription: JSON {
-    get {
-      guard let json = try? JSON.encode(self.value.jsonSerializableRepresentation()) else {
-        return JSON.JNull
-      }
-      return json
+  var jsonDescription: JSON { get {
+    guard let json = try? JSON.encode(self.value.jsonSerializableRepresentation()) else {
+      return JSON.JNull
     }
-  }
+    return json
+  }}
 
-  var description: String {
-    get {
-      return self.value.description
-    }
-  }
+  var description: String { get {
+    return self.value.description
+  }}
 }
 
 struct iOSTargetSubject: JSONDescribeable, CustomStringConvertible {
@@ -101,62 +91,52 @@ struct iOSTargetWithSubject : JSONDescribeable, CustomStringConvertible {
     self.timestamp = NSDate()
   }
 
-  var jsonDescription: JSON {
-    get {
-      return JSON.JDictionary([
-        "event_name" : JSON.JString(self.eventName.rawValue),
-        "event_type" : JSON.JString(self.eventType.rawValue),
-        "target" : self.targetSubject.jsonDescription,
-        "subject" : self.subject.jsonDescription,
-        "timestamp" : JSON.JNumber(NSNumber(double: round(self.timestamp.timeIntervalSince1970))),
-      ])
-    }
-  }
+  var jsonDescription: JSON { get {
+    return JSON.JDictionary([
+      "event_name" : JSON.JString(self.eventName.rawValue),
+      "event_type" : JSON.JString(self.eventType.rawValue),
+      "target" : self.targetSubject.jsonDescription,
+      "subject" : self.subject.jsonDescription,
+      "timestamp" : JSON.JNumber(NSNumber(double: round(self.timestamp.timeIntervalSince1970))),
+    ])
+  }}
 
-  var description: String {
-    get {
-      switch self.eventType {
-      case .Discrete:
-        return "\(self.targetSubject): \(self.eventName.rawValue): \(self.subject.description)"
-      default:
-        return ""
-      }
+  var description: String { get {
+    switch self.eventType {
+    case .Discrete:
+      return "\(self.targetSubject): \(self.eventName.rawValue): \(self.subject.description)"
+    default:
+      return ""
     }
-  }
+  }}
 }
 
 struct LogSubject : JSONDescribeable, CustomStringConvertible {
   let logString: String
   let level: Int32
 
-  var jsonDescription: JSON {
-    get {
-      return JSON.JDictionary([
-        "event_name" : JSON.JString(EventName.Log.rawValue),
-        "event_type" : JSON.JString(EventType.Discrete.rawValue),
-        "level" : JSON.JString(self.levelString),
-        "subject" : JSON.JString(self.logString),
-        "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
-      ])
-    }
-  }
+  var jsonDescription: JSON { get {
+    return JSON.JDictionary([
+      "event_name" : JSON.JString(EventName.Log.rawValue),
+      "event_type" : JSON.JString(EventType.Discrete.rawValue),
+      "level" : JSON.JString(self.levelString),
+      "subject" : JSON.JString(self.logString),
+      "timestamp" : JSON.JNumber(NSNumber(double: round(NSDate().timeIntervalSince1970))),
+    ])
+  }}
 
-  var description: String {
-    get {
-      return self.logString
-    }
-  }
+  var description: String { get {
+    return self.logString
+  }}
 
-  var levelString: String {
-    get {
-      switch self.level {
-      case Constants.asl_level_debug(): return "debug"
-      case Constants.asl_level_err(): return "error"
-      case Constants.asl_level_info(): return "info"
-      default: return "unknown"
-      }
+  var levelString: String { get {
+    switch self.level {
+    case Constants.asl_level_debug(): return "debug"
+    case Constants.asl_level_err(): return "error"
+    case Constants.asl_level_info(): return "info"
+    default: return "unknown"
     }
-  }
+  }}
 }
 
 struct ArraySubject<A where A : JSONDescribeable, A : CustomStringConvertible> : JSONDescribeable, CustomStringConvertible {

@@ -18,11 +18,9 @@ private class HttpEventReporter : EventReporter, JSONDescribeable {
     self.events.append(subject)
   }
 
-  var jsonDescription: JSON {
-    get {
-      return JSON.JArray(self.events.map { $0.jsonDescription })
-    }
-  }
+  var jsonDescription: JSON { get {
+    return JSON.JArray(self.events.map { $0.jsonDescription })
+  }}
 
   static func errorResponse(errorMessage: String?) -> HttpResponse {
     let json = JSON.JDictionary([

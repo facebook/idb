@@ -11,11 +11,9 @@ import Foundation
 import FBSimulatorControl
 
 extension FBSimulatorState {
-  public var description: String {
-    get {
-      return FBSimulator.stateStringFromSimulatorState(self)
-    }
-  }
+  public var description: String { get {
+    return FBSimulator.stateStringFromSimulatorState(self)
+  }}
 }
 
 public typealias ControlCoreValue = protocol<FBJSONSerializable, CustomStringConvertible>

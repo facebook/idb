@@ -13,14 +13,12 @@ import FBSimulatorControl
 public enum DefaultsError : ErrorType, CustomStringConvertible {
   case UnreadableRCFile(String)
 
-  public var description: String {
-    get {
-      switch self {
-      case .UnreadableRCFile(let underlyingError):
-        return "Unreadable RC File " + underlyingError
-      }
+  public var description: String { get {
+    switch self {
+    case .UnreadableRCFile(let underlyingError):
+      return "Unreadable RC File " + underlyingError
     }
-  }
+  }}
 }
 
 public protocol Defaultable {

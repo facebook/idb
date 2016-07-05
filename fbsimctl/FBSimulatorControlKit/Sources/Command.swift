@@ -224,34 +224,30 @@ public func == (left: Server, right: Server) -> Bool {
 }
 
 extension Server : JSONDescribeable, CustomStringConvertible {
-  public var jsonDescription: JSON {
-    get {
-      switch self {
-      case .StdIO:
-        return JSON.JDictionary([
-          "type" : JSON.JString("stdio")
-        ])
-      case .Socket(let port):
-        return JSON.JDictionary([
-          "type" : JSON.JString("socket"),
-          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
-        ])
-      case .Http(let port):
-        return JSON.JDictionary([
-          "type" : JSON.JString("http"),
-          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
-        ])
-      }
+  public var jsonDescription: JSON { get {
+    switch self {
+    case .StdIO:
+      return JSON.JDictionary([
+        "type" : JSON.JString("stdio")
+      ])
+    case .Socket(let port):
+      return JSON.JDictionary([
+        "type" : JSON.JString("socket"),
+        "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+      ])
+    case .Http(let port):
+      return JSON.JDictionary([
+        "type" : JSON.JString("http"),
+        "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+      ])
     }
-  }
+  }}
 
-  public var description: String {
-    get {
-      switch self {
-      case .StdIO: return "stdio"
-      case .Socket(let port): return "Socket: Port \(port)"
-      case .Http(let port): return "HTTP: Port \(port)"
-      }
+  public var description: String { get {
+    switch self {
+    case .StdIO: return "stdio"
+    case .Socket(let port): return "Socket: Port \(port)"
+    case .Http(let port): return "HTTP: Port \(port)"
     }
-  }
+  }}
 }

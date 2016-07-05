@@ -72,18 +72,14 @@ public enum CommandResult {
 }
 
 extension CommandResult : CustomStringConvertible, CustomDebugStringConvertible {
-  public var description: String {
-    get {
-      switch self {
-      case .Success: return "Success"
-      case .Failure(let string): return "Failure '\(string)'"
-      }
+  public var description: String { get {
+    switch self {
+    case .Success: return "Success"
+    case .Failure(let string): return "Failure '\(string)'"
     }
-  }
+  }}
 
-  public var debugDescription: String {
-    get {
-      return self.description
-    }
-  }
+  public var debugDescription: String { get {
+    return self.description
+  }}
 }

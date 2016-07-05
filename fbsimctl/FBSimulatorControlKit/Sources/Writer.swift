@@ -37,15 +37,11 @@ public class FileHandleWriter : Writer {
     self.fileHandle.writeData(data)
   }
 
-  public static var stdOutWriter: FileHandleWriter {
-    get {
-      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput())
-    }
-  }
+  public static var stdOutWriter: FileHandleWriter { get {
+    return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput())
+  }}
 
-  public static var stdErrWriter: FileHandleWriter {
-    get {
-      return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
-    }
-  }
+  public static var stdErrWriter: FileHandleWriter { get {
+    return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
+  }}
 }
