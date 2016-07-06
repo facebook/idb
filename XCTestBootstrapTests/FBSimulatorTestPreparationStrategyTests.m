@@ -73,10 +73,12 @@
   [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/heaven" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
 
+  NSError *error;
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builderWithFileManager:fileManagerMock]
     withBundlePath:@"/app"]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
 
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
   [[[deviceOperatorMock expect] andReturn:productBundle] applicationBundleWithBundleID:@"bundleId" error:[OCMArg anyObjectRef]];

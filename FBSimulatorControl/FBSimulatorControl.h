@@ -8,11 +8,12 @@
  */
 
 #import <FBSimulatorControl/FBAddVideoPolyfill.h>
+#import <FBSimulatorControl/FBAgentLaunchStrategy.h>
+#import <FBSimulatorControl/FBApplicationLaunchStrategy.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
 #import <FBSimulatorControl/FBCoreSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBDispatchSourceNotifier.h>
-#import <FBSimulatorControl/FBAgentLaunchStrategy.h>
 #import <FBSimulatorControl/FBFramebuffer.h>
 #import <FBSimulatorControl/FBFramebufferCompositeDelegate.h>
 #import <FBSimulatorControl/FBFramebufferDebugWindow.h>
@@ -21,13 +22,12 @@
 #import <FBSimulatorControl/FBFramebufferVideoConfiguration.h>
 #import <FBSimulatorControl/FBInteraction.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
+#import <FBSimulatorControl/FBProcessFetcher+Simulators.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Private.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
-#import <FBSimulatorControl/FBProcessFetcher+Simulators.h>
 #import <FBSimulatorControl/FBProcessTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimDeviceWrapper.h>
-#import <FBSimulatorControl/FBSimulator+Commands.h>
 #import <FBSimulatorControl/FBSimulator+Helpers.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
@@ -36,14 +36,11 @@
 #import <FBSimulatorControl/FBSimulatorBootStrategy.h>
 #import <FBSimulatorControl/FBSimulatorBridge.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration+CoreSimulator.h>
-#import <FBSimulatorControl/FBSimulatorConfiguration+Private.h>
 #import <FBSimulatorControl/FBSimulatorConfiguration.h>
-#import <FBSimulatorControl/FBSimulatorConfigurationVariants.h>
 #import <FBSimulatorControl/FBSimulatorConnectStrategy.h>
 #import <FBSimulatorControl/FBSimulatorControl+PrincipalClass.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBSimulatorControl/FBSimulatorControlConfiguration.h>
-#import <FBSimulatorControl/FBApplicationLaunchStrategy.h>
 #import <FBSimulatorControl/FBSimulatorControlOperator.h>
 #import <FBSimulatorControl/FBSimulatorDiagnosticQuery.h>
 #import <FBSimulatorControl/FBSimulatorDiagnostics.h>
@@ -74,7 +71,6 @@
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
-#import <FBSimulatorControl/FBSimulatorQuery.h>
 #import <FBSimulatorControl/FBSimulatorResourceManager.h>
 #import <FBSimulatorControl/FBSimulatorSet+Private.h>
 #import <FBSimulatorControl/FBSimulatorSet.h>

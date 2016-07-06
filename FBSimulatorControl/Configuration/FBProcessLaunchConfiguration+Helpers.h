@@ -9,21 +9,36 @@
 
 #import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
 
+@class FBLocalizationOverride;
 @class FBSimulator;
 
+NS_ASSUME_NONNULL_BEGIN
+
+/**
+ Helpers for Application & Agent Launches.
+ */
 @interface FBProcessLaunchConfiguration (Helpers)
 
 /**
  Adds Environment to the Launch Configuration
 
  @param environmentAdditions the Environment to Add. Must be an NSDictionary<NSString *, NSString*>>
+ @return a new Launch Configuration with the Environment Applied.
  */
-- (instancetype)withEnvironmentAdditions:(NSDictionary *)environmentAdditions;
+- (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environmentAdditions;
+
+/**
+ Appends Arguments to the Launch Configuration
+
+ @param arguments the arguments to append.
+ @return a new Launch Configuration with the Arguments Applied.
+ */
+- (instancetype)withAdditionalArguments:(NSArray<NSString *> *)arguments;
 
 /**
  Adds Diagnostic Environment information to the reciever's environment configuration.
 
- @return a new Process Launch Configuration with the diagnostic environment applied.
+ @return a new Launch Configuration with the Diagnostic Environment Applied.
  */
 - (instancetype)withDiagnosticEnvironment;
 
@@ -46,7 +61,7 @@
  @param stdErr the stderr to use, may be nil.
  @return a Dictionary if successful, nil otherwise.
  */
-- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
+- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
 
 /**
  A Name used to distinguish between Launch Configurations.
@@ -54,3 +69,19 @@
 - (NSString *)identifiableName;
 
 @end
+
+/**
+ Helpers for Application Launches.
+ */
+@interface FBApplicationLaunchConfiguration (Helpers)
+
+/**
+ Overrides the launch of the Application with a given localization.
+
+ @param localizationOverride the Localization Override to Apply.s
+ */
+- (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
+
+@end
+
+NS_ASSUME_NONNULL_END

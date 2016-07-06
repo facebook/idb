@@ -17,7 +17,7 @@
 
 @interface FBSimulatorApplicationCommands ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, weak, readonly) FBSimulator *simulator;
 
 @end
 

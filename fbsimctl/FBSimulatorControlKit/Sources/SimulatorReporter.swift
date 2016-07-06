@@ -10,17 +10,17 @@
 import Foundation
 import FBSimulatorControl
 
-public class SimulatorReporter : NSObject, FBSimulatorEventSink {
-  unowned let simulator: FBSimulator
-  let reporter: EventReporter
-  let format: Format
+public class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
+  unowned public let target: FBSimulator
+  public let reporter: EventReporter
+  public let format: FBiOSTargetFormat
 
-  init(simulator: FBSimulator, format: Format, reporter: EventReporter) {
-    self.simulator = simulator
+  init(simulator: FBSimulator, format: FBiOSTargetFormat, reporter: EventReporter) {
+    self.target = simulator
     self.reporter = reporter
     self.format = format
     super.init()
-    self.simulator.userEventSink = self
+    simulator.userEventSink = self
   }
 
   public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo!) {
@@ -47,12 +47,12 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink {
 
   }
 
-  public func simulatorDidLaunch(launchdSimProcess: FBProcessInfo!) {
-    self.reportValue(EventName.Launch, EventType.Discrete, launchdSimProcess)
+  public func simulatorDidLaunch(launchdProcess: FBProcessInfo!) {
+    self.reportValue(EventName.Launch, EventType.Discrete, launchdProcess)
   }
 
-  public func simulatorDidTerminate(launchdSimProcess: FBProcessInfo!, expected: Bool) {
-    self.reportValue(EventName.Terminate, EventType.Discrete, launchdSimProcess)
+  public func simulatorDidTerminate(launchdProcess: FBProcessInfo!, expected: Bool) {
+    self.reportValue(EventName.Terminate, EventType.Discrete, launchdProcess)
   }
 
   public func agentDidLaunch(launchConfig: FBAgentLaunchConfiguration!, didStart agentProcess: FBProcessInfo!, stdOut: NSFileHandle!, stdErr: NSFileHandle!) {
@@ -82,21 +82,4 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink {
   public func terminationHandleAvailable(terminationHandle: FBTerminationHandleProtocol!) {
 
   }
-}
-
-extension SimulatorReporter {
-  public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
-    let simulatorSubject = SimulatorSubject(simulator: self.simulator, format: self.format)
-    self.reporter.report(SimulatorWithSubject(
-      simulatorSubject: simulatorSubject,
-      eventName: eventName,
-      eventType: eventType,
-      subject: subject
-    ))
-  }
-
-  public func reportValue(eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
-    self.report(eventName, eventType, ControlCoreSubject(value))
-  }
-
 }

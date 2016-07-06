@@ -24,6 +24,7 @@
 @property (nonatomic, strong, readonly) FBMutableSimulatorEventSink *mutableSink;
 @property (nonatomic, strong, readonly) FBSimulatorResourceManager *resourceSink;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, copy, readonly) NSArray *commandResponders;
 
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
 @property (nonatomic, weak, readwrite) FBSimulatorPool *pool;

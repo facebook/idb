@@ -40,6 +40,11 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)ConfigurationUtilityKit;
 + (instancetype)ConfigurationProfile;
 
+/**
+ System Private Frameworks
+ */
++ (instancetype)MobileDevice;
+
 @end
 
 NS_ASSUME_NONNULL_END

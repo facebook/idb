@@ -32,7 +32,7 @@
     @"--args",
     @"-CurrentDeviceUDID", simulator.udid,
     @"-ConnectHardwareKeyboard", @"0",
-    [self lastScaleCommandLineSwitchForSimulator:simulator], self.scaleString
+//    [self lastScaleCommandLineSwitchForSimulator:simulator], self.scaleString
   ]];
   NSString *setPath = simulator.set.deviceSet.setPath;
   if (setPath) {

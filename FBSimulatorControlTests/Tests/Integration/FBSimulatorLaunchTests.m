@@ -119,7 +119,7 @@
     [self assertSimulatorBooted:simulator];
   }
 
-  XCTAssertEqual([NSSet setWithArray:[simulators valueForKeyPath:@"launchdSimProcess.processIdentifier"]].count, 3u);
+  XCTAssertEqual([NSSet setWithArray:[simulators valueForKeyPath:@"launchdProcess.processIdentifier"]].count, 3u);
 
   for (FBSimulator *simulator in simulators) {
     [self assertShutdownSimulatorAndTerminateSession:simulator];

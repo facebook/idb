@@ -62,17 +62,17 @@
   }
 }
 
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink simulatorDidLaunch:launchdSimProcess];
+    [sink simulatorDidLaunch:launchdProcess];
   }
 }
 
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink simulatorDidTerminate:launchdSimProcess expected:expected];
+    [sink simulatorDidTerminate:launchdProcess expected:expected];
   }
 }
 

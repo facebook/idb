@@ -60,16 +60,16 @@
 /**
  Event for the launch of a Simulator's launchd_sim.
 
- @param launchdSimProcess the launchd_sim process
+ @param launchdProcess the launchd_sim process
  */
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess;
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess;
 
 /**
  Event for the termination of a Simulator's launchd_sim.
 
- @param launchdSimProcess the launchd_sim process
+ @param launchdProcess the launchd_sim process
  */
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected;
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected;
 
 /**
  Event for the launch of an Agent.

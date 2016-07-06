@@ -34,15 +34,16 @@
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:expectedTestConfigPath options:0 error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Deep/Deep/Darkness" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
-  [[[fileManagerMock stub] andReturn:nil] dictionaryWithPath:[OCMArg any]];
+  [[[fileManagerMock stub] andReturn:@{}] dictionaryWithPath:[OCMArg any]];
 
+  NSError *error;
   FBTestBundle *testBundle =
   [[[[[FBTestBundleBuilder builderWithFileManager:fileManagerMock]
       withBundlePath:bundle.bundlePath]
      withWorkingDirectory:@"/Deep/Deep/Darkness"]
     withSessionIdentifier:sessionIdentifier]
-   build];
-
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertTrue([testBundle isKindOfClass:FBTestBundle.class]);
   XCTAssertNotNil(testBundle.configuration);
   XCTAssertEqualObjects(testBundle.configuration.sessionIdentifier, sessionIdentifier);
@@ -55,16 +56,18 @@
 
 - (void)testNoBundlePath
 {
-  XCTAssertThrows([[FBTestBundleBuilder builder] build]);
+  XCTAssertThrows([[FBTestBundleBuilder builder] buildWithError:nil]);
 }
 
 - (void)testBundleWithoutSessionIdentifier
 {
+  NSError *error;
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
   FBTestBundle *testBundle =
   [[[FBTestBundleBuilder builder]
     withBundlePath:bundle.bundlePath]
-   build];
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertTrue([testBundle isKindOfClass:FBTestBundle.class]);
   XCTAssertNil(testBundle.configuration);
 }

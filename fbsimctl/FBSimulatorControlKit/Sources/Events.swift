@@ -42,6 +42,7 @@ public enum EventName : String {
   case Terminate = "terminate"
   case Uninstall = "uninstall"
   case Upload = "upload"
+  case WatchdogOverride = "watchdog_override"
 }
 
 public enum EventType : String {

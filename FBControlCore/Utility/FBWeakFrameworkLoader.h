@@ -20,6 +20,7 @@
 /**
  Loads a list of Frameworks.
  Will avoid re-loading already loaded Frameworks.
+ Will also completely bypass loading of user plugins to prevent compatability issues.
 
  @param weakFrameworks a list of frameworks to load
  @param logger a logger for logging framework loading activities.

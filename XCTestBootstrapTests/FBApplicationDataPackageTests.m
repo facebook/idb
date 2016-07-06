@@ -35,6 +35,7 @@
   [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:[OCMArg any] withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[fileManagerMock stub] andReturnValue:@YES] copyItemAtPath:[OCMArg any] toPath:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:[OCMArg any] options:YES error:[OCMArg anyObjectRef]];
+  [[[fileManagerMock stub] andReturn:@{}] dictionaryWithPath:[OCMArg any]];
 
   id testConfigurationMock = [OCMockObject mockForClass:FBTestConfiguration.class];
   [[[testConfigurationMock stub] andReturn:[self.class sessionIdentifier]] sessionIdentifier];
@@ -44,15 +45,18 @@
   [[[testBundleMock stub] andReturn:@"Magic"] name];
   [[[testBundleMock stub] andReturn:@"Magic.xctest"] filename];
   [[[testBundleMock stub] andReturn:testConfigurationMock] configuration];
-
-  return
+  NSError *error;
+  FBApplicationDataPackage *dataPackage =
   [[[[[[[FBApplicationDataPackageBuilder builderWithFileManager:fileManagerMock]
         withTestBundle:testBundleMock]
        withWorkingDirectory:@"/Middle/of/nowhere"]
       withDeviceDataDirectory:@"/device/somewhere"]
      withPlatformDirectory:@"/platform/ibuddy"]
     withCodesignProvider:codesigner]
-   build];
+   buildWithError:&error];
+  XCTAssertNotNil(dataPackage);
+  XCTAssertNil(error);
+  return dataPackage;
 }
 
 - (void)testDataPackageCreation
@@ -67,7 +71,7 @@
 
   [[[[fileManagerMock stub] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp" withIntermediateDirectories:YES attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
-  [[[fileManagerMock stub] andReturn:nil] dictionaryWithPath:[OCMArg any]];
+  [[[fileManagerMock stub] andReturn:@{}] dictionaryWithPath:[OCMArg any]];
 
   id testConfigurationMock = [OCMockObject mockForClass:FBTestConfiguration.class];
   [[[testConfigurationMock stub] andReturn:[self.class sessionIdentifier]] sessionIdentifier];
@@ -78,14 +82,15 @@
   [[[testBundleMock stub] andReturn:@"Magic.xctest"] filename];
   [[[testBundleMock stub] andReturn:testConfigurationMock] configuration];
 
+  NSError *error;
   FBApplicationDataPackage *package =
   [[[[[[FBApplicationDataPackageBuilder builderWithFileManager:fileManagerMock]
        withTestBundle:testBundleMock]
       withWorkingDirectory:@"/Middle/of/nowhere"]
      withDeviceDataDirectory:@"/device/somewhere"]
     withPlatformDirectory:@"/platform/ibuddy"]
-   build];
-
+   buildWithError:&error];
+  XCTAssertNil(error);
   XCTAssertNotNil(package.testConfiguration);
   XCTAssertNotNil(package.testBundle);
   XCTAssertNotNil(package.XCTestFramework);
@@ -133,9 +138,9 @@
 - (void)testCodesigning
 {
   OCMockObject<FBCodesignProvider> *codesignerMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
-  [[codesignerMock expect] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest"];
-  [[codesignerMock expect] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/XCTest.framework"];
-  [[codesignerMock expect] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/IDEBundleInjection.framework"];
+  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/Magic.xctest"];
+  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/XCTest.framework"];
+  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:@"/Middle/of/nowhere/Magic.xcappdata/AppData/tmp/IDEBundleInjection.framework"];
   [self buildSilentPackageWithCodeSigner:codesignerMock];
   [codesignerMock verify];
 }

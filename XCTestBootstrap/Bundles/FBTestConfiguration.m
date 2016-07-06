@@ -71,11 +71,10 @@
   return self;
 }
 
-- (FBTestConfiguration *)build
+- (FBTestConfiguration *)buildWithError:(NSError **)error
 {
   if (self.savePath) {
     NSAssert(self.fileManager, @"fileManager is required to save test configuration");
-    NSError *error;
     XCTestConfiguration *testConfiguration = [NSClassFromString(@"XCTestConfiguration") new];
     testConfiguration.sessionIdentifier = self.sessionIdentifier;
     testConfiguration.testBundleURL = (self.testBundlePath ? [NSURL fileURLWithPath:self.testBundlePath] : nil);
@@ -84,7 +83,7 @@
     testConfiguration.reportResultsToIDE = YES;
     testConfiguration.pathToXcodeReportingSocket = nil;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
-    if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:&error]) {
+    if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:error]) {
       return nil;
     }
   }

@@ -8,16 +8,30 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <FBControlCore/FBControlCore.h>
 
+@class FBDeviceSet;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
-
 @protocol FBDeviceOperator;
+@protocol FBControlCoreLogger;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  Class that wraps DVTAbstractiOSDevice and it's device operator that can perform actions on it.
  */
-@interface FBDevice : NSObject
+@interface FBDevice : NSObject <FBiOSTarget>
+
+/**
+ The Device Set to which the Device Belongs.
+ */
+@property (nonatomic, weak, readonly) FBDeviceSet *set;
+
+/**
+ The Logger to Log events with.
+ */
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
  Device operator used to control device
@@ -40,21 +54,18 @@
 @property (nonatomic, copy, readonly) NSString *systemVersion;
 
 /**
+<<<<<<< HEAD
  Unique Device IDentifier
  */
 @property (nonatomic, copy, readonly) NSString *UDID;
 
 /**
+=======
+>>>>>>> facebook/master
  Architectures suported by device
  */
 @property (nonatomic, copy, readonly) NSSet *supportedArchitectures;
 
-/**
- Convenience constructor
-
- @param deviceOperator device operator used to operate device
- @return instance of FBDevice.
- */
-+ (instancetype)deviceWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator;
-
 @end
+
+NS_ASSUME_NONNULL_END

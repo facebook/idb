@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBSimulatorControl/FBSimulatorConfiguration+Private.h>
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration.h>
 
 @protocol FBSimulatorLaunchConfiguration_Scale <NSObject>
@@ -16,16 +15,16 @@
 
 @end
 
-@interface FBSimulatorLaunchConfiguration_Scale_25 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
+@interface FBSimulatorLaunchConfiguration_Scale_25 : FBControlCoreConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
 @end
 
-@interface FBSimulatorLaunchConfiguration_Scale_50 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
+@interface FBSimulatorLaunchConfiguration_Scale_50 : FBControlCoreConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
 @end
 
-@interface FBSimulatorLaunchConfiguration_Scale_75 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
+@interface FBSimulatorLaunchConfiguration_Scale_75 : FBControlCoreConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
 @end
 
-@interface FBSimulatorLaunchConfiguration_Scale_100 : FBSimulatorConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
+@interface FBSimulatorLaunchConfiguration_Scale_100 : FBControlCoreConfigurationVariant_Base <FBSimulatorLaunchConfiguration_Scale>
 @end
 
 @interface FBSimulatorLaunchConfiguration ()

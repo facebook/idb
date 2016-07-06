@@ -70,7 +70,7 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
 
 - (NSUInteger)hash
 {
-  return self.arguments.hash ^ self.environment.hash & self.options;
+  return self.arguments.hash ^ (self.environment.hash & self.options);
 }
 
 - (BOOL)isEqual:(FBProcessLaunchConfiguration *)object

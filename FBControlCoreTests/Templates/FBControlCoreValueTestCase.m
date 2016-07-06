@@ -34,7 +34,15 @@
 - (void)assertJSONSerialization:(NSArray *)values
 {
   for (id value in values) {
-    [self assertStringKeysJSONValues:[value jsonSerializableRepresentation]];
+    id json = [value jsonSerializableRepresentation];
+    if ([json isKindOfClass:NSDictionary.class]) {
+      [self assertStringKeysJSONValues:json];
+      return;
+    } else if ([json isKindOfClass:NSArray.class]) {
+      [self assertJSONValues:json];
+      return;
+    }
+    XCTFail(@"%@ is not a container", json);
   }
 }
 

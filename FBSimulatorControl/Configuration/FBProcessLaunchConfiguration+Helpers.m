@@ -16,13 +16,20 @@
 
 @implementation FBProcessLaunchConfiguration (Helpers)
 
-- (instancetype)withEnvironmentAdditions:(NSDictionary *)environmentAdditions
+- (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environmentAdditions
 {
   NSMutableDictionary *environment = [[self environment] mutableCopy];
   [environment addEntriesFromDictionary:environmentAdditions];
 
   FBProcessLaunchConfiguration *configuration = [self copy];
   configuration.environment = [environment copy];
+  return configuration;
+}
+
+- (instancetype)withAdditionalArguments:(NSArray<NSString *> *)arguments
+{
+  FBProcessLaunchConfiguration *configuration = [self copy];
+  configuration.arguments = [self.arguments arrayByAddingObjectsFromArray:arguments];
   return configuration;
 }
 
@@ -105,6 +112,11 @@
 @end
 
 @implementation FBApplicationLaunchConfiguration (Helpers)
+
+- (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride
+{
+  return [self withAdditionalArguments:localizationOverride.arguments];
+}
 
 - (NSString *)identifiableName
 {

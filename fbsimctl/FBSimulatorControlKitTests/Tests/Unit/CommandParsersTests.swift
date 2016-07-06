@@ -11,15 +11,15 @@ import XCTest
 import FBSimulatorControl
 @testable import FBSimulatorControlKit
 
-class KeywordParserTests : XCTestCase {
+class FBiOSTargetFormatParserTests : XCTestCase {
   func testParsesKeywords() {
-    self.assertParsesAll(Keyword.parser, [
-      (["--udid"], Keyword.UDID),
-      (["--name"], Keyword.Name),
-      (["--device-name"], Keyword.DeviceName),
-      (["--os"], Keyword.OSVersion),
-      (["--state"], Keyword.State),
-      (["--pid"], Keyword.ProcessIdentifier)
+    self.assertParsesAll(FBiOSTargetFormatParsers.parser, [
+      (["--udid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatUDID])),
+      (["--name"], FBiOSTargetFormat(fields: [FBiOSTargetFormatName])),
+      (["--device-name"], FBiOSTargetFormat(fields: [FBiOSTargetFormatDeviceName])),
+      (["--os"], FBiOSTargetFormat(fields: [FBiOSTargetFormatOSVersion])),
+      (["--state"], FBiOSTargetFormat(fields: [FBiOSTargetFormatState])),
+      (["--pid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatProcessIdentifier]))
     ])
   }
 }
@@ -54,8 +54,8 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
   func testParsesOSAlone() {
     self.assertParses(
       FBSimulatorConfigurationParser.parser,
-      ["iOS 9.2"],
-      FBSimulatorConfiguration.defaultConfiguration().iOS_9_2()
+      ["iOS 9.3"],
+      FBSimulatorConfiguration.defaultConfiguration().iOS_9_3()
     )
   }
 
@@ -77,7 +77,7 @@ class FBSimulatorConfigurationParserTests : XCTestCase {
 
   func parsesOSAndDevice(){
     self.assertParsesAll(FBSimulatorConfigurationParser.parser, [
-      (["iPhone 6", "iOS 9.2"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2()),
+      (["iPhone 6", "iOS 9.3"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_3()),
       (["iPad 2", "iOS 9.0"], FBSimulatorConfiguration.defaultConfiguration().iPad2().iOS_9_0()),
     ])
   }
@@ -88,7 +88,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
       ["--locale", "fr_FR"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("fr_FR")
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "fr_FR")))
     )
   }
 
@@ -112,7 +112,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
       ["--locale", "en_GB", "--scale=75", "--direct-launch","--record-video"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocaleNamed("en_GB").scale75Percent().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_GB"))).scale75Percent().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
     )
   }
 }
@@ -127,22 +127,25 @@ let validConfigurations: [([String], Configuration)] = [
   (["--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.DeleteAllOnFirstStart.union(.KillSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin"))
 ]
 
-let validQueries: [([String], FBSimulatorQuery)] = [
-  (["all"], FBSimulatorQuery.allSimulators()),
-  (["iPhone 5"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPhone5()])),
-  (["iPad 2"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPad2()])),
-  (["iOS 9.0", "iOS 9.1"], FBSimulatorQuery.osVersions([FBSimulatorConfiguration_iOS_9_0(), FBSimulatorConfiguration_iOS_9_1()])),
-  (["--state=creating"], FBSimulatorQuery.simulatorStates([.Creating])),
-  (["--state=shutdown"], FBSimulatorQuery.simulatorStates([.Shutdown])),
-  (["--state=booted"], FBSimulatorQuery.simulatorStates([.Booted])),
-  (["--state=booting"], FBSimulatorQuery.simulatorStates([.Booting])),
-  (["--state=shutting-down"], FBSimulatorQuery.simulatorStates([.ShuttingDown])),
-  (["--first", "2", "iPhone 6"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPhone6()]).ofCount(2)),
-  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
-  (["iPhone 5", "iPad 2"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPhone5(), FBSimulatorConfiguration_Device_iPad2()])),
-  (["--state=creating", "--state=booting", "--state=shutdown"], FBSimulatorQuery.simulatorStates([.Creating, .Booting, .Shutdown])),
-  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
-  (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPhone6()]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
+let validQueries: [([String], FBiOSTargetQuery)] = [
+  (["all"], FBiOSTargetQuery.allTargets()),
+  (["iPhone 5"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5()])),
+  (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()])),
+  (["iOS 9.0", "iOS 9.1"], FBiOSTargetQuery.osVersions([FBControlCoreConfiguration_iOS_9_0(), FBControlCoreConfiguration_iOS_9_1()])),
+  (["--state=creating"], FBiOSTargetQuery.simulatorStates([.Creating])),
+  (["--state=shutdown"], FBiOSTargetQuery.simulatorStates([.Shutdown])),
+  (["--state=booted"], FBiOSTargetQuery.simulatorStates([.Booted])),
+  (["--state=booting"], FBiOSTargetQuery.simulatorStates([.Booting])),
+  (["--state=shutting-down"], FBiOSTargetQuery.simulatorStates([.ShuttingDown])),
+  (["--simulators"], FBiOSTargetQuery.targetType(FBiOSTargetType.Simulator)),
+  (["--devices"], FBiOSTargetQuery.targetType(FBiOSTargetType.Device)),
+  (["--simulators", "--devices", "iPhone 6s"], FBiOSTargetQuery.targetType(FBiOSTargetType.Simulator.union(FBiOSTargetType.Device)).devices([FBControlCoreConfiguration_Device_iPhone6S()])),
+  (["--first", "2", "iPhone 6"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).ofCount(2)),
+  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
+  (["iPhone 5", "iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPad2()])),
+  (["--state=creating", "--state=booting", "--state=shutdown"], FBiOSTargetQuery.simulatorStates([.Creating, .Booting, .Shutdown])),
+  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
+  (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
 ]
 
 let invalidQueries: [[String]] = [
@@ -158,14 +161,14 @@ let invalidQueries: [[String]] = [
 let validActions: [([String], Action)] = [
   (["approve", "com.foo.bar", "com.bing.bong"], Action.Approve(["com.foo.bar", "com.bing.bong"])),
   (["approve", Fixtures.application.path], Action.Approve([Fixtures.application.bundleID])),
-  (["boot", "--locale", "en_US", "--scale=75"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "en_US")).scale75Percent())),
-  (["boot", "--locale", "fr_FR"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocale(NSLocale(localeIdentifier: "fr_FR")))),
+  (["boot", "--locale", "en_US", "--scale=75"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_US"))).scale75Percent())),
+  (["boot", "--locale", "fr_FR"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "fr_FR"))))),
   (["boot", "--scale=50"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale50Percent())),
   (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale25Percent().withOptions(FBSimulatorLaunchOptions.ConnectBridge.union(FBSimulatorLaunchOptions.UseNSWorkspace)))),
   (["boot"], Action.Boot(nil)),
   (["clear_keychain", "com.foo.bar"], Action.ClearKeychain("com.foo.bar")),
-  (["create", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_2())),
-  (["create", "iPhone 6", "iOS 9.2"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_2())),
+  (["create", "iOS 9.3"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_3())),
+  (["create", "iPhone 6", "iOS 9.3"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_3())),
   (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
   (["delete"], Action.Delete),
   (["diagnose", "--content", "--crashes-since", "200", "--system"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.System, since: NSDate(timeIntervalSince1970: 200)), DiagnosticFormat.Content)),
@@ -204,6 +207,7 @@ let validActions: [([String], Action)] = [
   (["terminate", "com.foo.bar"], Action.Terminate("com.foo.bar")),
   (["uninstall", "com.foo.bar"], Action.Uninstall("com.foo.bar")),
   (["upload", Fixtures.photoPath, Fixtures.videoPath], Action.Upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic])),
+  (["watchdog_override", "60", "com.foo.bar", "com.bar.baz"], Action.WatchdogOverride(["com.foo.bar", "com.bar.baz"], 60)),
 ]
 
 let invalidActions: [[String]] = [
@@ -225,11 +229,11 @@ class ConfigurationParserTests : XCTestCase {
 
 class QueryParserTests : XCTestCase {
   func testParsesValidQueries() {
-    self.assertParsesAll(FBSimulatorQueryParsers.parser, validQueries)
+    self.assertParsesAll(FBiOSTargetQueryParsers.parser, validQueries)
   }
 
   func testParsesInvalidQueries() {
-    self.assertFailsToParseAll(FBSimulatorQueryParsers.parser, invalidQueries)
+    self.assertFailsToParseAll(FBiOSTargetQueryParsers.parser, invalidQueries)
   }
 }
 
@@ -280,16 +284,16 @@ class CommandParserTests : XCTestCase {
   func assertWithDefaultActions(actions: [Action], suffix: [String]) {
     return self.unzipAndAssert(actions, suffix: suffix, extras: [
       ([], nil, nil),
-      (["all"], FBSimulatorQuery.allSimulators(), nil),
-      (["iPad 2"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPad2()]), nil),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
-      (["iPhone 5", "--state=shutdown", "iPhone 6"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPhone5(), FBSimulatorConfiguration_Device_iPhone6()]).simulatorStates([.Shutdown]), nil),
-      (["iPad 2", "--device-name", "--os"], FBSimulatorQuery.devices([FBSimulatorConfiguration_Device_iPad2()]), [.DeviceName, .OSVersion]),
-      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBSimulatorQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
+      (["all"], FBiOSTargetQuery.allTargets(), nil),
+      (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), nil),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
+      (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPhone6()]).simulatorStates([.Shutdown]), nil),
+      (["iPad 2", "--device-name", "--os"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()]), FBiOSTargetFormat(fields: [FBiOSTargetFormatDeviceName, FBiOSTargetFormatOSVersion])),
+      (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }
 
-  func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], FBSimulatorQuery?, Format?)]) {
+  func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], FBiOSTargetQuery?, FBiOSTargetFormat?)]) {
     let pairs = extras.map { (tokens, query, format) in
       return (tokens + suffix, Command.Perform(Configuration.defaultValue, actions, query, format))
     }

@@ -33,12 +33,14 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorPredicates.h"
+#import "FBSimulatorSet.h"
 
 @interface FBSimulatorTerminationStrategy ()
 
+@property (nonatomic, weak, readonly) FBSimulatorSet *set;
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
 @end
@@ -47,13 +49,13 @@
 
 #pragma mark Initialization
 
-+ (instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:processFetcher logger:logger];
-  return [[self alloc] initWithConfiguration:configuration processFetcher:processFetcher processTerminationStrategy:processTerminationStrategy logger:logger];
+  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:set.processFetcher logger:set.logger];
+  return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher processTerminationStrategy:processTerminationStrategy logger:set.logger];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(processFetcher);
   NSParameterAssert(configuration);
@@ -64,6 +66,7 @@
     return nil;
   }
 
+  _set = set;
   _configuration = configuration;
   _processFetcher = processFetcher;
   _logger = logger;
@@ -74,8 +77,18 @@
 
 #pragma mark Public Methods
 
-- (NSArray *)killSimulators:(NSArray *)simulators error:(NSError **)error
+- (nullable NSArray<FBSimulator *> *)killSimulators:(NSArray<FBSimulator *> *)simulators error:(NSError **)error;
 {
+  // Confirm that the Simulators belong to the set
+  for (FBSimulator *simulator in simulators) {
+    if (simulator.set != self.set) {
+      return [[[FBSimulatorError
+        describeFormat:@"Simulator's set %@ is not %@, cannot delete", simulator.set, self]
+        inSimulator:simulator]
+        fail:error];
+    }
+  }
+
   // It looks like there is a bug with El Capitan, where terminating multiple Applications quickly
   // can result in the dock getting into an inconsistent state displaying icons for terminated Applications.
   //
@@ -94,7 +107,7 @@
   for (FBSimulator *simulator in simulators) {
     // Get some preconditions
     NSError *innerError = nil;
-    FBProcessInfo *launchdSimProcess = simulator.launchdSimProcess ?: [self.processFetcher launchdSimProcessForSimDevice:simulator.device];
+    FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
 
     // The Bridge should also be tidied up if one exists.
     FBSimulatorBridge *bridge = simulator.bridge;
@@ -147,8 +160,8 @@
         logger:self.logger]
         fail:error];
     }
-    if (launchdSimProcess) {
-      [simulator.eventSink simulatorDidTerminate:launchdSimProcess expected:YES];
+    if (launchdProcess) {
+      [simulator.eventSink simulatorDidTerminate:launchdProcess expected:YES];
     }
   }
   return simulators;

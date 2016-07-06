@@ -32,7 +32,7 @@
 /**
  The current Simulator Launch Info.
  */
-@property (nonatomic, copy, readonly) FBProcessInfo *launchdSimProcess;
+@property (nonatomic, copy, readonly) FBProcessInfo *launchdProcess;
 
 /**
  The current Container Application

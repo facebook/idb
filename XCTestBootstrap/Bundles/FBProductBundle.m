@@ -13,6 +13,7 @@
 #import "FBCodesignProvider.h"
 #import "FBFileManager.h"
 #import "NSFileManager+FBFileManager.h"
+#import "XCTestBootstrapError.h"
 
 @interface FBProductBundle ()
 @property (nonatomic, copy) NSString *name;
@@ -89,35 +90,37 @@
   return self;
 }
 
-- (FBProductBundle *)build
+- (FBProductBundle *)buildWithError:(NSError **)error
 {
   NSAssert(self.bundlePath, @"bundlePath is required to load product bundle");
-
   NSString *targetBundlePath = self.bundlePath;
   if (self.workingDirectory) {
     NSAssert(self.fileManager, @"fileManager is required to copy product bundle");
-    NSError *error;
     NSString *bundleName = self.bundlePath.lastPathComponent;
 
     if (![self.fileManager fileExistsAtPath:self.workingDirectory]) {
-      if(![self.fileManager createDirectoryAtPath:self.workingDirectory withIntermediateDirectories:YES attributes:nil error:&error]){
+      if(![self.fileManager createDirectoryAtPath:self.workingDirectory withIntermediateDirectories:YES attributes:nil error:error]){
         return nil;
       }
     }
 
     targetBundlePath = [self.workingDirectory stringByAppendingPathComponent:bundleName];
     if ([self.fileManager fileExistsAtPath:targetBundlePath]) {
-      [self.fileManager removeItemAtPath:targetBundlePath error:&error];
+      if(![self.fileManager removeItemAtPath:targetBundlePath error:error]) {
+        return nil;
+      }
     }
     if(![self.fileManager copyItemAtPath:self.bundlePath
                                   toPath:targetBundlePath
-                                   error:&error]) {
+                                   error:error]) {
       return nil;
     }
   }
 
   if (self.codesignProvider && ![self.codesignProvider signBundleAtPath:targetBundlePath]) {
-    return nil;
+    return
+    [[XCTestBootstrapError describeFormat:@"Failed to codesign %@", targetBundlePath]
+     fail:error];
   }
 
     NSString *plistPath = [self.bundlePath stringByAppendingPathComponent:@"Info.plist"];
@@ -127,6 +130,11 @@
       NSLog(@"Couldn't find Info.plist at %@, checking %@", self.bundlePath, plistPath);
     infoPlist = [self.fileManager dictionaryWithPath:plistPath];
       NSLog(@"No Info.plist found");
+  }
+  if (!infoPlist) {
+    return
+    [[XCTestBootstrapError describeFormat:@"Failed to read Info.plist for bundle: %@", self.bundlePath]
+     fail:error];
   }
   FBProductBundle *bundleProduct = [self.productClass new];
   bundleProduct.path = targetBundlePath;

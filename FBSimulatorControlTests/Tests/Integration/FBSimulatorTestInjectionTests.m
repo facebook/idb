@@ -51,6 +51,18 @@
 
 }
 
+- (void)testInjectsApplicationTestIntoSampleAppOnIOS81Simulator
+{
+  self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_8_1;
+  FBSimulator *simulator = [self obtainBootedSimulator];
+  id<FBInteraction> interaction = [[simulator.interact
+    installApplication:self.tableSearchApplication]
+    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self];
+
+  [self assertInteractionSuccessful:interaction];
+  [self assertPassed:@[@"testIsRunningOnIOS"] failed:@[@"testIsRunningOnMacOSX", @"testIsSafari"]];
+}
+
 - (void)testInjectsApplicationTestIntoSafari
 {
   FBSimulator *simulator = [self obtainBootedSimulator];

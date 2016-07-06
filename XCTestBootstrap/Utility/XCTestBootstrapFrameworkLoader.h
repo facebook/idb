@@ -20,8 +20,8 @@
 + (void)initializeTestingEnvironment;
 
 /**
- Raises the Log Level to debug for relevant Private Frameworks.
+ Raises the Log Level to debug for DVT relevant Private Frameworks.
  */
-+ (void)enableDebugLogging;
++ (void)enableDVTDebugLogging;
 
 @end

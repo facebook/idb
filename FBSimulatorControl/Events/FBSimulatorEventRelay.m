@@ -22,7 +22,7 @@
 
 @interface FBSimulatorEventRelay ()
 
-@property (nonatomic, copy, readwrite) FBProcessInfo *launchdSimProcess;
+@property (nonatomic, copy, readwrite) FBProcessInfo *launchdProcess;
 @property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
 @property (nonatomic, strong, readwrite) FBSimulatorBridge *bridge;
 
@@ -55,7 +55,7 @@
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
 
-  _launchdSimProcess = [processFetcher launchdSimProcessForSimDevice:simDevice];
+  _launchdProcess = [processFetcher launchdProcessForSimDevice:simDevice];
   _containerApplication = [processFetcher simulatorApplicationProcessForSimDevice:simDevice];
 
   [self registerSimulatorLifecycleHandlers];
@@ -114,28 +114,28 @@
   [self.sink bridgeDidDisconnect:bridge expected:expected];
 }
 
-- (void)simulatorDidLaunch:(FBProcessInfo *)launchdSimProcess
+- (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
-  NSParameterAssert(launchdSimProcess);
+  NSParameterAssert(launchdProcess);
 
   // De-duplicate known-launched launchd_sims.
-  if (self.launchdSimProcess) {
+  if (self.launchdProcess) {
     return;
   }
-  self.launchdSimProcess = launchdSimProcess;
-  [self.sink simulatorDidLaunch:launchdSimProcess];
+  self.launchdProcess = launchdProcess;
+  [self.sink simulatorDidLaunch:launchdProcess];
 }
 
-- (void)simulatorDidTerminate:(FBProcessInfo *)launchdSimProcess expected:(BOOL)expected
+- (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
-  NSParameterAssert(launchdSimProcess);
+  NSParameterAssert(launchdProcess);
 
   // De-duplicate known-terminated launchd_sims.
-  if (!self.launchdSimProcess) {
+  if (!self.launchdProcess) {
     return;
   }
-  self.launchdSimProcess = nil;
-  [self.sink simulatorDidTerminate:launchdSimProcess expected:expected];
+  self.launchdProcess = nil;
+  [self.sink simulatorDidTerminate:launchdProcess expected:expected];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
@@ -275,11 +275,11 @@
 - (void)fetchLaunchdSimInfoFromBoot
 {
   // We already have launchd_sim info, don't bother fetching.
-  if (self.launchdSimProcess) {
+  if (self.launchdProcess) {
     return;
   }
 
-  FBProcessInfo *launchdSim = [self.processFetcher launchdSimProcessForSimDevice:self.simDevice];
+  FBProcessInfo *launchdSim = [self.processFetcher launchdProcessForSimDevice:self.simDevice];
   if (!launchdSim) {
     return;
   }
@@ -289,12 +289,12 @@
 - (void)discardLaunchdSimInfoFromBoot
 {
   // Don't look at the application if we know if we don't consider the Simulator boot.
-  if (!self.launchdSimProcess) {
+  if (!self.launchdProcess) {
     return;
   }
 
   // Notify of Simulator Termination.
-  [self simulatorDidTerminate:self.launchdSimProcess expected:NO];
+  [self simulatorDidTerminate:self.launchdProcess expected:NO];
 }
 
 #pragma mark Simulator Application Launch/Termination
