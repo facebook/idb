@@ -26,6 +26,9 @@ int FBAMDeviceStopSession(CFTypeRef device);
 CFStringRef FBAMDeviceGetName(CFTypeRef device);
 CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
 
+// Debugging
+void FBAMDSetLogLevel(int32_t level);
+
 @interface FBAMDevice ()
 
 @property (nonatomic, assign, readonly) CFTypeRef amDevice;

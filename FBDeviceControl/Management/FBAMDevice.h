@@ -21,6 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBAMDevice : NSObject
 
 /**
+ Turns on asl debug logs for all AMDevice services
+ */
++ (void)enableDebugLogging;
+
+/**
  Returns an Array of all the Available Devices.
  */
 + (NSArray<FBAMDevice *> *)allDevices;

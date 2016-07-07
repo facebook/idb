@@ -18,6 +18,8 @@
 
 #import <IDEFoundation/IDEFoundationTestInitializer.h>
 
+#import "FBAMDevice.h"
+
 @implementation FBDeviceControlFrameworkLoader
 
 #pragma mark - Public
@@ -29,6 +31,9 @@
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     [self loadEssentialFrameworksOrAbort];
+    if (FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
+      [FBAMDevice enableDebugLogging];
+    }
   });
 }
 

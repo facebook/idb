@@ -24,6 +24,12 @@ static void *FBGetMobileDeviceFunction(const char *name)
   return function;
 }
 
+void FBAMDSetLogLevel(int32_t level)
+{
+  void (*AMDSetLogLevel)(int32_t) = FBGetMobileDeviceFunction("AMDSetLogLevel");
+  AMDSetLogLevel(level);
+}
+
 int FBAMDeviceConnect(CFTypeRef device)
 {
   int (*Connect) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceConnect");
@@ -79,6 +85,11 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
 }
 
 @implementation FBAMDevice
+
++ (void)enableDebugLogging
+{
+  FBAMDSetLogLevel(9);
+}
 
 + (NSArray<FBAMDevice *> *)allDevices
 {
