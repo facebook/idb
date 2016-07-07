@@ -33,12 +33,36 @@
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 
+@interface FBSimulatorBootStrategyContext : NSObject
+
+@property (nonatomic, strong, nullable, readonly) FBFramebuffer *framebuffer;
+@property (nonatomic, assign, readonly) mach_port_t hidPort;
+
+@end
+
+@implementation FBSimulatorBootStrategyContext
+
+- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _framebuffer = framebuffer;
+  _hidPort = hidPort;
+
+  return self;
+}
+
+@end
+
 @interface FBSimulatorBootStrategy ()
 
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorLaunchConfiguration *configuration;
 @property (nonatomic, strong, readonly, nonnull) FBSimulator *simulator;
 
-- (BOOL)performBoot:(NSError **)error framebufferServiceOut:(SimDeviceFramebufferService **)framebufferServiceOut hidPortOut:(mach_port_t *)hidPortOut;
+- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error;
 
 @end
 
@@ -48,19 +72,20 @@
 
 @implementation FBSimulatorBootStrategy_Direct
 
-- (BOOL)performBoot:(NSError **)error framebufferServiceOut:(SimDeviceFramebufferService **)framebufferServiceOut hidPortOut:(mach_port_t *)hidPortOut
+- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error
 {
   // Create the Framebuffer
   NSError *innerError = nil;
-  SimDeviceFramebufferService *framebufferService = [self createFramebufferService:&innerError];
-  if (!framebufferService) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+  SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:&innerError];
+  if (!mainScreenService) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
+  FBFramebuffer *framebuffer = [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:self.simulator];
 
   // Create the HID Port
   mach_port_t hidPort = [self createIndigoHIDRegistrationPort:&innerError];
   if (hidPort == 0) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
@@ -77,15 +102,13 @@
       describeFormat:@"Failed to boot Simulator with options %@", options]
       inSimulator:self.simulator]
       causedBy:innerError]
-      failBool:error];
+      fail:error];
   }
 
-  *framebufferServiceOut = framebufferService;
-  *hidPortOut = hidPort;
-  return YES;
+  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:framebuffer hidPort:hidPort];
 }
 
-- (SimDeviceFramebufferService *)createFramebufferService:(NSError **)error
+- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
 {
   // If you're curious about where the knowledege for these parts of the CoreSimulator.framework comes from, take a look at:
   // $DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS [VERSION].simruntime/Contents/Resources/profile.plist
@@ -167,7 +190,7 @@
 
 @implementation FBSimulatorBootStrategy_Subprocess
 
-- (BOOL)performBoot:(NSError **)error framebufferServiceOut:(SimDeviceFramebufferService **)framebufferServiceOut hidPortOut:(mach_port_t *)hidPortOut
+- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error
 {
   // Fetch the Boot Arguments & Environment
   NSError *innerError = nil;
@@ -176,7 +199,7 @@
     return [[[FBSimulatorError
       describeFormat:@"Failed to create boot args for Configuration %@", self.configuration]
       causedBy:innerError]
-      failBool:error];
+      fail:error];
   }
   // Add the UDID marker to the subprocess environment, so that it can be queried in any process.
   NSDictionary *environment = @{
@@ -185,7 +208,7 @@
 
   // Launch the Simulator.app Process.
   if (![self launchSimulatorProcessWithArguments:arguments environment:environment error:&innerError]) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   // Expect the state of the simulator to be updated.
@@ -194,7 +217,7 @@
     return [[[FBSimulatorError
       describeFormat:@"Timed out waiting for device to be Booted, got %@", self.simulator.device.stateString]
       inSimulator:self.simulator]
-      failBool:error];
+      fail:error];
   }
 
   // Expect the launch info for the process to exist.
@@ -203,11 +226,11 @@
     return [[[FBSimulatorError
       describe:@"Could not obtain process info for container application"]
       inSimulator:self.simulator]
-      failBool:error];
+      fail:error];
   }
   [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
 
-  return YES;
+  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:nil hidPort:0];
 }
 
 - (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
@@ -323,18 +346,16 @@
       failBool:error];
   }
 
+  // Perform the boot
   NSError *innerError = nil;
-  mach_port_t hidPort = 0;
-  SimDeviceFramebufferService *framebufferService = nil;
-
-  // Fail if there was an error.
-  if (![self performBoot:&innerError framebufferServiceOut:&framebufferService hidPortOut:&hidPort]) {
+  FBSimulatorBootStrategyContext *context = [self performBootWithError:&innerError];
+  if (!context) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
-  // Connect the Bridge.
-  FBFramebuffer *framebuffer = framebufferService ? [FBFramebuffer withFramebufferService:framebufferService configuration:self.configuration simulator:self.simulator] : nil;
-  FBSimulatorBridge *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:framebuffer hidPort:hidPort] connect:&innerError] : nil;
+  // Connect the Bridge, if present.
+  mach_port_t hidPort = context.hidPort;
+  FBSimulatorBridge *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:context.framebuffer hidPort:hidPort] connect:&innerError] : nil;
   if (self.configuration.shouldConnectBridge && !bridge) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
@@ -347,10 +368,10 @@
   return YES;
 }
 
-- (BOOL)performBoot:(NSError **)error framebufferServiceOut:(SimDeviceFramebufferService **)framebufferServiceOut hidPortOut:(mach_port_t *)hidPortOut
+- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
+  return nil;
 }
 
 - (FBProcessInfo *)launchdSimWithAllRequiredProcesses:(NSError **)error
