@@ -12,25 +12,25 @@
 NS_ASSUME_NONNULL_BEGIN
 
 // Getting a full Device List
-CF_RETURNS_RETAINED CFArrayRef FBAMDCreateDeviceList(void);
+_Nullable CFArrayRef (*_Nonnull FBAMDCreateDeviceList)(void);
 
 // Managing a Connection to a Device
-int FBAMDeviceConnect(CFTypeRef device);
-int FBAMDeviceDisconnect(CFTypeRef device);
-int FBAMDeviceIsPaired(CFTypeRef device);
-int FBAMDeviceValidatePairing(CFTypeRef device);
-int FBAMDeviceStartSession(CFTypeRef device);
-int FBAMDeviceStopSession(CFTypeRef device);
-int FBAMDServiceConnectionGetSocket(CFTypeRef connection);
-int FBAMDServiceConnectionInvalidate(CFTypeRef connection);
-int FBAMDeviceSecureStartService(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle);
+int (*FBAMDeviceConnect)(CFTypeRef device);
+int (*FBAMDeviceDisconnect)(CFTypeRef device);
+int (*FBAMDeviceIsPaired)(CFTypeRef device);
+int (*FBAMDeviceValidatePairing)(CFTypeRef device);
+int (*FBAMDeviceStartSession)(CFTypeRef device);
+int (*FBAMDeviceStopSession)(CFTypeRef device);
+int (*FBAMDServiceConnectionGetSocket)(CFTypeRef connection);
+int (*FBAMDServiceConnectionInvalidate)(CFTypeRef connection);
+int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle);
 
 // Getting Properties of a Device.
-CFStringRef FBAMDeviceGetName(CFTypeRef device);
-CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
+_Nullable CFStringRef (*_Nonnull FBAMDeviceGetName)(CFTypeRef device);
+_Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
 
 // Debugging
-void FBAMDSetLogLevel(int32_t level);
+void (*FBAMDSetLogLevel)(int32_t level);
 
 @interface FBAMDevice ()
 

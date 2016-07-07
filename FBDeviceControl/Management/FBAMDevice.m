@@ -31,92 +31,11 @@ typedef struct afc_connection {
   unsigned int context;           /* 40 */
 } __attribute__ ((packed)) afc_connection;
 
-static const char *MobileDeviceDylibPath = "/System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/MobileDevice";
-static void *FBGetMobileDeviceFunction(const char *name)
+static void *FBGetSymbolFromHandle(void *handle, const char *name)
 {
-  void *handle = dlopen(MobileDeviceDylibPath, RTLD_LAZY);
-  NSCAssert(handle, @"MobileDevice could not be opened");
   void *function = dlsym(handle, name);
   NSCAssert(function, @"%s could not be located", name);
   return function;
-}
-
-void FBAMDSetLogLevel(int32_t level)
-{
-  void (*AMDSetLogLevel)(int32_t) = FBGetMobileDeviceFunction("AMDSetLogLevel");
-  AMDSetLogLevel(level);
-}
-
-int FBAMDeviceConnect(CFTypeRef device)
-{
-  int (*Connect) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceConnect");
-  return Connect(device);
-}
-
-int FBAMDeviceDisconnect(CFTypeRef device)
-{
-  int (*Disconnect) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceDisconnect");
-  return Disconnect(device);
-}
-
-int FBAMDeviceIsPaired(CFTypeRef device)
-{
-  int (*IsPaired) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceIsPaired");
-  return IsPaired(device);
-}
-
-int FBAMDeviceValidatePairing(CFTypeRef device)
-{
-  int (*ValidatePairing) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceValidatePairing");
-  return ValidatePairing(device);
-}
-
-int FBAMDeviceStartSession(CFTypeRef device)
-{
-  int (*StartSession) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceStartSession");
-  return StartSession(device);
-}
-
-int FBAMDeviceStopSession(CFTypeRef device)
-{
-  int (*StopSession) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceStopSession");
-  return StopSession(device);
-}
-
-int FBAMDServiceConnectionGetSocket(CFTypeRef connection)
-{
-  int (*GetSocket)(CFTypeRef) = FBGetMobileDeviceFunction("AMDServiceConnectionGetSocket");
-  return GetSocket(connection);
-}
-
-int FBAMDServiceConnectionInvalidate(CFTypeRef connection)
-{
-  int (*Invalidate)(CFTypeRef) = FBGetMobileDeviceFunction("AMDServiceConnectionInvalidate");
-  return Invalidate(connection);
-}
-
-int FBAMDeviceSecureStartService(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle)
-{
-  int (*StartService)(CFTypeRef, CFStringRef, CFDictionaryRef, void *) = FBGetMobileDeviceFunction("AMDeviceSecureStartService");
-  return StartService(device, service_name, userinfo, handle);
-}
-
-CFArrayRef FBAMDCreateDeviceList(void)
-{
-  CFArrayRef (*CreateDeviceList) (void) = FBGetMobileDeviceFunction("AMDCreateDeviceList");
-  return CreateDeviceList();
-}
-
-CFStringRef FBAMDeviceGetName(CFTypeRef device)
-{
-  CFStringRef (*GetName) (CFTypeRef) = FBGetMobileDeviceFunction("AMDeviceGetName");
-  return GetName(device);
-}
-
-CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name)
-{
-  CFStringRef (*CopyValue) (CFTypeRef, CFStringRef, CFStringRef) = FBGetMobileDeviceFunction("AMDeviceCopyValue");
-  return CopyValue(device, domain, name);
 }
 
 @implementation FBAMDevice
@@ -126,6 +45,24 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
   FBAMDSetLogLevel(9);
 }
 
++ (void)loadFBAMDeviceSymbols
+{
+  void *handle = dlopen("/System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/MobileDevice", RTLD_LAZY);
+  NSCAssert(handle, @"MobileDevice could not be opened");
+  FBAMDSetLogLevel = (void(*)(int32_t))FBGetSymbolFromHandle(handle, "AMDSetLogLevel");
+  FBAMDeviceConnect = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceConnect");
+  FBAMDeviceDisconnect = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceDisconnect");
+  FBAMDeviceIsPaired = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceIsPaired");
+  FBAMDeviceValidatePairing = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceValidatePairing");
+  FBAMDeviceStartSession = (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceStartSession");
+  FBAMDeviceStopSession =  (int(*)(CFTypeRef device))FBGetSymbolFromHandle(handle, "AMDeviceStopSession");
+  FBAMDServiceConnectionGetSocket = (int(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDServiceConnectionGetSocket");
+  FBAMDServiceConnectionInvalidate = (int(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDServiceConnectionInvalidate");
+  FBAMDeviceSecureStartService = (int(*)(CFTypeRef, CFStringRef, CFDictionaryRef, void *))FBGetSymbolFromHandle(handle, "AMDeviceSecureStartService");
+  FBAMDCreateDeviceList = (CFArrayRef(*)(void))FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
+  FBAMDeviceGetName = (CFStringRef(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDeviceGetName");
+  FBAMDeviceCopyValue = (CFStringRef(*)(CFTypeRef, CFStringRef, CFStringRef))FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
+}
 + (NSArray<FBAMDevice *> *)allDevices
 {
   NSMutableArray<FBAMDevice *> *devices = [NSMutableArray array];

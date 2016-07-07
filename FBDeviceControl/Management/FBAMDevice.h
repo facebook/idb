@@ -21,6 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBAMDevice : NSObject
 
 /**
+ Loads AMDevice symbols required by this class to work properly.
+ Should be called before any other call to this class is made.
+ */
++ (void)loadFBAMDeviceSymbols;
+
+/**
  Turns on asl debug logs for all AMDevice services
  */
 + (void)enableDebugLogging;

@@ -43,6 +43,7 @@
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
   BOOL success = [self loadEssentialFrameworks:logger error:&error];
   if (success) {
+    [FBAMDevice loadFBAMDeviceSymbols];
     return;
   }
 
