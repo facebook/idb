@@ -9,18 +9,19 @@
 
 #import "FBSimulatorHistory+Queries.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration.h"
-#import "FBSimulatorApplication.h"
 
 @interface FBProcessLaunchConfiguration (HistoryQueries)
 
-- (FBSimulatorBinary *)binary;
+- (FBBinaryDescriptor *)binary;
 
 @end
 
 @implementation FBProcessLaunchConfiguration (HistoryQueries)
 
-- (FBSimulatorBinary *)binary
+- (FBBinaryDescriptor *)binary
 {
   [self doesNotRecognizeSelector:_cmd];
   return nil;
@@ -105,14 +106,14 @@
   return [self runningProcessForBinary:launchConfig.binary];
 }
 
-- (FBProcessInfo *)runningProcessForBinary:(FBSimulatorBinary *)binary
+- (FBProcessInfo *)runningProcessForBinary:(FBBinaryDescriptor *)binary
 {
   return [[self.launchedApplicationProcesses
     filteredArrayUsingPredicate:[FBSimulatorHistory predicateForBinary:binary]]
     firstObject];
 }
 
-- (FBProcessInfo *)runningProcessForApplication:(FBSimulatorApplication *)application
+- (FBProcessInfo *)runningProcessForApplication:(FBApplicationDescriptor *)application
 {
   return [self runningProcessForApplication:application recursive:NO];
 }
@@ -173,7 +174,7 @@
   return [array copy];
 }
 
-- (FBProcessInfo *)runningProcessForApplication:(FBSimulatorApplication *)application recursive:(BOOL)recursive
+- (FBProcessInfo *)runningProcessForApplication:(FBApplicationDescriptor *)application recursive:(BOOL)recursive
 {
   FBProcessInfo *process = [self runningProcessForBinary:application.binary];
   if (process) {
@@ -193,7 +194,7 @@
 
 #pragma mark Predicates
 
-+ (NSPredicate *)predicateForBinary:(FBSimulatorBinary *)binary
++ (NSPredicate *)predicateForBinary:(FBBinaryDescriptor *)binary
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
     return [process.launchPath isEqualToString:binary.path];

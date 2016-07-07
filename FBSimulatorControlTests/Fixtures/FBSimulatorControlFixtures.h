@@ -11,10 +11,10 @@
 #import <XCTest/XCTest.h>
 
 @class FBAgentLaunchConfiguration;
+@class FBApplicationDescriptor ;
 @class FBApplicationLaunchConfiguration;
 @class FBDiagnostic;
 @class FBProcessInfo;
-@class FBSimulatorApplication;
 
 /**
  Fixtures for Tests.
@@ -46,7 +46,7 @@
 /**
  An Application for the built in Mobile Safari.
  */
-- (FBSimulatorApplication *)safariApplication;
+- (FBApplicationDescriptor *)safariApplication;
 
 /**
  An App Launch for the built in Mobile Safari.
@@ -57,7 +57,7 @@
  A build of Apple's 'Table Search' Sample Application.
  Source is available at: https://developer.apple.com/library/ios/samplecode/TableSearch_UISearchController/Introduction/Intro.html#//apple_ref/doc/uid/TP40014683
  */
-- (FBSimulatorApplication *)tableSearchApplication;
+- (FBApplicationDescriptor *)tableSearchApplication;
 
 /**
  A build of Apple's 'Table Search' Sample Application.

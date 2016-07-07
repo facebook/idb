@@ -16,14 +16,14 @@ import FBSimulatorControl
 }
 
 struct Fixtures {
-  static var application: FBSimulatorApplication { get {
-    return FBSimulatorApplication.xcodeSimulator()
+  static var application: FBApplicationDescriptor { get {
+    return FBApplicationDescriptor.xcodeSimulator()
   }}
 
-  static var binary: FBSimulatorBinary { get {
+  static var binary: FBBinaryDescriptor { get {
     let basePath: NSString = FBControlCoreGlobalConfiguration.developerDirectory()
-    return try! FBSimulatorBinary(
-      path: basePath.stringByAppendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/sbin/launchd_sim")
+    return try! FBBinaryDescriptor.binaryWithPath(
+      basePath.stringByAppendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/sbin/launchd_sim")
     )
   }}
 

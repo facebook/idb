@@ -19,12 +19,13 @@
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBFramebuffer.h"
 #import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"

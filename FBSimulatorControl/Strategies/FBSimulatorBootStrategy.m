@@ -19,12 +19,13 @@
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBFramebuffer.h"
 #import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorConnectStrategy.h"
 #import "FBSimulatorError.h"
@@ -227,7 +228,7 @@
 {
   // Construct and start the task.
   id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
-    withLaunchPath:FBSimulatorApplication.xcodeSimulator.binary.path]
+    withLaunchPath:FBApplicationDescriptor .xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
     build]
@@ -258,7 +259,7 @@
 {
   // The NSWorkspace API allows for arguments & environment to be provided to the launched application
   // Additionally, multiple Apps of the same application can be launched with the NSWorkspaceLaunchNewInstance option.
-  NSURL *applicationURL = [NSURL fileURLWithPath:FBSimulatorApplication.xcodeSimulator.path];
+  NSURL *applicationURL = [NSURL fileURLWithPath:FBApplicationDescriptor .xcodeSimulator.path];
   NSDictionary *appLaunchConfiguration = @{
     NSWorkspaceLaunchConfigurationArguments : arguments,
     NSWorkspaceLaunchConfigurationEnvironment : environment,

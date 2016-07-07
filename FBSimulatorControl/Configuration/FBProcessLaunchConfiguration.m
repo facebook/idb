@@ -10,8 +10,9 @@
 #import "FBProcessLaunchConfiguration.h"
 #import "FBProcessLaunchConfiguration+Private.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 
 static NSString *const OptionConnectStdout = @"connect_stdout";
@@ -158,7 +159,7 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
   return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment options:options];
 }
 
-+ (instancetype)configurationWithApplication:(FBSimulatorApplication *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
++ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
 {
   if (!application) {
     return nil;
@@ -287,12 +288,12 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
 
 @implementation FBAgentLaunchConfiguration
 
-+ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment
++ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment
 {
   return [self configurationWithBinary:agentBinary arguments:arguments environment:environment options:0];
 }
 
-+ (instancetype)configurationWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
++ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options
 {
   if (!agentBinary || !arguments || !environment) {
     return nil;
@@ -304,7 +305,7 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
 {
   NSError *innerError = nil;
   NSDictionary *binaryJSON = json[@"binary"];
-  FBSimulatorBinary *binary = [FBSimulatorBinary inflateFromJSON:binaryJSON error:&innerError];
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor inflateFromJSON:binaryJSON error:&innerError];
   if (!binary) {
     return [[[FBSimulatorError
       describeFormat:@"Could not build binary from json %@", binaryJSON]
@@ -327,7 +328,7 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
   return [self configurationWithBinary:binary arguments:arguments environment:environment options:options];
 }
 
-- (instancetype)initWithBinary:(FBSimulatorBinary *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment options:(FBProcessLaunchOptions)options
+- (instancetype)initWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray *)arguments environment:(NSDictionary *)environment options:(FBProcessLaunchOptions)options
 {
   self = [super initWithArguments:arguments environment:environment options:options];
   if (!self) {

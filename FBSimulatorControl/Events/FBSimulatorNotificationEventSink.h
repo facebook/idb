@@ -24,12 +24,12 @@ extern NSString *const FBSimulatorDidTerminateNotification;
 /**
  Notification that is fired when a Simulator's Container Process Starts.
  */
-extern NSString *const FBSimulatorContainerDidLaunchNotification;
+extern NSString *const FBSimulatorApplicationDidLaunchNotification;
 
 /**
  Notification that is fired when a Simulator's Container Process Starts.
  */
-extern NSString *const FBSimulatorContainerDidTerminateNotification;
+extern NSString *const FBSimulatorApplicationDidTerminateNotification;
 
 /**
  Notification that is fired when a Simulator Framebuffer Starts.

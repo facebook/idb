@@ -9,9 +9,10 @@
 
 #import "FBSimulatorHistoryGenerator.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorHistory+Private.h"
 #import "FBSimulatorHistory+Queries.h"
 

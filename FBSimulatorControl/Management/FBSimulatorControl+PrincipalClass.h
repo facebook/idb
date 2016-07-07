@@ -11,7 +11,7 @@
 
 #import <FBSimulatorControl/FBSimulatorPool.h>
 
-@class FBSimulatorApplication;
+@class FBApplicationDescriptor ;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControlConfiguration;
 @class FBSimulatorPool;

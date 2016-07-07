@@ -139,8 +139,8 @@
     FBSimulatorDidTerminateNotification,
     FBSimulatorBridgeDidConnectNotification,
     FBSimulatorBridgeDidDisconnectNotification,
-    FBSimulatorContainerDidLaunchNotification,
-    FBSimulatorContainerDidTerminateNotification,
+    FBSimulatorApplicationDidLaunchNotification,
+    FBSimulatorApplicationDidTerminateNotification,
     FBSimulatorApplicationProcessDidLaunchNotification,
     FBSimulatorApplicationProcessDidTerminateNotification,
     FBSimulatorAgentProcessDidLaunchNotification,
@@ -283,7 +283,7 @@
   if (FBSimulatorControlTestCase.useDirectLaunching) {
     return @[FBSimulatorDidLaunchNotification, FBSimulatorBridgeDidConnectNotification];
   }
-  return @[FBSimulatorDidLaunchNotification, FBSimulatorBridgeDidConnectNotification, FBSimulatorContainerDidLaunchNotification];
+  return @[FBSimulatorDidLaunchNotification, FBSimulatorBridgeDidConnectNotification, FBSimulatorApplicationDidLaunchNotification];
 }
 
 - (NSArray *)expectedShutdownNotificationNames
@@ -291,7 +291,7 @@
   if (FBSimulatorControlTestCase.useDirectLaunching) {
     return @[FBSimulatorDidTerminateNotification, FBSimulatorBridgeDidDisconnectNotification];
   }
-  return @[FBSimulatorDidTerminateNotification,FBSimulatorBridgeDidDisconnectNotification, FBSimulatorContainerDidTerminateNotification];
+  return @[FBSimulatorDidTerminateNotification,FBSimulatorBridgeDidDisconnectNotification, FBSimulatorApplicationDidTerminateNotification];
 }
 
 @end

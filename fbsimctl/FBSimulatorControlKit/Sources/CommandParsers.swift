@@ -8,6 +8,7 @@
  */
 
 import Foundation
+import FBControlCore
 import FBSimulatorControl
 
 extension Parser {
@@ -83,22 +84,22 @@ extension Parser {
     }
   }}
 
-  public static var ofApplication: Parser<FBSimulatorApplication> { get {
+  public static var ofApplication: Parser<FBApplicationDescriptor> { get {
     let expected = "An Application"
-    return Parser<FBSimulatorApplication>.single(expected) { token in
+    return Parser<FBApplicationDescriptor>.single(expected) { token in
       do {
-        return try FBSimulatorApplication(path: token)
+        return try FBApplicationDescriptor.applicationWithPath(token)
       } catch let error as NSError {
         throw ParseError.Custom("Could not get an app \(token) \(error.description)")
       }
     }
   }}
 
-  public static var ofBinary: Parser<FBSimulatorBinary> { get {
+  public static var ofBinary: Parser<FBBinaryDescriptor> { get {
     let expected = "A Binary"
-    return Parser<FBSimulatorBinary>.single(expected) { token in
+    return Parser<FBBinaryDescriptor>.single(expected) { token in
       do {
-        return try FBSimulatorBinary(path: token)
+        return try FBBinaryDescriptor.binaryWithPath(token)
       } catch let error as NSError {
         throw ParseError.Custom("Could not get an binary \(token) \(error.description)")
       }

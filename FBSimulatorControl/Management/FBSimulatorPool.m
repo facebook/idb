@@ -10,13 +10,12 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPool+Private.h"
 
-#import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"

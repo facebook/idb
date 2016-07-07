@@ -11,7 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
@@ -22,7 +21,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
 
 @implementation FBSimulatorInteraction (Diagnostics)
 
-- (instancetype)sampleApplication:(FBSimulatorApplication *)application withDuration:(NSInteger)durationInSeconds frequency:(NSInteger)frequencyInMilliseconds
+- (instancetype)sampleApplication:(FBApplicationDescriptor *)application withDuration:(NSInteger)durationInSeconds frequency:(NSInteger)frequencyInMilliseconds
 {
   return [self asyncDiagnosticOnApplication:application name:@"stack_sample" taskFactory:^ id<FBTask> (FBTaskExecutor *executor, pid_t processIdentifier) {
     return [executor
@@ -31,7 +30,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
   }];
 }
 
-- (instancetype)onApplication:(FBSimulatorApplication *)application executeLLDBCommand:(NSString *)command
+- (instancetype)onApplication:(FBApplicationDescriptor *)application executeLLDBCommand:(NSString *)command
 {
   NSParameterAssert(command);
 
@@ -46,7 +45,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
 
 #pragma mark Private
 
-- (instancetype)asyncDiagnosticOnApplication:(FBSimulatorApplication *)application name:(NSString *)name taskFactory:(FBDiagnosticTaskFactory)taskFactory
+- (instancetype)asyncDiagnosticOnApplication:(FBApplicationDescriptor *)application name:(NSString *)name taskFactory:(FBDiagnosticTaskFactory)taskFactory
 {
   NSParameterAssert(application);
   NSParameterAssert(name);
@@ -70,7 +69,7 @@ typedef id<FBTask>(^FBDiagnosticTaskFactory)(FBTaskExecutor *executor, pid_t pro
   }];
 }
 
-- (instancetype)syncDiagnosticOnApplication:(FBSimulatorApplication *)application name:(NSString *)name taskFactory:(FBDiagnosticTaskFactory)taskFactory
+- (instancetype)syncDiagnosticOnApplication:(FBApplicationDescriptor *)application name:(NSString *)name taskFactory:(FBDiagnosticTaskFactory)taskFactory
 {
   NSParameterAssert(application);
   NSParameterAssert(name);

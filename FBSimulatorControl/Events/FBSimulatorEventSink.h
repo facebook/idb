@@ -10,11 +10,11 @@
 #import <FBSimulatorControl/FBSimulator.h>
 
 @class FBAgentLaunchConfiguration;
+@class FBApplicationDescriptor ;
 @class FBApplicationLaunchConfiguration;
 @class FBDiagnostic;
 @class FBProcessInfo;
 @class FBSimulator;
-@class FBSimulatorApplication;
 @class FBSimulatorBridge;
 @class FBTestManager;
 @protocol FBTerminationHandle;

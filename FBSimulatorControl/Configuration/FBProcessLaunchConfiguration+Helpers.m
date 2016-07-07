@@ -9,9 +9,10 @@
 
 #import "FBProcessLaunchConfiguration+Helpers.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 
 @implementation FBProcessLaunchConfiguration (Helpers)

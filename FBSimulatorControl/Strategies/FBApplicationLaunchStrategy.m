@@ -17,7 +17,6 @@
 #import "FBSimulator+Private.h"
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorBridge.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorDiagnostics.h"
@@ -57,7 +56,7 @@
 {
   FBSimulator *simulator = self.simulator;
   NSError *innerError = nil;
-  FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  FBApplicationDescriptor *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
   if (!application) {
     return [[[[FBSimulatorError
       describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]

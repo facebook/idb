@@ -9,8 +9,8 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
+@class FBApplicationDescriptor ;
 @class FBSimDeviceWrapper;
-@class FBSimulatorApplication;
 @class FBSimulatorInteraction;
 @class FBSimulatorLaunchCtl;
 
@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Fetches a list of the installed applications=
  */
-@property (nonatomic, copy, readonly) NSArray<FBSimulatorApplication *> *installedApplications;
+@property (nonatomic, copy, readonly) NSArray<FBApplicationDescriptor *> *installedApplications;
 
 #pragma mark Methods
 
@@ -108,13 +108,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)eraseWithError:(NSError **)error;
 
 /**
- Fetches the FBSimulatorApplication instance by Bundle ID, on the Simulator.
+ Fetches the FBApplicationDescriptor instance by Bundle ID, on the Simulator.
 
  @param bundleID the Bundle ID to fetch an installed application for.
  @param error an error out for any error that occurs.
- @return a FBSimulatorApplication instance if one could be obtained, nil otherwise.
+ @return a FBApplicationDescriptor instance if one could be obtained, nil otherwise.
  */
-- (nullable FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Determines whether a provided Bundle ID represents a System Application

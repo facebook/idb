@@ -31,7 +31,6 @@
 #import <FBSimulatorControl/FBSimulator+Helpers.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
-#import <FBSimulatorControl/FBSimulatorApplication.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorBootStrategy.h>
 #import <FBSimulatorControl/FBSimulatorBridge.h>

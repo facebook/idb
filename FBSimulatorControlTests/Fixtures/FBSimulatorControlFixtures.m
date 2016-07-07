@@ -13,10 +13,10 @@
 
 @implementation FBSimulatorControlFixtures
 
-+ (FBSimulatorApplication *)tableSearchApplicationWithError:(NSError **)error
++ (FBApplicationDescriptor *)tableSearchApplicationWithError:(NSError **)error
 {
   NSString *path = [[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"];
-  return [FBSimulatorApplication applicationWithPath:path error:error];
+  return [FBApplicationDescriptor applicationWithPath:path error:error];
 }
 
 + (NSString *)photo0Path
@@ -53,19 +53,19 @@
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
 
-- (FBSimulatorApplication *)tableSearchApplication
+- (FBApplicationDescriptor *)tableSearchApplication
 {
   NSError *error = nil;
-  FBSimulatorApplication *value = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
+  FBApplicationDescriptor *value = [FBSimulatorControlFixtures tableSearchApplicationWithError:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(value);
   return value;
 }
 
-- (FBSimulatorApplication *)safariApplication
+- (FBApplicationDescriptor *)safariApplication
 {
   NSError *error = nil;
-  FBSimulatorApplication *application = [FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:&error];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor systemApplicationNamed:@"MobileSafari" error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(application, @"Could not fetch MobileSafari");
   return application;
@@ -73,7 +73,7 @@
 
 - (FBApplicationLaunchConfiguration *)tableSearchAppLaunch
 {
-  FBSimulatorApplication *application = self.tableSearchApplication;
+  FBApplicationDescriptor *application = self.tableSearchApplication;
   if (!application) {
     return nil;
   }
@@ -82,7 +82,7 @@
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
 {
-  FBSimulatorApplication *application = self.safariApplication;
+  FBApplicationDescriptor *application = self.safariApplication;
   if (!application) {
     return nil;
   }

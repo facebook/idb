@@ -9,9 +9,10 @@
 
 #import "FBSimulatorApplicationCommands.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimDeviceWrapper.h"
 
@@ -44,7 +45,7 @@
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   NSError *innerError = nil;
-  FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:path error:&innerError];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:path error:&innerError];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]

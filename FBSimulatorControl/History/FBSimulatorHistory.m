@@ -10,9 +10,10 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorHistory+Private.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator+Helpers.h"
-#import "FBSimulatorApplication.h"
 
 NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"termination_status";
 

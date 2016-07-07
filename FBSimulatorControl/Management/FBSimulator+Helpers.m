@@ -17,7 +17,6 @@
 #import "FBProcessFetcher+Simulators.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorInteraction.h"
@@ -58,11 +57,11 @@
   return [self.processFetcher subprocessesOf:launchdSim.processIdentifier];
 }
 
-- (NSArray<FBSimulatorApplication *> *)installedApplications
+- (NSArray<FBApplicationDescriptor *> *)installedApplications
 {
-  NSMutableArray<FBSimulatorApplication *> *applications = [NSMutableArray array];
+  NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
   for (NSDictionary *appInfo in [[self.device installedAppsWithError:nil] allValues]) {
-    FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:appInfo[@"Path"] error:nil];
+    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[@"Path"] error:nil];
     if (!application) {
       continue;
     }
@@ -122,7 +121,7 @@
   return [self.set eraseSimulator:self error:error];
 }
 
-- (FBSimulatorApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSParameterAssert(bundleID);
 
@@ -132,7 +131,7 @@
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
   NSString *appPath = appInfo[@"Path"];
-  FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:appPath error:&innerError];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appPath error:&innerError];
   if (!application) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to get App Path of %@ at %@", bundleID, appPath]
@@ -178,7 +177,7 @@
   NSParameterAssert(bundleID);
 
   NSError *innerError = nil;
-  FBSimulatorApplication *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
+  FBApplicationDescriptor *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
   if (!application) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -228,7 +227,7 @@
   return appInfo;
 }
 
-+ (NSPredicate *)predicateForApplicationProcessOfApplication:(FBSimulatorApplication *)application
++ (NSPredicate *)predicateForApplicationProcessOfApplication:(FBApplicationDescriptor *)application
 {
   NSPredicate *launchPathPredicate = [FBProcessFetcher processesWithLaunchPath:application.binary.path];
   NSPredicate *environmentPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSProcessInfo *processInfo, NSDictionary *_) {

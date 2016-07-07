@@ -18,7 +18,6 @@
 #import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
@@ -106,7 +105,7 @@
   }];
 }
 
-- (instancetype)binary:(FBSimulatorBinary *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
+- (instancetype)binary:(FBBinaryDescriptor *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
 {
   NSParameterAssert(binary);
   NSParameterAssert(block);

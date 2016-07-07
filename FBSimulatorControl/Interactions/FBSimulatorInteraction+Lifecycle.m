@@ -20,7 +20,6 @@
 #import "FBProcessTerminationStrategy.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorBootStrategy.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"

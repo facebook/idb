@@ -152,7 +152,7 @@
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
-  FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:path error:error];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:path error:error];
   if (![[self.simulator.interact installApplication:application] perform:error]) {
     return NO;
   }
@@ -166,7 +166,7 @@
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBSimulatorApplication *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBApplicationDescriptor *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!application) {
     return nil;
   }
@@ -181,7 +181,7 @@
 
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment error:(NSError **)error
 {
-  FBSimulatorApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBApplicationDescriptor *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!app) {
     return NO;
   }
@@ -205,7 +205,7 @@
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBSimulatorApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBApplicationDescriptor *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   return [[FBProcessFetcher new] subprocessOf:self.simulator.launchdProcess.processIdentifier withName:app.binary.name];
 }
 
