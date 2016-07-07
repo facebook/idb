@@ -16,6 +16,7 @@
 
 #import <DTXConnectionServices/DTXChannel.h>
 #import <DTXConnectionServices/DTXMessage.h>
+#import <DTXConnectionServices/DTXSocketTransport.h>
 
 #import <DVTFoundation/DVTDeviceManager.h>
 #import <DVTFoundation/DVTFuture.h>
@@ -27,6 +28,8 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBDevice.h"
+#import "FBDeviceControlError.h"
+#import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBDeviceControlFrameworkLoader.h"
 
@@ -137,7 +140,36 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 
 - (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  return [self.device.dvtDevice makeTransportForTestManagerService:error];
+  if ([NSThread isMainThread]) {
+    return
+    [[[FBDeviceControlError
+       describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
+      logger:logger]
+     fail:error];
+  }
+  NSError *innerError;
+  CFTypeRef connection = [self.device startTestManagerServiceWithError:&innerError];
+  if (!connection) {
+    return
+    [[[[FBDeviceControlError
+        describe:@"Failed to start test manager daemon service."]
+       logger:logger]
+      causedBy:innerError]
+     fail:error];
+  }
+  int socket = FBAMDServiceConnectionGetSocket(connection);
+  if (socket <= 0) {
+    return
+    [[[FBDeviceControlError
+       describe:@"Invalid socket returned from AMDServiceConnectionGetSocket"]
+      logger:logger]
+     fail:error];
+  }
+  return
+  [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
+    [logger log:@"Disconnected from test manager daemon socket"];
+    FBAMDServiceConnectionInvalidate(connection);
+  }];
 }
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection

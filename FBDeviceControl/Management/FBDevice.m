@@ -43,6 +43,11 @@
   return self;
 }
 
+- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error
+{
+  return [self.amDevice startTestManagerServiceWithError:error];
+}
+
 #pragma mark FBiOSTarget
 
 - (NSString *)udid

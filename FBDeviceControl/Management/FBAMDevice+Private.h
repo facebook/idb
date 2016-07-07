@@ -21,6 +21,9 @@ int FBAMDeviceIsPaired(CFTypeRef device);
 int FBAMDeviceValidatePairing(CFTypeRef device);
 int FBAMDeviceStartSession(CFTypeRef device);
 int FBAMDeviceStopSession(CFTypeRef device);
+int FBAMDServiceConnectionGetSocket(CFTypeRef connection);
+int FBAMDServiceConnectionInvalidate(CFTypeRef connection);
+int FBAMDeviceSecureStartService(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle);
 
 // Getting Properties of a Device.
 CFStringRef FBAMDeviceGetName(CFTypeRef device);

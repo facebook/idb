@@ -16,6 +16,21 @@
 
 #import "FBDeviceControlError.h"
 
+typedef struct afc_connection {
+  unsigned int handle;            /* 0 */
+  unsigned int unknown0;          /* 4 */
+  unsigned char unknown1;         /* 8 */
+  unsigned char padding[3];       /* 9 */
+  unsigned int unknown2;          /* 12 */
+  unsigned int unknown3;          /* 16 */
+  unsigned int unknown4;          /* 20 */
+  unsigned int fs_block_size;     /* 24 */
+  unsigned int sock_block_size;   /* 28: always 0x3c */
+  unsigned int io_timeout;        /* 32: from AFCConnectionOpen, usu. 0 */
+  void *afc_lock;                 /* 36 */
+  unsigned int context;           /* 40 */
+} __attribute__ ((packed)) afc_connection;
+
 static const char *MobileDeviceDylibPath = "/System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/MobileDevice";
 static void *FBGetMobileDeviceFunction(const char *name)
 {
@@ -66,6 +81,24 @@ int FBAMDeviceStopSession(CFTypeRef device)
 {
   int (*StopSession) (CFTypeRef device) = FBGetMobileDeviceFunction("AMDeviceStopSession");
   return StopSession(device);
+}
+
+int FBAMDServiceConnectionGetSocket(CFTypeRef connection)
+{
+  int (*GetSocket)(CFTypeRef) = FBGetMobileDeviceFunction("AMDServiceConnectionGetSocket");
+  return GetSocket(connection);
+}
+
+int FBAMDServiceConnectionInvalidate(CFTypeRef connection)
+{
+  int (*Invalidate)(CFTypeRef) = FBGetMobileDeviceFunction("AMDServiceConnectionInvalidate");
+  return Invalidate(connection);
+}
+
+int FBAMDeviceSecureStartService(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle)
+{
+  int (*StartService)(CFTypeRef, CFStringRef, CFDictionaryRef, void *) = FBGetMobileDeviceFunction("AMDeviceSecureStartService");
+  return StartService(device, service_name, userinfo, handle);
 }
 
 CFArrayRef FBAMDCreateDeviceList(void)
@@ -140,6 +173,24 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
   }
   FBAMDeviceDisconnect(_amDevice);
   return operationResult;
+}
+
+- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error
+{
+  NSDictionary *userInfo = @{
+    @"CloseOnInvalidate" : @1,
+    @"InvalidateOnDetach" : @1
+  };
+  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    CFTypeRef test_apple_afc_conn;
+    FBAMDeviceSecureStartService(
+      device,
+      CFSTR("com.apple.testmanagerd.lockdown"),
+      (__bridge CFDictionaryRef _Nonnull)(userInfo),
+      &test_apple_afc_conn
+    );
+    return (__bridge id)(test_apple_afc_conn);
+  } error:error]);
 }
 
 - (void)dealloc
