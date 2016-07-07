@@ -14,6 +14,8 @@
 
 #include <dlfcn.h>
 
+#import "FBDeviceControlError.h"
+
 static const char *MobileDeviceDylibPath = "/System/Library/PrivateFrameworks/MobileDevice.framework/Versions/A/MobileDevice";
 static void *FBGetMobileDeviceFunction(const char *name)
 {
@@ -119,6 +121,27 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
   return self;
 }
 
+- (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error
+{
+  if (FBAMDeviceConnect(_amDevice) != 0) {
+    return
+    [[FBDeviceControlError
+      describe:@"Failed to connect to device."]
+     fail:error];
+  }
+  id operationResult = nil;
+  if (FBAMDeviceStartSession(_amDevice) == 0) {
+    operationResult = operationBlock(_amDevice);
+    FBAMDeviceStopSession(_amDevice);
+  } else {
+    [[FBDeviceControlError
+      describe:@"Failed to start session with device."]
+     fail:error];
+  }
+  FBAMDeviceDisconnect(_amDevice);
+  return operationResult;
+}
+
 - (void)dealloc
 {
   CFRelease(_amDevice);
@@ -129,35 +152,28 @@ CFStringRef FBAMDeviceCopyValue(CFTypeRef device, _Nullable CFStringRef domain, 
 
 - (BOOL)cacheAllValues
 {
-  if (FBAMDeviceConnect(_amDevice) != 0) {
-    return NO;
-  }
-  if (FBAMDeviceIsPaired(_amDevice) != 1) {
-    return NO;
-  }
-  if (FBAMDeviceValidatePairing(_amDevice) != 0) {
-    return NO;
-  }
-  if (FBAMDeviceStartSession(_amDevice) != 0) {
-    return NO;
-  }
+  return
+  [[self handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    if (FBAMDeviceIsPaired(device) != 1) {
+      return @NO;
 
-  _udid = (__bridge NSString *)(FBAMDeviceGetName(_amDevice));
-  _deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("DeviceName")));
-  _modelName = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("DeviceClass")));
-  _systemVersion = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductVersion")));
-  _productType = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("ProductType")));
-  _architechture = (__bridge NSString *)(FBAMDeviceCopyValue(_amDevice, NULL, CFSTR("CPUArchitecture")));
+    }
+    if (FBAMDeviceValidatePairing(device) != 0) {
+      return @NO;
+    }
 
-  NSString *osVersion = [FBAMDevice osVersionForDevice:_amDevice];
+    self->_udid = (__bridge NSString *)(FBAMDeviceGetName(device));
+    self->_deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
+    self->_modelName = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));
+    self->_systemVersion = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("ProductVersion")));
+    self->_productType = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("ProductType")));
+    self->_architechture = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("CPUArchitecture")));
 
-  FBAMDeviceStopSession(_amDevice);
-  FBAMDeviceDisconnect(_amDevice);
-
-  _deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[_productType];
-  _osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[osVersion];
-
-  return YES;
+    NSString *osVersion = [FBAMDevice osVersionForDevice:device];
+    self->_deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[self->_productType];
+    self->_osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[osVersion];
+    return @YES;
+  } error:nil] boolValue];
 }
 
 #pragma mark NSObject
