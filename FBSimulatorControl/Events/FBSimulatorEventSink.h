@@ -22,6 +22,8 @@
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializable;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A reciever of Simulator Events
  */
@@ -143,3 +145,5 @@
 - (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle;
 
 @end
+
+NS_ASSUME_NONNULL_END
