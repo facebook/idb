@@ -24,8 +24,7 @@
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorApplication.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
@@ -110,21 +109,21 @@
     FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
 
     // The Bridge should also be tidied up if one exists.
-    FBSimulatorBridge *bridge = simulator.bridge;
-    if (bridge) {
-      [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, terminating it now", simulator.shortDescription, bridge];
+    FBSimulatorConnection *connection = simulator.connection;
+    if (connection) {
+      [self.logger.debug logFormat:@"Simulator %@ has a connection %@, terminating it now", simulator.shortDescription, connection];
       // Stopping listening will notify the event sink.
       NSTimeInterval timeout = FBControlCoreGlobalConfiguration.regularTimeout;
-      [self.logger.debug logFormat:@"Simulator %@ has a bridge %@, stopping & wait with timeout %f", simulator.shortDescription, bridge, timeout];
+      [self.logger.debug logFormat:@"Simulator %@ has a connection %@, stopping & wait with timeout %f", simulator.shortDescription, connection, timeout];
       NSDate *date = NSDate.date;
-      BOOL success = [bridge terminateWithTimeout:timeout];
+      BOOL success = [connection terminateWithTimeout:timeout];
       if (success) {
-        [self.logger.debug logFormat:@"Simulator Bridge %@ torn down in %f seconds", bridge, [NSDate.date timeIntervalSinceDate:date]];
+        [self.logger.debug logFormat:@"Simulator connection %@ torn down in %f seconds", connection, [NSDate.date timeIntervalSinceDate:date]];
       } else {
-        [self.logger.debug logFormat:@"Simulator Bridge %@ did not teardown in less than %f seconds", bridge, timeout];
+        [self.logger.debug logFormat:@"Simulator connection %@ did not teardown in less than %f seconds", connection, timeout];
       }
     } else {
-      [self.logger.debug logFormat:@"Simulator %@ does not have a running bridge", simulator.shortDescription];
+      [self.logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.shortDescription];
     }
 
     // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.

@@ -8,48 +8,48 @@
  */
 
 import Foundation
-import FBSimulatorControl
 
-@objc public class CLI : NSObject {
-  public static func bootstrap() -> Int32 {
-    let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
-    let environment = NSProcessInfo.processInfo().environment
-    let runner = CLIRunner(arguments: arguments, environment: environment, writer: FileHandleWriter.stdOutWriter)
-    return runner.run()
+/**
+ Base Options that are also used in Help.
+ */
+public struct OutputOptions : OptionSetType {
+  public let rawValue : Int
+  public init(rawValue: Int) {
+    self.rawValue = rawValue
   }
+
+  public static let DebugLogging = OutputOptions(rawValue: 1 << 0)
+  public static let JSON = OutputOptions(rawValue: 1 << 1)
+  public static let Pretty = OutputOptions(rawValue: 1 << 2)
 }
 
-struct CLIRunner {
-  let arguments: [String]
-  let environment: [String : String]
-  let writer: Writer
+/**
+ Some Actions performed on some targets.
+ */
+public struct Help {
+  let outputOptions: OutputOptions
+  let userInitiated: Bool
+  let command: Command?
+}
 
-  func run() -> Int32 {
-    // The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
+public enum CLI {
+  case Show(Help)
+  case Run(Command)
+}
+
+public extension CLI {
+  public static func fromArguments(arguments: [String], environment: [String : String]) -> CLI {
+    let help = Help(outputOptions: OutputOptions(), userInitiated: false, command: nil)
+
     do {
-      let (_, configuration) = try FBSimulatorControlKit.Configuration.parser.parse(arguments)
-      let debugEnabled = configuration.outputOptions.contains(OutputOptions.DebugLogging)
-
-      let reporter = configuration.outputOptions.createReporter(configuration.outputOptions.createLogWriter())
-      let bridge = ControlCoreLoggerBridge(reporter: reporter)
-      let logger = LogReporter(bridge: bridge, debug: debugEnabled)
-      FBControlCoreGlobalConfiguration.setDefaultLogger(logger)
-    } catch {
-      // Parse errors will be handled by the full parse
-    }
-
-    let command = Command.fromArguments(arguments, environment: self.environment)
-    return self.runFromCLI(command)
-  }
-
-  func runFromCLI(command: Command) -> Int32 {
-    let (reporter, result) = CommandRunner.bootstrap(command, writer: self.writer)
-    switch result {
-    case .Success:
-      return 0
-    case .Failure(let string):
-      reporter.reportSimpleBridge(EventName.Failure, EventType.Discrete, string as NSString)
-      return 1
+      let (_, cli) = try CLI.parser.parse(arguments)
+      return cli.appendEnvironment(environment)
+    } catch let error as ParseError {
+      print("Failed to Parse Command \(error)")
+      return CLI.Show(help)
+    } catch let error as NSError {
+      print("Failed to Parse Command \(error)")
+      return CLI.Show(help)
     }
   }
 }

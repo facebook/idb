@@ -185,7 +185,7 @@
     userInfo[@"stderr"] = self.stdErr;
   }
 
-  if (self.task.isRunning) {
+  if (!self.task.isRunning) {
     userInfo[@"exitcode"] = @(self.task.terminationStatus);
   }
 

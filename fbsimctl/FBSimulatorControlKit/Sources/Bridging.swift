@@ -11,11 +11,9 @@ import Foundation
 import FBSimulatorControl
 
 extension FBSimulatorState {
-  public var description: String {
-    get {
-      return FBSimulator.stateStringFromSimulatorState(self)
-    }
-  }
+  public var description: String { get {
+    return FBSimulator.stateStringFromSimulatorState(self)
+  }}
 }
 
 public typealias ControlCoreValue = protocol<FBJSONSerializable, CustomStringConvertible>
@@ -96,4 +94,20 @@ extension FBiOSTargetFormat : Accumulator {
   public func append(other: FBiOSTargetFormat) -> Self {
     return self.appendFields(other.fields)
   }
+}
+
+extension CreationConfiguration {
+  public var simulatorConfiguration : FBSimulatorConfiguration { get {
+    var configuration = FBSimulatorConfiguration.defaultConfiguration()
+    if let device = self.deviceType {
+      configuration = configuration.withDevice(device)
+    }
+    if let os = self.osVersion {
+      configuration = configuration.withOS(os)
+    }
+    if let auxDirectory = self.auxDirectory {
+      configuration = configuration.withAuxillaryDirectory(auxDirectory)
+    }
+    return configuration
+  }}
 }

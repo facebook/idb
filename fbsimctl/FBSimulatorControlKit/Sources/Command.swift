@@ -12,20 +12,6 @@ import FBSimulatorControl
 import FBControlCore
 
 /**
-  Base Options that are also used in Help.
-*/
-public struct OutputOptions : OptionSetType {
-  public let rawValue : Int
-  public init(rawValue: Int) {
-    self.rawValue = rawValue
-  }
-
-  public static let DebugLogging = OutputOptions(rawValue: 1 << 0)
-  public static let JSON = OutputOptions(rawValue: 1 << 1)
-  public static let Pretty = OutputOptions(rawValue: 1 << 2)
-}
-
-/**
   Describes the Configuration for the running FBSimulatorControl Commands
 */
 public struct Configuration {
@@ -44,6 +30,15 @@ public enum Server {
 }
 
 /**
+ A Configuration for Creating a Simulator.
+ */
+public struct CreationConfiguration {
+  let osVersion: FBControlCoreConfiguration_OS?
+  let deviceType: FBControlCoreConfiguration_Device?
+  let auxDirectory : String?
+}
+
+/**
   An Enumeration specifying the output format of diagnostics.
 */
 public enum DiagnosticFormat : String {
@@ -59,11 +54,11 @@ public enum Action {
   case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
   case ClearKeychain(String)
-  case Create(FBSimulatorConfiguration)
+  case Create(CreationConfiguration)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Erase
-  case Install(FBSimulatorApplication)
+  case Install(String)
   case LaunchAgent(FBAgentLaunchConfiguration)
   case LaunchApp(FBApplicationLaunchConfiguration)
   case LaunchXCTest(FBApplicationLaunchConfiguration, String)
@@ -83,11 +78,18 @@ public enum Action {
 }
 
 /**
- The entry point for all commands.
+ Some Actions performed on some targets.
  */
-public indirect enum Command {
-  case Perform(Configuration, [Action], FBiOSTargetQuery?, FBiOSTargetFormat?)
-  case Help(OutputOptions, Bool, Command?)
+public struct Command {
+  let configuration: Configuration
+  let actions: [Action]
+  let query: FBiOSTargetQuery?
+  let format: FBiOSTargetFormat?
+}
+
+extension Command : Equatable {}
+public func == (left: Command, right: Command) -> Bool {
+  return left.configuration == right.configuration && left.actions == right.actions && left.query == right.query && left.format == right.format
 }
 
 extension Configuration : Equatable {}
@@ -127,6 +129,27 @@ extension Configuration : Accumulator {
   public static func ofDeviceSetPath(deviceSetPath: String) -> Configuration {
     let query = self.identity
     return Configuration(outputOptions: query.outputOptions, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: deviceSetPath)
+  }
+}
+
+extension CreationConfiguration : Equatable {}
+public func == (left: CreationConfiguration, right: CreationConfiguration) -> Bool {
+  return left.osVersion?.name == right.osVersion?.name &&
+         left.deviceType?.deviceName == right.deviceType?.deviceName &&
+         left.auxDirectory == right.auxDirectory
+}
+
+extension CreationConfiguration : Accumulator {
+  public init() {
+    self.init(osVersion: nil, deviceType: nil, auxDirectory: nil)
+  }
+
+  public func append(other: CreationConfiguration) -> CreationConfiguration {
+    return CreationConfiguration(
+      osVersion: other.osVersion ?? self.osVersion,
+      deviceType: other.deviceType ?? self.deviceType,
+      auxDirectory: other.auxDirectory ?? self.auxDirectory
+    )
   }
 }
 
@@ -186,31 +209,6 @@ public func == (left: Action, right: Action) -> Bool {
   }
 }
 
-extension Command : Equatable {}
-public func == (left: Command, right: Command) -> Bool {
-  switch (left, right) {
-  case (.Perform(let leftConfiguration, let leftActions, let leftQuery, let leftMaybeFormat), .Perform(let rightConfiguration, let rightActions, let rightQuery, let rightMaybeFormat)):
-    if leftConfiguration != rightConfiguration || leftActions != rightActions || leftQuery != rightQuery {
-      return false
-    }
-
-    // The == function isn't as concise as it could be as Format? isn't automatically Equatable
-    // This is despite [Equatable] Equatable? and Format all being Equatable
-    switch (leftMaybeFormat, rightMaybeFormat) {
-    case (.Some(let leftFormat), .Some(let rightFormat)):
-      return leftFormat == rightFormat
-    case (.None, .None):
-      return true
-    default:
-      return false
-    }
-  case (.Help(let leftOutput, let leftSuccess, let leftCommand), .Help(let rightOutput, let rightSuccess, let rightCommand)):
-    return leftOutput == rightOutput && leftSuccess == rightSuccess && leftCommand == rightCommand
-  default:
-    return false
-  }
-}
-
 extension Server : Equatable { }
 public func == (left: Server, right: Server) -> Bool {
   switch (left, right) {
@@ -226,34 +224,30 @@ public func == (left: Server, right: Server) -> Bool {
 }
 
 extension Server : JSONDescribeable, CustomStringConvertible {
-  public var jsonDescription: JSON {
-    get {
-      switch self {
-      case .StdIO:
-        return JSON.JDictionary([
-          "type" : JSON.JString("stdio")
-        ])
-      case .Socket(let port):
-        return JSON.JDictionary([
-          "type" : JSON.JString("socket"),
-          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
-        ])
-      case .Http(let port):
-        return JSON.JDictionary([
-          "type" : JSON.JString("http"),
-          "port" : JSON.JNumber(NSNumber(int: Int32(port)))
-        ])
-      }
+  public var jsonDescription: JSON { get {
+    switch self {
+    case .StdIO:
+      return JSON.JDictionary([
+        "type" : JSON.JString("stdio")
+      ])
+    case .Socket(let port):
+      return JSON.JDictionary([
+        "type" : JSON.JString("socket"),
+        "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+      ])
+    case .Http(let port):
+      return JSON.JDictionary([
+        "type" : JSON.JString("http"),
+        "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+      ])
     }
-  }
+  }}
 
-  public var description: String {
-    get {
-      switch self {
-      case .StdIO: return "stdio"
-      case .Socket(let port): return "Socket: Port \(port)"
-      case .Http(let port): return "HTTP: Port \(port)"
-      }
+  public var description: String { get {
+    switch self {
+    case .StdIO: return "stdio"
+    case .Socket(let port): return "Socket: Port \(port)"
+    case .Http(let port): return "HTTP: Port \(port)"
     }
-  }
+  }}
 }

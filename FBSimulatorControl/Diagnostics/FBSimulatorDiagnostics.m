@@ -261,12 +261,12 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 }
 
-- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
+- (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
 
 }
 
-- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
+- (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
 
 }

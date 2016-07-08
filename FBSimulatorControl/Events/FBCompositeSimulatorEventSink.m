@@ -48,17 +48,17 @@
   }
 }
 
-- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
+- (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink bridgeDidConnect:bridge];
+    [sink connectionDidConnect:connection];
   }
 }
 
-- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
+- (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink bridgeDidDisconnect:bridge expected:expected];
+    [sink connectionDidDisconnect:connection expected:expected];
   }
 }
 

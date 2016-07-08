@@ -167,6 +167,14 @@
   self.testBundleProtocolVersion = 0;
 }
 
+- (BOOL)hasFinishedExecution
+{
+  FBTestBundleConnectionState state = self.state;
+  return (state == FBTestBundleConnectionStateEndedTestPlan ||
+          state == FBTestBundleConnectionStateFinishedSuccessfully ||
+          state == FBTestBundleConnectionStateFinishedInError);
+}
+
 #pragma mark Private
 
 - (void)connect
@@ -195,9 +203,7 @@
   [connection registerDisconnectHandler:^{
     FBTestBundleConnectionState state = self.state;
     [self.logger logFormat:@"Bundle Connection Disconnected in state '%@'", [FBTestBundleConnection stateStringForState:state]];
-    if (state == FBTestBundleConnectionStateEndedTestPlan ||
-        state == FBTestBundleConnectionStateFinishedSuccessfully ||
-        state == FBTestBundleConnectionStateFinishedInError) {
+    if (self.hasFinishedExecution) {
       return;
     }
     [self failWithError:[[XCTestBootstrapError

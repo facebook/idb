@@ -1,12 +1,11 @@
-// Import Shared Configuration
+// Import Shared & Framework Configuration
 #include "../Configuration/Shared.xcconfig"
+#include "../Configuration/Framework.xcconfig"
 
 // Weak-Link Xcode Private Frameworks
 OTHER_LDFLAGS = $(inherited) -weak_framework DTXConnectionServices -weak_framework DVTFoundation -weak_framework IBAutolayoutFoundation -weak_framework IDEFoundation -weak_framework IDEKit -weak_library $(DEVELOPER_DIR)/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore -weak_library $(DEVELOPER_DIR)/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor
 
 // Target-Specific Settings
-DEFINES_MODULE = YES;
 INFOPLIST_FILE = $(SRCROOT)/FBDeviceControl/FBDeviceControl-Info.plist
-LD_RUNPATH_SEARCH_PATHS = @loader_path/Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl
 PRODUCT_NAME = FBDeviceControl

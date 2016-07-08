@@ -12,19 +12,25 @@ import FBSimulatorControl
 
 let EnvironmentPrefix = "FBSIMCTL_CHILD_"
 
-public extension Command {
-  func appendEnvironment(environment: [String : String]) -> Command {
+public extension CLI {
+  func appendEnvironment(environment: [String : String]) -> CLI {
     switch self {
-    case .Perform(let configuration, let actions, let query, let format):
-      return .Perform(
-        configuration,
-        actions.map { $0.appendEnvironment(environment) },
-        query,
-        format
-      )
+    case .Run(let command):
+      return .Run(command.appendEnvironment(environment))
     default:
       return self
     }
+  }
+}
+
+public extension Command {
+  func appendEnvironment(environment: [String : String]) -> Command {
+    return Command(
+      configuration: self.configuration,
+      actions: self.actions.map { $0.appendEnvironment(environment) },
+      query: self.query,
+      format: self.format
+    )
   }
 }
 

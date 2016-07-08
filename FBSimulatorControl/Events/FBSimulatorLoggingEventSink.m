@@ -53,14 +53,14 @@
   [self.logger logFormat:@"Container Application Did Terminate => %@ Expected %d", applicationProcess.shortDescription, expected];
 }
 
-- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
+- (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
-  [self.logger logFormat:@"Bridge Did Connect => %@", bridge];
+  [self.logger logFormat:@"Connection Did Connect => %@", connection];
 }
 
-- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
+- (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
-  [self.logger logFormat:@"Bridge Did Disconnect => %@ Expected %d", bridge, expected];
+  [self.logger logFormat:@"Connection Did Disconnect => %@ Expected %d", connection, expected];
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess

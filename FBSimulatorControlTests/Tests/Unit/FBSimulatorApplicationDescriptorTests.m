@@ -9,26 +9,26 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorControlFixtures.h"
 
-@interface FBSimulatorApplicationTests : XCTestCase
+@interface FBSimulatorApplicationDescriptorTests : XCTestCase
 
 @end
 
-@implementation FBSimulatorApplicationTests
+@implementation FBSimulatorApplicationDescriptorTests
 
 - (void)testCanFetchSimulatorApplications
 {
-  XCTAssertNotNil([FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:nil]);
-  XCTAssertNotNil([FBSimulatorApplication systemApplicationNamed:@"Camera" error:nil]);
-  XCTAssertNotNil([FBSimulatorApplication systemApplicationNamed:@"Maps" error:nil]);
+  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"MobileSafari" error:nil]);
+  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Camera" error:nil]);
+  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Maps" error:nil]);
 }
 
 - (void)testCreatesSampleApplication
 {
-  FBSimulatorApplication *application = self.tableSearchApplication;
+  FBApplicationDescriptor *application = self.tableSearchApplication;
   XCTAssertEqualObjects(application.bundleID, @"com.example.apple-samplecode.TableSearch");
   XCTAssertEqualObjects(application.binary.architectures, [NSSet setWithArray:@[@"i386"]]);
 }

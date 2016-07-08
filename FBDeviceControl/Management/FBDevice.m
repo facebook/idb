@@ -14,9 +14,27 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBiOSDeviceOperator.h"
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
-#import "FBiOSDeviceOperator+Private.h"
+
+_Nullable CFArrayRef (*_Nonnull FBAMDCreateDeviceList)(void);
+int (*FBAMDeviceConnect)(CFTypeRef device);
+int (*FBAMDeviceDisconnect)(CFTypeRef device);
+int (*FBAMDeviceIsPaired)(CFTypeRef device);
+int (*FBAMDeviceValidatePairing)(CFTypeRef device);
+int (*FBAMDeviceStartSession)(CFTypeRef device);
+int (*FBAMDeviceStopSession)(CFTypeRef device);
+int (*FBAMDServiceConnectionGetSocket)(CFTypeRef connection);
+int (*FBAMDServiceConnectionInvalidate)(CFTypeRef connection);
+int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle);
+_Nullable CFStringRef (*_Nonnull FBAMDeviceGetName)(CFTypeRef device);
+_Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
+void (*FBAMDSetLogLevel)(int32_t level);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
 
 @implementation FBDevice
 
@@ -37,6 +55,11 @@
   _logger = logger;
 
   return self;
+}
+
+- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error
+{
+  return [self.amDevice startTestManagerServiceWithError:error];
 }
 
 #pragma mark FBiOSTarget
@@ -113,7 +136,7 @@
 - (id<FBDeviceOperator>)deviceOperator
 {
   if (_deviceOperator == nil) {
-    _deviceOperator = [[FBiOSDeviceOperator alloc] initWithiOSDevice:self.dvtDevice];
+    _deviceOperator = [FBiOSDeviceOperator forDevice:self];
   }
   return _deviceOperator;
 }
@@ -133,4 +156,16 @@
   return self.dvtDevice.supportedArchitectures.set;
 }
 
+#pragma mark Forwarding
+
+- (id)forwardingTargetForSelector:(SEL)selector
+{
+  if ([self.deviceOperator respondsToSelector:selector]) {
+    return self.deviceOperator;
+  }
+  return nil;
+}
+
 @end
+
+#pragma clang diagnostic pop

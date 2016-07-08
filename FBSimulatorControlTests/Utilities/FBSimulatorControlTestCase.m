@@ -42,7 +42,7 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
   }
 
   [FBControlCoreGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBControlCoreGlobalConfiguration.description];
-  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
 }
 
 #pragma mark Property Overrides

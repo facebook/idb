@@ -10,41 +10,24 @@
 import Foundation
 import FBSimulatorControl
 
-public extension Command {
-  public static func fromArguments(arguments: [String], environment: [String : String]) -> Command {
-    do {
-      let (_, command) = try Command.parser.parse(arguments)
-      return command.appendEnvironment(environment)
-    } catch let error as ParseError {
-      print("Failed to Parse Command \(error)")
-      return Command.Help(OutputOptions(), false, nil)
-    } catch let error as NSError {
-      print("Failed to Parse Command \(error)")
-      return Command.Help(OutputOptions(), false, nil)
-    }
-  }
-}
-
 public enum ParseError : ErrorType, CustomStringConvertible {
   case EndOfInput
   case DoesNotMatch(String, String)
   case CouldNotInterpret(String, String)
   case Custom(String)
 
-  public var description: String {
-    get {
-      switch self {
-      case .EndOfInput:
-        return "End of Input"
-      case .DoesNotMatch(let expected, let actual):
-        return "'\(actual)' does not match '\(expected)'"
-      case .CouldNotInterpret(let typeName, let actual):
-        return "\(actual) could not be interpreted as \(typeName)"
-      case .Custom(let message):
-        return message
-      }
+  public var description: String { get {
+    switch self {
+    case .EndOfInput:
+      return "End of Input"
+    case .DoesNotMatch(let expected, let actual):
+      return "'\(actual)' does not match '\(expected)'"
+    case .CouldNotInterpret(let typeName, let actual):
+      return "\(actual) could not be interpreted as \(typeName)"
+    case .Custom(let message):
+      return message
     }
-  }
+  }}
 }
 
 /**
@@ -64,11 +47,9 @@ public struct Parser<A> : CustomStringConvertible {
     return (nextTokens, value)
   }
 
-  public var description: String {
-    get {
-      return self.matchDescription
-    }
-  }
+  public var description: String { get {
+    return self.matchDescription
+  }}
 }
 
 /**

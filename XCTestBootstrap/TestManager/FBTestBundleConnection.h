@@ -88,6 +88,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (atomic, assign, readonly) long long testBundleProtocolVersion;
 @property (atomic, nullable, strong, readonly) id<XCTestDriverInterface> testBundleProxy;
 @property (atomic, nullable, strong, readonly) DTXConnection *testBundleConnection;
+@property (atomic, assign, readonly) BOOL hasFinishedExecution;
 
 @end
 

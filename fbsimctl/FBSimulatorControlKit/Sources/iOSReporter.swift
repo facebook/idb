@@ -13,13 +13,14 @@ import Foundation
  A Protocol for Commands to access and report about an iOS Target.
  */
 public protocol iOSReporter : class {
-  associatedtype Target : FBiOSTarget
-
   var reporter: EventReporter { get }
-  unowned var target: Target { get }
+  unowned var target: FBiOSTarget { get }
   var format: FBiOSTargetFormat { get }
 }
 
+/**
+ Conveniences for a Reporter.
+ */
 extension iOSReporter {
   public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     let targetSubject = iOSTargetSubject(target: self.target, format: self.format)

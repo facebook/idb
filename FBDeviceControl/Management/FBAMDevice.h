@@ -21,6 +21,17 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBAMDevice : NSObject
 
 /**
+ Loads AMDevice symbols required by this class to work properly.
+ Should be called before any other call to this class is made.
+ */
++ (void)loadFBAMDeviceSymbols;
+
+/**
+ Turns on asl debug logs for all AMDevice services
+ */
++ (void)enableDebugLogging;
+
+/**
  Returns an Array of all the Available Devices.
  */
 + (NSArray<FBAMDevice *> *)allDevices;
@@ -64,6 +75,13 @@ NS_ASSUME_NONNULL_BEGIN
  The Architechture of the Device's CPU.
  */
 @property (nonatomic, nullable, copy, readonly) NSString *architechture;
+
+/**
+ Starts test manager daemon service
+
+ @return AMDServiceConnection if the operation succeeds, otherwise NULL.
+ */
+- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error;
 
 @end
 

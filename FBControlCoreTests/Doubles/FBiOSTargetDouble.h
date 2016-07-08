@@ -21,7 +21,7 @@
 
 @property (nonatomic, assign, readwrite) FBiOSTargetType targetType;
 
-@property (nonatomic, assign, readwrite) FBProcessInfo *launchdProcess;
+@property (nonatomic, copy, readwrite) FBProcessInfo *launchdProcess;
 
 @property (nonatomic, copy, readwrite) id<FBControlCoreConfiguration_Device> deviceConfiguration;
 

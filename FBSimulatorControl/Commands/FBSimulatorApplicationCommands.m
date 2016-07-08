@@ -9,9 +9,10 @@
 
 #import "FBSimulatorApplicationCommands.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimDeviceWrapper.h"
 
@@ -44,7 +45,7 @@
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   NSError *innerError = nil;
-  FBSimulatorApplication *application = [FBSimulatorApplication applicationWithPath:path error:&innerError];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:path error:&innerError];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]
@@ -54,6 +55,18 @@
 
   if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
     return YES;
+  }
+
+  NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
+  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceConfiguration.simulatorArchitecture];
+  if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
+    return [[FBSimulatorError
+      describeFormat:
+        @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
+        [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
+        application.binary.path,
+        [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
+      failBool:error];
   }
 
   NSDictionary *options = @{

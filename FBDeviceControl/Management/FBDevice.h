@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 #import <FBControlCore/FBControlCore.h>
 
+@class DVTiOSDevice;
 @class FBDeviceSet;
 @class FBProductBundle;
 @class FBTestRunnerConfiguration;
@@ -34,9 +35,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 /**
+ The DVTDevice, corresponding to the reciever.
+ */
+@property (nonatomic, nullable, strong, readonly) DVTiOSDevice *dvtDevice;
+
+/**
  Device operator used to control device
  */
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
 
 /**
  Device's name
@@ -65,6 +71,13 @@ NS_ASSUME_NONNULL_BEGIN
  Architectures suported by device
  */
 @property (nonatomic, copy, readonly) NSSet *supportedArchitectures;
+
+/**
+ Starts test manager daemon service
+
+ @return AMDServiceConnection if the operation succeeds, otherwise NULL.
+ */
+- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error;
 
 @end
 

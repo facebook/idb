@@ -13,20 +13,16 @@ struct SignalInfo : JSONDescribeable, CustomStringConvertible {
   let signo: Int32
   let name: String
 
-  var jsonDescription: JSON {
-    get {
-      return JSON.JDictionary([
-        "signo" : JSON.JNumber(NSNumber(int: self.signo)),
-        "name" : JSON.JString(self.name),
-      ])
-    }
-  }
+  var jsonDescription: JSON { get {
+    return JSON.JDictionary([
+      "signo" : JSON.JNumber(NSNumber(int: self.signo)),
+      "name" : JSON.JString(self.name),
+    ])
+  }}
 
-  var description: String {
-    get {
-      return "\(self.name) \(self.signo)"
-    }
-  }
+  var description: String { get {
+    return "\(self.name) \(self.signo)"
+  }}
 }
 
 let signalPairs: [SignalInfo] = [

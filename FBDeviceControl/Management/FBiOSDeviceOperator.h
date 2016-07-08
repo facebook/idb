@@ -7,11 +7,24 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <XCTestBootstrap/FBDeviceOperator.h>
 
+@class FBDevice;
+
 /**
- Operator that uses DVTFoundation and IDEiOSSupportCore.ideplugin to control DVTiOSDevice directly
+ A 'Device Operator' Implementation for providing the necessary functionality to XCTestBoostrap for Physical Devices.
+ Uses the Xcode Frameworks DVTFoundation and IDEiOSSupportCore.ideplugin to control a DVTiOSDevice instance directly.
  */
 @interface FBiOSDeviceOperator : NSObject <FBDeviceOperator>
+
+/**
+ Creates a new Device Operator for the provided Device.
+
+ @param device the Device to create the Operator for.
+ @return a new FBiOSDeviceOperator instance.
+ */
++ (instancetype)forDevice:(FBDevice *)device;
 
 @end

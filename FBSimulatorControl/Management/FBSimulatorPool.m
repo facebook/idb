@@ -10,13 +10,12 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorPool+Private.h"
 
-#import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"
@@ -53,7 +52,7 @@
 
 #pragma mark - Public Methods
 
-- (FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
+- (nullable FBSimulator *)allocateSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration options:(FBSimulatorAllocationOptions)options error:(NSError **)error;
 {
   NSError *innerError = nil;
   FBSimulator *simulator = [self obtainSimulatorWithConfiguration:configuration options:options error:&innerError];

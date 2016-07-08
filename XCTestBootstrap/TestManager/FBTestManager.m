@@ -65,6 +65,11 @@
   [self.mediator disconnectTestRunnerAndTestManagerDaemon];
 }
 
+- (BOOL)waitUntilTestingHasFinishedWithTimeout:(NSTimeInterval)timeout
+{
+  return [self.mediator waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:timeout];
+}
+
 - (NSString *)description
 {
   return [NSString stringWithFormat:

@@ -18,15 +18,48 @@
 
 #import <IDEFoundation/IDEFoundationTestInitializer.h>
 
+#import "FBAMDevice.h"
+
 @implementation FBDeviceControlFrameworkLoader
+
+#pragma mark - Public
+
+#pragma mark Essential Frameworks
 
 + (void)initializeEssentialFrameworks
 {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     [self loadEssentialFrameworksOrAbort];
+    if (FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
+      [FBAMDevice enableDebugLogging];
+    }
   });
 }
+
++ (void)loadEssentialFrameworksOrAbort
+{
+  NSError *error = nil;
+  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+  BOOL success = [self loadEssentialFrameworks:logger error:&error];
+  if (success) {
+    [FBAMDevice loadFBAMDeviceSymbols];
+    return;
+  }
+
+  [logger.error logFormat:@"Failed to load the essential frameworks for FBDeviceControl with error %@", error];
+  abort();
+}
+
++ (BOOL)loadEssentialFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  NSArray<FBWeakFramework *> *frameworks = @[
+    FBWeakFramework.MobileDevice,
+  ];
+  return [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
+}
+
+#pragma mark Xcode Frameworks
 
 + (void)initializeXCodeFrameworks
 {
@@ -36,25 +69,6 @@
     [self confirmExistenceOfClasses];
     [self initializePrincipalClasses];
   });
-}
-
-#pragma mark Private
-
-+ (void)loadEssentialFrameworksOrAbort
-{
-  NSArray<FBWeakFramework *> *frameworks = @[
-    FBWeakFramework.MobileDevice,
-  ];
-
-  NSError *error = nil;
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  BOOL success = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:&error];
-  if (success) {
-    return;
-  }
-
-  [logger.error logFormat:@"Failed to load the essential frameworks for FBDeviceControl with error %@", error];
-  abort();
 }
 
 + (void)loadXcodeFrameworksOrAbort
@@ -104,6 +118,16 @@
   NSCAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"], @"Failed to load Xcode.DeviceType.Mac");
   NSCAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"], @"Failed to load Xcode.DeviceType.iPhone");
   [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] startLocating];
+}
+
++ (void)enableDVTDebugLogging
+{
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSupport"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSimulator"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"DVTDevice"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Operations"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Executable"] setLogLevel:10];
+  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"CommandInvocation"] setLogLevel:10];
 }
 
 @end

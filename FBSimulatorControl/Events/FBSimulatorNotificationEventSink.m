@@ -11,10 +11,10 @@
 
 NSString *const FBSimulatorDidLaunchNotification = @"FBSimulatorDidLaunchNotification";
 NSString *const FBSimulatorDidTerminateNotification = @"FBSimulatorDidTerminateNotification";
-NSString *const FBSimulatorContainerDidLaunchNotification = @"FBSimulatorContainerDidLaunchNotification";
-NSString *const FBSimulatorContainerDidTerminateNotification = @"FBSimulatorContainerDidTerminateNotification";
-NSString *const FBSimulatorBridgeDidConnectNotification = @"FBSimulatorBridgeDidConnectNotification";
-NSString *const FBSimulatorBridgeDidDisconnectNotification = @"FBSimulatorBridgeDidDisconnectNotification";
+NSString *const FBSimulatorApplicationDidLaunchNotification = @"FBSimulatorApplicationDidLaunchNotification";
+NSString *const FBSimulatorApplicationDidTerminateNotification = @"FBSimulatorApplicationDidTerminateNotification";
+NSString *const FBSimulatorConnectionDidConnectNotification = @"FBSimulatorConnectionDidConnectNotification";
+NSString *const FBSimulatorConnectionDidDisconnectNotification = @"FBSimulatorConnectionDidDisconnectNotification";
 NSString *const FBSimulatorApplicationProcessDidLaunchNotification = @"FBSimulatorApplicationProcessDidLaunchNotification";
 NSString *const FBSimulatorApplicationProcessDidTerminateNotification = @"FBSimulatorApplicationProcessDidTerminateNotification";
 NSString *const FBSimulatorAgentProcessDidLaunchNotification = @"FBSimulatorAgentProcessDidLaunchNotification";
@@ -27,7 +27,7 @@ NSString *const FBSimulatorStateDidChange = @"FBSimulatorStateDidChange";
 NSString *const FBSimulatorExpectedTerminationKey = @"expected";
 NSString *const FBSimulatorProcessKey = @"process";
 NSString *const FBSimulatorDiagnosticLog = @"diagnostic_log";
-NSString *const FBSimulatorBridgeKey = @"bridge";
+NSString *const FBSimulatorConnectionKey = @"connection";
 NSString *const FBSimulatorStateKey = @"simulator_state";
 NSString *const FBSimulatorTestManagerKey = @"testManager";
 
@@ -50,31 +50,31 @@ NSString *const FBSimulatorTestManagerKey = @"testManager";
 
 - (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
 {
-  [self materializeNotification:FBSimulatorContainerDidLaunchNotification userInfo:@{
+  [self materializeNotification:FBSimulatorApplicationDidLaunchNotification userInfo:@{
     FBSimulatorProcessKey : applicationProcess
   }];
 }
 
 - (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
-  [self materializeNotification:FBSimulatorContainerDidTerminateNotification userInfo:@{
+  [self materializeNotification:FBSimulatorApplicationDidTerminateNotification userInfo:@{
     FBSimulatorExpectedTerminationKey : @(expected),
     FBSimulatorProcessKey : applicationProcess
   }];
 }
 
-- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
+- (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
-  [self materializeNotification:FBSimulatorBridgeDidConnectNotification userInfo:@{
-    FBSimulatorBridgeKey : bridge,
+  [self materializeNotification:FBSimulatorConnectionDidConnectNotification userInfo:@{
+    FBSimulatorConnectionKey : connection,
   }];
 }
 
-- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
+- (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
-  [self materializeNotification:FBSimulatorBridgeDidDisconnectNotification userInfo:@{
+  [self materializeNotification:FBSimulatorConnectionDidDisconnectNotification userInfo:@{
     FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorBridgeKey : bridge,
+    FBSimulatorConnectionKey : connection,
   }];
 }
 

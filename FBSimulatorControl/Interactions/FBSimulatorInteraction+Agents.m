@@ -20,7 +20,6 @@
 #import "FBSimulator+Private.h"
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorInteraction+Private.h"
@@ -37,7 +36,7 @@
   }];
 }
 
-- (instancetype)killAgent:(FBSimulatorBinary *)agent
+- (instancetype)killAgent:(FBBinaryDescriptor *)agent
 {
   NSParameterAssert(agent);
 

@@ -26,7 +26,7 @@
 
     // Ensure that application is installed on simulator.
     NSError *innerError = nil;
-    FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:bundleID error:&innerError];
+    FBApplicationDescriptor *application = [simulator installedApplicationWithBundleID:bundleID error:&innerError];
     if (!application) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to find application with bundleID %@", bundleID]

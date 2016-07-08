@@ -19,20 +19,18 @@ public enum JSONError : ErrorType {
   case Stringifying(NSData)
   case Parse(String)
 
-  public var description: String {
-    get {
-      switch self {
-      case .NonEncodable(let object):
-        return "\(object) is not JSON Encodable"
-      case .Serialization(let error):
-        return "Serialization \(error.description)"
-      case .Stringifying(let data):
-        return "Stringifying \(data.description)"
-      case .Parse(let string):
-        return "Parsing \(string)"
-      }
+  public var description: String { get {
+    switch self {
+    case .NonEncodable(let object):
+      return "\(object) is not JSON Encodable"
+    case .Serialization(let error):
+      return "Serialization \(error.description)"
+    case .Stringifying(let data):
+      return "Stringifying \(data.description)"
+    case .Parse(let string):
+      return "Parsing \(string)"
     }
-  }
+  }}
 }
 
 /**

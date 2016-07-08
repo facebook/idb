@@ -93,15 +93,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "listen"
+            argument = "all"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--socket"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "8090"
+            argument = "list"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

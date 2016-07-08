@@ -11,8 +11,9 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorControlConfiguration.h"
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
@@ -65,7 +66,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 + (NSPredicate *)simulatorProcessesWithCorrectLaunchPath
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    return [process.launchPath isEqualToString:FBSimulatorApplication.xcodeSimulator.binary.path];
+    return [process.launchPath isEqualToString:FBApplicationDescriptor .xcodeSimulator.binary.path];
   }];
 }
 
@@ -146,7 +147,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   }];
 }
 
-+ (NSPredicate *)processesForBinary:(FBSimulatorBinary *)binary
++ (NSPredicate *)processesForBinary:(FBBinaryDescriptor *)binary
 {
   NSString *endPath = binary.path.lastPathComponent;
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *processInfo, NSDictionary *_) {

@@ -16,7 +16,6 @@
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorLaunchCtl ()
@@ -52,7 +51,7 @@
 {
   // Construct a Launch Configuration for launchctl we'll use the 'list' command.
   FBAgentLaunchConfiguration *launchConfiguration = [FBAgentLaunchConfiguration
-    configurationWithBinary:FBSimulatorBinary.launchCtl
+    configurationWithBinary:FBBinaryDescriptor.launchCtl
     arguments:@[@"list"]
     environment:@{}
     options:0];

@@ -72,7 +72,7 @@
          <EnvironmentVariable
             key = "FBSIMULATORCONTROL_LAUNCH_TYPE"
             value = "simulator_app"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
       <AdditionalOptions>

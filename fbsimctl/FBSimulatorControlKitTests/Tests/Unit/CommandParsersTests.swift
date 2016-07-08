@@ -46,39 +46,22 @@ class FBSimulatorManagementOptionsParserTests : XCTestCase {
   }
 }
 
-class FBSimulatorConfigurationParserTests : XCTestCase {
-  func testFailsToParseEmpty() {
-    self.assertParseFails(FBSimulatorConfigurationParser.parser, [])
-  }
+let emptyConfiguration = CreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: nil)
+let iOS9Configuration = CreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_0(), deviceType: nil, auxDirectory: nil)
+let iPhone6Configuration = CreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone6(), auxDirectory: nil)
+let auxDirectoryConfiguration = CreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: "/usr/bin")
+let compoundConfiguration0 =  CreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_3(), deviceType: FBControlCoreConfiguration_Device_iPhone6S(), auxDirectory: nil)
+let compoundConfiguration1 =  CreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_10_0(), deviceType: FBControlCoreConfiguration_Device_iPadAir2(), auxDirectory: nil)
 
-  func testParsesOSAlone() {
-    self.assertParses(
-      FBSimulatorConfigurationParser.parser,
-      ["iOS 9.3"],
-      FBSimulatorConfiguration.defaultConfiguration().iOS_9_3()
-    )
-  }
-
-  func testParsesDeviceAlone() {
-    self.assertParses(
-      FBSimulatorConfigurationParser.parser,
-      ["iPhone 6"],
-      FBSimulatorConfiguration.defaultConfiguration().iPhone6()
-    )
-  }
-
-  func testParsesAuxDirectoryAlone() {
-    self.assertParses(
-      FBSimulatorConfigurationParser.parser,
-      ["--aux", "/usr/bin"],
-      FBSimulatorConfiguration.defaultConfiguration().withAuxillaryDirectory("/usr/bin")
-    )
-  }
-
-  func parsesOSAndDevice(){
-    self.assertParsesAll(FBSimulatorConfigurationParser.parser, [
-      (["iPhone 6", "iOS 9.3"], FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_3()),
-      (["iPad 2", "iOS 9.0"], FBSimulatorConfiguration.defaultConfiguration().iPad2().iOS_9_0()),
+class CreationConfigurationParserTests : XCTestCase {
+  func testParses() {
+    self.assertParsesAll(CreationConfiguration.parser, [
+      ([], emptyConfiguration),
+      (["iOS 9.0"], iOS9Configuration),
+      (["iPhone 6"], iPhone6Configuration),
+      (["--aux", "/usr/bin"], auxDirectoryConfiguration),
+      (["iPhone 6s", "iOS 9.3"], compoundConfiguration0),
+      (["iPad Air 2", "iOS 10.0"], compoundConfiguration1),
     ])
   }
 }
@@ -167,9 +150,9 @@ let validActions: [([String], Action)] = [
   (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale25Percent().withOptions(FBSimulatorLaunchOptions.ConnectBridge.union(FBSimulatorLaunchOptions.UseNSWorkspace)))),
   (["boot"], Action.Boot(nil)),
   (["clear_keychain", "com.foo.bar"], Action.ClearKeychain("com.foo.bar")),
-  (["create", "iOS 9.3"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iOS_9_3())),
-  (["create", "iPhone 6", "iOS 9.3"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6().iOS_9_3())),
-  (["create", "iPhone 6"], Action.Create(FBSimulatorConfiguration.defaultConfiguration().iPhone6())),
+  (["create", "iOS 9.0"], Action.Create(iOS9Configuration)),
+  (["create", "iPhone 6s", "iOS 9.3"], Action.Create(compoundConfiguration0)),
+  (["create", "iPhone 6"], Action.Create(iPhone6Configuration)),
   (["delete"], Action.Delete),
   (["diagnose", "--content", "--crashes-since", "200", "--system"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.System, since: NSDate(timeIntervalSince1970: 200)), DiagnosticFormat.Content)),
   (["diagnose", "--content", "com.foo.bar", "foo.txt", "bar.txt"], Action.Diagnose(FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID("com.foo.bar", withFilenames: ["foo.txt", "bar.txt"]), DiagnosticFormat.Content)),
@@ -178,7 +161,7 @@ let validActions: [([String], Action)] = [
   (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.Diagnose(FBSimulatorDiagnosticQuery.crashesOfType(FBCrashLogInfoProcessType.Application, since: NSDate(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
   (["diagnose"], Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["erase"], Action.Erase),
-  (["install", Fixtures.application.path], Action.Install(Fixtures.application)),
+  (["install", Fixtures.application.path], Action.Install(Fixtures.application.path)),
   (["launch", "--stderr", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: .WriteStderr))),
   (["launch", "--stdout", "com.foo.bar", "--foo", "--", "--something-else"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:], options: .WriteStdout))),
   (["launch", "com.foo.bar"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
@@ -214,9 +197,7 @@ let invalidActions: [[String]] = [
   ["aboota"],
   ["approve", "dontadddotstome"],
   ["approve"],
-  ["create"],
   ["ddshutdown"],
-  ["install", "/dev/null"],
   ["install"],
   ["listaa"],
 ]
@@ -262,9 +243,9 @@ class CommandParserTests : XCTestCase {
 
   func testParsesListBootListenShutdownDiagnose() {
     let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
-    let simulatorConfiguration = FBSimulatorConfiguration.iPhone5()
+    let creationConfiguration = CreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone5(), auxDirectory: nil)
     let diagnoseAction = Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
-    let actions: [Action] = [Action.List, Action.Create(simulatorConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
+    let actions: [Action] = [Action.List, Action.Create(creationConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
     let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "listen", "--http", "8090", "shutdown", "diagnose"]
     self.assertWithDefaultActions(actions, suffix: suffix)
   }
@@ -295,7 +276,7 @@ class CommandParserTests : XCTestCase {
 
   func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], FBiOSTargetQuery?, FBiOSTargetFormat?)]) {
     let pairs = extras.map { (tokens, query, format) in
-      return (tokens + suffix, Command.Perform(Configuration.defaultValue, actions, query, format))
+      return (tokens + suffix, Command(configuration: Configuration.defaultValue, actions: actions, query: query, format: format))
     }
     self.assertParsesAll(Command.parser, pairs)
   }

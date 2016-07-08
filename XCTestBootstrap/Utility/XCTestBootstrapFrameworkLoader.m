@@ -30,64 +30,22 @@
   });
 }
 
-+ (void)initializeDVTEnvironment
-{
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    // First load the Frameworks.
-    [self loadPrivateDVTFrameworksOrAbort];
-
-    // Then confirm the important classes exist.
-    NSError *error = nil;
-    NSCAssert([NSClassFromString(@"IDEFoundationTestInitializer") initializeTestabilityWithUI:NO error:&error], @"Failed to initialize Testability %@", error);
-    NSCAssert([NSClassFromString(@"DVTPlatform") loadAllPlatformsReturningError:&error], @"Failed to load all platforms: %@", error);
-    NSCAssert([NSClassFromString(@"DVTPlatform") platformForIdentifier:@"com.apple.platform.iphoneos"] != nil, @"DVTPlatform hasn't been initialized yet.");
-    NSCAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"], @"Failed to load Xcode.DeviceType.Mac");
-    NSCAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"], @"Failed to load Xcode.DeviceType.iPhone");
-    [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] startLocating];
-  });
-}
-
-+ (void)enableDVTDebugLogging
-{
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSupport"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSimulator"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"DVTDevice"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Operations"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Executable"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"CommandInvocation"] setLogLevel:10];
-}
 
 #pragma mark Private
 
 + (void)loadPrivateTestingFrameworksOrAbort
 {
-  [self loadFrameworksOrAbort:@[
+  NSArray<FBWeakFramework *> *frameworks = @[
     [FBWeakFramework DTXConnectionServices],
-    [FBWeakFramework XCTest],
-  ] groupName:@"Testing frameworks"];
-}
+    [FBWeakFramework XCTest]
+  ];
 
-+ (void)loadPrivateDVTFrameworksOrAbort
-{
-  [self loadFrameworksOrAbort:@[
-    [FBWeakFramework DVTFoundation],
-    [FBWeakFramework IDEFoundation],
-    [FBWeakFramework IDEiOSSupportCore],
-    [FBWeakFramework IBAutolayoutFoundation],
-    [FBWeakFramework IDEKit],
-    [FBWeakFramework IDESourceEditor]
-  ] groupName:@"DVT frameworks"];
-}
-
-+ (void)loadFrameworksOrAbort:(NSArray<FBWeakFramework *> *)frameworks groupName:(NSString *)groupName
-{
   NSError *error = nil;
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
   if ([FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:&error]) {
     return;
   }
-  [logger.error logFormat:@"Failed to load private %@ for XCTBoostrap with error %@", groupName, error];
+  [logger.error logFormat:@"Failed to load the xcode frameworks for XCTBoostrap with error %@", error];
   abort();
 }
 

@@ -18,7 +18,6 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorEventSink.h"
@@ -30,7 +29,7 @@
 
 @implementation FBSimulatorInteraction (Applications)
 
-- (instancetype)installApplication:(FBSimulatorApplication *)application
+- (instancetype)installApplication:(FBApplicationDescriptor *)application
 {
   NSParameterAssert(application);
 
@@ -109,7 +108,7 @@
   }];
 }
 
-- (instancetype)terminateApplication:(FBSimulatorApplication *)application
+- (instancetype)terminateApplication:(FBApplicationDescriptor *)application
 {
   NSParameterAssert(application);
   return [self terminateApplicationWithBundleID:application.bundleID];

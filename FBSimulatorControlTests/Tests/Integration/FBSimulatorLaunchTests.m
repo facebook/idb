@@ -21,7 +21,7 @@
 
 @implementation FBSimulatorLaunchTests
 
-- (FBSimulator *)testApplication:(FBSimulatorApplication *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
+- (FBSimulator *)testApplication:(FBApplicationDescriptor *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = [self obtainSimulator];
 
@@ -38,7 +38,7 @@
   return simulator;
 }
 
-- (void)testApplication:(FBSimulatorApplication *)application relaunches:(FBApplicationLaunchConfiguration *)appLaunch
+- (void)testApplication:(FBApplicationDescriptor *)application relaunches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = [self testApplication:application launches:appLaunch];
   FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
@@ -151,7 +151,7 @@
 - (void)testCanUninstallApplication
 {
   FBSimulator *simulator = [self obtainSimulator];
-  FBSimulatorApplication *application = self.tableSearchApplication;
+  FBApplicationDescriptor *application = self.tableSearchApplication;
   FBApplicationLaunchConfiguration *launch = self.tableSearchAppLaunch;
 
   [self.assert consumeAllNotifications];

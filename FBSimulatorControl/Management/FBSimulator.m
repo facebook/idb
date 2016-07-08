@@ -169,9 +169,9 @@
   return self.eventRelay.launchdProcess;
 }
 
-- (FBSimulatorBridge *)bridge
+- (FBSimulatorConnection *)connection
 {
-  return self.eventRelay.bridge;
+  return self.eventRelay.connection;
 }
 
 - (FBProcessInfo *)containerApplication
@@ -256,6 +256,8 @@
     [FBSimulatorApplicationCommands withSimulator:simulator],
   ];
 }
+
+#pragma mark Private
 
 + (NSString *)auxillaryDirectoryFromSimDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration
 {

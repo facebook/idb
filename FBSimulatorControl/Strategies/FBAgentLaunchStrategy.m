@@ -17,7 +17,6 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorDiagnostics.h"
-#import "FBSimulatorApplication.h"
 #import "FBProcessLaunchConfiguration.h"
 
 @interface FBAgentLaunchStrategy ()

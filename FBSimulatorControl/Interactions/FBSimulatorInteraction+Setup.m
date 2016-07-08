@@ -11,8 +11,9 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBSimulator.h"
-#import "FBSimulatorApplication.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorLaunchConfiguration.h"
@@ -68,7 +69,7 @@
   }];
 }
 
-- (instancetype)authorizeLocationSettingForApplication:(FBSimulatorApplication *)application
+- (instancetype)authorizeLocationSettingForApplication:(FBApplicationDescriptor *)application
 {
   NSParameterAssert(application);
   return [self authorizeLocationSettings:@[application.bundleID]];

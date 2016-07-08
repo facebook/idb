@@ -15,12 +15,13 @@
 
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorControl+PrincipalClass.h"
+#import "FBSimulatorControlFrameworkLoader.h"
 
 @implementation FBSimulatorConfiguration
 
 + (void)initialize
 {
-  [FBSimulatorControl loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
 }
 
 #pragma mark Initializers

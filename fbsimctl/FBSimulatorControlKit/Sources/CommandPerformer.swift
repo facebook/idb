@@ -26,7 +26,12 @@ struct ActionPerformer {
   let format: FBiOSTargetFormat?
 
   func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> CommandResult {
-    let command = Command.Perform(self.configuration, [action], queryOverride ?? self.query, formatOverride ?? self.format)
+    let command = Command(
+      configuration: self.configuration,
+      actions: [action],
+      query: queryOverride ?? self.query,
+      format: formatOverride ?? self.format
+    )
     return self.commandPerformer.perform(command, reporter: reporter)
   }
 }
@@ -67,18 +72,14 @@ public enum CommandResult {
 }
 
 extension CommandResult : CustomStringConvertible, CustomDebugStringConvertible {
-  public var description: String {
-    get {
-      switch self {
-      case .Success: return "Success"
-      case .Failure(let string): return "Failure '\(string)'"
-      }
+  public var description: String { get {
+    switch self {
+    case .Success: return "Success"
+    case .Failure(let string): return "Failure '\(string)'"
     }
-  }
+  }}
 
-  public var debugDescription: String {
-    get {
-      return self.description
-    }
-  }
+  public var debugDescription: String { get {
+    return self.description
+  }}
 }

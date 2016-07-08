@@ -16,14 +16,13 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBApplicationLaunchStrategy.h"
-#import "FBSimulatorBridge.h"
-#import "FBSimulatorApplication.h"
+#import "FBSimulatorConnection.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBProcessLaunchConfiguration.h"
-#import "FBSimulatorConnectStrategy.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBProcessLaunchConfiguration+Helpers.h"
 
@@ -48,6 +47,7 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
@@ -57,7 +57,7 @@
 {
   FBSimulator *simulator = self.simulator;
   NSError *innerError = nil;
-  FBSimulatorApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  FBApplicationDescriptor *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
   if (!application) {
     return [[[[FBSimulatorError
       describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]
@@ -67,7 +67,7 @@
   }
 
   // The Bridge must be connected in order for the launch to work.
-  FBSimulatorBridge *bridge = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
+  FBSimulatorBridge *bridge = [simulator.connection connectToBridge:&innerError];
   if (!bridge) {
     return [[[FBSimulatorError
       describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
@@ -116,7 +116,10 @@
   }
 
   // Launch the Application.
-  pid_t processIdentifier = [bridge launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil) stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil) error:&innerError];
+  pid_t processIdentifier = [bridge
+    launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil)
+    stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil)
+    error:&innerError];
   if (!processIdentifier) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to launch application %@", appLaunch]

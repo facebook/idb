@@ -8,14 +8,39 @@
  */
 
 import Foundation
+import FBSimulatorControl
+import FBDeviceControl
 
-struct iOSTargetRunner<A : iOSReporter> : Runner {
-  let reporter: A
+struct iOSActionProvider {
+  let context: iOSRunnerContext<(Action, FBiOSTarget, iOSReporter)>
+
+  func makeRunner() -> Runner? {
+    let (action, target, reporter) = self.context.value
+
+    switch action {
+    case .List:
+      let format = self.context.format
+      return iOSTargetRunner(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
+        let subject = iOSTargetSubject(target: target, format: format)
+        reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
+      }
+    case .Install(let appPath):
+      return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
+        try target.installApplicationWithPath(appPath)
+      }
+    default:
+      return nil
+    }
+  }
+}
+
+struct iOSTargetRunner : Runner {
+  let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
   let action: Void throws -> Void
 
-  init(_ reporter: A, _ name: EventName?, _ subject: EventReporterSubject, _ action: Void throws -> Void) {
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: Void throws -> Void) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
@@ -35,13 +60,9 @@ struct iOSTargetRunner<A : iOSReporter> : Runner {
       return .Failure(error.description)
     } catch let error as JSONError {
       return .Failure(error.description)
+    } catch {
+      return .Failure("Unknown Error")
     }
     return .Success
-  }
-}
-
-struct UnimplementedRunner : Runner {
-  func run() -> CommandResult {
-    return CommandResult.Failure("Unimplemented")
   }
 }
