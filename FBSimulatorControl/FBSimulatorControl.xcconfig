@@ -1,12 +1,11 @@
-// Import Shared Configuration
+// Import Shared & Framework Configuration
 #include "../Configuration/Shared.xcconfig"
+#include "../Configuration/Framework.xcconfig"
 
 // Weak-Link Xcode Private Frameworks
 OTHER_LDFLAGS = $(inherited) -weak_framework DVTFoundation -weak_framework DVTiPhoneSimulatorRemoteClient -weak_framework CoreSimulator -weak_framework SimulatorKit
 
 // Target-Specific Settings
-DEFINES_MODULE = YES;
 INFOPLIST_FILE = $(SRCROOT)/FBSimulatorControl/FBSimulatorControl-Info.plist;
-LD_RUNPATH_SEARCH_PATHS = @loader_path/Frameworks
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControl
 PRODUCT_NAME = FBSimulatorControl

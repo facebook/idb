@@ -777,6 +777,7 @@
 		AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetPredicates.m; sourceTree = "<group>"; };
 		AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControl.xcconfig; sourceTree = "<group>"; };
 		AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBControlCoreTests.xcconfig; sourceTree = "<group>"; };
+		AAA5DE491D2F8F71008A36ED /* Framework.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Framework.xcconfig; sourceTree = "<group>"; };
 		AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFixtures.h; sourceTree = "<group>"; };
 		AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFixtures.m; sourceTree = "<group>"; };
 		AAAA67C71BC5018500075197 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = TableSearch.app; sourceTree = "<group>"; };
@@ -1308,6 +1309,7 @@
 		AA633F8A1CFD788F00A59C5F /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
+				AAA5DE491D2F8F71008A36ED /* Framework.xcconfig */,
 				AA633F8B1CFD788F00A59C5F /* Shared.xcconfig */,
 			);
 			path = Configuration;

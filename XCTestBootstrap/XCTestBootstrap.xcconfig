@@ -1,5 +1,6 @@
-// Import Shared Configuration
+// Import Shared & Framework Configuration
 #include "../Configuration/Shared.xcconfig"
+#include "../Configuration/Framework.xcconfig"
 
 // Target-Specific Settings
 DEFINES_MODULE = YES;
