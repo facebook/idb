@@ -64,13 +64,13 @@
 {
   XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
   XCTAssertNotNil(simulator.launchdProcess);
-  XCTAssertNotNil(simulator.bridge);
+  XCTAssertNotNil(simulator.connection);
   if (self.expectContainerProcesses) {
     XCTAssertNotNil(simulator.containerApplication);
-    XCTAssertNil(simulator.bridge.framebuffer);
+    XCTAssertNil(simulator.connection.framebuffer);
   } else {
     XCTAssertNil(simulator.containerApplication);
-    XCTAssertNotNil(simulator.bridge.framebuffer);
+    XCTAssertNotNil(simulator.connection.framebuffer);
   }
 }
 
@@ -137,8 +137,8 @@
   NSArray *notificationNames = @[
     FBSimulatorDidLaunchNotification,
     FBSimulatorDidTerminateNotification,
-    FBSimulatorBridgeDidConnectNotification,
-    FBSimulatorBridgeDidDisconnectNotification,
+    FBSimulatorConnectionDidConnectNotification,
+    FBSimulatorConnectionDidDisconnectNotification,
     FBSimulatorApplicationDidLaunchNotification,
     FBSimulatorApplicationDidTerminateNotification,
     FBSimulatorApplicationProcessDidLaunchNotification,
@@ -281,17 +281,17 @@
 - (NSArray *)expectedBootNotificationNames
 {
   if (FBSimulatorControlTestCase.useDirectLaunching) {
-    return @[FBSimulatorDidLaunchNotification, FBSimulatorBridgeDidConnectNotification];
+    return @[FBSimulatorDidLaunchNotification, FBSimulatorConnectionDidConnectNotification];
   }
-  return @[FBSimulatorDidLaunchNotification, FBSimulatorBridgeDidConnectNotification, FBSimulatorApplicationDidLaunchNotification];
+  return @[FBSimulatorDidLaunchNotification, FBSimulatorConnectionDidConnectNotification, FBSimulatorApplicationDidLaunchNotification];
 }
 
 - (NSArray *)expectedShutdownNotificationNames
 {
   if (FBSimulatorControlTestCase.useDirectLaunching) {
-    return @[FBSimulatorDidTerminateNotification, FBSimulatorBridgeDidDisconnectNotification];
+    return @[FBSimulatorDidTerminateNotification, FBSimulatorConnectionDidDisconnectNotification];
   }
-  return @[FBSimulatorDidTerminateNotification,FBSimulatorBridgeDidDisconnectNotification, FBSimulatorApplicationDidTerminateNotification];
+  return @[FBSimulatorDidTerminateNotification, FBSimulatorConnectionDidDisconnectNotification, FBSimulatorApplicationDidTerminateNotification];
 }
 
 @end

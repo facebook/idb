@@ -15,7 +15,9 @@
 @class FBDiagnostic;
 @class FBProcessInfo;
 @class FBSimulator;
+@class FBSimulatorApplication;
 @class FBSimulatorBridge;
+@class FBSimulatorConnection;
 @class FBTestManager;
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializable;
@@ -45,17 +47,17 @@
 /**
  Event for the Direct Launch of a Simulator Bridge.
 
- @param bridge the Simulator Bridge of the Simulator.
+ @param connection the Simulator Bridge of the Simulator.
  */
-- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge;
+- (void)connectionDidConnect:(FBSimulatorConnection *)connection;
 
 /**
  Event for the termination of a Simulator Framebuffer.
 
- @param bridge the Simulator Bridge of the Simulator.
+ @param connection the Simulator Bridge of the Simulator.
  @param expected whether the termination was expected or not.
  */
-- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected;
+- (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected;
 
 /**
  Event for the launch of a Simulator's launchd_sim.

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 
 #import <Cocoa/Cocoa.h>
 
@@ -18,8 +18,6 @@
 #import <SimulatorBridge/SimulatorBridge.h>
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
-
-#import <FBControlCore/FBControlCore.h>
 
 #import "FBFramebuffer.h"
 #import "FBProcessFetcher+Simulators.h"
@@ -32,7 +30,7 @@
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 
-@interface FBSimulatorBridge ()
+@interface FBSimulatorConnection ()
 
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 @property (nonatomic, strong, readonly) dispatch_group_t teardownGroup;
@@ -42,7 +40,7 @@
 
 @end
 
-@implementation FBSimulatorBridge
+@implementation FBSimulatorConnection
 
 #pragma mark Initializers
 
@@ -104,7 +102,7 @@
   self.bridge = nil;
   [[distantObject connectionForProxy] invalidate];
   // Notify the eventSink
-  [self.eventSink bridgeDidDisconnect:self expected:YES];
+  [self.eventSink connectionDidDisconnect:self expected:YES];
 
   // Don't wait if there's no timeout
   if (timeout <= 0) {

@@ -26,7 +26,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 #import "FBSimulatorConnectStrategy.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
@@ -355,7 +355,7 @@
 
   // Connect the Bridge, if present.
   mach_port_t hidPort = context.hidPort;
-  FBSimulatorBridge *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:context.framebuffer hidPort:hidPort] connect:&innerError] : nil;
+  FBSimulatorConnection *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:context.framebuffer hidPort:hidPort] connect:&innerError] : nil;
   if (self.configuration.shouldConnectBridge && !bridge) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }

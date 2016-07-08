@@ -16,7 +16,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBApplicationLaunchStrategy.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorDiagnostics.h"
@@ -66,8 +66,8 @@
   }
 
   // The Bridge must be connected in order for the launch to work.
-  FBSimulatorBridge *bridge = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
-  if (!bridge) {
+  FBSimulatorConnection *connection = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
+  if (!connection) {
     return [[[FBSimulatorError
       describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
       causedBy:innerError]
@@ -115,7 +115,7 @@
   }
 
   // Launch the Application.
-  pid_t processIdentifier = [bridge launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil) stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil) error:&innerError];
+  pid_t processIdentifier = [connection launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil) stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil) error:&innerError];
   if (!processIdentifier) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to launch application %@", appLaunch]

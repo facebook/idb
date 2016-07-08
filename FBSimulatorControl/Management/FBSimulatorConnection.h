@@ -21,10 +21,10 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A Simulator Bridge is a container for all of the relevant services that can be obtained when launching via: -[SimDevice bootWithOptions:error].
+ A Simulator Connection is a container for all of the relevant services that can be obtained when launching via: -[SimDevice bootWithOptions:error].
  Typically these are all the services with which Simulator.app can interact with, except that we have them inside FBSimulatorControl.
  */
-@interface FBSimulatorBridge : NSObject  <FBJSONSerializable>
+@interface FBSimulatorConnection : NSObject  <FBJSONSerializable>
 
 #pragma mark Initializers
 

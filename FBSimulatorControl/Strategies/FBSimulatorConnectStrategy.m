@@ -26,7 +26,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
@@ -61,29 +61,29 @@
   return self;
 }
 
-- (FBSimulatorBridge *)connect:(NSError **)error
+- (FBSimulatorConnection *)connect:(NSError **)error
 {
   // Return early if the bridge exists.
-  if (self.simulator.bridge) {
-    return self.simulator.bridge;
+  if (self.simulator.connection) {
+    return self.simulator.connection;
   }
 
   // Connect to the expected-to-be-running CoreSimulatorBridge running inside the Simulator.
   // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over a Remote Object connection.
   NSError *innerError = nil;
-  mach_port_t port = [self.simulator.device lookup:@"com.apple.iphonesimulator.bridge" error:&innerError];
-  if (port == 0) {
+  mach_port_t bridgePort = [self.simulator.device lookup:@"com.apple.iphonesimulator.bridge" error:&innerError];
+  if (bridgePort == 0) {
     return [[[FBSimulatorError
       describe:@"Could not lookup mach port for 'com.apple.iphonesimulator.bridge'"]
       inSimulator:self.simulator]
       fail:error];
   }
-  NSPort *machPort = [NSMachPort portWithMachPort:port];
-  NSConnection *connection = [NSConnection connectionWithReceivePort:nil sendPort:machPort];
-  NSDistantObject *distantObject = [connection rootProxy];
+  NSPort *bridgeMachPort = [NSMachPort portWithMachPort:bridgePort];
+  NSConnection *bridgeConnection = [NSConnection connectionWithReceivePort:nil sendPort:bridgeMachPort];
+  NSDistantObject *distantObject = [bridgeConnection rootProxy];
   if (![distantObject respondsToSelector:@selector(setLocationScenarioWithPath:)]) {
     return [[[FBSimulatorError
-      describeFormat:@"Distant Object '%@' for 'com.apple.iphonesimulator.bridge' at port %d isn't a SimulatorBridge", distantObject, port]
+      describeFormat:@"Distant Object '%@' for 'com.apple.iphonesimulator.bridge' at port %d isn't a SimulatorBridge", distantObject, bridgePort]
       inSimulator:self.simulator]
       fail:error];
   }
@@ -102,17 +102,17 @@
   }
 
   // Create the bridge.
-  FBSimulatorBridge *bridge = [[FBSimulatorBridge alloc] initWithFramebuffer:self.framebuffer hidPort:self.hidPort bridge:simulatorBridge eventSink:self.simulator.eventSink];
+  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithFramebuffer:self.framebuffer hidPort:self.hidPort bridge:simulatorBridge eventSink:self.simulator.eventSink];
   // Set the Location to a default location, when launched directly.
   // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
   // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
   if (self.framebuffer) {
-    [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
+    [connection setLocationWithLatitude:37.485023 longitude:-122.147911];
   }
 
   // Broadcast the availability of the new bridge.
-  [self.simulator.eventSink bridgeDidConnect:bridge];
-  return bridge;
+  [self.simulator.eventSink connectionDidConnect:connection];
+  return connection;
 }
 
 @end

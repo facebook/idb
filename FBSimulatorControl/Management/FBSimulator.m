@@ -169,9 +169,9 @@
   return self.eventRelay.launchdProcess;
 }
 
-- (FBSimulatorBridge *)bridge
+- (FBSimulatorConnection *)connection
 {
-  return self.eventRelay.bridge;
+  return self.eventRelay.connection;
 }
 
 - (FBProcessInfo *)containerApplication

@@ -18,13 +18,13 @@
 #import "FBCoreSimulatorNotifier.h"
 #import "FBDispatchSourceNotifier.h"
 #import "FBProcessFetcher+Simulators.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 
 @interface FBSimulatorEventRelay ()
 
 @property (nonatomic, copy, readwrite) FBProcessInfo *launchdProcess;
 @property (nonatomic, copy, readwrite) FBProcessInfo *containerApplication;
-@property (nonatomic, strong, readwrite) FBSimulatorBridge *bridge;
+@property (nonatomic, strong, readwrite) FBSimulatorConnection *connection;
 
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
@@ -96,22 +96,22 @@
   [self.sink containerApplicationDidTerminate:applicationProcess expected:expected];
 }
 
-- (void)bridgeDidConnect:(FBSimulatorBridge *)bridge
+- (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
-  NSParameterAssert(bridge);
-  NSParameterAssert(self.bridge == nil);
+  NSParameterAssert(connection);
+  NSParameterAssert(self.connection == nil);
 
-  self.bridge = bridge;
-  [self.sink bridgeDidConnect:bridge];
+  self.connection = connection;
+  [self.sink connectionDidConnect:connection];
 }
 
-- (void)bridgeDidDisconnect:(FBSimulatorBridge *)bridge expected:(BOOL)expected
+- (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
-  NSParameterAssert(bridge);
-  NSParameterAssert(self.bridge);
+  NSParameterAssert(connection);
+  NSParameterAssert(self.connection);
 
-  self.bridge = nil;
-  [self.sink bridgeDidDisconnect:bridge expected:expected];
+  self.connection = nil;
+  [self.sink connectionDidDisconnect:connection expected:expected];
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess

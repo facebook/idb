@@ -35,12 +35,12 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
     self.reportValue(EventName.Terminate, EventType.Discrete, applicationProcess)
   }
 
-  public func bridgeDidConnect(bridge: FBSimulatorBridge!) {
-    self.reportValue(EventName.Launch, EventType.Discrete, bridge)
+  public func connectionDidConnect(connection: FBSimulatorConnection!) {
+    self.reportValue(EventName.Launch, EventType.Discrete, connection)
   }
 
-  public func bridgeDidDisconnect(bridge: FBSimulatorBridge!, expected: Bool) {
-    self.reportValue(EventName.Terminate, EventType.Discrete, bridge)
+  public func connectionDidDisconnect(connection: FBSimulatorConnection!, expected: Bool) {
+    self.reportValue(EventName.Terminate, EventType.Discrete, connection)
   }
 
   public func testmanagerDidConnect(testManager: FBTestManager!) {

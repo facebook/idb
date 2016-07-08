@@ -21,7 +21,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootStrategy.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControl.h"

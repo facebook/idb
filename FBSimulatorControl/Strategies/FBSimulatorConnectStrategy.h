@@ -14,7 +14,7 @@
 
 @class FBFramebuffer;
 @class FBSimulator;
-@class FBSimulatorBridge;
+@class FBSimulatorConnection;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the Bridge if successful, nil otherwise.
  */
-- (FBSimulatorBridge *)connect:(NSError **)error;
+- (FBSimulatorConnection *)connect:(NSError **)error;
 
 @end
 

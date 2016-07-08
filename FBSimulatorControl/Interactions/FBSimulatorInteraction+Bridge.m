@@ -12,7 +12,7 @@
 #import "FBFramebuffer.h"
 #import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
-#import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
 #import "FBSimulatorConnectStrategy.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
@@ -37,33 +37,33 @@
 
 - (instancetype)tap:(double)x y:(double)y
 {
-  return [self interactWithBridge:^ BOOL (NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge) {
-    return [bridge tapX:x y:y error:error];
+  return [self interactWithConnection:^ BOOL (NSError **error, FBSimulator *simulator, FBSimulatorConnection *connection) {
+    return [connection tapX:x y:y error:error];
   }];
 }
 
 #pragma mark Private
 
-- (instancetype)interactWithBridge:(BOOL (^)(NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge))block
+- (instancetype)interactWithConnection:(BOOL (^)(NSError **error, FBSimulator *simulator, FBSimulatorConnection *connection))block
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    FBSimulatorBridge *bridge = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
-    if (!bridge) {
+    FBSimulatorConnection *connection = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
+    if (!connection) {
       return [[[[FBSimulatorError
-        describe:@"Could not connect to Simulator Bridge"]
+        describe:@"Could not connect to Simulator Connection"]
         causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
     }
-    return block(error, simulator, bridge);
+    return block(error, simulator, connection);
   }];
 }
 
 - (instancetype)interactWithVideo:(BOOL (^)(NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup))block
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBFramebufferVideo *video = simulator.bridge.framebuffer.video;
+    FBFramebufferVideo *video = simulator.connection.framebuffer.video;
     if (!video) {
       return [[[FBSimulatorError
         describe:@"Simulator Does not have a FBFramebufferVideo instance"]
