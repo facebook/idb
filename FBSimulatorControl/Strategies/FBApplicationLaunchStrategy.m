@@ -48,6 +48,7 @@
   }
 
   _simulator = simulator;
+
   return self;
 }
 
@@ -67,7 +68,7 @@
   }
 
   // The Bridge must be connected in order for the launch to work.
-  FBSimulatorConnection *connection = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
+  FBSimulatorConnection *connection = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hid:0] connect:&innerError];
   if (!connection) {
     return [[[FBSimulatorError
       describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]

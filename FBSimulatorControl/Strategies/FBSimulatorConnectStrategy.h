@@ -15,6 +15,7 @@
 @class FBFramebuffer;
 @class FBSimulator;
 @class FBSimulatorConnection;
+@class FBSimulatorHID;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -28,10 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param simulator the Simulator to connect to.
  @param framebuffer the Framebuffer instance to connect.
- @param hidPort the hid port to connect.
  @return a FBSimulatorConnectStategy instance.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator framebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort;
++ (instancetype)withSimulator:(FBSimulator *)simulator framebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid;
 
 /**
  Connects a Bridge to the Simulator

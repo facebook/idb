@@ -28,6 +28,7 @@
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorHID.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 
@@ -36,8 +37,8 @@
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 @property (nonatomic, strong, readonly) dispatch_group_t teardownGroup;
 
-@property (nonatomic, assign, readwrite) mach_port_t hidPort;
 @property (nonatomic, strong, readwrite) FBSimulatorBridge *bridge;
+@property (nonatomic, strong, readwrite) FBSimulatorHID *hid;
 
 @end
 
@@ -45,7 +46,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(FBSimulatorBridge *)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid bridge:(FBSimulatorBridge *)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -56,7 +57,7 @@
   _teardownGroup = dispatch_group_create();
 
   _framebuffer = framebuffer;
-  _hidPort = hidPort;
+  _hid = hid;
   _bridge = bridge;
 
   return self;
@@ -67,9 +68,9 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Bridge: Framebuffer (%@) | hid_port %d | %@",
+    @"Bridge: Framebuffer (%@) | HID %@ | %@",
     self.framebuffer.description,
-    self.hidPort,
+    self.hid,
     self.bridge
   ];
 }
@@ -80,7 +81,7 @@
 {
   return @{
     @"framebuffer" : self.framebuffer.jsonSerializableRepresentation ?: NSNull.null,
-    @"hid_port" : @(self.hidPort),
+    @"hid" : self.hid.jsonSerializableRepresentation ?: NSNull.null,
     @"bridge" : self.bridge.jsonSerializableRepresentation ?: NSNull.null,
   };
 }
@@ -94,11 +95,9 @@
   // First stop the Framebuffer
   [self.framebuffer stopListeningWithTeardownGroup:self.teardownGroup];
 
-  // Disconnect the HID Port
-  if (self.hidPort != 0) {
-    mach_port_destroy(mach_task_self(), self.hidPort);
-    self.hidPort = 0;
-  }
+  // Disconnect the HID
+  [self.hid disconnect];
+  self.hid = nil;
 
   // Close the connection with the SimulatorBridge and nullify
   [self.bridge disconnect];

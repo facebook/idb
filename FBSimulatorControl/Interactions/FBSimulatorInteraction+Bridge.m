@@ -49,7 +49,7 @@
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    FBSimulatorConnection *connection = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hidPort:0] connect:&innerError];
+    FBSimulatorConnection *connection = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hid:nil] connect:&innerError];
     if (!connection) {
       return [[[[FBSimulatorError
         describe:@"Could not connect to Simulator Connection"]

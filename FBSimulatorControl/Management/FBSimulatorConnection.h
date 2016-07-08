@@ -14,6 +14,7 @@
 @class FBFramebuffer;
 @class FBSimulator;
 @class FBSimulatorBridge;
+@class FBSimulatorHID;
 @class FBSimulatorLaunchConfiguration;
 @protocol FBSimulatorEventSink;
 @class FBApplicationLaunchConfiguration;
@@ -32,11 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer
 
  @param framebuffer the Framebuffer. May be nil.
- @param hidPort the Indigo HID Port. Zero if no such port exists.
+ @param hid the Indigo HID Port. May be nil.
  @param bridge the underlying bridge. Must not be nil.
  @param eventSink the event sink. Must not be nil.
  */
-- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort bridge:(FBSimulatorBridge *)bridge eventSink:(id<FBSimulatorEventSink>)eventSink;
+- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid bridge:(FBSimulatorBridge *)bridge eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  Tears down the bridge and it's resources, waiting for any asynchronous teardown to occur before returning.
@@ -53,6 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
  The FBSimulatorFramebuffer Instance.
  */
 @property (nonatomic, strong, readonly, nullable) FBFramebuffer *framebuffer;
+
+/**
+ The FBSimulatorFramebuffer Instance.
+ */
+@property (nonatomic, strong, readonly, nullable) FBSimulatorHID *hid;
 
 /**
  The FBSimulatorFramebuffer Instance.

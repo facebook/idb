@@ -32,17 +32,18 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorHID.h"
 
 @interface FBSimulatorBootStrategyContext : NSObject
 
 @property (nonatomic, strong, nullable, readonly) FBFramebuffer *framebuffer;
-@property (nonatomic, assign, readonly) mach_port_t hidPort;
+@property (nonatomic, assign, nullable, readonly) FBSimulatorHID *hid;
 
 @end
 
 @implementation FBSimulatorBootStrategyContext
 
-- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort
+- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid
 {
   self = [super init];
   if (!self) {
@@ -50,7 +51,7 @@
   }
 
   _framebuffer = framebuffer;
-  _hidPort = hidPort;
+  _hid = hid;
 
   return self;
 }
@@ -83,8 +84,8 @@
   FBFramebuffer *framebuffer = [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:self.simulator];
 
   // Create the HID Port
-  mach_port_t hidPort = [self createIndigoHIDRegistrationPort:&innerError];
-  if (hidPort == 0) {
+  FBSimulatorHID *hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:&innerError];
+  if (!hid) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
@@ -105,7 +106,7 @@
       fail:error];
   }
 
-  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:framebuffer hidPort:hidPort];
+  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:framebuffer hid:hid];
 }
 
 - (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
@@ -143,41 +144,6 @@
   }
 
   return framebufferService;
-}
-
-- (mach_port_t)createIndigoHIDRegistrationPort:(NSError **)error
-{
-  // As with the 'PurpleFBServer', a 'IndigoHIDRegistrationPort' is needed in order for the synthesis of touch events to work appropriately.
-  // If this is not set you will see the following logger message in the System log upon booting the simulator
-  // 'backboardd[10667]: BKHID: Unable to open Indigo HID system'
-  // The dissasembly for backboardd shows that this will happen when the call to 'IndigoHIDSystemSpawnLoopback' fails.
-  // Simulator.app creates a Mach Port for the 'IndigoHIDRegistrationPort' and therefore succeeds in the above call.
-  // As with 'PurpleFBServer' this can be registered with 'register-head-services'
-  // The first step is to create the mach port
-  NSError *innerError = nil;
-  mach_port_t hidPort = 0;
-  mach_port_t machTask = mach_task_self();
-  kern_return_t result = mach_port_allocate(machTask, MACH_PORT_RIGHT_RECEIVE, &hidPort);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to create a Mach Port for IndigoHIDRegistrationPort with code %d", result]
-      failUInt:error];
-  }
-  result = mach_port_insert_right(machTask, hidPort, hidPort, MACH_MSG_TYPE_MAKE_SEND);
-  if (result != KERN_SUCCESS) {
-    return [[FBSimulatorError
-      describeFormat:@"Failed to 'insert_right' the mach port with code %d", result]
-      failUInt:error];
-  }
-  // Then register it as the 'IndigoHIDRegistrationPort'
-  if (![self.simulator.device registerPort:hidPort service:@"IndigoHIDRegistrationPort" error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to register %d as the IndigoHIDRegistrationPort", hidPort]
-      causedBy:innerError]
-      failUInt:error];
-  }
-
-  return hidPort;
 }
 
 @end
@@ -230,7 +196,7 @@
   }
   [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
 
-  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:nil hidPort:0];
+  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:nil hid:nil];
 }
 
 - (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
@@ -354,8 +320,7 @@
   }
 
   // Connect the Bridge, if present.
-  mach_port_t hidPort = context.hidPort;
-  FBSimulatorConnection *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:context.framebuffer hidPort:hidPort] connect:&innerError] : nil;
+  FBSimulatorConnection *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:context.framebuffer hid:context.hid] connect:&innerError] : nil;
   if (self.configuration.shouldConnectBridge && !bridge) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }

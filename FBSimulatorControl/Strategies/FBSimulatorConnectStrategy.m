@@ -35,18 +35,18 @@
 
 @property (nonatomic, strong, readonly, nonnull) FBSimulator *simulator;
 @property (nonatomic, strong, readonly, nullable) FBFramebuffer *framebuffer;
-@property (nonatomic, assign, readonly) mach_port_t hidPort;
+@property (nonatomic, strong, readonly, nullable) FBSimulatorHID *hid;
 
 @end
 
 @implementation FBSimulatorConnectStrategy
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator framebuffer:(FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort;
++ (instancetype)withSimulator:(FBSimulator *)simulator framebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid
 {
-  return [[self alloc] initWithSimulator:simulator framebuffer:framebuffer hidPort:hidPort];
+  return [[self alloc] initWithSimulator:simulator framebuffer:framebuffer hid:hid];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator framebuffer:(FBFramebuffer *)framebuffer hidPort:(mach_port_t)hidPort
+- (instancetype)initWithSimulator:(FBSimulator *)simulator framebuffer:(FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid
 {
   self = [super init];
   if (!self) {
@@ -55,7 +55,7 @@
 
   _simulator = simulator;
   _framebuffer = framebuffer;
-  _hidPort = hidPort;
+  _hid = hid;
 
   return self;
 }
@@ -88,8 +88,8 @@
   // Start Listening to Framebuffer events if one exists.
   [self.framebuffer startListeningInBackground];
 
-  // Create the bridge.
-  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithFramebuffer:self.framebuffer hidPort:self.hidPort bridge:bridge eventSink:self.simulator.eventSink];
+  // Create the Connection.
+  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithFramebuffer:self.framebuffer hid:self.hid bridge:bridge eventSink:self.simulator.eventSink];
 
   // Set the Location to a default location, when launched directly.
   // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
