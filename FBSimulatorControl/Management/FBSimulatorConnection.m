@@ -34,11 +34,12 @@
 
 @interface FBSimulatorConnection ()
 
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+@property (nonatomic, weak, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) dispatch_group_t teardownGroup;
 
-@property (nonatomic, strong, readwrite) FBSimulatorBridge *bridge;
-@property (nonatomic, strong, readwrite) FBSimulatorHID *hid;
+@property (nonatomic, strong, readwrite, nullable) FBFramebuffer *framebuffer;
+@property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
+@property (nonatomic, strong, readwrite, nullable) FBSimulatorHID *hid;
 
 @end
 
@@ -46,19 +47,18 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid bridge:(FBSimulatorBridge *)bridge eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithSimulator:(FBSimulator *)simulator framebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _eventSink = eventSink;
+  _simulator = simulator;
   _teardownGroup = dispatch_group_create();
 
   _framebuffer = framebuffer;
   _hid = hid;
-  _bridge = bridge;
 
   return self;
 }
@@ -88,6 +88,16 @@
 
 #pragma mark Lifecycle
 
+- (nullable FBSimulatorBridge *)connectToBridge:(NSError **)error
+{
+  if (self.bridge) {
+    return self.bridge;
+  }
+
+  self.bridge = [FBSimulatorBridge bridgeForSimulator:self.simulator error:error];
+  return self.bridge;
+}
+
 - (BOOL)terminateWithTimeout:(NSTimeInterval)timeout
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
@@ -97,14 +107,9 @@
 
   // Disconnect the HID
   [self.hid disconnect];
-  self.hid = nil;
 
   // Close the connection with the SimulatorBridge and nullify
   [self.bridge disconnect];
-  self.bridge = nil;
-
-  // Notify the eventSink
-  [self.eventSink connectionDidDisconnect:self expected:YES];
 
   // Don't wait if there's no timeout
   if (timeout <= 0) {
@@ -112,8 +117,15 @@
   }
 
   int64_t timeoutInt = ((int64_t) timeout) * ((int64_t) NSEC_PER_SEC);
-  long status = dispatch_group_wait(self.teardownGroup, dispatch_time(DISPATCH_TIME_NOW, timeoutInt));
-  return status == 0l;
+  BOOL result = dispatch_group_wait(self.teardownGroup, dispatch_time(DISPATCH_TIME_NOW, timeoutInt)) == 0l;
+
+  // Clean up resources and notify.
+  self.framebuffer = nil;
+  self.hid = nil;
+  self.bridge = nil;
+  [self.simulator.eventSink connectionDidDisconnect:self expected:YES];
+
+  return result;
 }
 
 @end

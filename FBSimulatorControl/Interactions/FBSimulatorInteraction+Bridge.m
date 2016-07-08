@@ -14,7 +14,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorBridge.h"
-#import "FBSimulatorConnectStrategy.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
 
@@ -38,26 +37,26 @@
 
 - (instancetype)tap:(double)x y:(double)y
 {
-  return [self interactWithConnection:^ BOOL (NSError **error, FBSimulator *simulator, FBSimulatorConnection *connection) {
-    return [connection.bridge tapX:x y:y error:error];
+  return [self interactWithBridge:^ BOOL (NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge) {
+    return [bridge tapX:x y:y error:error];
   }];
 }
 
 #pragma mark Private
 
-- (instancetype)interactWithConnection:(BOOL (^)(NSError **error, FBSimulator *simulator, FBSimulatorConnection *connection))block
+- (instancetype)interactWithBridge:(BOOL (^)(NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge))block
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    FBSimulatorConnection *connection = [[FBSimulatorConnectStrategy withSimulator:simulator framebuffer:nil hid:nil] connect:&innerError];
-    if (!connection) {
+    FBSimulatorBridge *bridge = [simulator.connection connectToBridge:&innerError];
+    if (!bridge) {
       return [[[[FBSimulatorError
         describe:@"Could not connect to Simulator Connection"]
         causedBy:innerError]
         inSimulator:simulator]
         failBool:error];
     }
-    return block(error, simulator, connection);
+    return block(error, simulator, bridge);
   }];
 }
 

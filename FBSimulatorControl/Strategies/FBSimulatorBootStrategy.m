@@ -26,44 +26,20 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorConnection.h"
-#import "FBSimulatorConnectStrategy.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorHID.h"
 
-@interface FBSimulatorBootStrategyContext : NSObject
-
-@property (nonatomic, strong, nullable, readonly) FBFramebuffer *framebuffer;
-@property (nonatomic, assign, nullable, readonly) FBSimulatorHID *hid;
-
-@end
-
-@implementation FBSimulatorBootStrategyContext
-
-- (instancetype)initWithFramebuffer:(nullable FBFramebuffer *)framebuffer hid:(nullable FBSimulatorHID *)hid
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _framebuffer = framebuffer;
-  _hid = hid;
-
-  return self;
-}
-
-@end
-
 @interface FBSimulatorBootStrategy ()
 
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorLaunchConfiguration *configuration;
 @property (nonatomic, strong, readonly, nonnull) FBSimulator *simulator;
 
-- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error;
+- (FBSimulatorConnection *)performBootWithError:(NSError **)error;
 
 @end
 
@@ -73,7 +49,7 @@
 
 @implementation FBSimulatorBootStrategy_Direct
 
-- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error
+- (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
   // Create the Framebuffer
   NSError *innerError = nil;
@@ -106,7 +82,7 @@
       fail:error];
   }
 
-  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:framebuffer hid:hid];
+  return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
 }
 
 - (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
@@ -156,7 +132,7 @@
 
 @implementation FBSimulatorBootStrategy_Subprocess
 
-- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error
+- (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
   // Fetch the Boot Arguments & Environment
   NSError *innerError = nil;
@@ -196,7 +172,7 @@
   }
   [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
 
-  return [[FBSimulatorBootStrategyContext alloc] initWithFramebuffer:nil hid:nil];
+  return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:nil hid:nil];
 }
 
 - (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
@@ -314,15 +290,22 @@
 
   // Perform the boot
   NSError *innerError = nil;
-  FBSimulatorBootStrategyContext *context = [self performBootWithError:&innerError];
-  if (!context) {
+  FBSimulatorConnection *connection = [self performBootWithError:&innerError];
+  if (!connection) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
-  // Connect the Bridge, if present.
-  FBSimulatorConnection *bridge = self.configuration.shouldConnectBridge ? [[FBSimulatorConnectStrategy withSimulator:self.simulator framebuffer:context.framebuffer hid:context.hid] connect:&innerError] : nil;
-  if (self.configuration.shouldConnectBridge && !bridge) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+  // Fail when the bridge could not be connected.
+  if (self.configuration.shouldConnectBridge) {
+    FBSimulatorBridge *bridge = [connection connectToBridge:&innerError];
+    if (!bridge) {
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    }
+
+    // Set the Location to a default location, when launched directly.
+    // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
+    // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
+    [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
   }
 
   // Expect the launchd_sim process to be updated.
@@ -330,10 +313,16 @@
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
+  // Start Listening to Framebuffer events if one exists.
+  [connection.framebuffer startListeningInBackground];
+
+  // Broadcast the availability of the new bridge.
+  [self.simulator.eventSink connectionDidConnect:connection];
+
   return YES;
 }
 
-- (FBSimulatorBootStrategyContext *)performBootWithError:(NSError **)error
+- (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;

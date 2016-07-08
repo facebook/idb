@@ -9,10 +9,13 @@
 
 #import "FBSimulatorBridge.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 #import <SimulatorBridge/SimulatorBridge.h>
 
 #import "FBProcessLaunchConfiguration.h"
+#import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
 @interface FBSimulatorBridge ()
@@ -23,8 +26,22 @@
 
 @implementation FBSimulatorBridge
 
-+ (nullable instancetype)bridgeForDistantObject:(NSDistantObject *)bridgeDistantObject error:(NSError **)error
++ (nullable instancetype)bridgeForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
+  // Connect to the expected-to-be-running CoreSimulatorBridge running inside the Simulator.
+  // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over a Remote Object connection.
+  NSError *innerError = nil;
+  mach_port_t bridgePort = [simulator.device lookup:@"com.apple.iphonesimulator.bridge" error:&innerError];
+  if (bridgePort == 0) {
+    return [[[FBSimulatorError
+      describe:@"Could not lookup mach port for 'com.apple.iphonesimulator.bridge'"]
+      inSimulator:simulator]
+      fail:error];
+  }
+  NSPort *bridgeMachPort = [NSMachPort portWithMachPort:bridgePort];
+  NSConnection *bridgeConnection = [NSConnection connectionWithReceivePort:nil sendPort:bridgeMachPort];
+  NSDistantObject *bridgeDistantObject = [bridgeConnection rootProxy];
+
   if (![bridgeDistantObject respondsToSelector:@selector(setLocationScenarioWithPath:)]) {
     return [[FBSimulatorError
       describeFormat:@"Distant Object '%@' for 'com.apple.iphonesimulator.bridge' at isn't a SimulatorBridge", bridgeDistantObject]

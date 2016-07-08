@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 @class FBApplicationLaunchConfiguration;
+@class FBSimulator;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,14 +24,14 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Creates and Returns a SimulatorBridge for the provided Distant Object.
- Fails if the Distant Object isn't a proxy for a SimulatorBridge.
+ Creates and Returns a SimulatorBridge for the attaching to the provided Simulator.
+ Fails if the connection could not established.
 
- @param bridgeDistantObject the Distant Object for the Simulator Bridge.
+ @param simulator the Simulator to attach to.
  @param error an error out for any error that occurs.
  @return a FBSimulatorBridge object on success, nil otherwise.
  */
-+ (nullable instancetype)bridgeForDistantObject:(NSDistantObject *)bridgeDistantObject error:(NSError **)error;
++ (nullable instancetype)bridgeForSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
 /**
  Should be called when the connection to the remote bridge should be disconnected.
