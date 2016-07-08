@@ -57,6 +57,18 @@
     return YES;
   }
 
+  NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
+  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceConfiguration.simulatorArchitecture];
+  if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
+    return [[FBSimulatorError
+      describeFormat:
+        @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
+        [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
+        application.binary.path,
+        [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
+      failBool:error];
+  }
+
   NSDictionary *options = @{
     @"CFBundleIdentifier" : application.bundleID
   };
