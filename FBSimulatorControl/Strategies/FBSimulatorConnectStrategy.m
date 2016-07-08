@@ -14,9 +14,6 @@
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceType.h>
 
-#import <SimulatorBridge/SimulatorBridge-Protocol.h>
-#import <SimulatorBridge/SimulatorBridge.h>
-
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
 #import <FBControlCore/FBControlCore.h>
@@ -26,6 +23,8 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBSimulatorBridge.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
@@ -80,34 +79,23 @@
   }
   NSPort *bridgeMachPort = [NSMachPort portWithMachPort:bridgePort];
   NSConnection *bridgeConnection = [NSConnection connectionWithReceivePort:nil sendPort:bridgeMachPort];
-  NSDistantObject *distantObject = [bridgeConnection rootProxy];
-  if (![distantObject respondsToSelector:@selector(setLocationScenarioWithPath:)]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Distant Object '%@' for 'com.apple.iphonesimulator.bridge' at port %d isn't a SimulatorBridge", distantObject, bridgePort]
-      inSimulator:self.simulator]
-      fail:error];
+  NSDistantObject *bridgeDistantObject = [bridgeConnection rootProxy];
+  FBSimulatorBridge *bridge = [FBSimulatorBridge bridgeForDistantObject:bridgeDistantObject error:&innerError];
+  if (!bridge) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
   // Start Listening to Framebuffer events if one exists.
   [self.framebuffer startListeningInBackground];
 
-  // Load Accessibility, return early if this fails
-  id simulatorBridge = (id) distantObject;
-  [simulatorBridge enableAccessibility];
-  if (![simulatorBridge accessibilityEnabled]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not enable accessibility for bridge '%@'", simulatorBridge]
-      inSimulator:self.simulator]
-      fail:error];
-  }
-
   // Create the bridge.
-  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithFramebuffer:self.framebuffer hidPort:self.hidPort bridge:simulatorBridge eventSink:self.simulator.eventSink];
+  FBSimulatorConnection *connection = [[FBSimulatorConnection alloc] initWithFramebuffer:self.framebuffer hidPort:self.hidPort bridge:bridge eventSink:self.simulator.eventSink];
+
   // Set the Location to a default location, when launched directly.
   // This is effectively done by Simulator.app by a NSUserDefault with for the 'LocationMode', even when the location is 'None'.
   // If the Location is set on the Simulator, then CLLocationManager will behave in a consistent manner inside launched Applications.
   if (self.framebuffer) {
-    [connection setLocationWithLatitude:37.485023 longitude:-122.147911];
+    [bridge setLocationWithLatitude:37.485023 longitude:-122.147911];
   }
 
   // Broadcast the availability of the new bridge.

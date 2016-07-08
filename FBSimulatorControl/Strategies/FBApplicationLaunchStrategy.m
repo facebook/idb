@@ -18,6 +18,7 @@
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorBridge.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorHistory+Queries.h"
@@ -115,7 +116,10 @@
   }
 
   // Launch the Application.
-  pid_t processIdentifier = [connection launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil) stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil) error:&innerError];
+  pid_t processIdentifier = [connection.bridge
+    launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil)
+    stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil)
+    error:&innerError];
   if (!processIdentifier) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to launch application %@", appLaunch]
