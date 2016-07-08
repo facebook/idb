@@ -33,6 +33,7 @@
 - (void)setUp
 {
   [super setUp];
+    
   self.passedMethods = [NSMutableSet set];
   self.failedMethods = [NSMutableSet set];
 }
@@ -51,9 +52,10 @@
 
 }
 
-- (void)testInjectsApplicationTestIntoSampleAppOnIOS81Simulator
+- (void)testInjectsApplicationTestIntoSampleAppOnIOS83Simulator
 {
-  self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_8_1;
+    
+  self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_8_3;
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[simulator.interact
     installApplication:self.tableSearchApplication]
