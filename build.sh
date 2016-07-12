@@ -25,16 +25,16 @@ function build_test_deps() {
 }
 
 function framework_build() {
-  NAME=FBSimulatorControl
+  local NAME=$1
   xcodebuild \
-    -project $NAME.xcodeproj \
+    -project FBSimulatorControl.xcodeproj \
     -scheme $NAME \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     build
 
   if [[ -n $OUTPUT_DIRECTORY ]]; then
-    ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/FBSimulatorControl.framework"
+    ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/$NAME.framework"
     echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
     mkdir -p $OUTPUT_DIRECTORY
     cp -r $ARTIFACT $OUTPUT_DIRECTORY
@@ -42,13 +42,59 @@ function framework_build() {
 }
 
 function framework_test() {
-  NAME=FBSimulatorControl
+  local NAME=$1
   xctool \
-    -project $NAME.xcodeproj \
+    -project FBSimulatorControl.xcodeproj \
     -scheme $NAME \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     test
+}
+
+function core_framework_build() {
+  framework_build FBControlCore
+}
+
+function core_framework_test() {
+  framework_test FBControlCore
+}
+
+function xctest_framework_build() {
+  framework_build XCTestBootstrap
+}
+
+function xctest_framework_test() {
+  framework_test XCTestBootstrap
+}
+
+function simulator_framework_build() {
+  framework_build FBSimulatorControl
+}
+
+function simulator_framework_test() {
+  framework_test FBSimulatorControl
+}
+
+function device_framework_build() {
+  framework_build FBDeviceControl
+}
+
+function device_framework_test() {
+  framework_test FBDeviceControl
+}
+
+function all_frameworks_build() {
+  core_framework_build
+  xctest_framework_build
+  simulator_framework_build
+  device_framework_build
+}
+
+function all_frameworks_test() {
+  core_framework_test
+  xctest_framework_test
+  simulator_framework_test
+  device_framework_test
 }
 
 function cli_build() {
@@ -131,11 +177,10 @@ case $TARGET in
     print_usage;;
   framework)
     case $COMMAND in
-      build) 
-        framework_build;;
+      build)
+        all_frameworks_build;;
       test) 
-        build_test_deps
-        framework_test;;
+        all_frameworks_test;;
       *) 
         echo "Unknown Command $2"
         exit 1;;
