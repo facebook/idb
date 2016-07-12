@@ -1,0 +1,9 @@
+// Import Shared & Framework Configuration
+#include "../../Configuration/Shared.xcconfig"
+
+// Target Specific Settings
+EMBEDDED_CONTENT_CONTAINS_SWIFT = YES
+PRODUCT_NAME = FBSimulatorControlKitTests
+INFOPLIST_FILE = $(PROJECT_DIR)/FBSimulatorControlKitTests/Info.plist
+PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlKitTests
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks

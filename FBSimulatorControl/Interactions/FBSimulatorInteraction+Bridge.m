@@ -12,6 +12,7 @@
 #import "FBFramebuffer.h"
 #import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
+#import "FBSimulator+Connection.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
@@ -48,7 +49,7 @@
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     NSError *innerError = nil;
-    FBSimulatorBridge *bridge = [simulator.connection connectToBridge:&innerError];
+    FBSimulatorBridge *bridge = [[simulator connectWithError:&innerError] connectToBridge:&innerError];
     if (!bridge) {
       return [[[[FBSimulatorError
         describe:@"Could not connect to Simulator Connection"]
@@ -63,7 +64,7 @@
 - (instancetype)interactWithVideo:(BOOL (^)(NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup))block
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBFramebufferVideo *video = simulator.connection.framebuffer.video;
+    FBFramebufferVideo *video = [simulator connectWithError:nil].framebuffer.video;
     if (!video) {
       return [[[FBSimulatorError
         describe:@"Simulator Does not have a FBFramebufferVideo instance"]

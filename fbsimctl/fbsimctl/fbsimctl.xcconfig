@@ -1,0 +1,7 @@
+// Import Shared & Framework Configuration
+#include "../../Configuration/Shared.xcconfig"
+
+// Target Specific Settings
+PRODUCT_NAME = fbsimctl
+PRODUCT_BUNDLE_IDENTIFIER = com.facebook.fbsimctl
+LD_RUNPATH_SEARCH_PATHS = @executable_path

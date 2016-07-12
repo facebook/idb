@@ -23,6 +23,7 @@
 #import "FBProcessTerminationStrategy.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator+Connection.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
@@ -108,22 +109,21 @@
     NSError *innerError = nil;
     FBProcessInfo *launchdProcess = simulator.launchdProcess ?: [self.processFetcher launchdProcessForSimDevice:simulator.device];
 
-    // The Bridge should also be tidied up if one exists.
-    FBSimulatorConnection *connection = simulator.connection;
-    if (connection) {
-      [self.logger.debug logFormat:@"Simulator %@ has a connection %@, terminating it now", simulator.shortDescription, connection];
-      // Stopping listening will notify the event sink.
-      NSTimeInterval timeout = FBControlCoreGlobalConfiguration.regularTimeout;
-      [self.logger.debug logFormat:@"Simulator %@ has a connection %@, stopping & wait with timeout %f", simulator.shortDescription, connection, timeout];
-      NSDate *date = NSDate.date;
-      BOOL success = [connection terminateWithTimeout:timeout];
-      if (success) {
-        [self.logger.debug logFormat:@"Simulator connection %@ torn down in %f seconds", connection, [NSDate.date timeIntervalSinceDate:date]];
-      } else {
-        [self.logger.debug logFormat:@"Simulator connection %@ did not teardown in less than %f seconds", connection, timeout];
-      }
-    } else {
-      [self.logger.debug logFormat:@"Simulator %@ does not have an active connection", simulator.shortDescription];
+    // The Simulator Connection for this process should be tidied up first.
+    if (![simulator disconnectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout logger:self.logger error:&innerError]) {
+      return [[[[[FBSimulatorError
+        describe:@"Could disconnect from Simulator"]
+        inSimulator:simulator]
+        causedBy:innerError]
+        logger:self.logger]
+        fail:error];
+    }
+
+    // Disconnect any Test Managers connected to the Simulator.
+    // If a TestManager Deallocates during the shutdown of a Simulator, the calling thread can deadlock.
+    for (FBTestManager *testManager in simulator.resourceSink.testManagers) {
+      [testManager disconnect];
+      [simulator.eventSink testmanagerDidDisconnect:testManager];
     }
 
     // Kill the Simulator.app Process first, see documentation in `-[FBSimDeviceWrapper shutdownWithError:]`.
@@ -140,10 +140,6 @@
           fail:error];
       }
       [simulator.eventSink containerApplicationDidTerminate:simulatorProcess expected:YES];
-      for (FBTestManager *testManager in simulator.resourceSink.testManagers) {
-        [testManager disconnect];
-        [simulator.eventSink testmanagerDidDisconnect:testManager];
-      }
     } else {
       [self.logger.debug logFormat:@"Simulator %@ does not have a running Simulator.app Process", simulator.shortDescription];
     }

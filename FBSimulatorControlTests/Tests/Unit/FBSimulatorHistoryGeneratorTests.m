@@ -9,6 +9,8 @@
 
 #import <XCTest/XCTest.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "CoreSimulatorDoubles.h"
@@ -29,7 +31,7 @@
   device.UDID = [NSUUID UUID];
   device.name = @"iPhoneMega";
 
-  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:nil set:nil processFetcher:nil auxillaryDirectory:NSTemporaryDirectory() logger:nil];
+  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:FBSimulatorConfiguration.defaultConfiguration set:[FBSimulatorSet new] processFetcher:[FBProcessFetcher new] auxillaryDirectory:NSTemporaryDirectory() logger:nil];
   self.generator = [FBSimulatorHistoryGenerator forSimulator:simulator];
 }
 
