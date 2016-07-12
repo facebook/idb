@@ -194,6 +194,7 @@ case $TARGET in
       build)
         all_frameworks_build;;
       test) 
+        build_test_deps
         all_frameworks_test;;
       *) 
         echo "Unknown Command $2"
