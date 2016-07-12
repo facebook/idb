@@ -127,6 +127,7 @@
 		AA75CD171D244100003C45B0 /* FBDeviceControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
 		AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControlKit.xcconfig; sourceTree = "<group>"; };
+		AA7D2F5F1D33844000C7C6CF /* fbsimctl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = fbsimctl.xcconfig; sourceTree = "<group>"; };
 		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -283,6 +284,7 @@
 		AAE35A7B1C2863EB0073CC70 /* fbsimctl */ = {
 			isa = PBXGroup;
 			children = (
+				AA7D2F5F1D33844000C7C6CF /* fbsimctl.xcconfig */,
 				AAA6EC581C96A5DD0083A62C /* main.m */,
 			);
 			path = fbsimctl;
@@ -602,28 +604,15 @@
 		};
 		AA93B7B81BE8351000CF6A56 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA7D2F5F1D33844000C7C6CF /* fbsimctl.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		AA93B7B91BE8351000CF6A56 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA7D2F5F1D33844000C7C6CF /* fbsimctl.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
