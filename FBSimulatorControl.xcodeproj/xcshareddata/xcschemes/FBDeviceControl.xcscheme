@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0800"
+   LastUpgradeVersion = "0730"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E66DC04E390C419500000000"
-               BuildableName = "FBSimulatorControl.framework"
-               BlueprintName = "FBSimulatorControl"
+               BlueprintIdentifier = "AAC8B22A1CEC51120034A865"
+               BuildableName = "FBDeviceControl.framework"
+               BlueprintName = "FBDeviceControl"
                ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,15 +26,15 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "NO">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
          <TestableReference
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AA819DB11B9FB40D002F58CA"
-               BuildableName = "FBSimulatorControlTests.xctest"
-               BlueprintName = "FBSimulatorControlTests"
+               BlueprintIdentifier = "AAC8B2331CEC51120034A865"
+               BuildableName = "FBDeviceControlTests.xctest"
+               BlueprintName = "FBDeviceControlTests"
                ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -42,19 +42,12 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E66DC04E390C419500000000"
-            BuildableName = "FBSimulatorControl.framework"
-            BlueprintName = "FBSimulatorControl"
+            BlueprintIdentifier = "AAC8B22A1CEC51120034A865"
+            BuildableName = "FBDeviceControl.framework"
+            BlueprintName = "FBDeviceControl"
             ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "FBSIMULATORCONTROL_LAUNCH_TYPE"
-            value = "simulator_app"
-            isEnabled = "NO">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -71,9 +64,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E66DC04E390C419500000000"
-            BuildableName = "FBSimulatorControl.framework"
-            BlueprintName = "FBSimulatorControl"
+            BlueprintIdentifier = "AAC8B22A1CEC51120034A865"
+            BuildableName = "FBDeviceControl.framework"
+            BlueprintName = "FBDeviceControl"
             ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -89,9 +82,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E66DC04E390C419500000000"
-            BuildableName = "FBSimulatorControl.framework"
-            BlueprintName = "FBSimulatorControl"
+            BlueprintIdentifier = "AAC8B22A1CEC51120034A865"
+            BuildableName = "FBDeviceControl.framework"
+            BlueprintName = "FBDeviceControl"
             ReferencedContainer = "container:FBSimulatorControl.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
