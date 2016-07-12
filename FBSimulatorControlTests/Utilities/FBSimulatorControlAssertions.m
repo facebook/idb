@@ -64,13 +64,10 @@
 {
   XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
   XCTAssertNotNil(simulator.launchdProcess);
-  XCTAssertNotNil(simulator.connection);
   if (self.expectContainerProcesses) {
     XCTAssertNotNil(simulator.containerApplication);
-    XCTAssertNil(simulator.connection.framebuffer);
   } else {
     XCTAssertNil(simulator.containerApplication);
-    XCTAssertNotNil(simulator.connection.framebuffer);
   }
 }
 

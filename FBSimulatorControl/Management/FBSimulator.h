@@ -17,7 +17,6 @@
 @class FBProcessFetcher;
 @class FBProcessInfo;
 @class FBSimulatorConfiguration;
-@class FBSimulatorConnection;
 @class FBSimulatorDiagnostics;
 @class FBSimulatorHistory;
 @class FBSimulatorPool;
@@ -107,11 +106,6 @@ NS_ASSUME_NONNULL_BEGIN
  The FBProcessInfo associated with the Container Application that launched the Simulator.
  */
 @property (nonatomic, copy, readonly, nullable) FBProcessInfo *containerApplication;
-
-/**
- The Bridge of the Simulator.
- */
-@property (nonatomic, strong, readonly, nullable) FBSimulatorConnection *connection;
 
 /**
  The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.

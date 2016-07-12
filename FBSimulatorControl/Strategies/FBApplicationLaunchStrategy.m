@@ -13,6 +13,7 @@
 
 #import "FBSimulatorError.h"
 #import "FBSimulator.h"
+#import "FBSimulator+Connection.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBApplicationLaunchStrategy.h"
@@ -67,7 +68,7 @@
   }
 
   // The Bridge must be connected in order for the launch to work.
-  FBSimulatorBridge *bridge = [simulator.connection connectToBridge:&innerError];
+  FBSimulatorBridge *bridge = [[simulator connectWithError:&innerError] connectToBridge:&innerError];
   if (!bridge) {
     return [[[FBSimulatorError
       describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
