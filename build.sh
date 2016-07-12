@@ -97,6 +97,12 @@ function all_frameworks_test() {
   device_framework_test
 }
 
+function strip_framework() {
+  local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Debug/$1"
+  echo "Stripping Framework $FRAMEWORK_PATH"
+  rm -r "$FRAMEWORK_PATH"
+}
+
 function cli_build() {
   NAME=fbsimctl
   xcodebuild \
@@ -105,6 +111,14 @@ function cli_build() {
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     build
+
+  strip_framework "FBSimulatorControlKit.framework/Versions/Current/Frameworks/FBSimulatorControl.framework"
+  strip_framework "FBSimulatorControlKit.framework/Versions/Current/Frameworks/FBDeviceControl.framework"
+  strip_framework "FBSimulatorControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
+  strip_framework "FBSimulatorControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
+  strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
+  strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
+  strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
   
   if [[ -n $OUTPUT_DIRECTORY ]]; then
     ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/*"

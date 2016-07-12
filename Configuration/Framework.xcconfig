@@ -9,4 +9,4 @@ DYLIB_CURRENT_VERSION = 1
 DYLIB_INSTALL_NAME_BASE = @rpath
 FRAMEWORK_VERSION = A
 VERSIONING_SYSTEM = apple-generic
-LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/Frameworks
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path @loader_path/Frameworks
