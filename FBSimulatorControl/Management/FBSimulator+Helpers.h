@@ -56,6 +56,22 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Methods
 
 /**
+ Convenience method for obtaining SimulatorState from a String.
+
+ @param stateString the State String to convert from
+ @return an Enumerated State for the String.
+ */
++ (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString;
+
+/**
+ Convenience method for obtaining a description of Simulator State
+
+ @param state the Enumerated State to convert from.
+ @return a String Representation of the Simulator State.
+ */
++ (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state;
+
+/**
  Synchronously waits on the provided state.
 
  @param state the state to wait on
@@ -80,16 +96,6 @@ NS_ASSUME_NONNULL_BEGIN
  @returns YES if the Simulator transitioned to the given state with the timeout, NO otherwise
  */
 - (BOOL)waitOnState:(FBSimulatorState)state withError:(NSError **)error;
-
-/**
- Convenience method for obtaining a description of Simulator State
- */
-+ (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state;
-
-/**
- Convenience method for obtaining SimulatorState from a String.
- */
-+ (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString;
 
 /**
  Calls `freeSimulator:error:` on this device's pool, with the reciever as the first argument.
@@ -151,9 +157,9 @@ NS_ASSUME_NONNULL_BEGIN
  and when it is stable enough state to launch Applications/Daemons, these Service Names
  represent the Services that are known to signify readyness.
 
- @return a NSSet<NSString> of the required process names.
+ @return the required process names.
  */
-- (NSSet *)requiredProcessNamesToVerifyBooted;
+- (NSSet<NSString *> *)requiredProcessNamesToVerifyBooted;
 
 @end
 

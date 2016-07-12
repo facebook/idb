@@ -188,7 +188,7 @@
     firstObject];
 }
 
-- (NSSet *)requiredProcessNamesToVerifyBooted
+- (NSSet<NSString *> *)requiredProcessNamesToVerifyBooted
 {
   if (self.productFamily == FBControlCoreProductFamilyiPhone || self.productFamily == FBControlCoreProductFamilyiPad) {
     return [NSSet setWithArray:@[
@@ -211,7 +211,7 @@
 
 #pragma mark Private
 
-- (NSDictionary *)appInfo:(NSString *)bundleID error:(NSError **)error
+- (NSDictionary<NSString *, id> *)appInfo:(NSString *)bundleID error:(NSError **)error
 {
   NSError *innerError = nil;
   NSDictionary *appInfo = [self.device propertiesOfApplication:bundleID error:&innerError];
