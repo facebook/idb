@@ -128,6 +128,7 @@
 		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
 		AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControlKit.xcconfig; sourceTree = "<group>"; };
 		AA7D2F5F1D33844000C7C6CF /* fbsimctl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = fbsimctl.xcconfig; sourceTree = "<group>"; };
+		AA7D2F611D33867D00C7C6CF /* FBSimulatorControlKitTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControlKitTests.xcconfig; sourceTree = "<group>"; };
 		AA83D5EA1C58E368003B253E /* Events.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		AA93B7B01BE8351000CF6A56 /* fbsimctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbsimctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -305,6 +306,7 @@
 			isa = PBXGroup;
 			children = (
 				AAE35AD21C2865C10073CC70 /* Info.plist */,
+				AA7D2F611D33867D00C7C6CF /* FBSimulatorControlKitTests.xcconfig */,
 				AAA6EC511C933DAE0083A62C /* Fixtures */,
 				AA2AFD701C29412C000123BA /* Helpers */,
 				AA2AFD711C29412C000123BA /* Tests */,
@@ -632,25 +634,19 @@
 		};
 		AAE35AD71C2865C10073CC70 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA7D2F611D33867D00C7C6CF /* FBSimulatorControlKitTests.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = FBSimulatorControlKitTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = FB.FBSimulatorControlKitTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		AAE35AD81C2865C10073CC70 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA7D2F611D33867D00C7C6CF /* FBSimulatorControlKitTests.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = FBSimulatorControlKitTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = FB.FBSimulatorControlKitTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
