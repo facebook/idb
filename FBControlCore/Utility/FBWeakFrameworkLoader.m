@@ -72,7 +72,10 @@ static BOOL FBUserPluginBypassingBundleLoad(NSBundle *bundle, SEL selector, NSEr
   }
 
   // We're done with loading Frameworks.
-  [logger logFormat:@"Loaded All Private Frameworks %@", [FBCollectionInformation oneLineDescriptionFromArray:[weakFrameworks valueForKeyPath:@"@unionOfObjects.name"] atKeyPath:@"lastPathComponent"]];
+  [logger.debug logFormat:
+    @"Loaded All Private Frameworks %@",
+    [FBCollectionInformation oneLineDescriptionFromArray:[weakFrameworks valueForKeyPath:@"@unionOfObjects.name"] atKeyPath:@"lastPathComponent"]
+  ];
 
   return YES;
 }

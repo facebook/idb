@@ -185,7 +185,7 @@
     return [FBControlCoreError failBoolWithError:innerError errorOut:error];
   }
 
-  [logger logFormat:@"%@: Successfully loaded", self.name];
+  [logger.debug logFormat:@"%@: Successfully loaded", self.name];
   if (![self allRequiredClassesExistsWithError:&innerError]) {
     [logger logFormat:@"Failed to load %@", path.lastPathComponent];
     return [FBControlCoreError failBoolWithError:innerError errorOut:error];
@@ -275,7 +275,7 @@
       describeFormat:@"Expected Framework %@ to be loaded for Developer Directory at path %@, but was loaded from %@", bundle.bundlePath.lastPathComponent, bundle.bundlePath, self.basePath]
       failBool:error];
   }
-  [logger logFormat:@"%@: %@ has correct path of %@", self.name, className, basePath];
+  [logger.debug logFormat:@"%@: %@ has correct path of %@", self.name, className, basePath];
   return YES;
 }
 
