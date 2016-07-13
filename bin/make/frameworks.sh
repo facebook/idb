@@ -17,7 +17,7 @@ else
   XC_PIPE='cat'
 fi
 
+xcodebuild -target XCTestBootstrap | $XC_PIPE
 xcodebuild -target FBSimulatorControl | $XC_PIPE
 xcodebuild -target FBDeviceControl | $XC_PIPE
 xcodebuild -target FBControlCore | $XC_PIPE
-xcodebuild -target XCTestBootstrap | $XC_PIPE
