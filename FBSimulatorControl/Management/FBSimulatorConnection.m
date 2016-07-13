@@ -38,8 +38,8 @@
 @property (nonatomic, strong, readonly) dispatch_group_t teardownGroup;
 
 @property (nonatomic, strong, readwrite, nullable) FBFramebuffer *framebuffer;
-@property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
 @property (nonatomic, strong, readwrite, nullable) FBSimulatorHID *hid;
+@property (nonatomic, strong, readwrite, nullable) FBSimulatorBridge *bridge;
 
 @end
 
