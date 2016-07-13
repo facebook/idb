@@ -40,3 +40,7 @@ Carthage/Build
 Carthage/Checkouts
 fbsimctl/Carthage/Build
 fbsimctl/Carthage/Checkouts
+
+# vim and emacs
+(.*/)?\#[^/]*\#$
+*.swp
