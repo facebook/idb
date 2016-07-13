@@ -17,30 +17,35 @@
 
 #pragma mark Framework Loading
 
+static BOOL hasLoadedFrameworks = NO;
+
 + (void)loadPrivateFrameworksOrAbort
 {
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-    NSError *error = nil;
-    BOOL success = [FBSimulatorControlFrameworkLoader loadPrivateFrameworks:logger.debug error:&error];
-    if (success) {
-      return;
-    }
-    [logger.error logFormat:@"Failed to private frameworks for FBSimulatorControl with error %@", error];
-    abort();
-  });
+  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+  NSError *error = nil;
+  BOOL success = [FBSimulatorControlFrameworkLoader loadPrivateFrameworks:logger.debug error:&error];
+  if (success) {
+    return;
+  }
+  [logger.error logFormat:@"Failed to private frameworks for FBSimulatorControl with error %@", error];
+  abort();
 }
 
 + (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
+  if (hasLoadedFrameworks) {
+    return YES;
+  }
   NSArray<FBWeakFramework *> *frameworks = @[
     FBWeakFramework.CoreSimulator,
     FBWeakFramework.SimulatorKit,
   ];
   BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
-  // Set CoreSimulator Logging since it is now loaded.
-  [self setCoreSimulatorLoggingEnabled:FBControlCoreGlobalConfiguration.debugLoggingEnabled];
+  if (result) {
+    // Set CoreSimulator Logging since it is now loaded.
+    [self setCoreSimulatorLoggingEnabled:FBControlCoreGlobalConfiguration.debugLoggingEnabled];
+    hasLoadedFrameworks = YES;
+  }
   return result;
 }
 

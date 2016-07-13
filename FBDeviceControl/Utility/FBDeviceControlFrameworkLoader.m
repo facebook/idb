@@ -18,7 +18,11 @@
 
 #import <IDEFoundation/IDEFoundationTestInitializer.h>
 
+#import "FBDeviceControlError.h"
 #import "FBAMDevice.h"
+
+static BOOL hasLoadedEssentialFrameworks = NO;
+static BOOL hasLoadedXcodeFrameworks = NO;
 
 @implementation FBDeviceControlFrameworkLoader
 
@@ -28,51 +32,56 @@
 
 + (void)initializeEssentialFrameworks
 {
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    [self loadEssentialFrameworksOrAbort];
-    if (FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
-      [FBAMDevice enableDebugLogging];
-    }
-  });
-}
-
-+ (void)loadEssentialFrameworksOrAbort
-{
   NSError *error = nil;
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
   BOOL success = [self loadEssentialFrameworks:logger error:&error];
   if (success) {
-    [FBAMDevice loadFBAMDeviceSymbols];
     return;
   }
-
-  [logger.error logFormat:@"Failed to load the essential frameworks for FBDeviceControl with error %@", error];
+  [logger.error logFormat:@"Failed to load the Essential frameworks for FBDeviceControl with error %@", error];
   abort();
 }
 
 + (BOOL)loadEssentialFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
+  if (hasLoadedEssentialFrameworks) {
+    return YES;
+  }
+
   NSArray<FBWeakFramework *> *frameworks = @[
     FBWeakFramework.MobileDevice,
   ];
-  return [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
+  BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
+  if (result) {
+    [FBAMDevice loadFBAMDeviceSymbols];
+    hasLoadedEssentialFrameworks = YES;
+  }
+  if (result && FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
+    [FBAMDevice enableDebugLogging];
+  }
+  return result;
 }
 
 #pragma mark Xcode Frameworks
 
 + (void)initializeXCodeFrameworks
 {
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    [self loadXcodeFrameworksOrAbort];
-    [self confirmExistenceOfClasses];
-    [self initializePrincipalClasses];
-  });
+  NSError *error = nil;
+  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
+  BOOL success = [self loadEssentialFrameworks:logger error:&error];
+  if (success) {
+    return;
+  }
+  [logger.error logFormat:@"Failed to load the Xcode frameworks for FBDeviceControl with error %@", error];
+  abort();
 }
 
-+ (void)loadXcodeFrameworksOrAbort
++ (BOOL)loadXcodeFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
+  if (hasLoadedXcodeFrameworks) {
+    return YES;
+  }
+
   NSArray<FBWeakFramework *> *frameworks = @[
     FBWeakFramework.DTXConnectionServices,
     FBWeakFramework.DVTFoundation,
@@ -83,18 +92,20 @@
     FBWeakFramework.IDESourceEditor,
   ];
 
-  NSError *error = nil;
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  BOOL success = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:&error];
-  if (success) {
-    return;
+  if (![FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error]) {
+    return NO;
   }
-
-  [logger.error logFormat:@"Failed to load the xcode frameworks for FBDeviceControl with error %@", error];
-  abort();
+  if (![self confirmExistenceOfClasses:logger error:error]) {
+    return NO;
+  }
+  if (![self initializePrincipalClasses:logger error:error]) {
+    return NO;
+  }
+  hasLoadedXcodeFrameworks = YES;
+  return YES;
 }
 
-+ (void)confirmExistenceOfClasses
++ (BOOL)confirmExistenceOfClasses:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSArray<NSString *> *classNames = @[
     @"DVTDeviceManager",
@@ -103,21 +114,43 @@
     @"DVTPlatform",
     @"DVTDeviceType",
   ];
+  NSMutableArray<NSString *> *unloadedClasses = [NSMutableArray array];
   for (NSString *className in classNames) {
     Class class = NSClassFromString(className);
-    NSAssert(class, @"Expected %@ to have been loaded", class);
+    if (!class) {
+      continue;
+    }
+    [logger.error logFormat:@"Expected %@ to be loaded, but it was not", className];
+    [unloadedClasses addObject:className];
   }
+  if (unloadedClasses.count > 0) {
+    return [[FBDeviceControlError
+      describeFormat:@"Expected %@ to be loaded, but they were not", [FBCollectionInformation oneLineDescriptionFromArray:unloadedClasses]]
+      failBool:error];
+  }
+  return YES;
 }
 
-+ (void)initializePrincipalClasses
++ (BOOL)initializePrincipalClasses:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
-  NSError *error = nil;
-  NSCAssert([NSClassFromString(@"IDEFoundationTestInitializer") initializeTestabilityWithUI:NO error:&error], @"Failed to initialize Testability %@", error);
-  NSCAssert([NSClassFromString(@"DVTPlatform") loadAllPlatformsReturningError:&error], @"Failed to load all platforms: %@", error);
-  NSCAssert([NSClassFromString(@"DVTPlatform") platformForIdentifier:@"com.apple.platform.iphoneos"] != nil, @"DVTPlatform hasn't been initialized yet.");
-  NSCAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"], @"Failed to load Xcode.DeviceType.Mac");
-  NSCAssert([NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"], @"Failed to load Xcode.DeviceType.iPhone");
+  NSError *innerError = nil;
+  if (![NSClassFromString(@"IDEFoundationTestInitializer") initializeTestabilityWithUI:NO error:&innerError]) {
+    return [[[FBDeviceControlError describe:@"Failed to initialize testability"] causedBy:innerError] failBool:error];
+  }
+  if (![NSClassFromString(@"DVTPlatform") loadAllPlatformsReturningError:&innerError]) {
+    return [[[FBDeviceControlError describe:@"Failed to load all platforms"] causedBy:innerError] failBool:error];
+  }
+  if (![NSClassFromString(@"DVTPlatform") platformForIdentifier:@"com.apple.platform.iphoneos"]) {
+    return [[[FBDeviceControlError describe:@"Platform 'com.apple.platform.iphoneos' hasn't been initialized yet"] causedBy:innerError] failBool:error];
+  }
+  if (![NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"]) {
+     return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.Mac' hasn't been initialized yet"] causedBy:innerError] failBool:error];
+  }
+  if (![NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"]) {
+    return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.iPhone' hasn't been initialized yet"] causedBy:innerError] failBool:error];
+  }
   [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] startLocating];
+  return YES;
 }
 
 + (void)enableDVTDebugLogging
