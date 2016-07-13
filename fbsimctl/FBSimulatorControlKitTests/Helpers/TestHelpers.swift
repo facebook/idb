@@ -44,7 +44,8 @@ public extension XCTestCase {
   func assertCLIRunsSuccessfully(arguments: [String]) -> [String] {
     let writer = TestWriter()
     let cli = CLI.fromArguments(arguments, environment: [:])
-    let runner = CLIRunner(cli: cli, writer: writer)
+    let reporter = cli.createReporter(writer)
+    let runner = CLIRunner(cli: cli, reporter: reporter)
     let result = runner.runForStatus()
     XCTAssertEqual(result, 0, "Expected a succesful result, but got \(result), output \(writer)")
     return writer.output
