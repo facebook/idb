@@ -48,3 +48,10 @@ fbsimctl/cli-tests/supports_metal
 
 output/
 .clang-format
+
+## vim and emacs
+(.*/)?\#[^/]*\#$
+*.swp
+
+## JetBrains
+.idea
