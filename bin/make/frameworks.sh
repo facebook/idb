@@ -17,7 +17,42 @@ else
   XC_PIPE='cat'
 fi
 
-xcrun xcodebuild -target XCTestBootstrap | $XC_PIPE
-xcrun xcodebuild -target FBSimulatorControl | $XC_PIPE
-xcrun xcodebuild -target FBDeviceControl | $XC_PIPE
-xcrun xcodebuild -target FBControlCore | $XC_PIPE
+BUILD_DIR="build"
+XC_PROJECT="FBSimulatorControl.xcodeproj"
+
+xcrun xcodebuild \
+  -SYMROOT="${BUILD_DIR}" \
+  -OBJROOT="${BUILD_DIR}" \
+  -project ${XC_PROJECT} \
+  -target XCTestBootstrap \
+  -configuration Release \
+  -sdk macosx \
+  build | $XC_PIPE
+
+xcrun xcodebuild \
+  -SYMROOT="${BUILD_DIR}" \
+  -OBJROOT="${BUILD_DIR}" \
+  -project ${XC_PROJECT} \
+  -target FBSimulatorControl \
+  -configuration Release \
+  -sdk macosx \
+  build | $XC_PIPE
+
+xcrun xcodebuild \
+  -SYMROOT="${BUILD_DIR}" \
+  -OBJROOT="${BUILD_DIR}" \
+  -project ${XC_PROJECT} \
+  -target FBDeviceControl \
+  -configuration Release \
+  -sdk macosx \
+  build | $XC_PIPE
+
+xcrun xcodebuild \
+  -SYMROOT="${BUILD_DIR}" \
+  -OBJROOT="${BUILD_DIR}" \
+  -project ${XC_PROJECT} \
+  -target FBControlCore \
+  -configuration Release \
+  -sdk macosx \
+  build | $XC_PIPE
+
