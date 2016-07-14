@@ -11,6 +11,18 @@ import Foundation
 import FBSimulatorControl
 import FBDeviceControl
 
+extension CommandResultRunner {
+  static func unimplementedActionRunner(action: Action, target: FBiOSTarget, format: FBiOSTargetFormat) -> Runner {
+    let (eventName, maybeSubject) = action.reportable
+    var actionMessage = eventName.rawValue
+    if let subject = maybeSubject {
+      actionMessage += " \(subject.description)"
+    }
+    let message = "Action \(actionMessage) is unimplemented for target \(format.format(target))"
+    return CommandResultRunner(result: CommandResult.Failure(message))
+  }
+}
+
 struct iOSActionProvider {
   let context: iOSRunnerContext<(Action, FBiOSTarget, iOSReporter)>
 

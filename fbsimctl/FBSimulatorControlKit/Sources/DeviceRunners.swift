@@ -27,6 +27,6 @@ struct DeviceActionRunner : Runner {
       return runner
     }
 
-    return CommandResultRunner.unimplemented
+    return CommandResultRunner.unimplementedActionRunner(action, target: device, format: context.format)
   }
 }

@@ -129,7 +129,7 @@ struct SimulatorActionRunner : Runner {
         interaction.overrideWatchDogTimerForApplications(bundleIDs, withTimeout: timeout)
       }
     default:
-      return CommandResultRunner.unimplemented
+      return CommandResultRunner.unimplementedActionRunner(action, target: simulator, format: context.format)
     }
   }
 }

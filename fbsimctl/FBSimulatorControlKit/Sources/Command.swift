@@ -209,6 +209,61 @@ public func == (left: Action, right: Action) -> Bool {
   }
 }
 
+extension Action {
+  public var reportable: (EventName, EventReporterSubject?) { get {
+    switch self {
+    case .Approve(let bundleIDs):
+      return (EventName.Approve, ArraySubject(bundleIDs))
+    case .Boot:
+      return (EventName.Boot, nil)
+    case .ClearKeychain(let bundleID):
+      return (EventName.ClearKeychain, bundleID)
+    case .Create:
+      return (EventName.Create, nil)
+    case .Delete:
+      return (EventName.Delete, nil)
+    case .Diagnose(let query, _):
+      return (EventName.Diagnose, ControlCoreSubject(query))
+    case .Erase:
+      return (EventName.Erase, nil)
+    case .Install:
+      return (EventName.Install, nil)
+    case .LaunchAgent(let launch):
+      return (EventName.Launch, ControlCoreSubject(launch))
+    case .LaunchApp(let launch):
+      return (EventName.Launch, ControlCoreSubject(launch))
+    case .LaunchXCTest(let launch, _):
+        return (EventName.LaunchXCTest, ControlCoreSubject(launch))
+    case .List:
+        return (EventName.List, nil)
+    case .ListApps:
+      return (EventName.ListApps, nil)
+    case .Listen:
+      return (EventName.Listen, nil)
+    case .Open(let url):
+      return (EventName.Open, url.absoluteString)
+    case .Record(let start):
+      return (EventName.Record, start)
+    case .Relaunch(let appLaunch):
+      return (EventName.Relaunch, ControlCoreSubject(appLaunch))
+    case .Search(let search):
+      return (EventName.Search, ControlCoreSubject(search))
+    case .Shutdown:
+      return (EventName.Shutdown, nil)
+    case .Tap:
+      return (EventName.Tap, nil)
+    case .Terminate(let bundleID):
+      return (EventName.Record, bundleID)
+    case .Uninstall(let bundleID):
+      return (EventName.Uninstall, bundleID)
+    case .Upload:
+      return (EventName.Diagnose, nil)
+    case .WatchdogOverride(let bundleIDs, _):
+      return (EventName.WatchdogOverride, ArraySubject(bundleIDs))
+    }
+  }}
+}
+
 extension Server : Equatable { }
 public func == (left: Server, right: Server) -> Bool {
   switch (left, right) {
