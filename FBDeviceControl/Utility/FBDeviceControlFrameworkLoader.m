@@ -68,7 +68,7 @@ static BOOL hasLoadedXcodeFrameworks = NO;
 {
   NSError *error = nil;
   id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  BOOL success = [self loadEssentialFrameworks:logger error:&error];
+  BOOL success = [self loadXcodeFrameworks:logger error:&error];
   if (success) {
     return;
   }
@@ -116,8 +116,7 @@ static BOOL hasLoadedXcodeFrameworks = NO;
   ];
   NSMutableArray<NSString *> *unloadedClasses = [NSMutableArray array];
   for (NSString *className in classNames) {
-    Class class = NSClassFromString(className);
-    if (!class) {
+    if (NSClassFromString(className)) {
       continue;
     }
     [logger.error logFormat:@"Expected %@ to be loaded, but it was not", className];
