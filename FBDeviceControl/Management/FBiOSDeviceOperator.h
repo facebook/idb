@@ -13,6 +13,8 @@
 
 @class FBDevice;
 
+@protocol DVTApplication;
+
 /**
  A 'Device Operator' Implementation for providing the necessary functionality to XCTestBoostrap for Physical Devices.
  Uses the Xcode Frameworks DVTFoundation and IDEiOSSupportCore.ideplugin to control a DVTiOSDevice instance directly.
@@ -27,4 +29,10 @@
  */
 + (instancetype)forDevice:(FBDevice *)device;
 
+/**
+ Exposing this due to a bug with -(FBProductBundle *)applicationBundleWithBundleID:error"
+ https://github.com/facebook/FBSimulatorControl/issues/279
+ */
+
+- (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID;
 @end
