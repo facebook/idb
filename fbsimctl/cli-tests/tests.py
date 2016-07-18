@@ -1,9 +1,6 @@
-from util import (FBSimctl, Simulator)
+from util import (FBSimctl, Simulator, EXECUTABLE_PATH)
 import unittest
 import tempfile
-
-EXECUTABLE_PATH = 'fbsimctl'
-
 
 class FBSimctlTestCase(unittest.TestCase):
     def setUp(self):
