@@ -25,34 +25,35 @@ function build_test_deps() {
 }
 
 function framework_build() {
-  local NAME=$1
+  local name=$1
   xcodebuild \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $NAME \
+    -scheme $name \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     build
 
-  if [[ -n $OUTPUT_DIRECTORY ]]; then
-    ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/$NAME.framework"
-    echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p $OUTPUT_DIRECTORY
-    cp -r $ARTIFACT $OUTPUT_DIRECTORY
+  local output_directory=$2
+  if [[ -n $output_directory ]]; then
+    local artifact="$BUILD_DIRECTORY/Build/Products/Debug/$name.framework"
+    echo "Copying Build output from $artifact to $output_directory"
+    mkdir -p "$output_directory"
+    cp -r $artifact "$output_directory"
   fi
 }
 
 function framework_test() {
-  local NAME=$1
+  local name=$1
   xctool \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $NAME \
+    -scheme $name \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     test
 }
 
 function core_framework_build() {
-  framework_build FBControlCore
+  framework_build FBControlCore $1
 }
 
 function core_framework_test() {
@@ -60,7 +61,7 @@ function core_framework_test() {
 }
 
 function xctest_framework_build() {
-  framework_build XCTestBootstrap
+  framework_build XCTestBootstrap $1
 }
 
 function xctest_framework_test() {
@@ -68,7 +69,7 @@ function xctest_framework_test() {
 }
 
 function simulator_framework_build() {
-  framework_build FBSimulatorControl
+  framework_build FBSimulatorControl $1
 }
 
 function simulator_framework_test() {
@@ -76,7 +77,7 @@ function simulator_framework_test() {
 }
 
 function device_framework_build() {
-  framework_build FBDeviceControl
+  framework_build FBDeviceControl $1
 }
 
 function device_framework_test() {
@@ -84,10 +85,11 @@ function device_framework_test() {
 }
 
 function all_frameworks_build() {
-  core_framework_build
-  xctest_framework_build
-  simulator_framework_build
-  device_framework_build
+  local output_directory=$1
+  core_framework_build $output_directory
+  xctest_framework_build $output_directory
+  simulator_framework_build $output_directory
+  device_framework_build $output_directory
 }
 
 function all_frameworks_test() {
@@ -104,10 +106,10 @@ function strip_framework() {
 }
 
 function cli_build() {
-  NAME=fbsimctl
+  local name=fbsimctl
   xcodebuild \
-    -workspace $NAME/$NAME.xcworkspace \
-    -scheme $NAME \
+    -workspace $name/$name.xcworkspace \
+    -scheme $name \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     build
@@ -120,15 +122,16 @@ function cli_build() {
   strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
   strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
   
-  if [[ -n $OUTPUT_DIRECTORY ]]; then
-    ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/*"
-    echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p $OUTPUT_DIRECTORY
-    cp -r $ARTIFACT $OUTPUT_DIRECTORY
+  local output_directory=$1
+  if [[ -n $output_directory ]]; then
+    local artifact="$BUILD_DIRECTORY/Build/Products/Debug/*"
+    echo "Copying Build output from $artifact to $output_directory"
+    mkdir -p "$output_directory"
+    cp -r $artifact "$output_directory"
   fi
 }
 
-function cli_test() {
+function cli_framework_test() {
   NAME=fbsimctl
   xctool \
     -workspace $NAME/$NAME.xcworkspace \
@@ -136,6 +139,12 @@ function cli_test() {
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     test
+}
+
+function cli_e2e_test() {
+  pushd fbsimctl/cli-tests
+  python3 -m unittest tests
+  popd
 }
 
 function print_usage() {
@@ -154,6 +163,8 @@ Supported Commands:
     Build the fbsimctl exectutable. Optionally copies the executable and it's dependencies to <output-directory>
   cli test
     Build the FBSimulatorControlKit.framework and runs the tests. Requires xctool to be installed.
+  cli e2e-test
+    Build the fbsimctl executable and run the e2e CLI Tests against it. Requires python3
 EOF
 }
 
@@ -184,6 +195,8 @@ if [[ -n $OUTPUT_DIRECTORY ]]; then
 elif [[ -n $3 ]]; then
   echo "using output directory $3"
   OUTPUT_DIRECTORY=$3
+else
+  echo "No output directory specified"
 fi
 
 case $TARGET in
@@ -192,7 +205,7 @@ case $TARGET in
   framework)
     case $COMMAND in
       build)
-        all_frameworks_build;;
+        all_frameworks_build $OUTPUT_DIRECTORY;;
       test) 
         build_test_deps
         all_frameworks_test;;
@@ -204,10 +217,13 @@ case $TARGET in
     build_cli_deps
     case $COMMAND in
       build) 
-        cli_build;;
+        cli_build $OUTPUT_DIRECTORY;;
       test)
         build_test_deps
-        cli_test;;
+        cli_framework_test;;
+      e2e-test)
+        cli_build fbsimctl/cli-tests/executable-under-test
+        cli_e2e_test;;
       *)
         echo "Unknown Command $COMMAND"
         exit 1;;

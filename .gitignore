@@ -2,8 +2,9 @@
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
-## Build generated
+## Build & Test Generated
 build/
+fbsimctl/cli-tests/executable-under-test
 DerivedData
 
 ## Filesystem
@@ -31,6 +32,9 @@ xcuserdata/
 *.hmap
 *.ipa
 
+## Python
+*.pyc
+
 # Carthage
 #
 # Add this line if you want to avoid checking in source code from Carthage dependencies.
@@ -40,3 +44,4 @@ Carthage/Build
 Carthage/Checkouts
 fbsimctl/Carthage/Build
 fbsimctl/Carthage/Checkouts
+
