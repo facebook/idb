@@ -260,11 +260,13 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesMultipleConsecutiveLaunches() {
+    let compoundComponents = [
+      ["launch", "--stdout", "com.foo.bar", "--foo", "--bar"], ["launch", Fixtures.application.path, "--bing", "--bong"],
+    ]
     let launchConfig1 = FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "--bar"], environment: [:], options: .WriteStdout)
     let launchConfig2 = FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: ["--bing", "--bong"], environment: [:], options: FBProcessLaunchOptions())
     let actions: [Action] = [Action.LaunchApp(launchConfig1), Action.LaunchApp(launchConfig2)]
-    let suffix: [String] = ["launch", "--stdout", "com.foo.bar", "--foo", "--bar", "--", "launch", Fixtures.application.path, "--bing", "--bong"]
-    self.assertWithDefaultActions(actions, suffix: suffix)
+    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
   func assertWithDefaultAction(action: Action, suffix: [String]) {
@@ -284,13 +286,11 @@ class CommandParserTests : XCTestCase {
   }
 
   func assertParsesImplodingCompoundActions(actions: [Action], compoundComponents: [[String]]) {
-    for suffix in CommandParserTests.implodeCompoundActions(compoundComponents) {
-      self.assertWithDefaultActions(actions, suffix: suffix)
-    }
+    self.assertWithDefaultActions(actions, suffix: CommandParserTests.implodeCompoundActions(compoundComponents))
   }
 
   func assertFailsToParseImplodingCompoundActions(compoundComponents: [[String]]) {
-    self.assertFailsToParseAll(
+    self.assertParseFails(
       Command.parser,
       CommandParserTests.implodeCompoundActions(compoundComponents)
     )
@@ -303,10 +303,7 @@ class CommandParserTests : XCTestCase {
     self.assertParsesAll(Command.parser, pairs)
   }
 
-  static func implodeCompoundActions(compoundComponents: [[String]]) -> [[String]] {
-    return [
-      Array(compoundComponents.joinWithSeparator(["--"])),
-      Array(compoundComponents.joinWithSeparator([]))
-    ]
+  static func implodeCompoundActions(compoundComponents: [[String]]) -> [String] {
+    return Array(compoundComponents.joinWithSeparator(["--"]))
   }
 }

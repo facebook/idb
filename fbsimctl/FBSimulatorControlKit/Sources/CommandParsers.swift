@@ -357,10 +357,9 @@ extension Command : Parsable {
   }
 
   static var compoundActionParser: Parser<[Action]> { get {
-    return Parser.alternative([
-      Parser.exhaustive(Parser.manyCount(1, Action.parser)),
-      Parser.exhaustive(Parser.manySepCount(1, Action.parser, Parser<NSNull>.ofDashSeparator)),
-    ])
+    return Parser.exhaustive(
+      Parser.manySepCount(1, Action.parser, Parser<NSNull>.ofDashSeparator)
+    )
   }}
 }
 
