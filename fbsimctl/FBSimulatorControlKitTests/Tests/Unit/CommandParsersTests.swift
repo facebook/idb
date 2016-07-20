@@ -163,14 +163,12 @@ let validActions: [([String], Action)] = [
   (["erase"], Action.Erase),
   (["install", Fixtures.application.path], Action.Install(Fixtures.application.path)),
   (["launch", "--stderr", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: .WriteStderr))),
-  (["launch", "--stdout", "com.foo.bar", "--foo", "--", "--something-else"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:], options: .WriteStdout))),
   (["launch", "com.foo.bar"], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
   (["launch", "--stderr", Fixtures.application.path], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: .WriteStderr))),
   (["launch", Fixtures.application.path], Action.LaunchApp(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
   (["launch", Fixtures.binary.path, "--foo", "-b", "-a", "-r"], Action.LaunchAgent(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: FBProcessLaunchOptions()))),
   (["launch", Fixtures.binary.path], Action.LaunchAgent(FBAgentLaunchConfiguration(binary: Fixtures.binary, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
   (["launch_xctest", "/usr/bin", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
-  (["launch_xctest", "/usr/bin", "com.foo.bar", "--foo", "--", "--something-else"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo"], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
   (["launch_xctest", "/usr/bin", "com.foo.bar"], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
   (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
   (["launch_xctest", "/usr/bin", Fixtures.application.path], Action.LaunchXCTest(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()), "/usr/bin")),
@@ -236,18 +234,29 @@ class CommandParserTests : XCTestCase {
   }
 
   func testParsesListBootListenShutdown() {
+    let compoundComponents = [
+      ["list"], ["boot"], ["listen", "--http", "1000"], ["shutdown"],
+    ]
     let actions: [Action] = [Action.List, Action.Boot(nil), Action.Listen(Server.Http(1000)), Action.Shutdown]
-    let suffix: [String] = ["list", "boot", "listen", "--http", "1000", "shutdown"]
-    self.assertWithDefaultActions(actions, suffix: suffix)
+    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
   func testParsesListBootListenShutdownDiagnose() {
+    let compoundComponents = [
+      ["list"], ["create", "iPhone 5"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["shutdown"], ["diagnose"],
+    ]
     let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
     let creationConfiguration = CreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone5(), auxDirectory: nil)
     let diagnoseAction = Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [Action.List, Action.Create(creationConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
-    let suffix: [String] = ["list", "create", "iPhone 5", "boot", "--direct-launch", "listen", "--http", "8090", "shutdown", "diagnose"]
-    self.assertWithDefaultActions(actions, suffix: suffix)
+    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+  }
+
+  func testFailsToParseDanglingTokens() {
+    let compoundComponents = [
+      ["list"], ["create", "iPhone 5"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["YOLO"],
+    ]
+    self.assertFailsToParseImplodingCompoundActions(compoundComponents)
   }
 
   func testParsesMultipleConsecutiveLaunches() {
@@ -259,7 +268,7 @@ class CommandParserTests : XCTestCase {
   }
 
   func assertWithDefaultAction(action: Action, suffix: [String]) {
-    assertWithDefaultActions([action], suffix: suffix)
+    self.assertWithDefaultActions([action], suffix: suffix)
   }
 
   func assertWithDefaultActions(actions: [Action], suffix: [String]) {
@@ -274,10 +283,30 @@ class CommandParserTests : XCTestCase {
     ])
   }
 
+  func assertParsesImplodingCompoundActions(actions: [Action], compoundComponents: [[String]]) {
+    for suffix in CommandParserTests.implodeCompoundActions(compoundComponents) {
+      self.assertWithDefaultActions(actions, suffix: suffix)
+    }
+  }
+
+  func assertFailsToParseImplodingCompoundActions(compoundComponents: [[String]]) {
+    self.assertFailsToParseAll(
+      Command.parser,
+      CommandParserTests.implodeCompoundActions(compoundComponents)
+    )
+  }
+
   func unzipAndAssert(actions: [Action], suffix: [String], extras: [([String], FBiOSTargetQuery?, FBiOSTargetFormat?)]) {
     let pairs = extras.map { (tokens, query, format) in
       return (tokens + suffix, Command(configuration: Configuration.defaultValue, actions: actions, query: query, format: format))
     }
     self.assertParsesAll(Command.parser, pairs)
+  }
+
+  static func implodeCompoundActions(compoundComponents: [[String]]) -> [[String]] {
+    return [
+      Array(compoundComponents.joinWithSeparator(["--"])),
+      Array(compoundComponents.joinWithSeparator([]))
+    ]
   }
 }

@@ -130,6 +130,10 @@ extension Parser {
   public static var ofDate: Parser<NSDate> { get {
     return Parser<NSDate>.ofDouble.fmap { NSDate(timeIntervalSince1970: $0) }
   }}
+
+  public static var ofDashSeparator: Parser<NSNull> { get {
+    return Parser<NSNull>.ofString("--", NSNull())
+  }}
 }
 
 extension OutputOptions : Parsable {
@@ -339,7 +343,7 @@ extension Command : Parsable {
         Configuration.parser,
         FBiOSTargetQueryParsers.parser.optional(),
         FBiOSTargetFormatParsers.parser.optional(),
-        Parser.manyCount(1, Action.parser)
+        self.compoundActionParser
       )
       .fmap { (configuration, query, format, actions) in
         return Command(
@@ -351,6 +355,13 @@ extension Command : Parsable {
       }
     }
   }
+
+  static var compoundActionParser: Parser<[Action]> { get {
+    return Parser.alternative([
+      Parser.exhaustive(Parser.manyCount(1, Action.parser)),
+      Parser.exhaustive(Parser.manySepCount(1, Action.parser, Parser<NSNull>.ofDashSeparator)),
+    ])
+  }}
 }
 
 extension Server : Parsable {
@@ -806,9 +817,10 @@ struct FBProcessLaunchConfigurationParsers {
   }}
 
   static var argumentParser: Parser<[String]> { get {
-    return Parser.manyTill(
-      Parser<String>.ofString("--", "--"),
-      Parser<String>.ofAny
-    )
+    return Parser
+      .manyTill(
+        Parser<NSNull>.ofDashSeparator,
+        Parser<String>.ofAny
+      )
   }}
 }

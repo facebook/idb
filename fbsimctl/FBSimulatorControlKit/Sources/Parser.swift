@@ -75,10 +75,20 @@ extension Parser {
   func optional() -> Parser<A?> {
     return Parser<A?>(self.matchDescription) { tokens in
       do {
-        let (nextTokens, value) = try self.parse(tokens)
-        return (nextTokens, Optional.Some(value))
+        let (tokens, value) = try self.parse(tokens)
+        return (tokens, Optional.Some(value))
       } catch {
         return (tokens, nil)
+      }
+    }
+  }
+
+  func handle(f: ParseError -> A) -> Parser<A> {
+    return Parser<A>(self.matchDescription) { tokens in
+      do {
+        return try self.parse(tokens)
+      } catch let error as ParseError {
+        return (tokens, f(error))
       }
     }
   }
@@ -94,17 +104,6 @@ extension Parser {
   Derivatives
 */
 extension Parser {
-  func handle(f: () -> A) -> Parser<A> {
-    return self
-      .optional()
-      .fmap { optionalValue in
-        guard let value = optionalValue else {
-          return f()
-        }
-        return value
-      }
-  }
-
   func fallback(a: A) -> Parser<A> {
     return self.handle { _ in a }
   }
@@ -112,6 +111,21 @@ extension Parser {
   func describe(description: String) -> Parser<A> {
     return Parser(description, output: self.output)
   }
+
+  static var passthrough: Parser<NSNull> { get {
+    return Parser<NSNull>("") { tokens in
+      return (tokens, NSNull())
+    }
+  }}
+
+  static var noRemaining: Parser<NSNull> { get {
+    return Parser<NSNull>("No Remaining") { tokens in
+      if tokens.count > 0 {
+        throw ParseError.Custom("There were remaining tokens \(tokens)")
+      }
+      return ([], NSNull())
+    }
+  }}
 
   static func fail(error: ParseError) -> Parser<A> {
     return Parser<A>("fail Parser") { _ in
@@ -199,6 +213,10 @@ extension Parser {
   }
 
   static func manyCount(count: Int, _ parser: Parser<A>) -> Parser<[A]> {
+    return self.manySepCount(count, parser, Parser.passthrough)
+  }
+
+  static func manySepCount<B>(count: Int, _ parser: Parser<A>, _ separator: Parser<B>) -> Parser<[A]> {
     assert(count >= 0, "Count should be >= 0")
     return Parser<[A]>("At least \(count) of \(parser)") { tokens in
       var values: [A] = []
@@ -207,10 +225,15 @@ extension Parser {
 
       do {
         while (runningArgs.count > 0) {
-          let output = try parser.parse(runningArgs)
+          // Extract the main parsed value
+          let (remainder, value) = try parser.parse(runningArgs)
           parseCount += 1
-          runningArgs = output.0
-          values.append(output.1)
+          runningArgs = remainder
+          values.append(value)
+
+          // Add the separator, will break out if separator parse fails
+          let (nextRemainder, _) = try separator.parse(runningArgs)
+          runningArgs = nextRemainder
         }
       } catch { }
 
@@ -228,8 +251,7 @@ extension Parser {
 
       while (runningArgs.count > 0) {
         do {
-          let output = try terminatingParser.parse(runningArgs)
-          runningArgs = output.0
+          try terminatingParser.parse(runningArgs)
           break
         } catch {
           let output = try parser.parse(runningArgs)
@@ -278,6 +300,14 @@ extension Parser {
           accumulator = accumulator.append(value)
         }
         return accumulator
+      }
+  }
+
+  static func exhaustive(parser: Parser<A>) -> Parser<A> {
+    return Parser
+      .ofTwoSequenced(parser, Parser.noRemaining)
+      .fmap { (original, _) in
+        return original
       }
   }
 }
