@@ -149,7 +149,7 @@
 
 + (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device
 {
-  return [self withDevice:device];
+  return [self.defaultConfiguration withDevice:device];
 }
 
 - (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device
