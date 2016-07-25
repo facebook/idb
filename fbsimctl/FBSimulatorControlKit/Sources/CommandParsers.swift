@@ -208,9 +208,9 @@ extension Configuration : Parsable {
  A separate struct for FBSimulatorConfiguration is needed as Parsable protcol conformance cannot be
  applied to FBSimulatorConfiguration as it is a non-final.
  */
-extension CreationConfiguration : Parsable {
-  public static var parser: Parser<CreationConfiguration> { get {
-    return Parser<CreationConfiguration>.accumulate(0, [
+extension IndividualCreationConfiguration : Parsable {
+  public static var parser: Parser<IndividualCreationConfiguration> { get {
+    return Parser<IndividualCreationConfiguration>.accumulate(0, [
       self.deviceConfigurationParser,
       self.osVersionConfigurationParser,
       self.auxDirectoryConfigurationParser,
@@ -227,9 +227,9 @@ extension CreationConfiguration : Parsable {
     }
   }}
 
-  static var deviceConfigurationParser: Parser<CreationConfiguration> { get {
+  static var deviceConfigurationParser: Parser<IndividualCreationConfiguration> { get {
     return self.deviceParser.fmap { device in
-      return CreationConfiguration(
+      return IndividualCreationConfiguration(
         osVersion: nil,
         deviceType: device,
         auxDirectory: nil
@@ -247,9 +247,9 @@ extension CreationConfiguration : Parsable {
     }
   }}
 
-  static var osVersionConfigurationParser: Parser<CreationConfiguration> { get {
+  static var osVersionConfigurationParser: Parser<IndividualCreationConfiguration> { get {
     return self.osVersionParser.fmap { osVersion in
-      return CreationConfiguration(
+      return IndividualCreationConfiguration(
         osVersion: osVersion,
         deviceType: nil,
         auxDirectory: nil
@@ -261,9 +261,9 @@ extension CreationConfiguration : Parsable {
     return Parser.succeeded("--aux", Parser<Any>.ofDirectory)
   }}
 
-  static var auxDirectoryConfigurationParser: Parser<CreationConfiguration> { get {
+  static var auxDirectoryConfigurationParser: Parser<IndividualCreationConfiguration> { get {
     return self.auxDirectoryParser.fmap { auxDirectory in
-      return CreationConfiguration(
+      return IndividualCreationConfiguration(
         osVersion: nil,
         deviceType: nil,
         auxDirectory: auxDirectory
@@ -441,7 +441,7 @@ extension Action : Parsable {
 
   static var createParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Create.rawValue, CreationConfiguration.parser)
+      .succeeded(EventName.Create.rawValue, IndividualCreationConfiguration.parser)
       .fmap { configuration in
         return Action.Create(configuration)
       }
@@ -673,13 +673,13 @@ public struct FBiOSTargetQueryParsers {
   }}
 
   static var osVersionsParser: Parser<FBiOSTargetQuery> { get {
-    return CreationConfiguration
+    return IndividualCreationConfiguration
       .osVersionParser
       .fmap { FBiOSTargetQuery.osVersions([$0]) }
   }}
 
   static var deviceParser: Parser<FBiOSTargetQuery> { get {
-    return CreationConfiguration
+    return IndividualCreationConfiguration
       .deviceParser
       .fmap { FBiOSTargetQuery.devices([$0]) }
   }}

@@ -30,9 +30,9 @@ public enum Server {
 }
 
 /**
- A Configuration for Creating a Simulator.
+ A Configuration for Creating an Individual Simulator.
  */
-public struct CreationConfiguration {
+public struct IndividualCreationConfiguration {
   let osVersion: FBControlCoreConfiguration_OS?
   let deviceType: FBControlCoreConfiguration_Device?
   let auxDirectory : String?
@@ -54,7 +54,7 @@ public enum Action {
   case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
   case ClearKeychain(String)
-  case Create(CreationConfiguration)
+  case Create(IndividualCreationConfiguration)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Erase
@@ -132,20 +132,20 @@ extension Configuration : Accumulator {
   }
 }
 
-extension CreationConfiguration : Equatable {}
-public func == (left: CreationConfiguration, right: CreationConfiguration) -> Bool {
+extension IndividualCreationConfiguration : Equatable {}
+public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
   return left.osVersion?.name == right.osVersion?.name &&
          left.deviceType?.deviceName == right.deviceType?.deviceName &&
          left.auxDirectory == right.auxDirectory
 }
 
-extension CreationConfiguration : Accumulator {
+extension IndividualCreationConfiguration : Accumulator {
   public init() {
     self.init(osVersion: nil, deviceType: nil, auxDirectory: nil)
   }
 
-  public func append(other: CreationConfiguration) -> CreationConfiguration {
-    return CreationConfiguration(
+  public func append(other: IndividualCreationConfiguration) -> IndividualCreationConfiguration {
+    return IndividualCreationConfiguration(
       osVersion: other.osVersion ?? self.osVersion,
       deviceType: other.deviceType ?? self.deviceType,
       auxDirectory: other.auxDirectory ?? self.auxDirectory

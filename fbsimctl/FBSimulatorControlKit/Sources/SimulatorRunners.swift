@@ -11,7 +11,7 @@ import Foundation
 import FBSimulatorControl
 
 struct SimulatorCreationRunner : Runner {
-  let context: iOSRunnerContext<CreationConfiguration>
+  let context: iOSRunnerContext<IndividualCreationConfiguration>
 
   func run() -> CommandResult {
     do {

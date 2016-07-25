@@ -96,7 +96,7 @@ extension FBiOSTargetFormat : Accumulator {
   }
 }
 
-extension CreationConfiguration {
+extension IndividualCreationConfiguration {
   public var simulatorConfiguration : FBSimulatorConfiguration { get {
     var configuration = FBSimulatorConfiguration.defaultConfiguration()
     if let device = self.deviceType {

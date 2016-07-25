@@ -46,16 +46,16 @@ class FBSimulatorManagementOptionsParserTests : XCTestCase {
   }
 }
 
-let emptyConfiguration = CreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: nil)
-let iOS9Configuration = CreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_0(), deviceType: nil, auxDirectory: nil)
-let iPhone6Configuration = CreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone6(), auxDirectory: nil)
-let auxDirectoryConfiguration = CreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: "/usr/bin")
-let compoundConfiguration0 =  CreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_3(), deviceType: FBControlCoreConfiguration_Device_iPhone6S(), auxDirectory: nil)
-let compoundConfiguration1 =  CreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_10_0(), deviceType: FBControlCoreConfiguration_Device_iPadAir2(), auxDirectory: nil)
+let emptyConfiguration = IndividualCreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: nil)
+let iOS9Configuration = IndividualCreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_0(), deviceType: nil, auxDirectory: nil)
+let iPhone6Configuration = IndividualCreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone6(), auxDirectory: nil)
+let auxDirectoryConfiguration = IndividualCreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: "/usr/bin")
+let compoundConfiguration0 =  IndividualCreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_3(), deviceType: FBControlCoreConfiguration_Device_iPhone6S(), auxDirectory: nil)
+let compoundConfiguration1 =  IndividualCreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_10_0(), deviceType: FBControlCoreConfiguration_Device_iPadAir2(), auxDirectory: nil)
 
-class CreationConfigurationParserTests : XCTestCase {
+class IndividualCreationConfigurationParserTests : XCTestCase {
   func testParses() {
-    self.assertParsesAll(CreationConfiguration.parser, [
+    self.assertParsesAll(IndividualCreationConfiguration.parser, [
       ([], emptyConfiguration),
       (["iOS 9.0"], iOS9Configuration),
       (["iPhone 6"], iPhone6Configuration),
@@ -246,7 +246,7 @@ class CommandParserTests : XCTestCase {
       ["list"], ["create", "iPhone 5"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["shutdown"], ["diagnose"],
     ]
     let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
-    let creationConfiguration = CreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone5(), auxDirectory: nil)
+    let creationConfiguration = IndividualCreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone5(), auxDirectory: nil)
     let diagnoseAction = Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [Action.List, Action.Create(creationConfiguration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
