@@ -50,8 +50,15 @@ Actions expose the core features of `fbsimctl` and there are a great number of t
 - `record [start|stop]` will start or stop video recording. Video recording is discussed later on.
 - `shutdown` will shutdown any booted Simulator. `fbsimctl` has remediation for many circumstances that would cause `simctl` to fail.
 - `terminate [APPLICATION-BUNDLE-ID]` will terminate an Application by Bundle Identifier. Targets booted Simulators by default.
-- ``upload [PATH ...]` will upload resources to a Simulator specified by file paths. In the case of videos and photos, the resources will be placed in the camera roll. With other files, they will be placed in an 'Auxillary Directory' within the Simulator's Root directory. By default this will target booted iOS Simulators.
+- `upload [PATH ...]` will upload resources to a Simulator specified by file paths. In the case of videos and photos, the resources will be placed in the camera roll. With other files, they will be placed in an 'Auxillary Directory' within the Simulator's Root directory. By default this will target booted iOS Simulators.
 - `watchdog-override [TIMEOUT-SECONDS] [APPLICATION-BUNDLE-ID ...]` will set the watchdog timer that iOS uses when launching an Application. Multiple Applications can be specified after a number specifying the timeout in seconds. This should be executed on Simulators *before* booting them, as it is read by Springboard on launch.
+
+### Creation
+
+Simulators can be created with the `create` command. There are a few options here that should be placed after the `create` argument:
+
+- `--all-missing-defaults` will create all the 'Default Simulators' that are missig for the current Simulator set. This means that a Simulator will be created for each available iOS Version & Device Combination.
+- A Single Simulator can be defined by supplying an OS Version & Device Type. For example `create 'iOS 9.1' 'iPhone 6s'` will create an iPhone 6s running iOS 9.1. If Device Type is not specified it will default to an iPhone 6. If an OS Version is not specified it will default to the newest available OS Version for the current version of Xcode.
 
 ### Booting
 

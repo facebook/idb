@@ -11,20 +11,30 @@ import Foundation
 import FBSimulatorControl
 
 struct SimulatorCreationRunner : Runner {
-  let context: iOSRunnerContext<IndividualCreationConfiguration>
+  let context: iOSRunnerContext<CreationSpecification>
 
   func run() -> CommandResult {
     do {
-      let configuration = self.context.value.simulatorConfiguration
-      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Started, configuration)
-      let simulator = try self.context.simulatorControl.set.createSimulatorWithConfiguration(configuration)
-      self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
-      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
+      for configuration in self.configurations {
+        self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Started, configuration)
+        let simulator = try self.context.simulatorControl.set.createSimulatorWithConfiguration(configuration)
+        self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
+        self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
+      }
       return CommandResult.Success
     } catch let error as NSError {
       return CommandResult.Failure("Failed to Create Simulator \(error.description)")
     }
   }
+
+  private var configurations: [FBSimulatorConfiguration] { get {
+    switch self.context.value {
+    case .AllMissingDefaults:
+      return  self.context.simulatorControl.set.configurationsForAbsentDefaultSimulators()
+    case .Individual(let configuration):
+      return [configuration.simulatorConfiguration]
+    }
+  }}
 }
 
 struct SimulatorActionRunner : Runner {

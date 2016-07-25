@@ -39,6 +39,14 @@ public struct IndividualCreationConfiguration {
 }
 
 /**
+ A Specification for the 'Create' Action.
+ */
+public enum CreationSpecification {
+  case AllMissingDefaults
+  case Individual(IndividualCreationConfiguration)
+}
+
+/**
   An Enumeration specifying the output format of diagnostics.
 */
 public enum DiagnosticFormat : String {
@@ -54,7 +62,7 @@ public enum Action {
   case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
   case ClearKeychain(String)
-  case Create(IndividualCreationConfiguration)
+  case Create(CreationSpecification)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Erase
@@ -153,6 +161,18 @@ extension IndividualCreationConfiguration : Accumulator {
   }
 }
 
+extension CreationSpecification : Equatable {}
+public func == (left: CreationSpecification, right: CreationSpecification) -> Bool {
+  switch (left, right) {
+  case (.AllMissingDefaults, .AllMissingDefaults):
+    return true
+  case (.Individual(let leftConfiguration), .Individual(let rightConfiguration)):
+    return leftConfiguration == rightConfiguration
+  default:
+    return false
+  }
+}
+
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
@@ -162,8 +182,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftConfiguration == rightConfiguration
   case (.ClearKeychain(let leftBundleID), .ClearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
-  case (.Create(let leftConfiguration), .Create(let rightConfiguration)):
-    return leftConfiguration == rightConfiguration
+  case (.Create(let leftSpecification), .Create(let rightSpecification)):
+    return leftSpecification == rightSpecification
   case (.Delete, .Delete):
     return true
   case (.Diagnose(let leftQuery, let leftFormat), .Diagnose(let rightQuery, let rightFormat)):

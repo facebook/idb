@@ -43,3 +43,41 @@ struct Fixtures {
     return FBDiagnosticBuilder().updatePath(self.videoPath).build()
   }}
 }
+
+extension CreationSpecification {
+  static var empty: CreationSpecification { get {
+    return CreationSpecification.Individual(
+      IndividualCreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: nil)
+    )
+  }}
+
+  static var iOS9CreationSpecification: CreationSpecification { get {
+    return CreationSpecification.Individual(
+      IndividualCreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_0(), deviceType: nil, auxDirectory: nil)
+    )
+  }}
+
+  static var iPhone6Configuration: CreationSpecification { get {
+    return CreationSpecification.Individual(
+      IndividualCreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone6(), auxDirectory: nil)
+    )
+  }}
+
+  static var auxDirectoryConfiguration: CreationSpecification { get {
+    return CreationSpecification.Individual(
+      IndividualCreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: "/usr/bin")
+    )
+  }}
+
+  static var compoundConfiguration0: CreationSpecification { get {
+    return CreationSpecification.Individual(
+      IndividualCreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_9_3(), deviceType: FBControlCoreConfiguration_Device_iPhone6S(), auxDirectory: nil)
+    )
+  }}
+
+  static var compoundConfiguration1: CreationSpecification { get {
+    return CreationSpecification.Individual(
+      IndividualCreationConfiguration(osVersion: FBControlCoreConfiguration_iOS_10_0(), deviceType: FBControlCoreConfiguration_Device_iPadAir2(), auxDirectory: nil)
+    )
+  }}
+}

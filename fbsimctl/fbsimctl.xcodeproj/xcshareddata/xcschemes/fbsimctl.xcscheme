@@ -73,11 +73,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "all"
+            argument = "--set /Users/lawrencelomax/Desktop/sims/"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "list"
+            argument = "create --all-missing-defaults"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

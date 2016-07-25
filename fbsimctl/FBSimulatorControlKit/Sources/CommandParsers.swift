@@ -204,10 +204,6 @@ extension Configuration : Parsable {
   }}
 }
 
-/**
- A separate struct for FBSimulatorConfiguration is needed as Parsable protcol conformance cannot be
- applied to FBSimulatorConfiguration as it is a non-final.
- */
 extension IndividualCreationConfiguration : Parsable {
   public static var parser: Parser<IndividualCreationConfiguration> { get {
     return Parser<IndividualCreationConfiguration>.accumulate(0, [
@@ -269,6 +265,15 @@ extension IndividualCreationConfiguration : Parsable {
         auxDirectory: auxDirectory
       )
     }
+  }}
+}
+
+extension CreationSpecification : Parsable {
+  public static var parser: Parser<CreationSpecification> { get {
+    return Parser.alternative([
+      Parser.ofString("--all-missing-defaults", CreationSpecification.AllMissingDefaults),
+      IndividualCreationConfiguration.parser.fmap { CreationSpecification.Individual($0) },
+    ])
   }}
 }
 
@@ -441,10 +446,8 @@ extension Action : Parsable {
 
   static var createParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Create.rawValue, IndividualCreationConfiguration.parser)
-      .fmap { configuration in
-        return Action.Create(configuration)
-      }
+      .succeeded(EventName.Create.rawValue, CreationSpecification.parser)
+      .fmap { Action.Create($0) }
   }}
 
   static var deleteParser: Parser<Action> { get {
