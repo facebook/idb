@@ -222,6 +222,14 @@
   return simulator;
 }
 
+- (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators
+{
+  NSSet<FBSimulatorConfiguration *> *existingConfigurations = [NSSet setWithArray:[self.allSimulators valueForKey:@"configuration"]];
+  NSMutableSet<FBSimulatorConfiguration *> *absentConfigurations = [NSMutableSet setWithArray:FBSimulatorConfiguration.allAvailableDefaultConfigurations];
+  [absentConfigurations minusSet:existingConfigurations];
+  return [absentConfigurations allObjects];
+}
+
 #pragma mark Destructive Methods
 
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
