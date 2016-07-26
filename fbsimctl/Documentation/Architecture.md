@@ -1,4 +1,4 @@
-## Rationale & Architecture
+# Rationale & Architecture
 
 The `FBSimulatorControl` Framework exposes a lot of functionality over it's API surface. The Framework can be dropped in to any Mac OS X App, CLI or  Test Projects, an the API can be used directly. This isn't super-convenient for many Users who just want access to `FBSimulatorControl` in the fastest and simplest way possible.
 

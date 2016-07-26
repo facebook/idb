@@ -1,4 +1,4 @@
-## Interface
+# Interface
 
 A command passed to `fbsimctl` looks like the following:
 
@@ -6,7 +6,7 @@ A command passed to `fbsimctl` looks like the following:
 fbsimctl [CONFIGURATION] [QUERY] [FORMAT] [ACTION]
 ```
 
-### Configuration
+## Configuration
 
 These are flags and options that are provided to the `fbsimctl` process that define global constants. They alter the behaviour of `fbsimctl` as well as how it presents output.
 
@@ -14,7 +14,7 @@ These are flags and options that are provided to the `fbsimctl` process that def
 - `--json` outputs linewise JSON to `stdout` instead of Human-Readable events to `stdout` and logging to `stderr`. 
 - `--set /path/to/device-set` Will point `fbsimctl` at an alternative Simulator Device Set, with the provided Path. By default `fbsimctl` will use the 'Default Device Set' that is located at `~/Library/Developer/CoreSimulator/Devices`.
 
-### Query
+## Query
 
 Every Action that `fbsimctl` executes can be applied to any number of iOS Targets. A Query can specify anywhere from a individual iOS Target to all the Targets that are currently available to the host. This power allows you to trivially automate a single Action against many targets at once.
 
@@ -31,7 +31,7 @@ Queries also can be combined. Combined queries operate on the intersection of th
 
 All non-destructive actions in `fbsimctl` have implicit default Queries, which means in many cases you will not need to provide a Query at all. This can really help you out if you just want to quickly execute a few Actions and move on. The Default Queries will target the sensible default for the first Action that you provide. For example the `install` Action will default to running against all booted Simulators.
 
-### Actions
+## Actions
 
 Actions expose the core features of `fbsimctl` and there are a great number of them. There is some overlap with Apple's `simctl`, but `fbsimctl` also provides some actions that `simctl` does not.A
 
@@ -53,14 +53,14 @@ Actions expose the core features of `fbsimctl` and there are a great number of t
 - `upload [PATH ...]` will upload resources to a Simulator specified by file paths. In the case of videos and photos, the resources will be placed in the camera roll. With other files, they will be placed in an 'Auxillary Directory' within the Simulator's Root directory. By default this will target booted iOS Simulators.
 - `watchdog-override [TIMEOUT-SECONDS] [APPLICATION-BUNDLE-ID ...]` will set the watchdog timer that iOS uses when launching an Application. Multiple Applications can be specified after a number specifying the timeout in seconds. This should be executed on Simulators *before* booting them, as it is read by Springboard on launch.
 
-### Creation
+## Creation
 
 Simulators can be created with the `create` command. There are a few options here that should be placed after the `create` argument:
 
 - `--all-missing-defaults` will create all the 'Default Simulators' that are missig for the current Simulator set. This means that a Simulator will be created for each available iOS Version & Device Combination.
 - A Single Simulator can be defined by supplying an OS Version & Device Type. For example `create 'iOS 9.1' 'iPhone 6s'` will create an iPhone 6s running iOS 9.1. If Device Type is not specified it will default to an iPhone 6. If an OS Version is not specified it will default to the newest available OS Version for the current version of Xcode.
 
-### Booting
+## Booting
 
 When booting a Simulator, a number of arguments can be provided to alter the behaviour of the booting process. Options can be sequenced.
 
@@ -71,7 +71,7 @@ There are two ways of booting a Simulator:
 - If you supply no arguments, the Simulator will be booted with the `Simulator.app` for the curent version of Xcode. This will allow the user to interact with the UI in the familiar Application.
 - If you supply the `--direct-launch` argument, the Simulator will be launched from `CoreSimulator`. This is the way that Apple's `simctl` will launch Simulators. The Simulator is launched in a 'headless' way, which means that there is no User Inferface. However, `fbsimctl` will connect a Framebuffer to the Simulator as it is Booting. This enables Video Recording, providing that the `fbsimctl` process is kept alive. Booting simulators 'directly' can also be substantially more performant than using `Simulator.app`.
 
-### Diagnostics
+## Diagnostics
 
 The `diagnose` command can be used to fetch useful diagnostic information from any Simulator. When `fbsimctl` creates any diagnostic information, it also makes it available to the diagnose command. By default `diagnose` will target all iOS Targets.
 
@@ -86,7 +86,7 @@ C3F0183E-B497-4916-9E99-82FB8A842624 | iPhone 5s | Booted | iPhone 5s | iOS 8.4:
 $ fbsimctl --state=booted diagnose | grep system_log | awk '{print $NF}' | xargs less
 ```
 
-### `listen`
+## `listen`
 
 The `listen` action of `fbsimctl`, can be used to accept a stream of commands over `stdin`, or to start a HTTP Server for accepting commands:
 
@@ -95,7 +95,7 @@ The `listen` action of `fbsimctl`, can be used to accept a stream of commands ov
 
 When you wish to complete the `listen` action, send a `SIGHUP` to the `fbsimctl` process.
 
-### Video Recording & Chaining
+## Video Recording & Chaining
 
 `fbsimctl` suppors chaining of actions within one process invocation. This is done by separating actions with `--`. This exists mainly to enable video recording by keeping the `fbsimctl` process alive:
 

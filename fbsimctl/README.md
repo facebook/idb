@@ -1,4 +1,4 @@
-## `fbsimctl`
+# `fbsimctl`
 
 `fbsimctl` is a command line interface to the `FBSimulatorControl` Framework. It intends to expose the core features of the `FBSimulatorControl` framework with a syntax that accommodates many common automation scenarios.
 
@@ -73,20 +73,13 @@ More detailed documentation of all the features, is in the [Usage Document](Docu
 
 ## Installation
 
-The quickest way to get going with`fbsimctl` is to use the build script at the root of the `FBSimulatorControl` repo, in the parent directory of this readme. To get started:
+The quickest way to get going with `fbsimctl` is to use the [Homebrew Formula](http://brew.sh). The Homebrew formula is part of [Faceboook's Homebrew Tap](https://github.com/facebook/homebrew-fb).
 
-```
-# Carthage is required
-$ brew Install carthage
-# Build fbsimctl and place it in the 'output' directory
-$ ./build.sh cli build output
-# Lists all Simulators & Devices
-$ ./output/fbsimctl list
+```bash
+# Get the Facebook Tap.
+brew tap facebook/fb
+# Install fbsimctl from master
+brew install fbsimctl --HEAD
 ```
 
-The `output` directory can be relocated on disk wherever you wish, the directory contains all the necessary dependencies in the directory. You can zip the package up and move it anywhere, or add the directory to your shell's `PATH`.
-
-The `fbsimctl.xcworkspace` Workspace in this directory contains all of the source as well some Unit & Integration tests for `fbsimctl`:
-
-A homebrew formula will be available shortly.
-
+When building `fbsimctl`, you must be using Xcode 7.1 or greater. Building with Xcode 8 is currently not supported. There are also more [detailed instructions for a custom installation.](Documentation/Installation.md)
