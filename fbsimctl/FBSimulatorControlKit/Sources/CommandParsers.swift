@@ -494,13 +494,14 @@ extension Action : Parsable {
     return Parser
       .succeeded(
         EventName.LaunchXCTest.rawValue,
-        Parser.ofTwoSequenced(
+        Parser.ofThreeSequenced(
+          Parser.succeeded("--test-timeout", Parser<Any>.ofDouble).optional(),
           Parser<Any>.ofDirectory,
           FBProcessLaunchConfigurationParsers.appLaunchParser
         )
       )
-      .fmap { (bundle, appLaunch) in
-        Action.LaunchXCTest(appLaunch, bundle)
+      .fmap { (timeout, bundle, appLaunch) in
+        Action.LaunchXCTest(appLaunch, bundle, timeout)
       }
   }}
 
