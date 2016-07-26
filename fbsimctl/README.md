@@ -69,7 +69,7 @@ Listen Ended: HTTP: Port 8090
 Short Name 'video' | Content 1 | Path /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/F0F071BB-8775-472C-8378-262BB6D31212/data/fbsimulatorcontrol/diagnostics/video.mp4
 ```
 
-More detailed documentation of all the features, is in the [Usage Document](Documentation/USAGE.md).
+More detailed documentation of all the features, is in the [Usage Document](Documentation/Usage.md).
 
 ## Installation
 
