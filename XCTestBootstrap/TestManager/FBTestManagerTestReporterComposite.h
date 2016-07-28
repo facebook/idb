@@ -10,6 +10,8 @@
 #import "FBTestManagerTestReporter.h"
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface FBTestManagerTestReporterComposite : NSObject <FBTestManagerTestReporter>
 
 /**
@@ -18,3 +20,5 @@
 + (instancetype)withTestReporters:(NSArray<id<FBTestManagerTestReporter>> *)reporters;
 
 @end
+
+NS_ASSUME_NONNULL_END
