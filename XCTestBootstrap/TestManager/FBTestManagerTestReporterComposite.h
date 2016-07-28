@@ -12,10 +12,17 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ A Test Reporter that implements the FBTestManagerTestReporter interface.
+ It forwards all method invocations to a given list of other Test Reporters,
+ which also implement the FBTestManagerTestReporter interface.
+ */
 @interface FBTestManagerTestReporterComposite : NSObject <FBTestManagerTestReporter>
 
 /**
  Constructs a Test Reporter with a given List of Other Test Reporters.
+
+ @param reporters array of reporters implementing FBTestManagerTestReporter.
  */
 + (instancetype)withTestReporters:(NSArray<id<FBTestManagerTestReporter>> *)reporters;
 
