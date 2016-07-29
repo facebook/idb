@@ -2,8 +2,9 @@
 
 from util import (FBSimctl, Simulator, find_fbsimctl_path)
 import argparse
-import unittest
+import os
 import tempfile
+import unittest
 
 class FBSimctlTestCase(unittest.TestCase):
     def __init__(
@@ -25,27 +26,50 @@ class FBSimctlTestCase(unittest.TestCase):
         )
 
     def assertEventSuccesful(self, arguments, event_name):
+        return self.assertEventsFromRun(
+            arguments=arguments,
+            event_name=event_name,
+            event_type='ended',
+            min_count=1,
+            max_count=1,
+        )[0]
+
+    def assertEventsFromRun(
+        self,
+        arguments,
+        event_name,
+        event_type,
+        min_count=1,
+        max_count=None
+    ):
         events = self.fbsimctl.run(arguments)
-        matching_events = events.matching(event_name, 'ended')
+        matching_events = events.matching(event_name, event_type)
         match_count = len(matching_events)
-        self.assertNotEqual(
-            0,
-            match_count,
-            'Expected one successful {} event, but there were none. Other events: \b {}'.format(
-                event_name,
-                events
+        if min_count is not None:
+            self.assertGreaterEqual(
+                match_count,
+                min_count,
+                'Expected at least {} {} {} event, but there were {}. Other events: \b {}'.format(
+                    str(min_count),
+                    event_name,
+                    event_type,
+                    str(match_count),
+                    events
+                )
             )
-        )
-        self.assertLess(
-            match_count,
-            2,
-            'Expected one successful {} event, but there were {}. Matching events: \b {}'.format(
-                event_name,
-                str(match_count),
-                matching_events,
+        if max_count is not None:
+            self.assertLessEqual(
+                match_count,
+                max_count,
+                'Expected no more than {} {} {} event, but there were {}. Other events: \b {}'.format(
+                    str(max_count),
+                    event_name,
+                    event_type,
+                    str(match_count),
+                    events
+                )
             )
-        )
-        return matching_events[0]
+        return matching_events
 
     def assertListContainsOnly(self, expected_udids):
         events = self.fbsimctl.run(['list'])
@@ -81,6 +105,13 @@ class FBSimctlTestCase(unittest.TestCase):
             )
         )
         return Simulator(sim_json)
+
+    def assertExtractAndKeyDiagnostics(self, json_events):
+        return {
+            event['subject']['short_name']: event['subject']
+            for event
+            in json_events
+        }
 
     def assertCreatesSimulator(self, args):
         args = ['create'] + args
@@ -133,6 +164,35 @@ class FBSimctlSimulatorTestCase(FBSimctlTestCase):
         simulator = self.assertCreatesSimulator([self.device_type])
         self.assertEventSuccesful([simulator.get_udid(), 'boot', '--direct-launch'], 'boot')
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+
+    def testRecordsVideo(self):
+        simulator = self.assertCreatesSimulator([self.device_type])
+        arguments = [
+            simulator.get_udid(), 'boot', '--direct-launch',
+            '--', 'record', 'start',
+            '--', 'listen',
+            '--', 'shutdown',
+        ]
+        # Launch the process, terminate and confirm teardown is successful
+        with self.fbsimctl.launch(arguments) as process:
+            process.wait_for_event('listen', 'started')
+            process.terminate()
+            process.wait_for_event('listen', 'ended')
+            process.wait_for_event('shutdown', 'ended')
+        # Get the diagnostics
+        diagnose_events = self.assertExtractAndKeyDiagnostics(
+            self.assertEventsFromRun(
+                [simulator.get_udid(), 'diagnose'],
+                'diagnostic',
+                'discrete',
+            ),
+        )
+        # Confirm the video exists
+        video_path = diagnose_events['video']['location']
+        self.assertTrue(
+            os.path.exists(video_path),
+            'Video at path {} should exist'.format(video_path),
+        )
 
 
 def build_suite(fbsimctl_path, device_types):
