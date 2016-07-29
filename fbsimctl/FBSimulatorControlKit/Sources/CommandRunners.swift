@@ -165,9 +165,10 @@ struct ServerRunner : Runner, CommandPerformer {
   let context: iOSRunnerContext<(Server, FBiOSTargetQuery)>
 
   func run() -> CommandResult {
-    self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
-    let runner = RelayRunner(relay: SynchronousRelay(relay: self.baseRelay, reporter: self.context.reporter))
-    let result = runner.run()
+    let relay = SynchronousRelay(relay: self.baseRelay, reporter: self.context.reporter) {
+      self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
+    }
+    let result = RelayRunner(relay: relay).run()
     self.context.reporter.reportSimple(EventName.Listen, EventType.Ended, self.context.value.0)
     return result
   }

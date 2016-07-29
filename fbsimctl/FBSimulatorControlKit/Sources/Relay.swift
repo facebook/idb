@@ -23,22 +23,28 @@ protocol Relay {
 class SynchronousRelay : Relay {
   let relay: Relay
   let reporter: EventReporter
+  let started: Void -> Void
 
-  init(relay: Relay, reporter: EventReporter) {
+  init(relay: Relay, reporter: EventReporter, started: Void -> Void) {
     self.relay = relay
     self.reporter = reporter
+    self.started = started
   }
 
   func start() throws {
-    try self.relay.start()
+    // Setup the Signal Handling first, so sending a Signal cannot race with starting the relay.
     var signalled = false
-
     let handler = SignalHandler { info in
       self.reporter.reportSimple(EventName.Signalled, EventType.Discrete, info)
       signalled = true
     }
-
     handler.register()
+
+    // Start the Relay and notify consumers.
+    try self.relay.start()
+    self.started()
+
+    // Start the event loop.
     NSRunLoop.currentRunLoop().spinRunLoopWithTimeout(DBL_MAX) { signalled }
     handler.unregister()
   }
