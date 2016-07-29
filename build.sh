@@ -143,7 +143,7 @@ function cli_framework_test() {
 
 function cli_e2e_test() {
   pushd fbsimctl/cli-tests
-  python3 -m unittest tests
+  ./tests.py
   popd
 }
 

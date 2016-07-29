@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-import io
 import json
-import subprocess
 import logging
 import os
+import subprocess
 
 # Setup the Logger
 logging.basicConfig(format='%(message)s')
@@ -13,14 +12,16 @@ log.setLevel(logging.INFO)
 
 DEFAULT_TIMEOUT = 100
 
-# Use the built testable, otherwise assume it is on the PATH.
-TEST_EXCUTABLE = 'executable-under-test/fbsimctl'
-if os.path.exists(TEST_EXCUTABLE):
-    EXECUTABLE_PATH = os.path.realpath(TEST_EXCUTABLE)
-    log.info('Using fbsimctl test executable at {}'.format(EXECUTABLE_PATH))
-else:
-    EXECUTABLE_PATH = 'fbsimctl'
-    log.info('Using fbsimctl on PATH')
+
+def find_fbsimctl_path(expected_path):
+    if os.path.exists(expected_path):
+        fbsimctl_path = os.path.realpath(expected_path)
+        log.info('Using fbsimctl test executable at {}'.format(fbsimctl_path))
+        return fbsimctl_path
+    else:
+        log.info('Using fbsimctl on PATH')
+        return 'fbsimctl'
+
 
 class Events:
     def __init__(self, events):
