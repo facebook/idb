@@ -69,7 +69,7 @@ public enum Action {
   case Install(String)
   case LaunchAgent(FBAgentLaunchConfiguration)
   case LaunchApp(FBApplicationLaunchConfiguration)
-  case LaunchXCTest(FBApplicationLaunchConfiguration, String)
+  case LaunchXCTest(FBApplicationLaunchConfiguration, String, NSTimeInterval?)
   case List
   case ListApps
   case Listen(Server)
@@ -196,8 +196,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftLaunch == rightLaunch
   case (.LaunchApp(let leftLaunch), .LaunchApp(let rightLaunch)):
     return leftLaunch == rightLaunch
-  case (.LaunchXCTest(let leftLaunch, let leftBundle), .LaunchXCTest(let rightLaunch, let rightBundle)):
-    return leftLaunch == rightLaunch && leftBundle == rightBundle
+  case (.LaunchXCTest(let leftLaunch, let leftBundle, let leftTimeout), .LaunchXCTest(let rightLaunch, let rightBundle, let rightTimeout)):
+    return leftLaunch == rightLaunch && leftBundle == rightBundle && leftTimeout == rightTimeout
   case (.List, .List):
     return true
   case (.ListApps, .ListApps):
@@ -252,7 +252,7 @@ extension Action {
       return (EventName.Launch, ControlCoreSubject(launch))
     case .LaunchApp(let launch):
       return (EventName.Launch, ControlCoreSubject(launch))
-    case .LaunchXCTest(let launch, _):
+    case .LaunchXCTest(let launch, _, _):
         return (EventName.LaunchXCTest, ControlCoreSubject(launch))
     case .List:
         return (EventName.List, nil)

@@ -89,9 +89,12 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
         interaction.launchApplication(launch)
       }
-    case .LaunchXCTest(let launch, let bundlePath):
+    case .LaunchXCTest(let launch, let bundlePath, let timeout):
       return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in
         interaction.startTestRunnerLaunchConfiguration(launch, testBundlePath: bundlePath)
+        if let timeout = timeout {
+            interaction.waitUntilAllTestRunnersHaveFinishedTestingWithTimeout(timeout)
+        }
       }
     case .ListApps:
       return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
