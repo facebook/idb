@@ -200,6 +200,13 @@ class HttpRelay : Relay {
       return Action.Tap(x, y)
     }
   }}
+  private var setLocationRoute: HttpRoute { get {
+        return HttpRoute(method: HttpMethod.POST, endpoint: EventName.setLocation.rawValue) { json in
+            let x = try json.getValue("x").getNumber().doubleValue
+            let y = try json.getValue("y").getNumber().doubleValue
+            return Action.setLocation(x, y)
+        }
+        }}
 
   private var terminateRoute: HttpRoute { get {
     return HttpRoute(method: HttpMethod.POST, endpoint: "terminate") { json in
@@ -240,7 +247,8 @@ class HttpRelay : Relay {
       self.searchRoute,
       self.tapRoute,
       self.terminateRoute,
-      self.uploadRoute
+      self.uploadRoute,
+      self.setLocationRoute
     ]
   }}
 

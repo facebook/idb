@@ -43,4 +43,7 @@
  */
 - (instancetype)tap:(double)x y:(double)y;
 
+
+- (instancetype)setLocation:(double)x y:(double)y;
+
 @end

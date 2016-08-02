@@ -43,6 +43,15 @@
   }];
 }
 
+- (instancetype)setLocation:(double)x y:(double)y
+{
+    return [self interactWithBridge:^ BOOL (NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge) {
+        [bridge setLocationWithLatitude:x longitude:y];
+        return YES;
+    }];
+}
+
+
 #pragma mark Private
 
 - (instancetype)interactWithBridge:(BOOL (^)(NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge))block
