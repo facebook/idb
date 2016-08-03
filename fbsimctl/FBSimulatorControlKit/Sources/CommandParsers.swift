@@ -576,9 +576,9 @@ extension Action : Parsable {
                     Parser<Any>.ofDouble
                 )
             )
-            .fmap { (x,y) in
+            .fmap { (latitude, longitude) in
             
-                Action.setLocation(x, y)
+                Action.setLocation(latitude, longitude)
         }
   }}
 

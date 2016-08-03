@@ -217,8 +217,8 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.Tap(let leftX, let leftY), .Tap(let rightX, let rightY)):
     return leftX == rightX && leftY == rightY
-  case (.setLocation(let leftX, let leftY), .setLocation(let rightX, let rightY)):
-    return leftX == rightX && leftY == rightY
+  case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
+    return leftLat == rightLon && leftLat == rightLon
   case (.Terminate(let leftBundleID), .Terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.Uninstall(let leftBundleID), .Uninstall(let rightBundleID)):

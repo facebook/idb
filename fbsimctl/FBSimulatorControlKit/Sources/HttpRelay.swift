@@ -201,10 +201,10 @@ class HttpRelay : Relay {
     }
   }}
   private var setLocationRoute: HttpRoute { get {
-        return HttpRoute(method: HttpMethod.POST, endpoint: EventName.setLocation.rawValue) { json in
-            let x = try json.getValue("x").getNumber().doubleValue
-            let y = try json.getValue("y").getNumber().doubleValue
-            return Action.setLocation(x, y)
+    return HttpRoute(method: HttpMethod.POST, endpoint: EventName.setLocation.rawValue) { json in
+      let latitude = try json.getValue("latitude").getNumber().doubleValue
+      let longitude = try json.getValue("longitude").getNumber().doubleValue
+      return Action.setLocation(latitude, longitude)
         }
         }}
 

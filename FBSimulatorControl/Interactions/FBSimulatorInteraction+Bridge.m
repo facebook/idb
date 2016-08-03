@@ -43,10 +43,10 @@
   }];
 }
 
-- (instancetype)setLocation:(double)x y:(double)y
+- (instancetype)setLocation:(double)latitude longitude:(double)longitude
 {
     return [self interactWithBridge:^ BOOL (NSError **error, FBSimulator *simulator, FBSimulatorBridge *bridge) {
-        [bridge setLocationWithLatitude:x longitude:y];
+        [bridge setLocationWithLatitude:latitude longitude:longitude];
         return YES;
     }];
 }
