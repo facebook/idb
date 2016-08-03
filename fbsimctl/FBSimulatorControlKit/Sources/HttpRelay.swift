@@ -200,6 +200,7 @@ class HttpRelay : Relay {
       return Action.Tap(x, y)
     }
   }}
+    
   private var setLocationRoute: HttpRoute { get {
     return HttpRoute(method: HttpMethod.POST, endpoint: EventName.setLocation.rawValue) { json in
       let latitude = try json.getValue("latitude").getNumber().doubleValue

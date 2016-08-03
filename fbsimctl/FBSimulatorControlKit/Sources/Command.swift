@@ -83,7 +83,7 @@ public enum Action {
   case Uninstall(String)
   case Upload([FBDiagnostic])
   case WatchdogOverride([String], NSTimeInterval)
-  case setLocation(Double,Double)
+  case SetLocation(Double,Double)
 }
 
 /**
