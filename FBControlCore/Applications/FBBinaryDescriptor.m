@@ -178,7 +178,7 @@
 + (NSString *)pathForiPhoneLaunchCtl
 {
   return [FBControlCoreGlobalConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator.sdk/bin/launchctl"];
+    stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/bin/launchctl"];
 }
 
 + (NSString *)binaryNameForBinaryPath:(NSString *)binaryPath

@@ -49,10 +49,19 @@
 
 - (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error
 {
+  NSString *needle = [NSString stringWithFormat:@"%d", process.processIdentifier];
+  NSString *haystack = [self runWithArguments:@[@"list"] error:error];
+  return [haystack containsString:needle];
+}
+
+#pragma mark Private
+
+- (NSString *)runWithArguments:(NSArray<NSString *> *)arguments error:(NSError **)error
+{
   // Construct a Launch Configuration for launchctl we'll use the 'list' command.
   FBAgentLaunchConfiguration *launchConfiguration = [FBAgentLaunchConfiguration
     configurationWithBinary:FBBinaryDescriptor.launchCtl
-    arguments:@[@"list"]
+    arguments:arguments
     environment:@{}
     options:0];
 
@@ -60,16 +69,7 @@
   // Synchronize on the mutable string.
   NSPipe *stdOutPipe = [NSPipe pipe];
   NSDictionary *options = [launchConfiguration simDeviceLaunchOptionsWithStdOut:stdOutPipe.fileHandleForWriting stdErr:nil];
-  NSMutableString *haystack = [NSMutableString string];
-  stdOutPipe.fileHandleForReading.readabilityHandler = ^(NSFileHandle *handle) {
-    NSString *string = [[NSString alloc] initWithData:handle.availableData encoding:NSUTF8StringEncoding];
-    @synchronized(haystack)
-    {
-      [haystack appendString:string];
-    }
-  };
 
-  // Spawn the Process.
   NSError *innerError = nil;
   pid_t processIdentifier = [self.simulator.simDeviceWrapper
     spawnShortRunningWithPath:launchConfiguration.agentBinary.path
@@ -78,19 +78,14 @@
     error:&innerError];
   if (processIdentifier <= 0) {
     return [[[FBSimulatorError
-      describeFormat:@"Could not get launchctl info for process %@ as the spawn of launchctl failed", process.shortDescription]
+      describeFormat:@"Running launchctl %@ failed", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
       causedBy:innerError]
-      failBool:error];
+      fail:error];
   }
-
-  // Wait for the data to exist.
-  NSString *needle = [NSString stringWithFormat:@"%d", process.processIdentifier];
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    @synchronized(haystack)
-    {
-      return [haystack containsString:needle];
-    }
-  }];
+  [stdOutPipe.fileHandleForWriting closeFile];
+  NSData *data = [stdOutPipe.fileHandleForReading readDataToEndOfFile];
+  NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+  return [output copy];
 }
 
 @end
