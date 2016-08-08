@@ -423,6 +423,7 @@ extension Action : Parsable {
         self.uninstallParser,
         self.uploadParser,
         self.watchdogOverrideParser,
+        self.setLocationParser,
       ])
   }}
 
@@ -565,6 +566,20 @@ extension Action : Parsable {
       .fmap { (x,y) in
         Action.Tap(x, y)
       }
+  }}
+  static var setLocationParser: Parser<Action> { get {
+    return Parser
+      .succeeded(
+        EventName.setLocation.rawValue,
+          Parser.ofTwoSequenced(
+                    Parser<Any>.ofDouble,
+                    Parser<Any>.ofDouble
+                )
+            )
+            .fmap { (latitude, longitude) in
+            
+                Action.setLocation(latitude, longitude)
+        }
   }}
 
   static var terminateParser: Parser<Action> { get {
