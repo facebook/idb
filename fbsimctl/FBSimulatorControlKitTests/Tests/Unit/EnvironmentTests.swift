@@ -12,18 +12,29 @@ import FBSimulatorControl
 @testable import FBSimulatorControlKit
 
 class EnvironmentTests : XCTestCase {
+  let testEnvironment = [
+    "FBSIMCTL_CHILD_FOO" : "BAR",
+    "PATH" : "IGNORE",
+    "FBSIMCTL_CHILD_BING" : "BONG",
+  ]
+
   func testAppendsEnvironmentToLaunchConfiguration() {
-    let environment = [
-      "FBSIMCTL_CHILD_FOO" : "BAR",
-      "PATH" : "IGNORE",
-      "FBSIMCTL_CHILD_BING" : "BONG",
-    ]
     let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], options: FBProcessLaunchOptions())
-    let actual = Action.LaunchApp(launchConfig).appendEnvironment(environment)
+    let actual = Action.LaunchApp(launchConfig).appendEnvironment(testEnvironment)
     let expected  = Action.LaunchApp(launchConfig.withEnvironmentAdditions([
       "FOO" : "BAR",
       "BING" : "BONG",
     ]))
+    XCTAssertEqual(expected, actual)
+  }
+
+  func testAppendsEnvironmentToXCTestLaunchConfiguration() {
+    let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], options: FBProcessLaunchOptions())
+    let actual = Action.LaunchXCTest(launchConfig, "com.example.App", nil).appendEnvironment(testEnvironment)
+    let expected  = Action.LaunchXCTest(launchConfig.withEnvironmentAdditions([
+      "FOO" : "BAR",
+      "BING" : "BONG",
+    ]), "com.example.App", nil)
     XCTAssertEqual(expected, actual)
   }
 }
