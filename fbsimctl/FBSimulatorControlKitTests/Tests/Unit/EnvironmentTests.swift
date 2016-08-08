@@ -20,10 +20,10 @@ class EnvironmentTests : XCTestCase {
     ]
     let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], options: FBProcessLaunchOptions())
     let actual = Action.LaunchApp(launchConfig).appendEnvironment(environment)
-    let expteced  = Action.LaunchApp(launchConfig.withEnvironmentAdditions([
+    let expected  = Action.LaunchApp(launchConfig.withEnvironmentAdditions([
       "FOO" : "BAR",
       "BING" : "BONG",
     ]))
-    XCTAssertEqual(expteced, actual)
+    XCTAssertEqual(expected, actual)
   }
 }
