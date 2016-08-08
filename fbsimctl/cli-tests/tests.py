@@ -200,6 +200,11 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
         simulator = self.assertCreatesSimulator([self.device_type])
         self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
         self.assertEventSuccesful([simulator.get_udid(), 'launch', 'com.apple.Preferences'], 'launch')
+        return (simulator, 'com.apple.Preferences')
+
+    def testLaunchesThenTerminatesSystemApplication(self):
+        (simulator, bundle_id) = self.testLaunchesSystemApplication()
+        self.assertEventSuccesful([simulator.get_udid(), 'terminate', bundle_id], 'terminate')
 
     def testRecordsVideo(self):
         simulator = self.assertCreatesSimulator([self.device_type])

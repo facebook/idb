@@ -128,7 +128,7 @@ struct SimulatorActionRunner : Runner {
         interaction.tap(x, y: y)
       }
     case .Terminate(let bundleID):
-      return SimulatorInteractionRunner(reporter, EventName.Record, bundleID) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.Terminate, bundleID) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)
       }
     case .Uninstall(let bundleID):
