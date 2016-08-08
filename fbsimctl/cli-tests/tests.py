@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from util import (FBSimctl, Simulator, find_fbsimctl_path)
+from util import (FBSimctl, Simulator, find_fbsimctl_path, DEFAULT_TIMEOUT, LONG_TIMEOUT)
 import argparse
 import os
 import tempfile
@@ -44,9 +44,10 @@ class FBSimctlTestCase(unittest.TestCase):
         event_name,
         event_type,
         min_count=1,
-        max_count=None
+        max_count=None,
+        timeout=DEFAULT_TIMEOUT,
     ):
-        events = self.fbsimctl.run(arguments)
+        events = self.fbsimctl.run(arguments, timeout)
         matching_events = events.matching(event_name, event_type)
         match_count = len(matching_events)
         if min_count is not None:
@@ -148,6 +149,7 @@ class MultipleSimulatorTestCase(FBSimctlTestCase):
             arguments=['create', '--all-missing-defaults'],
             event_name='create',
             event_type='ended',
+            timeout=LONG_TIMEOUT,
         )
 
 class SingleSimulatorTestCase(FBSimctlTestCase):
