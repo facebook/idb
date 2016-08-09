@@ -15,25 +15,25 @@
 
 @interface FBTestManagerTestReporterJUnit ()
 
-@property (nonatomic, strong) NSFileHandle *outputFileHandle;
+@property (nonatomic, strong) NSURL *outputFileURL;
 
 @end
 
 @implementation FBTestManagerTestReporterJUnit
 
-+ (instancetype)withOutputFileHandle:(NSFileHandle *)outputFileHandle
++ (instancetype)withOutputFileURL:(NSURL *)outputFileURL
 {
-  return [[self alloc] initWithOutputFileHandle:outputFileHandle];
+  return [[self alloc] initWithOutputFileURL:outputFileURL];
 }
 
-- (instancetype)initWithOutputFileHandle:(NSFileHandle *)outputFileHandle
+- (instancetype)initWithOutputFileURL:(NSURL *)outputFileURL
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _outputFileHandle = outputFileHandle;
+  _outputFileURL = outputFileURL;
 
   return self;
 }
@@ -45,7 +45,7 @@
   [super testManagerMediatorDidFinishExecutingTestPlan:mediator];
 
   NSXMLDocument *document = [FBTestManagerTestReporterJUnit documentForTestSuite:self.testSuite];
-  [self.outputFileHandle writeData:[document XMLDataWithOptions:NSXMLNodePrettyPrint]];
+  [[document XMLDataWithOptions:NSXMLNodePrettyPrint] writeToURL:self.outputFileURL atomically:YES];
 }
 
 #pragma mark - JUnit XML Generator

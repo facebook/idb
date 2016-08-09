@@ -18,8 +18,7 @@
 
 @property (nonatomic) id testManagerAPIMediator;
 @property (nonatomic) FBTestManagerTestReporterJUnit *reporter;
-@property (nonatomic) NSFileHandle *outputFileHandle;
-@property (nonatomic) NSString *outputFilePath;
+@property (nonatomic) NSURL *outputFileURL;
 @property (nonatomic, readonly) NSString *outputFileContent;
 
 @end
@@ -31,12 +30,10 @@
   [super setUp];
 
   self.testManagerAPIMediator = [OCMockObject mockForClass:[FBTestManagerAPIMediator class]];
-  self.outputFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString];
+  self.outputFileURL =
+      [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
 
-  [[NSFileManager defaultManager] createFileAtPath:self.outputFilePath contents:nil attributes:nil];
-
-  self.outputFileHandle = [NSFileHandle fileHandleForWritingAtPath:self.outputFilePath];
-  self.reporter = [FBTestManagerTestReporterJUnit withOutputFileHandle:self.outputFileHandle];
+  self.reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:self.outputFileURL];
 }
 
 #pragma mark -
@@ -85,7 +82,7 @@
   [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self.testManagerAPIMediator];
   NSError *error;
   NSString *reporterResult =
-      [[NSString alloc] initWithContentsOfFile:self.outputFilePath encoding:NSUTF8StringEncoding error:&error];
+      [[NSString alloc] initWithContentsOfURL:self.outputFileURL encoding:NSUTF8StringEncoding error:&error];
   XCTAssertNil(error);
   return reporterResult;
 }

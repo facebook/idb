@@ -21,9 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Constructs a JUnit Test Reporter.
 
- @param outputFileHandle a file handle the JUnit XML should be written to.
+ @param outputFileURL a URL to a file the JUnit XML should be written to.
+ @return a new JUnit Test Reporter instance.
  */
-+ (instancetype)withOutputFileHandle:(NSFileHandle *)outputFileHandle;
++ (instancetype)withOutputFileURL:(NSURL *)outputFileURL;
 
 @end
 
