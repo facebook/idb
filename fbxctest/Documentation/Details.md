@@ -20,7 +20,7 @@ These tests can manipulate the UI within an Application, depend certain behaviou
 
 ### UI Tests
 
-In Xcode 7, Apple deprecated `UIAutomation` and replaced it with UI Testing support inside the `XCTest` `Framework itself. This means that UI Tests have a similar execution model to Application Tests, by injecting into an Application Process. 
+In Xcode 7, Apple deprecated `UIAutomation` and replaced it with UI Testing support inside the `XCTest` framework itself. This means that UI Tests have a similar execution model to Application Tests, by injecting into an Application Process. 
 
 As part of the security model of running these tests, the Test Bundle cannot manipulate the User Interface un-aided. The bundle running inside the Application process co-ordinates with Xcode via a daemon process called `testmanagerd`. This mediated connection between the injected Application process and IDE Host also allows for [test results to be delivered across a delegate protocol to the IDE Host](https://github.com/facebook/FBSimulatorControl/blob/master/PrivateHeaders/XCTest/XCTestManager_IDEInterface-Protocol.h).
 
