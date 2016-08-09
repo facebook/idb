@@ -80,6 +80,44 @@
   XCTAssertEqualObjects(self.failedMethods, [NSSet setWithArray:failed]);
 }
 
+- (void)testInjectsApplicationTestIntoSampleAppWithJUnitReporter
+{
+  NSURL *outputFileURL =
+      [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
+  FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
+  FBSimulator *simulator = [self obtainBootedSimulator];
+  id<FBInteraction> interaction = [[[simulator.interact installApplication:self.tableSearchApplication]
+      startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch
+                          testBundlePath:self.applicationTestBundlePath
+                                reporter:reporter] waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+  [self assertInteractionSuccessful:interaction];
+
+  NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];
+  NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
+  NSString *actual = [self stringWithContentsOfJUnitResult:outputFileURL];
+
+  XCTAssertEqualObjects(expected, actual);
+}
+
+#pragma mark -
+
+- (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path
+{
+  NSError *error;
+  NSString *string = [NSString stringWithContentsOfURL:path encoding:NSUTF8StringEncoding error:&error];
+  XCTAssertNil(error);
+
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"time=\"[^\"]+\""
+                                                                         options:NSRegularExpressionCaseInsensitive
+                                                                           error:&error];
+  XCTAssertNil(error);
+
+  return [regex stringByReplacingMatchesInString:string
+                                         options:0
+                                           range:NSMakeRange(0, string.length)
+                                    withTemplate:@"time=\"0.00\""];
+}
+
 #pragma mark FBTestManagerTestReporter
 
 - (void)testManagerMediatorDidBeginExecutingTestPlan:(FBTestManagerAPIMediator *)mediator

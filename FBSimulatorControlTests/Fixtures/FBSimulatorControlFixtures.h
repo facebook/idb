@@ -36,6 +36,11 @@
  */
 + (NSString *)video0Path;
 
+/**
+ A File Path to the first JUnit XML result.
+ */
++ (NSString *)JUnitXMLResult0Path;
+
 @end
 
 /**
