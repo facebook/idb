@@ -15,7 +15,7 @@
 
 @interface FBTestManagerTestReporterJUnit ()
 
-@property (nonatomic) NSFileHandle *outputFileHandle;
+@property (nonatomic, strong) NSFileHandle *outputFileHandle;
 
 @end
 

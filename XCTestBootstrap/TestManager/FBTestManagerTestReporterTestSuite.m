@@ -12,10 +12,10 @@
 
 @interface FBTestManagerTestReporterTestSuite ()
 
-@property (nonatomic) NSMutableArray<FBTestManagerTestReporterTestCase *> *mutableTestCases;
-@property (nonatomic) NSMutableArray<FBTestManagerTestReporterTestSuite *> *mutableTestSuites;
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, copy) NSString *startTime;
+@property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestCase *> *mutableTestCases;
+@property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestSuite *> *mutableTestSuites;
 @property (nonatomic, weak) FBTestManagerTestReporterTestSuite *parent;
 
 @end

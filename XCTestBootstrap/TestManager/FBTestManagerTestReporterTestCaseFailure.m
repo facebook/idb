@@ -11,7 +11,7 @@
 
 @interface FBTestManagerTestReporterTestCaseFailure ()
 
-@property (nonatomic) NSUInteger line;
+@property (nonatomic, assign) NSUInteger line;
 @property (nonatomic, copy) NSString *file;
 @property (nonatomic, copy) NSString *message;
 
