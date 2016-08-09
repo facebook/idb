@@ -58,7 +58,7 @@
   [self testSuiteDidFinish:@"All Tests" at:@"2016-08-07 10:31:38" runCount:3 failures:1 unexpected:1 testDuration:0.05 totalDuration:0.23];
 
   NSString *actual = [self reporterResult];
-  NSString *expected = [self expectedReporterResult:@"expectedJUnitReporterResult.xml"];
+  NSString *expected = [self expectedReporterResult:@"FBTestManagerTestReporterJUnitTests_testJUnitReporter.xml"];
 
   XCTAssertEqualObjects(expected, actual);
 }
