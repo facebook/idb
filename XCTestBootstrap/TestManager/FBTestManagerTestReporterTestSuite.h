@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The test suite summary. May be nil.
  */
-@property (nonatomic, nullable) FBTestManagerResultSummary *summary;
+@property (nonatomic, readonly, nullable) FBTestManagerResultSummary *summary;
 
 /**
  The parent test suite, if it is a nested test suite. May be nil.
@@ -69,6 +69,12 @@ NS_ASSUME_NONNULL_BEGIN
  @param testSuite testSuite to add.
  */
 - (void)addTestSuite:(FBTestManagerTestReporterTestSuite *)testSuite;
+
+/**
+ Set the summary property.
+ @param summary the summary the test suite finished with.
+ */
+- (void)finishWithSummary:(FBTestManagerResultSummary *)summary;
 
 @end
 

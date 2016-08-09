@@ -14,6 +14,7 @@
 
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, copy) NSString *startTime;
+@property (nonatomic, nullable) FBTestManagerResultSummary *summary;
 @property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestCase *> *mutableTestCases;
 @property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestSuite *> *mutableTestSuites;
 @property (nonatomic, weak) FBTestManagerTestReporterTestSuite *parent;
@@ -61,6 +62,12 @@
 {
   testSuite.parent = self;
   [self.mutableTestSuites addObject:testSuite];
+}
+
+- (void)finishWithSummary:(FBTestManagerResultSummary *)summary
+{
+  NSAssert(!self.summary, @"finishWithSummary: may be called only once");
+  self.summary = summary;
 }
 
 #pragma mark -

@@ -93,7 +93,7 @@
 {
   NSAssert([self.currentTestSuite.name isEqualToString:summary.testSuite], @"Unexpected testSuite");
 
-  self.currentTestSuite.summary = summary;
+  [self.currentTestSuite finishWithSummary:summary];
   if (self.currentTestSuite.parent) {
     self.currentTestSuite = self.currentTestSuite.parent;
   }
