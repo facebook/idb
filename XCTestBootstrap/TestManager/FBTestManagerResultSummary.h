@@ -31,6 +31,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) NSTimeInterval testDuration;
 @property (nonatomic, assign, readonly) NSTimeInterval totalDuration;
 
+/**
+ Returns a status enum value for the given status string.
+
+ @param statusString the status string.
+ @return the status enum value.
+ */
 + (FBTestReportStatus)statusForStatusString:(NSString *)statusString;
 
 @end
