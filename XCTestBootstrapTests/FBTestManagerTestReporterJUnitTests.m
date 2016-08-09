@@ -13,6 +13,7 @@
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestManagerTestReporterJUnit.h"
+#import "FBXCTestBootstrapFixtures.h"
 
 @interface FBTestManagerTestReporterJUnitTests : XCTestCase
 
@@ -57,34 +58,23 @@
 
   [self testSuiteDidFinish:@"All Tests" at:@"2016-08-07 10:31:38" runCount:3 failures:1 unexpected:1 testDuration:0.05 totalDuration:0.23];
 
-  NSString *actual = [self reporterResult];
-  NSString *expected = [self expectedReporterResult:@"FBTestManagerTestReporterJUnitTests_testJUnitReporter.xml"];
+  [self testManagerMediatorDidFinishExecutingTestPlan];
+
+  NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBTestManagerTestReporterJUnitTests JUnitXMLResult0Path]];
+  NSString *actual = [self stringWithContentsOfJUnitResult:self.outputFileURL];
+  NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
 
   XCTAssertEqualObjects(expected, actual);
 }
 
 #pragma mark -
 
-- (NSString *)expectedReporterResult:(NSString *)filename
+- (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path
 {
-  NSArray *resource = [filename componentsSeparatedByString:@"."];
-  NSString *path =
-      [[NSBundle bundleForClass:self.class] pathForResource:resource.firstObject ofType:resource.lastObject];
   NSError *error;
-  NSString *expectedReporterResult =
-      [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
+  NSString *string = [NSString stringWithContentsOfURL:path encoding:NSUTF8StringEncoding error:&error];
   XCTAssertNil(error);
-  return expectedReporterResult;
-}
-
-- (NSString *)reporterResult
-{
-  [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self.testManagerAPIMediator];
-  NSError *error;
-  NSString *reporterResult =
-      [[NSString alloc] initWithContentsOfURL:self.outputFileURL encoding:NSUTF8StringEncoding error:&error];
-  XCTAssertNil(error);
-  return reporterResult;
+  return string;
 }
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
@@ -141,6 +131,11 @@
                                                                      testDuration:@(testDuration)
                                                                     totalDuration:@(totalDuration)];
   [self.reporter testManagerMediator:self.testManagerAPIMediator finishedWithSummary:summary];
+}
+
+- (void)testManagerMediatorDidFinishExecutingTestPlan
+{
+  [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self.testManagerAPIMediator];
 }
 
 @end
