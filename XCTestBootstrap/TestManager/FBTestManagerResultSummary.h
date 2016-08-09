@@ -39,6 +39,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (FBTestReportStatus)statusForStatusString:(NSString *)statusString;
 
+/**
+ Returns a status string for the given status enum value.
+
+ @param status the status enum value.
+ @return the status string.
+*/
++ (NSString *)statusStringForStatus:(FBTestReportStatus)status;
+
 @end
 
 NS_ASSUME_NONNULL_END

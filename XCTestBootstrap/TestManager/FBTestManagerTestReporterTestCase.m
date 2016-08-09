@@ -8,6 +8,7 @@
  */
 
 #import "FBTestManagerTestReporterTestCase.h"
+#import "FBTestManagerResultSummary.h"
 
 @interface FBTestManagerTestReporterTestCase ()
 
@@ -16,7 +17,6 @@
 @property (nonatomic, assign) NSTimeInterval duration;
 @property (nonatomic, copy) NSString *method;
 @property (nonatomic, copy) NSString *testClass;
-@property (nonatomic, readonly) NSString *statusDescription;
 @property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestCaseFailure *> *mutableFailures;
 
 @end
@@ -64,20 +64,9 @@
 
 - (NSString *)description
 {
+  NSString *statusDescription = [FBTestManagerResultSummary statusStringForStatus:self.status];
   return [NSString stringWithFormat:@"TestCase %@ | Method %@ | Status %@ | Duration %f", self.testClass, self.method,
-                                    self.statusDescription, self.duration];
-}
-
-- (NSString *)statusDescription
-{
-  switch (self.status) {
-  case FBTestReportStatusUnknown:
-    return @"Unknown";
-  case FBTestReportStatusPassed:
-    return @"Passed";
-  case FBTestReportStatusFailed:
-    return @"Failed";
-  }
+                                    statusDescription, self.duration];
 }
 
 @end
