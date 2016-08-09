@@ -23,16 +23,6 @@
 
 @implementation FBTestManagerTestReporterBase
 
-- (instancetype)init
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  return self;
-}
-
 #pragma mark - FBTestManagerTestReporter
 
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator
