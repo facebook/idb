@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<testsuites>
+    <testsuite tests="3" failures="2" errors="0" time="0.00" name="All tests">
+        <testsuite tests="3" failures="2" errors="0" time="0.00" name="SimpleTestTarget.xctest">
+            <testsuite tests="3" failures="2" errors="0" time="0.00" name="SimpleTestTarget">
+                <testcase classname="SimpleTestTarget" name="testIsRunningOnIOS" time="0.00"></testcase>
+                <testcase classname="SimpleTestTarget" name="testIsRunningOnMacOSX" time="0.00">
+                    <failure type="Failure" message="((NSClassFromString(@&quot;NSView&quot;)) != nil) failed">/Users/lawrencelomax/src/FBSimulatorControl/Shims/Shimulator/SimpleTestTarget/SimpleTestTarget.m:30</failure>
+                </testcase>
+                <testcase classname="SimpleTestTarget" name="testIsSafari" time="0.00">
+                    <failure type="Failure" message="(([NSProcessInfo.processInfo.processName isEqualToString:@&quot;MobileSafari&quot;]) is true) failed">/Users/lawrencelomax/src/FBSimulatorControl/Shims/Shimulator/SimpleTestTarget/SimpleTestTarget.m:35</failure>
+                </testcase>
+            </testsuite>
+        </testsuite>
+    </testsuite>
+</testsuites>

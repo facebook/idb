@@ -13,7 +13,6 @@
 #import <XCTestBootstrap/FBDeviceOperator.h>
 #import <XCTestBootstrap/FBDeviceTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBFileManager.h>
-#import <XCTestBootstrap/XCTestBootstrapFrameworkLoader.h>
 #import <XCTestBootstrap/FBProductBundle.h>
 #import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBTestBundle.h>
@@ -23,10 +22,13 @@
 #import <XCTestBootstrap/FBTestManagerProcessInteractionDelegate.h>
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/FBTestManagerTestReporter.h>
+#import <XCTestBootstrap/FBTestManagerTestReporterBase.h>
 #import <XCTestBootstrap/FBTestManagerTestReporterComposite.h>
+#import <XCTestBootstrap/FBTestManagerTestReporterJUnit.h>
+#import <XCTestBootstrap/FBTestReporterForwarder.h>
 #import <XCTestBootstrap/FBTestRunnerConfiguration.h>
 #import <XCTestBootstrap/FBXCTestManagerLoggingForwarder.h>
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
 #import <XCTestBootstrap/NSFileManager+FBFileManager.h>
-#import <XCTestBootstrap/FBTestReporterForwarder.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>
+#import <XCTestBootstrap/XCTestBootstrapFrameworkLoader.h>

@@ -67,6 +67,18 @@
     return FBTestReportStatusFailed;
   }
   return FBTestReportStatusUnknown;
- }
+}
+
++ (NSString *)statusStringForStatus:(FBTestReportStatus)status
+{
+  switch (status) {
+  case FBTestReportStatusUnknown:
+    return @"Unknown";
+  case FBTestReportStatusPassed:
+    return @"Passed";
+  case FBTestReportStatusFailed:
+    return @"Failed";
+  }
+}
 
 @end
