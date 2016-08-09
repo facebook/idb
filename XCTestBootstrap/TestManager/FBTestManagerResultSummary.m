@@ -67,6 +67,6 @@
     return FBTestReportStatusFailed;
   }
   return FBTestReportStatusUnknown;
- }
+}
 
 @end
