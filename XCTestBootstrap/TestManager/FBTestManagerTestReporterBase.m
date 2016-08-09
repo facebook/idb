@@ -43,10 +43,11 @@
       [FBTestManagerTestReporterTestSuite withName:testSuite startTime:startTime];
 
   // Add nested test suite
-  if (self.testSuite) {
-    [self.testSuite addTestSuite:currentTestSuite];
+  if (self.currentTestSuite) {
+    [self.currentTestSuite addTestSuite:currentTestSuite];
   }
   else {
+    self.currentTestSuite = currentTestSuite;
     self.testSuite = currentTestSuite;
   }
 
