@@ -14,51 +14,6 @@
 #import "FBTestManagerResultSummary.h"
 #import "FBTestManagerTestReporterJUnit.h"
 
-#define testSuiteDidStart(name, startTime)                                                                             \
-  [self.reporter testManagerMediator:self.testManagerAPIMediator testSuite:name didStartAt:startTime]
-
-#define testCaseDidFinish(className, methodName, status, time)                                                         \
-  [self.reporter testManagerMediator:self.testManagerAPIMediator                                                       \
-       testCaseDidFinishForTestClass:className                                                                         \
-                              method:methodName                                                                        \
-                          withStatus:status                                                                            \
-                            duration:time]
-
-#define testCaseDidStart(className, methodName)                                                                        \
-  [self.reporter testManagerMediator:self.testManagerAPIMediator                                                       \
-        testCaseDidStartForTestClass:className                                                                         \
-                              method:methodName]
-
-#define testCaseDidFail(className, methodName, message, inFile, atLine)                                                \
-  [self.reporter testManagerMediator:self.testManagerAPIMediator                                                       \
-         testCaseDidFailForTestClass:(NSString *)className                                                             \
-                              method:(NSString *)methodName                                                            \
-                         withMessage:(NSString *)message                                                               \
-                                file:(NSString *)inFile                                                                \
-                                line:(NSUInteger)atLine]
-
-#define testSuiteDidFinish(name, finishTime, runCountValue, failureCount, unexpectedCount, testTime, totalTime)        \
-  [self.reporter testManagerMediator:self.testManagerAPIMediator                                                       \
-                 finishedWithSummary:[FBTestManagerResultSummary fromTestSuite:name                                    \
-                                                                   finishingAt:finishTime                              \
-                                                                      runCount:@(runCountValue)                        \
-                                                                      failures:@(failureCount)                         \
-                                                                    unexpected:@(unexpectedCount)                      \
-                                                                  testDuration:@(testTime)                             \
-                                                                 totalDuration:@(totalTime)]]
-
-#define assertJUnitReportEqualTo(file, extension)                                                                      \
-  [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self.testManagerAPIMediator];                           \
-  NSError *error;                                                                                                      \
-  NSString *path =                                                                                                     \
-      [[NSBundle bundleForClass:self.class] pathForResource:@"expectedJUnitReporterResult" ofType:@"xml"];             \
-  NSString *expected = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];            \
-  XCTAssertNil(error);                                                                                                 \
-  NSString *actual =                                                                                                   \
-      [[NSString alloc] initWithContentsOfFile:self.outputFilePath encoding:NSUTF8StringEncoding error:&error];        \
-  XCTAssertNil(error);                                                                                                 \
-  XCTAssertEqualObjects(expected, actual);
-
 @interface FBTestManagerTestReporterJUnitTests : XCTestCase
 
 @property (nonatomic) id testManagerAPIMediator;
@@ -88,24 +43,107 @@
 
 - (void)testJUnitReporter
 {
-  testSuiteDidStart(@"All Tests", @"2016-08-07 10:31:33");
+  [self testSuite:@"All Tests" didStartAt:@"2016-08-07 10:31:33"];
 
-  testSuiteDidStart(@"UnitTests.xctest", @"2016-08-07 10:31:34");
-  testCaseDidStart(@"CalculatorTest", @"testMultiplication");
-  testCaseDidFinish(@"CalculatorTest", @"testMultiplication", FBTestReportStatusPassed, 0.06);
-  testCaseDidStart(@"CalculatorTest", @"testDivision");
-  testCaseDidFail(@"CalculatorTest", @"testDivision", @"division by zero", @"CalculatorTest.m", 42);
-  testCaseDidFinish(@"CalculatorTest", @"testDivision", FBTestReportStatusFailed, 0.12);
-  testSuiteDidFinish(@"UnitTests.xctest", @"2016-08-07 10:31:35", 2, 1, 1, 0.18, 0.18);
+  [self testSuite:@"UnitTests.xctest" didStartAt:@"2016-08-07 10:31:34"];
+  [self testCaseDidStart:@"CalculatorTest" method:@"testMultiplication"];
+  [self testCaseDidFinish:@"CalculatorTest" method:@"testMultiplication" status:FBTestReportStatusPassed duration:0.06];
+  [self testCaseDidStart:@"CalculatorTest" method:@"testDivision"];
+  [self testCaseDidFail:@"CalculatorTest" method:@"testDivision" withMessage:@"division by zero" file:@"CalculatorTest.m" line:42];
+  [self testCaseDidFinish:@"CalculatorTest" method:@"testDivision" status:FBTestReportStatusFailed duration:0.12];
+  [self testSuiteDidFinish:@"UnitTests.xctest" at:@"2016-08-07 10:31:35" runCount:2 failures:1 unexpected:1 testDuration:0.18 totalDuration:0.18];
 
-  testSuiteDidStart(@"UITests.xctest", @"2016-08-07 10:31:36");
-  testCaseDidStart(@"CalculatorInterfaceTest", @"testInteraction");
-  testCaseDidFinish(@"CalculatorInterfaceTest", @"testInteraction", FBTestReportStatusPassed, 0.05);
-  testSuiteDidFinish(@"UITests.xctest", @"2016-08-07 10:31:37", 1, 0, 0, 0.05, 0.05);
+  [self testSuite:@"UITests.xctest" didStartAt:@"2016-08-07 10:31:36"];
+  [self testCaseDidStart:@"CalculatorInterfaceTest" method:@"testInteraction"];
+  [self testCaseDidFinish:@"CalculatorInterfaceTest" method:@"testInteraction" status:FBTestReportStatusPassed duration:0.05];
+  [self testSuiteDidFinish:@"UITests.xctest" at:@"2016-08-07 10:31:37" runCount:1 failures:0 unexpected:0 testDuration:0.05 totalDuration:0.05];
 
-  testSuiteDidFinish(@"All Tests", @"2016-08-07 10:31:38", 3, 1, 1, 0.05, 0.23);
+  [self testSuiteDidFinish:@"All Tests" at:@"2016-08-07 10:31:38" runCount:3 failures:1 unexpected:1 testDuration:0.05 totalDuration:0.23];
 
-  assertJUnitReportEqualTo(@"expectedJUnitReporterResult", @"xml");
+  NSString *actual = [self reporterResult];
+  NSString *expected = [self expectedReporterResult:@"expectedJUnitReporterResult.xml"];
+
+  XCTAssertEqualObjects(expected, actual);
+}
+
+#pragma mark -
+
+- (NSString *)expectedReporterResult:(NSString *)filename
+{
+  NSArray *resource = [filename componentsSeparatedByString:@"."];
+  NSString *path =
+      [[NSBundle bundleForClass:self.class] pathForResource:resource.firstObject ofType:resource.lastObject];
+  NSError *error;
+  NSString *expectedReporterResult =
+      [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
+  XCTAssertNil(error);
+  return expectedReporterResult;
+}
+
+- (NSString *)reporterResult
+{
+  [self.reporter testManagerMediatorDidFinishExecutingTestPlan:self.testManagerAPIMediator];
+  NSError *error;
+  NSString *reporterResult =
+      [[NSString alloc] initWithContentsOfFile:self.outputFilePath encoding:NSUTF8StringEncoding error:&error];
+  XCTAssertNil(error);
+  return reporterResult;
+}
+
+- (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
+{
+  [self.reporter testManagerMediator:self.testManagerAPIMediator testSuite:testSuite didStartAt:startTime];
+}
+
+- (void)testCaseDidStart:(NSString *)className method:(NSString *)methodName
+{
+  [self.reporter testManagerMediator:self.testManagerAPIMediator
+        testCaseDidStartForTestClass:className
+                              method:methodName];
+}
+
+- (void)testCaseDidFinish:(NSString *)className
+                   method:(NSString *)methodName
+                   status:(FBTestReportStatus)status
+                 duration:(NSTimeInterval)duration
+{
+  [self.reporter testManagerMediator:self.testManagerAPIMediator
+       testCaseDidFinishForTestClass:className
+                              method:methodName
+                          withStatus:status
+                            duration:duration];
+}
+
+- (void)testCaseDidFail:(NSString *)className
+                 method:(NSString *)methodName
+            withMessage:(NSString *)message
+                   file:(NSString *)inFile
+                   line:(NSUInteger)atLine
+{
+  [self.reporter testManagerMediator:self.testManagerAPIMediator
+         testCaseDidFailForTestClass:className
+                              method:methodName
+                         withMessage:message
+                                file:inFile
+                                line:atLine];
+}
+
+- (void)testSuiteDidFinish:(NSString *)testSuite
+                        at:(NSString *)finishTime
+                  runCount:(NSUInteger)runCount
+                  failures:(NSUInteger)failures
+                unexpected:(NSUInteger)unexpected
+              testDuration:(NSTimeInterval)testDuration
+             totalDuration:(NSTimeInterval)totalDuration
+{
+  FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:testSuite
+                                                                      finishingAt:finishTime
+                                                                         runCount:@(runCount)
+                                                                         failures:@(failures)
+                                                                       unexpected:@(unexpected)
+                                                                     testDuration:@(testDuration)
+                                                                    totalDuration:@(totalDuration)];
+  [self.reporter testManagerMediator:self.testManagerAPIMediator finishedWithSummary:summary];
 }
 
 @end
