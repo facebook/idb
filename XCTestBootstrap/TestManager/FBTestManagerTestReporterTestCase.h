@@ -55,12 +55,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Add a failure to the test case.
+
  @param failure the failure to add.
  */
 - (void)addFailure:(FBTestManagerTestReporterTestCaseFailure *)failure;
 
 /**
  Set the status and duration properties.
+
  @param status the status the test case finished with.
  @param duration the execution time of the test case.
  */

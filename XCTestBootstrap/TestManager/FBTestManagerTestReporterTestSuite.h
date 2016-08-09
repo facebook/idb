@@ -60,18 +60,21 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Add a test case to the test suite.
+
  @param testCase testCase to add.
  */
 - (void)addTestCase:(FBTestManagerTestReporterTestCase *)testCase;
 
 /**
  Add a nested test suite.
+
  @param testSuite testSuite to add.
  */
 - (void)addTestSuite:(FBTestManagerTestReporterTestSuite *)testSuite;
 
 /**
  Set the summary property.
+
  @param summary the summary the test suite finished with.
  */
 - (void)finishWithSummary:(FBTestManagerResultSummary *)summary;
