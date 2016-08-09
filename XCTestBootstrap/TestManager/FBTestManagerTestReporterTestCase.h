@@ -31,12 +31,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The test report status.
  */
-@property (nonatomic) FBTestReportStatus status;
+@property (nonatomic, assign, readonly) FBTestReportStatus status;
 
 /**
  The test case duration.
  */
-@property (nonatomic) NSTimeInterval duration;
+@property (nonatomic, assign, readonly) NSTimeInterval duration;
 
 /**
  A list of test case failures.
@@ -58,6 +58,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param failure the failure to add.
  */
 - (void)addFailure:(FBTestManagerTestReporterTestCaseFailure *)failure;
+
+/**
+ Set the status and duration properties.
+ @param status the status the test case finished with.
+ @param duration the execution time of the test case.
+ */
+- (void)finishWithStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration;
 
 @end
 

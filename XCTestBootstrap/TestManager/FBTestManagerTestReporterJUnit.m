@@ -80,8 +80,7 @@
   NSAssert([self.currentTestCase.testClass isEqualToString:testClass] &&
                [self.currentTestCase.method isEqualToString:method],
            @"Unexpected testClass/method");
-  self.currentTestCase.status = status;
-  self.currentTestCase.duration = duration;
+  [self.currentTestCase finishWithStatus:status duration:duration];
   self.currentTestCase = nil;
 }
 

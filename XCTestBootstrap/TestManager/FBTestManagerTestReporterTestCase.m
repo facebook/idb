@@ -11,10 +11,13 @@
 
 @interface FBTestManagerTestReporterTestCase ()
 
+@property (nonatomic, assign) BOOL finished;
+@property (nonatomic, assign) FBTestReportStatus status;
+@property (nonatomic, assign) NSTimeInterval duration;
 @property (nonatomic, copy) NSString *method;
 @property (nonatomic, copy) NSString *testClass;
 @property (nonatomic, readonly) NSString *statusDescription;
-@property (nonatomic) NSMutableArray<FBTestManagerTestReporterTestCaseFailure *> *mutableFailures;
+@property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestCaseFailure *> *mutableFailures;
 
 @end
 
@@ -47,6 +50,14 @@
 - (void)addFailure:(FBTestManagerTestReporterTestCaseFailure *)failure
 {
   [self.mutableFailures addObject:failure];
+}
+
+- (void)finishWithStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
+{
+  NSAssert(!self.finished, @"finishWithStatus:duration: may be called only once");
+  self.finished = YES;
+  self.status = status;
+  self.duration = duration;
 }
 
 #pragma mark -
