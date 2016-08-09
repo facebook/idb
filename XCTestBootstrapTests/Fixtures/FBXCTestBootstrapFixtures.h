@@ -25,4 +25,9 @@
  */
 + (NSString *)JUnitXMLResult0Path;
 
+/**
+ A File Path to the second JUnit XML result.
+ */
++ (NSString *)JUnitXMLResult1Path;
+
 @end

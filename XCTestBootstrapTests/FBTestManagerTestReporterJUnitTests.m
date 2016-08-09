@@ -67,6 +67,34 @@
   XCTAssertEqualObjects(expected, actual);
 }
 
+- (void)testJUnitReporterWithManyNestedTestSuites
+{
+  [self testSuite:@"One" didStartAt:@"2016-08-07 10:31:33"];
+  [self testCaseDidStart:@"TestOne" method:@"method"];
+  [self testCaseDidFinish:@"TestOne" method:@"method" status:FBTestReportStatusPassed duration:0.05];
+  [self testSuite:@"Two" didStartAt:@"2016-08-07 10:31:34"];
+  [self testCaseDidStart:@"TestTwo" method:@"method"];
+  [self testCaseDidFinish:@"TestTwo" method:@"method" status:FBTestReportStatusPassed duration:0.05];
+  [self testSuite:@"Three" didStartAt:@"2016-08-07 10:31:35"];
+  [self testCaseDidStart:@"TestThree" method:@"method"];
+  [self testCaseDidFinish:@"TestThree" method:@"method" status:FBTestReportStatusPassed duration:0.05];
+  [self testSuite:@"Four" didStartAt:@"2016-08-07 10:31:36"];
+  [self testCaseDidStart:@"TestFour" method:@"method"];
+  [self testCaseDidFinish:@"TestFour" method:@"method" status:FBTestReportStatusPassed duration:0.05];
+  [self testSuiteDidFinish:@"Four" at:@"2016-08-07 10:31:37" runCount:1 failures:0 unexpected:0 testDuration:0.05 totalDuration:0.05];
+  [self testSuiteDidFinish:@"Three" at:@"2016-08-07 10:31:38" runCount:2 failures:0 unexpected:0 testDuration:0.05 totalDuration:0.05];
+  [self testSuiteDidFinish:@"Two" at:@"2016-08-07 10:31:39" runCount:3 failures:0 unexpected:0 testDuration:0.05 totalDuration:0.05];
+  [self testSuiteDidFinish:@"One" at:@"2016-08-07 10:31:34" runCount:4 failures:0 unexpected:0 testDuration:0.05 totalDuration:0.05];
+
+  [self testManagerMediatorDidFinishExecutingTestPlan];
+
+  NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBTestManagerTestReporterJUnitTests JUnitXMLResult1Path]];
+  NSString *actual = [self stringWithContentsOfJUnitResult:self.outputFileURL];
+  NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
+
+  XCTAssertEqualObjects(expected, actual);
+}
+
 #pragma mark -
 
 - (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path
