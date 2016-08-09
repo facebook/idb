@@ -281,7 +281,7 @@
     if ([diagnosticName isEqualToString:@""]) {
       for (FBDiagnostic *diagnostic in diagnostics) {
         for (FBLogSearchPredicate *predicate in predicates) {
-          [searchers addObject:[FBLogSearch withDiagnostic:diagnostic predicate:predicate]];
+          [searchers addObject:[FBDiagnosticLogSearch withDiagnostic:diagnostic predicate:predicate]];
         }
       }
     }
@@ -290,7 +290,7 @@
       continue;
     }
     for (FBLogSearchPredicate *predicate in predicates) {
-      [searchers addObject:[FBLogSearch withDiagnostic:diagnostic predicate:predicate]];
+      [searchers addObject:[FBDiagnosticLogSearch withDiagnostic:diagnostic predicate:predicate]];
     }
   }
 
@@ -298,7 +298,7 @@
   BOOL lines = self.lines;
   NSArray<NSArray *> *results = [FBConcurrentCollectionOperations
     mapFilter:[searchers copy]
-    map:^ NSArray * (FBLogSearch *search) {
+    map:^ NSArray * (FBDiagnosticLogSearch *search) {
       NSArray<NSString *> *matches = lines ? search.matchingLines : search.allMatches;
       if (matches.count == 0) {
        return nil;

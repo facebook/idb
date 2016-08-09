@@ -32,9 +32,18 @@
   [self assertJSONDeserialization:values];
 }
 
+- (void)testFindsWithinText
+{
+  FBLogSearch *searcher = [FBLogSearch withText:@"Hellop\nBye\nHellooeeeeee" predicate:[FBLogSearchPredicate substrings:@[
+    @"Hello",
+  ]]];
+  XCTAssertEqualObjects(searcher.firstMatch, @"Hello");
+  XCTAssertEqualObjects(searcher.matchingLines, (@[@"Hellop", @"Hellooeeeeee"]));
+}
+
 - (void)testFindsMatchInFileDiagnostic
 {
-  FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate substrings:@[
+  FBLogSearch *searcher = [FBDiagnosticLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate substrings:@[
     @"LOLIDK",
     @"Installed apps did change",
     @"Couldn't find the digitizer HID service, this is probably bad"
@@ -45,7 +54,7 @@
 
 - (void)testFailsToFindAbsentSubstrings
 {
-  FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate substrings:@[
+  FBLogSearch *searcher = [FBDiagnosticLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate substrings:@[
     @"LOLIDK",
     @"LOLIDK1",
     @"LOLIDK2"
@@ -56,7 +65,7 @@
 
 - (void)testFindsMultipleSubstrings
 {
-  FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate substrings:@[
+  FBLogSearch *searcher = [FBDiagnosticLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate substrings:@[
     @"Cloud Resources scheduler activated"
   ]]];
   XCTAssertEqual(searcher.allMatches.count, 9u);
@@ -65,7 +74,7 @@
 
 - (void)testFindsMatchInFileRegex
 {
-  FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate regex:
+  FBLogSearch *searcher = [FBDiagnosticLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate regex:
     @"layer position \\d+ \\d+ bounds \\d+ \\d+ \\d+ \\d+"
   ]];
   XCTAssertEqualObjects(searcher.firstMatch, @"layer position 375 667 bounds 0 0 750 133");
@@ -74,7 +83,7 @@
 
 - (void)testFailsToFindAbsentRegex
 {
-  FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate regex:
+  FBLogSearch *searcher = [FBDiagnosticLogSearch withDiagnostic:self.simulatorSystemLog predicate:[FBLogSearchPredicate regex:
     @"layer position \\D+ \\d+ bounds \\d+ \\d+ \\d+ \\d+"
   ]];
   XCTAssertNil(searcher.firstMatch);
@@ -83,7 +92,7 @@
 
 - (void)testDoesNotFindInBinaryDiagnostics
 {
-  FBLogSearch *searcher = [FBLogSearch withDiagnostic:self.photoDiagnostic predicate:[FBLogSearchPredicate substrings:@[
+  FBLogSearch *searcher = [FBDiagnosticLogSearch withDiagnostic:self.photoDiagnostic predicate:[FBLogSearchPredicate substrings:@[
     @"LOLIDK",
     @"Installed apps did change",
     @"Couldn't find the digitizer HID service, this is probably bad"

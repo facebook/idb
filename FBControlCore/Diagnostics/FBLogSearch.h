@@ -41,22 +41,20 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- Wraps FBDiagnostic with Log Searching Abilities.
+ A Container for a Search.
 
- Most Diagnostics have effectively constant content, except for file backed diagnostics.
- The content of file logs will be lazily fetched, so it's contents may change if the file backing it changes.
- This is worth bearing in mind of the caller expects idempotent results.
  */
 @interface FBLogSearch : NSObject
 
 /**
- Creates a Log Searcher for the given diagnostic.
-
-
- @param diagnostic the diagnostic to search.
- @param predicate the predicate to search with.
+ A
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate;
++ (FBLogSearch *)withText:(NSString *)text predicate:(FBLogSearchPredicate *)predicate;
+
+/**
+ Returns all of the Lines that will be Searched.
+ */
+- (NSArray<NSString *> *)lines;
 
 /**
  Searches the Diagnostic Log, returning all matches of the predicate.
@@ -89,14 +87,33 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSString *)firstMatchingLine;
 
 /**
- The Diagnostic to Search.
- */
-@property (nonatomic, copy, readonly) FBDiagnostic *diagnostic;
-
-/**
  The Predicate to Search with.
  */
 @property (nonatomic, copy, readonly) FBLogSearchPredicate *predicate;
+
+@end
+
+/**
+ Wraps FBDiagnostic with Log Searching Abilities by augmenting FBLogSearch.
+
+ Most Diagnostics have effectively constant content, except for file backed diagnostics.
+ The content of file logs will be lazily fetched, so it's contents may change if the file backing it changes.
+ This is worth bearing in mind of the caller expects idempotent results.
+ */
+@interface FBDiagnosticLogSearch : FBLogSearch
+
+/**
+ Creates a Log Searcher for the given diagnostic.
+
+ @param diagnostic the diagnostic to search.
+ @param predicate the predicate to search with.
+ */
++ (FBDiagnosticLogSearch *)withDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate;
+
+/**
+ The Diagnostic that will be Searched.
+ */
+@property (nonatomic, copy, readonly) FBDiagnostic *diagnostic;
 
 @end
 

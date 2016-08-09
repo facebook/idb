@@ -15,13 +15,6 @@
 #import "FBDiagnostic.h"
 #import "NSPredicate+FBControlCore.h"
 
-@interface FBLogSearch ()
-
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate;
-- (NSArray<NSString *> *)matchesWithLines:(BOOL)lines;
-
-@end
-
 #pragma mark - FBLogSearchPredicate
 
 @interface FBLogSearchPredicate_Regex : FBLogSearchPredicate
@@ -302,21 +295,69 @@
 
 #pragma mark - FBLogSearch
 
-@interface FBLogSearch_Invalid : FBLogSearch
+@interface FBLogSearch ()
+
+- (NSArray<NSString *> *)matchesWithLines:(BOOL)lines;
+- (instancetype)initWithPrediate:(FBLogSearchPredicate *)predicate;
 
 @end
 
-@implementation FBLogSearch_Invalid
+@interface FBLogSearch_WithStorage : FBLogSearch
+
+@property (nonatomic, copy, readonly) NSArray<NSString *> *storedLines;
 
 @end
 
-@interface FBLogSearch_Linewise : FBLogSearch
+@implementation FBLogSearch_WithStorage
+
+- (instancetype)initWithStoredLines:(NSArray<NSString *> *)storedLines prediate:(FBLogSearchPredicate *)predicate
+{
+  self = [super initWithPrediate:predicate];
+  if (!self) {
+    return nil;
+  }
+
+  _storedLines = storedLines;
+
+  return self;
+}
+
+- (NSArray<NSString *> *)lines
+{
+  return self.storedLines;
+}
 
 @end
 
-@implementation FBLogSearch_Linewise
+@implementation FBLogSearch
+
+#pragma mark Intitializers
+
++ (FBLogSearch *)withText:(NSString *)text predicate:(FBLogSearchPredicate *)predicate
+{
+  NSArray<NSString *> *lines = [text componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
+  return [[FBLogSearch_WithStorage alloc] initWithStoredLines:lines prediate:predicate];
+}
+
+- (instancetype)initWithPrediate:(FBLogSearchPredicate *)predicate
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _predicate = predicate;
+
+  return self;
+}
 
 #pragma mark Public API
+
+- (NSArray<NSString *> *)lines
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
 
 - (NSArray<NSString *> *)matchesWithLines:(BOOL)outputLines
 {
@@ -332,47 +373,6 @@
       return outputLines ? line : substring;
     }
     predicate:NSPredicate.notNullPredicate];
-}
-
-#pragma mark Private
-
-- (NSArray *)lines
-{
-  return [self.diagnostic.asString componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
-}
-
-@end
-
-@implementation FBLogSearch
-
-#pragma mark Initializers
-
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate
-{
-  if (!diagnostic.isSearchableAsText) {
-    return [FBLogSearch_Invalid new];
-  }
-  return [[FBLogSearch_Linewise alloc] initWithDiagnostic:diagnostic predicate:predicate];
-}
-
-- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _diagnostic = diagnostic;
-  _predicate = predicate;
-
-  return self;
-}
-
-#pragma mark Public API
-
-- (NSArray<NSString *> *)matchesWithLines:(BOOL)lines
-{
-  return nil;
 }
 
 - (NSArray<NSString *> *)allMatches
@@ -393,6 +393,36 @@
 - (NSString *)firstMatchingLine
 {
   return [self.matchingLines firstObject];
+}
+
+@end
+
+@implementation FBDiagnosticLogSearch
+
+#pragma mark Initializers
+
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate
+{
+  return [[FBDiagnosticLogSearch alloc] initWithDiagnostic:diagnostic predicate:predicate];
+}
+
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic predicate:(FBLogSearchPredicate *)predicate
+{
+  self = [super initWithPrediate:predicate];
+  if (!self) {
+    return nil;
+  }
+
+  _diagnostic = diagnostic;
+
+  return self;
+}
+
+- (NSArray<NSString *> *)lines
+{
+  return self.diagnostic.isSearchableAsText
+    ? [self.diagnostic.asString componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet]
+    : @[];
 }
 
 @end
