@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<testsuites>
+    <testsuite tests="3" failures="1" errors="1" time="0.23" name="All Tests">
+        <testsuite tests="2" failures="1" errors="1" time="0.18" name="UnitTests.xctest">
+            <testcase classname="CalculatorTest" name="testMultiplication" time="0.06"></testcase>
+            <testcase classname="CalculatorTest" name="testDivision" time="0.12">
+                <failure type="Failure" message="division by zero">CalculatorTest.m:42</failure>
+            </testcase>
+        </testsuite>
+        <testsuite tests="1" failures="0" errors="0" time="0.05" name="UITests.xctest">
+            <testcase classname="CalculatorInterfaceTest" name="testInteraction" time="0.05"></testcase>
+        </testsuite>
+    </testsuite>
+</testsuites>
