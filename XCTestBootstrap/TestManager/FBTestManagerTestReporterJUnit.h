@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBTestManagerTestReporter.h"
+#import "FBTestManagerTestReporterBase.h"
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
  A Test Reporter that implements the FBTestManagerTestReporter interface.
  It writes the Test Result to a given File Handle in the JUnit XML format.
  */
-@interface FBTestManagerTestReporterJUnit : NSObject <FBTestManagerTestReporter>
+@interface FBTestManagerTestReporterJUnit : FBTestManagerTestReporterBase
 
 /**
  Constructs a JUnit Test Reporter.

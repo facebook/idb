@@ -15,10 +15,7 @@
 
 @interface FBTestManagerTestReporterJUnit ()
 
-@property (nonatomic) FBTestManagerTestReporterTestCase *currentTestCase;
-@property (nonatomic) FBTestManagerTestReporterTestSuite *currentTestSuite;
 @property (nonatomic) NSFileHandle *outputFileHandle;
-@property (nonatomic) NSMutableArray<FBTestManagerTestReporterTestSuite *> *rootTestSuites;
 
 @end
 
@@ -37,96 +34,26 @@
   }
 
   _outputFileHandle = outputFileHandle;
-  _rootTestSuites = [NSMutableArray array];
 
   return self;
 }
 
 #pragma mark - FBTestManagerTestReporter
 
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-                  testSuite:(NSString *)testSuite
-                 didStartAt:(NSString *)startTime
-{
-  FBTestManagerTestReporterTestSuite *currentTestSuite =
-      [FBTestManagerTestReporterTestSuite withName:testSuite startTime:startTime];
-
-  // Add nested test suite
-  if (self.currentTestSuite) {
-    [self.currentTestSuite addTestSuite:currentTestSuite];
-  }
-  else {
-    [self.rootTestSuites addObject:currentTestSuite];
-  }
-  self.currentTestSuite = currentTestSuite;
-}
-
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-    testCaseDidStartForTestClass:(NSString *)testClass
-                          method:(NSString *)method
-{
-  FBTestManagerTestReporterTestCase *testCase =
-      [FBTestManagerTestReporterTestCase withTestClass:testClass method:method];
-  self.currentTestCase = testCase;
-  [self.currentTestSuite addTestCase:testCase];
-}
-
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-    testCaseDidFinishForTestClass:(NSString *)testClass
-                           method:(NSString *)method
-                       withStatus:(FBTestReportStatus)status
-                         duration:(NSTimeInterval)duration
-{
-  NSAssert([self.currentTestCase.testClass isEqualToString:testClass] &&
-               [self.currentTestCase.method isEqualToString:method],
-           @"Unexpected testClass/method");
-  [self.currentTestCase finishWithStatus:status duration:duration];
-  self.currentTestCase = nil;
-}
-
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-    testCaseDidFailForTestClass:(NSString *)testClass
-                         method:(NSString *)method
-                    withMessage:(NSString *)message
-                           file:(NSString *)file
-                           line:(NSUInteger)line
-{
-  [self.currentTestCase addFailure:[FBTestManagerTestReporterTestCaseFailure withMessage:message file:file line:line]];
-}
-
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-        finishedWithSummary:(FBTestManagerResultSummary *)summary
-{
-  self.currentTestSuite.summary = summary;
-  self.currentTestSuite = self.currentTestSuite.parent;
-}
-
 - (void)testManagerMediatorDidFinishExecutingTestPlan:(FBTestManagerAPIMediator *)mediator
 {
-  NSXMLDocument *document = [FBTestManagerTestReporterJUnit documentForTestSuites:self.rootTestSuites];
+  [super testManagerMediatorDidFinishExecutingTestPlan:mediator];
+
+  NSXMLDocument *document = [FBTestManagerTestReporterJUnit documentForTestSuite:self.testSuite];
   [self.outputFileHandle writeData:[document XMLDataWithOptions:NSXMLNodePrettyPrint]];
-}
-
-#pragma mark - FBTestManagerTestReporter (unused)
-
-- (void)testManagerMediatorDidBeginExecutingTestPlan:(FBTestManagerAPIMediator *)mediator
-{
-}
-
-- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator
-    testBundleReadyWithProtocolVersion:(NSInteger)protocolVersion
-                        minimumVersion:(NSInteger)minimumVersion
-{
 }
 
 #pragma mark - JUnit XML Generator
 
-+ (NSXMLDocument *)documentForTestSuites:(NSArray<FBTestManagerTestReporterTestSuite *> *)testSuites
++ (NSXMLDocument *)documentForTestSuite:(FBTestManagerTestReporterTestSuite *)testSuite
 {
   NSXMLElement *testSuiteElement = [NSXMLElement elementWithName:@"testsuites"];
-  for (FBTestManagerTestReporterTestSuite *testSuite in testSuites) {
-    [testSuiteElement addChild:[self elementForTestSuite:testSuite]];
-  }
+  [testSuiteElement addChild:[self elementForTestSuite:testSuite]];
   NSXMLDocument *document = [NSXMLDocument documentWithRootElement:testSuiteElement];
   document.version = @"1.0";
   document.standalone = YES;
