@@ -47,14 +47,45 @@
 
 #pragma mark Public
 
-- (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error
+- (nullable NSString *)serviceNameForProcess:(FBProcessInfo *)process error:(NSError **)error
 {
-  NSString *needle = [NSString stringWithFormat:@"%d", process.processIdentifier];
-  NSString *haystack = [self runWithArguments:@[@"list"] error:error];
-  return [haystack containsString:needle];
+  NSString *text = [self runWithArguments:@[@"list"] error:error];
+  if (!text) {
+    return nil;
+  }
+  FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[@(process.processIdentifier).stringValue]];
+  FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
+  NSString *line = search.firstMatchingLine;
+  if (!line) {
+    return [[FBSimulatorError
+      describeFormat:@"No Matching processes for %@", process.shortDescription]
+      fail:error];
+  }
+  NSArray<NSString *> *words = [line componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
+  if (words.count != 3) {
+    return [[FBSimulatorError
+      describeFormat:@"Output does not have exactly three words: %@", [FBCollectionInformation oneLineDescriptionFromArray:words]]
+      fail:error];
+  }
+  return [words lastObject];
 }
 
-#pragma mark Private
+- (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error
+{
+  NSError *innerError = nil;
+  if (![self runWithArguments:@[@"stop", serviceName] error:&innerError]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to stop service %@", serviceName]
+      causedBy:innerError]
+      fail:error];
+  }
+  return serviceName;
+}
+
+- (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error
+{
+  return [self serviceNameForProcess:process error:error] != nil;
+}
 
 - (NSString *)runWithArguments:(NSArray<NSString *> *)arguments error:(NSError **)error
 {
