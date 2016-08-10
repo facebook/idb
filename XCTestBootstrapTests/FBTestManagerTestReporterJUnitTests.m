@@ -17,9 +17,9 @@
 
 @interface FBTestManagerTestReporterJUnitTests : XCTestCase
 
-@property (nonatomic, assign) id testManagerAPIMediator;
-@property (nonatomic, assign) FBTestManagerTestReporterJUnit *reporter;
-@property (nonatomic, assign) NSURL *outputFileURL;
+@property (nonatomic, strong) id testManagerAPIMediator;
+@property (nonatomic, strong) FBTestManagerTestReporterJUnit *reporter;
+@property (nonatomic, strong) NSURL *outputFileURL;
 @property (nonatomic, copy, readonly) NSString *outputFileContent;
 
 @end
