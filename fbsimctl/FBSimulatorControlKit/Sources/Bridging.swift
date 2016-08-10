@@ -18,11 +18,11 @@ extension FBSimulatorState {
 
 extension NSURL {
   static func urlRelativeTo(basePath: String, component: String, isDirectory: Bool) -> NSURL {
-    let url = NSURL(fileURLWithPath: NSHomeDirectory())
+    let url = NSURL(fileURLWithPath: basePath)
     #if swift(>=2.3)
-      return url.URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)!
+      return url.URLByAppendingPathComponent(component, isDirectory: isDirectory)!
     #else
-      return url.URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
+      return url.URLByAppendingPathComponent(component, isDirectory: isDirectory)
     #endif
   }
 

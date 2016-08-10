@@ -28,18 +28,18 @@ class IntegrationTests : XCTestCase {
     self.assertCLIRunsSuccessfully(set1, ["delete"])
     self.assertCLIRunsSuccessfully(set2, ["delete"])
     self.assertCLIRunsSuccessfully(set1, ["create", "iPhone 5s"])
-    self.assertCLIRunsSuccessfully(set2, ["create", "iPad 2"])
+    self.assertCLIRunsSuccessfully(set2, ["create", "iPad Air 2"])
     self.assertCLIRunsSuccessfully(set1, ["iPhone 5s", "boot"])
-    self.assertCLIRunsSuccessfully(set2, ["iPad 2", "boot"])
+    self.assertCLIRunsSuccessfully(set2, ["iPad Air 2", "boot"])
     self.assertCLIRunsSuccessfully(set1, ["delete"])
     XCTAssertEqual(
       self.assertCLIRunsSuccessfully(set2, ["--device-name", "--state", "list"]),
-      ["iPad 2 | Booted"]
+      ["iPad Air 2 | Booted"]
     )
     self.assertCLIRunsSuccessfully(set2, ["shutdown"])
     XCTAssertEqual(
       self.assertCLIRunsSuccessfully(set2, ["--device-name", "--state", "list"]),
-      ["iPad 2 | Shutdown"]
+      ["iPad Air 2 | Shutdown"]
     )
     self.assertCLIRunsSuccessfully(set2, ["delete"])
   }
