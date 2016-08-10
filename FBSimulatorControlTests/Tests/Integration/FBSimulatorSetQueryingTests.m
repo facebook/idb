@@ -26,12 +26,12 @@
 - (void)setUp
 {
   self.simulators = [self createPoolWithExistingSimDeviceSpecs:@[
-    @{@"name" : @"iPad 2", @"state" : @(FBSimulatorStateBooted), @"os" : @"iOS 8.0"},
     @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateCreating), @"os" : @"iOS 8.0"},
+    @{@"name" : @"iPad 2", @"state" : @(FBSimulatorStateBooted), @"os" : @"iOS 8.0"},
     @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown), @"os" : @"iOS 9.0"},
-    @{@"name" : @"iPad Air 2", @"state" : @(FBSimulatorStateCreating), @"os" : @"iOS 9.1"},
-    @{@"name" : @"iPhone 6S", @"state" : @(FBSimulatorStateShuttingDown), @"os" : @"iOS 9.0"},
+    @{@"name" : @"iPhone 6s", @"state" : @(FBSimulatorStateShuttingDown), @"os" : @"iOS 9.0"},
     @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateBooted), @"os" : @"iOS 9.1"},
+    @{@"name" : @"iPad Air 2", @"state" : @(FBSimulatorStateCreating), @"os" : @"iOS 9.1"},
     @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown), @"os" : @"iOS 9.2"},
     @{@"name" : @"iPad Air", @"state" : @(FBSimulatorStateBooted), @"os" : @"iOS 9.3"},
   ]];
@@ -41,7 +41,7 @@
 {
   FBiOSTargetQuery *query = [FBiOSTargetQuery devices:@[FBControlCoreConfiguration_Device_iPhone5.new]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
-  NSArray<FBSimulator *> *expected = @[self.simulators[1], self.simulators[2], self.simulators[5], self.simulators[6]];
+  NSArray<FBSimulator *> *expected = @[self.simulators[0], self.simulators[2], self.simulators[4], self.simulators[6]];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -49,7 +49,7 @@
 {
   FBiOSTargetQuery *query = [FBiOSTargetQuery devices:@[FBControlCoreConfiguration_Device_iPadAir.new, FBControlCoreConfiguration_Device_iPadAir2.new]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
-  NSArray<FBSimulator *> *expected = @[self.simulators[3], self.simulators[7]];
+  NSArray<FBSimulator *> *expected = @[self.simulators[5], self.simulators[7]];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -57,7 +57,7 @@
 {
   FBiOSTargetQuery *query = [FBiOSTargetQuery osVersions:@[FBControlCoreConfiguration_iOS_9_1.new]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
-  NSArray<FBSimulator *> *expected = @[self.simulators[3], self.simulators[5]];
+  NSArray<FBSimulator *> *expected = @[self.simulators[4], self.simulators[5]];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -73,7 +73,7 @@
 {
   FBiOSTargetQuery *query = [FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooted]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
-  NSArray<FBSimulator *> *expected = @[self.simulators[0], self.simulators[5], self.simulators[7]];
+  NSArray<FBSimulator *> *expected = @[self.simulators[1], self.simulators[4], self.simulators[7]];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -82,7 +82,7 @@
   NSIndexSet *states = [FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateShutdown), @(FBSimulatorStateShuttingDown)]];
   FBiOSTargetQuery *query = [FBiOSTargetQuery states:states];
   NSArray<FBSimulator *> *actual = [self.set query:query];
-  NSArray<FBSimulator *> *expected = @[self.simulators[2], self.simulators[4], self.simulators[6]];
+  NSArray<FBSimulator *> *expected = @[self.simulators[2], self.simulators[3], self.simulators[6]];
   XCTAssertEqualObjects(expected, actual);
 }
 
@@ -90,7 +90,7 @@
 {
   FBiOSTargetQuery *query = [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateCreating]] devices:@[FBControlCoreConfiguration_Device_iPhone5.new]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
-  NSArray<FBSimulator *> *expected = @[self.simulators[1]];
+  NSArray<FBSimulator *> *expected = @[self.simulators[0]];
   XCTAssertEqualObjects(expected, actual);
 }
 

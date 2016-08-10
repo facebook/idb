@@ -360,7 +360,9 @@
   [cullSet minusSet:[NSSet setWithArray:currentSimulatorUDIDs]];
   [self.inflatedSimulators removeObjectsForKeys:cullSet.allObjects];
 
-  return [self.inflatedSimulators objectsForKeys:currentSimulatorUDIDs notFoundMarker:NSNull.null];
+  return [[self.inflatedSimulators
+    objectsForKeys:currentSimulatorUDIDs notFoundMarker:NSNull.null]
+    sortedArrayUsingSelector:@selector(compare:)];
 }
 
 - (NSArray<FBSimulator *> *)launchedSimulators
