@@ -221,7 +221,9 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   self.state = FBSimulatorFramebufferStateTerminated;
   [self.framebufferService unregisterClient:self];
   [self.framebufferService suspend];
-  CFRelease(self.timebase);
+  if (self.timebase) {
+    CFRelease(self.timebase);
+  }
   self.timebase = nil;
 
   [self.delegate framebuffer:self didBecomeInvalidWithError:error teardownGroup:teardownGroup];
