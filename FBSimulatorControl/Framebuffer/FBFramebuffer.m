@@ -19,6 +19,8 @@
 #import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
+#import <IOSurface/IOSurfaceBase.h>
+
 #import "FBFramebufferCompositeDelegate.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
@@ -181,6 +183,11 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   self.size = size;
   [self frameUpdateWithImage:backingStore.image size:size];
   self.frameCount++;
+}
+
+- (void)setIOSurface:(IOSurfaceRef)surface
+{
+  [self.logger.info logFormat:@"Recieved IOSurface from Framebuffer Service %@", surface];
 }
 
 #pragma mark Delegate Forwarding & Deduplicating

@@ -290,7 +290,7 @@
 {
   NSDecimalNumber *xcodeVersion = FBControlCoreGlobalConfiguration.xcodeVersionNumber;
   if ([xcodeVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"8.0"]]) {
-    return 162;
+    return 163;
   }
   if ([xcodeVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"7.0"]]) {
     return 159;
