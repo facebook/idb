@@ -4,9 +4,8 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#import <Foundation/NSUserDefaults.h>
+#import <Foundation/NSKeyedUnarchiver.h>
 
-@interface NSUserDefaults (SimDefaults)
-+ (id)simulatorDefaults;
+@interface NSKeyedUnarchiver (SimPasteboardItem)
++ (id)sim_securelyUnarchiveObjectWithData:(id)arg1;
 @end
-

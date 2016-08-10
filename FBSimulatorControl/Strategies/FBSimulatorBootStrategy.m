@@ -12,6 +12,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDevice+Removed.h>
 #import <CoreSimulator/SimDeviceType.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
@@ -107,9 +108,11 @@
   // If you're curious about where the knowledege for these parts of the CoreSimulator.framework comes from, take a look at:
   // $DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS [VERSION].simruntime/Contents/Resources/profile.plist
   // as well as the dissasembly for CoreSimulator.framework, SimulatorKit.Framework & the Simulator.app Executable.
-
+  //
   // Creating the Framebuffer with the 'mainScreen' constructor will return a 'PurpleFBServer' and attach it to the '_registeredServices' ivar.
   // This is the Framebuffer for the Simulator's main screen, which is distinct from 'PurpleFBTVOut' and 'Stark' Framebuffers for External Displays and CarPlay.
+  //
+  // -[SimDevice portForServiceNamed:error:] is gone in Xcode 8 Beta 5.
   NSError *innerError = nil;
   NSPort *purpleServerPort = [self.simulator.device portForServiceNamed:@"PurpleFBServer" error:&innerError];
   if (!purpleServerPort) {

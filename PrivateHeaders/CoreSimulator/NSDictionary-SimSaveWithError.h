@@ -4,9 +4,8 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#import <Foundation/NSUserDefaults.h>
+#import <Foundation/NSDictionary.h>
 
-@interface NSUserDefaults (SimDefaults)
-+ (id)simulatorDefaults;
+@interface NSDictionary (SimSaveWithError)
+- (BOOL)sim_writeAtomicallyToFile:(id)arg1 error:(id *)arg2;
 @end
-

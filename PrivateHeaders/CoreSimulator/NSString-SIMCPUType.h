@@ -4,9 +4,9 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#import <Foundation/NSUserDefaults.h>
+#import <Foundation/NSString.h>
 
-@interface NSUserDefaults (SimDefaults)
-+ (id)simulatorDefaults;
+@interface NSString (SIMCPUType)
++ (id)sim_stringForCPUType:(int)arg1;
+- (int)sim_cpuType;
 @end
-
