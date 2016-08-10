@@ -4,6 +4,7 @@
 
 // Target Specific Settings
 EMBEDDED_CONTENT_CONTAINS_SWIFT = YES
+SWIFT_VERSION = 2.3
 PRODUCT_NAME = FBSimulatorControlKit
 INFOPLIST_FILE = $(PROJECT_DIR)/FBSimulatorControlKit/Info.plist
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlKit

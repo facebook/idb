@@ -102,7 +102,7 @@ struct SimulatorActionRunner : Runner {
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
     case .Open(let url):
-      return SimulatorInteractionRunner(reporter, EventName.Open, url.absoluteString) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.Open, url.bridgedAbsoluteString) { interaction in
         interaction.openURL(url)
       }
     case .Record(let start):

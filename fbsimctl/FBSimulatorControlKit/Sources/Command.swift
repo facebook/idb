@@ -149,7 +149,9 @@ public func == (left: IndividualCreationConfiguration, right: IndividualCreation
 
 extension IndividualCreationConfiguration : Accumulator {
   public init() {
-    self.init(osVersion: nil, deviceType: nil, auxDirectory: nil)
+    self.osVersion = nil
+    self.deviceType = nil
+    self.auxDirectory = nil
   }
 
   public func append(other: IndividualCreationConfiguration) -> IndividualCreationConfiguration {

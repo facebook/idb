@@ -15,8 +15,8 @@ import FBSimulatorControl
 
 class IntegrationTests : XCTestCase {
   func testNoInterferenceBeetweenDeviceSets() {
-    let set1 = self.temporaryDirectory().URLByAppendingPathComponent("set_1", isDirectory: true)
-    let set2 = self.temporaryDirectory().URLByAppendingPathComponent("set_2", isDirectory: true)
+    let set1 = NSURL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_1", isDirectory: true)
+    let set2 = NSURL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_2", isDirectory: true)
 
     if ((try? NSFileManager.defaultManager().createDirectoryAtURL(set1, withIntermediateDirectories: true, attributes: [:])) == nil) {
       XCTFail("Could not create directory at \(set1)")

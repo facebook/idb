@@ -416,9 +416,11 @@
 					};
 					AAE35AC11C2865C10073CC70 = {
 						CreatedOnToolsVersion = 7.2;
+						LastSwiftMigration = 0800;
 					};
 					AAE35ACA1C2865C10073CC70 = {
 						CreatedOnToolsVersion = 7.2;
+						LastSwiftMigration = 0800;
 					};
 				};
 			};
