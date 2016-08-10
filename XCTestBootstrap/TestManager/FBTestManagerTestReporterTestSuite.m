@@ -14,7 +14,7 @@
 
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, copy) NSString *startTime;
-@property (nonatomic, assign, nullable) FBTestManagerResultSummary *summary;
+@property (nonatomic, strong, nullable) FBTestManagerResultSummary *summary;
 @property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestCase *> *mutableTestCases;
 @property (nonatomic, strong) NSMutableArray<FBTestManagerTestReporterTestSuite *> *mutableTestSuites;
 @property (nonatomic, weak) FBTestManagerTestReporterTestSuite *parent;
