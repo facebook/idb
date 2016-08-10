@@ -28,6 +28,11 @@
   return [FBiOSTargetFormat.defaultFormat format:self];
 }
 
+- (NSComparisonResult)compare:(id<FBiOSTarget>)target
+{
+  return FBiOSTargetComparison(self, target);
+}
+
 #pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation

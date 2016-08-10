@@ -66,7 +66,9 @@ struct iOSRunnerContext<A> {
     let devices: [FBiOSTarget] = self.deviceControl?.query(query) ?? []
     let simulators: [FBiOSTarget] = self.simulatorControl.set.query(query)
     let targets = devices + simulators
-    return targets
+    return targets.sort { left, right in
+      return FBiOSTargetComparison(left, right) == NSComparisonResult.OrderedDescending
+    }
   }
 }
 

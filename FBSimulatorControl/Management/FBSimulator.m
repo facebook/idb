@@ -127,6 +127,11 @@
   return self.configuration.os;
 }
 
+- (NSComparisonResult)compare:(id<FBiOSTarget>)target
+{
+  return FBiOSTargetComparison(self, target);
+}
+
 #pragma mark Properties
 
 - (FBControlCoreProductFamily)productFamily
