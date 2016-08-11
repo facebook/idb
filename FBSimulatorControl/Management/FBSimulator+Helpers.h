@@ -9,7 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
-@class FBApplicationDescriptor ;
+@class FBApplicationDescriptor;
 @class FBSimDeviceWrapper;
 @class FBSimulatorInteraction;
 @class FBSimulatorLaunchCtl;
@@ -160,6 +160,11 @@ NS_ASSUME_NONNULL_BEGIN
  @return the required process names.
  */
 - (NSSet<NSString *> *)requiredProcessNamesToVerifyBooted;
+
+/**
+ A Dictionary Representing the iPhone Simulator.app Preferences.
+ */
++ (NSDictionary<NSString *, id> *)simulatorApplicationPreferences;
 
 @end
 

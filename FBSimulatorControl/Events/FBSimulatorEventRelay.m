@@ -40,7 +40,7 @@
 
 @implementation FBSimulatorEventRelay
 
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink
 {
   self = [super init];
   if (!self) {
@@ -55,8 +55,8 @@
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
 
-  _launchdProcess = [processFetcher launchdProcessForSimDevice:simDevice];
-  _containerApplication = [processFetcher simulatorApplicationProcessForSimDevice:simDevice];
+  _launchdProcess = launchdProcess;
+  _containerApplication = containerApplication;
 
   [self registerSimulatorLifecycleHandlers];
   [self createNotifierForSimDevice:simDevice];

@@ -209,6 +209,12 @@
   return [NSSet set];
 }
 
++ (NSDictionary<NSString *, id> *)simulatorApplicationPreferences
+{
+  NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Preferences/com.apple.iphonesimulator.plist"];
+  return [NSDictionary dictionaryWithContentsOfFile:path];
+}
+
 #pragma mark Private
 
 - (NSDictionary<NSString *, id> *)appInfo:(NSString *)bundleID error:(NSError **)error

@@ -167,7 +167,7 @@
   NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
     [NSCompoundPredicate andPredicateWithSubpredicates:@[
       [FBProcessFetcher simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
-      [FBProcessFetcher simulatorProcessesLaunchedBySimulatorControl]
+      [FBProcessFetcher simulatorApplicationProcessesLaunchedBySimulatorControl]
     ]
   ]];
 
@@ -187,7 +187,7 @@
 
 - (BOOL)killSimulatorProcessesMatchingPredicate:(NSPredicate *)predicate error:(NSError **)error
 {
-  NSArray *processes = [self.processFetcher.simulatorProcesses filteredArrayUsingPredicate:predicate];
+  NSArray *processes = [self.processFetcher.simulatorApplicationProcesses filteredArrayUsingPredicate:predicate];
   for (FBProcessInfo *process in processes) {
     NSParameterAssert(process.processIdentifier > 1);
     if (![self.processTerminationStrategy killProcess:process error:error]) {
