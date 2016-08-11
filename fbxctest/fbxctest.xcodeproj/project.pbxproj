@@ -1,0 +1,242 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA24FFB81D4A6DEA00B429CD /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA24FFAE1D4A6DEA00B429CD /* main.m */; };
+		AA24FFC11D4A70BE00B429CD /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA24FFC01D4A70BE00B429CD /* XCTestBootstrap.framework */; };
+		AAB710921D58D02300ED60AF /* FBTestRunConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB7108F1D58D02300ED60AF /* FBTestRunConfiguration.m */; };
+		AAB710931D58D02300ED60AF /* FBXCTestRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB710911D58D02300ED60AF /* FBXCTestRunner.m */; };
+		AAB7109D1D58D02B00ED60AF /* FBJSONTestReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB710961D58D02B00ED60AF /* FBJSONTestReporter.m */; };
+		AAB7109E1D58D02B00ED60AF /* FBXCTestReporterAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB710991D58D02B00ED60AF /* FBXCTestReporterAdapter.m */; };
+		AAB7109F1D58D02B00ED60AF /* FBXCTestError.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB7109C1D58D02B00ED60AF /* FBXCTestError.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA24FF961D4A6D8500B429CD /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AA24FF981D4A6D8500B429CD /* fbxctest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbxctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA24FFAE1D4A6DEA00B429CD /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = fbxctest.xcconfig; sourceTree = "<group>"; };
+		AA24FFC01D4A70BE00B429CD /* XCTestBootstrap.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTestBootstrap.framework; path = "../../../../../../Library/Developer/Xcode/DerivedData/fbxctest-eyhjyfgpghlzbnamzfzbhruxwscz/Build/Products/Debug/XCTestBootstrap.framework"; sourceTree = "<group>"; };
+		AAB7108E1D58D02300ED60AF /* FBTestRunConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestRunConfiguration.h; sourceTree = "<group>"; };
+		AAB7108F1D58D02300ED60AF /* FBTestRunConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestRunConfiguration.m; sourceTree = "<group>"; };
+		AAB710901D58D02300ED60AF /* FBXCTestRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunner.h; sourceTree = "<group>"; };
+		AAB710911D58D02300ED60AF /* FBXCTestRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunner.m; sourceTree = "<group>"; };
+		AAB710951D58D02B00ED60AF /* FBJSONTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONTestReporter.h; sourceTree = "<group>"; };
+		AAB710961D58D02B00ED60AF /* FBJSONTestReporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBJSONTestReporter.m; sourceTree = "<group>"; };
+		AAB710971D58D02B00ED60AF /* FBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporter.h; sourceTree = "<group>"; };
+		AAB710981D58D02B00ED60AF /* FBXCTestReporterAdapter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterAdapter.h; sourceTree = "<group>"; };
+		AAB710991D58D02B00ED60AF /* FBXCTestReporterAdapter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterAdapter.m; sourceTree = "<group>"; };
+		AAB7109B1D58D02B00ED60AF /* FBXCTestError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestError.h; sourceTree = "<group>"; };
+		AAB7109C1D58D02B00ED60AF /* FBXCTestError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestError.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA24FF951D4A6D8500B429CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA24FFC11D4A70BE00B429CD /* XCTestBootstrap.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA24FF8F1D4A6D8500B429CD = {
+			isa = PBXGroup;
+			children = (
+				AA24FFA81D4A6DEA00B429CD /* fbxctest */,
+				AA24FFC21D4A70D600B429CD /* Frameworks */,
+				AA24FF991D4A6D8500B429CD /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA24FF991D4A6D8500B429CD /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA24FF981D4A6D8500B429CD /* fbxctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA24FFA81D4A6DEA00B429CD /* fbxctest */ = {
+			isa = PBXGroup;
+			children = (
+				AAB7108E1D58D02300ED60AF /* FBTestRunConfiguration.h */,
+				AAB710941D58D02B00ED60AF /* Reporters */,
+				AAB7109A1D58D02B00ED60AF /* Utility */,
+				AAB7108F1D58D02300ED60AF /* FBTestRunConfiguration.m */,
+				AAB710901D58D02300ED60AF /* FBXCTestRunner.h */,
+				AAB710911D58D02300ED60AF /* FBXCTestRunner.m */,
+				AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */,
+				AA24FFAE1D4A6DEA00B429CD /* main.m */,
+			);
+			path = fbxctest;
+			sourceTree = "<group>";
+		};
+		AA24FFC21D4A70D600B429CD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AA24FFC01D4A70BE00B429CD /* XCTestBootstrap.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		AAB710941D58D02B00ED60AF /* Reporters */ = {
+			isa = PBXGroup;
+			children = (
+				AAB710951D58D02B00ED60AF /* FBJSONTestReporter.h */,
+				AAB710961D58D02B00ED60AF /* FBJSONTestReporter.m */,
+				AAB710971D58D02B00ED60AF /* FBXCTestReporter.h */,
+				AAB710981D58D02B00ED60AF /* FBXCTestReporterAdapter.h */,
+				AAB710991D58D02B00ED60AF /* FBXCTestReporterAdapter.m */,
+			);
+			path = Reporters;
+			sourceTree = "<group>";
+		};
+		AAB7109A1D58D02B00ED60AF /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				AAB7109B1D58D02B00ED60AF /* FBXCTestError.h */,
+				AAB7109C1D58D02B00ED60AF /* FBXCTestError.m */,
+			);
+			path = Utility;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA24FF971D4A6D8500B429CD /* fbxctest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA24FF9F1D4A6D8500B429CD /* Build configuration list for PBXNativeTarget "fbxctest" */;
+			buildPhases = (
+				AA24FF941D4A6D8500B429CD /* Sources */,
+				AA24FF951D4A6D8500B429CD /* Frameworks */,
+				AA24FF961D4A6D8500B429CD /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = fbxctest;
+			productName = fbxctest;
+			productReference = AA24FF981D4A6D8500B429CD /* fbxctest */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA24FF901D4A6D8500B429CD /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0730;
+				ORGANIZATIONNAME = Facebook;
+				TargetAttributes = {
+					AA24FF971D4A6D8500B429CD = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+				};
+			};
+			buildConfigurationList = AA24FF931D4A6D8500B429CD /* Build configuration list for PBXProject "fbxctest" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = AA24FF8F1D4A6D8500B429CD;
+			productRefGroup = AA24FF991D4A6D8500B429CD /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA24FF971D4A6D8500B429CD /* fbxctest */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA24FF941D4A6D8500B429CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAB7109D1D58D02B00ED60AF /* FBJSONTestReporter.m in Sources */,
+				AAB710921D58D02300ED60AF /* FBTestRunConfiguration.m in Sources */,
+				AAB7109E1D58D02B00ED60AF /* FBXCTestReporterAdapter.m in Sources */,
+				AA24FFB81D4A6DEA00B429CD /* main.m in Sources */,
+				AAB710931D58D02300ED60AF /* FBXCTestRunner.m in Sources */,
+				AAB7109F1D58D02B00ED60AF /* FBXCTestError.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA24FF9D1D4A6D8500B429CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		AA24FF9E1D4A6D8500B429CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		AA24FFA01D4A6D8500B429CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		AA24FFA11D4A6D8500B429CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA24FF931D4A6D8500B429CD /* Build configuration list for PBXProject "fbxctest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA24FF9D1D4A6D8500B429CD /* Debug */,
+				AA24FF9E1D4A6D8500B429CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA24FF9F1D4A6D8500B429CD /* Build configuration list for PBXNativeTarget "fbxctest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA24FFA01D4A6D8500B429CD /* Debug */,
+				AA24FFA11D4A6D8500B429CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AA24FF901D4A6D8500B429CD /* Project object */;
+}
