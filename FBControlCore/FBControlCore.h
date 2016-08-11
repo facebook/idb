@@ -21,6 +21,7 @@
 #import <FBControlCore/FBControlCoreError.h>
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>
 #import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBCrashLogInfo.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDiagnostic.h>
