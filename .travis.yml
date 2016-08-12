@@ -9,6 +9,7 @@ env:
 - TARGET=fbsimctl COMMAND=build
 - TARGET=fbsimctl COMMAND=test
 - TARGET=fbsimctl COMMAND=e2e-test
+- TARGET=fbxctest COMMAND=build
 script: ./build.sh
 branches:
   only:
