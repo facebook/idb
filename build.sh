@@ -6,13 +6,13 @@ BUILD_DIRECTORY=build
 
 function assert_has_carthage() {
   if ! command -v carthage; then
-      echo "cli build needs 'carthage' to bootstrap dependencies"
+      echo "build needs 'carthage' to bootstrap dependencies"
       echo "You can install it using brew. E.g. $ brew install carthage"
       exit 1;
   fi
 }
 
-function build_cli_deps() {
+function build_fbsimctl_deps() {
   assert_has_carthage
   pushd fbsimctl
   carthage bootstrap --platform Mac
@@ -106,7 +106,7 @@ function strip_framework() {
 }
 
 function cli_build() {
-  local name=fbsimctl
+  local name=$1
   xcodebuild \
     -workspace $name/$name.xcworkspace \
     -scheme $name \
@@ -122,7 +122,7 @@ function cli_build() {
   strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
   strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
 
-  local output_directory=$1
+  local output_directory=$2
   if [[ -n $output_directory ]]; then
     local artifact="$BUILD_DIRECTORY/Build/Products/Debug/*"
     echo "Copying Build output from $artifact to $output_directory"
@@ -132,7 +132,7 @@ function cli_build() {
 }
 
 function cli_framework_test() {
-  NAME=fbsimctl
+  NAME=$1
   xctool \
     -workspace $NAME/$NAME.xcworkspace \
     -scheme $NAME \
@@ -142,7 +142,8 @@ function cli_framework_test() {
 }
 
 function cli_e2e_test() {
-  pushd fbsimctl/cli-tests
+  NAME=$1
+  pushd $NAME/cli-tests
   ./tests.py
   popd
 }
@@ -159,11 +160,11 @@ Supported Commands:
     Build the FBSimulatorControl.framework. Optionally copies the Framework to <output-directory>
   framework test
     Build then Test the FBSimulatorControl.framework. Requires xctool to be installed.
-  cli build <output-directory>
+  fbsimctl build <output-directory>
     Build the fbsimctl exectutable. Optionally copies the executable and it's dependencies to <output-directory>
-  cli test
+  fbsimctl test
     Build the FBSimulatorControlKit.framework and runs the tests. Requires xctool to be installed.
-  cli e2e-test
+  fbsimctl e2e-test
     Build the fbsimctl executable and run the e2e CLI Tests against it. Requires python3
 EOF
 }
@@ -213,17 +214,17 @@ case $TARGET in
         echo "Unknown Command $2"
         exit 1;;
     esac;;
-  cli)
-    build_cli_deps
+  fbsimctl)
+    build_fbsimctl_deps
     case $COMMAND in
       build)
-        cli_build $OUTPUT_DIRECTORY;;
+        cli_build fbsimctl $OUTPUT_DIRECTORY;;
       test)
         build_test_deps
-        cli_framework_test;;
+        cli_framework_test fbsimctl;;
       e2e-test)
-        cli_build fbsimctl/cli-tests/executable-under-test
-        cli_e2e_test;;
+        cli_build fbsimctl fbsimctl/cli-tests/executable-under-test
+        cli_e2e_test fbsimctl;;
       *)
         echo "Unknown Command $COMMAND"
         exit 1;;
