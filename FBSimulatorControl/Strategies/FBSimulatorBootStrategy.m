@@ -185,7 +185,6 @@
     @"env" : @{
       @"SIMULATOR_IS_HEADLESS" : @1,
     },
-    @"persist" : @1,
   };
 }
 
