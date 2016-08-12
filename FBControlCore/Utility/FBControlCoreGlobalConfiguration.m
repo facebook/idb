@@ -110,12 +110,22 @@ static id<FBControlCoreLogger> logger;
   return 120;
 }
 
++ (BOOL)isXcode7OrGreater
+{
+  return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"7.0"]];
+}
+
++ (BOOL)isXcode8OrGreater
+{
+  return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"8.0"]];
+}
+
 + (BOOL)supportsCustomDeviceSets
 {
   // Prior to Xcode 7, 'iOS Simulator.app' calls `+[SimDeviceSet defaultSet]` directly
   // This means that the '-DeviceSetPath' won't do anything for Simulators booted with prior to Xcode 7.
   // It should be possible to fix this by injecting a shim that swizzles this method in these Xcode versions.
-  return [self.iosSDKVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
+  return self.isXcode7OrGreater;
 }
 
 + (id<FBControlCoreLogger>)defaultLogger

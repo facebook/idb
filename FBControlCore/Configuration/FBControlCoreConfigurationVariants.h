@@ -86,6 +86,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBControlCoreConfiguration_Device_iPhone6SPlus : FBControlCoreConfiguration_Device_iPhone_Base
 @end
 
+@interface FBControlCoreConfiguration_Device_iPhoneSE : FBControlCoreConfiguration_Device_iPhone_Base
+@end
+
 @interface FBControlCoreConfiguration_Device_iPad_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Device>
 @end
 
@@ -102,6 +105,12 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 @interface FBControlCoreConfiguration_Device_iPadPro : FBControlCoreConfiguration_Device_iPad_Base
+@end
+
+@interface FBControlCoreConfiguration_Device_iPadPro_9_7_Inch : FBControlCoreConfiguration_Device_iPad_Base
+@end
+
+@interface FBControlCoreConfiguration_Device_iPadPro_12_9_Inch : FBControlCoreConfiguration_Device_iPad_Base
 @end
 
 @interface FBControlCoreConfiguration_Device_tvOS_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Device>
@@ -186,6 +195,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBControlCoreConfiguration_tvOS_9_2 : FBControlCoreConfiguration_tvOS_Base
 @end
 
+@interface FBControlCoreConfiguration_tvOS_10_0 : FBControlCoreConfiguration_tvOS_Base
+@end
+
 @interface FBControlCoreConfiguration_watchOS_Base : FBControlCoreConfiguration_OS_Base
 @end
 
@@ -196,6 +208,9 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 @interface FBControlCoreConfiguration_watchOS_2_2 : FBControlCoreConfiguration_watchOS_Base
+@end
+
+@interface FBControlCoreConfiguration_watchOS_3_0 : FBControlCoreConfiguration_watchOS_Base
 @end
 
 /**

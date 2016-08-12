@@ -288,11 +288,10 @@
 
 + (NSInteger)errorCodeForShutdownWhenShuttingDown
 {
-  NSDecimalNumber *xcodeVersion = FBControlCoreGlobalConfiguration.xcodeVersionNumber;
-  if ([xcodeVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"8.0"]]) {
+  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
     return 163;
   }
-  if ([xcodeVersion isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"7.0"]]) {
+  if (FBControlCoreGlobalConfiguration.isXcode7OrGreater) {
     return 159;
   }
   return 146;

@@ -120,6 +120,12 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)iPhone6sPlus;
 - (instancetype)iPhone6sPlus;
 
+/**
+ An iPhone 6s Plus.
+ */
++ (instancetype)iPhoneSE;
+- (instancetype)iPhoneSE;
+
 #pragma mark iPad Devices
 
 /**

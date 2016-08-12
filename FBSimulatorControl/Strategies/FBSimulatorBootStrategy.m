@@ -321,7 +321,7 @@
 + (instancetype)withConfiguration:(FBSimulatorLaunchConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   if (configuration.shouldUseDirectLaunch) {
-    return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"8.0"]]
+    return FBControlCoreGlobalConfiguration.isXcode8OrGreater
       ? [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator]
       : [[FBSimulatorBootStrategy_Direct_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
   }
