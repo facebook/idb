@@ -41,36 +41,39 @@
 - (DTXTransport *)makeTransportForTestManagerServiceWithLogger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   if ([NSThread isMainThread]) {
-    return
-    [[[FBSimulatorError
-       describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
+    return [[[FBSimulatorError
+      describe:@"'makeTransportForTestManagerService' method may block and should not be called on the main thread"]
       logger:logger]
-     fail:error];
+      fail:error];
   }
 
   const BOOL simulatorIsBooted = (self.simulator.state == FBSimulatorStateBooted);
   if (!simulatorIsBooted) {
-    return
-    [[[FBSimulatorError
-       describe:@"Simulator should be already booted"]
+    return [[[FBSimulatorError
+      describe:@"Simulator should be already booted"]
       logger:logger]
-     fail:error];
+      fail:error];
   }
 
   NSError *innerError;
   int testManagerSocket = [self makeTestManagerDaemonSocketWithLogger:logger error:&innerError];
   if (testManagerSocket == 1) {
-    return
-    [[[[FBSimulatorError
-        describe:@"Falied to create test manager dameon socket"]
-       causedBy:innerError]
+    return [[[[FBSimulatorError
+      describe:@"Falied to create test manager dameon socket"]
+      causedBy:innerError]
       logger:logger]
-     fail:error];
+      fail:error];
   }
 
   DTXSocketTransport *transport = [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocket disconnectAction:^{
     [logger log:@"Disconnected from test manager daemon socket"];
   }];
+  if (!transport) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not create a DTXSocketTransport for %d", testManagerSocket]
+      fail:error];
+  }
+
   return transport;
 }
 

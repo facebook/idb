@@ -24,7 +24,7 @@ static BOOL hasLoadedFrameworks = NO;
 
 #pragma mark Private
 
-+ (BOOL)loadTestingFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   if (hasLoadedFrameworks) {
     return YES;
