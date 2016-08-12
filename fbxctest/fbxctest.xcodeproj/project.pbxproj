@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3E0DE0BC1D5D6ECB00A2083E /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E0DE0BB1D5D6ECB00A2083E /* FBSimulatorControl.framework */; };
 		AA24FFB81D4A6DEA00B429CD /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA24FFAE1D4A6DEA00B429CD /* main.m */; };
 		AA24FFC11D4A70BE00B429CD /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA24FFC01D4A70BE00B429CD /* XCTestBootstrap.framework */; };
 		AAB710921D58D02300ED60AF /* FBTestRunConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB7108F1D58D02300ED60AF /* FBTestRunConfiguration.m */; };
@@ -29,6 +30,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3E0DE0BB1D5D6ECB00A2083E /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = ../build/Debug/FBSimulatorControl.framework; sourceTree = "<group>"; };
 		AA24FF981D4A6D8500B429CD /* fbxctest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbxctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA24FFAE1D4A6DEA00B429CD /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = fbxctest.xcconfig; sourceTree = "<group>"; };
@@ -51,6 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3E0DE0BC1D5D6ECB00A2083E /* FBSimulatorControl.framework in Frameworks */,
 				AA24FFC11D4A70BE00B429CD /* XCTestBootstrap.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -93,6 +96,7 @@
 		AA24FFC21D4A70D600B429CD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3E0DE0BB1D5D6ECB00A2083E /* FBSimulatorControl.framework */,
 				AA24FFC01D4A70BE00B429CD /* XCTestBootstrap.framework */,
 			);
 			name = Frameworks;
