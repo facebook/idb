@@ -102,7 +102,7 @@ function all_frameworks_test() {
 function strip_framework() {
   local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Debug/$1"
   echo "Stripping Framework $FRAMEWORK_PATH"
-  rm -r "$FRAMEWORK_PATH"
+  rm -rf "$FRAMEWORK_PATH"
 }
 
 function cli_build() {
@@ -166,6 +166,8 @@ Supported Commands:
     Build the FBSimulatorControlKit.framework and runs the tests. Requires xctool to be installed.
   fbsimctl e2e-test
     Build the fbsimctl executable and run the e2e CLI Tests against it. Requires python3
+  fbxctest build <output-directory>
+    Build the xctest exectutable. Optionally copies the executable and it's dependencies to <output-directory>
 EOF
 }
 
@@ -225,6 +227,14 @@ case $TARGET in
       e2e-test)
         cli_build fbsimctl fbsimctl/cli-tests/executable-under-test
         cli_e2e_test fbsimctl;;
+      *)
+        echo "Unknown Command $COMMAND"
+        exit 1;;
+    esac;;
+  fbxctest)
+    case $COMMAND in
+      build)
+        cli_build fbxctest $OUTPUT_DIRECTORY;;
       *)
         echo "Unknown Command $COMMAND"
         exit 1;;
