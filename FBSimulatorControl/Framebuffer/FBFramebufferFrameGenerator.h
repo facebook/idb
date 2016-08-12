@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <IOSurface/IOSurface.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 @protocol FBFramebufferDelegate;
@@ -19,6 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Generates FBFramebufferFrame Objects and forwards them to the delegate.
+ This class is abstract, use FBFramebufferBackingStoreFrameGenerator or FBFramebufferIOSurfaceFrameGenerator as appropriate.
  */
 @interface FBFramebufferFrameGenerator : NSObject <FBJSONSerializable>
 
@@ -26,13 +29,30 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates and returns a new Generator.
+ Must be called on the subclasses of FBFramebufferFrameGenerator.
 
  @param framebuffer the Framebuffer to generate frames for.
+ @param scale the Scale Factor.
  @param delegate the Delegate to forward to.
+ @param queue the Queue the Delegate will be called on.
  @param logger the logger to log to.
  @return a new Framebuffer Frame Generator;
  */
-+ (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale delegate:(id<FBFramebufferDelegate>)delegate queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
+#pragma mark Public Methods.
+
+/**
+ To be called when there are no further frames.
+ */
+- (void)frameSteamEnded;
+
+@end
+
+/**
+ A Frame Generator for the Xcode 7 'SimDeviceFramebufferBackingStore'
+ */
+@interface FBFramebufferBackingStoreFrameGenerator : FBFramebufferFrameGenerator
 
 #pragma mark Public Methods
 
@@ -50,10 +70,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)backingStoreDidUpdate:(SimDeviceFramebufferBackingStore *)backingStore;
 
+@end
+
 /**
- To be called when there are no further frames.
+ A Frame Generator for the Xcode 8 'IOSurface'.
  */
-- (void)frameSteamEnded;
+@interface FBFramebufferIOSurfaceFrameGenerator : FBFramebufferFrameGenerator
+
+/**
+ To be called when the current IOSurface for a Framebuffer changes.
+
+ @param surface the surface that has changed.
+ */
+- (void)currentSurfaceChanged:(nullable IOSurfaceRef)surface;
 
 @end
 

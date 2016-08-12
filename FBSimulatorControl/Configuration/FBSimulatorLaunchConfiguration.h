@@ -41,6 +41,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, strong, readonly) FBLocalizationOverride *localizationOverride;
 
 /**
+ A Decimal representing the Scaling Factor at which to launch the Simulator.
+ */
+@property (nonatomic, copy, readonly) NSDecimalNumber *scaleValue;
+
+/**
  A String representing the Scaling Factor at which to launch the Simulator.
  */
 @property (nonatomic, copy, readonly) NSString *scaleString;
