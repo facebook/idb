@@ -121,7 +121,7 @@ function cli_build() {
   strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
   strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
   strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
-  
+
   local output_directory=$1
   if [[ -n $output_directory ]]; then
     local artifact="$BUILD_DIRECTORY/Build/Products/Debug/*"
@@ -184,7 +184,7 @@ if [[ -n $COMMAND ]]; then
 elif [[ -n $2 ]]; then
   COMMAND=$2
   echo "using command $COMMAND"
-else 
+else
   echo "No command argument or $COMMAND provided"
   print_usage
   exit 1
@@ -200,23 +200,23 @@ else
 fi
 
 case $TARGET in
-  help) 
+  help)
     print_usage;;
   framework)
     case $COMMAND in
       build)
         all_frameworks_build $OUTPUT_DIRECTORY;;
-      test) 
+      test)
         build_test_deps
         all_frameworks_test;;
-      *) 
+      *)
         echo "Unknown Command $2"
         exit 1;;
     esac;;
   cli)
     build_cli_deps
     case $COMMAND in
-      build) 
+      build)
         cli_build $OUTPUT_DIRECTORY;;
       test)
         build_test_deps
@@ -228,7 +228,7 @@ case $TARGET in
         echo "Unknown Command $COMMAND"
         exit 1;;
     esac;;
-  *) 
+  *)
     echo "Unknown Command $TARGET"
     exit 1;;
 esac
