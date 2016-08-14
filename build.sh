@@ -168,6 +168,8 @@ Supported Commands:
     Build the fbsimctl executable and run the e2e CLI Tests against it. Requires python3
   fbxctest build <output-directory>
     Build the xctest exectutable. Optionally copies the executable and it's dependencies to <output-directory>
+  fbxctest test
+    Builds the FBXCTestKit.framework and runs the tests. Requires xctool to be installed.
 EOF
 }
 
@@ -235,6 +237,9 @@ case $TARGET in
     case $COMMAND in
       build)
         cli_build fbxctest $OUTPUT_DIRECTORY;;
+      test)
+        build_test_deps
+        cli_framework_test fbxctest;;
       *)
         echo "Unknown Command $COMMAND"
         exit 1;;
