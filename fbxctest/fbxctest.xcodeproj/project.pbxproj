@@ -25,6 +25,7 @@
 		050D461D1D6072800038F72D /* FBXCTestReporterAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46111D6072800038F72D /* FBXCTestReporterAdapter.m */; };
 		050D461E1D6072800038F72D /* FBXCTestError.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D46131D6072800038F72D /* FBXCTestError.h */; };
 		050D461F1D6072800038F72D /* FBXCTestError.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46141D6072800038F72D /* FBXCTestError.m */; };
+		050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */; };
 		050D46271D6074B60038F72D /* FBXCTestKitFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */; };
 		050D462C1D6075E10038F72D /* SimpleTestTarget.xctest in Resources */ = {isa = PBXBuildFile; fileRef = 050D462A1D6075E10038F72D /* SimpleTestTarget.xctest */; };
 		050D462D1D6075E10038F72D /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = 050D462B1D6075E10038F72D /* TableSearch.app */; };
@@ -76,6 +77,7 @@
 		050D46111D6072800038F72D /* FBXCTestReporterAdapter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterAdapter.m; sourceTree = "<group>"; };
 		050D46131D6072800038F72D /* FBXCTestError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestError.h; sourceTree = "<group>"; };
 		050D46141D6072800038F72D /* FBXCTestError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestError.m; sourceTree = "<group>"; };
+		050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestKitIntegrationTests.m; sourceTree = "<group>"; };
 		050D46251D6074B60038F72D /* FBXCTestKitFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestKitFixtures.h; sourceTree = "<group>"; };
 		050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestKitFixtures.m; sourceTree = "<group>"; };
 		050D462A1D6075E10038F72D /* SimpleTestTarget.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SimpleTestTarget.xctest; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 			isa = PBXGroup;
 			children = (
 				050D46241D6074580038F72D /* Fixtures */,
+				050D46201D6073DC0038F72D /* Tests */,
 				050D45F81D6070690038F72D /* Info.plist */,
 				050D46061D6071A40038F72D /* FBXCTestKitTests.xcconfig */,
 			);
@@ -165,6 +168,22 @@
 				050D46141D6072800038F72D /* FBXCTestError.m */,
 			);
 			path = Utility;
+			sourceTree = "<group>";
+		};
+		050D46201D6073DC0038F72D /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				050D46211D6073DC0038F72D /* Integration */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		050D46211D6073DC0038F72D /* Integration */ = {
+			isa = PBXGroup;
+			children = (
+				050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */,
+			);
+			path = Integration;
 			sourceTree = "<group>";
 		};
 		050D46241D6074580038F72D /* Fixtures */ = {
@@ -371,6 +390,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */,
 				050D46271D6074B60038F72D /* FBXCTestKitFixtures.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
