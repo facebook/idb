@@ -2,9 +2,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "FBTestRunConfiguration.h"
-#import "FBXCTestRunner.h"
-#import "FBJSONTestReporter.h"
+#import <FBXCTestKit/FBXCTestKit.h>
 
 void handleError(NSError *error);
 
