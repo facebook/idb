@@ -31,11 +31,19 @@
 		050D462D1D6075E10038F72D /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = 050D462B1D6075E10038F72D /* TableSearch.app */; };
 		050D46301D6079C10038F72D /* FBXCTestBootstrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D462E1D6079C10038F72D /* FBXCTestBootstrapper.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		050D46311D6079C10038F72D /* FBXCTestBootstrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D462F1D6079C10038F72D /* FBXCTestBootstrapper.m */; };
+		050D463C1D608AA40038F72D /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 050D463B1D608AA40038F72D /* FBSimulatorControl.framework */; };
 		AA24FFB81D4A6DEA00B429CD /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA24FFAE1D4A6DEA00B429CD /* main.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		050D45F31D6070690038F72D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA24FF901D4A6D8500B429CD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 050D45E71D6070690038F72D;
+			remoteInfo = FBXCTestKit;
+		};
+		050D463D1D608AA90038F72D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA24FF901D4A6D8500B429CD /* Project object */;
 			proxyType = 1;
@@ -84,6 +92,7 @@
 		050D462B1D6075E10038F72D /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = TableSearch.app; sourceTree = "<group>"; };
 		050D462E1D6079C10038F72D /* FBXCTestBootstrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapper.h; sourceTree = "<group>"; };
 		050D462F1D6079C10038F72D /* FBXCTestBootstrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapper.m; sourceTree = "<group>"; };
+		050D463B1D608AA40038F72D /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = "../../../Library/Developer/Xcode/DerivedData/fbxctest-ggloazodethqmqakznelmdxzqbcu/Build/Products/Debug/FBSimulatorControl.framework"; sourceTree = "<group>"; };
 		3E0DE0BB1D5D6ECB00A2083E /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = ../build/Debug/FBSimulatorControl.framework; sourceTree = "<group>"; };
 		AA24FF981D4A6D8500B429CD /* fbxctest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = fbxctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA24FFAE1D4A6DEA00B429CD /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -96,6 +105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				050D463C1D608AA40038F72D /* FBSimulatorControl.framework in Frameworks */,
 				050D46011D6070A50038F72D /* FBControlCore.framework in Frameworks */,
 				050D46021D6070A50038F72D /* XCTestBootstrap.framework in Frameworks */,
 			);
@@ -230,6 +240,7 @@
 		AA24FFC21D4A70D600B429CD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				050D463B1D608AA40038F72D /* FBSimulatorControl.framework */,
 				050D45FF1D6070A50038F72D /* FBControlCore.framework */,
 				050D46001D6070A50038F72D /* XCTestBootstrap.framework */,
 				3E0DE0BB1D5D6ECB00A2083E /* FBSimulatorControl.framework */,
@@ -306,6 +317,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				050D463E1D608AA90038F72D /* PBXTargetDependency */,
 			);
 			name = fbxctest;
 			productName = fbxctest;
@@ -410,6 +422,11 @@
 			isa = PBXTargetDependency;
 			target = 050D45E71D6070690038F72D /* FBXCTestKit */;
 			targetProxy = 050D45F31D6070690038F72D /* PBXContainerItemProxy */;
+		};
+		050D463E1D608AA90038F72D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 050D45E71D6070690038F72D /* FBXCTestKit */;
+			targetProxy = 050D463D1D608AA90038F72D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
