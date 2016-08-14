@@ -2,4 +2,5 @@
 
 #import <FBXCTestKit/FBJSONTestReporter.h>
 #import <FBXCTestKit/FBTestRunConfiguration.h>
+#import <FBXCTestKit/FBXCTestBootstrapper.h>
 #import <FBXCTestKit/FBXCTestRunner.h>
