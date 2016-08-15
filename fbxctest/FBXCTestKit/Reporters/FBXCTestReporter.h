@@ -19,6 +19,10 @@
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary;
 - (void)didFinishExecutingTestPlan;
 
+- (void)testHadOutput:(NSString *)output;
+
+- (void)handleExternalEvent:(NSDictionary *)event;
+
 - (BOOL)printReportWithError:(NSError **)error;
 
 @end

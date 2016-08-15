@@ -18,6 +18,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 @property (nonatomic, copy, readwrite) NSString *testBundlePath;
 @property (nonatomic, copy, readwrite) NSString *testType;
 @property (nonatomic, copy, readwrite) NSMutableArray<NSDictionary *> *events;
+@property (nonatomic, copy, readwrite) NSMutableArray<NSString *> *pendingTestOutput;
 @property (nonatomic, copy, readwrite) NSString *currentTestName;
 @property (nonatomic, assign, readwrite) BOOL finished;
 @end
@@ -32,6 +33,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     _testBundlePath = testBundlePath;
     _testType = testType;
     _events = [NSMutableArray array];
+    _pendingTestOutput = [NSMutableArray array];
     _currentTestName = nil;
     _finished = NO;
   }
@@ -137,7 +139,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self storeEvent:@{
     @"event" : @"end-test",
     @"result" : (status == FBTestReportStatusPassed ? @"success" : @"failure"),
-    @"output" : @"", //?
+    @"output" : [self.pendingTestOutput componentsJoinedByString:@""],
     @"test" : FBFullyFormattedXCTestName(testClass, method),
     @"className" : testClass,
     @"methodName" : method,
@@ -145,6 +147,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     @"exceptions" : self.xctestNameExceptionsMapping[xctestName] ?: @[],
     @"totalDuration" : @(duration),
   }];
+  [self.pendingTestOutput removeAllObjects];
 }
 
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
@@ -164,6 +167,26 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 {
   _finished = YES;
   [self storeEvent:[self createOCUnitEndEventWithMessage:nil success:YES]];
+}
+
+- (void)testHadOutput:(NSString *)output
+{
+  [self.pendingTestOutput addObject:output];
+  [self storeEvent:@{
+    @"event": @"test-output",
+    @"output": output
+  }];
+}
+
+- (void)handleExternalEvent:(NSDictionary *)event
+{
+  if ([event[@"event"] isEqualToString:@"end-test"]) {
+    NSMutableDictionary *mutableEvent = event.mutableCopy;
+    mutableEvent[@"output"] = [self.pendingTestOutput componentsJoinedByString:@""];
+    event = mutableEvent.copy;
+    [self.pendingTestOutput removeAllObjects];
+  }
+  [self.events addObject:event];
 }
 
 @end
