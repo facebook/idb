@@ -102,7 +102,7 @@ function all_frameworks_test() {
 function strip_framework() {
   local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Debug/$1"
   echo "Stripping Framework $FRAMEWORK_PATH"
-  rm -rf "$FRAMEWORK_PATH"
+  [ -d "$FRAMEWORK_PATH" ] && rm -r "$FRAMEWORK_PATH"
 }
 
 function cli_build() {
