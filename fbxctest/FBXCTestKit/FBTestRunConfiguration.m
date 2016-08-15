@@ -26,6 +26,7 @@
 @property (nonatomic, copy, readwrite) NSString *runnerAppPath;
 @property (nonatomic, copy, readwrite) NSString *simulatorName;
 @property (nonatomic, copy, readwrite) NSString *simulatorOS;
+@property (nonatomic, copy, readwrite) NSString *testFilter;
 
 @property (nonatomic, assign, readwrite) BOOL runWithoutSimulator;
 @property (nonatomic, assign, readwrite) BOOL listTestsOnly;
@@ -37,6 +38,7 @@
 {
   arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
   NSUInteger nextArgument = 0;
+  NSString *testFilter = nil;
   while (nextArgument < arguments.count) {
     NSString *argument = arguments[nextArgument++];
     if ([argument isEqualToString:@"run-tests"]) {
@@ -73,6 +75,11 @@
       NSString *testRunnerPath = [parameter substringFromIndex:colonRange.location + 1];
       NSString *testRunnerAppPath = [testRunnerPath stringByDeletingLastPathComponent];
       [self addTestBundle:testBundlePath runnerAppPath:testRunnerAppPath error:error];
+    } else if ([argument isEqualToString:@"-only"]) {
+      if (testFilter != nil) {
+        return [[FBXCTestError describeFormat:@"Multiple -only options specified: %@, %@", testFilter, parameter] failBool:error];
+      }
+      testFilter = parameter;
     } else {
       return [[FBXCTestError describeFormat:@"Unrecognized option: %@", argument] failBool:error];
     }
@@ -80,6 +87,13 @@
 
   //self.logger = [FBControlCoreLogger aslLoggerWritingToStderrr:YES withDebugLogging:YES];
   self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType];
+  if (testFilter != nil) {
+    NSString *expectedPrefix = [self.testBundlePath stringByAppendingString:@":"];
+    if (![testFilter hasPrefix:expectedPrefix]) {
+      return [[FBXCTestError describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, self.testBundlePath] failBool:error];
+    }
+    self.testFilter = [testFilter substringFromIndex:expectedPrefix.length];
+  }
   FBSimulatorConfiguration *simulatorConfiguration = [FBSimulatorConfiguration defaultConfiguration];
   if (_simulatorName) {
     simulatorConfiguration = [simulatorConfiguration withDeviceNamed:_simulatorName];

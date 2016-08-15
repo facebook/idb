@@ -23,6 +23,7 @@
 @property (nonatomic, copy, readonly) NSString *runnerAppPath;
 @property (nonatomic, copy, readonly) NSString *simulatorName;
 @property (nonatomic, copy, readonly) NSString *simulatorOS;
+@property (nonatomic, copy, readonly) NSString *testFilter;
 
 @property (nonatomic, assign, readonly) BOOL runWithoutSimulator;
 @property (nonatomic, assign, readonly) BOOL listTestsOnly;

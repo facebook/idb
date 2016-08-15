@@ -106,6 +106,10 @@
     return [self runLogicTestWithSimulator:simulator error:error];
   }
 
+  if (self.configuration.testFilter != nil) {
+    return [[FBXCTestError describe:@"Test filtering is only supported for logic tests."] failBool:error];
+  }
+
   FBSimulatorLaunchConfiguration *simulatorLaunchConfiguration = [FBSimulatorLaunchConfiguration defaultConfiguration];
   FBInteraction *launchInteraction =
   [[simulator.interact
@@ -154,12 +158,18 @@
   NSPipe *testOutputPipe = [NSPipe pipe];
 
   NSTask *task = [[NSTask alloc] init];
+  NSString *testSpecifier;
+  if (self.configuration.testFilter != nil) {
+    testSpecifier = self.configuration.testFilter;
+  } else {
+    testSpecifier = @"All";
+  }
   if (simulator == nil) {
     task.launchPath = xctestPath;
-    task.arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
+    task.arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
   } else {
     task.launchPath = simctlPath;
-    task.arguments = @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", @"All", self.configuration.testBundlePath];
+    task.arguments = @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", testSpecifier, self.configuration.testBundlePath];
   }
   task.environment = [self buildEnvironmentWithEntries:@{
                                                          @"DYLD_INSERT_LIBRARIES": otestShimPath,
