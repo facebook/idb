@@ -36,6 +36,22 @@
 
 - (BOOL)executeTestsWithError:(NSError **)error
 {
+  if (self.configuration.runWithoutSimulator) {
+    if (self.configuration.runnerAppPath != nil) {
+      return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
+    }
+
+    if (![self runLogicTestWithSimulator:nil error:error]) {
+      return NO;
+    }
+
+    if (![self.configuration.reporter printReportWithError:error]) {
+      return NO;
+    }
+
+    return YES;
+  }
+
   FBSimulatorControl *simulatorControl = [self createSimulatorControlWithError:error];
   if (!simulatorControl) {
     return NO;
@@ -101,8 +117,14 @@
 {
   [self.configuration.reporter didBeginExecutingTestPlan];
 
-  NSString *xctestPath = [FBControlCoreGlobalConfiguration.developerDirectory
-                          stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+  NSString *xctestPath;
+  if (simulator == nil) {
+    xctestPath = [FBControlCoreGlobalConfiguration.developerDirectory
+                  stringByAppendingPathComponent:@"usr/bin/xctest"];
+  } else {
+    xctestPath = [FBControlCoreGlobalConfiguration.developerDirectory
+                  stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+  }
   NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory
                           stringByAppendingPathComponent:@"usr/bin/simctl"];
   NSString *executablePath = [NSProcessInfo processInfo].arguments[0];
@@ -111,7 +133,12 @@
   }
   executablePath = [executablePath stringByStandardizingPath];
   NSString *installationRoot = executablePath.stringByDeletingLastPathComponent.stringByDeletingLastPathComponent;
-  NSString *otestShimPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-shim-ios.dylib"];
+  NSString *otestShimPath;
+  if (simulator == nil) {
+    otestShimPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-shim-osx.dylib"];
+  } else {
+    otestShimPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-shim-ios.dylib"];
+  }
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
 
   if (mkfifo([otestShimOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {
@@ -122,19 +149,32 @@
   NSPipe *testOutputPipe = [NSPipe pipe];
 
   NSTask *task = [[NSTask alloc] init];
-  task.launchPath = simctlPath;
-  task.arguments = @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", @"All", self.configuration.testBundlePath];
+  if (simulator == nil) {
+    task.launchPath = xctestPath;
+    task.arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
+  } else {
+    task.launchPath = simctlPath;
+    task.arguments = @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", @"All", self.configuration.testBundlePath];
+  }
   NSDictionary *parentEnvironment = [NSProcessInfo processInfo].environment;
-  NSMutableDictionary *environment = parentEnvironment.mutableCopy;
+  NSMutableDictionary *environmentOverrides = [NSMutableDictionary dictionary];
   NSString *xctoolTestEnvPrefix = @"XCTOOL_TEST_ENV_";
   for (NSString *key in parentEnvironment.allKeys) {
     if ([key hasPrefix:xctoolTestEnvPrefix]) {
-      NSString *childKey = [@"SIMCTL_CHILD_" stringByAppendingString:[key substringFromIndex:xctoolTestEnvPrefix.length]];
-      environment[childKey] = parentEnvironment[key];
+      NSString *childKey = [key substringFromIndex:xctoolTestEnvPrefix.length];
+      environmentOverrides[childKey] = parentEnvironment[key];
     }
   }
-  environment[@"SIMCTL_CHILD_DYLD_INSERT_LIBRARIES"] = otestShimPath;
-  environment[@"SIMCTL_CHILD_OTEST_SHIM_STDOUT_FILE"] = otestShimOutputPath;
+  environmentOverrides[@"DYLD_INSERT_LIBRARIES"] = otestShimPath;
+  environmentOverrides[@"OTEST_SHIM_STDOUT_FILE"] = otestShimOutputPath;
+  NSMutableDictionary *environment = parentEnvironment.mutableCopy;
+  for (NSString *key in environmentOverrides) {
+    NSString *childKey = key;
+    if (simulator != nil) {
+      childKey = [@"SIMCTL_CHILD_" stringByAppendingString:childKey];
+    }
+    environment[childKey] = environmentOverrides[key];
+  }
   task.environment = environment.copy;
   task.standardOutput = testOutputPipe.fileHandleForWriting;
   task.standardError = testOutputPipe.fileHandleForWriting;

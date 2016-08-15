@@ -24,6 +24,8 @@
 @property (nonatomic, copy, readonly) NSString *simulatorName;
 @property (nonatomic, copy, readonly) NSString *simulatorOS;
 
+@property (nonatomic, assign, readonly) BOOL runWithoutSimulator;
+
 - (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error;
 
 @end

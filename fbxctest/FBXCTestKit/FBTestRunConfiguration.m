@@ -26,6 +26,8 @@
 @property (nonatomic, copy, readwrite) NSString *runnerAppPath;
 @property (nonatomic, copy, readwrite) NSString *simulatorName;
 @property (nonatomic, copy, readwrite) NSString *simulatorOS;
+
+@property (nonatomic, assign, readwrite) BOOL runWithoutSimulator;
 @end
 
 @implementation FBTestRunConfiguration
@@ -98,10 +100,15 @@
 
 - (BOOL)setSDK:(NSString *)sdk error:(NSError **)error
 {
-  if (![sdk isEqualToString:@"iphonesimulator"]) {
-    return [[FBXCTestError describeFormat:@"Unsupported SDK: %@", sdk] failBool:error];
+  if ([sdk isEqualToString:@"iphonesimulator"]) {
+    self.runWithoutSimulator = NO;
+    return YES;
   }
-  return YES;
+  if ([sdk isEqualToString:@"macosx"]) {
+    self.runWithoutSimulator = YES;
+    return YES;
+  }
+  return [[FBXCTestError describeFormat:@"Unsupported SDK: %@", sdk] failBool:error];
 }
 
 - (BOOL)setDestination:(NSString *)destination error:(NSError **)error
