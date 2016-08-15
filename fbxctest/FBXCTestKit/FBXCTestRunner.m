@@ -12,6 +12,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <sys/types.h>
 #import <sys/stat.h>
+#import <XCTestBootstrap/FBTestManagerResultSummary.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBJSONTestReporter.h"
@@ -41,6 +42,18 @@
       return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
     }
 
+    if (self.configuration.listTestsOnly) {
+      if (![self listTestsWithError:error]) {
+        return NO;
+      }
+
+      if (![self.configuration.reporter printReportWithError:error]) {
+        return NO;
+      }
+
+      return YES;
+    }
+
     if (![self runLogicTestWithSimulator:nil error:error]) {
       return NO;
     }
@@ -50,6 +63,10 @@
     }
 
     return YES;
+  }
+
+  if (self.configuration.listTestsOnly) {
+    return [[FBXCTestError describe:@"Listing tests is only supported for macosx tests."] failBool:error];
   }
 
   FBSimulatorControl *simulatorControl = [self createSimulatorControlWithError:error];
@@ -117,22 +134,10 @@
 {
   [self.configuration.reporter didBeginExecutingTestPlan];
 
-  NSString *xctestPath;
-  if (simulator == nil) {
-    xctestPath = [FBControlCoreGlobalConfiguration.developerDirectory
-                  stringByAppendingPathComponent:@"usr/bin/xctest"];
-  } else {
-    xctestPath = [FBControlCoreGlobalConfiguration.developerDirectory
-                  stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
-  }
+  NSString *xctestPath = [self xctestPathForSimulator:simulator];
   NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory
                           stringByAppendingPathComponent:@"usr/bin/simctl"];
-  NSString *executablePath = [NSProcessInfo processInfo].arguments[0];
-  if (!executablePath.isAbsolutePath) {
-    executablePath = [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingString:executablePath];
-  }
-  executablePath = [executablePath stringByStandardizingPath];
-  NSString *installationRoot = executablePath.stringByDeletingLastPathComponent.stringByDeletingLastPathComponent;
+  NSString *installationRoot = [self fbxctestInstallationRoot];
   NSString *otestShimPath;
   if (simulator == nil) {
     otestShimPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-shim-osx.dylib"];
@@ -156,26 +161,11 @@
     task.launchPath = simctlPath;
     task.arguments = @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", @"All", self.configuration.testBundlePath];
   }
-  NSDictionary *parentEnvironment = [NSProcessInfo processInfo].environment;
-  NSMutableDictionary *environmentOverrides = [NSMutableDictionary dictionary];
-  NSString *xctoolTestEnvPrefix = @"XCTOOL_TEST_ENV_";
-  for (NSString *key in parentEnvironment.allKeys) {
-    if ([key hasPrefix:xctoolTestEnvPrefix]) {
-      NSString *childKey = [key substringFromIndex:xctoolTestEnvPrefix.length];
-      environmentOverrides[childKey] = parentEnvironment[key];
-    }
-  }
-  environmentOverrides[@"DYLD_INSERT_LIBRARIES"] = otestShimPath;
-  environmentOverrides[@"OTEST_SHIM_STDOUT_FILE"] = otestShimOutputPath;
-  NSMutableDictionary *environment = parentEnvironment.mutableCopy;
-  for (NSString *key in environmentOverrides) {
-    NSString *childKey = key;
-    if (simulator != nil) {
-      childKey = [@"SIMCTL_CHILD_" stringByAppendingString:childKey];
-    }
-    environment[childKey] = environmentOverrides[key];
-  }
-  task.environment = environment.copy;
+  task.environment = [self buildEnvironmentWithEntries:@{
+                                                         @"DYLD_INSERT_LIBRARIES": otestShimPath,
+                                                         @"OTEST_SHIM_STDOUT_FILE": otestShimOutputPath,
+                                                         }
+                                    targetingSimulator:simulator != nil];
   task.standardOutput = testOutputPipe.fileHandleForWriting;
   task.standardError = testOutputPipe.fileHandleForWriting;
   [task launch];
@@ -240,6 +230,128 @@
   [self.configuration.reporter didFinishExecutingTestPlan];
 
   return YES;
+}
+
+- (BOOL)listTestsWithError:(NSError **)error
+{
+  [self.configuration.reporter didBeginExecutingTestPlan];
+
+  NSString *xctestPath = [self xctestPathForSimulator:nil];
+  NSString *installationRoot = [self fbxctestInstallationRoot];
+  NSString *otestQueryPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-query-lib-osx.dylib"];
+  NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
+
+  if (mkfifo([otestQueryOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {
+    NSError *posixError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+    return [[[FBXCTestError describeFormat:@"Failed to create a named pipe %@", otestQueryOutputPath] causedBy:posixError] failBool:error];
+  }
+
+  NSTask *task = [[NSTask alloc] init];
+  task.launchPath = xctestPath;
+  task.arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
+  task.environment = [self buildEnvironmentWithEntries:@{
+                                                         @"DYLD_INSERT_LIBRARIES": otestQueryPath,
+                                                         @"OTEST_QUERY_OUTPUT_FILE": otestQueryOutputPath,
+                                                         @"OtestQueryBundlePath": self.configuration.testBundlePath,
+                                                         }
+                                    targetingSimulator:NO];
+  task.standardOutput = [NSFileHandle fileHandleWithStandardError];
+  task.standardError = [NSFileHandle fileHandleWithStandardError];
+  [task launch];
+
+  NSFileHandle *otestQueryOutputHandle = [NSFileHandle fileHandleForReadingAtPath:otestQueryOutputPath];
+  if (otestQueryOutputHandle == nil) {
+    return [[FBXCTestError describeFormat:@"Failed to open fifo for reading: %@", otestQueryOutputPath] failBool:error];
+  }
+
+  FBMultiFileReader *multiReader = [FBMultiFileReader fileReader];
+  NSMutableData *queryOutput = [NSMutableData data];
+
+  if (![multiReader
+        addFileHandle:otestQueryOutputHandle
+        withConsumer:^(NSData *data) {
+          [queryOutput appendData:data];
+        }
+        error:error]) {
+    return NO;
+  }
+
+  if (![multiReader
+        readWhileBlockRuns:^{
+          [task waitUntilExit];
+        }
+        error:error]) {
+    return NO;
+  }
+
+  [otestQueryOutputHandle closeFile];
+
+  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:queryOutput options:0 error:error];
+  if (testNames == nil) {
+    return NO;
+  }
+  for (NSString *testName in testNames) {
+    NSRange slashRange = [testName rangeOfString:@"/"];
+    if (slashRange.length == 0) {
+      return [[FBXCTestError describeFormat:@"Received unexpected test name from xctool: %@", testName] failBool:error];
+    }
+    NSString *className = [testName substringToIndex:slashRange.location];
+    NSString *methodName = [testName substringFromIndex:slashRange.location + 1];
+    [self.configuration.reporter testCaseDidStartForTestClass:className method:methodName];
+    [self.configuration.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
+  }
+
+  if (task.terminationStatus != 0) {
+    return [[FBXCTestError describeFormat:@"Subprocess exited with code %d: %@ %@", task.terminationStatus, task.launchPath, task.arguments] failBool:error];
+  }
+
+  [self.configuration.reporter didFinishExecutingTestPlan];
+
+  return YES;
+}
+
+- (NSString *)xctestPathForSimulator:(FBSimulator *)simulator
+{
+  if (simulator == nil) {
+    return [FBControlCoreGlobalConfiguration.developerDirectory
+            stringByAppendingPathComponent:@"usr/bin/xctest"];
+  } else {
+    return [FBControlCoreGlobalConfiguration.developerDirectory
+            stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+  }
+}
+
+- (NSString *)fbxctestInstallationRoot
+{
+  NSString *executablePath = [NSProcessInfo processInfo].arguments[0];
+  if (!executablePath.isAbsolutePath) {
+    executablePath = [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingString:executablePath];
+  }
+  executablePath = [executablePath stringByStandardizingPath];
+  return executablePath.stringByDeletingLastPathComponent.stringByDeletingLastPathComponent;
+}
+
+- (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries targetingSimulator:(BOOL)simulator
+{
+  NSDictionary *parentEnvironment = [NSProcessInfo processInfo].environment;
+  NSMutableDictionary *environmentOverrides = [NSMutableDictionary dictionary];
+  NSString *xctoolTestEnvPrefix = @"XCTOOL_TEST_ENV_";
+  for (NSString *key in parentEnvironment) {
+    if ([key hasPrefix:xctoolTestEnvPrefix]) {
+      NSString *childKey = [key substringFromIndex:xctoolTestEnvPrefix.length];
+      environmentOverrides[childKey] = parentEnvironment[key];
+    }
+  }
+  [environmentOverrides addEntriesFromDictionary:entries];
+  NSMutableDictionary *environment = parentEnvironment.mutableCopy;
+  for (NSString *key in environmentOverrides) {
+    NSString *childKey = key;
+    if (simulator) {
+      childKey = [@"SIMCTL_CHILD_" stringByAppendingString:childKey];
+    }
+    environment[childKey] = environmentOverrides[key];
+  }
+  return environment.copy;
 }
 
 - (BOOL)runApplicationTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error

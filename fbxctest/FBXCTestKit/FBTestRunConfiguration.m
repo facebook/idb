@@ -28,6 +28,7 @@
 @property (nonatomic, copy, readwrite) NSString *simulatorOS;
 
 @property (nonatomic, assign, readwrite) BOOL runWithoutSimulator;
+@property (nonatomic, assign, readwrite) BOOL listTestsOnly;
 @end
 
 @implementation FBTestRunConfiguration
@@ -37,17 +38,19 @@
   arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
   NSUInteger nextArgument = 0;
   while (nextArgument < arguments.count) {
-    NSString *argument = arguments[nextArgument];
-    NSString *parameter = nil;
-    if ([argument length] >= 1 && [argument characterAtIndex:0] == '-') {
-      if (++nextArgument >= arguments.count) {
-        return [[FBXCTestError describeFormat:@"The last option is missing a parameter: %@", argument] failBool:error];
-      }
-      parameter = arguments[nextArgument];
-    }
+    NSString *argument = arguments[nextArgument++];
     if ([argument isEqualToString:@"run-tests"]) {
       // Ignore. This is the only action we support.
-    } else if ([argument isEqualToString:@"-reporter"]) {
+      continue;
+    } else if ([argument isEqualToString:@"-listTestsOnly"]) {
+      self.listTestsOnly = YES;
+      continue;
+    }
+    if (nextArgument >= arguments.count) {
+      return [[FBXCTestError describeFormat:@"The last option is missing a parameter: %@", argument] failBool:error];
+    }
+    NSString *parameter = arguments[nextArgument++];
+    if ([argument isEqualToString:@"-reporter"]) {
       if (![self checkReporter:parameter error:error]) {
         return NO;
       }
@@ -73,7 +76,6 @@
     } else {
       return [[FBXCTestError describeFormat:@"Unrecognized option: %@", argument] failBool:error];
     }
-    ++nextArgument;
   }
 
   //self.logger = [FBControlCoreLogger aslLoggerWritingToStderrr:YES withDebugLogging:YES];
