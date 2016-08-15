@@ -20,13 +20,13 @@
 
  @return path to the application.
  */
-+ (NSString *)applicationPath;
++ (NSString *)tableSearchApplicationPath;
 
 /**
  An Application Test xctest bundle.
 
  @return path to the Application Test Bundle.
  */
-+ (NSString *)testBundlePath;
++ (NSString *)simpleTestTargetPath;
 
 @end

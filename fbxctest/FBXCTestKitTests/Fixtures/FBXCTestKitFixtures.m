@@ -19,13 +19,13 @@
   return temporaryDirectory;
 }
 
-+ (NSString *)applicationPath
++ (NSString *)tableSearchApplicationPath
 {
   return [[[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"]
       stringByAppendingPathComponent:@"TableSearch"];
 }
 
-+ (NSString *)testBundlePath
++ (NSString *)simpleTestTargetPath
 {
   return [[NSBundle bundleForClass:self] pathForResource:@"SimpleTestTarget" ofType:@"xctest"];
 }
