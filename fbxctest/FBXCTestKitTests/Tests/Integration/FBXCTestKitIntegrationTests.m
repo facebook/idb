@@ -36,7 +36,7 @@
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 5,OS=iOS 9.3", @"-appTest", appTestArgument ];
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter];
+  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
   [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertNil(error);
 
@@ -70,6 +70,51 @@
     @[@"iOSUnitTestFixtureTests", @"testIsRunningInMacOSXApp"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
     @[@"iOSUnitTestFixtureTests", @"testWillAlwaysFail"],
+  ];
+  XCTAssertEqualObjects(expected, self.reporter.failedTests);
+}
+
+- (void)testApplicationTestEndsOnCrashingTest
+{
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
+  NSString *testBundlePath = [FBXCTestKitFixtures iOSUnitTestBundlePath];
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 5,OS=iOS 9.3", @"-appTest", appTestArgument ];
+  NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = @{
+    @"TEST_FIXTURE_SHOULD_CRASH" : @"1",
+  };
+
+  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:processUnderTestEnvironment];
+  [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+
+  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
+  [testRunner executeTestsWithError:&error];
+  XCTAssertNil(error);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  NSArray<NSArray<NSString *> *> *expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
+    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningInMacOSXApp"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
+    @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
+  ];
+  XCTAssertEqualObjects(expected, self.reporter.startedTests);
+  expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
+  ];
+  XCTAssertEqualObjects(expected, self.reporter.passedTests);
+  expected = @[
+    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
+    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningInMacOSXApp"],
+    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
   ];
   XCTAssertEqualObjects(expected, self.reporter.failedTests);
 }

@@ -35,7 +35,7 @@
 
 @implementation FBTestRunConfiguration
 
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter
+- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
 {
   self = [super init];
   if (!self) {
@@ -43,6 +43,7 @@
   }
 
   _reporter = reporter;
+  _processUnderTestEnvironment = environment ?: @{};
 
   return self;
 }

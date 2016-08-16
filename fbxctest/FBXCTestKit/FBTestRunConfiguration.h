@@ -19,12 +19,13 @@
  */
 @interface FBTestRunConfiguration : NSObject
 
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter;
+- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
 
 @property (nonatomic, strong, readonly) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) FBSimulatorConfiguration *targetDeviceConfiguration;
 
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 @property (nonatomic, copy, readonly) NSString *runnerAppPath;

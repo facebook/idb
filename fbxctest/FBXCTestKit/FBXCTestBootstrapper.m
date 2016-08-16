@@ -30,7 +30,7 @@
     return handleError(error, nil);
   }
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:nil];
+  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:nil processUnderTestEnvironment:@{}];
   if (![configuration loadWithArguments:[NSProcessInfo processInfo].arguments
                        workingDirectory:workingDirectory
                                   error:&error]) {
