@@ -138,6 +138,9 @@ struct ActionRunner : Runner {
     let query = self.context.value.1
 
     switch action {
+    case .ListDeviceSets:
+      let context = self.context.replace(FBProcessFetcher())
+      return ListDeviceSetsRunner(context: context).run()
     case .Listen(let server):
       let context = self.context.replace((server, query))
       return ServerRunner(context: context).run()
@@ -201,5 +204,17 @@ struct ServerRunner : Runner, CommandPerformer {
       deviceControl: self.context.deviceControl
     )
     return CommandRunner(context: context).run()
+  }
+}
+
+struct ListDeviceSetsRunner : Runner {
+  let context: iOSRunnerContext<FBProcessFetcher>
+
+  func run() -> CommandResult {
+    let launchdProcessesToDeviceSets = self.context.value.launchdProcessesToContainingDeviceSet()
+    for deviceSet in Set(launchdProcessesToDeviceSets.values).sort() {
+      self.context.reporter.reportSimple(EventName.ListDeviceSets, EventType.Discrete, deviceSet)
+    }
+    return CommandResult.Success
   }
 }

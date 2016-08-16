@@ -31,6 +31,10 @@ class IntegrationTests : XCTestCase {
     self.assertCLIRunsSuccessfully(set2, ["create", "iPad Air 2"])
     self.assertCLIRunsSuccessfully(set1, ["iPhone 5s", "boot"])
     self.assertCLIRunsSuccessfully(set2, ["iPad Air 2", "boot"])
+    XCTAssertEqual(
+      self.assertCLIRunsSuccessfully(set1, ["list_device_sets"]).count,
+      2
+    )
     self.assertCLIRunsSuccessfully(set1, ["delete"])
     XCTAssertEqual(
       self.assertCLIRunsSuccessfully(set2, ["--device-name", "--state", "list"]),

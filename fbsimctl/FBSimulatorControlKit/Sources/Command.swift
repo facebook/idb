@@ -72,6 +72,7 @@ public enum Action {
   case LaunchXCTest(FBApplicationLaunchConfiguration, String, NSTimeInterval?)
   case List
   case ListApps
+  case ListDeviceSets
   case Listen(Server)
   case Open(NSURL)
   case Record(Bool)
@@ -204,6 +205,8 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.ListApps, .ListApps):
     return true
+  case (.ListDeviceSets, .ListDeviceSets):
+    return true
   case (.Listen(let leftServer), .Listen(let rightServer)):
     return leftServer == rightServer
   case (.Open(let leftURL), .Open(let rightURL)):
@@ -260,6 +263,8 @@ extension Action {
         return (EventName.List, nil)
     case .ListApps:
       return (EventName.ListApps, nil)
+    case .ListDeviceSets:
+      return (EventName.ListDeviceSets, nil)
     case .Listen:
       return (EventName.Listen, nil)
     case .Open(let url):

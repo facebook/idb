@@ -414,6 +414,7 @@ extension Action : Parsable {
         self.listenParser,
         self.listParser,
         self.listAppsParser,
+        self.listDeviceSetsParser,
         self.openParser,
         self.recordParser,
         self.relaunchParser,
@@ -517,6 +518,10 @@ extension Action : Parsable {
 
   static var listAppsParser: Parser<Action> { get {
     return Parser.ofString(EventName.ListApps.rawValue, Action.ListApps)
+  }}
+
+  static var listDeviceSetsParser: Parser<Action> { get {
+    return Parser.ofString(EventName.ListDeviceSets.rawValue, Action.ListDeviceSets)
   }}
 
   static var openParser: Parser<Action> { get {
