@@ -3,7 +3,12 @@
 rm -rf build
 
 set -e
-set -o pipefail
+
+if [[ "${SHELL}" =~ "zsh" ]]; then
+  echo "-o pipefail is not available in zsh.  You have been warned."
+else
+  set -o pipefail
+fi
 
 if [ "${XCPRETTY}" = "0" ]; then
   USE_XCPRETTY=
