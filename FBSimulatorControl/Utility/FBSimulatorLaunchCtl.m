@@ -49,25 +49,7 @@
 
 - (nullable NSString *)serviceNameForProcess:(FBProcessInfo *)process error:(NSError **)error
 {
-  NSString *text = [self runWithArguments:@[@"list"] error:error];
-  if (!text) {
-    return nil;
-  }
-  FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[@(process.processIdentifier).stringValue]];
-  FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
-  NSString *line = search.firstMatchingLine;
-  if (!line) {
-    return [[FBSimulatorError
-      describeFormat:@"No Matching processes for %@", process.shortDescription]
-      fail:error];
-  }
-  NSArray<NSString *> *words = [line componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
-  if (words.count != 3) {
-    return [[FBSimulatorError
-      describeFormat:@"Output does not have exactly three words: %@", [FBCollectionInformation oneLineDescriptionFromArray:words]]
-      fail:error];
-  }
-  return [words lastObject];
+  return [self serviceNameForSubstring:@(process.processIdentifier).stringValue processIdentifierOut:nil error:error];
 }
 
 - (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error
@@ -82,9 +64,51 @@
   return serviceName;
 }
 
+- (nullable NSString *)serviceNameForBundleID:(NSString *)bundleID processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
+{
+  return [self serviceNameForSubstring:bundleID processIdentifierOut:processIdentifierOut error:error];
+}
+
 - (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error
 {
   return [self serviceNameForProcess:process error:error] != nil;
+}
+
+#pragma mark Private
+
+- (nullable NSString *)serviceNameForSubstring:(NSString *)substring processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
+{
+  NSString *text = [self runWithArguments:@[@"list"] error:error];
+  if (!text) {
+    return nil;
+  }
+  FBLogSearchPredicate *predicate = [FBLogSearchPredicate substrings:@[substring]];
+  FBLogSearch *search = [FBLogSearch withText:text predicate:predicate];
+  NSString *line = search.firstMatchingLine;
+  if (!line) {
+    return [[FBSimulatorError
+      describeFormat:@"No Matching processes for %@", substring]
+      fail:error];
+  }
+  NSArray<NSString *> *words = [line componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
+  if (words.count != 3) {
+    return [[FBSimulatorError
+      describeFormat:@"Output does not have exactly three words: %@", [FBCollectionInformation oneLineDescriptionFromArray:words]]
+      fail:error];
+  }
+  NSString *serviceName = [words lastObject];
+  NSString *processIdentifierString = [words firstObject];
+  NSInteger processIdentifierInteger = [processIdentifierString integerValue];
+  if (processIdentifierInteger < 1) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected a process identifier as first word, but got %@ from %@", processIdentifierString, [FBCollectionInformation oneLineDescriptionFromArray:words]]
+      fail:error];
+  }
+  if (processIdentifierOut) {
+    *processIdentifierOut = (pid_t) processIdentifierInteger;
+  }
+
+  return serviceName;
 }
 
 - (NSString *)runWithArguments:(NSArray<NSString *> *)arguments error:(NSError **)error

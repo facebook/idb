@@ -51,6 +51,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error;
 
 /**
+ Finds the Service Name for a given Application Bundle ID.
+ Optionally provides the Process Identifier of this Application.
+
+ @param bundleID the Bundle ID of the Application to fetch.
+ @param processIdentifierOut an outparam for the pid of the Service.
+ @param error an error out for any error that occurs.
+ @return a String for the Service Name, nil otherwise.
+ */
+- (nullable NSString *)serviceNameForBundleID:(NSString *)bundleID processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error;
+
+/**
  Consults the Simulator's launchctl to determine if the given process
 
  @param process the process to look for.
