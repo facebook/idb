@@ -11,3 +11,4 @@
 #import <FBXCTestKit/FBTestRunConfiguration.h>
 #import <FBXCTestKit/FBXCTestBootstrapper.h>
 #import <FBXCTestKit/FBXCTestRunner.h>
+#import <FBXCTestKit/FBXCTestLogger.h>

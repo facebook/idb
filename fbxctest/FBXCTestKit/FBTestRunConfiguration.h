@@ -10,11 +10,12 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulatorConfiguration;
+@class FBXCTestLogger;
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
 
 @interface FBTestRunConfiguration : NSObject
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) FBSimulatorConfiguration *targetDeviceConfiguration;
 

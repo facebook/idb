@@ -8,9 +8,11 @@
  */
 
 #import "FBXCTestBootstrapper.h"
+
 #import "FBJSONTestReporter.h"
 #import "FBTestRunConfiguration.h"
 #import "FBXCTestRunner.h"
+#import "FBXCTestLogger.h"
 
 @implementation FBXCTestBootstrapper
 
@@ -25,35 +27,37 @@
               withIntermediateDirectories:YES
                                attributes:nil
                                     error:&error]) {
-    handleError(error);
-    return NO;
+    return handleError(error, nil);
   }
 
   FBTestRunConfiguration *configuration = [FBTestRunConfiguration new];
   if (![configuration loadWithArguments:[NSProcessInfo processInfo].arguments
                        workingDirectory:workingDirectory
                                   error:&error]) {
-    handleError(error);
-    return NO;
+    return handleError(error, configuration.logger);
   }
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
   if (![testRunner executeTestsWithError:&error]) {
-    handleError(error);
-    return NO;
+    return handleError(error, configuration.logger);
   }
 
   if (![fileManager removeItemAtPath:workingDirectory error:&error]) {
-    handleError(error);
-    return NO;
+    return handleError(error, configuration.logger);
   }
 
   return YES;
 }
 
-static inline void handleError(NSError *error)
+static inline BOOL handleError(NSError *error, FBXCTestLogger *logger)
 {
+  NSString *lastLines = [logger lastLinesOfOutput:10];
+  if (lastLines) {
+    fputs(lastLines.UTF8String, stderr);
+  }
   NSLog(@"%@", error.localizedDescription);
+
+  return NO;
 }
 
 @end

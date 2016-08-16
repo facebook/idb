@@ -15,6 +15,7 @@
 
 #import "FBJSONTestReporter.h"
 #import "FBXCTestError.h"
+#import "FBXCTestLogger.h"
 
 @interface FBTestRunConfiguration ()
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
@@ -36,6 +37,10 @@
 
 - (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error
 {
+  // Sets the default logger for all Frameworks.
+  self.logger = [FBXCTestLogger loggerInTemporaryDirectory];
+  [FBControlCoreGlobalConfiguration setDefaultLogger:self.logger];
+
   arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
   NSUInteger nextArgument = 0;
   NSString *testFilter = nil;
@@ -85,7 +90,6 @@
     }
   }
 
-  //self.logger = [FBControlCoreLogger aslLoggerWritingToStderrr:YES withDebugLogging:YES];
   self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType];
   if (testFilter != nil) {
     NSString *expectedPrefix = [self.testBundlePath stringByAppendingString:@":"];
