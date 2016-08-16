@@ -21,6 +21,7 @@
 #import "FBTestRunConfiguration.h"
 #import "FBXCTestError.h"
 #import "FBXCTestReporterAdapter.h"
+#import "FBXCTestLogger.h"
 
 @interface FBXCTestRunner ()
 @property (nonatomic, strong) FBTestRunConfiguration *configuration;
