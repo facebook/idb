@@ -14,7 +14,13 @@
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
 
+/**
+ The Configuration pased to FBXCTestRunner.
+ */
 @interface FBTestRunConfiguration : NSObject
+
+- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter;
+
 @property (nonatomic, strong, readonly) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) FBSimulatorConfiguration *targetDeviceConfiguration;

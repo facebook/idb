@@ -35,6 +35,18 @@
 
 @implementation FBTestRunConfiguration
 
+- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _reporter = reporter;
+
+  return self;
+}
+
 - (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error
 {
   // Sets the default logger for all Frameworks.
@@ -90,7 +102,9 @@
     }
   }
 
-  self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType];
+  if (!self.reporter) {
+    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType];
+  }
   if (testFilter != nil) {
     NSString *expectedPrefix = [self.testBundlePath stringByAppendingString:@":"];
     if (![testFilter hasPrefix:expectedPrefix]) {
@@ -98,6 +112,10 @@
     }
     self.testFilter = [testFilter substringFromIndex:expectedPrefix.length];
   }
+  if (!self.reporter) {
+    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType];
+  }
+
   FBSimulatorConfiguration *simulatorConfiguration = [FBSimulatorConfiguration defaultConfiguration];
   if (_simulatorName) {
     simulatorConfiguration = [simulatorConfiguration withDeviceNamed:_simulatorName];
