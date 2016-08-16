@@ -78,9 +78,14 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 - (nullable FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice;
 
 /**
- Fetches an Dictionary, mapping Simulator UDID to launchd_sim process.
+ Fetches a Dictionary, mapping Simulator UDID to launchd_sim process.
  */
 - (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids;
+
+/**
+ Fetches a Dictionary, mapping launchd_sim to the device set that contains it.
+ */
+- (NSDictionary<FBProcessInfo *, NSString *> *)launchdProcessesToContainingDeviceSet;
 
 #pragma mark CoreSimulatorService
 

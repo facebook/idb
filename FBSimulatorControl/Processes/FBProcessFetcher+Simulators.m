@@ -88,6 +88,20 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   return [dictionary copy];
 }
 
+- (NSDictionary<FBProcessInfo *, NSString *> *)launchdProcessesToContainingDeviceSet
+{
+  NSMutableDictionary<FBProcessInfo *, NSString *> *dictionary = [NSMutableDictionary dictionary];
+
+  for (FBProcessInfo *process in self.launchdProcesses) {
+    NSString *deviceSetPath = [FBProcessFetcher deviceSetPathForLaunchdSim:process];
+    if (!deviceSetPath) {
+      continue;
+    }
+    dictionary[process] = deviceSetPath;
+  }
+  return [dictionary copy];
+}
+
 - (FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice
 {
   return [self launchdProcessesByUDIDs:@[simDevice.UDID.UUIDString]][simDevice.UDID.UUIDString];
@@ -169,6 +183,33 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
     return nil;
   }
   return [components anyObject];
+}
+
++ (nullable NSString *)deviceSetPathForLaunchdSim:(FBProcessInfo *)process
+{
+  NSString *udid = [self udidForLaunchdSim:process];
+  if (!udid) {
+    return nil;
+  }
+  if (process.arguments.count < 2) {
+    return nil;
+  }
+  NSString *bootstrapPath = process.arguments[1];
+  if (![bootstrapPath.lastPathComponent isEqualToString:@"launchd_bootstrap.plist"]) {
+    return nil;
+  }
+  NSString *deviceSetPath = [[[[[bootstrapPath
+    stringByDeletingLastPathComponent] //launchd_bootstrap.plist
+    stringByDeletingLastPathComponent] // run
+    stringByDeletingLastPathComponent] // var
+    stringByDeletingLastPathComponent] // data
+    stringByDeletingLastPathComponent]; // Simulator UDID
+
+  NSString *simulatorRootPath = [deviceSetPath stringByAppendingString:udid];
+  if ([NSFileManager.defaultManager fileExistsAtPath:simulatorRootPath]) {
+    return nil;
+  }
+  return deviceSetPath;
 }
 
 + (nullable NSString *)udidForSimulatorApplicationProcess:(FBProcessInfo *)process
