@@ -14,6 +14,7 @@
 @property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutableStartedTestCases;
 @property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutablePassedTests;
 @property (nonatomic, strong, readonly) NSMutableArray<NSArray<NSString *> *> *mutableFailedTests;
+@property (nonatomic, strong, readonly) NSMutableArray<NSDictionary *> *mutableExternalEvents;
 @property (nonatomic, assign, readwrite) BOOL printReportWasCalled;
 
 @end
@@ -32,6 +33,7 @@
   _mutableStartedTestCases = [NSMutableArray array];
   _mutablePassedTests = [NSMutableArray array];
   _mutableFailedTests = [NSMutableArray array];
+  _mutableExternalEvents = [NSMutableArray array];
 
   return self;
 }
@@ -63,6 +65,11 @@
 {
   self.printReportWasCalled = YES;
   return YES;
+}
+
+- (void)handleExternalEvent:(NSDictionary *)event
+{
+  [self.mutableExternalEvents addObject:event];
 }
 
 #pragma mark Stubbed Methods
@@ -97,11 +104,6 @@
 
 }
 
-- (void)handleExternalEvent:(NSDictionary *)event
-{
-
-}
-
 #pragma mark Accessors
 
 - (NSArray<NSArray<NSString *> *> *)startedTests
@@ -117,6 +119,14 @@
 - (NSArray<NSArray<NSString *> *> *)failedTests
 {
   return [self.mutableFailedTests copy];
+}
+
+- (NSArray<NSDictionary *> *)eventsWithName:(NSString *)name
+{
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (NSDictionary<NSString *, id> *event, id _) {
+    return [event[@"event"] isEqualToString:name];
+  }];
+  return [self.mutableExternalEvents filteredArrayUsingPredicate:predicate];
 }
 
 @end

@@ -27,7 +27,7 @@
   self.reporter = [FBXCTestReporterDouble new];
 }
 
-- (void)testRunTestsWithAppTest
+- (void)testRunsiOSUnitTestInApplication
 {
   NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
@@ -117,6 +117,33 @@
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
   ];
   XCTAssertEqualObjects(expected, self.reporter.failedTests);
+}
+
+- (void)testRunsiOSLogicTestsWithoutApplication
+{
+  if (![FBTestRunConfiguration findShimDirectoryWithError:nil]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+
+  NSError *error;
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [FBXCTestKitFixtures iOSUnitTestBundlePath];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 5,OS=iOS 9.3", @"-logicTest", testBundlePath ];
+
+  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
+  [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
+  XCTAssertNil(error);
+
+  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
+  [testRunner executeTestsWithError:&error];
+  XCTAssertNil(error);
+
+  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 9u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 9u);
 }
 
 @end

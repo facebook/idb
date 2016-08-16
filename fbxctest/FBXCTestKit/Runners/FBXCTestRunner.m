@@ -143,13 +143,7 @@
   NSString *xctestPath = [self xctestPathForSimulator:simulator];
   NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory
                           stringByAppendingPathComponent:@"usr/bin/simctl"];
-  NSString *installationRoot = [self fbxctestInstallationRoot];
-  NSString *otestShimPath;
-  if (simulator == nil) {
-    otestShimPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-shim-osx.dylib"];
-  } else {
-    otestShimPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-shim-ios.dylib"];
-  }
+  NSString *otestShimPath = simulator ? self.configuration.iOSSimulatorOtestShimPath : self.configuration.macOtestShimPath;
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
 
   if (mkfifo([otestShimOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {
@@ -249,7 +243,7 @@
   [self.configuration.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = [self xctestPathForSimulator:nil];
-  NSString *installationRoot = [self fbxctestInstallationRoot];
+  NSString *installationRoot = [FBTestRunConfiguration fbxctestInstallationRoot];
   NSString *otestQueryPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-query-lib-osx.dylib"];
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
 
@@ -333,15 +327,6 @@
   }
 }
 
-- (NSString *)fbxctestInstallationRoot
-{
-  NSString *executablePath = [NSProcessInfo processInfo].arguments[0];
-  if (!executablePath.isAbsolutePath) {
-    executablePath = [[[NSFileManager defaultManager] currentDirectoryPath] stringByAppendingString:executablePath];
-  }
-  executablePath = [executablePath stringByStandardizingPath];
-  return executablePath.stringByDeletingLastPathComponent.stringByDeletingLastPathComponent;
-}
 
 - (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries targetingSimulator:(BOOL)simulator
 {

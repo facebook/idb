@@ -36,4 +36,9 @@
  */
 @property (nonatomic, assign, readonly) BOOL printReportWasCalled;
 
+/**
+ Get events by name that were recieved from `-[FBXCTestReporter handleExternalEvent:]`
+ */
+- (NSArray<NSDictionary *> *)eventsWithName:(NSString *)name;
+
 @end
