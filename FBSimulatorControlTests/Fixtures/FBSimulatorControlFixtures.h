@@ -101,8 +101,8 @@
 - (FBProcessInfo *)processInfo2a;
 
 /**
- An Application Test xctest bundle
+ An iOS Unit Test XCTest Bundle
  */
-- (NSString *)applicationTestBundlePath;
+- (NSString *)iOSUnitTestBundlePath;
 
 @end

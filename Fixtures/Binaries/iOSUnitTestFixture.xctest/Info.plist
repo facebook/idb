@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>15E65</string>
+	<string>15G31</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>SimpleTestTarget</string>
+	<string>iOSUnitTestFixture</string>
 	<key>CFBundleIdentifier</key>
-	<string>FB.SimpleTestTarget</string>
+	<string>com.facebook.iOSUnitTestFixture</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>SimpleTestTarget</string>
+	<string>iOSUnitTestFixture</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
@@ -39,9 +39,9 @@
 	<key>DTSDKName</key>
 	<string>iphonesimulator9.3</string>
 	<key>DTXcode</key>
-	<string>0730</string>
+	<string>0731</string>
 	<key>DTXcodeBuild</key>
-	<string>7D175</string>
+	<string>7D1014</string>
 	<key>MinimumOSVersion</key>
 	<string>9.3</string>
 	<key>UIDeviceFamily</key>

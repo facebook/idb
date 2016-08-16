@@ -25,9 +25,9 @@
 
 - (void)testTestBundleLoadWithPath
 {
-  NSString *expectedTestConfigPath = @"/Deep/Deep/Darkness/SimpleTestTarget.xctest/SimpleTestTarget-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration";
+  NSString *expectedTestConfigPath = @"/Deep/Deep/Darkness/iOSUnitTestFixture.xctest/iOSUnitTestFixture-E621E1F8-C36C-495A-93FC-0C247A3E6E5F.xctestconfiguration";
   NSUUID *sessionIdentifier = [[NSUUID alloc] initWithUUIDString:@"E621E1F8-C36C-495A-93FC-0C247A3E6E5F"];
-  NSBundle *bundle = [FBTestBundleTests testBundleFixture];
+  NSBundle *bundle = [FBTestBundleTests iosUnitTestBundleFixture];
 
   OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] copyItemAtPath:bundle.bundlePath toPath:expectedTestConfigPath.stringByDeletingLastPathComponent error:[OCMArg anyObjectRef]];
@@ -47,7 +47,7 @@
   XCTAssertTrue([testBundle isKindOfClass:FBTestBundle.class]);
   XCTAssertNotNil(testBundle.configuration);
   XCTAssertEqualObjects(testBundle.configuration.sessionIdentifier, sessionIdentifier);
-  XCTAssertEqualObjects(testBundle.configuration.moduleName, @"SimpleTestTarget");
+  XCTAssertEqualObjects(testBundle.configuration.moduleName, @"iOSUnitTestFixture");
   XCTAssertEqualObjects(testBundle.configuration.testBundlePath, expectedTestConfigPath.stringByDeletingLastPathComponent);
   XCTAssertEqualObjects(testBundle.configuration.path, expectedTestConfigPath);
 

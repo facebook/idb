@@ -1,0 +1,10 @@
+// Import Shared Configuration
+#include "../../Configuration/Shared.xcconfig"
+
+// Target-Specific Settings
+SDKROOT = iphoneos
+INFOPLIST_FILE = $(SRCROOT)/iOSUnitTestFixture/Info.plist
+PRODUCT_BUNDLE_IDENTIFIER = com.facebook.iOSUnitTestFixture
+PRODUCT_NAME = iOSUnitTestFixture
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks
+ONLY_ACTIVE_ARCH = NO

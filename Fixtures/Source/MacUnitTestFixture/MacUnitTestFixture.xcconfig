@@ -1,0 +1,9 @@
+// Import Shared Configuration
+#include "../../Configuration/Shared.xcconfig"
+
+// Target-Specific Settings
+SDKROOT = macosx
+INFOPLIST_FILE = $(SRCROOT)/MacUnitTestFixture/Info.plist
+PRODUCT_BUNDLE_IDENTIFIER = com.facebook.MacUnitTestFixture
+PRODUCT_NAME = MacUnitTestFixture
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks

@@ -24,19 +24,19 @@
 - (void)testProductBundleLoadWithPath
 {
   NSError *error;
-  NSBundle *bundle = [FBProductBundleTests testBundleFixture];
+  NSBundle *bundle = [FBProductBundleTests iosUnitTestBundleFixture];
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
     withBundlePath:bundle.bundlePath]
    buildWithError:&error];
   XCTAssertNil(error);
   XCTAssertTrue([productBundle isKindOfClass:FBProductBundle.class]);
-  XCTAssertEqualObjects(productBundle.name, @"SimpleTestTarget");
-  XCTAssertEqualObjects(productBundle.filename, @"SimpleTestTarget.xctest");
+  XCTAssertEqualObjects(productBundle.name, @"iOSUnitTestFixture");
+  XCTAssertEqualObjects(productBundle.filename, @"iOSUnitTestFixture.xctest");
   XCTAssertEqualObjects(productBundle.path, bundle.bundlePath);
-  XCTAssertEqualObjects(productBundle.bundleID, @"FB.SimpleTestTarget");
-  XCTAssertEqualObjects(productBundle.binaryName, @"SimpleTestTarget");
-  XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"SimpleTestTarget"]);
+  XCTAssertEqualObjects(productBundle.bundleID, @"com.facebook.iOSUnitTestFixture");
+  XCTAssertEqualObjects(productBundle.binaryName, @"iOSUnitTestFixture");
+  XCTAssertEqualObjects(productBundle.binaryPath, [bundle.bundlePath stringByAppendingPathComponent:@"iOSUnitTestFixture"]);
 }
 
 - (void)testNoBundlePath
@@ -46,13 +46,13 @@
 
 - (void)testWorkingDirectory
 {
-  NSBundle *bundle = [FBProductBundleTests testBundleFixture];
+  NSBundle *bundle = [FBProductBundleTests iosUnitTestBundleFixture];
   NSDictionary *plist =
   @{
     @"CFBundleIdentifier" : @"bundleID",
     @"CFBundleExecutable" : @"exec",
   };
-  NSString *targetPath = @"/Heaven/SimpleTestTarget.xctest";
+  NSString *targetPath = @"/Heaven/iOSUnitTestFixture.xctest";
   OCMockObject<FBFileManager> *fileManagerMock = [OCMockObject mockForProtocol:@protocol(FBFileManager)];
   [[[fileManagerMock expect] andReturnValue:@YES] copyItemAtPath:bundle.bundlePath toPath:targetPath error:[OCMArg anyObjectRef]];
   [[[fileManagerMock expect] andReturn:plist] dictionaryWithPath:[bundle.bundlePath stringByAppendingPathComponent:@"Info.plist"]];

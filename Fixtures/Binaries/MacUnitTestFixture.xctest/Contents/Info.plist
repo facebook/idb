@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>BuildMachineOSBuild</key>
-	<string>15E65</string>
+	<string>15G31</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>SimpleTestTarget</string>
+	<string>MacUnitTestFixture</string>
 	<key>CFBundleIdentifier</key>
-	<string>FB.SimpleTestTarget</string>
+	<string>com.facebook.MacUnitTestFixture</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>SimpleTestTarget</string>
+	<string>MacUnitTestFixture</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
@@ -22,31 +22,23 @@
 	<string>????</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
-		<string>iPhoneSimulator</string>
+		<string>MacOSX</string>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTPlatformBuild</key>
-	<string></string>
-	<key>DTPlatformName</key>
-	<string>iphonesimulator</string>
+	<string>7D1014</string>
 	<key>DTPlatformVersion</key>
-	<string>9.3</string>
+	<string>GM</string>
 	<key>DTSDKBuild</key>
-	<string>13E230</string>
+	<string>15E60</string>
 	<key>DTSDKName</key>
-	<string>iphonesimulator9.3</string>
+	<string>macosx10.11</string>
 	<key>DTXcode</key>
-	<string>0730</string>
+	<string>0731</string>
 	<key>DTXcodeBuild</key>
-	<string>7D175</string>
-	<key>MinimumOSVersion</key>
-	<string>9.3</string>
-	<key>UIDeviceFamily</key>
-	<array>
-		<integer>1</integer>
-	</array>
+	<string>7D1014</string>
 </dict>
 </plist>

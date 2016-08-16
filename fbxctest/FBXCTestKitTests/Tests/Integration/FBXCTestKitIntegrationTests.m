@@ -22,7 +22,7 @@
   NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
-  NSString *testBundlePath = [FBXCTestKitFixtures simpleTestTargetPath];
+  NSString *testBundlePath = [FBXCTestKitFixtures iOSUnitTestBundlePath];
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 5,OS=iOS 9.3", @"-appTest", appTestArgument ];
 

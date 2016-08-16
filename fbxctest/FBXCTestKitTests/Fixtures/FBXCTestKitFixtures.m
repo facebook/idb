@@ -32,9 +32,14 @@
       stringByAppendingPathComponent:@"TableSearch"];
 }
 
-+ (NSString *)simpleTestTargetPath
++ (NSString *)iOSUnitTestBundlePath
 {
-  return [[NSBundle bundleForClass:self] pathForResource:@"SimpleTestTarget" ofType:@"xctest"];
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];
+}
+
++ (NSString *)macUnitTestBundlePath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"MacUnitTestFixture" ofType:@"xctest"];
 }
 
 @end

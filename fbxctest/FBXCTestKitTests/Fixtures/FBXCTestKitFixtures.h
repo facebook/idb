@@ -30,10 +30,17 @@
 + (NSString *)tableSearchApplicationPath;
 
 /**
- An Application Test xctest bundle.
+ An iOS Unit Test XCTest Target.
 
- @return path to the Application Test Bundle.
+ @return path to the Unit Test Bundle.
  */
-+ (NSString *)simpleTestTargetPath;
++ (NSString *)iOSUnitTestBundlePath;
+
+/**
+ An Mac Unit Test XCTest Target.
+
+ @return path to the Unit Test Bundle.
+ */
++ (NSString *)macUnitTestBundlePath;
 
 @end

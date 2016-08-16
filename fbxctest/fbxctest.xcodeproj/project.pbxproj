@@ -27,8 +27,6 @@
 		050D461F1D6072800038F72D /* FBXCTestError.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46141D6072800038F72D /* FBXCTestError.m */; };
 		050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */; };
 		050D46271D6074B60038F72D /* FBXCTestKitFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */; };
-		050D462C1D6075E10038F72D /* SimpleTestTarget.xctest in Resources */ = {isa = PBXBuildFile; fileRef = 050D462A1D6075E10038F72D /* SimpleTestTarget.xctest */; };
-		050D462D1D6075E10038F72D /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = 050D462B1D6075E10038F72D /* TableSearch.app */; };
 		050D46301D6079C10038F72D /* FBXCTestBootstrapper.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D462E1D6079C10038F72D /* FBXCTestBootstrapper.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		050D46311D6079C10038F72D /* FBXCTestBootstrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D462F1D6079C10038F72D /* FBXCTestBootstrapper.m */; };
 		050D463C1D608AA40038F72D /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 050D463B1D608AA40038F72D /* FBSimulatorControl.framework */; };
@@ -37,6 +35,9 @@
 		5B92E3D11D62006300BCBB36 /* FBMultiFileReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 5B92E3CD1D62006300BCBB36 /* FBMultiFileReader.h */; };
 		5B92E3D21D62006300BCBB36 /* FBMultiFileReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 5B92E3CE1D62006300BCBB36 /* FBMultiFileReader.m */; };
 		AA24FFB81D4A6DEA00B429CD /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA24FFAE1D4A6DEA00B429CD /* main.m */; };
+		AAB44FF31D622B6C0059E922 /* iOSUnitTestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */; };
+		AAB44FF41D622B6C0059E922 /* MacUnitTestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */; };
+		AAB44FF51D622B6C0059E922 /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF21D622B6C0059E922 /* TableSearch.app */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,8 +93,6 @@
 		050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestKitIntegrationTests.m; sourceTree = "<group>"; };
 		050D46251D6074B60038F72D /* FBXCTestKitFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestKitFixtures.h; sourceTree = "<group>"; };
 		050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestKitFixtures.m; sourceTree = "<group>"; };
-		050D462A1D6075E10038F72D /* SimpleTestTarget.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SimpleTestTarget.xctest; sourceTree = "<group>"; };
-		050D462B1D6075E10038F72D /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; path = TableSearch.app; sourceTree = "<group>"; };
 		050D462E1D6079C10038F72D /* FBXCTestBootstrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapper.h; sourceTree = "<group>"; };
 		050D462F1D6079C10038F72D /* FBXCTestBootstrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapper.m; sourceTree = "<group>"; };
 		050D463B1D608AA40038F72D /* FBSimulatorControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSimulatorControl.framework; path = "../../../Library/Developer/Xcode/DerivedData/fbxctest-ggloazodethqmqakznelmdxzqbcu/Build/Products/Debug/FBSimulatorControl.framework"; sourceTree = "<group>"; };
@@ -106,6 +105,9 @@
 		AA24FFAE1D4A6DEA00B429CD /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		AA24FFBB1D4A6E1E00B429CD /* fbxctest.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = fbxctest.xcconfig; sourceTree = "<group>"; };
 		AA24FFC01D4A70BE00B429CD /* XCTestBootstrap.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTestBootstrap.framework; path = "../../../../../../Library/Developer/Xcode/DerivedData/fbxctest-eyhjyfgpghlzbnamzfzbhruxwscz/Build/Products/Debug/XCTestBootstrap.framework"; sourceTree = "<group>"; };
+		AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = iOSUnitTestFixture.xctest; path = ../../../Fixtures/Binaries/iOSUnitTestFixture.xctest; sourceTree = "<group>"; };
+		AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MacUnitTestFixture.xctest; path = ../../../Fixtures/Binaries/MacUnitTestFixture.xctest; sourceTree = "<group>"; };
+		AAB44FF21D622B6C0059E922 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; name = TableSearch.app; path = ../../../Fixtures/Binaries/TableSearch.app; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -211,10 +213,11 @@
 		050D46241D6074580038F72D /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				AAB44FF21D622B6C0059E922 /* TableSearch.app */,
 				050D46251D6074B60038F72D /* FBXCTestKitFixtures.h */,
 				050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */,
-				050D462A1D6075E10038F72D /* SimpleTestTarget.xctest */,
-				050D462B1D6075E10038F72D /* TableSearch.app */,
+				AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */,
+				AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -390,9 +393,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				050D462D1D6075E10038F72D /* TableSearch.app in Resources */,
+				AAB44FF51D622B6C0059E922 /* TableSearch.app in Resources */,
+				AAB44FF31D622B6C0059E922 /* iOSUnitTestFixture.xctest in Resources */,
 				050D46071D6071A40038F72D /* FBXCTestKitTests.xcconfig in Resources */,
-				050D462C1D6075E10038F72D /* SimpleTestTarget.xctest in Resources */,
+				AAB44FF41D622B6C0059E922 /* MacUnitTestFixture.xctest in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

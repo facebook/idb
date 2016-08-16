@@ -49,9 +49,9 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"tree" ofType:@"json"];
 }
 
-+ (NSString *)applicationTestBundlePath
++ (NSString *)iOSUnitTestBundlePath
 {
-  return [[NSBundle bundleForClass:self] pathForResource:@"SimpleTestTarget" ofType:@"xctest"];
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];
 }
 
 @end
@@ -148,9 +148,9 @@
     environment:self.appLaunch2.environment];
 }
 
-- (NSString *)applicationTestBundlePath
+- (NSString *)iOSUnitTestBundlePath
 {
-  return FBSimulatorControlFixtures.applicationTestBundlePath;
+  return FBSimulatorControlFixtures.iOSUnitTestBundlePath;
 }
 
 @end
