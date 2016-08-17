@@ -26,6 +26,8 @@ function build_test_deps() {
 
 function framework_build() {
   local name=$1
+  local output_directory=$2
+
   xcodebuild \
     -project FBSimulatorControl.xcodeproj \
     -scheme $name \
@@ -33,13 +35,20 @@ function framework_build() {
     -derivedDataPath $BUILD_DIRECTORY \
     build
 
-  local output_directory=$2
   if [[ -n $output_directory ]]; then
-    local artifact="$BUILD_DIRECTORY/Build/Products/Debug/$name.framework"
-    echo "Copying Build output from $artifact to $output_directory"
-    mkdir -p "$output_directory"
-    cp -R $artifact "$output_directory"
+    framework_install $name $output_directory
   fi
+}
+
+function framework_install() {
+  local name=$1
+  local output_directory=$2
+  local artifact="$BUILD_DIRECTORY/Build/Products/Debug/$name.framework"
+  local output_directory_framework="$output_directory/Frameworks"
+
+  echo "Copying Build output of $artifact to $output_directory_framework"
+  mkdir -p "$output_directory_framework"
+  cp -R $artifact "$output_directory_framework/"
 }
 
 function framework_test() {
@@ -109,6 +118,8 @@ function strip_framework() {
 
 function cli_build() {
   local name=$1
+  local output_directory=$2
+
   xcodebuild \
     -workspace $name/$name.xcworkspace \
     -scheme $name \
@@ -124,13 +135,30 @@ function cli_build() {
   strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
   strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
 
-  local output_directory=$2
   if [[ -n $output_directory ]]; then
-    local artifact="$BUILD_DIRECTORY/Build/Products/Debug/*"
-    echo "Copying Build output from $artifact to $output_directory"
-    mkdir -p "$output_directory"
-    cp -R $artifact "$output_directory"
+    cli_install $output_directory
   fi
+}
+
+function cli_install() {
+  local output_directory=$1
+  local cli_artifact="$BUILD_DIRECTORY/Build/Products/Debug/!(*.framework)"
+  local framework_artifact="$BUILD_DIRECTORY/Build/Products/Debug/*.framework"
+  local output_directory_cli="$output_directory/bin"
+  local output_directory_framework="$output_directory/Frameworks"
+
+  mkdir -p "$output_directory_cli"
+  mkdir -p "$output_directory_framework"
+
+  shopt -s extglob
+
+  echo "Copying Build output from $cli_artifact to $output_directory_cli"
+  cp -R $cli_artifact "$output_directory_cli"
+
+  echo "Copying Build output from $framework_artifact to $output_directory_framework"
+  cp -R $framework_artifact "$output_directory_framework"
+
+  shopt -u extglob
 }
 
 function cli_framework_test() {
