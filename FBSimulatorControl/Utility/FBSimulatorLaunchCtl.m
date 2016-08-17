@@ -9,6 +9,9 @@
 
 #import "FBSimulatorLaunchCtl.h"
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimRuntime.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBProcessLaunchConfiguration+Helpers.h"
@@ -17,6 +20,27 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+
+@interface FBSimulator (FBSimulatorLaunchCtl)
+
+@property (nonatomic, copy, readonly) FBBinaryDescriptor *launchCtlBinary;
+
+@end
+
+@implementation FBSimulator (FBSimulatorLaunchCtl)
+
+- (FBBinaryDescriptor *)launchCtlBinary
+{
+  NSString *path = [[self.device.runtime.root
+    stringByAppendingPathComponent:@"bin"]
+    stringByAppendingPathComponent:@"launchctl"];
+  NSError *error = nil;
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:path error:&error];
+  NSAssert(binary, @"Could not locate launchctl at expected location '%@', error %@", path, error);
+  return binary;
+}
+
+@end
 
 @interface FBSimulatorLaunchCtl ()
 
@@ -115,7 +139,7 @@
 {
   // Construct a Launch Configuration for launchctl we'll use the 'list' command.
   FBAgentLaunchConfiguration *launchConfiguration = [FBAgentLaunchConfiguration
-    configurationWithBinary:FBBinaryDescriptor.launchCtl
+    configurationWithBinary:self.simulator.launchCtlBinary
     arguments:arguments
     environment:@{}
     options:0];
