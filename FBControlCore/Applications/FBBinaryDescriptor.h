@@ -66,14 +66,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)binaryWithPath:(NSString *)path error:(NSError **)error;
 
-/**
- Returns the launchctl for the current version of Xcode's of the Simulator Platform.
- Will assert if the FBBinaryDescriptor instance could not be constructed.
-
- @return a FBBinaryDescriptor instance launchctl.
- */
-+ (instancetype)launchCtl;
-
 @end
 
 NS_ASSUME_NONNULL_END
