@@ -38,7 +38,7 @@ function framework_build() {
     local artifact="$BUILD_DIRECTORY/Build/Products/Debug/$name.framework"
     echo "Copying Build output from $artifact to $output_directory"
     mkdir -p "$output_directory"
-    cp -r $artifact "$output_directory"
+    cp -R $artifact "$output_directory"
   fi
 }
 
@@ -129,7 +129,7 @@ function cli_build() {
     local artifact="$BUILD_DIRECTORY/Build/Products/Debug/*"
     echo "Copying Build output from $artifact to $output_directory"
     mkdir -p "$output_directory"
-    cp -r $artifact "$output_directory"
+    cp -R $artifact "$output_directory"
   fi
 }
 
