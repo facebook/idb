@@ -53,7 +53,7 @@ function framework_install() {
 
 function framework_test() {
   local name=$1
-  xctool \
+  xcodebuild \
     -project FBSimulatorControl.xcodeproj \
     -scheme $name \
     -sdk macosx \
@@ -163,7 +163,7 @@ function cli_install() {
 
 function cli_framework_test() {
   NAME=$1
-  xctool \
+  xcodebuild \
     -workspace $NAME/$NAME.xcworkspace \
     -scheme $NAME \
     -sdk macosx \
@@ -189,17 +189,17 @@ Supported Commands:
   framework build <output-directory>
     Build the FBSimulatorControl.framework. Optionally copies the Framework to <output-directory>
   framework test
-    Build then Test the FBSimulatorControl.framework. Requires xctool to be installed.
+    Build then Test the FBSimulatorControl.framework.
   fbsimctl build <output-directory>
     Build the fbsimctl exectutable. Optionally copies the executable and it's dependencies to <output-directory>
   fbsimctl test
-    Build the FBSimulatorControlKit.framework and runs the tests. Requires xctool to be installed.
+    Build the FBSimulatorControlKit.framework and runs the tests.
   fbsimctl e2e-test
     Build the fbsimctl executable and run the e2e CLI Tests against it. Requires python3
   fbxctest build <output-directory>
     Build the xctest exectutable. Optionally copies the executable and it's dependencies to <output-directory>
   fbxctest test
-    Builds the FBXCTestKit.framework and runs the tests. Requires xctool to be installed.
+    Builds the FBXCTestKit.framework and runs the tests.
 EOF
 }
 
