@@ -265,7 +265,7 @@ static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
   }
 
   // Otherwise, expect it to be relative to the location of the current executable.
-  NSString *libPath = [[self fbxctestInstallationRoot] stringByAppendingString:@"lib"];
+  NSString *libPath = [[self fbxctestInstallationRoot] stringByAppendingPathComponent:@"lib"];
   return [self confirmExistenceOfRequiredShimsInDirectory:libPath withError:error];
 }
 
