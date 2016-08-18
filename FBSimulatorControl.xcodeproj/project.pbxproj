@@ -18,11 +18,11 @@
 		2ACC1E9D1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h in Headers */ = {isa = PBXBuildFile; fileRef = 2ACC1E9B1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14993C1D4C5042005A5C8F /* FBTestManagerTestReporterJUnit.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14993A1D4C5042005A5C8F /* FBTestManagerTestReporterJUnit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14993D1D4C5042005A5C8F /* FBTestManagerTestReporterJUnit.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E14993B1D4C5042005A5C8F /* FBTestManagerTestReporterJUnit.m */; };
-		3E1499441D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E1499421D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.h */; };
+		3E1499441D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E1499421D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E1499451D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1499431D4C574F005A5C8F /* FBTestManagerTestReporterTestSuite.m */; };
-		3E1499481D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E1499461D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.h */; };
+		3E1499481D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E1499461D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E1499491D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1499471D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m */; };
-		3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */; };
+		3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14994D1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA017F581BD7787300F45E9D /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
