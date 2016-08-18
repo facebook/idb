@@ -209,8 +209,14 @@
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   pid_t processIdentifier = 0;
-  if (![self.simulator.launchctl serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:error]) {
+  NSString *serviceName = [self.simulator.launchctl serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:error];
+  if (!serviceName) {
     return -1;
+  }
+  if (processIdentifier < 1) {
+    [[FBSimulatorError
+      describeFormat:@"Found the Process for %@ with service name %@ but the process was not alive", bundleID, serviceName]
+      fail:error];
   }
   return processIdentifier;
 }

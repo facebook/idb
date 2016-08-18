@@ -292,7 +292,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   pid_t PID = [self processIDWithBundleID:bundleID error:error];
-  if (!PID) {
+  if (PID < 1) {
     return NO;
   }
   return [self killProcessWithID:PID error:error];

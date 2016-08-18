@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)withSimulator:(FBSimulator *)simulator;
 
-#pragma mark launchctl commands
+#pragma mark Querying Services
 
 /**
  Finds the Service Name for a provided process.
@@ -42,20 +42,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSString *)serviceNameForProcess:(FBProcessInfo *)process error:(NSError **)error;
 
 /**
- Stops the Provided Process, by Service Name.
-
- @param serviceName the name of the Process to Stop.
- @param error an error for any error that occurs.
- @return the Service Name of the Stopped process, or nil if the process does not exist.
- */
-- (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error;
-
-/**
  Finds the Service Name for a given Application Bundle ID.
  Optionally provides the Process Identifier of this Application.
 
  @param bundleID the Bundle ID of the Application to fetch.
- @param processIdentifierOut an outparam for the pid of the Service.
+ @param processIdentifierOut an outparam for the pid of the Service. Will be set to -1 if there is no running process for the Service.
  @param error an error out for any error that occurs.
  @return a String for the Service Name, nil otherwise.
  */
@@ -69,6 +60,27 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the Process is running, NO otherwise.
  */
 - (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error;
+
+/**
+ Returns the currently running launchctl services.
+ Returns a Mapping of Service Name to Process Identifier.
+ NSNull is used to represent services that do not have a Process Identifier.
+
+ @param error an error out for any error that occurs.
+ @return a Mapping of Service Name to Process identifier.
+ */
+- (nullable NSDictionary<NSString *, id> *)listServicesWithError:(NSError **)error;
+
+#pragma mark Stopping Services
+
+/**
+ Stops the Provided Process, by Service Name.
+
+ @param serviceName the name of the Process to Stop.
+ @param error an error for any error that occurs.
+ @return the Service Name of the Stopped process, or nil if the process does not exist.
+ */
+- (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error;
 
 @end
 
