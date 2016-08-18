@@ -23,6 +23,7 @@
 #import "FBXCTestReporterAdapter.h"
 #import "FBXCTestLogger.h"
 #import "FBApplicationTestRunner.h"
+#import "FBXCTestSimulatorFetcher.h"
 
 @interface FBXCTestRunner ()
 @property (nonatomic, strong) FBTestRunConfiguration *configuration;
@@ -71,35 +72,27 @@
     return [[FBXCTestError describe:@"Listing tests is only supported for macosx tests."] failBool:error];
   }
 
-  FBSimulatorControl *simulatorControl = [self createSimulatorControlWithError:error];
-  if (!simulatorControl) {
+  FBXCTestSimulatorFetcher *simulatorFetcher = [FBXCTestSimulatorFetcher withConfiguration:self.configuration error:error];
+  if (!simulatorFetcher) {
     return NO;
   }
-  FBSimulator *simulator = [simulatorControl.pool allocateSimulatorWithConfiguration:self.configuration.targetDeviceConfiguration
-                                                                             options:FBSimulatorAllocationOptionsCreate
-                                                                               error:error];
+  FBSimulator *simulator =  self.configuration.runnerAppPath
+    ? [simulatorFetcher fetchSimulatorForApplicationTestsWithError:error]
+    : [simulatorFetcher fetchSimulatorForLogicTestWithError:error];
   if (!simulator) {
     return NO;
   }
-  if (![self runTestWithSimulator:simulator error:error]) {
-    [simulatorControl.pool freeSimulator:simulator error:nil];
+
+  BOOL testResult = [self runTestWithSimulator:simulator error:error];
+  [simulatorFetcher returnSimulator:simulator error:nil];
+  if (!testResult) {
     return NO;
   }
-  if (![simulatorControl.pool freeSimulator:simulator error:error]) {
-    return NO;
-  }
+
   if (![self.configuration.reporter printReportWithError:error]) {
     return NO;
   }
   return YES;
-}
-
-- (FBSimulatorControl *)createSimulatorControlWithError:(NSError **)error
-{
-  NSString *deviceSetPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"sim"];
-  FBSimulatorControlConfiguration *simulatorControlConfiguration =
-  [FBSimulatorControlConfiguration configurationWithDeviceSetPath:deviceSetPath options:0];
-  return [FBSimulatorControl withConfiguration:simulatorControlConfiguration logger:self.configuration.logger error:error];
 }
 
 - (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -112,24 +105,7 @@
     return [[FBXCTestError describe:@"Test filtering is only supported for logic tests."] failBool:error];
   }
 
-  FBSimulatorLaunchConfiguration *simulatorLaunchConfiguration = [FBSimulatorLaunchConfiguration defaultConfiguration];
-  FBInteraction *launchInteraction =
-  [[simulator.interact
-    prepareForLaunch:simulatorLaunchConfiguration]
-   bootSimulator:simulatorLaunchConfiguration];
-
-  if (![launchInteraction perform:error]) {
-    [self.configuration.logger logFormat:@"Failed to boot simulator: %@", *error];
-    return NO;
-  }
-
   if (![[FBApplicationTestRunner withSimulator:simulator configuration:self.configuration] runTestsWithError:error]) {
-    [[simulator.interact shutdownSimulator] perform:nil];
-    return NO;
-  }
-
-  if (![[simulator.interact shutdownSimulator] perform:error]) {
-    [self.configuration.logger logFormat:@"Failed to shutdown simulator: %@", *error];
     return NO;
   }
 
