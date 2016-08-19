@@ -17,10 +17,11 @@
  An Option Set for Direct Launching.
  */
 typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
-  FBSimulatorLaunchOptionsConnectBridge = 1 << 0, /** Connects the Simulator Bridge on launch, rather than lazily on-demand */
-  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 1, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
-  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 2, /** Relays the Simulator Framebuffer to a window */
-  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 3, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
+  FBSimulatorLaunchOptionsConnectBridge = 1 << 0, /** Connects the Simulator Bridge on boot, rather than lazily on-demand */
+  FBSimulatorLaunchOptionsConnectFramebuffer = 1 << 1, /** Connects the Simulator Framebuffer on launch. Currently. Connecting the Framebuffer on boot is currently the only way of connecting to the Framebuffer */
+  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 2, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
+  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 3, /** Relays the Simulator Framebuffer to a window */
+  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 4, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
 };
 
 NS_ASSUME_NONNULL_BEGIN
@@ -52,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Configuration for Framebuffer Video encoding.
- Only applies if FBSimulatorLaunchOptionsEnableDirectLaunch is flagged.
+ Only applies if FBSimulatorLaunchOptionsEnableDirectLaunch & FBSimulatorLaunchOptionsConnectFramebuffer is flagged.
  */
 @property (nonatomic, copy, readonly) FBFramebufferVideoConfiguration *video;
 
