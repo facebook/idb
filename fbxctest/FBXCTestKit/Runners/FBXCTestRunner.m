@@ -219,8 +219,7 @@
   [self.configuration.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = [self xctestPathForSimulator:nil];
-  NSString *installationRoot = [FBTestRunConfiguration fbxctestInstallationRoot];
-  NSString *otestQueryPath = [installationRoot stringByAppendingPathComponent:@"lib/otest-query-lib-osx.dylib"];
+  NSString *otestQueryPath = self.configuration.macOtestQueryPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
 
   if (mkfifo([otestQueryOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {

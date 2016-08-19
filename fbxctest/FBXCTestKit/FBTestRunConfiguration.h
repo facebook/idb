@@ -48,6 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable, readonly) NSString *shimDirectory;
 @property (nonatomic, copy, nullable, readonly) NSString *iOSSimulatorOtestShimPath;
 @property (nonatomic, copy, nullable, readonly) NSString *macOtestShimPath;
+@property (nonatomic, copy, nullable, readonly) NSString *macOtestQueryPath;
 
 /**
  Loads the Configuration, with the provided parameters.

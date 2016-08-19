@@ -19,6 +19,7 @@
 
 static NSString *const iOSXCTestShimFileName = @"otest-shim-ios.dylib";
 static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
+static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
 
 @interface FBTestRunConfiguration ()
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
@@ -243,6 +244,11 @@ static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
   return [self.shimDirectory stringByAppendingPathComponent:MacXCTestShimFileName];
 }
 
+- (NSString *)macOtestQueryPath
+{
+  return [self.shimDirectory stringByAppendingPathComponent:MacQueryShimFileName];
+}
+
 + (NSString *)fbxctestInstallationRoot
 {
   NSString *executablePath = NSProcessInfo.processInfo.arguments[0];
@@ -277,16 +283,22 @@ static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
       fail:error];
   }
 
-  NSString *otestShimPath = [directory stringByAppendingPathComponent:iOSXCTestShimFileName];
-  if (![NSFileManager.defaultManager fileExistsAtPath:otestShimPath]) {
+  NSString *shimPath = [directory stringByAppendingPathComponent:iOSXCTestShimFileName];
+  if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
     return [[FBXCTestError
-      describeFormat:@"The iOS xctest Simulator Shim was expected at the location '%@', but it was not there", otestShimPath]
+      describeFormat:@"The iOS xctest Simulator Shim was expected at the location '%@', but it was not there", shimPath]
       fail:error];
   }
-  otestShimPath = [directory stringByAppendingPathComponent:MacXCTestShimFileName];
-  if (![NSFileManager.defaultManager fileExistsAtPath:otestShimPath]) {
+  shimPath = [directory stringByAppendingPathComponent:MacXCTestShimFileName];
+  if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
     return [[FBXCTestError
-      describeFormat:@"The Mac xctest Shim was expected at the location '%@', but it was not there", otestShimPath]
+      describeFormat:@"The Mac xctest Shim was expected at the location '%@', but it was not there", shimPath]
+      fail:error];
+  }
+  shimPath = [directory stringByAppendingPathComponent:MacQueryShimFileName];
+  if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
+    return [[FBXCTestError
+      describeFormat:@"The Mac Query Shim was expected at the location '%@', but it was not there", shimPath]
       fail:error];
   }
   return directory;
