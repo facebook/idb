@@ -78,7 +78,7 @@
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
 
   OCMockObject<FBCodesignProvider> *codesignerMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
-  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:bundle.bundlePath];
+  [[[codesignerMock expect] andReturnValue:@YES] signBundleAtPath:bundle.bundlePath error:[OCMArg anyObjectRef]];
 
   NSError *error;
   [[[[FBProductBundleBuilder builder]
