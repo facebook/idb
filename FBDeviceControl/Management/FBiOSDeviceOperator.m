@@ -45,7 +45,10 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 @interface FBiOSDeviceOperator ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
-@property (nonatomic, copy, readwrite) NSString *preLaunchConsoleString;
+/**
+ * A string marks the end of device log for previous run.
+ */
+@property (nonatomic, copy, readwrite) NSString *previousEndMarker;
 
 @end
 
@@ -207,6 +210,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
   }
 
   __block NSUInteger preLaunchLogLength;
+  __block NSString *preLaunchConsoleString;
   if (![[[[FBRunLoopSpinner new]
           timeout:60]
          timeoutErrorMessage:@"Failed to load device console entries"]
@@ -220,7 +224,8 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
             preLaunchLogLength = log.length;
             return NO;
           }
-          self.preLaunchConsoleString = log;
+          preLaunchConsoleString = log;
+          [self markPreviousEnd:log];
           return YES;
         } error:error])
   {
@@ -239,6 +244,16 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
       failBool:error];
   }
   return YES;
+}
+
+/**
+ * Record the end of the consoleString as the previous end marker.
+ * The next slice of log will begin after the marker.
+ */
+- (void)markPreviousEnd:(NSString *)consoleString
+{
+  self.previousEndMarker = [FBSubstringUtilities substringOf:consoleString
+                                      withLastCharacterCount:FBMaxConosleMarkerLength];
 }
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
@@ -309,10 +324,8 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
   if (consoleString.length == 0) {
     return nil;
   }
-  NSString *markerString = [FBSubstringUtilities substringOf:self.preLaunchConsoleString withLastCharacterCount:FBMaxConosleMarkerLength];
-  return [FBSubstringUtilities substringAfterNeedle:markerString inHaystack:consoleString];
+  return [FBSubstringUtilities substringAfterNeedle:self.previousEndMarker inHaystack:consoleString];
 }
-
 
 - (BOOL)observeProcessWithID:(NSInteger)processID error:(NSError **)error
 {
