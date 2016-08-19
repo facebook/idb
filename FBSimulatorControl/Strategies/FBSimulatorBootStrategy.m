@@ -31,6 +31,7 @@
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorHID.h"
@@ -259,7 +260,7 @@
 {
   // Construct and start the task.
   id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
-    withLaunchPath:FBApplicationDescriptor .xcodeSimulator.binary.path]
+    withLaunchPath:FBApplicationDescriptor.xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
     build]
@@ -408,15 +409,22 @@
   }
   [self.simulator.eventSink simulatorDidLaunch:launchdProcess];
 
-  // Waitng for all required processes to start
-  NSSet *requiredProcessNames = self.simulator.requiredProcessNamesToVerifyBooted;
-  BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-    NSSet *runningProcessNames = [NSSet setWithArray:[[processFetcher subprocessesOf:launchdProcess.processIdentifier] valueForKey:@"processName"]];
-    return [requiredProcessNames isSubsetOfSet:runningProcessNames];
+  // Waitng for all required services to start
+  NSSet<NSString *> *requiredServiceNames = self.simulator.requiredLaunchdServicesToVerifyBooted;
+  BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
+    NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];
+    if (!services) {
+      return NO;
+    }
+    NSSet<id> *processIdentifiers = [NSSet setWithArray:[services objectsForKeys:requiredServiceNames.allObjects notFoundMarker:NSNull.null]];
+    if ([processIdentifiers containsObject:NSNull.null]) {
+      return NO;
+    }
+    return YES;
   }];
-  if (!didStartAllRequiredProcesses) {
+  if (!didStartAllRequiredServices) {
     return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredProcessNames.allObjects]]
+      describeFormat:@"Timed out waiting for all required services %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredServiceNames.allObjects]]
       inSimulator:self.simulator]
       fail:error];
   }
