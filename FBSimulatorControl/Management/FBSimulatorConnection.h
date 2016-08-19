@@ -58,19 +58,14 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
- The FBSimulatorFramebuffer Instance.
+ The FBSimulatorFramebuffer owned by the reciever.
  */
 @property (nonatomic, strong, readonly, nullable) FBFramebuffer *framebuffer;
 
 /**
- The FBSimulatorFramebuffer Instance.
+ The FBSimulatorHID owned by the reciever.
  */
 @property (nonatomic, strong, readonly, nullable) FBSimulatorHID *hid;
-
-/**
- The FBSimulatorFramebuffer Instance.
- */
-@property (nonatomic, strong, readonly, nullable) FBSimulatorBridge *bridge;
 
 @end
 

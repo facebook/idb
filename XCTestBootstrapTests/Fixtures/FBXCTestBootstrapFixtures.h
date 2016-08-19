@@ -16,8 +16,23 @@
 @interface XCTestCase (FBXCTestBootstrapFixtures)
 
 /**
- An xctest bundle
+ An iOS Unit Test Bundle.
  */
-+ (NSBundle *)testBundleFixture;
++ (NSBundle *)iosUnitTestBundleFixture;
+
+/**
+ An Mac OS X Unit Test Bundle.
+ */
++ (NSBundle *)macUnitTestBundleFixture;
+
+/**
+ A File Path to the first JUnit XML result.
+ */
++ (NSString *)JUnitXMLResult0Path;
+
+/**
+ A File Path to the second JUnit XML result.
+ */
++ (NSString *)JUnitXMLResult1Path;
 
 @end

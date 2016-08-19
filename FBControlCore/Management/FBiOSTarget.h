@@ -81,6 +81,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) id<FBControlCoreConfiguration_OS> osConfiguration;
 
+/**
+ A Comparison Method for `sortedArrayUsingSelector:`
+
+ @param target the target to compare to.
+ @return a Comparison Result.
+ */
+- (NSComparisonResult)compare:(id<FBiOSTarget>)target;
+
 @end
 
 /**
@@ -102,5 +110,10 @@ NSArray<NSString *> *FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType target
  The canonical enum representation of the state string.
  */
 extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> *targetTypeStrings);
+
+/**
+ A Default Comparison Function that can be called for different implementations of FBiOSTarget.
+ */
+extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right);
 
 NS_ASSUME_NONNULL_END

@@ -1,0 +1,307 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA19D6F91D61ADC700229B59 /* MacUnitTestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA19D6F71D61ADC700229B59 /* MacUnitTestFixtureTests.m */; };
+		AA19D6FD1D61ADD400229B59 /* iOSUnitTestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA19D6FB1D61ADD400229B59 /* iOSUnitTestFixtureTests.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AA19D6DE1D61AD2100229B59 /* MacUnitTestFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacUnitTestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA19D6E21D61AD2100229B59 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA19D6EA1D61AD3200229B59 /* iOSUnitTestFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSUnitTestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA19D6EE1D61AD3200229B59 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA19D6F61D61ADC700229B59 /* MacUnitTestFixture.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = MacUnitTestFixture.xcconfig; sourceTree = "<group>"; };
+		AA19D6F71D61ADC700229B59 /* MacUnitTestFixtureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MacUnitTestFixtureTests.m; sourceTree = "<group>"; };
+		AA19D6FA1D61ADD400229B59 /* iOSUnitTestFixture.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iOSUnitTestFixture.xcconfig; sourceTree = "<group>"; };
+		AA19D6FB1D61ADD400229B59 /* iOSUnitTestFixtureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = iOSUnitTestFixtureTests.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA19D6DB1D61AD2100229B59 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA19D6E71D61AD3200229B59 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA19D6C51D61ACF700229B59 = {
+			isa = PBXGroup;
+			children = (
+				AA19D6DF1D61AD2100229B59 /* MacUnitTestFixture */,
+				AA19D6EB1D61AD3200229B59 /* iOSUnitTestFixture */,
+				AA19D6CF1D61ACF700229B59 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA19D6CF1D61ACF700229B59 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA19D6DE1D61AD2100229B59 /* MacUnitTestFixture.xctest */,
+				AA19D6EA1D61AD3200229B59 /* iOSUnitTestFixture.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA19D6DF1D61AD2100229B59 /* MacUnitTestFixture */ = {
+			isa = PBXGroup;
+			children = (
+				AA19D6E21D61AD2100229B59 /* Info.plist */,
+				AA19D6F61D61ADC700229B59 /* MacUnitTestFixture.xcconfig */,
+				AA19D6F71D61ADC700229B59 /* MacUnitTestFixtureTests.m */,
+			);
+			path = MacUnitTestFixture;
+			sourceTree = "<group>";
+		};
+		AA19D6EB1D61AD3200229B59 /* iOSUnitTestFixture */ = {
+			isa = PBXGroup;
+			children = (
+				AA19D6EE1D61AD3200229B59 /* Info.plist */,
+				AA19D6FA1D61ADD400229B59 /* iOSUnitTestFixture.xcconfig */,
+				AA19D6FB1D61ADD400229B59 /* iOSUnitTestFixtureTests.m */,
+			);
+			path = iOSUnitTestFixture;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA19D6DD1D61AD2100229B59 /* MacUnitTestFixture */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA19D6E31D61AD2100229B59 /* Build configuration list for PBXNativeTarget "MacUnitTestFixture" */;
+			buildPhases = (
+				AA19D6DA1D61AD2100229B59 /* Sources */,
+				AA19D6DB1D61AD2100229B59 /* Frameworks */,
+				AA19D6DC1D61AD2100229B59 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacUnitTestFixture;
+			productName = MacUnitTestFixture;
+			productReference = AA19D6DE1D61AD2100229B59 /* MacUnitTestFixture.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AA19D6E91D61AD3200229B59 /* iOSUnitTestFixture */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA19D6EF1D61AD3200229B59 /* Build configuration list for PBXNativeTarget "iOSUnitTestFixture" */;
+			buildPhases = (
+				AA19D6E61D61AD3200229B59 /* Sources */,
+				AA19D6E71D61AD3200229B59 /* Frameworks */,
+				AA19D6E81D61AD3200229B59 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iOSUnitTestFixture;
+			productName = iOSUnitTestFixture;
+			productReference = AA19D6EA1D61AD3200229B59 /* iOSUnitTestFixture.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA19D6C61D61ACF700229B59 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0730;
+				ORGANIZATIONNAME = Facebook;
+				TargetAttributes = {
+					AA19D6DD1D61AD2100229B59 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					AA19D6E91D61AD3200229B59 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+				};
+			};
+			buildConfigurationList = AA19D6C91D61ACF700229B59 /* Build configuration list for PBXProject "Fixtures" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = AA19D6C51D61ACF700229B59;
+			productRefGroup = AA19D6CF1D61ACF700229B59 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA19D6DD1D61AD2100229B59 /* MacUnitTestFixture */,
+				AA19D6E91D61AD3200229B59 /* iOSUnitTestFixture */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA19D6DC1D61AD2100229B59 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA19D6E81D61AD3200229B59 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA19D6DA1D61AD2100229B59 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA19D6F91D61ADC700229B59 /* MacUnitTestFixtureTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA19D6E61D61AD3200229B59 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA19D6FD1D61ADD400229B59 /* iOSUnitTestFixtureTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA19D6D51D61ACF700229B59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		AA19D6D61D61ACF700229B59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		AA19D6E41D61AD2100229B59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA19D6F61D61ADC700229B59 /* MacUnitTestFixture.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		AA19D6E51D61AD2100229B59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA19D6F61D61ADC700229B59 /* MacUnitTestFixture.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		AA19D6F01D61AD3200229B59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA19D6FA1D61ADD400229B59 /* iOSUnitTestFixture.xcconfig */;
+			buildSettings = {
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		AA19D6F11D61AD3200229B59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA19D6FA1D61ADD400229B59 /* iOSUnitTestFixture.xcconfig */;
+			buildSettings = {
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA19D6C91D61ACF700229B59 /* Build configuration list for PBXProject "Fixtures" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA19D6D51D61ACF700229B59 /* Debug */,
+				AA19D6D61D61ACF700229B59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA19D6E31D61AD2100229B59 /* Build configuration list for PBXNativeTarget "MacUnitTestFixture" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA19D6E41D61AD2100229B59 /* Debug */,
+				AA19D6E51D61AD2100229B59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA19D6EF1D61AD3200229B59 /* Build configuration list for PBXNativeTarget "iOSUnitTestFixture" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA19D6F01D61AD3200229B59 /* Debug */,
+				AA19D6F11D61AD3200229B59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AA19D6C61D61ACF700229B59 /* Project object */;
+}

@@ -6,13 +6,13 @@ BUILD_DIRECTORY=build
 
 function assert_has_carthage() {
   if ! command -v carthage; then
-      echo "cli build needs 'carthage' to bootstrap dependencies"
+      echo "build needs 'carthage' to bootstrap dependencies"
       echo "You can install it using brew. E.g. $ brew install carthage"
       exit 1;
   fi
 }
 
-function build_cli_deps() {
+function build_fbsimctl_deps() {
   assert_has_carthage
   pushd fbsimctl
   carthage bootstrap --platform Mac
@@ -25,34 +25,44 @@ function build_test_deps() {
 }
 
 function framework_build() {
-  local NAME=$1
+  local name=$1
+  local output_directory=$2
+
   xcodebuild \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $NAME \
+    -scheme $name \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     build
 
-  if [[ -n $OUTPUT_DIRECTORY ]]; then
-    ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/$NAME.framework"
-    echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p $OUTPUT_DIRECTORY
-    cp -r $ARTIFACT $OUTPUT_DIRECTORY
+  if [[ -n $output_directory ]]; then
+    framework_install $name $output_directory
   fi
 }
 
+function framework_install() {
+  local name=$1
+  local output_directory=$2
+  local artifact="$BUILD_DIRECTORY/Build/Products/Debug/$name.framework"
+  local output_directory_framework="$output_directory/Frameworks"
+
+  echo "Copying Build output of $artifact to $output_directory_framework"
+  mkdir -p "$output_directory_framework"
+  cp -R $artifact "$output_directory_framework/"
+}
+
 function framework_test() {
-  local NAME=$1
-  xctool \
+  local name=$1
+  xcodebuild \
     -project FBSimulatorControl.xcodeproj \
-    -scheme $NAME \
+    -scheme $name \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     test
 }
 
 function core_framework_build() {
-  framework_build FBControlCore
+  framework_build FBControlCore $1
 }
 
 function core_framework_test() {
@@ -60,7 +70,7 @@ function core_framework_test() {
 }
 
 function xctest_framework_build() {
-  framework_build XCTestBootstrap
+  framework_build XCTestBootstrap $1
 }
 
 function xctest_framework_test() {
@@ -68,7 +78,7 @@ function xctest_framework_test() {
 }
 
 function simulator_framework_build() {
-  framework_build FBSimulatorControl
+  framework_build FBSimulatorControl $1
 }
 
 function simulator_framework_test() {
@@ -76,7 +86,7 @@ function simulator_framework_test() {
 }
 
 function device_framework_build() {
-  framework_build FBDeviceControl
+  framework_build FBDeviceControl $1
 }
 
 function device_framework_test() {
@@ -84,10 +94,11 @@ function device_framework_test() {
 }
 
 function all_frameworks_build() {
-  core_framework_build
-  xctest_framework_build
-  simulator_framework_build
-  device_framework_build
+  local output_directory=$1
+  core_framework_build $output_directory
+  xctest_framework_build $output_directory
+  simulator_framework_build $output_directory
+  device_framework_build $output_directory
 }
 
 function all_frameworks_test() {
@@ -99,15 +110,19 @@ function all_frameworks_test() {
 
 function strip_framework() {
   local FRAMEWORK_PATH="$BUILD_DIRECTORY/Build/Products/Debug/$1"
-  echo "Stripping Framework $FRAMEWORK_PATH"
-  rm -r "$FRAMEWORK_PATH"
+  if [ -d "$FRAMEWORK_PATH" ]; then
+    echo "Stripping Framework $FRAMEWORK_PATH"
+    rm -r "$FRAMEWORK_PATH"
+  fi
 }
 
 function cli_build() {
-  NAME=fbsimctl
+  local name=$1
+  local output_directory=$2
+
   xcodebuild \
-    -workspace $NAME/$NAME.xcworkspace \
-    -scheme $NAME \
+    -workspace $name/$name.xcworkspace \
+    -scheme $name \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     build
@@ -119,23 +134,48 @@ function cli_build() {
   strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/XCTestBootstrap.framework"
   strip_framework "FBDeviceControl.framework/Versions/Current/Frameworks/FBControlCore.framework"
   strip_framework "XCTestBootstrap.framework/Versions/Current/Frameworks/FBControlCore.framework"
-  
-  if [[ -n $OUTPUT_DIRECTORY ]]; then
-    ARTIFACT="$BUILD_DIRECTORY/Build/Products/Debug/*"
-    echo "Copying Build output from $ARTIFACT to $OUTPUT_DIRECTORY"
-    mkdir -p $OUTPUT_DIRECTORY
-    cp -r $ARTIFACT $OUTPUT_DIRECTORY
+
+  if [[ -n $output_directory ]]; then
+    cli_install $output_directory
   fi
 }
 
-function cli_test() {
-  NAME=fbsimctl
-  xctool \
+function cli_install() {
+  local output_directory=$1
+  local cli_artifact="$BUILD_DIRECTORY/Build/Products/Debug/!(*.framework)"
+  local framework_artifact="$BUILD_DIRECTORY/Build/Products/Debug/*.framework"
+  local output_directory_cli="$output_directory/bin"
+  local output_directory_framework="$output_directory/Frameworks"
+
+  mkdir -p "$output_directory_cli"
+  mkdir -p "$output_directory_framework"
+
+  shopt -s extglob
+
+  echo "Copying Build output from $cli_artifact to $output_directory_cli"
+  cp -R $cli_artifact "$output_directory_cli"
+
+  echo "Copying Build output from $framework_artifact to $output_directory_framework"
+  cp -R $framework_artifact "$output_directory_framework"
+
+  shopt -u extglob
+}
+
+function cli_framework_test() {
+  NAME=$1
+  xcodebuild \
     -workspace $NAME/$NAME.xcworkspace \
     -scheme $NAME \
     -sdk macosx \
     -derivedDataPath $BUILD_DIRECTORY \
     test
+}
+
+function cli_e2e_test() {
+  NAME=$1
+  pushd $NAME/cli-tests
+  ./tests.py
+  popd
 }
 
 function print_usage() {
@@ -149,11 +189,17 @@ Supported Commands:
   framework build <output-directory>
     Build the FBSimulatorControl.framework. Optionally copies the Framework to <output-directory>
   framework test
-    Build then Test the FBSimulatorControl.framework. Requires xctool to be installed.
-  cli build <output-directory>
+    Build then Test the FBSimulatorControl.framework.
+  fbsimctl build <output-directory>
     Build the fbsimctl exectutable. Optionally copies the executable and it's dependencies to <output-directory>
-  cli test
-    Build the FBSimulatorControlKit.framework and runs the tests. Requires xctool to be installed.
+  fbsimctl test
+    Build the FBSimulatorControlKit.framework and runs the tests.
+  fbsimctl e2e-test
+    Build the fbsimctl executable and run the e2e CLI Tests against it. Requires python3
+  fbxctest build <output-directory>
+    Build the xctest exectutable. Optionally copies the executable and it's dependencies to <output-directory>
+  fbxctest test
+    Builds the FBXCTestKit.framework and runs the tests.
 EOF
 }
 
@@ -173,7 +219,7 @@ if [[ -n $COMMAND ]]; then
 elif [[ -n $2 ]]; then
   COMMAND=$2
   echo "using command $COMMAND"
-else 
+else
   echo "No command argument or $COMMAND provided"
   print_usage
   exit 1
@@ -184,35 +230,51 @@ if [[ -n $OUTPUT_DIRECTORY ]]; then
 elif [[ -n $3 ]]; then
   echo "using output directory $3"
   OUTPUT_DIRECTORY=$3
+else
+  echo "No output directory specified"
 fi
 
 case $TARGET in
-  help) 
+  help)
     print_usage;;
   framework)
     case $COMMAND in
       build)
-        all_frameworks_build;;
-      test) 
+        all_frameworks_build $OUTPUT_DIRECTORY;;
+      test)
         build_test_deps
         all_frameworks_test;;
-      *) 
+      *)
         echo "Unknown Command $2"
         exit 1;;
     esac;;
-  cli)
-    build_cli_deps
+  fbsimctl)
+    build_fbsimctl_deps
     case $COMMAND in
-      build) 
-        cli_build;;
+      build)
+        cli_build fbsimctl $OUTPUT_DIRECTORY;;
       test)
         build_test_deps
-        cli_test;;
+        cli_framework_test fbsimctl;;
+      e2e-test)
+        cli_build fbsimctl fbsimctl/cli-tests/executable-under-test
+        cli_e2e_test fbsimctl;;
       *)
         echo "Unknown Command $COMMAND"
         exit 1;;
     esac;;
-  *) 
+  fbxctest)
+    case $COMMAND in
+      build)
+        cli_build fbxctest $OUTPUT_DIRECTORY;;
+      test)
+        build_test_deps
+        cli_framework_test fbxctest;;
+      *)
+        echo "Unknown Command $COMMAND"
+        exit 1;;
+    esac;;
+  *)
     echo "Unknown Command $TARGET"
     exit 1;;
 esac

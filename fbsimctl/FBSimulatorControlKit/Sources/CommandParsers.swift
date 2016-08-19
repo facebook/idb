@@ -130,6 +130,10 @@ extension Parser {
   public static var ofDate: Parser<NSDate> { get {
     return Parser<NSDate>.ofDouble.fmap { NSDate(timeIntervalSince1970: $0) }
   }}
+
+  public static var ofDashSeparator: Parser<NSNull> { get {
+    return Parser<NSNull>.ofString("--", NSNull())
+  }}
 }
 
 extension OutputOptions : Parsable {
@@ -200,13 +204,9 @@ extension Configuration : Parsable {
   }}
 }
 
-/**
- A separate struct for FBSimulatorConfiguration is needed as Parsable protcol conformance cannot be
- applied to FBSimulatorConfiguration as it is a non-final.
- */
-extension CreationConfiguration : Parsable {
-  public static var parser: Parser<CreationConfiguration> { get {
-    return Parser<CreationConfiguration>.accumulate(0, [
+extension IndividualCreationConfiguration : Parsable {
+  public static var parser: Parser<IndividualCreationConfiguration> { get {
+    return Parser<IndividualCreationConfiguration>.accumulate(0, [
       self.deviceConfigurationParser,
       self.osVersionConfigurationParser,
       self.auxDirectoryConfigurationParser,
@@ -223,9 +223,9 @@ extension CreationConfiguration : Parsable {
     }
   }}
 
-  static var deviceConfigurationParser: Parser<CreationConfiguration> { get {
+  static var deviceConfigurationParser: Parser<IndividualCreationConfiguration> { get {
     return self.deviceParser.fmap { device in
-      return CreationConfiguration(
+      return IndividualCreationConfiguration(
         osVersion: nil,
         deviceType: device,
         auxDirectory: nil
@@ -243,9 +243,9 @@ extension CreationConfiguration : Parsable {
     }
   }}
 
-  static var osVersionConfigurationParser: Parser<CreationConfiguration> { get {
+  static var osVersionConfigurationParser: Parser<IndividualCreationConfiguration> { get {
     return self.osVersionParser.fmap { osVersion in
-      return CreationConfiguration(
+      return IndividualCreationConfiguration(
         osVersion: osVersion,
         deviceType: nil,
         auxDirectory: nil
@@ -257,14 +257,23 @@ extension CreationConfiguration : Parsable {
     return Parser.succeeded("--aux", Parser<Any>.ofDirectory)
   }}
 
-  static var auxDirectoryConfigurationParser: Parser<CreationConfiguration> { get {
+  static var auxDirectoryConfigurationParser: Parser<IndividualCreationConfiguration> { get {
     return self.auxDirectoryParser.fmap { auxDirectory in
-      return CreationConfiguration(
+      return IndividualCreationConfiguration(
         osVersion: nil,
         deviceType: nil,
         auxDirectory: auxDirectory
       )
     }
+  }}
+}
+
+extension CreationSpecification : Parsable {
+  public static var parser: Parser<CreationSpecification> { get {
+    return Parser.alternative([
+      Parser.ofString("--all-missing-defaults", CreationSpecification.AllMissingDefaults),
+      IndividualCreationConfiguration.parser.fmap { CreationSpecification.Individual($0) },
+    ])
   }}
 }
 
@@ -339,7 +348,7 @@ extension Command : Parsable {
         Configuration.parser,
         FBiOSTargetQueryParsers.parser.optional(),
         FBiOSTargetFormatParsers.parser.optional(),
-        Parser.manyCount(1, Action.parser)
+        self.compoundActionParser
       )
       .fmap { (configuration, query, format, actions) in
         return Command(
@@ -351,6 +360,12 @@ extension Command : Parsable {
       }
     }
   }
+
+  static var compoundActionParser: Parser<[Action]> { get {
+    return Parser.exhaustive(
+      Parser.manySepCount(1, Action.parser, Parser<NSNull>.ofDashSeparator)
+    )
+  }}
 }
 
 extension Server : Parsable {
@@ -399,6 +414,7 @@ extension Action : Parsable {
         self.listenParser,
         self.listParser,
         self.listAppsParser,
+        self.listDeviceSetsParser,
         self.openParser,
         self.recordParser,
         self.relaunchParser,
@@ -431,10 +447,8 @@ extension Action : Parsable {
 
   static var createParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.Create.rawValue, CreationConfiguration.parser)
-      .fmap { configuration in
-        return Action.Create(configuration)
-      }
+      .succeeded(EventName.Create.rawValue, CreationSpecification.parser)
+      .fmap { Action.Create($0) }
   }}
 
   static var deleteParser: Parser<Action> { get {
@@ -481,13 +495,14 @@ extension Action : Parsable {
     return Parser
       .succeeded(
         EventName.LaunchXCTest.rawValue,
-        Parser.ofTwoSequenced(
+        Parser.ofThreeSequenced(
+          Parser.succeeded("--test-timeout", Parser<Any>.ofDouble).optional(),
           Parser<Any>.ofDirectory,
           FBProcessLaunchConfigurationParsers.appLaunchParser
         )
       )
-      .fmap { (bundle, appLaunch) in
-        Action.LaunchXCTest(appLaunch, bundle)
+      .fmap { (timeout, bundle, appLaunch) in
+        Action.LaunchXCTest(appLaunch, bundle, timeout)
       }
   }}
 
@@ -503,6 +518,10 @@ extension Action : Parsable {
 
   static var listAppsParser: Parser<Action> { get {
     return Parser.ofString(EventName.ListApps.rawValue, Action.ListApps)
+  }}
+
+  static var listDeviceSetsParser: Parser<Action> { get {
+    return Parser.ofString(EventName.ListDeviceSets.rawValue, Action.ListDeviceSets)
   }}
 
   static var openParser: Parser<Action> { get {
@@ -663,13 +682,13 @@ public struct FBiOSTargetQueryParsers {
   }}
 
   static var osVersionsParser: Parser<FBiOSTargetQuery> { get {
-    return CreationConfiguration
+    return IndividualCreationConfiguration
       .osVersionParser
       .fmap { FBiOSTargetQuery.osVersions([$0]) }
   }}
 
   static var deviceParser: Parser<FBiOSTargetQuery> { get {
-    return CreationConfiguration
+    return IndividualCreationConfiguration
       .deviceParser
       .fmap { FBiOSTargetQuery.devices([$0]) }
   }}
@@ -769,7 +788,7 @@ struct FBSimulatorLaunchConfigurationParser {
     return Parser<FBSimulatorLaunchOptions>
       .union(1, [
         Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
-        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
+        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer)),
         Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])
@@ -806,9 +825,10 @@ struct FBProcessLaunchConfigurationParsers {
   }}
 
   static var argumentParser: Parser<[String]> { get {
-    return Parser.manyTill(
-      Parser<String>.ofString("--", "--"),
-      Parser<String>.ofAny
-    )
+    return Parser
+      .manyTill(
+        Parser<NSNull>.ofDashSeparator,
+        Parser<String>.ofAny
+      )
   }}
 }

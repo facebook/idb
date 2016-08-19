@@ -21,7 +21,7 @@ static NSString *const LaunchTypeEnvKey = @"FBSIMULATORCONTROL_LAUNCH_TYPE";
 static NSString *const LaunchTypeSimulatorApp = @"simulator_app";
 static NSString *const LaunchTypeDirect = @"direct";
 
-static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
+static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 @interface FBSimulatorControlTestCase ()
 
@@ -104,18 +104,23 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 
 + (BOOL)useDirectLaunching
 {
-  if ([NSProcessInfo.processInfo.environment[LaunchTypeEnvKey] isEqualToString:LaunchTypeSimulatorApp]) {
-    return NO;
+  return [NSProcessInfo.processInfo.environment[LaunchTypeEnvKey] isEqualToString:LaunchTypeSimulatorApp];
+}
+
++ (FBSimulatorLaunchOptions)launchOptions
+{
+  FBSimulatorLaunchOptions options = 0;
+  if (self.useDirectLaunching) {
+    options = options | FBSimulatorLaunchOptionsEnableDirectLaunch;
   }
-  return YES;
+  if ([NSProcessInfo.processInfo.environment[RecordVideoEnvKey] boolValue]) {
+    options = options | FBSimulatorLaunchOptionsConnectFramebuffer;
+  }
+  return options;
 }
 
 + (FBFramebufferVideoConfiguration *)defaultVideoConfiguration
 {
-  NSString *value = NSProcessInfo.processInfo.environment[DirectLaunchRecordVideoKey];
-  if (value && value.boolValue == NO) {
-    return FBFramebufferVideoConfiguration.defaultConfiguration;
-  }
   return [FBFramebufferVideoConfiguration.defaultConfiguration withOptions:FBFramebufferVideoConfiguration.defaultConfiguration.options | FBFramebufferVideoOptionsAutorecord];
 }
 
@@ -130,11 +135,9 @@ static NSString *const DirectLaunchRecordVideoKey = @"FBSIMULATORCONTROL_RECORD_
 
 + (FBSimulatorLaunchConfiguration *)defaultLaunchConfiguration
 {
-  if (self.useDirectLaunching) {
-    FBSimulatorLaunchOptions options = FBSimulatorLaunchOptionsEnableDirectLaunch;
-    return [[FBSimulatorLaunchConfiguration withOptions:options] withVideo:self.defaultVideoConfiguration];
-  }
-  return FBSimulatorLaunchConfiguration.defaultConfiguration;
+  return [[FBSimulatorLaunchConfiguration
+    withOptions:self.launchOptions]
+    withVideo:self.defaultVideoConfiguration];
 }
 
 #pragma mark XCTestCase

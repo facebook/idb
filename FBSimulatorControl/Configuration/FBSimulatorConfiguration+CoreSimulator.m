@@ -70,6 +70,31 @@
   return YES;
 }
 
++ (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurations
+{
+  NSMutableArray<FBSimulatorConfiguration *> *configurations = [NSMutableArray array];
+  NSArray<SimDeviceType *> *deviceTypes = self.supportedDeviceTypes;
+
+  for (SimRuntime *runtime in self.supportedRuntimes) {
+    if (!runtime.available) {
+      continue;
+    }
+    id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
+    NSAssert(os, @"Runtime %@ does not have a valid FBControlCoreConfiguration_OS entry", runtime.name);
+
+    for (SimDeviceType *deviceType in deviceTypes) {
+      if (![runtime supportsDeviceType:deviceType]) {
+        continue;
+      }
+      id<FBControlCoreConfiguration_Device> device = FBControlCoreConfigurationVariants.nameToDevice[deviceType.name];
+      NSAssert(device, @"No FBControlCoreConfiguration_Device for device with name '%@'", deviceType.name);
+      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDevice:device] withOS:os];
+      [configurations addObject:configuration];
+    }
+  }
+  return [configurations copy];
+}
+
 #pragma mark Obtaining CoreSimulator Classes
 
 - (SimRuntime *)obtainRuntimeWithError:(NSError **)error
@@ -106,17 +131,17 @@
 
 #pragma mark Private
 
-+ (NSArray *)supportedRuntimes
++ (NSArray<SimRuntime *> *)supportedRuntimes
 {
   return [NSClassFromString(@"SimRuntime") supportedRuntimes];
 }
 
-+ (NSArray *)supportedDeviceTypes
++ (NSArray<SimDeviceType *> *)supportedDeviceTypes
 {
   return [NSClassFromString(@"SimDeviceType") supportedDeviceTypes];
 }
 
-+ (NSArray *)supportedRuntimesForDevice:(id<FBControlCoreConfiguration_Device>)device
++ (NSArray<SimRuntime *> *)supportedRuntimesForDevice:(id<FBControlCoreConfiguration_Device>)device
 {
   return [[self.supportedRuntimes
     filteredArrayUsingPredicate:[FBSimulatorConfiguration runtimeProductFamilyPredicate:device]]
@@ -127,7 +152,7 @@
     }];
 }
 
-+ (NSArray *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device
++ (NSArray<id<FBControlCoreConfiguration_OS>> *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device
 {
   NSMutableArray *array = [NSMutableArray array];
   for (SimRuntime *runtime in [self supportedRuntimesForDevice:device]) {

@@ -30,6 +30,11 @@
 - (BOOL)shouldUseDirectLaunch;
 
 /**
+ Whether the reciever represents a configuration that should connect an FBFramebuffer on boot.
+ */
+- (BOOL)shouldConnectFramebuffer;
+
+/**
  Whether the reciever represents a configuration that should boot via the NSWorkspace Application Launch API.
  */
 - (BOOL)shouldLaunchViaWorkspace;

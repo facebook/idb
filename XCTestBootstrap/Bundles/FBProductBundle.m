@@ -117,10 +117,12 @@
     }
   }
 
-  if (self.codesignProvider && ![self.codesignProvider signBundleAtPath:targetBundlePath]) {
-    return
-    [[XCTestBootstrapError describeFormat:@"Failed to codesign %@", targetBundlePath]
-     fail:error];
+  NSError *innerError = nil;
+  if (self.codesignProvider && ![self.codesignProvider signBundleAtPath:targetBundlePath error:&innerError]) {
+    return [[[XCTestBootstrapError
+      describeFormat:@"Failed to codesign %@", targetBundlePath]
+      causedBy:innerError]
+      fail:error];
   }
 
     NSString *plistPath = [self.bundlePath stringByAppendingPathComponent:@"Info.plist"];

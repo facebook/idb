@@ -11,6 +11,8 @@
 
 #import <CoreSimulator/SimDevice.h>
 
+#import <mach/mach_port.h>
+
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import <mach/mach_port.h>

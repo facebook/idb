@@ -155,7 +155,7 @@
   if (self.range.location == NSNotFound && self.range.length == 0) {
     return targets;
   }
-  NSRange range = NSIntersectionRange(self.range, NSMakeRange(0, targets.count - 1));
+  NSRange range = NSIntersectionRange(self.range, NSMakeRange(0, targets.count));
   return [targets subarrayWithRange:range];
 }
 

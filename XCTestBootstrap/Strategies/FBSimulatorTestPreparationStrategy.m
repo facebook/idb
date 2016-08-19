@@ -19,6 +19,7 @@
 #import "FBTestRunnerConfiguration.h"
 #import "NSFileManager+FBFileManager.h"
 #import "XCTestBootstrapError.h"
+#import "FBCodeSignCommand.h"
 
 @interface FBSimulatorTestPreparationStrategy ()
 @property (nonatomic, copy) NSString *workingDirectory;
@@ -63,29 +64,37 @@
   NSAssert(self.testRunnerBundleID, @"Test runner bundle ID is needed to load bundles");
   NSAssert(self.testBundlePath, @"Path to test bundle is needed to load bundles");
 
+
+  // Check the bundle is codesigned (if required).
   NSError *innerError;
+  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater && ![FBCodeSignCommand.codeSignCommandWithAdHocIdentity cdHashForBundleAtPath:self.testBundlePath error:&innerError]) {
+    return [[[XCTestBootstrapError
+      describeFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testBundlePath]
+      causedBy:innerError]
+      fail:error];
+  }
+
   // Prepare XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle =
-  [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-      withBundlePath:self.testBundlePath]
-     withWorkingDirectory:self.workingDirectory]
+  FBTestBundle *testBundle = [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+    withBundlePath:self.testBundlePath]
+    withWorkingDirectory:self.workingDirectory]
     withSessionIdentifier:sessionIdentifier]
-   buildWithError:&innerError];
+    buildWithError:&innerError];
   if (!testBundle) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed to prepare test bundle"]
+    return [[[XCTestBootstrapError
+      describe:@"Failed to prepare test bundle"]
       causedBy:innerError]
-     fail:error];
+      fail:error];
   }
 
   // Prepare test runner
   FBProductBundle *application = [deviceOperator applicationBundleWithBundleID:self.testRunnerBundleID error:error];
   if (!application) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed to prepare test runner"]
+    return [[[XCTestBootstrapError
+      describe:@"Failed to prepare test runner"]
       causedBy:innerError]
-     fail:error];
+      fail:error];
   }
 
   NSString *IDEBundleInjectionFrameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory
@@ -95,10 +104,10 @@
     withBundlePath:IDEBundleInjectionFrameworkPath]
     buildWithError:&innerError];
   if (!IDEBundleInjectionFramework) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed to prepare IDEBundleInjectionFramework"]
+    return [[[XCTestBootstrapError
+      describe:@"Failed to prepare IDEBundleInjectionFramework"]
       causedBy:innerError]
-     fail:error];
+      fail:error];
   }
 
   return [[[[[[[FBTestRunnerConfigurationBuilder builder]

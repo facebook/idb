@@ -1,13 +1,17 @@
 language: objective-c
 osx_image: xcode7.3
 before_install:
-  brew install carthage
+  brew install carthage python3
 env:
 - TARGET=framework COMMAND=test FBSIMULATORCONTROL_DEVICE_SET=default FBSIMULATORCONTROL_LAUNCH_TYPE=simulator_app
 - TARGET=framework COMMAND=test FBSIMULATORCONTROL_DEVICE_SET=custom FBSIMULATORCONTROL_LAUNCH_TYPE=simulator_app
 - TARGET=framework COMMAND=test FBSIMULATORCONTROL_DEVICE_SET=custom FBSIMULATORCONTROL_LAUNCH_TYPE=direct
-- TARGET=cli COMMAND=build
-- TARGET=cli COMMAND=test
+- TARGET=framework COMMAND=test FBSIMULATORCONTROL_DEVICE_SET=custom FBSIMULATORCONTROL_LAUNCH_TYPE=direct FBSIMULATORCONTROL_RECORD_VIDEO=1
+- TARGET=fbsimctl COMMAND=build
+- TARGET=fbsimctl COMMAND=test
+- TARGET=fbsimctl COMMAND=e2e-test
+- TARGET=fbxctest COMMAND=build
+- TARGET=fbxctest COMMAND=test
 script: ./build.sh
 branches:
   only:

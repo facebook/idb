@@ -30,12 +30,20 @@ public enum Server {
 }
 
 /**
- A Configuration for Creating a Simulator.
+ A Configuration for Creating an Individual Simulator.
  */
-public struct CreationConfiguration {
+public struct IndividualCreationConfiguration {
   let osVersion: FBControlCoreConfiguration_OS?
   let deviceType: FBControlCoreConfiguration_Device?
   let auxDirectory : String?
+}
+
+/**
+ A Specification for the 'Create' Action.
+ */
+public enum CreationSpecification {
+  case AllMissingDefaults
+  case Individual(IndividualCreationConfiguration)
 }
 
 /**
@@ -54,16 +62,17 @@ public enum Action {
   case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
   case ClearKeychain(String)
-  case Create(CreationConfiguration)
+  case Create(CreationSpecification)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
   case Erase
   case Install(String)
   case LaunchAgent(FBAgentLaunchConfiguration)
   case LaunchApp(FBApplicationLaunchConfiguration)
-  case LaunchXCTest(FBApplicationLaunchConfiguration, String)
+  case LaunchXCTest(FBApplicationLaunchConfiguration, String, NSTimeInterval?)
   case List
   case ListApps
+  case ListDeviceSets
   case Listen(Server)
   case Open(NSURL)
   case Record(Bool)
@@ -132,24 +141,38 @@ extension Configuration : Accumulator {
   }
 }
 
-extension CreationConfiguration : Equatable {}
-public func == (left: CreationConfiguration, right: CreationConfiguration) -> Bool {
+extension IndividualCreationConfiguration : Equatable {}
+public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
   return left.osVersion?.name == right.osVersion?.name &&
          left.deviceType?.deviceName == right.deviceType?.deviceName &&
          left.auxDirectory == right.auxDirectory
 }
 
-extension CreationConfiguration : Accumulator {
+extension IndividualCreationConfiguration : Accumulator {
   public init() {
-    self.init(osVersion: nil, deviceType: nil, auxDirectory: nil)
+    self.osVersion = nil
+    self.deviceType = nil
+    self.auxDirectory = nil
   }
 
-  public func append(other: CreationConfiguration) -> CreationConfiguration {
-    return CreationConfiguration(
+  public func append(other: IndividualCreationConfiguration) -> IndividualCreationConfiguration {
+    return IndividualCreationConfiguration(
       osVersion: other.osVersion ?? self.osVersion,
       deviceType: other.deviceType ?? self.deviceType,
       auxDirectory: other.auxDirectory ?? self.auxDirectory
     )
+  }
+}
+
+extension CreationSpecification : Equatable {}
+public func == (left: CreationSpecification, right: CreationSpecification) -> Bool {
+  switch (left, right) {
+  case (.AllMissingDefaults, .AllMissingDefaults):
+    return true
+  case (.Individual(let leftConfiguration), .Individual(let rightConfiguration)):
+    return leftConfiguration == rightConfiguration
+  default:
+    return false
   }
 }
 
@@ -162,8 +185,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftConfiguration == rightConfiguration
   case (.ClearKeychain(let leftBundleID), .ClearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
-  case (.Create(let leftConfiguration), .Create(let rightConfiguration)):
-    return leftConfiguration == rightConfiguration
+  case (.Create(let leftSpecification), .Create(let rightSpecification)):
+    return leftSpecification == rightSpecification
   case (.Delete, .Delete):
     return true
   case (.Diagnose(let leftQuery, let leftFormat), .Diagnose(let rightQuery, let rightFormat)):
@@ -176,11 +199,13 @@ public func == (left: Action, right: Action) -> Bool {
     return leftLaunch == rightLaunch
   case (.LaunchApp(let leftLaunch), .LaunchApp(let rightLaunch)):
     return leftLaunch == rightLaunch
-  case (.LaunchXCTest(let leftLaunch, let leftBundle), .LaunchXCTest(let rightLaunch, let rightBundle)):
-    return leftLaunch == rightLaunch && leftBundle == rightBundle
+  case (.LaunchXCTest(let leftLaunch, let leftBundle, let leftTimeout), .LaunchXCTest(let rightLaunch, let rightBundle, let rightTimeout)):
+    return leftLaunch == rightLaunch && leftBundle == rightBundle && leftTimeout == rightTimeout
   case (.List, .List):
     return true
   case (.ListApps, .ListApps):
+    return true
+  case (.ListDeviceSets, .ListDeviceSets):
     return true
   case (.Listen(let leftServer), .Listen(let rightServer)):
     return leftServer == rightServer
@@ -207,6 +232,63 @@ public func == (left: Action, right: Action) -> Bool {
   default:
     return false
   }
+}
+
+extension Action {
+  public var reportable: (EventName, EventReporterSubject?) { get {
+    switch self {
+    case .Approve(let bundleIDs):
+      return (EventName.Approve, ArraySubject(bundleIDs))
+    case .Boot:
+      return (EventName.Boot, nil)
+    case .ClearKeychain(let bundleID):
+      return (EventName.ClearKeychain, bundleID)
+    case .Create:
+      return (EventName.Create, nil)
+    case .Delete:
+      return (EventName.Delete, nil)
+    case .Diagnose(let query, _):
+      return (EventName.Diagnose, ControlCoreSubject(query))
+    case .Erase:
+      return (EventName.Erase, nil)
+    case .Install:
+      return (EventName.Install, nil)
+    case .LaunchAgent(let launch):
+      return (EventName.Launch, ControlCoreSubject(launch))
+    case .LaunchApp(let launch):
+      return (EventName.Launch, ControlCoreSubject(launch))
+    case .LaunchXCTest(let launch, _, _):
+        return (EventName.LaunchXCTest, ControlCoreSubject(launch))
+    case .List:
+        return (EventName.List, nil)
+    case .ListApps:
+      return (EventName.ListApps, nil)
+    case .ListDeviceSets:
+      return (EventName.ListDeviceSets, nil)
+    case .Listen:
+      return (EventName.Listen, nil)
+    case .Open(let url):
+      return (EventName.Open, url.absoluteString)
+    case .Record(let start):
+      return (EventName.Record, start)
+    case .Relaunch(let appLaunch):
+      return (EventName.Relaunch, ControlCoreSubject(appLaunch))
+    case .Search(let search):
+      return (EventName.Search, ControlCoreSubject(search))
+    case .Shutdown:
+      return (EventName.Shutdown, nil)
+    case .Tap:
+      return (EventName.Tap, nil)
+    case .Terminate(let bundleID):
+      return (EventName.Record, bundleID)
+    case .Uninstall(let bundleID):
+      return (EventName.Uninstall, bundleID)
+    case .Upload:
+      return (EventName.Diagnose, nil)
+    case .WatchdogOverride(let bundleIDs, _):
+      return (EventName.WatchdogOverride, ArraySubject(bundleIDs))
+    }
+  }}
 }
 
 extension Server : Equatable { }

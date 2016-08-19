@@ -80,6 +80,16 @@ extern NSString *const FBControlCoreDebugLogging;
 + (NSTimeInterval)slowTimeout;
 
 /**
+ YES if Xcode 7 or greater, NO Otherwise.
+ */
++ (BOOL)isXcode7OrGreater;
+
+/**
+ YES if Xcode 8 or greater, NO Otherwise.
+ */
++ (BOOL)isXcode8OrGreater;
+
+/**
  YES if passing a custom SimDeviceSet to the Simulator App is Supported.
  */
 + (BOOL)supportsCustomDeviceSets;

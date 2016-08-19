@@ -9,14 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 /**
  Framework and Class Loading for XCTestBoostrap.
  */
-@interface XCTestBootstrapFrameworkLoader : NSObject
-
-/**
- Loads the Relevant Private Frameworks for ensuring the proper operation of XCTestBootsrap.
- */
-+ (void)initializeTestingEnvironment;
+@interface XCTestBootstrapFrameworkLoader : FBControlCoreFrameworkLoader
 
 @end

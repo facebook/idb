@@ -48,7 +48,7 @@
   static dispatch_once_t onceToken;
   static FBSimulatorConfiguration *configuration;
   dispatch_once(&onceToken, ^{
-    id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone5.new;
+    id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone6.new;
     id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
     configuration = [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
   });
@@ -149,7 +149,7 @@
 
 + (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device
 {
-  return [self withDevice:device];
+  return [self.defaultConfiguration withDevice:device];
 }
 
 - (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device
@@ -244,6 +244,16 @@
   return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone6SPlus.class];
 }
 
++ (instancetype)iPhoneSE
+{
+  return [self.defaultConfiguration iPhoneSE];
+}
+
+- (instancetype)iPhoneSE
+{
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhoneSE.class];
+}
+
 #pragma mark iPad Devices
 
 + (instancetype)iPad2
@@ -268,12 +278,14 @@
 
 + (instancetype)iPadPro
 {
-    return [self.defaultConfiguration iPadPro];
+  return [self.defaultConfiguration iPadPro];
 }
 
 - (instancetype)iPadPro
 {
-    return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadPro.class];
+  return FBControlCoreGlobalConfiguration.isXcode8OrGreater
+    ? [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadPro_12_9_Inch.class]
+    : [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadPro.class];
 }
 
 + (instancetype)iPadAir

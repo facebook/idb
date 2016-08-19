@@ -11,20 +11,30 @@ import Foundation
 import FBSimulatorControl
 
 struct SimulatorCreationRunner : Runner {
-  let context: iOSRunnerContext<CreationConfiguration>
+  let context: iOSRunnerContext<CreationSpecification>
 
   func run() -> CommandResult {
     do {
-      let configuration = self.context.value.simulatorConfiguration
-      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Started, configuration)
-      let simulator = try self.context.simulatorControl.set.createSimulatorWithConfiguration(configuration)
-      self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
-      self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
+      for configuration in self.configurations {
+        self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Started, configuration)
+        let simulator = try self.context.simulatorControl.set.createSimulatorWithConfiguration(configuration)
+        self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
+        self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
+      }
       return CommandResult.Success
     } catch let error as NSError {
       return CommandResult.Failure("Failed to Create Simulator \(error.description)")
     }
   }
+
+  private var configurations: [FBSimulatorConfiguration] { get {
+    switch self.context.value {
+    case .AllMissingDefaults:
+      return  self.context.simulatorControl.set.configurationsForAbsentDefaultSimulators()
+    case .Individual(let configuration):
+      return [configuration.simulatorConfiguration]
+    }
+  }}
 }
 
 struct SimulatorActionRunner : Runner {
@@ -79,9 +89,12 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
         interaction.launchApplication(launch)
       }
-    case .LaunchXCTest(let launch, let bundlePath):
+    case .LaunchXCTest(let launch, let bundlePath, let timeout):
       return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in
         interaction.startTestRunnerLaunchConfiguration(launch, testBundlePath: bundlePath)
+        if let timeout = timeout {
+            interaction.waitUntilAllTestRunnersHaveFinishedTestingWithTimeout(timeout)
+        }
       }
     case .ListApps:
       return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
@@ -89,7 +102,7 @@ struct SimulatorActionRunner : Runner {
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
     case .Open(let url):
-      return SimulatorInteractionRunner(reporter, EventName.Open, url.absoluteString) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.Open, url.bridgedAbsoluteString) { interaction in
         interaction.openURL(url)
       }
     case .Record(let start):
@@ -115,7 +128,7 @@ struct SimulatorActionRunner : Runner {
         interaction.tap(x, y: y)
       }
     case .Terminate(let bundleID):
-      return SimulatorInteractionRunner(reporter, EventName.Record, bundleID) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.Terminate, bundleID) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)
       }
     case .Uninstall(let bundleID):
@@ -129,7 +142,7 @@ struct SimulatorActionRunner : Runner {
         interaction.overrideWatchDogTimerForApplications(bundleIDs, withTimeout: timeout)
       }
     default:
-      return CommandResultRunner.unimplemented
+      return CommandResultRunner.unimplementedActionRunner(action, target: simulator, format: context.format)
     }
   }
 }

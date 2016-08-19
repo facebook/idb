@@ -175,6 +175,11 @@
   return self.scale.scaleString;
 }
 
+- (NSDecimalNumber *)scaleValue
+{
+  return [NSDecimalNumber decimalNumberWithString:self.scaleString];
+}
+
 #pragma mark Options
 
 + (instancetype)withOptions:(FBSimulatorLaunchOptions)options

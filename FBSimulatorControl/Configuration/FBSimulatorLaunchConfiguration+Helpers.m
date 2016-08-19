@@ -49,6 +49,11 @@
   return (self.options & FBSimulatorLaunchOptionsEnableDirectLaunch) == FBSimulatorLaunchOptionsEnableDirectLaunch;
 }
 
+- (BOOL)shouldConnectFramebuffer
+{
+  return (self.options & FBSimulatorLaunchOptionsConnectFramebuffer) == FBSimulatorLaunchOptionsConnectFramebuffer;
+}
+
 - (BOOL)shouldLaunchViaWorkspace
 {
   return (self.options & FBSimulatorLaunchOptionsUseNSWorkspace) == FBSimulatorLaunchOptionsUseNSWorkspace;

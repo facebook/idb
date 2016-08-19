@@ -99,6 +99,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return self.amDevice.osConfiguration;
 }
 
+- (NSComparisonResult)compare:(id<FBiOSTarget>)target
+{
+  return FBiOSTargetComparison(self, target);
+}
+
 #pragma mark FBDebugDescribeable
 
 - (NSString *)description

@@ -16,6 +16,26 @@ extension FBSimulatorState {
   }}
 }
 
+extension NSURL {
+  static func urlRelativeTo(basePath: String, component: String, isDirectory: Bool) -> NSURL {
+    let url = NSURL(fileURLWithPath: basePath)
+    #if swift(>=2.3)
+      return url.URLByAppendingPathComponent(component, isDirectory: isDirectory)!
+    #else
+      return url.URLByAppendingPathComponent(component, isDirectory: isDirectory)
+    #endif
+  }
+
+  var bridgedAbsoluteString: String { get {
+    #if swift(>=2.3)
+      return self.absoluteString!
+    #else
+      return self.absoluteString
+    #endif
+  }}
+
+}
+
 public typealias ControlCoreValue = protocol<FBJSONSerializable, CustomStringConvertible>
 
 @objc public class ControlCoreLoggerBridge : NSObject {
@@ -96,7 +116,7 @@ extension FBiOSTargetFormat : Accumulator {
   }
 }
 
-extension CreationConfiguration {
+extension IndividualCreationConfiguration {
   public var simulatorConfiguration : FBSimulatorConfiguration { get {
     var configuration = FBSimulatorConfiguration.defaultConfiguration()
     if let device = self.deviceType {

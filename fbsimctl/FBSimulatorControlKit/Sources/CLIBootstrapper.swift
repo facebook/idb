@@ -28,30 +28,31 @@ import FBSimulatorControl
       // Parse errors will be handled by the full parse
     }
     let cli = CLI.fromArguments(arguments, environment: environment)
-    let writer = FileHandleWriter.stdOutWriter
-    return CLIRunner(cli: cli, writer: writer).runForStatus()
+    let reporter = cli.createReporter(FileHandleWriter.stdOutWriter)
+    return CLIRunner(cli: cli, reporter: reporter).runForStatus()
   }
 }
 
 struct CLIRunner : Runner {
   let cli: CLI
-  let writer: Writer
+  let reporter: EventReporter
 
   func run() -> CommandResult {
-    let reporter = self.cli.createReporter(writer)
-
     switch self.cli {
     case .Run(let command):
-      return BaseCommandRunner(reporter: reporter, command: command).run()
+      return BaseCommandRunner(reporter: self.reporter, command: command).run()
     case .Show(let help):
-      return HelpRunner(reporter: reporter, help: help).run()
+      return HelpRunner(reporter: self.reporter, help: help).run()
     }
   }
 
   func runForStatus() -> Int32 {
     switch self.run() {
-      case .Failure: return 1
-      case .Success: return 0
+      case .Failure(let message):
+        self.reporter.reportError(message)
+        return 1
+      case .Success:
+        return 0
     }
   }
 }

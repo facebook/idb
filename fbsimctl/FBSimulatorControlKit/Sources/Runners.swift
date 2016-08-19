@@ -46,10 +46,6 @@ struct CommandResultRunner : Runner {
   func run() -> CommandResult {
     return self.result
   }
-
-  static var unimplemented: Runner { get {
-    return CommandResultRunner(result: CommandResult.Failure("Unimplemented"))
-  }}
 }
 
 extension CommandResult {

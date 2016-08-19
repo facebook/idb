@@ -9,13 +9,15 @@
 
 #import <XCTestBootstrap/FBCodesignProvider.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  An concrete implementation of a codesigning provider.
  */
 @interface FBCodeSignCommand : NSObject <FBCodesignProvider>
 
 /**
- Identity used to codesign bundle
+ Identity used to codesign bundle.
  */
 @property (nonatomic, copy, readonly) NSString *_Nonnull identityName;
 
@@ -25,4 +27,11 @@
  */
 + (instancetype _Nonnull)codeSignCommandWithIdentityName:(NSString *_Nonnull)identityName;
 
+/**
+ @return code sign command that signs bundles with the ad hoc identity.
+ */
++ (instancetype)codeSignCommandWithAdHocIdentity;
+
 @end
+
+NS_ASSUME_NONNULL_END

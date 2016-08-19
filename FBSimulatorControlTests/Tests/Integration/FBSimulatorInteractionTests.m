@@ -33,10 +33,4 @@
   [self assertInteractionSuccessful:[simulator.interact uploadVideos:@[FBSimulatorControlFixtures.video0Path]]];
 }
 
-- (void)testVideoUploadFailure
-{
-  FBSimulator *simulator = [self obtainBootedSimulator];
-  [self assertInteractionFailed:[simulator.interact uploadVideos:@[FBSimulatorControlFixtures.photo0Path]]];
-}
-
 @end

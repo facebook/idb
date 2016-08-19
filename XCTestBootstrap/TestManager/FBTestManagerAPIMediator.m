@@ -32,7 +32,7 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
 
-const NSInteger FBProtocolVersion = 0x10;
+const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>

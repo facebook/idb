@@ -25,8 +25,11 @@
 #import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 #import "FBSimulatorControlFrameworkLoader.h"
+#import "FBSimulatorInflationStrategy.h"
 
 @implementation FBSimulatorSet
+
+@synthesize allSimulators = _allSimulators;
 
 #pragma mark Initializers
 
@@ -62,8 +65,9 @@
   _control = control;
   _configuration = configuration;
 
-  _inflatedSimulators = [NSMutableDictionary dictionary];
+  _allSimulators = @[];
   _processFetcher = [FBProcessFetcher new];
+  _inflationStrategy = [FBSimulatorInflationStrategy forSet:self];
 
   return self;
 }
@@ -222,6 +226,14 @@
   return simulator;
 }
 
+- (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators
+{
+  NSSet<FBSimulatorConfiguration *> *existingConfigurations = [NSSet setWithArray:[self.allSimulators valueForKey:@"configuration"]];
+  NSMutableSet<FBSimulatorConfiguration *> *absentConfigurations = [NSMutableSet setWithArray:FBSimulatorConfiguration.allAvailableDefaultConfigurations];
+  [absentConfigurations minusSet:existingConfigurations];
+  return [absentConfigurations allObjects];
+}
+
 #pragma mark Destructive Methods
 
 - (BOOL)killSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -335,24 +347,10 @@
 
 - (NSArray<FBSimulator *> *)allSimulators
 {
-  // Inflate new simulators that have come along since last time this method was called.
-  NSArray *simDevices = self.deviceSet.availableDevices;
-  for (SimDevice *device in simDevices) {
-    NSString *udid = device.UDID.UUIDString;
-    if (self.inflatedSimulators[udid]) {
-      continue;
-    }
-    FBSimulator *simulator = [FBSimulator fromSimDevice:device configuration:nil set:self];
-    self.inflatedSimulators[udid] = simulator;
-  }
-
-  // Cull Simulators that should have gone away.
-  NSArray *currentSimulatorUDIDs = [simDevices valueForKeyPath:@"UDID.UUIDString"];
-  NSMutableSet *cullSet = [NSMutableSet setWithArray:self.inflatedSimulators.allKeys];
-  [cullSet minusSet:[NSSet setWithArray:currentSimulatorUDIDs]];
-  [self.inflatedSimulators removeObjectsForKeys:cullSet.allObjects];
-
-  return [self.inflatedSimulators objectsForKeys:currentSimulatorUDIDs notFoundMarker:NSNull.null];
+  _allSimulators = [[self.inflationStrategy
+    inflateFromDevices:self.deviceSet.availableDevices exitingSimulators:_allSimulators]
+    sortedArrayUsingSelector:@selector(compare:)];
+  return _allSimulators;
 }
 
 - (NSArray<FBSimulator *> *)launchedSimulators

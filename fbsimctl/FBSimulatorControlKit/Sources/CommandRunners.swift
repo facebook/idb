@@ -66,7 +66,9 @@ struct iOSRunnerContext<A> {
     let devices: [FBiOSTarget] = self.deviceControl?.query(query) ?? []
     let simulators: [FBiOSTarget] = self.simulatorControl.set.query(query)
     let targets = devices + simulators
-    return targets
+    return targets.sort { left, right in
+      return FBiOSTargetComparison(left, right) == NSComparisonResult.OrderedDescending
+    }
   }
 }
 
@@ -136,6 +138,9 @@ struct ActionRunner : Runner {
     let query = self.context.value.1
 
     switch action {
+    case .ListDeviceSets:
+      let context = self.context.replace(FBProcessFetcher())
+      return ListDeviceSetsRunner(context: context).run()
     case .Listen(let server):
       let context = self.context.replace((server, query))
       return ServerRunner(context: context).run()
@@ -165,9 +170,10 @@ struct ServerRunner : Runner, CommandPerformer {
   let context: iOSRunnerContext<(Server, FBiOSTargetQuery)>
 
   func run() -> CommandResult {
-    self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
-    let runner = RelayRunner(relay: SynchronousRelay(relay: self.baseRelay, reporter: self.context.reporter))
-    let result = runner.run()
+    let relay = SynchronousRelay(relay: self.baseRelay, reporter: self.context.reporter) {
+      self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
+    }
+    let result = RelayRunner(relay: relay).run()
     self.context.reporter.reportSimple(EventName.Listen, EventType.Ended, self.context.value.0)
     return result
   }
@@ -198,5 +204,17 @@ struct ServerRunner : Runner, CommandPerformer {
       deviceControl: self.context.deviceControl
     )
     return CommandRunner(context: context).run()
+  }
+}
+
+struct ListDeviceSetsRunner : Runner {
+  let context: iOSRunnerContext<FBProcessFetcher>
+
+  func run() -> CommandResult {
+    let launchdProcessesToDeviceSets = self.context.value.launchdProcessesToContainingDeviceSet()
+    for deviceSet in Set(launchdProcessesToDeviceSets.values).sort() {
+      self.context.reporter.reportSimple(EventName.ListDeviceSets, EventType.Discrete, deviceSet)
+    }
+    return CommandResult.Success
   }
 }

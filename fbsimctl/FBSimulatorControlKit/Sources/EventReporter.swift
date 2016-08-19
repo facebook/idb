@@ -24,6 +24,10 @@ extension EventReporter {
     self.report(SimpleSubject(eventName, eventType, subject))
   }
 
+  func reportError(message: String) {
+    self.reportSimpleBridge(EventName.Failure, EventType.Discrete, message as NSString)
+  }
+
   func logDebug(string: String) {
     self.report(LogSubject(logString: string, level: Constants.asl_level_debug()))
   }

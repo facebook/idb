@@ -165,21 +165,7 @@
     architectures:archs];
 }
 
-+ (instancetype)launchCtl
-{
-  NSError *error = nil;
-  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:self.pathForiPhoneLaunchCtl error:&error];
-  NSAssert(binary, @"Failed to construct launchctl binary with error %@", error);
-  return binary;
-}
-
 #pragma mark Private
-
-+ (NSString *)pathForiPhoneLaunchCtl
-{
-  return [FBControlCoreGlobalConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator.sdk/bin/launchctl"];
-}
 
 + (NSString *)binaryNameForBinaryPath:(NSString *)binaryPath
 {

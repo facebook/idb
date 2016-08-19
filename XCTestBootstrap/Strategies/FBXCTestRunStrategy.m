@@ -81,8 +81,8 @@
   }
 
   pid_t testRunnerProcessID = [self.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
-  if (testRunnerProcessID <= 0) {
-      NSLog(@"[%@ %@] => %@ (unable to fetch test runner PID)", NSStringFromClass(self.class), NSStringFromSelector(_cmd), nil);
+
+  if (testRunnerProcessID < 1) {
     return [[XCTestBootstrapError
       describe:@"Failed to determine test runner process PID"]
       fail:error];
