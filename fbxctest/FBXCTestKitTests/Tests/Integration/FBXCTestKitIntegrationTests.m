@@ -34,7 +34,7 @@
   NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
   NSString *testBundlePath = [FBXCTestKitFixtures iOSUnitTestBundlePath];
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 5,OS=iOS 9.3", @"-appTest", appTestArgument ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
 
   FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
   [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
@@ -81,7 +81,7 @@
   NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
   NSString *testBundlePath = [FBXCTestKitFixtures iOSUnitTestBundlePath];
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 5,OS=iOS 9.3", @"-appTest", appTestArgument ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = @{
     @"TEST_FIXTURE_SHOULD_CRASH" : @"1",
   };
@@ -129,7 +129,7 @@
   NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [FBXCTestKitFixtures iOSUnitTestBundlePath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 5,OS=iOS 9.3", @"-logicTest", testBundlePath ];
+  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
 
   FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
   [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
