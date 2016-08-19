@@ -82,7 +82,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
       ["--direct-launch"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer))
     )
   }
 
@@ -90,7 +90,7 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
       ["--locale", "en_GB", "--scale=75", "--direct-launch","--record-video"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_GB"))).scale75Percent().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
+      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_GB"))).scale75Percent().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer))
     )
   }
 }
@@ -243,7 +243,7 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["create", "iPhone 6"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["shutdown"], ["diagnose"],
     ]
-    let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
+    let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer))
     let diagnoseAction = Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [Action.List, Action.Create(CreationSpecification.iPhone6Configuration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)

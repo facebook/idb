@@ -788,7 +788,7 @@ struct FBSimulatorLaunchConfigurationParser {
     return Parser<FBSimulatorLaunchOptions>
       .union(1, [
         Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
-        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
+        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer)),
         Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])
