@@ -57,18 +57,14 @@
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
   // Create the Framebuffer (if required).
-  FBFramebuffer *framebuffer = nil;
-  if (self.configuration.shouldConnectFramebuffer) {
-    NSError *innerError = nil;
-    SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:&innerError];
-    if (!mainScreenService) {
-      return [FBSimulatorError failWithError:innerError errorOut:error];
-    }
-    framebuffer = [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:self.simulator];
+  NSError *innerError = nil;
+  SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:&innerError];
+  if (!mainScreenService) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
+  FBFramebuffer *framebuffer = [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:self.simulator];
 
   // Create the HID Port
-  NSError *innerError = nil;
   FBSimulatorHID *hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:&innerError];
   if (!hid) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
