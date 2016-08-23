@@ -343,6 +343,22 @@
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
 }
 
+- (id)_XCT_didBeginInitializingForUITesting
+{
+  [self.logger log:@"Started initilizing for UI testing."];
+  return nil;
+}
+
+- (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)error
+{
+  [self failWithError:[[[XCTestBootstrapError
+                         describe:@"Failed to initilize for UI testing"]
+                        causedBy:error]
+                       code:XCTestBootstrapErrorCodeStartupFailure]
+   ];
+  return nil;
+}
+
 + (NSString *)stateStringForState:(FBTestBundleConnectionState)state
 {
   switch (state) {

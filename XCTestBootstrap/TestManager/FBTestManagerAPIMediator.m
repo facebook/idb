@@ -32,7 +32,7 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
 
-const NSInteger FBProtocolVersion = 0x10;
+const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
@@ -224,6 +224,23 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   }
   [recepit invokeCompletionWithReturnValue:token error:error];
   return recepit;
+}
+
+#pragma mark iOS 10.x
+
+- (id)_XCT_didBeginInitializingForUITesting
+{
+  return nil;
+}
+
+- (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)error
+{
+  return nil;
+}
+
+- (id)_XCT_handleCrashReportData:(NSData *)arg1 fromFileWithName:(NSString *)arg2
+{
+  return nil;
 }
 
 #pragma mark Test Suite Progress
