@@ -102,7 +102,7 @@ struct SimulatorActionRunner : Runner {
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
     case .Open(let url):
-      return SimulatorInteractionRunner(reporter, EventName.Open, url.absoluteString) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.Open, url.bridgedAbsoluteString) { interaction in
         interaction.openURL(url)
       }
     case .Record(let start):
@@ -132,7 +132,7 @@ struct SimulatorActionRunner : Runner {
             interaction.setLocation(latitude, longitude: longitude)
         }
     case .Terminate(let bundleID):
-      return SimulatorInteractionRunner(reporter, EventName.Record, bundleID) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.Terminate, bundleID) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)
       }
     case .Uninstall(let bundleID):

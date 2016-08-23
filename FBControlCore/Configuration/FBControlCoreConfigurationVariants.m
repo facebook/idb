@@ -296,6 +296,30 @@
 
 @end
 
+@implementation FBControlCoreConfiguration_Device_iPhoneSE
+
+- (NSString *)deviceName
+{
+  return @"iPhone SE";
+}
+
+- (NSSet<NSString *> *)productTypes
+{
+  return [NSSet setWithArray:@[@"iPhone8,2"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
+@end
+
 @implementation FBControlCoreConfiguration_Device_iPad_Base
 
 - (NSString *)deviceName
@@ -437,6 +461,54 @@
 {
   // Both the 9" and 12" Variants.
   return [NSSet setWithArray:@[@"iPad6,7", @"iPad6,8", @"iPad6,3", @"iPad6,4"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
+@end
+
+@implementation FBControlCoreConfiguration_Device_iPadPro_9_7_Inch
+
+- (NSString *)deviceName
+{
+  return @"iPad Pro (9.7-inch)";
+}
+
+- (NSSet<NSString *> *)productTypes
+{
+  return [NSSet setWithArray:@[@"iPad6,3", @"iPad6,4"]];
+}
+
+- (NSString *)deviceArchitecture
+{
+  return @"arm64";
+}
+
+- (NSString *)simulatorArchitecture
+{
+  return @"x86_64";
+}
+
+@end
+
+@implementation  FBControlCoreConfiguration_Device_iPadPro_12_9_Inch
+
+- (NSString *)deviceName
+{
+  return @"iPad Pro (12.9-inch)";
+}
+
+- (NSSet<NSString *> *)productTypes
+{
+  return [NSSet setWithArray:@[@"iPad6,7", @"iPad6,8"]];
 }
 
 - (NSString *)deviceArchitecture
@@ -784,6 +856,15 @@
 
 @end
 
+@implementation FBControlCoreConfiguration_tvOS_10_0
+
+- (NSString *)name
+{
+  return @"tvOS 10.0";
+}
+
+@end
+
 @implementation FBControlCoreConfiguration_watchOS_Base
 
 - (NSString *)name
@@ -826,6 +907,15 @@
 
 @end
 
+@implementation FBControlCoreConfiguration_watchOS_3_0
+
+- (NSString *)name
+{
+  return @"watchOS 3.0";
+}
+
+@end
+
 @implementation FBControlCoreConfigurationVariants
 
 #pragma mark Lookup Tables
@@ -843,10 +933,13 @@
       FBControlCoreConfiguration_Device_iPhone6Plus.new,
       FBControlCoreConfiguration_Device_iPhone6S.new,
       FBControlCoreConfiguration_Device_iPhone6SPlus.new,
+      FBControlCoreConfiguration_Device_iPhoneSE.new,
       FBControlCoreConfiguration_Device_iPad2.new,
       FBControlCoreConfiguration_Device_iPadRetina.new,
       FBControlCoreConfiguration_Device_iPadAir.new,
       FBControlCoreConfiguration_Device_iPadPro.new,
+      FBControlCoreConfiguration_Device_iPadPro_9_7_Inch.new,
+      FBControlCoreConfiguration_Device_iPadPro_12_9_Inch.new,
       FBControlCoreConfiguration_Device_iPadAir2.new,
       FBControlCoreConfiguration_Device_AppleWatch38mm.new,
       FBControlCoreConfiguration_Device_AppleWatch42mm.new,
@@ -878,9 +971,11 @@
       FBControlCoreConfiguration_tvOS_9_0.new,
       FBControlCoreConfiguration_tvOS_9_1.new,
       FBControlCoreConfiguration_tvOS_9_2.new,
+      FBControlCoreConfiguration_tvOS_10_0.new,
       FBControlCoreConfiguration_watchOS_2_0.new,
       FBControlCoreConfiguration_watchOS_2_1.new,
-      FBControlCoreConfiguration_watchOS_2_2.new
+      FBControlCoreConfiguration_watchOS_2_2.new,
+      FBControlCoreConfiguration_watchOS_3_0.new,
     ];
   });
   return OSConfigurations;

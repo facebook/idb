@@ -9,17 +9,33 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
- Protocol for Codesigning Bundles.
+ A Protocol for providing a codesigning implementation.
  */
 @protocol FBCodesignProvider <NSObject>
 
 /**
- Request to codesign bundle at given path
+ Requests that the reciver codesigns a bundle.
+ Implementors can provide an error if one occurs.
 
- @param bundlePath path to bundle that should be signed
+ @param bundlePath path to bundle that should be signed.
+ @param error an error out for any error that occurs.
  @return YES if operation was successful
  */
-- (BOOL)signBundleAtPath:(NSString *)bundlePath;
+- (BOOL)signBundleAtPath:(NSString *)bundlePath error:(NSError **)error;
+
+/**
+ Attempts to fetch the CDHash of a bundle.
+ Implementors can provide an error if one occurs.
+
+ @param bundlePath the file path to the bundle.
+ @param error an error out for any error that occurs.
+ @return YES if operation was successful
+ */
+- (nullable NSString *)cdHashForBundleAtPath:(NSString *)bundlePath error:(NSError **)error;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -22,25 +22,15 @@ static BOOL hasLoadedFrameworks = NO;
 
 @implementation XCTestBootstrapFrameworkLoader
 
-#pragma mark Public
-
-+ (void)initializeTestingEnvironment
-{
-  NSError *error = nil;
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  if ([self loadTestingFrameworks:logger error:&error]) {
-    return;
-  }
-  [logger.error logFormat:@"Failed to load the xcode frameworks for XCTBoostrap with error %@", error];
-  abort();
-}
-
 #pragma mark Private
 
-+ (BOOL)loadTestingFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   if (hasLoadedFrameworks) {
     return YES;
+  }
+  if (![super loadPrivateFrameworks:logger error:error]) {
+    return NO;
   }
 
   NSArray<FBWeakFramework *> *frameworks = @[
@@ -52,6 +42,11 @@ static BOOL hasLoadedFrameworks = NO;
     hasLoadedFrameworks = YES;
   }
   return success;
+}
+
++ (NSString *)loadingFrameworkName
+{
+  return @"XCTestBootstrap";
 }
 
 @end

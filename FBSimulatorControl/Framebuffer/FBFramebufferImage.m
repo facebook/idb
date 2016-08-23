@@ -9,6 +9,8 @@
 
 #import "FBFramebufferImage.h"
 
+#import <CoreImage/CoreImage.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBFramebufferFrame.h"
@@ -78,6 +80,10 @@
   dispatch_async(self.writeQueue, ^{
     self.lastFrame = frame;
   });
+}
+
+- (void)framebuffer:(FBFramebuffer *)framebuffer didGetIOSurface:(IOSurfaceRef)surface
+{
 }
 
 - (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup

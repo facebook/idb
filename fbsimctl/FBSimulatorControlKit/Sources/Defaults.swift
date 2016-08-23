@@ -40,7 +40,7 @@ extension Configuration {
   }
 }
 
-let DefaultsRCFile = NSURL(fileURLWithPath: NSHomeDirectory()).URLByAppendingPathComponent(".fbsimctlrc", isDirectory: false)
+let DefaultsRCFile: NSURL = NSURL.urlRelativeTo(NSHomeDirectory(), component: ".fbsimctlrc", isDirectory: false)
 
 /**
  Provides Default Values, with overrides from a .rc file
@@ -126,6 +126,6 @@ public class Defaults {
 
   private static func queryHistoryLocation(configuration: Configuration) -> NSURL {
     let setPath = configuration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
-    return NSURL(fileURLWithPath: setPath).URLByAppendingPathComponent(".fbsimctl_last_query")
+    return NSURL.urlRelativeTo(setPath, component: ".fbsimctl_last_query", isDirectory: false)
   }
 }

@@ -188,25 +188,29 @@
     firstObject];
 }
 
-- (NSSet<NSString *> *)requiredProcessNamesToVerifyBooted
+- (NSSet<NSString *> *)requiredLaunchdServicesToVerifyBooted
 {
   if (self.productFamily == FBControlCoreProductFamilyiPhone || self.productFamily == FBControlCoreProductFamilyiPad) {
     return [NSSet setWithArray:@[
-       @"SpringBoard",
-       @"SimulatorBridge",
-       @"backboardd",
-       @"installd",
+       @"com.apple.SpringBoard",
+       @"com.apple.SimulatorBridge",
+       @"com.apple.backboardd",
+       @"com.apple.mobile.installd",
     ]];
   }
   if (self.productFamily == FBControlCoreProductFamilyAppleWatch || self.productFamily == FBControlCoreProductFamilyAppleTV) {
     return [NSSet setWithArray:@[
-       @"backboardd",
-       @"networkd",
-       @"mobileassetd",
-       @"UserEventAgent",
+       @"com.apple.networkd",
+       @"com.apple.mobileassetd",
     ]];
   }
   return [NSSet set];
+}
+
++ (NSDictionary<NSString *, id> *)simulatorApplicationPreferences
+{
+  NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Preferences/com.apple.iphonesimulator.plist"];
+  return [NSDictionary dictionaryWithContentsOfFile:path];
 }
 
 #pragma mark Private

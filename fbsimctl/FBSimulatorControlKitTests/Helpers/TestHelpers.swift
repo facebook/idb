@@ -52,7 +52,7 @@ public extension XCTestCase {
   }
 
   func temporaryDirectory() -> NSURL {
-    return NSURL(fileURLWithPath: NSTemporaryDirectory()).URLByAppendingPathComponent("FBSimulatorControlKitTests")
+    return NSURL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests", isDirectory: true)
   }
 }
 

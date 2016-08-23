@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from util import (FBSimctl, Simulator, find_fbsimctl_path)
+from util import (FBSimctl, Simulator, find_fbsimctl_path, DEFAULT_TIMEOUT, LONG_TIMEOUT)
 import argparse
 import os
 import tempfile
@@ -18,6 +18,10 @@ class FBSimctlTestCase(unittest.TestCase):
         self.methodName = methodName
         self.use_custom_set = use_custom_set
         self.fbsimctl = FBSimctl(fbsimctl_path, set_path)
+
+    def tearDown(self):
+        action = 'delete' if self.use_custom_set else 'shutdown'
+        self.fbsimctl(['--simulators', action])
 
     def __str__(self):
         return '{}: {}'.format(
@@ -40,9 +44,10 @@ class FBSimctlTestCase(unittest.TestCase):
         event_name,
         event_type,
         min_count=1,
-        max_count=None
+        max_count=None,
+        timeout=DEFAULT_TIMEOUT,
     ):
-        events = self.fbsimctl.run(arguments)
+        events = self.fbsimctl.run(arguments, timeout)
         matching_events = events.matching(event_name, event_type)
         match_count = len(matching_events)
         if min_count is not None:
@@ -71,8 +76,8 @@ class FBSimctlTestCase(unittest.TestCase):
             )
         return matching_events
 
-    def assertListContainsOnly(self, expected_udids):
-        events = self.fbsimctl.run(['list'])
+    def assertListContainsOnly(self, expected_udids, query=[]):
+        events = self.fbsimctl.run(query + ['list'])
         list_events = events.matching('list', 'discrete')
         list_udids = [
             event.get('subject').get('udid') for event in list_events
@@ -127,18 +132,37 @@ class FBSimctlTestCase(unittest.TestCase):
             self.fbsimctl(['foo'])
 
 
-class FBSimctlSimulatorTestCase(FBSimctlTestCase):
+class MultipleSimulatorTestCase(FBSimctlTestCase):
     def __init__(
         self,
         methodName,
         fbsimctl_path,
-        use_custom_set,
-        device_type,
     ):
-        super(FBSimctlSimulatorTestCase, self).__init__(
+        super(MultipleSimulatorTestCase, self).__init__(
             methodName=methodName,
             fbsimctl_path=fbsimctl_path,
-            use_custom_set=use_custom_set,
+            use_custom_set=True,
+        )
+
+    def testConstructsMissingDefaults(self):
+        self.assertEventsFromRun(
+            arguments=['create', '--all-missing-defaults'],
+            event_name='create',
+            event_type='ended',
+            timeout=LONG_TIMEOUT,
+        )
+
+class SingleSimulatorTestCase(FBSimctlTestCase):
+    def __init__(
+        self,
+        methodName,
+        fbsimctl_path,
+        device_type,
+    ):
+        super(SingleSimulatorTestCase, self).__init__(
+            methodName=methodName,
+            fbsimctl_path=fbsimctl_path,
+            use_custom_set=True,
         )
         self.device_type = device_type
 
@@ -164,6 +188,23 @@ class FBSimctlSimulatorTestCase(FBSimctlTestCase):
         simulator = self.assertCreatesSimulator([self.device_type])
         self.assertEventSuccesful([simulator.get_udid(), 'boot', '--direct-launch'], 'boot')
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+
+    def testShutdownBootedSimulatorBeforeErasing(self):
+        simulator = self.assertCreatesSimulator([self.device_type])
+        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
+        self.assertListContainsOnly([simulator.get_udid()], ['--state=booted'])
+        self.assertEventSuccesful([simulator.get_udid(), 'erase'], 'erase')
+        self.assertListContainsOnly([simulator.get_udid()], ['--state=shutdown'])
+
+    def testLaunchesSystemApplication(self):
+        simulator = self.assertCreatesSimulator([self.device_type])
+        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
+        self.assertEventSuccesful([simulator.get_udid(), 'launch', 'com.apple.Preferences'], 'launch')
+        return (simulator, 'com.apple.Preferences')
+
+    def testLaunchesThenTerminatesSystemApplication(self):
+        (simulator, bundle_id) = self.testLaunchesSystemApplication()
+        self.assertEventSuccesful([simulator.get_udid(), 'terminate', bundle_id], 'terminate')
 
     def testRecordsVideo(self):
         simulator = self.assertCreatesSimulator([self.device_type])
@@ -195,36 +236,65 @@ class FBSimctlSimulatorTestCase(FBSimctlTestCase):
         )
 
 
-def build_suite(fbsimctl_path, device_types):
-    # Run all the tests in the base test case against custom & default set
-    base_methods = set(unittest.defaultTestLoader.getTestCaseNames(FBSimctlTestCase))
-    suite = unittest.TestSuite()
-    for methodName in base_methods:
+class SuiteBuilder:
+    def __init__(self, fbsimctl_path, name_filter=None, device_types=['iPhone 6', 'iPad Air 2']):
+        self.fbsimctl_path = fbsimctl_path
+        self.device_types = device_types
+        self.name_filter = name_filter
+        self.loader = unittest.defaultTestLoader
+
+    def _filter_methods(self, methods):
+        if not self.name_filter:
+            return methods
+        return [method for method in methods if self.name_filter.lower() in method.lower()]
+
+    def _get_base_methods(self):
+        return self._filter_methods(
+            self.loader.getTestCaseNames(FBSimctlTestCase)
+        )
+
+    def _get_single_simulator_methods(self):
+        return self._filter_methods(
+            set(self.loader.getTestCaseNames(SingleSimulatorTestCase)) - set(self._get_base_methods()),
+        )
+
+    def _get_multiple_simulator_methods(self):
+        return self._filter_methods(
+            set(self.loader.getTestCaseNames(MultipleSimulatorTestCase)) - set(self._get_base_methods()),
+        )
+
+    def build(self):
+        # Run all the tests in the base test case against custom & default set
+        suite = unittest.TestSuite()
         suite.addTests([
             FBSimctlTestCase(
-                methodName=methodName,
-                fbsimctl_path=fbsimctl_path,
-                use_custom_set=False,
-            ),
-            FBSimctlTestCase(
-                methodName=methodName,
-                fbsimctl_path=fbsimctl_path,
-                use_custom_set=True,
-            ),
-        ])
-    # Only run per-Simulator-Type tests against a custom set
-    custom_set_methods = set(unittest.defaultTestLoader.getTestCaseNames(FBSimctlSimulatorTestCase)) - base_methods
-    for method_name in custom_set_methods:
-        for device_type in device_types:
-            suite.addTest(
-                FBSimctlSimulatorTestCase(
-                    methodName=method_name,
-                    fbsimctl_path=fbsimctl_path,
-                    use_custom_set=True,
-                    device_type=device_type,
-                ),
+                methodName=method_name,
+                fbsimctl_path=self.fbsimctl_path,
+                use_custom_set=use_custom_set,
             )
-    return suite
+            for method_name in self._get_base_methods()
+            for use_custom_set in [True, False]
+        ])
+        # Only run per-Simulator-Type tests against a custom set
+        suite.addTests([
+            SingleSimulatorTestCase(
+                methodName=method_name,
+                fbsimctl_path=self.fbsimctl_path,
+                device_type=device_type,
+            )
+            for method_name in self._get_single_simulator_methods()
+            for device_type in self.device_types
+        ])
+        # Only run multiple-Simulator tests against a custom set.
+        suite.addTests([
+            MultipleSimulatorTestCase(
+                methodName=method_name,
+                fbsimctl_path=self.fbsimctl_path,
+            )
+            for method_name
+            in self._get_multiple_simulator_methods()
+        ])
+        return suite
 
 
 if __name__ == '__main__':
@@ -235,14 +305,19 @@ if __name__ == '__main__':
         default='executable-under-test/fbsimctl',
         help='The location of the fbsimctl executable',
     )
+    parser.add_argument(
+        '--name-filter',
+        default=None,
+        help='A substring to match tests against, will only run matching tests',
+    )
     arguments = parser.parse_args()
 
-    suite = build_suite(
+    suite_builder = SuiteBuilder(
         fbsimctl_path=find_fbsimctl_path(arguments.fbsimctl_path),
-        device_types=['iPhone 6', 'iPad Air 2'],
+        name_filter=arguments.name_filter,
     )
     runner = unittest.TextTestRunner(
         verbosity=2,
         failfast=True,
     )
-    runner.run(suite)
+    runner.run(suite_builder.build())

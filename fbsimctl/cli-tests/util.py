@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import shlex
 import subprocess
 import time
 
@@ -13,7 +14,7 @@ log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 DEFAULT_TIMEOUT = 60
-
+LONG_TIMEOUT = 400
 
 def find_fbsimctl_path(expected_path):
     if os.path.exists(expected_path):
@@ -101,7 +102,7 @@ class FBSimctlProcess:
     @asyncio.coroutine
     def _start_process(self):
         log.info('Opening Process with Arguments {0}'.format(
-            self.__arguments,
+            ' '.join(self.__arguments),
         ))
         create = asyncio.create_subprocess_exec(
             *self.__arguments,
@@ -184,6 +185,9 @@ class FBSimctl:
 
     def run(self, arguments, timeout=DEFAULT_TIMEOUT):
         arguments = self._make_arguments(arguments)
+        log.info('Running Process with Arguments {0}'.format(
+            ' '.join(arguments),
+        ))
         process = subprocess.run(
             arguments,
             stdout=subprocess.PIPE,

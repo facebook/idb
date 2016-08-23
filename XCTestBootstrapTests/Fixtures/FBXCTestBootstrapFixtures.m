@@ -9,13 +9,28 @@
 
 #import "FBXCTestBootstrapFixtures.h"
 
-
 @implementation XCTestCase (FBXCTestBootstrapFixtures)
 
-+ (NSBundle *)testBundleFixture
++ (NSBundle *)iosUnitTestBundleFixture
 {
-  NSString *fixturePath = [[NSBundle bundleForClass:self.class] pathForResource:@"SimpleTestTarget" ofType:@"xctest"];
+  NSString *fixturePath = [[NSBundle bundleForClass:self.class] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];
   return [NSBundle bundleWithPath:fixturePath];
+}
+
++ (NSBundle *)macUnitTestBundleFixture
+{
+  NSString *fixturePath = [[NSBundle bundleForClass:self.class] pathForResource:@"MacUnitTestFixture" ofType:@"xctest"];
+  return [NSBundle bundleWithPath:fixturePath];
+}
+
++ (NSString *)JUnitXMLResult0Path
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"junitResult0" ofType:@"xml"];
+}
+
++ (NSString *)JUnitXMLResult1Path
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"junitResult1" ofType:@"xml"];
 }
 
 @end

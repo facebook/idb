@@ -44,7 +44,7 @@
 
 #pragma mark Lifecycle
 
-+ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set
++ (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess set:(FBSimulatorSet *)set
 {
   return [[[FBSimulator alloc]
     initWithDevice:device
@@ -53,7 +53,7 @@
     processFetcher:set.processFetcher
     auxillaryDirectory:[FBSimulator auxillaryDirectoryFromSimDevice:device configuration:configuration]
     logger:set.logger]
-    attachEventSinkComposition];
+    attachEventSinkCompositionWithLaunchdSimProcess:launchdSimProcess containerApplicationProcess:containerApplicationProcess];
 }
 
 - (instancetype)initWithDevice:(SimDevice *)device configuration:(FBSimulatorConfiguration *)configuration set:(FBSimulatorSet *)set processFetcher:(FBProcessFetcher *)processFetcher auxillaryDirectory:(NSString *)auxillaryDirectory logger:(nullable id<FBControlCoreLogger>)logger
@@ -74,7 +74,7 @@
   return self;
 }
 
-- (instancetype)attachEventSinkComposition
+- (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
 {
   FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator forSimulator:self];
   FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
@@ -84,7 +84,7 @@
   FBSimulatorResourceManager *resourceSink = [FBSimulatorResourceManager new];
 
   FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink, diagnosticsSink, mutableSink, resourceSink]];
-  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device processFetcher:self.processFetcher sink:compositeSink];
+  FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device launchdProcess:launchdSimProcess containerApplication:containerApplicationProcess processFetcher:self.processFetcher sink:compositeSink];
 
   _historyGenerator = historyGenerator;
   _eventRelay = relay;
@@ -125,6 +125,11 @@
 - (id<FBControlCoreConfiguration_OS>)osConfiguration
 {
   return self.configuration.os;
+}
+
+- (NSComparisonResult)compare:(id<FBiOSTarget>)target
+{
+  return FBiOSTargetComparison(self, target);
 }
 
 #pragma mark Properties

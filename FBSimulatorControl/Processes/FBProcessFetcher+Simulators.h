@@ -31,22 +31,19 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  */
 @interface FBProcessFetcher (Simulators)
 
-#pragma mark Process Fetching
+#pragma mark - Process Fetching
+
+#pragma mark The Container 'Simulator.app'
 
 /**
  Fetches an NSArray<FBProcessInfo *> of all Simulator Application Processes.
  */
-- (NSArray<FBProcessInfo *> *)simulatorProcesses;
+- (NSArray<FBProcessInfo *> *)simulatorApplicationProcesses;
 
 /**
- Fetches an NSArray<FBProcessInfo *> of all com.apple.CoreSimulator.CoreSimulatorService.
+ Fetches a Dictionary, mapping Simulator UDID to Simulator Application Process.
  */
-- (NSArray<FBProcessInfo *> *)coreSimulatorServiceProcesses;
-
-/**
- Fetches an NSArray<FBProcessInfo *> of all launchd_sim processes.
- */
-- (NSArray<FBProcessInfo *> *)launchdProcesses;
+- (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut;
 
 /**
  Fetches the Process Info for a given Simulator.
@@ -54,7 +51,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @param simDevice the Simulator to fetch Process Info for.
  @return Application Process Info if any could be obtained, nil otherwise.
  */
-- (FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice;
+- (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice;
 
 /**
  Fetches the Process Info for a given Simulator, with a timeout as the process info may take a while to appear
@@ -63,7 +60,14 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @param timeout the time to wait for the process info to appear.
  @return Application Process Info if any could be obtained, nil otherwise.
  */
-- (FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice timeout:(NSTimeInterval)timeout;
+- (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice timeout:(NSTimeInterval)timeout;
+
+#pragma mark The Simulator's launchd_sim
+
+/**
+ Fetches an NSArray<FBProcessInfo *> of all launchd_sim processes.
+ */
+- (NSArray<FBProcessInfo *> *)launchdProcesses;
 
 /**
  Fetches the Process Info for a given Simulator's launchd_sim.
@@ -71,9 +75,26 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @param simDevice the Simulator to fetch Process Info for.
  @return Process Info if any could be obtained, nil otherwise.
  */
-- (FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice;
+- (nullable FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice;
 
-#pragma mark Predicates
+/**
+ Fetches a Dictionary, mapping Simulator UDID to launchd_sim process.
+ */
+- (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids;
+
+/**
+ Fetches a Dictionary, mapping launchd_sim to the device set that contains it.
+ */
+- (NSDictionary<FBProcessInfo *, NSString *> *)launchdProcessesToContainingDeviceSet;
+
+#pragma mark CoreSimulatorService
+
+/**
+ Fetches an NSArray<FBProcessInfo *> of all com.apple.CoreSimulator.CoreSimulatorService.
+ */
+- (NSArray<FBProcessInfo *> *)coreSimulatorServiceProcesses;
+
+#pragma mark - Predicates
 
 /**
  Returns a Predicate that matches simulator processes only from the Xcode version in the provided configuration.
@@ -88,23 +109,7 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
 
  @return an NSPredicate that operates on an Collection of FBProcessInfo *.
  */
-+ (NSPredicate *)simulatorProcessesLaunchedBySimulatorControl;
-
-/**
- Constructs a Predicate that matches Process Info for Simulator Applications for the given UDIDs.
-
- @param udids an NSArray<NSString *> of the Simulator UDIDs to match.
- @return an NSPredicate that operates on an Collection of FBProcessInfo *.
- */
-+ (NSPredicate *)simulatorProcessesMatchingUDIDs:(NSArray<NSString *> *)udids;
-
-/**
- Constructs a Predicate that matches Process Info for launchd_sim process for the given UDIDs.
-
- @param udids an NSArray<NSString *> of the Simulator UDIDs to match.
- @return an NSPredicate that operates on an Collection of FBProcessInfo *.
- */
-+ (NSPredicate *)launchdProcessesMatchingUDIDs:(NSArray<NSString *> *)udids;
++ (NSPredicate *)simulatorApplicationProcessesLaunchedBySimulatorControl;
 
 /**
  Constructs a Predicate that matches CoreSimulatorService Processes for the current xcode versions.

@@ -244,6 +244,16 @@
   return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone6SPlus.class];
 }
 
++ (instancetype)iPhoneSE
+{
+  return [self.defaultConfiguration iPhoneSE];
+}
+
+- (instancetype)iPhoneSE
+{
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhoneSE.class];
+}
+
 #pragma mark iPad Devices
 
 + (instancetype)iPad2
@@ -268,12 +278,14 @@
 
 + (instancetype)iPadPro
 {
-    return [self.defaultConfiguration iPadPro];
+  return [self.defaultConfiguration iPadPro];
 }
 
 - (instancetype)iPadPro
 {
-    return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadPro.class];
+  return FBControlCoreGlobalConfiguration.isXcode8OrGreater
+    ? [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadPro_12_9_Inch.class]
+    : [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPadPro.class];
 }
 
 + (instancetype)iPadAir

@@ -44,11 +44,11 @@
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
-    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self]
+    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.iOSUnitTestBundlePath reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
-  [self assertPassed:@[@"testIsRunningOnIOS"] failed:@[@"testIsRunningOnMacOSX", @"testIsSafari"]];
-
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
+              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
 - (void)testInjectsApplicationTestIntoSampleAppOnIOS81Simulator
@@ -57,27 +57,67 @@
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
-    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self]
+    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.iOSUnitTestBundlePath reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
-  [self assertPassed:@[@"testIsRunningOnIOS"] failed:@[@"testIsRunningOnMacOSX", @"testIsSafari"]];
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
+              failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
 - (void)testInjectsApplicationTestIntoSafari
 {
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[simulator.interact
-    startTestRunnerLaunchConfiguration:self.safariAppLaunch testBundlePath:self.applicationTestBundlePath reporter:self]
+    startTestRunnerLaunchConfiguration:self.safariAppLaunch testBundlePath:self.iOSUnitTestBundlePath reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
 
   [self assertInteractionSuccessful:interaction];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsSafari"] failed:@[@"testIsRunningOnMacOSX"]];
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
+              failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
 - (void)assertPassed:(NSArray<NSString *> *)passed failed:(NSArray<NSString *> *)failed
 {
   XCTAssertEqualObjects(self.passedMethods, [NSSet setWithArray:passed]);
   XCTAssertEqualObjects(self.failedMethods, [NSSet setWithArray:failed]);
+}
+
+- (void)testInjectsApplicationTestIntoSampleAppWithJUnitReporter
+{
+  NSURL *outputFileURL =
+      [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
+  FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
+  FBSimulator *simulator = [self obtainBootedSimulator];
+  id<FBInteraction> interaction = [[[simulator.interact installApplication:self.tableSearchApplication]
+      startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch
+                          testBundlePath:self.iOSUnitTestBundlePath
+                                reporter:reporter] waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+  [self assertInteractionSuccessful:interaction];
+
+  NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];
+  NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
+  NSString *actual = [self stringWithContentsOfJUnitResult:outputFileURL];
+
+  XCTAssertEqualObjects(expected, actual);
+}
+
+#pragma mark -
+
+- (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path
+{
+  NSError *error;
+  NSString *string = [NSString stringWithContentsOfURL:path encoding:NSUTF8StringEncoding error:&error];
+  XCTAssertNil(error);
+
+  NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"time=\"[^\"]+\""
+                                                                         options:NSRegularExpressionCaseInsensitive
+                                                                           error:&error];
+  XCTAssertNil(error);
+
+  return [regex stringByReplacingMatchesInString:string
+                                         options:0
+                                           range:NSMakeRange(0, string.length)
+                                    withTemplate:@"time=\"0.00\""];
 }
 
 #pragma mark FBTestManagerTestReporter
