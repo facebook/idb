@@ -47,6 +47,7 @@
 
 @interface FBSimulatorBootStrategy_Direct : FBSimulatorBootStrategy
 
+- (BOOL)shouldCreateFramebuffer;
 - (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error;
 - (NSDictionary<NSString *, id> *)bootOptions;
 
@@ -56,13 +57,16 @@
 
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
-  // Create the Framebuffer (if required).
+  // Create the Framebuffer (if required to do so).
   NSError *innerError = nil;
-  SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:&innerError];
-  if (!mainScreenService) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+  FBFramebuffer *framebuffer = nil;
+  if (self.shouldCreateFramebuffer) {
+    SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:&innerError];
+    if (!mainScreenService) {
+      return [FBSimulatorError failWithError:innerError errorOut:error];
+    }
+    framebuffer = [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:self.simulator];
   }
-  FBFramebuffer *framebuffer = [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:self.simulator];
 
   // Create the HID Port
   FBSimulatorHID *hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:&innerError];
@@ -82,6 +86,12 @@
   }
 
   return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
+}
+
+- (BOOL)shouldCreateFramebuffer
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
 }
 
 - (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
@@ -144,6 +154,12 @@
   return framebufferService;
 }
 
+- (BOOL)shouldCreateFramebuffer
+{
+  // A Framebuffer is required in Xcode 7 currently, otherwise any interface that uses the Mach Interface for 'Host Support' will fail/hang.
+  return YES;
+}
+
 - (NSDictionary<NSString *, id> *)bootOptions
 {
   // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
@@ -162,6 +178,12 @@
 @end
 
 @implementation FBSimulatorBootStrategy_Direct_Xcode8
+
+- (BOOL)shouldCreateFramebuffer
+{
+  // Framebuffer connection is optional on Xcode 8 so we should use the appropriate configuration.
+  return self.configuration.shouldConnectFramebuffer;
+}
 
 - (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
 {
