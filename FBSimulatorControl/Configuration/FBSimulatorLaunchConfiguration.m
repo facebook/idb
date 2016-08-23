@@ -141,10 +141,10 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Scale %@ | %@ | Options %lu",
+    @"Scale %@ | %@ | Options %@",
     self.scaleString,
-    self.localizationOverride,
-    self.options
+    self.localizationOverride ? self.localizationOverride : @"No Locale Override",
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorLaunchConfiguration stringsFromLaunchOptions:self.options]]
   ];
 }
 
@@ -271,6 +271,29 @@
 - (instancetype)withVideo:(FBFramebufferVideoConfiguration *)video
 {
   return [[self.class alloc] initWithOptions:self.options scale:self.scale localizationOverride:self.localizationOverride video:video];
+}
+
+#pragma mark Utility
+
++ (NSArray<NSString *> *)stringsFromLaunchOptions:(FBSimulatorLaunchOptions)options
+{
+  NSMutableArray<NSString *> *strings = [NSMutableArray array];
+  if ((options & FBSimulatorLaunchOptionsConnectBridge) == FBSimulatorLaunchOptionsConnectBridge) {
+    [strings addObject:@"Connect Bridge"];
+  }
+  if ((options & FBSimulatorLaunchOptionsConnectFramebuffer) == FBSimulatorLaunchOptionsConnectFramebuffer) {
+     [strings addObject:@"Connect Framebuffer"];
+  }
+  if ((options & FBSimulatorLaunchOptionsEnableDirectLaunch) == FBSimulatorLaunchOptionsEnableDirectLaunch) {
+    [strings addObject:@"Direct Launch"];
+  }
+  if ((options & FBSimulatorLaunchOptionsShowDebugWindow) == FBSimulatorLaunchOptionsShowDebugWindow) {
+    [strings addObject:@"Show Debug Window"];
+  }
+  if ((options & FBSimulatorLaunchOptionsUseNSWorkspace) == FBSimulatorLaunchOptionsUseNSWorkspace) {
+    [strings addObject:@"Use NSWorkspace"];
+  }
+  return [strings copy];
 }
 
 @end
