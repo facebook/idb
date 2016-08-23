@@ -51,6 +51,20 @@
   return _clientProcessUniqueIdentifier;
 }
 
++ (NSString *)clientProcessDisplayPath
+{
+  static dispatch_once_t onceToken;
+  static NSString *_clientProcessDisplayPath;
+  dispatch_once(&onceToken, ^{
+    NSString *path = NSBundle.mainBundle.bundlePath;
+    if (![path.pathExtension isEqualToString:@"app"]) {
+      path = NSBundle.mainBundle.executablePath;
+    }
+    _clientProcessDisplayPath = path;
+  });
+  return _clientProcessDisplayPath;
+}
+
 + (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithDeviceOperator:deviceOperator interface:interface sessionIdentifier:sessionIdentifier queue:queue logger:logger];
@@ -236,21 +250,17 @@
   [proxyChannel setExportedObject:self queue:dispatch_get_main_queue()];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
-  NSString *bundlePath = NSBundle.mainBundle.bundlePath;
-  if (![NSBundle.mainBundle.bundlePath.pathExtension isEqualToString:@"app"]) {
-    bundlePath = NSBundle.mainBundle.executablePath;
-  }
   [self.logger logFormat:@"Starting test session with ID %@", self.sessionIdentifier.UUIDString];
 
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
     _IDE_initiateSessionWithIdentifier:self.sessionIdentifier
     forClient:self.class.clientProcessUniqueIdentifier
-    atPath:bundlePath
+    atPath:self.class.clientProcessDisplayPath
     protocolVersion:@(FBProtocolVersion)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error){
     if (error || !version) {
       [self.logger logFormat:@"Client Daemon Interface failed, trying legacy format."];
-      [self setupLegacyProtocolConnectionViaRemoteProxy:remoteProxy proxyChannel:proxyChannel bundlePath:bundlePath];
+      [self setupLegacyProtocolConnectionViaRemoteProxy:remoteProxy proxyChannel:proxyChannel];
       return;
     }
 
@@ -260,12 +270,12 @@
   return receipt;
 }
 
-- (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel bundlePath:(NSString *)bundlePath
+- (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel
 {
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
     _IDE_beginSessionWithIdentifier:self.sessionIdentifier
     forClient:self.class.clientProcessUniqueIdentifier
-    atPath:bundlePath];
+    atPath:self.class.clientProcessDisplayPath];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     if (error) {
       [self failWithError:[[XCTestBootstrapError describe:@"Client Daemon Interface failed"] causedBy:error]];
