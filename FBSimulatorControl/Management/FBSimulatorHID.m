@@ -15,6 +15,7 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+#import <mach/mach_port.h>
 
 @interface FBSimulatorHID ()
 

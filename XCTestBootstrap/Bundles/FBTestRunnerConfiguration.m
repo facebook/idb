@@ -94,30 +94,42 @@
   return config;
 }
 
++ (NSArray *)defaultBuildAttributes {
+    return
+    @[
+      @"-NSTreatUnknownArgumentsAsOpen", @"NO",
+      @"-ApplePersistenceIgnoreState", @"YES"
+      ];
+}
 - (NSArray *)buildAttributes
 {
-  return
-  @[
-    @"-NSTreatUnknownArgumentsAsOpen", @"NO",
-    @"-ApplePersistenceIgnoreState", @"YES"
-  ];
+    return [self.class defaultBuildAttributes];
+}
+
++ (NSDictionary *)defaultBuildEnvironment {
+    return
+    @{
+      @"XCTestConfigurationFilePath" : @"/thanks/for/using/calabash",
+      };
 }
 
 - (NSDictionary *)buildEnvironment
 {
-  return
-  @{
-    @"AppTargetLocation" : self.testRunner.binaryPath,
-    @"DYLD_INSERT_LIBRARIES" : self.IDEBundleInjectionFramework.binaryPath,
-    @"DYLD_FRAMEWORK_PATH" : self.frameworkSearchPath ?: @"",
-    @"DYLD_LIBRARY_PATH" : self.frameworkSearchPath ?: @"",
-    @"OBJC_DISABLE_GC" : @"YES",
-    @"TestBundleLocation" : self.webDriverAgentTestBundle.path,
-    @"XCInjectBundle" : self.webDriverAgentTestBundle.path,
-    @"XCInjectBundleInto" : self.testRunner.binaryPath,
-    @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
-    @"XCTestConfigurationFilePath" : self.testConfigurationPath,
-  };
+    NSMutableDictionary *env = [[self.class defaultBuildEnvironment] mutableCopy];
+    
+    [env addEntriesFromDictionary:@{
+                                   @"AppTargetLocation" : self.testRunner.binaryPath,
+                                   @"DYLD_INSERT_LIBRARIES" : self.IDEBundleInjectionFramework.binaryPath,
+                                   @"DYLD_FRAMEWORK_PATH" : self.frameworkSearchPath ?: @"",
+                                   @"DYLD_LIBRARY_PATH" : self.frameworkSearchPath ?: @"",
+                                   @"OBJC_DISABLE_GC" : @"YES",
+                                   @"TestBundleLocation" : self.webDriverAgentTestBundle.path,
+                                   @"XCInjectBundle" : self.webDriverAgentTestBundle.path,
+                                   @"XCInjectBundleInto" : self.testRunner.binaryPath,
+                                   @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
+                                   @"XCTestConfigurationFilePath" : self.testConfigurationPath,
+                                   }];
+    return env;
 }
 
 @end

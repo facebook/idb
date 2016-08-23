@@ -8,7 +8,6 @@
  */
 
 #import <Foundation/Foundation.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 @class DVTiOSDevice;
@@ -61,6 +60,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *systemVersion;
 
 /**
+<<<<<<< HEAD
+ Unique Device IDentifier
+ */
+@property (nonatomic, copy, readonly) NSString *UDID;
+
+/**
+=======
+>>>>>>> facebook/master
  Architectures suported by device
  */
 @property (nonatomic, copy, readonly) NSSet *supportedArchitectures;

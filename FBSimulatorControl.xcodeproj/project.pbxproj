@@ -25,6 +25,7 @@
 		3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14994D1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
+		89AFD2DC1CF858D8003D365E /* FBDeviceControl.h in Headers */ = {isa = PBXBuildFile; fileRef = AAC8B22D1CEC51120034A865 /* FBDeviceControl.h */; };
 		AA017F581BD7787300F45E9D /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
 		AA0333421CC54C59009567E3 /* FBApplicationLaunchStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0333401CC54C59009567E3 /* FBApplicationLaunchStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0333431CC54C59009567E3 /* FBApplicationLaunchStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0333411CC54C59009567E3 /* FBApplicationLaunchStrategy.m */; };
@@ -61,8 +62,6 @@
 		AA2C9A531D33F59400A1355C /* FBSimulator+Connection.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2C9A511D33F59400A1355C /* FBSimulator+Connection.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA2C9A541D33F59400A1355C /* FBSimulator+Connection.m in Sources */ = {isa = PBXBuildFile; fileRef = AA2C9A521D33F59400A1355C /* FBSimulator+Connection.m */; };
 		AA3230CB1BDA387700C5BA01 /* FBSimulatorControlAssertions.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */; };
-		AA3714851CEDF52F00C29CCB /* FBDeviceControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAC8B22B1CEC51120034A865 /* FBDeviceControl.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		AA3714861CEDF56D00C29CCB /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AA391AD21CEF4CBC00817691 /* FBLocalizationOverride.h in Headers */ = {isa = PBXBuildFile; fileRef = AA391AD01CEF4CBC00817691 /* FBLocalizationOverride.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA391AD31CEF4CBC00817691 /* FBLocalizationOverride.m in Sources */ = {isa = PBXBuildFile; fileRef = AA391AD11CEF4CBC00817691 /* FBLocalizationOverride.m */; };
 		AA3C18421D5DE3BB00419EAA /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA3C18411D5DE3BB00419EAA /* IOSurface.framework */; };
@@ -218,11 +217,11 @@
 		AA9517C21C15F60B00A89CAD /* FBCompositeSimulatorEventSink.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9517C01C15F60B00A89CAD /* FBCompositeSimulatorEventSink.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9517C31C15F60B00A89CAD /* FBCompositeSimulatorEventSink.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9517C11C15F60B00A89CAD /* FBCompositeSimulatorEventSink.m */; };
 		AA98351C1CEF55C20038F432 /* FBLocalizationOverrideTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA98351B1CEF55C20038F432 /* FBLocalizationOverrideTests.m */; };
-		AA98ECAA1D0559D000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECAC1D0559DF00916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECAD1D0559E100916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECAE1D0559E400916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA98ECB01D055A0000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA98ECAA1D0559D000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECAC1D0559DF00916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECAD1D0559E100916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECAE1D0559E400916AED /* XCTestBootstrap.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA98ECB01D055A0000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AA9B24D81D07F9BB00CEE14F /* FBiOSTargetPredicates.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9B24D61D07F9BB00CEE14F /* FBiOSTargetPredicates.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9B24D91D07F9BB00CEE14F /* FBiOSTargetPredicates.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */; };
 		AAAA67C61BC4FED200075197 /* FBSimulatorControlFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */; };
@@ -474,17 +473,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		AA3714841CEDF52200C29CCB /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				AA3714861CEDF56D00C29CCB /* XCTestBootstrap.framework in CopyFiles */,
-				AA3714851CEDF52F00C29CCB /* FBDeviceControl.framework in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		AA98ECA81D0559B200916AED /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2396,6 +2384,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				89AFD2DC1CF858D8003D365E /* FBDeviceControl.h in Headers */,
 				EE4F0D901C91B82700608E89 /* XCTestBootstrap.h in Headers */,
 				AA7FA7B21CE075DD00614A61 /* FBXCTestManagerLoggingForwarder.h in Headers */,
 				AA1F2C8A1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.h in Headers */,
@@ -2534,7 +2523,6 @@
 				AAC8B2301CEC51120034A865 /* Sources */,
 				AAC8B2311CEC51120034A865 /* Frameworks */,
 				AAC8B2321CEC51120034A865 /* Resources */,
-				AA3714841CEDF52200C29CCB /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -2657,18 +2645,32 @@
 					};
 					AAC8B22A1CEC51120034A865 = {
 						CreatedOnToolsVersion = 7.3.1;
+						DevelopmentTeam = FYD86LA7RE;
+						DevelopmentTeamName = "Karl Krukow";
+						ProvisioningStyle = Automatic;
 					};
 					AAC8B2331CEC51120034A865 = {
 						CreatedOnToolsVersion = 7.3.1;
 					};
+					E66DC04E390C419500000000 = {
+						DevelopmentTeam = FYD86LA7RE;
+						DevelopmentTeamName = "Karl Krukow";
+						ProvisioningStyle = Automatic;
+					};
 					EE4F0D2F1C91B7DA00608E89 = {
 						CreatedOnToolsVersion = 7.2.1;
+						DevelopmentTeam = FYD86LA7RE;
+						DevelopmentTeamName = "Karl Krukow";
+						ProvisioningStyle = Automatic;
 					};
 					EE4F0D381C91B7DB00608E89 = {
 						CreatedOnToolsVersion = 7.2.1;
 					};
 					EEBD600D1C90628F00298A07 = {
 						CreatedOnToolsVersion = 7.2.1;
+						DevelopmentTeam = FYD86LA7RE;
+						DevelopmentTeamName = "Karl Krukow";
+						ProvisioningStyle = Automatic;
 					};
 					EEBD60161C90628F00298A07 = {
 						CreatedOnToolsVersion = 7.2.1;
@@ -3085,17 +3087,33 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Debug;
 		};
 		4952437303EDA63300000002 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
@@ -3104,15 +3122,31 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Profile;
 		};
 		4952437350C7218900000002 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 			};
 			name = Profile;
 		};
@@ -3120,15 +3154,31 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Release;
 		};
 		49524373A439BFE700000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 			};
 			name = Release;
 		};
@@ -3157,6 +3207,35 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				DEFINES_MODULE = YES;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-weak_framework",
+					DTXConnectionServices,
+					"-weak_framework",
+					DVTFoundation,
+					"-weak_framework",
+					IBAutolayoutFoundation,
+					"-weak_framework",
+					IDEFoundation,
+					"-weak_framework",
+					IDEKit,
+					"-weak_library",
+					"'$DEVELOPER_DIR/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore'",
+					"-weak_library",
+					"'$DEVELOPER_DIR/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor'",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
@@ -3164,6 +3243,35 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				DEFINES_MODULE = YES;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-weak_framework",
+					DTXConnectionServices,
+					"-weak_framework",
+					DVTFoundation,
+					"-weak_framework",
+					IBAutolayoutFoundation,
+					"-weak_framework",
+					IDEFoundation,
+					"-weak_framework",
+					IDEKit,
+					"-weak_library",
+					"'$DEVELOPER_DIR/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore'",
+					"-weak_library",
+					"'$DEVELOPER_DIR/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor'",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Profile;
 		};
@@ -3171,30 +3279,102 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				DEFINES_MODULE = YES;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				INFOPLIST_FILE = "FBDeviceControl/FBDeviceControl-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-weak_framework",
+					DTXConnectionServices,
+					"-weak_framework",
+					DVTFoundation,
+					"-weak_framework",
+					IBAutolayoutFoundation,
+					"-weak_framework",
+					IDEFoundation,
+					"-weak_framework",
+					IDEKit,
+					"-weak_library",
+					"'$DEVELOPER_DIR/../PlugIns/IDEiOSSupportCore.ideplugin/Contents/MacOS/IDEiOSSupportCore'",
+					"-weak_library",
+					"'$DEVELOPER_DIR/../PlugIns/IDESourceEditor.ideplugin/Contents/MacOS/IDESourceEditor'",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControl;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		AAC8B23F1CEC51120034A865 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
+			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		AAC8B2401CEC51120034A865 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
+			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Profile;
 		};
 		AAC8B2411CEC51120034A865 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
+			baseConfigurationReference = AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "FBDeviceControlTests/FBDeviceControlTests-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBDeviceControlTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -3202,6 +3382,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Debug;
 		};
@@ -3209,6 +3390,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Profile;
 		};
@@ -3216,6 +3398,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Release;
 		};
@@ -3268,6 +3451,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Debug;
 		};
@@ -3275,6 +3459,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Profile;
 		};
@@ -3282,6 +3467,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EEBD60341C9062E900298A07 /* FBControlCore.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Mac Developer";
 			};
 			name = Release;
 		};

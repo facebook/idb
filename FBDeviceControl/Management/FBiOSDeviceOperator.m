@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+
 #import "FBiOSDeviceOperator.h"
 
 #import <objc/runtime.h>
@@ -53,6 +54,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 @end
 
 @implementation FBiOSDeviceOperator
+@synthesize codesignProvider;
 
 + (instancetype)forDevice:(FBDevice *)device
 {

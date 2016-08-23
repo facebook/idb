@@ -59,6 +59,7 @@
 {
   NSAssert(self.deviceOperator, @"Device operator is needed to perform meaningful test");
   NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
+
   NSError *innerError;
   FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithDeviceOperator:self.deviceOperator error:&innerError];
   if (!configuration) {
@@ -68,6 +69,7 @@
      fail:error];
   }
 
+    NSLog(@"SessionID: %@", configuration.sessionIdentifier);
   if (![self.deviceOperator launchApplicationWithBundleID:configuration.testRunner.bundleID
                                                 arguments:[self argumentsFromConfiguration:configuration attributes:attributes]
                                               environment:[self environmentFromConfiguration:configuration environment:environment]
@@ -79,6 +81,7 @@
   }
 
   pid_t testRunnerProcessID = [self.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
+
   if (testRunnerProcessID < 1) {
     return [[XCTestBootstrapError
       describe:@"Failed to determine test runner process PID"]
@@ -93,14 +96,66 @@
     logger:self.logger];
 
   if (![testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
-    return
+      return
     [[[XCTestBootstrapError describe:@"Failed connect to test runner or test manager daemon"]
       causedBy:innerError]
      fail:error];
   }
+    NSLog(@"[%@ %@] => %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), testManager);
   return testManager;
 }
 
+
++ (FBTestManager *)startTestManagerForDeviceOperator:(id<FBDeviceOperator>)deviceOperator
+                                      runnerBundleID:(NSString *)bundleID
+                                           sessionID:(NSUUID *)sessionID
+                                      withAttributes:(NSArray *)attributes
+                                         environment:(NSDictionary *)environment
+                                            reporter:(id<FBTestManagerTestReporter>)reporter
+                                              logger:(id<FBControlCoreLogger>)logger
+                                               error:(NSError *__autoreleasing *)error {
+    NSAssert(bundleID, @"Must provide test runner bundle ID in order to run a test");
+    NSAssert(sessionID, @"Must provide a test session ID in order to run a test");
+    
+    NSLog(@"SessionID: %@", sessionID);
+    NSLog(@"BundleID: %@", bundleID);
+    
+    NSError *innerError;
+    
+    if (![deviceOperator launchApplicationWithBundleID:bundleID
+                                             arguments:attributes ?: @[]
+                                           environment:environment ?: @{}
+                                                 error:&innerError]) {
+        return
+        [[[XCTestBootstrapError describe:@"Failed launch test runner"]
+          causedBy:innerError]
+         fail:error];
+    }
+    
+    pid_t testRunnerProcessID = [deviceOperator processIDWithBundleID:bundleID error:error];
+    
+    if (testRunnerProcessID < 1) {
+        return [[XCTestBootstrapError
+                 describe:@"Failed to determine test runner process PID"]
+                fail:error];
+    }
+    
+    // Attach to the XCTest Test Runner host Process.
+    FBTestManager *testManager = [FBTestManager testManagerWithOperator:deviceOperator
+                                                          testRunnerPID:testRunnerProcessID
+                                                      sessionIdentifier:sessionID
+                                                               reporter:reporter
+                                                                 logger:logger];
+    
+    if (![testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
+        return
+        [[[XCTestBootstrapError describe:@"Failed connect to test runner or test manager daemon"]
+          causedBy:innerError]
+         fail:error];
+    }
+    NSLog(@"[%@ %@] => %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), testManager);
+    return testManager;
+}
 #pragma mark Private
 
 - (NSArray<NSString *> *)argumentsFromConfiguration:(FBTestRunnerConfiguration *)configuration attributes:(NSArray<NSString *> *)attributes

@@ -28,6 +28,8 @@
 
 @implementation FBSimulatorControlOperator
 
+@synthesize codesignProvider; //not used
+
 + (instancetype)operatorWithSimulator:(FBSimulator *)simulator
 {
   FBSimulatorControlOperator *operator = [self.class new];
