@@ -127,10 +127,10 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.Tap, ControlCoreSubject(simulator)) { interaction in
         interaction.tap(x, y: y)
       }
-    case .setLocation(let latitude, let longitude):
-        return SimulatorInteractionRunner(reporter, EventName.setLocation, ControlCoreSubject(simulator)) { interaction in
-            interaction.setLocation(latitude, longitude: longitude)
-        }
+    case .SetLocation(let latitude, let longitude):
+      return SimulatorInteractionRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) { interaction in
+        interaction.setLocation(latitude, longitude: longitude)
+      }
     case .Terminate(let bundleID):
       return SimulatorInteractionRunner(reporter, EventName.Terminate, bundleID) { interaction in
         interaction.terminateApplicationWithBundleID(bundleID)

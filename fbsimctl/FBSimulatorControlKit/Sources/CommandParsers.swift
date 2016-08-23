@@ -572,19 +572,19 @@ extension Action : Parsable {
         Action.Tap(x, y)
       }
   }}
+    
   static var setLocationParser: Parser<Action> { get {
     return Parser
       .succeeded(
-        EventName.setLocation.rawValue,
-          Parser.ofTwoSequenced(
-                    Parser<Any>.ofDouble,
-                    Parser<Any>.ofDouble
-                )
-            )
-            .fmap { (latitude, longitude) in
-            
-                Action.setLocation(latitude, longitude)
-        }
+        EventName.SetLocation.rawValue,
+        Parser.ofTwoSequenced(
+          Parser<Any>.ofDouble,
+          Parser<Any>.ofDouble
+        )
+      )
+      .fmap { (latitude, longitude) in
+        Action.SetLocation(latitude, longitude)
+      }
   }}
 
   static var terminateParser: Parser<Action> { get {

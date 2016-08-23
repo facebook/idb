@@ -43,7 +43,6 @@
  */
 - (instancetype)tap:(double)x y:(double)y;
 
-
 /**
  Sets latitude and longitude of the Simulator.
  The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
