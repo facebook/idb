@@ -202,10 +202,9 @@
       [self failWithError:[[XCTestBootstrapError describe:@"Failed to create transport"] causedBy:error]];
       return;
     }
-
     DTXConnection *connection = [self setupTestBundleConnectionWithTransport:transport];
     dispatch_async(dispatch_get_main_queue(), ^{
-      [self sendStartSessionRequestToConnection:connection];
+      [self sendStartSessionRequestWithConnection:connection];
     });
   });
 }
@@ -241,7 +240,7 @@
   return self.testBundleConnection;
 }
 
-- (DTXRemoteInvocationReceipt *)sendStartSessionRequestToConnection:(DTXConnection *)connection
+- (void)sendStartSessionRequestWithConnection:(DTXConnection *)connection
 {
   [self.logger log:@"Checking test manager availability..."];
   DTXProxyChannel *proxyChannel = [self.testBundleConnection
@@ -267,7 +266,6 @@
     [self.logger logFormat:@"testmanagerd handled session request using protcol version %ld.", (long)FBProtocolVersion];
     [proxyChannel cancel];
   }];
-  return receipt;
 }
 
 - (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel
