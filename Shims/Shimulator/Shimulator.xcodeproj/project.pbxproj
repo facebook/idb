@@ -8,26 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		AA017F491BD777B600F45E9D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F481BD777B600F45E9D /* main.m */; };
-		AA1D55441CD2745C00B84404 /* SimpleTestTarget.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1D55431CD2745C00B84404 /* SimpleTestTarget.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		AA017F411BD7776B00F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libShimulator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA017F481BD777B600F45E9D /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		AA1D55411CD2745C00B84404 /* SimpleTestTarget.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimpleTestTarget.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA1D55431CD2745C00B84404 /* SimpleTestTarget.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SimpleTestTarget.m; sourceTree = "<group>"; };
-		AA1D55451CD2745C00B84404 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AA017F3E1BD7776B00F45E9D /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA1D553E1CD2745C00B84404 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -41,7 +30,6 @@
 			isa = PBXGroup;
 			children = (
 				AA017F481BD777B600F45E9D /* main.m */,
-				AA1D55421CD2745C00B84404 /* SimpleTestTarget */,
 				AA017F421BD7776B00F45E9D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -50,18 +38,8 @@
 			isa = PBXGroup;
 			children = (
 				AA017F411BD7776B00F45E9D /* libShimulator.dylib */,
-				AA1D55411CD2745C00B84404 /* SimpleTestTarget.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		AA1D55421CD2745C00B84404 /* SimpleTestTarget */ = {
-			isa = PBXGroup;
-			children = (
-				AA1D55431CD2745C00B84404 /* SimpleTestTarget.m */,
-				AA1D55451CD2745C00B84404 /* Info.plist */,
-			);
-			path = SimpleTestTarget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -94,23 +72,6 @@
 			productReference = AA017F411BD7776B00F45E9D /* libShimulator.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		AA1D55401CD2745C00B84404 /* SimpleTestTarget */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AA1D55481CD2745C00B84404 /* Build configuration list for PBXNativeTarget "SimpleTestTarget" */;
-			buildPhases = (
-				AA1D553D1CD2745C00B84404 /* Sources */,
-				AA1D553E1CD2745C00B84404 /* Frameworks */,
-				AA1D553F1CD2745C00B84404 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = SimpleTestTarget;
-			productName = SimpleTestTarget;
-			productReference = AA1D55411CD2745C00B84404 /* SimpleTestTarget.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -122,9 +83,6 @@
 				TargetAttributes = {
 					AA017F401BD7776B00F45E9D = {
 						CreatedOnToolsVersion = 7.0.1;
-					};
-					AA1D55401CD2745C00B84404 = {
-						CreatedOnToolsVersion = 7.3;
 					};
 				};
 			};
@@ -141,20 +99,9 @@
 			projectRoot = "";
 			targets = (
 				AA017F401BD7776B00F45E9D /* Shimulator */,
-				AA1D55401CD2745C00B84404 /* SimpleTestTarget */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXResourcesBuildPhase section */
-		AA1D553F1CD2745C00B84404 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AA017F3D1BD7776B00F45E9D /* Sources */ = {
@@ -162,14 +109,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA017F491BD777B600F45E9D /* main.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA1D553D1CD2745C00B84404 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AA1D55441CD2745C00B84404 /* SimpleTestTarget.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,33 +213,6 @@
 			};
 			name = Release;
 		};
-		AA1D55461CD2745C00B84404 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				INFOPLIST_FILE = SimpleTestTarget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = FB.SimpleTestTarget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		AA1D55471CD2745C00B84404 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				INFOPLIST_FILE = SimpleTestTarget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = FB.SimpleTestTarget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -318,15 +230,6 @@
 			buildConfigurations = (
 				AA017F461BD7776B00F45E9D /* Debug */,
 				AA017F471BD7776B00F45E9D /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		AA1D55481CD2745C00B84404 /* Build configuration list for PBXNativeTarget "SimpleTestTarget" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA1D55461CD2745C00B84404 /* Debug */,
-				AA1D55471CD2745C00B84404 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -91,7 +91,7 @@
     NSError *innerError = nil;
     FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
     if (process) {
-      if (![[simulator.interact killProcess:process] perform:&innerError]) {
+      if (![[simulator.interact terminateSubprocess:process] perform:&innerError]) {
         return [FBSimulatorError failBoolWithError:innerError errorOut:error];
       }
     }
@@ -128,7 +128,7 @@
         causedBy:innerError]
         failBool:error];
     }
-    if (![[simulator.interact killProcess:process] perform:&innerError]) {
+    if (![[simulator.interact terminateSubprocess:process] perform:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
     return YES;
@@ -156,7 +156,7 @@
   return [self interactWithLastLaunchedApplicationProcess:^ BOOL (NSError **error, FBSimulator *simulator, FBProcessInfo *process) {
     // Kill the Application Process
     NSError *innerError = nil;
-    if (![[simulator.interact killProcess:process] perform:&innerError]) {
+    if (![[simulator.interact terminateSubprocess:process] perform:&innerError]) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to terminate app %@", process.shortDescription]
         causedBy:innerError]

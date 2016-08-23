@@ -87,6 +87,7 @@
         continue;
       }
       id<FBControlCoreConfiguration_Device> device = FBControlCoreConfigurationVariants.nameToDevice[deviceType.name];
+      NSAssert(device, @"No FBControlCoreConfiguration_Device for device with name '%@'", deviceType.name);
       FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDevice:device] withOS:os];
       [configurations addObject:configuration];
     }

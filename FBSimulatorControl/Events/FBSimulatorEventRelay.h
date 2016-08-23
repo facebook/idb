@@ -11,6 +11,8 @@
 
 @class FBProcessFetcher;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Automatically subscribes to event sources that create Simulator Events passively.
  The results of these event sources are translated into events for the relayed sink.
@@ -24,24 +26,28 @@
  The Designated Initializer.
 
  @param simDevice the SimDevice to relay events for.
+ @param launchdProcess the Simulator's `launchd_sim` process, if booted.
+ @param containerApplication the Simulator's 'Container Application' process, if applicable.
  @param processFetcher the Process Query for obtaining process information.
  @param sink the sink to forward to.
  */
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink;
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink;
 
 /**
- The current Simulator Launch Info.
+ The Simulator's `launchd_sim` process, if booted.
  */
-@property (nonatomic, copy, readonly) FBProcessInfo *launchdProcess;
+@property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;
 
 /**
- The current Container Application
+ The Simulator's 'Container Application' process, if applicable.
  */
-@property (nonatomic, copy, readonly) FBProcessInfo *containerApplication;
+@property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
 
 /**
  The current Simulator Connection.
  */
-@property (nonatomic, strong, readonly) FBSimulatorConnection *connection;
+@property (nonatomic, strong, nullable, readonly) FBSimulatorConnection *connection;
 
 @end
+
+NS_ASSUME_NONNULL_END

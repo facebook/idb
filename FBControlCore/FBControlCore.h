@@ -11,6 +11,7 @@
 #import <FBControlCore/FBApplicationDescriptor.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBASLParser.h>
+#import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryParser.h>
 #import <FBControlCore/FBCapacityQueue.h>
 #import <FBControlCore/FBCollectionInformation.h>
@@ -20,6 +21,7 @@
 #import <FBControlCore/FBControlCoreError.h>
 #import <FBControlCore/FBControlCoreGlobalConfiguration.h>
 #import <FBControlCore/FBControlCoreLogger.h>
+#import <FBControlCore/FBControlCoreFrameworkLoader.h>
 #import <FBControlCore/FBCrashLogInfo.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDiagnostic.h>

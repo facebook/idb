@@ -19,10 +19,13 @@
 #import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
+#import <IOSurface/IOSurfaceBase.h>
+
 #import "FBFramebufferCompositeDelegate.h"
 #import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferDelegate.h"
 #import "FBFramebufferFrame.h"
+#import "FBFramebufferFrameGenerator.h"
 #import "FBFramebufferImage.h"
 #import "FBFramebufferVideo.h"
 #import "FBFramebufferVideoConfiguration.h"
@@ -41,11 +44,6 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   FBSimulatorFramebufferStateTerminated = 3, /** After the framebuffer has terminated. */
 };
 
-static const NSInteger FBFramebufferLogFrameFrequency = 100;
-// Timescale is in nanonseconds
-static const CMTimeScale FBSimulatorFramebufferTimescale = 10E8;
-static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTimeRoundingMethod_Default;
-
 @interface FBFramebuffer ()
 
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
@@ -54,9 +52,18 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
 
 @property (atomic, assign, readwrite) FBSimulatorFramebufferState state;
-@property (atomic, assign, readwrite) CMTimebaseRef timebase;
-@property (atomic, assign, readwrite) NSUInteger frameCount;
-@property (atomic, assign, readwrite) CGSize size;
+
+@end
+
+@interface FBFramebuffer_IOSurface : FBFramebuffer
+
+@property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *frameGenerator;
+
+@end
+
+@interface FBFramebuffer_BackingStore : FBFramebuffer
+
+@property (nonatomic, strong, readonly) FBFramebufferBackingStoreFrameGenerator *frameGenerator;
 
 @end
 
@@ -66,7 +73,9 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
 
 + (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)launchConfiguration simulator:(FBSimulator *)simulator
 {
-  id<FBControlCoreLogger> logger = [simulator.logger withPrefix:[NSString stringWithFormat:@"%@:", simulator.udid]];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.FBFramebuffer.Client", DISPATCH_QUEUE_SERIAL);
+  id<FBControlCoreLogger> logger = [[simulator.logger withPrefix:[NSString stringWithFormat:@"%@:", simulator.udid]] onQueue:queue];
+
   NSMutableArray *sinks = [NSMutableArray array];
   BOOL useWindow = (launchConfiguration.options & FBSimulatorLaunchOptionsShowDebugWindow) == FBSimulatorLaunchOptionsShowDebugWindow;
   if (useWindow) {
@@ -80,12 +89,12 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.diagnostics.screenshot eventSink:simulator.eventSink]];
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.simulatorframebuffer", DISPATCH_QUEUE_SERIAL);
 
-  return [[self alloc] initWithFramebufferService:framebufferService onQueue:queue video:video logger:[logger onQueue:queue] delegate:delegate];
+  Class framebufferClass = FBControlCoreGlobalConfiguration.isXcode8OrGreater ? FBFramebuffer_IOSurface.class : FBFramebuffer_BackingStore.class;
+  return [[framebufferClass alloc] initWithFramebufferService:framebufferService configuration:launchConfiguration onQueue:queue video:video delegate:delegate logger:logger];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video logger:(id<FBControlCoreLogger>)logger delegate:(id<FBFramebufferDelegate>)delegate
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(framebufferService);
 
@@ -101,31 +110,16 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
 
   _clientQueue = clientQueue;
   _state = FBSimulatorFramebufferStateNotStarted;
-  _frameCount = 0;
-  _size = CGSizeZero;
 
   return self;
-}
-
-#pragma mark NSObject
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"%@ | Size %@ | Frame Count %ld",
-    [FBFramebuffer stringFromFramebufferState:self.state],
-    NSStringFromSize(self.size),
-    self.frameCount
-  ];
 }
 
 #pragma mark FBJSONSerializable Implementation
 
 - (id)jsonSerializableRepresentation
 {
-  return @{
-    @"size" : NSStringFromSize(self.size)
-  };
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
 #pragma mark Public
@@ -163,54 +157,7 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
   [self framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
 }
 
-#pragma mark Client Callbacks from SimDeviceFramebufferService
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
-{
-  [self framebufferDidBecomeInvalid:self error:error];
-}
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
-{
-
-}
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didUpdateRegion:(CGRect)region ofBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
-{
-  CGSize size = NSMakeSize(backingStore.pixelsWide, backingStore.pixelsHigh);
-  self.size = size;
-  [self frameUpdateWithImage:backingStore.image size:size];
-  self.frameCount++;
-}
-
-#pragma mark Delegate Forwarding & Deduplicating
-
-- (void)frameUpdateWithImage:(CGImageRef)image size:(CGSize)size
-{
-  if (self.state == FBSimulatorFramebufferStateStarting) {
-    self.state = FBSimulatorFramebufferStateRunning;
-    CMTimebaseRef timebase = NULL;
-    CMTimebaseCreateWithMasterClock(
-      kCFAllocatorDefault,
-      CMClockGetHostTimeClock(),
-      &timebase
-    );
-    NSAssert(timebase, @"Expected to be able to construct timebase");
-    CMTimebaseSetRate(timebase, 1.0);
-    self.timebase = timebase;
-    [self.logger.info log:@"First Frame"];
-  }
-  if (self.state != FBSimulatorFramebufferStateRunning) {
-    return;
-  }
-
-  FBFramebufferFrame *frame = [self frameFromCurrentTime:image size:size];
-  [self.delegate framebuffer:self didUpdate:frame];
-  if (self.frameCount % FBFramebufferLogFrameFrequency != 0) {
-    return;
-  }
-  [self.logger.info logFormat:@"Frame Count %lu", self.frameCount];
-}
+#pragma mark Teardown
 
 - (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
@@ -218,22 +165,18 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
     return;
   }
 
-  self.state = FBSimulatorFramebufferStateTerminated;
-  [self.framebufferService unregisterClient:self];
-  [self.framebufferService suspend];
-  CFRelease(self.timebase);
-  self.timebase = nil;
-
+  [self performTeardownWork];
   [self.delegate framebuffer:self didBecomeInvalidWithError:error teardownGroup:teardownGroup];
 }
 
-#pragma mark Private
-
-- (FBFramebufferFrame *)frameFromCurrentTime:(CGImageRef)image size:(CGSize)size
+- (void)performTeardownWork
 {
-  CMTime time = CMTimebaseGetTimeWithTimeScale(self.timebase, FBSimulatorFramebufferTimescale, FBSimulatorFramebufferRoundingMethod);
-  return [[FBFramebufferFrame alloc] initWithTime:time timebase:self.timebase image:image count:self.frameCount size:size];
+  self.state = FBSimulatorFramebufferStateTerminated;
+  [self.framebufferService unregisterClient:self];
+  [self.framebufferService suspend];
 }
+
+#pragma mark Private
 
 + (NSString *)stringFromFramebufferState:(FBSimulatorFramebufferState)state
 {
@@ -249,6 +192,147 @@ static const CMTimeRoundingMethod FBSimulatorFramebufferRoundingMethod = kCMTime
     default:
       return @"Unknown";
   }
+}
+
+@end
+
+@implementation FBFramebuffer_IOSurface
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"IOSurface Framebuffer | %@ | %@",
+    [FBFramebuffer stringFromFramebufferState:self.state],
+    self.frameGenerator
+  ];
+}
+
+#pragma mark FBJSONSerializable Implementation
+
+- (id)jsonSerializableRepresentation
+{
+  return self.frameGenerator.jsonSerializableRepresentation;
+}
+
+#pragma mark Initializers
+
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super initWithFramebufferService:framebufferService configuration:configuration onQueue:clientQueue video:video delegate:delegate logger:logger];
+  if (!self) {
+    return nil;
+  }
+
+  _frameGenerator = [FBFramebufferIOSurfaceFrameGenerator generatorWithFramebuffer:self scale:configuration.scaleValue delegate:delegate queue:clientQueue logger:logger];
+
+  return self;
+}
+
+#pragma mark Client Callbacks from SimDeviceFramebufferService
+
+- (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
+{
+  [self framebufferDidBecomeInvalid:self error:error];
+}
+
+- (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
+{
+
+}
+
+- (void)setIOSurface:(IOSurfaceRef)surface
+{
+  // The client recieves a NULL surface, before recieving the first surface.
+  if (self.state == FBSimulatorFramebufferStateStarting && surface == NULL) {
+    return;
+  }
+  // This is the first surface that has been recieved.
+  else if (self.state == FBSimulatorFramebufferStateStarting && surface != NULL) {
+    self.state = FBSimulatorFramebufferStateRunning;
+    [self.frameGenerator currentSurfaceChanged:surface];
+  }
+  NSParameterAssert(surface);
+}
+
+#pragma mark Teardown
+
+- (void)performTeardownWork
+{
+  [super performTeardownWork];
+
+  [self.frameGenerator frameSteamEnded];
+}
+
+@end
+
+@implementation FBFramebuffer_BackingStore
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"SimDeviceFramebufferBackingStore Framebuffer | %@ | %@",
+    [FBFramebuffer stringFromFramebufferState:self.state],
+    self.frameGenerator
+  ];
+}
+
+#pragma mark FBJSONSerializable Implementation
+
+- (id)jsonSerializableRepresentation
+{
+  return self.frameGenerator.jsonSerializableRepresentation;
+}
+
+#pragma mark Initializers
+
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBSimulatorLaunchConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super initWithFramebufferService:framebufferService configuration:configuration onQueue:clientQueue video:video delegate:delegate logger:logger];
+  if (!self) {
+    return nil;
+  }
+
+  _frameGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebuffer:self scale:configuration.scaleValue delegate:delegate queue:clientQueue logger:logger];
+
+  return self;
+}
+
+#pragma mark Client Callbacks from SimDeviceFramebufferService
+
+- (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
+{
+  [self framebufferDidBecomeInvalid:self error:error];
+}
+
+- (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
+{
+
+}
+
+- (void)framebufferService:(SimDeviceFramebufferService *)service didUpdateRegion:(CGRect)region ofBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
+{
+  if (self.state == FBSimulatorFramebufferStateStarting) {
+    self.state = FBSimulatorFramebufferStateRunning;
+    [(FBFramebufferBackingStoreFrameGenerator *)self.frameGenerator firstFrameWithBackingStore:backingStore];
+    return;
+  }
+  if (self.state != FBSimulatorFramebufferStateRunning) {
+    return;
+  }
+  [self.frameGenerator backingStoreDidUpdate:backingStore];
+}
+
+#pragma mark Teardown
+
+- (void)performTeardownWork
+{
+  [super performTeardownWork];
+
+  [self.frameGenerator frameSteamEnded];
 }
 
 @end

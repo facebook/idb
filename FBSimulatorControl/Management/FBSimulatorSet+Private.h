@@ -9,10 +9,12 @@
 
 #import <FBSimulatorControl/FBSimulatorSet.h>
 
+@class FBSimulatorInflationStrategy;
+
 @interface FBSimulatorSet ()
 
-@property (nonatomic, strong, readonly) NSMutableDictionary *inflatedSimulators;
-
 - (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger;
+
+@property (nonatomic, strong, readonly) FBSimulatorInflationStrategy *inflationStrategy;
 
 @end

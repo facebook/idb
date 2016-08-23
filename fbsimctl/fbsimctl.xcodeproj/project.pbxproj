@@ -31,6 +31,8 @@
 		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
 		AA5AA62C1CCE003900EC0298 /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5AA62B1CCE003900EC0298 /* CommandPerformer.swift */; };
 		AA6046901C7A96E500639DD5 /* SimulatorRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */; };
+		AA719E4C1D672DBD00947611 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA719E4B1D672DBD00947611 /* Foundation.framework */; };
+		AA719E4D1D672DCA00947611 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA719E4B1D672DBD00947611 /* Foundation.framework */; };
 		AA75CD161D243F73003C45B0 /* DeviceReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA75CD151D243F73003C45B0 /* DeviceReporter.swift */; };
 		AA75CD1A1D244152003C45B0 /* FBDeviceControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA75CD171D244100003C45B0 /* FBDeviceControl.framework */; };
 		AA75CD1B1D244198003C45B0 /* FBDeviceControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA75CD171D244100003C45B0 /* FBDeviceControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -123,6 +125,7 @@
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		AA5AA62B1CCE003900EC0298 /* CommandPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
 		AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorRunners.swift; sourceTree = "<group>"; };
+		AA719E4B1D672DBD00947611 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		AA75CD151D243F73003C45B0 /* DeviceReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceReporter.swift; sourceTree = "<group>"; };
 		AA75CD171D244100003C45B0 /* FBDeviceControl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventReporter.swift; sourceTree = "<group>"; };
@@ -160,6 +163,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA719E4D1D672DCA00947611 /* Foundation.framework in Frameworks */,
 				AAFE7AB11C92F01300D92E46 /* FBSimulatorControlKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -168,8 +172,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */,
+				AA719E4C1D672DBD00947611 /* Foundation.framework in Frameworks */,
 				AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */,
+				AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */,
 				AA75CD1A1D244152003C45B0 /* FBDeviceControl.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -265,6 +270,7 @@
 		AA93B7CB1BE8361F00CF6A56 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				AA719E4B1D672DBD00947611 /* Foundation.framework */,
 				AA75CD171D244100003C45B0 /* FBDeviceControl.framework */,
 				AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */,
 				AAD999541C68D1460014D61F /* Swifter.framework */,
@@ -416,9 +422,11 @@
 					};
 					AAE35AC11C2865C10073CC70 = {
 						CreatedOnToolsVersion = 7.2;
+						LastSwiftMigration = 0800;
 					};
 					AAE35ACA1C2865C10073CC70 = {
 						CreatedOnToolsVersion = 7.2;
+						LastSwiftMigration = 0800;
 					};
 				};
 			};

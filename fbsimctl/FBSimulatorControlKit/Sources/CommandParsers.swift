@@ -414,6 +414,7 @@ extension Action : Parsable {
         self.listenParser,
         self.listParser,
         self.listAppsParser,
+        self.listDeviceSetsParser,
         self.openParser,
         self.recordParser,
         self.relaunchParser,
@@ -518,6 +519,10 @@ extension Action : Parsable {
 
   static var listAppsParser: Parser<Action> { get {
     return Parser.ofString(EventName.ListApps.rawValue, Action.ListApps)
+  }}
+
+  static var listDeviceSetsParser: Parser<Action> { get {
+    return Parser.ofString(EventName.ListDeviceSets.rawValue, Action.ListDeviceSets)
   }}
 
   static var openParser: Parser<Action> { get {
@@ -798,7 +803,7 @@ struct FBSimulatorLaunchConfigurationParser {
     return Parser<FBSimulatorLaunchOptions>
       .union(1, [
         Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
-        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
+        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer)),
         Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
         Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
       ])

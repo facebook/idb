@@ -34,6 +34,11 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"video0" ofType:@"mp4"];
 }
 
++ (NSString *)JUnitXMLResult0Path
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"junitResult0" ofType:@"xml"];
+}
+
 + (NSString *)simulatorSystemLogPath
 {
   return [[NSBundle bundleForClass:self] pathForResource:@"simulator_system" ofType:@"log"];
@@ -44,9 +49,9 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"tree" ofType:@"json"];
 }
 
-+ (NSString *)applicationTestBundlePath
++ (NSString *)iOSUnitTestBundlePath
 {
-  return [[NSBundle bundleForClass:self] pathForResource:@"SimpleTestTarget" ofType:@"xctest"];
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];
 }
 
 @end
@@ -143,9 +148,9 @@
     environment:self.appLaunch2.environment];
 }
 
-- (NSString *)applicationTestBundlePath
+- (NSString *)iOSUnitTestBundlePath
 {
-  return FBSimulatorControlFixtures.applicationTestBundlePath;
+  return FBSimulatorControlFixtures.iOSUnitTestBundlePath;
 }
 
 @end

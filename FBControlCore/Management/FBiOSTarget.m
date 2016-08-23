@@ -9,6 +9,8 @@
 
 #import "FBiOSTarget.h"
 
+#import "FBControlCoreConfigurationVariants.h"
+
 NSString *FBSimulatorStateStringFromState(FBSimulatorState state)
 {
   switch (state) {
@@ -77,4 +79,29 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
   }
 
   return FBiOSTargetTypeNone;
+}
+
+extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right)
+{
+  NSComparisonResult comparison = [@(left.targetType) compare:@(right.targetType)];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  comparison = [left.osConfiguration.versionNumber compare:right.osConfiguration.versionNumber];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  comparison = [@(left.deviceConfiguration.family.productFamilyID) compare:@(right.deviceConfiguration.family.productFamilyID)];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  comparison = [left.deviceConfiguration.deviceName compare:right.deviceConfiguration.deviceName];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  comparison = [@(left.state) compare:@(right.state)];
+  if (comparison != NSOrderedSame) {
+    return comparison;
+  }
+  return [left.udid compare:right.udid];
 }

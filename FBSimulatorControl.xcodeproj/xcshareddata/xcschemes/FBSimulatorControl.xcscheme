@@ -54,6 +54,11 @@
             value = "simulator_app"
             isEnabled = "NO">
          </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "FBSIMULATORCONTROL_DEVICE_SET"
+            value = "default"
+            isEnabled = "NO">
+         </EnvironmentVariable>
       </EnvironmentVariables>
       <AdditionalOptions>
       </AdditionalOptions>

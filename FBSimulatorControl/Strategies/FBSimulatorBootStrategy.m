@@ -12,6 +12,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDevice+Removed.h>
 #import <CoreSimulator/SimDeviceType.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
@@ -30,6 +31,7 @@
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorHID.h"
@@ -45,13 +47,16 @@
 
 @interface FBSimulatorBootStrategy_Direct : FBSimulatorBootStrategy
 
+- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error;
+- (NSDictionary<NSString *, id> *)bootOptions;
+
 @end
 
 @implementation FBSimulatorBootStrategy_Direct
 
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
-  // Create the Framebuffer
+  // Create the Framebuffer (if required).
   NSError *innerError = nil;
   SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:&innerError];
   if (!mainScreenService) {
@@ -65,15 +70,9 @@
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
-  // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
-  // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
-  // Prior to Xcode 6 it was possible to shim into the Simulator process but codesigning now prevents this https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f
-  NSDictionary *options = @{
-    @"register-head-services" : @YES
-  };
-
   // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
   // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
+  NSDictionary<NSString *, id> *options = self.bootOptions;
   if (![self.simulator.device bootWithOptions:options error:&innerError]) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to boot Simulator with options %@", options]
@@ -87,12 +86,34 @@
 
 - (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
 {
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+@end
+
+@interface FBSimulatorBootStrategy_Direct_Xcode7 : FBSimulatorBootStrategy_Direct
+
+@end
+
+@implementation FBSimulatorBootStrategy_Direct_Xcode7
+
+- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
+{
   // If you're curious about where the knowledege for these parts of the CoreSimulator.framework comes from, take a look at:
   // $DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS [VERSION].simruntime/Contents/Resources/profile.plist
   // as well as the dissasembly for CoreSimulator.framework, SimulatorKit.Framework & the Simulator.app Executable.
-
+  //
   // Creating the Framebuffer with the 'mainScreen' constructor will return a 'PurpleFBServer' and attach it to the '_registeredServices' ivar.
   // This is the Framebuffer for the Simulator's main screen, which is distinct from 'PurpleFBTVOut' and 'Stark' Framebuffers for External Displays and CarPlay.
+  //
+  // -[SimDevice portForServiceNamed:error:] is gone in Xcode 8 Beta 5.
   NSError *innerError = nil;
   NSPort *purpleServerPort = [self.simulator.device portForServiceNamed:@"PurpleFBServer" error:&innerError];
   if (!purpleServerPort) {
@@ -112,6 +133,7 @@
     deviceDimensions:size
     scaledDimensions:scaledSize
     error:&innerError];
+
   if (!framebufferService) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create the Main Screen Framebuffer for device %@", self.simulator.device]
@@ -120,6 +142,51 @@
   }
 
   return framebufferService;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
+  // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
+  // Prior to Xcode 6 it was possible to shim into the Simulator process but codesigning now prevents this https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f
+
+  return @{
+    @"register-head-services" : @YES,
+  };
+}
+
+@end
+
+@interface FBSimulatorBootStrategy_Direct_Xcode8 : FBSimulatorBootStrategy_Direct
+
+@end
+
+@implementation FBSimulatorBootStrategy_Direct_Xcode8
+
+- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
+{
+  NSError *innerError = nil;
+  SimDeviceFramebufferService *service = [NSClassFromString(@"SimDeviceFramebufferService")
+    mainScreenFramebufferServiceForDevice:self.simulator.device
+    error:&innerError];
+  if (!service) {
+    return [[[FBSimulatorError
+      describe:@"Failed to create Main Screen Service for Device"]
+      causedBy:innerError]
+      fail:error];
+  }
+  return service;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  // Since Xcode 8 Beta 5, 'simctl' uses the 'SIMULATOR_IS_HEADLESS' argument.
+  return @{
+    @"register-head-services" : @YES,
+    @"env" : @{
+      @"SIMULATOR_IS_HEADLESS" : @1,
+    },
+  };
 }
 
 @end
@@ -193,7 +260,7 @@
 {
   // Construct and start the task.
   id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
-    withLaunchPath:FBApplicationDescriptor .xcodeSimulator.binary.path]
+    withLaunchPath:FBApplicationDescriptor.xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
     build]
@@ -254,7 +321,9 @@
 + (instancetype)withConfiguration:(FBSimulatorLaunchConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   if (configuration.shouldUseDirectLaunch) {
-    return [[FBSimulatorBootStrategy_Direct alloc] initWithConfiguration:configuration simulator:simulator];
+    return FBControlCoreGlobalConfiguration.isXcode8OrGreater
+      ? [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator]
+      : [[FBSimulatorBootStrategy_Direct_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
   }
   if (configuration.shouldLaunchViaWorkspace) {
     return [[FBSimulatorBootStrategy_Workspace alloc] initWithConfiguration:configuration simulator:simulator];
@@ -340,15 +409,22 @@
   }
   [self.simulator.eventSink simulatorDidLaunch:launchdProcess];
 
-  // Waitng for all required processes to start
-  NSSet *requiredProcessNames = self.simulator.requiredProcessNamesToVerifyBooted;
-  BOOL didStartAllRequiredProcesses = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-    NSSet *runningProcessNames = [NSSet setWithArray:[[processFetcher subprocessesOf:launchdProcess.processIdentifier] valueForKey:@"processName"]];
-    return [requiredProcessNames isSubsetOfSet:runningProcessNames];
+  // Waitng for all required services to start
+  NSSet<NSString *> *requiredServiceNames = self.simulator.requiredLaunchdServicesToVerifyBooted;
+  BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
+    NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];
+    if (!services) {
+      return NO;
+    }
+    NSSet<id> *processIdentifiers = [NSSet setWithArray:[services objectsForKeys:requiredServiceNames.allObjects notFoundMarker:NSNull.null]];
+    if ([processIdentifiers containsObject:NSNull.null]) {
+      return NO;
+    }
+    return YES;
   }];
-  if (!didStartAllRequiredProcesses) {
+  if (!didStartAllRequiredServices) {
     return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for all required processes %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredProcessNames.allObjects]]
+      describeFormat:@"Timed out waiting for all required services %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredServiceNames.allObjects]]
       inSimulator:self.simulator]
       fail:error];
   }

@@ -23,6 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  Constructs a Test Reporter with a given List of Other Test Reporters.
 
  @param reporters array of reporters implementing FBTestManagerTestReporter.
+ @return a new Composite Test Reporter instance.
  */
 + (instancetype)withTestReporters:(NSArray<id<FBTestManagerTestReporter>> *)reporters;
 
