@@ -13,6 +13,8 @@
 
 #import "XCTestBootstrapError.h"
 
+static NSString *const CDHashPrefix = @"CDHash=";
+
 @implementation FBCodeSignCommand
 
 + (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName
@@ -40,7 +42,7 @@
 
 + (FBLogSearchPredicate *)logSearchPredicateForCDHash
 {
-  return [FBLogSearchPredicate substrings:@[@"CDHash="]];
+  return [FBLogSearchPredicate substrings:@[CDHashPrefix]];
 }
 
 - (BOOL)signBundleAtPath:(NSString *)bundlePath error:(NSError **)error
@@ -62,10 +64,14 @@
       causedBy:task.error]
       fail:error];
   }
-  NSString *cdHash = [[FBLogSearch withText:task.stdOut predicate:FBCodeSignCommand.logSearchPredicateForCDHash] firstMatchingLine];
+  NSString *output = task.stdErr;
+  NSString *cdHash = [[[FBLogSearch
+    withText:output predicate:FBCodeSignCommand.logSearchPredicateForCDHash]
+    firstMatchingLine]
+    stringByReplacingOccurrencesOfString:CDHashPrefix withString:@""];
   if (!cdHash) {
     return [[[XCTestBootstrapError
-      describeFormat:@"Could not find 'CDHash' in output: %@", task.stdOut]
+      describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
       causedBy:task.error]
       fail:error];
   }
