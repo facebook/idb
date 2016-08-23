@@ -51,6 +51,20 @@
   return _clientProcessUniqueIdentifier;
 }
 
++ (NSString *)clientProcessDisplayPath
+{
+  static dispatch_once_t onceToken;
+  static NSString *_clientProcessDisplayPath;
+  dispatch_once(&onceToken, ^{
+    NSString *path = NSBundle.mainBundle.bundlePath;
+    if (![path.pathExtension isEqualToString:@"app"]) {
+      path = NSBundle.mainBundle.executablePath;
+    }
+    _clientProcessDisplayPath = path;
+  });
+  return _clientProcessDisplayPath;
+}
+
 + (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithDeviceOperator:deviceOperator interface:interface sessionIdentifier:sessionIdentifier queue:queue logger:logger];
@@ -188,10 +202,9 @@
       [self failWithError:[[XCTestBootstrapError describe:@"Failed to create transport"] causedBy:error]];
       return;
     }
-
     DTXConnection *connection = [self setupTestBundleConnectionWithTransport:transport];
     dispatch_async(dispatch_get_main_queue(), ^{
-      [self sendStartSessionRequestToConnection:connection];
+      [self sendStartSessionRequestWithConnection:connection];
     });
   });
 }
@@ -227,7 +240,7 @@
   return self.testBundleConnection;
 }
 
-- (DTXRemoteInvocationReceipt *)sendStartSessionRequestToConnection:(DTXConnection *)connection
+- (void)sendStartSessionRequestWithConnection:(DTXConnection *)connection
 {
   [self.logger log:@"Checking test manager availability..."];
   DTXProxyChannel *proxyChannel = [self.testBundleConnection
@@ -236,36 +249,31 @@
   [proxyChannel setExportedObject:self queue:dispatch_get_main_queue()];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
-  NSString *bundlePath = NSBundle.mainBundle.bundlePath;
-  if (![NSBundle.mainBundle.bundlePath.pathExtension isEqualToString:@"app"]) {
-    bundlePath = NSBundle.mainBundle.executablePath;
-  }
   [self.logger logFormat:@"Starting test session with ID %@", self.sessionIdentifier.UUIDString];
 
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
     _IDE_initiateSessionWithIdentifier:self.sessionIdentifier
     forClient:self.class.clientProcessUniqueIdentifier
-    atPath:bundlePath
+    atPath:self.class.clientProcessDisplayPath
     protocolVersion:@(FBProtocolVersion)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error){
     if (error || !version) {
       [self.logger logFormat:@"Client Daemon Interface failed, trying legacy format."];
-      [self setupLegacyProtocolConnectionViaRemoteProxy:remoteProxy proxyChannel:proxyChannel bundlePath:bundlePath];
+      [self setupLegacyProtocolConnectionViaRemoteProxy:remoteProxy proxyChannel:proxyChannel];
       return;
     }
 
     [self.logger logFormat:@"testmanagerd handled session request using protcol version %ld.", (long)FBProtocolVersion];
     [proxyChannel cancel];
   }];
-  return receipt;
 }
 
-- (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel bundlePath:(NSString *)bundlePath
+- (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel
 {
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
     _IDE_beginSessionWithIdentifier:self.sessionIdentifier
     forClient:self.class.clientProcessUniqueIdentifier
-    atPath:bundlePath];
+    atPath:self.class.clientProcessDisplayPath];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     if (error) {
       [self failWithError:[[XCTestBootstrapError describe:@"Client Daemon Interface failed"] causedBy:error]];
@@ -341,6 +349,22 @@
   [self.logger logFormat:@"Test Bundle is Ready"];
   self.state = FBTestBundleConnectionStateTestBundleReady;
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
+}
+
+- (id)_XCT_didBeginInitializingForUITesting
+{
+  [self.logger log:@"Started initilizing for UI testing."];
+  return nil;
+}
+
+- (id)_XCT_initializationForUITestingDidFailWithError:(NSError *)error
+{
+  [self failWithError:[[[XCTestBootstrapError
+                         describe:@"Failed to initilize for UI testing"]
+                        causedBy:error]
+                       code:XCTestBootstrapErrorCodeStartupFailure]
+   ];
+  return nil;
 }
 
 + (NSString *)stateStringForState:(FBTestBundleConnectionState)state

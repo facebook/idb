@@ -16,4 +16,7 @@
 - (DTXRemoteInvocationReceipt *)_IDE_initiateControlSessionForTestProcessID:(NSNumber *)arg1;
 - (DTXRemoteInvocationReceipt *)_IDE_initiateControlSessionForTestProcessID:(NSNumber *)arg1 protocolVersion:(NSNumber *)arg2;
 - (DTXRemoteInvocationReceipt *)_IDE_initiateSessionWithIdentifier:(NSUUID *)arg1 forClient:(NSString *)arg2 atPath:(NSString *)arg3 protocolVersion:(NSNumber *)arg4;
+
+// iOS 10.x specific
+- (DTXRemoteInvocationReceipt *)_IDE_collectNewCrashReportsInDirectories:(NSArray *)arg1 matchingProcessNames:(NSArray *)arg2;
 @end
