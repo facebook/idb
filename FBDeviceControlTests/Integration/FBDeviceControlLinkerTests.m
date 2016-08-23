@@ -20,20 +20,20 @@
 @implementation FBDeviceControlLinkerTests
 
 - (void)testTheTest {
-    FBCodeSignCommand *codesigner = [FBCodeSignCommand codeSignCommandWithIdentityName:@"iPhone Developer: Chris Fuentes (G7R46E5NX7)"];
+    FBCodeSignCommand *codesigner = [FBCodeSignCommand codeSignCommandWithIdentityName:@"iPhone Developer: Karl Krukow (YTTN6Y2QS9)"];
     
-    setenv("DEVELOPER_DIR", "/Users/chrisf/Xcodes/8b1/Xcode-beta.app/Contents/Developer", YES);
+    setenv("DEVELOPER_DIR", "/Users/chrisf/Xcodes/8b6/Xcode-beta.app/Contents/Developer", YES);
     
     FBDeviceTestPreparationStrategy *testPrepareStrategy =
-    [FBDeviceTestPreparationStrategy strategyWithTestRunnerApplicationPath:@"/Users/chrisf/calabash-xcuitest-server/Products/ipa/DeviceAgent/CBX-Runner.app"
+    [FBDeviceTestPreparationStrategy strategyWithTestRunnerApplicationPath:@"/Users/chrisf/iOSDeviceManager/Distribution/dependencies/ipa/DeviceAgent-Runner.app"
                                                        applicationDataPath:@"/Users/chrisf/scratch/appData.xcappdata"
-                                                            testBundlePath:@"/Users/chrisf/calabash-xcuitest-server/Products/ipa/DeviceAgent/CBX-Runner.app/PlugIns/CBX.xctest"
-                                                    pathToXcodePlatformDir:@"/Users/chrisf/Xcodes/8b1/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform"
+                                                            testBundlePath:@"/Users/chrisf/iOSDeviceManager/Distribution/dependencies/ipa/DeviceAgent-Runner.app/PlugIns/DeviceAgent.xctest"
+                                                    pathToXcodePlatformDir:@"/Users/chrisf/Xcodes/8b6/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform"
                                                           workingDirectory:@"/Users/chrisf"];
     
     NSError *err;
     FBDevice *device = [[FBDeviceSet defaultSetWithLogger:nil
-                                                    error:&err] deviceWithUDID:@"49a29c9e61998623e7909e35e8bae50dd07ef85f"];
+                                                    error:&err] deviceWithUDID:@"c5fec20a4a41c65ac9475154ea2276255e4a2029"];
     
     if (err) {
         NSLog(@"Error creating device operator: %@", err);
@@ -48,10 +48,9 @@
     NSError *innerError = nil;
     [testRunStrategy startTestManagerWithAttributes:@[] environment:@{} error:&innerError];
     
+    XCTAssertNil(innerError, @"%@", innerError);
     if (!innerError) {
         [[NSRunLoop mainRunLoop] run];
-    } else {
-        NSLog(@"Err: %@", innerError);
     }
 }
 
