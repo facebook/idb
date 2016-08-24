@@ -23,6 +23,7 @@
 
 @interface FBTestBundleBuilder ()
 @property (nonatomic, strong) NSUUID *sessionIdentifier;
+@property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @end
 
 @implementation FBTestBundleBuilder
@@ -30,6 +31,12 @@
 - (instancetype)withSessionIdentifier:(NSUUID *)sessionIdentifier
 {
   self.sessionIdentifier = sessionIdentifier;
+  return self;
+}
+
+- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
+{
+  self.shouldInitializeForUITesting = shouldInitializeForUITesting;
   return self;
 }
 
@@ -48,10 +55,11 @@
     NSError *innerError;
     NSString *testConfigurationFileName = [NSString stringWithFormat:@"%@-%@.xctestconfiguration", testBundle.name, self.sessionIdentifier.UUIDString];
     testBundle.configuration =
-    [[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
-         withModuleName:testBundle.name]
-        withSessionIdentifier:self.sessionIdentifier]
-       withTestBundlePath:testBundle.path]
+    [[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
+          withModuleName:testBundle.name]
+         withSessionIdentifier:self.sessionIdentifier]
+        withTestBundlePath:testBundle.path]
+       withUITesting:self.shouldInitializeForUITesting]
       saveAs:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]]
      buildWithError:&innerError];
     if (!testBundle.configuration) {

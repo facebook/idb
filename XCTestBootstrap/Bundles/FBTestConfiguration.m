@@ -31,6 +31,7 @@
 @property (nonatomic, copy) NSString *moduleName;
 @property (nonatomic, copy) NSString *testBundlePath;
 @property (nonatomic, copy) NSString *savePath;
+@property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @end
 
 @implementation FBTestConfigurationBuilder
@@ -65,6 +66,12 @@
   return self;
 }
 
+- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
+{
+  self.shouldInitializeForUITesting = shouldInitializeForUITesting;
+  return self;
+}
+
 - (instancetype)saveAs:(NSString *)savePath
 {
   self.savePath = savePath;
@@ -82,6 +89,7 @@
     testConfiguration.productModuleName = self.moduleName;
     testConfiguration.reportResultsToIDE = YES;
     testConfiguration.pathToXcodeReportingSocket = nil;
+    testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
     if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:error]) {
       return nil;

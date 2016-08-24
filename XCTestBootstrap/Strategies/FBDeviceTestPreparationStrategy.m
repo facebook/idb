@@ -14,6 +14,7 @@
 #import "FBProductBundle.h"
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
+#import "FBTestLaunchConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
 #import "NSFileManager+FBFileManager.h"
 #import "XCTestBootstrapError.h"
@@ -21,7 +22,7 @@
 @interface FBDeviceTestPreparationStrategy ()
 @property (nonatomic, copy) NSString *applicationPath;
 @property (nonatomic, copy) NSString *applicationDataPath;
-@property (nonatomic, copy) NSString *testBundlePath;
+@property (nonatomic, copy) FBTestLaunchConfiguration *testLaunchConfiguration;
 @property (nonatomic, strong) id<FBFileManager> fileManager;
 @end
 
@@ -29,24 +30,24 @@
 
 + (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
                         applicationDataPath:(NSString *)applicationDataPath
-                             testBundlePath:(NSString *)testBundlePath
+                    testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration;
 {
   return
   [self strategyWithApplicationPath:applicationPath
                 applicationDataPath:applicationDataPath
-                     testBundlePath:testBundlePath
+            testLaunchConfiguration:testLaunchConfiguration
                         fileManager:[NSFileManager defaultManager]];
 }
 
 + (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
                         applicationDataPath:(NSString *)applicationDataPath
-                             testBundlePath:(NSString *)testBundlePath
+                    testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
                                 fileManager:(id<FBFileManager>)fileManager
 {
   FBDeviceTestPreparationStrategy *strategy = [self.class new];
   strategy.applicationPath = applicationPath;
   strategy.applicationDataPath = applicationDataPath;
-  strategy.testBundlePath = testBundlePath;
+  strategy.testLaunchConfiguration = testLaunchConfiguration;
   strategy.fileManager = fileManager;
   return strategy;
 }
@@ -56,7 +57,7 @@
   NSAssert(deviceOperator, @"deviceOperator is needed to load bundles");
   NSAssert(self.applicationPath, @"Path to application is needed to load bundles");
   NSAssert(self.applicationDataPath, @"Path to application data bundle is needed to prepare bundles");
-  NSAssert(self.testBundlePath, @"Path to test bundle is needed to load bundles");
+  NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
 
   NSError *innerError;
   // Load tested application
@@ -100,9 +101,10 @@
 
   // Load XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-    withBundlePath:self.testBundlePath]
+  FBTestBundle *testBundle = [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+    withBundlePath:self.testLaunchConfiguration.testBundlePath]
     withSessionIdentifier:sessionIdentifier]
+    withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
     buildWithError:&innerError];
 
   if (!testBundle) {

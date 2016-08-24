@@ -9,6 +9,7 @@
 
 #import <XCTestBootstrap/FBXCTestPreparationStrategy.h>
 
+@class FBTestLaunchConfiguration;
 @protocol FBFileManager;
 
 /**
@@ -22,25 +23,25 @@
 
  @param applicationPath path to tested application (.app)
  @param applicationDataPath path to application data bundle (.xcappdata)
- @param testBundlePath path to test bundle (.xctest)
+ @param testLaunchConfiguration configuration used to launch test
  @returns Prepared FBLocalDeviceTestRunStrategy
  */
 + (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
                         applicationDataPath:(NSString *)applicationDataPath
-                             testBundlePath:(NSString *)testBundlePath;
+                    testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration;
 
 /**
  Creates and returns a strategy with given paramenters
 
  @param applicationPath path to tested application (.app)
  @param applicationDataPath path to application data bundle (.xcappdata)
- @param testBundlePath path to test bundle (.xctest)
+ @param testLaunchConfiguration configuration used to launch test
  @param fileManager file manager used to prepare all bundles
  @returns Prepared FBLocalDeviceTestRunStrategy
  */
 + (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
                         applicationDataPath:(NSString *)applicationDataPath
-                             testBundlePath:(NSString *)testBundlePath
+                    testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
                                 fileManager:(id<FBFileManager>)fileManager;
 
 @end

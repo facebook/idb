@@ -91,7 +91,8 @@ struct SimulatorActionRunner : Runner {
       }
     case .LaunchXCTest(let launch, let bundlePath, let timeout):
       return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in
-        interaction.startTestRunnerLaunchConfiguration(launch, testBundlePath: bundlePath)
+        let testLaunchConfiguration = FBTestLaunchConfiguration().withTestBundlePath(bundlePath).withApplicationLaunchConfiguration(launch).withUITesting(true)
+        interaction.startTestWithLaunchConfiguration(testLaunchConfiguration)
         if let timeout = timeout {
             interaction.waitUntilAllTestRunnersHaveFinishedTestingWithTimeout(timeout)
         }

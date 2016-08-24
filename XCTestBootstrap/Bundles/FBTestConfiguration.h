@@ -75,6 +75,12 @@
 - (instancetype)withTestBundlePath:(NSString *)testBundlePath;
 
 /**
+ @param shouldInitializeForUITesting determines whether should initialize for UITesting
+ @return builder
+ */
+- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
+
+/**
  @param savePath is set, builder will save file at given path that can be loaded directly by XCTestConfiguration
  @return builder
  */

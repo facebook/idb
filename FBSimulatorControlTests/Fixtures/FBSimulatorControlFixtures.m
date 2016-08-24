@@ -11,6 +11,8 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 @implementation FBSimulatorControlFixtures
 
 + (FBApplicationDescriptor *)tableSearchApplicationWithError:(NSError **)error
@@ -57,6 +59,15 @@
 @end
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
+
+- (FBTestLaunchConfiguration *)testLaunch
+{
+  return
+  [[[[FBTestLaunchConfiguration new]
+     withTestBundlePath:self.iOSUnitTestBundlePath]
+    withApplicationLaunchConfiguration:self.tableSearchAppLaunch]
+   withUITesting:NO];
+}
 
 - (FBApplicationDescriptor *)tableSearchApplication
 {

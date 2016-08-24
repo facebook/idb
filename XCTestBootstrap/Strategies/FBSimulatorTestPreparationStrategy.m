@@ -11,45 +11,42 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBCodeSignCommand.h"
 #import "FBDeviceOperator.h"
 #import "FBFileManager.h"
 #import "FBProductBundle.h"
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
+#import "FBTestLaunchConfiguration.h"
 #import "NSFileManager+FBFileManager.h"
 #import "XCTestBootstrapError.h"
-#import "FBCodeSignCommand.h"
+
 
 @interface FBSimulatorTestPreparationStrategy ()
 @property (nonatomic, copy) NSString *workingDirectory;
-@property (nonatomic, copy) NSString *testRunnerBundleID;
-@property (nonatomic, copy) NSString *testBundlePath;
+@property (nonatomic, copy) FBTestLaunchConfiguration *testLaunchConfiguration;
 @property (nonatomic, strong) id<FBFileManager> fileManager;
 @end
 
 @implementation FBSimulatorTestPreparationStrategy
 
-+ (instancetype)strategyWithTestRunnerBundleID:(NSString *)testRunnerBundleID
-                                testBundlePath:(NSString *)testBundlePath
-                              workingDirectory:(NSString *)workingDirectory
++ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
+                                   workingDirectory:(NSString *)workingDirectory
 {
   return
-  [self strategyWithTestRunnerBundleID:testRunnerBundleID
-                        testBundlePath:testBundlePath
-                      workingDirectory:workingDirectory
-                           fileManager:[NSFileManager defaultManager]
+  [self strategyWithTestLaunchConfiguration:testLaunchConfiguration
+                           workingDirectory:workingDirectory
+                                fileManager:[NSFileManager defaultManager]
    ];
 }
 
-+ (instancetype)strategyWithTestRunnerBundleID:(NSString *)testRunnerBundleID
-                                testBundlePath:(NSString *)testBundlePath
-                              workingDirectory:(NSString *)workingDirectory
-                                   fileManager:(id<FBFileManager>)fileManager
++ (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
+                                   workingDirectory:(NSString *)workingDirectory
+                                        fileManager:(id<FBFileManager>)fileManager
 {
   FBSimulatorTestPreparationStrategy *strategy = [self.class new];
-  strategy.testRunnerBundleID = testRunnerBundleID;
-  strategy.testBundlePath = testBundlePath;
+  strategy.testLaunchConfiguration = testLaunchConfiguration;
   strategy.workingDirectory = workingDirectory;
   strategy.fileManager = fileManager;
   return strategy;
@@ -61,23 +58,23 @@
 {
   NSAssert(deviceOperator, @"deviceOperator is needed to load bundles");
   NSAssert(self.workingDirectory, @"Working directory is needed to prepare bundles");
-  NSAssert(self.testRunnerBundleID, @"Test runner bundle ID is needed to load bundles");
-  NSAssert(self.testBundlePath, @"Path to test bundle is needed to load bundles");
-
+  NSAssert(self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
+  NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
 
   // Check the bundle is codesigned (if required).
   NSError *innerError;
-  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater && ![FBCodeSignCommand.codeSignCommandWithAdHocIdentity cdHashForBundleAtPath:self.testBundlePath error:&innerError]) {
+  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater && ![FBCodeSignCommand.codeSignCommandWithAdHocIdentity cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath error:&innerError]) {
     return [[[XCTestBootstrapError
-      describeFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testBundlePath]
+      describeFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]
       causedBy:innerError]
       fail:error];
   }
 
   // Prepare XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-    withBundlePath:self.testBundlePath]
+  FBTestBundle *testBundle = [[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+    withBundlePath:self.testLaunchConfiguration.testBundlePath]
+    withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
     withWorkingDirectory:self.workingDirectory]
     withSessionIdentifier:sessionIdentifier]
     buildWithError:&innerError];
@@ -89,7 +86,7 @@
   }
 
   // Prepare test runner
-  FBProductBundle *application = [deviceOperator applicationBundleWithBundleID:self.testRunnerBundleID error:error];
+  FBProductBundle *application = [deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:error];
   if (!application) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner"]

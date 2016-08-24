@@ -62,14 +62,16 @@
     environment:self.configuration.processUnderTestEnvironment
     options:0];
 
-  NSString *workingDirectoryPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"];
-  FBInteraction *interaction = [[self.simulator.interact
-    startTestRunnerLaunchConfiguration:appLaunch
-    testBundlePath:self.configuration.testBundlePath
-    reporter:[FBXCTestReporterAdapter adapterWithReporter:self.configuration.reporter]
-    workingDirectory:workingDirectoryPath]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:5000];
+  FBTestLaunchConfiguration *testLaunchConfiguration =
+  [[[FBTestLaunchConfiguration new]
+    withTestBundlePath:self.configuration.testBundlePath]
+   withApplicationLaunchConfiguration:appLaunch];
 
+  FBInteraction *interaction = [[self.simulator.interact
+    startTestWithLaunchConfiguration:testLaunchConfiguration
+    reporter:[FBXCTestReporterAdapter adapterWithReporter:self.configuration.reporter]
+    workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:5000];
 
   if (![interaction perform:error]) {
     [self.configuration.logger logFormat:@"Failed to execute test bundle: %@", *error];

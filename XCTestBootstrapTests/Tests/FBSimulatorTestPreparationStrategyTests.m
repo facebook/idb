@@ -16,6 +16,7 @@
 #import "FBProductBundle.h"
 #import "FBSimulatorTestPreparationStrategy.h"
 #import "FBTestRunnerConfiguration.h"
+#import "FBTestLaunchConfiguration.h"
 
 @interface FBSimulatorTestPreparationStrategyTests : XCTestCase
 @end
@@ -30,30 +31,29 @@
 - (void)testStrategyWithMissingWorkingDirectory
 {
   FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestRunnerBundleID:@""
-                                                      testBundlePath:@""
-                                                    workingDirectory:nil
-                                                         fileManager:nil];
+  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:self.defaultTestLaunch
+                                                         workingDirectory:nil
+                                                              fileManager:nil];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
 
 - (void)testStrategyWithMissingTestBundlePath
 {
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration new] withApplicationLaunchConfiguration:self.defaultAppLaunch];
   FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestRunnerBundleID:@""
-                                                      testBundlePath:nil
-                                                    workingDirectory:@""
-                                                         fileManager:nil];
+  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:testLaunch
+                                                         workingDirectory:@""
+                                                              fileManager:nil];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
 
 - (void)testStrategyWithMissingApplicationPath
 {
+  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration new] withTestBundlePath:@""];
   FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestRunnerBundleID:nil
-                                                      testBundlePath:@""
-                                                    workingDirectory:@""
-                                                         fileManager:nil];
+  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:testLaunch
+                                                         workingDirectory:@""
+                                                              fileManager:nil];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
 
@@ -84,10 +84,9 @@
   [[[deviceOperatorMock expect] andReturn:productBundle] applicationBundleWithBundleID:@"bundleId" error:[OCMArg anyObjectRef]];
 
   FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestRunnerBundleID:@"bundleId"
-                                                      testBundlePath:@"/testBundle"
-                                                    workingDirectory:@"/heaven"
-                                                         fileManager:fileManagerMock];
+  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:self.defaultTestLaunch
+                                                         workingDirectory:@"/heaven"
+                                                              fileManager:fileManagerMock];
   FBTestRunnerConfiguration *configuration = [strategy prepareTestWithDeviceOperator:deviceOperatorMock error:nil];
 
   NSDictionary *env = configuration.launchEnvironment;
@@ -106,6 +105,22 @@
                 );
   [fileManagerMock verify];
   [deviceOperatorMock verify];
+}
+
+- (FBTestLaunchConfiguration *)defaultTestLaunch
+{
+  return [[[FBTestLaunchConfiguration new] withApplicationLaunchConfiguration:self.defaultAppLaunch] withTestBundlePath:@"/testBundle"];
+}
+
+- (FBApplicationLaunchConfiguration *)defaultAppLaunch
+{
+  return
+  [FBApplicationLaunchConfiguration configurationWithBundleID:@"bundleId"
+                                                   bundleName:@""
+                                                    arguments:@[]
+                                                  environment:@{}
+                                                      options:FBProcessLaunchOptionsWriteStderr
+   ];
 }
 
 @end

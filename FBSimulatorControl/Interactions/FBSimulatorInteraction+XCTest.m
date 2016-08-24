@@ -23,27 +23,26 @@
 
 @implementation FBSimulatorInteraction (XCTest)
 
-- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath
+- (instancetype)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
 {
-  return [self startTestRunnerLaunchConfiguration:configuration testBundlePath:testBundlePath reporter:nil];
+  return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:nil];
 }
 
-- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath reporter:(id<FBTestManagerTestReporter>)reporter
+- (instancetype)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter
 {
-  return [self startTestRunnerLaunchConfiguration:configuration testBundlePath:testBundlePath reporter:reporter workingDirectory:self.simulator.auxillaryDirectory];
+  return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter workingDirectory:self.simulator.auxillaryDirectory];
 }
 
-- (instancetype)startTestRunnerLaunchConfiguration:(FBApplicationLaunchConfiguration *)configuration testBundlePath:(NSString *)testBundlePath reporter:(id<FBTestManagerTestReporter>)reporter workingDirectory:(NSString *)workingDirectory
+- (instancetype)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter workingDirectory:(NSString *)workingDirectory
 {
-  NSParameterAssert(configuration);
-  NSParameterAssert(testBundlePath);
+  NSParameterAssert(testLaunchConfiguration.applicationLaunchConfiguration);
+  NSParameterAssert(testLaunchConfiguration.testBundlePath);
   NSParameterAssert(workingDirectory);
   [XCTestBootstrapFrameworkLoader loadPrivateFrameworksOrAbort];
 
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy
-      strategyWithTestRunnerBundleID:configuration.bundleID
-      testBundlePath:testBundlePath
+      strategyWithTestLaunchConfiguration:testLaunchConfiguration
       workingDirectory:workingDirectory];
     FBSimulatorControlOperator *operator = [FBSimulatorControlOperator operatorWithSimulator:self.simulator];
     FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
@@ -53,7 +52,9 @@
       logger:simulator.logger];
 
     NSError *innerError = nil;
-    FBTestManager *testManager = [testRunStrategy startTestManagerWithAttributes:configuration.arguments environment:configuration.environment error:&innerError];
+    FBTestManager *testManager = [testRunStrategy startTestManagerWithAttributes:testLaunchConfiguration.applicationLaunchConfiguration.arguments
+                                                                     environment:testLaunchConfiguration.applicationLaunchConfiguration.environment
+                                                                           error:&innerError];
     if (!testManager) {
       return [[[FBSimulatorError
         describeFormat:@"Failed start test manager"]
@@ -79,6 +80,5 @@
     return YES;
   }];
 }
-
 
 @end

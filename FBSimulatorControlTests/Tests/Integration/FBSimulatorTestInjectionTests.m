@@ -44,7 +44,7 @@
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
-    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.iOSUnitTestBundlePath reporter:self]
+    startTestWithLaunchConfiguration:self.testLaunch reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
@@ -57,7 +57,7 @@
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
-    startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch testBundlePath:self.iOSUnitTestBundlePath reporter:self]
+    startTestWithLaunchConfiguration:self.testLaunch reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
@@ -66,9 +66,10 @@
 
 - (void)testInjectsApplicationTestIntoSafari
 {
+
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[simulator.interact
-    startTestRunnerLaunchConfiguration:self.safariAppLaunch testBundlePath:self.iOSUnitTestBundlePath reporter:self]
+    startTestWithLaunchConfiguration:[self.testLaunch withApplicationLaunchConfiguration:self.safariAppLaunch] reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
 
   [self assertInteractionSuccessful:interaction];
@@ -89,9 +90,8 @@
   FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
   FBSimulator *simulator = [self obtainBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact installApplication:self.tableSearchApplication]
-      startTestRunnerLaunchConfiguration:self.tableSearchAppLaunch
-                          testBundlePath:self.iOSUnitTestBundlePath
-                                reporter:reporter] waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+      startTestWithLaunchConfiguration:self.testLaunch reporter:reporter]
+      waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
 
   NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];

@@ -15,6 +15,7 @@
 @class FBApplicationLaunchConfiguration;
 @class FBDiagnostic;
 @class FBProcessInfo;
+@class FBTestLaunchConfiguration;
 
 /**
  Fixtures for Tests.
@@ -47,6 +48,11 @@
  Fetching Fixtures, causing test failures if they cannot be obtained.
  */
 @interface XCTestCase (FBSimulatorControlFixtures)
+
+/**
+ A XCTest launch configuration
+ */
+- (FBTestLaunchConfiguration *)testLaunch;
 
 /**
  An Application for the built in Mobile Safari.

@@ -39,6 +39,12 @@
 - (instancetype)withSessionIdentifier:(NSUUID *)sessionIdentifier;
 
 /**
+ @param shouldInitializeForUITesting determines whether should initialize for UITesting
+ @return builder
+ */
+- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
+
+/**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared test bundle if the operation succeeds, otherwise nil.
  */
