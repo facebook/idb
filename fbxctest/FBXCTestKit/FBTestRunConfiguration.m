@@ -9,8 +9,8 @@
 
 #import "FBTestRunConfiguration.h"
 
+#import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
-
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBJSONTestReporter.h"
@@ -283,23 +283,30 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
       fail:error];
   }
 
-  NSString *shimPath = [directory stringByAppendingPathComponent:iOSXCTestShimFileName];
-  if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
-    return [[FBXCTestError
-      describeFormat:@"The iOS xctest Simulator Shim was expected at the location '%@', but it was not there", shimPath]
-      fail:error];
-  }
-  shimPath = [directory stringByAppendingPathComponent:MacXCTestShimFileName];
-  if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
-    return [[FBXCTestError
-      describeFormat:@"The Mac xctest Shim was expected at the location '%@', but it was not there", shimPath]
-      fail:error];
-  }
-  shimPath = [directory stringByAppendingPathComponent:MacQueryShimFileName];
-  if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
-    return [[FBXCTestError
-      describeFormat:@"The Mac Query Shim was expected at the location '%@', but it was not there", shimPath]
-      fail:error];
+  NSDictionary<NSString *, NSNumber *> *shims = @{
+    iOSXCTestShimFileName : FBControlCoreGlobalConfiguration.isXcode8OrGreater ? @YES : @NO,
+    MacXCTestShimFileName : @NO,
+    MacQueryShimFileName : @NO,
+  };
+
+  id<FBCodesignProvider> codesign = FBCodeSignCommand.codeSignCommandWithAdHocIdentity;
+  for (NSString *filename in shims) {
+    NSString *shimPath = [directory stringByAppendingPathComponent:iOSXCTestShimFileName];
+    if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
+      return [[FBXCTestError
+        describeFormat:@"The iOS xctest Simulator Shim was expected at the location '%@', but it was not there", shimPath]
+        fail:error];
+    }
+    if (!shims[filename].boolValue) {
+      continue;
+    }
+    NSError *innerError = nil;
+    if (![codesign cdHashForBundleAtPath:shimPath error:&innerError]) {
+      return [[[FBXCTestError
+        describeFormat:@"Shim at path %@ was required to be signed, but it was not", shimPath]
+        causedBy:innerError]
+        fail:error];
+    }
   }
   return directory;
 }

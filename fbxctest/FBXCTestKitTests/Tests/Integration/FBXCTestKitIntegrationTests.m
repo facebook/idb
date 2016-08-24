@@ -130,12 +130,12 @@
 
 - (void)testRunsiOSLogicTestsWithoutApplication
 {
-  if (![FBTestRunConfiguration findShimDirectoryWithError:nil]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  NSError *error = nil;
+  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
 
-  NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [FBXCTestKitFixtures iOSUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
@@ -159,12 +159,12 @@
 
 - (void)testiOSLogicTestEndsOnCrashingTest
 {
-  if (![FBTestRunConfiguration findShimDirectoryWithError:nil]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  NSError *error = nil;
+  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
 
-  NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
@@ -189,12 +189,12 @@
 
 - (void)testMacOSXLogicTest
 {
-  if (![FBTestRunConfiguration findShimDirectoryWithError:nil]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  NSError *error = nil;
+  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
 
-  NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
@@ -218,12 +218,12 @@
 
 - (void)testMacOSXLogicTestEndsOnCrashingTest
 {
-  if (![FBTestRunConfiguration findShimDirectoryWithError:nil]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  NSError *error = nil;
+  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
 
-  NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
@@ -248,12 +248,12 @@
 
 - (void)testReportsMacOSXTestList
 {
-  if (![FBTestRunConfiguration findShimDirectoryWithError:nil]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  NSError *error = nil;
+  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
 
-  NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
