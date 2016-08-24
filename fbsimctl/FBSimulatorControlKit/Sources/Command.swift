@@ -84,6 +84,7 @@ public enum Action {
   case Uninstall(String)
   case Upload([FBDiagnostic])
   case WatchdogOverride([String], NSTimeInterval)
+  case SetLocation(Double,Double)
 }
 
 /**
@@ -221,6 +222,8 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.Tap(let leftX, let leftY), .Tap(let rightX, let rightY)):
     return leftX == rightX && leftY == rightY
+  case (.SetLocation(let leftLat, let leftLon), .SetLocation(let rightLat, let rightLon)):
+    return leftLat == rightLat && leftLon == rightLon
   case (.Terminate(let leftBundleID), .Terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.Uninstall(let leftBundleID), .Uninstall(let rightBundleID)):
@@ -287,6 +290,8 @@ extension Action {
       return (EventName.Diagnose, nil)
     case .WatchdogOverride(let bundleIDs, _):
       return (EventName.WatchdogOverride, ArraySubject(bundleIDs))
+    case .SetLocation:
+      return (EventName.SetLocation, nil)
     }
   }}
 }
