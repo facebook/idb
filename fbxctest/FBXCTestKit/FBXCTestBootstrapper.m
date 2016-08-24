@@ -51,12 +51,14 @@
 
 static inline BOOL handleError(NSError *error, FBXCTestLogger *logger)
 {
-  NSString *lastLines = [logger lastLinesOfOutput:10];
+  fputs(error.localizedDescription.UTF8String, stderr);
+
+  NSString *lastLines = [logger allLinesOfOutput];
   if (lastLines) {
     fputs(lastLines.UTF8String, stderr);
   }
-  NSLog(@"%@", error.localizedDescription);
 
+  fflush(stderr);
   return NO;
 }
 

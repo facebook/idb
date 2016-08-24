@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A logger for FBXCTest that accumilates messages, but can be used for logging in the event a failure occurs.
  */
@@ -25,8 +27,17 @@
  Returns the last n lines of logger output, for debugging purposes.
 
  @param lineCount the number of lines to output.
- @return the output.
+ @return the output, if it could be fetched.
  */
-- (NSString *)lastLinesOfOutput:(NSUInteger)lineCount;
+- (nullable NSString *)lastLinesOfOutput:(NSUInteger)lineCount;
+
+/**
+ Returns all the lines of logger output, for debugging purposes.
+
+ @return the output, if it could be fetched.
+ */
+- (nullable NSString *)allLinesOfOutput;
 
 @end
+
+NS_ASSUME_NONNULL_END

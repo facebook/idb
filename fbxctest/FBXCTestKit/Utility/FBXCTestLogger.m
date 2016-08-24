@@ -47,9 +47,9 @@
   return self;
 }
 
-- (NSString *)lastLinesOfOutput:(NSUInteger)lineCount
+- (nullable NSString *)lastLinesOfOutput:(NSUInteger)lineCount
 {
-  NSString *output = [NSString stringWithContentsOfFile:self.filePath encoding:NSUTF8StringEncoding error:nil];
+  NSString *output = [self allLinesOfOutput];
   if (!output) {
     return nil;
   }
@@ -61,6 +61,11 @@
   return [[lines
     subarrayWithRange:availableRange]
     componentsJoinedByString:@"\n"];
+}
+
+- (nullable NSString *)allLinesOfOutput
+{
+  return [NSString stringWithContentsOfFile:self.filePath encoding:NSUTF8StringEncoding error:nil];
 }
 
 #pragma mark Protocol Implementation

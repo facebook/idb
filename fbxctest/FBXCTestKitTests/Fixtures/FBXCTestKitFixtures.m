@@ -9,7 +9,9 @@
 
 #import "FBXCTestKitFixtures.h"
 
+#import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @implementation FBXCTestKitFixtures
 
@@ -40,6 +42,28 @@
 + (NSString *)macUnitTestBundlePath
 {
   return [[NSBundle bundleForClass:self] pathForResource:@"MacUnitTestFixture" ofType:@"xctest"];
+}
+
+@end
+
+@implementation XCTestCase (FBXCTestKitTests)
+
+- (nullable NSString *)iOSUnitTestBundlePath
+{
+  NSString *bundlePath = FBXCTestKitFixtures.iOSUnitTestBundlePath;
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    return nil;
+  }
+  id<FBCodesignProvider> codesign = FBCodeSignCommand.codeSignCommandWithAdHocIdentity;
+  if ([codesign cdHashForBundleAtPath:bundlePath error:nil]) {
+    return bundlePath;
+  }
+  NSError *error = nil;
+  if ([codesign signBundleAtPath:bundlePath error:&error]) {
+    return bundlePath;
+  }
+  XCTFail(@"Bundle at path %@ could not be codesigned: %@", bundlePath, error);
+  return nil;
 }
 
 @end
