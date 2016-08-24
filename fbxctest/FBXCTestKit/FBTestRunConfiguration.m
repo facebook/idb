@@ -304,4 +304,42 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
   return directory;
 }
 
+- (NSString *)xctestPathForSimulator:(nullable FBSimulator *)simulator
+{
+  if (simulator == nil) {
+    return [FBControlCoreGlobalConfiguration.developerDirectory
+      stringByAppendingPathComponent:@"usr/bin/xctest"];
+  } else {
+    return [FBControlCoreGlobalConfiguration.developerDirectory
+      stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+  }
+}
+
++ (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries simulator:(nullable FBSimulator *)simulator
+{
+  NSMutableDictionary<NSString *, NSString *> *parentEnvironment = NSProcessInfo.processInfo.environment.mutableCopy;
+  [parentEnvironment removeObjectsForKeys:@[
+    @"XCTestConfigurationFilePath",
+  ]];
+
+  NSMutableDictionary<NSString *, NSString *> *environmentOverrides = [NSMutableDictionary dictionary];
+  NSString *xctoolTestEnvPrefix = @"XCTOOL_TEST_ENV_";
+  for (NSString *key in parentEnvironment) {
+    if ([key hasPrefix:xctoolTestEnvPrefix]) {
+      NSString *childKey = [key substringFromIndex:xctoolTestEnvPrefix.length];
+      environmentOverrides[childKey] = parentEnvironment[key];
+    }
+  }
+  [environmentOverrides addEntriesFromDictionary:entries];
+  NSMutableDictionary<NSString *, NSString *> *environment = parentEnvironment.mutableCopy;
+  for (NSString *key in environmentOverrides) {
+    NSString *childKey = key;
+    if (simulator) {
+      childKey = [@"SIMCTL_CHILD_" stringByAppendingString:childKey];
+    }
+    environment[childKey] = environmentOverrides[key];
+  }
+  return environment.copy;
+}
+
 @end

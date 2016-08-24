@@ -177,14 +177,14 @@
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
   success = [testRunner executeTestsWithError:&error];
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
+  XCTAssertFalse(success);
+  XCTAssertNotNil(error);
 
-  XCTAssertTrue(self.reporter.printReportWasCalled);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 9u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 9u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 7u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 6u);
 }
 
 - (void)testMacOSXLogicTest
@@ -210,10 +210,10 @@
   XCTAssertNil(error);
 
   XCTAssertTrue(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 0u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 9u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 9u);
 }
 
 - (void)testMacOSXLogicTestEndsOnCrashingTest
@@ -236,14 +236,14 @@
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
   success = [testRunner executeTestsWithError:&error];
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
+  XCTAssertFalse(success);
+  XCTAssertNotNil(error);
 
-  XCTAssertTrue(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 0u);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
   XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 0u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 7u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 6u);
 }
 
 - (void)testReportsMacOSXTestList

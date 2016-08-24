@@ -9,8 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBXCTestLogger;
+
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
 
@@ -72,6 +74,25 @@ NS_ASSUME_NONNULL_BEGIN
  @return the shim directory if successful, NO otherwise.
  */
 + (nullable NSString *)findShimDirectoryWithError:(NSError **)error;
+
+/**
+ Gets the path to the xctest executable for the given simulator (or for a mac test).
+
+ @param simulator the Simulator to get the path for, if a simulator test.
+ @return the path to the xctest exectuable
+ */
+- (NSString *)xctestPathForSimulator:(nullable FBSimulator *)simulator;
+
+/**
+ Gets the Environment for a Subprocess.
+ Will extract the environment variables from the appropriately prefixed environment variables.
+ Will strip out environment variables that will confuse subprocesses if this class is called inside an 'xctest' environment.
+
+ @param entries the entries to add in
+ @param simulator the Simulator, if applicable.
+ @return the subprocess environment
+ */
++ (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries simulator:(nullable FBSimulator *)simulator;
 
 @end
 
