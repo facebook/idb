@@ -22,6 +22,7 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBDeviceOperator.h"
+#import "FBTestManagerContext.h"
 #import "FBTestManagerAPIMediator.h"
 
 #pragma clang diagnostic push
@@ -65,21 +66,21 @@
   return _clientProcessDisplayPath;
 }
 
-+ (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDeviceOperator:deviceOperator interface:interface sessionIdentifier:sessionIdentifier queue:queue logger:logger];
+  return [[self alloc] initWithWithContext:context deviceOperator:deviceOperator interface:interface queue:queue logger:logger];
 }
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface sessionIdentifier:(NSUUID *)sessionIdentifier queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _context = context;
   _deviceOperator = deviceOperator;
   _interface = interface;
-  _sessionIdentifier = sessionIdentifier;
   _queue = queue;
   _logger = logger;
 
@@ -249,10 +250,10 @@
   [proxyChannel setExportedObject:self queue:dispatch_get_main_queue()];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
-  [self.logger logFormat:@"Starting test session with ID %@", self.sessionIdentifier.UUIDString];
+  [self.logger logFormat:@"Starting test session with ID %@", self.context.sessionIdentifier.UUIDString];
 
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
-    _IDE_initiateSessionWithIdentifier:self.sessionIdentifier
+    _IDE_initiateSessionWithIdentifier:self.context.sessionIdentifier
     forClient:self.class.clientProcessUniqueIdentifier
     atPath:self.class.clientProcessDisplayPath
     protocolVersion:@(FBProtocolVersion)];
@@ -271,7 +272,7 @@
 - (DTXRemoteInvocationReceipt *)setupLegacyProtocolConnectionViaRemoteProxy:(id<XCTestManager_DaemonConnectionInterface>)remoteProxy proxyChannel:(DTXProxyChannel *)proxyChannel
 {
   DTXRemoteInvocationReceipt *receipt = [remoteProxy
-    _IDE_beginSessionWithIdentifier:self.sessionIdentifier
+    _IDE_beginSessionWithIdentifier:self.context.sessionIdentifier
     forClient:self.class.clientProcessUniqueIdentifier
     atPath:self.class.clientProcessDisplayPath];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {

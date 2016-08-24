@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBTestManagerContext;
+
 @protocol FBDeviceOperator;
 @protocol FBControlCoreLogger;
 @protocol FBTestManagerTestReporter;
@@ -23,14 +25,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a test manager with given paramenters.
 
+ @param context the Context of the Test Manager.
  @param deviceOperator a device operator used to handle device.
- @param testRunnerPID a process id of test runner (XCTest bundle).
- @param sessionIdentifier a session identifier of test that should be started.
  @param reporter an optional reporter to report test progress to.
  @param logger the logger object to log events to, may be nil.
  @return Prepared FBTestManager
  */
-+ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)testManagerWithContext:(FBTestManagerContext *)context operator:(id<FBDeviceOperator>)deviceOperator reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Connects to the 'testmanagerd' daemon.

@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class DVTAbstractiOSDevice;
+@class FBTestManagerContext;
 
 @protocol FBTestManagerProcessInteractionDelegate;
 @protocol FBTestManagerTestReporter;
@@ -23,22 +23,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.
+ This class 'takes over' after an Application Process has been started.
  The class mediates between:
  - The Host
  - The 'testmanagerd' daemon running on iOS.
  - The 'Test Runner', the Appication in which the XCTest bundle is running.
  */
 @interface FBTestManagerAPIMediator : NSObject
-
-/**
- XCTest session identifier
- */
-@property (nonatomic, copy, readonly) NSUUID *sessionIdentifier;
-
-/**
- Process id of test runner application
- */
-@property (nonatomic, assign, readonly) pid_t testRunnerPID;
 
 /**
  Delegate object used to handle application install & launch request
@@ -53,15 +44,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a mediator with given paramenters
 
+ @param context the Context of the Test Manager.
  @param deviceOperator a device operator for device that test runner is running on
  @param processDelegate the Delegate to handle application interactivity.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
- @param testRunnerPID a process id of test runner (XCTest bundle)
- @param sessionIdentifier a session identifier of test that should be started
  @return Prepared FBTestRunnerConfiguration
  */
-+ (instancetype)mediatorWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
++ (instancetype)mediatorWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Establishes a connection between the host, testmanagerd and the Test Bundle.

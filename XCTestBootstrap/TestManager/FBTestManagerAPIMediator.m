@@ -24,19 +24,21 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBXCTestManagerLoggingForwarder.h"
+
 #import "FBTestReporterForwarder.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
-
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
+#import "FBTestManagerContext.h"
 
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
 
 @interface FBTestManagerAPIMediator () <XCTestManager_IDEInterface>
 
+@property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, strong, readonly) FBTestReporterForwarder *reporterForwarder;
@@ -57,23 +59,22 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 #pragma mark - Initializers
 
-+ (instancetype)mediatorWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier;
++ (instancetype)mediatorWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return  [[self alloc] initWithDeviceOperator:deviceOperator processDelegate:processDelegate reporter:reporter logger:logger testRunnerPID:testRunnerPID sessionIdentifier:sessionIdentifier];
+  return  [[self alloc] initWithContext:context deviceOperator:deviceOperator processDelegate:processDelegate reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier
+- (instancetype)initWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _context = context;
   _deviceOperator = deviceOperator;
   _processDelegate = processDelegate;
   _logger = logger;
-  _testRunnerPID = testRunnerPID;
-  _sessionIdentifier = sessionIdentifier;
 
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
@@ -81,8 +82,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _reporterForwarder = [FBTestReporterForwarder withAPIMediator:self reporter:reporter];
   _loggingForwarder = [FBXCTestManagerLoggingForwarder withIDEInterface:(id<XCTestManager_IDEInterface, NSObject>)_reporterForwarder logger:logger];
 
-  _bundleConnection = [FBTestBundleConnection connectionWithDeviceOperator:deviceOperator interface:(id)_loggingForwarder sessionIdentifier:sessionIdentifier queue:_requestQueue logger:logger];
-  _daemonConnection = [FBTestDaemonConnection connectionWithDeviceOperator:deviceOperator interface:(id)_loggingForwarder testRunnerPID:testRunnerPID queue:_requestQueue logger:logger];
+  _bundleConnection = [FBTestBundleConnection connectionWithContext:context deviceOperator:deviceOperator interface:(id)_loggingForwarder queue:_requestQueue logger:logger];
+  _daemonConnection = [FBTestDaemonConnection connectionWithContext:context deviceOperator:deviceOperator interface:(id)_loggingForwarder queue:_requestQueue logger:logger];
 
   return self;
 }

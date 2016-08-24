@@ -25,6 +25,7 @@
 #import "XCTestBootstrapError.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBDeviceOperator.h"
+#import "FBTestManagerContext.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -45,22 +46,22 @@
 
 #pragma mark Initializers
 
-+ (instancetype)connectionWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDeviceOperator:deviceOperator interface:interface testRunnerPID:testRunnerPID queue:queue logger:logger];
+  return [[self alloc] initWithWithContext:context deviceOperator:deviceOperator interface:interface queue:queue logger:logger];
 }
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface testRunnerPID:(pid_t)testRunnerPID queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _context = context;
   _deviceOperator = deviceOperator;
   _interface = interface;
   _queue = queue;
-  _testRunnerPID = testRunnerPID;
   _logger = logger;
 
   _state = FBTestDaemonConnectionStateNotConnected;
@@ -219,8 +220,8 @@
   [channel setExportedObject:self queue:dispatch_get_main_queue()];
   self.daemonProxy = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
 
-  [self.logger logFormat:@"Whitelisting test process ID %d", self.testRunnerPID];
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID) protocolVersion:@(FBProtocolVersion)];
+  [self.logger logFormat:@"Whitelisting test process ID %d", self.context.testRunnerPID];
+  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.context.testRunnerPID) protocolVersion:@(FBProtocolVersion)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     if (error) {
       [self.logger log:@"Error in establishing daemon connection, trying legacy protocol"];
@@ -237,7 +238,7 @@
 
 - (DTXRemoteInvocationReceipt *)setupDaemonConnectionViaLegacyProtocol
 {
-  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.testRunnerPID)];
+  DTXRemoteInvocationReceipt *receipt = [self.daemonProxy _IDE_initiateControlSessionForTestProcessID:@(self.context.testRunnerPID)];
   [receipt handleCompletion:^(NSNumber *version, NSError *error) {
     if (error) {
       [self.logger logFormat:@"Error in whitelisting response from testmanagerd: %@ (%@), ignoring for now.", error.localizedDescription, error.localizedRecoverySuggestion];

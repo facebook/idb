@@ -13,9 +13,11 @@
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerProcessInteractionDelegate.h"
 #import "FBTestManagerProcessInteractionOperator.h"
+#import "FBTestManagerContext.h"
 
 @interface FBTestManager ()
 
+@property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
 @property (nonatomic, strong, readonly) FBTestManagerProcessInteractionOperator *processOperator;
 
@@ -25,21 +27,20 @@
 
 #pragma mark Initializers
 
-+ (instancetype)testManagerWithOperator:(id<FBDeviceOperator>)deviceOperator testRunnerPID:(pid_t)testRunnerPID sessionIdentifier:(NSUUID *)sessionIdentifier reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)testManagerWithContext:(FBTestManagerContext *)context operator:(id<FBDeviceOperator>)deviceOperator reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withDeviceOperator:deviceOperator];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
-    mediatorWithDeviceOperator:deviceOperator
+    mediatorWithContext:context
+    deviceOperator:deviceOperator
     processDelegate:processOperator
     reporter:reporter
-    logger:logger
-    testRunnerPID:testRunnerPID
-    sessionIdentifier:sessionIdentifier];
+    logger:logger];
 
-  return [[FBTestManager alloc] initWithMediator:mediator processOperator:processOperator];
+  return [[FBTestManager alloc] initWithContext:context mediator:mediator processOperator:processOperator];
 }
 
-- (instancetype)initWithMediator:(FBTestManagerAPIMediator *)mediator processOperator:(FBTestManagerProcessInteractionOperator *)processOperator
+- (instancetype)initWithContext:(FBTestManagerContext *)context mediator:(FBTestManagerAPIMediator *)mediator processOperator:(FBTestManagerProcessInteractionOperator *)processOperator
 {
   self = [super init];
   if (!self) {
@@ -72,11 +73,7 @@
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:
-    @"SessionID: %@ | Testrunner PID: %d",
-    self.mediator.sessionIdentifier.UUIDString,
-    self.mediator.testRunnerPID
-  ];
+  return self.context.description;
 }
 
 @end
