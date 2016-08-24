@@ -17,7 +17,6 @@
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorError.h"
-#import "FBProcessLaunchConfiguration.h"
 #import "FBSimulatorEventSink.h"
 
 @interface FBSimulatorSubprocessTerminationStrategy ()

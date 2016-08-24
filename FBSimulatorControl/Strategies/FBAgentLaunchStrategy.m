@@ -12,12 +12,10 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator+Helpers.h"
-#import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorDiagnostics.h"
-#import "FBProcessLaunchConfiguration.h"
 
 @interface FBAgentLaunchStrategy ()
 

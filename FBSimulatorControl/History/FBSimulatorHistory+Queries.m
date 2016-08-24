@@ -11,8 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessLaunchConfiguration.h"
-
 @interface FBProcessLaunchConfiguration (HistoryQueries)
 
 - (FBBinaryDescriptor *)binary;

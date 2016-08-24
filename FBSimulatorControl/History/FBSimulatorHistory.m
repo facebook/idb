@@ -12,7 +12,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator+Helpers.h"
 
 NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"termination_status";

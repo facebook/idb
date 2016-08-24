@@ -14,7 +14,6 @@
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 #import <SimulatorBridge/SimulatorBridge.h>
 
-#import "FBProcessLaunchConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 

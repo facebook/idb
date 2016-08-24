@@ -16,8 +16,6 @@
 
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
-#import "FBProcessLaunchConfiguration.h"
-#import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimulatorHistory+Queries.h"
 
 NSString *const FBSimulatorLogNameSyslog = @"system_log";

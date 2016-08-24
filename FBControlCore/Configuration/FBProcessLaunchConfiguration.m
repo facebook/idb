@@ -12,9 +12,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator.h"
-#import "FBSimulatorError.h"
-
 static NSString *const OptionConnectStdout = @"connect_stdout";
 static NSString *const OptionConnectStderr = @"connect_stderr";
 
@@ -172,23 +169,23 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
 {
   NSString *bundleID = json[@"bundle_id"];
   if (![bundleID isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a bundle_id", bundleID] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a bundle_id", bundleID] fail:error];
   }
   NSString *bundleName = json[@"bundle_name"];
   if (![bundleName isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a bundle_name", bundleName] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a bundle_name", bundleName] fail:error];
   }
   NSArray *arguments = json[@"arguments"];
   if (![FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
   }
   NSDictionary *environment = json[@"environment"];
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
   NSArray<NSString *> *optionNames = json[@"options"] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:optionNames withClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
   }
   FBProcessLaunchOptions options = [FBProcessLaunchConfiguration optionsFromOptionNames:optionNames];
   return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment options:options];
@@ -307,22 +304,22 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
   NSDictionary *binaryJSON = json[@"binary"];
   FBBinaryDescriptor *binary = [FBBinaryDescriptor inflateFromJSON:binaryJSON error:&innerError];
   if (!binary) {
-    return [[[FBSimulatorError
+    return [[[FBControlCoreError
       describeFormat:@"Could not build binary from json %@", binaryJSON]
       causedBy:innerError]
       fail:error];
   }
   NSArray *arguments = json[@"arguments"];
   if (![FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
   }
   NSDictionary *environment = json[@"environment"];
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
   NSArray<NSString *> *optionNames = json[@"options"] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:optionNames withClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
   }
   FBProcessLaunchOptions options = [FBProcessLaunchConfiguration optionsFromOptionNames:optionNames];
   return [self configurationWithBinary:binary arguments:arguments environment:environment options:options];

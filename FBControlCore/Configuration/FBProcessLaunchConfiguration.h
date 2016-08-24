@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBDebugDescribeable.h>
 
-@class FBApplicationDescriptor ;
+@class FBApplicationDescriptor;
 @class FBBinaryDescriptor;
-@class FBSimulator;
 
 NS_ASSUME_NONNULL_BEGIN
 

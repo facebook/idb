@@ -12,8 +12,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBProcessLaunchConfiguration+Private.h"
-#import "FBSimulator.h"
-#import "FBSimulatorError.h"
 
 @implementation FBProcessLaunchConfiguration (Helpers)
 

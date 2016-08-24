@@ -23,9 +23,7 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBProcessLaunchConfiguration.h"
 #import "FBSimDeviceWrapper.h"
-#import "FBProcessLaunchConfiguration+Helpers.h"
 
 @interface FBApplicationLaunchStrategy ()
 

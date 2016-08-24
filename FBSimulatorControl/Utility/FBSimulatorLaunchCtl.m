@@ -14,8 +14,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessLaunchConfiguration+Helpers.h"
-#import "FBProcessLaunchConfiguration.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"

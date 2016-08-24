@@ -36,6 +36,9 @@
 #import <FBControlCore/FBProcessFetcher+Helpers.h>
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>
+#import <FBControlCore/FBProcessLaunchConfiguration+Helpers.h>
+#import <FBControlCore/FBProcessLaunchConfiguration+Private.h>
+#import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBRunLoopSpinner.h>
 #import <FBControlCore/FBSubstringUtilities.h>
 #import <FBControlCore/FBTask+Private.h>

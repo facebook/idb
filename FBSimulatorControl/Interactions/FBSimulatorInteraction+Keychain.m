@@ -9,7 +9,6 @@
 
 #import "FBSimulatorInteraction+Keychain.h"
 
-#import "FBProcessLaunchConfiguration+Helpers.h"
 #import "FBSimulatorError.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorInteraction+Applications.h"

@@ -7,10 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBSimulatorControl/FBProcessLaunchConfiguration.h>
+#import <FBControlCore/FBProcessLaunchConfiguration.h>
 
 @class FBLocalizationOverride;
-@class FBSimulator;
 
 NS_ASSUME_NONNULL_BEGIN
 
