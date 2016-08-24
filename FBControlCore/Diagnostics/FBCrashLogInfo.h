@@ -12,6 +12,8 @@
 @class FBDiagnostic;
 @class FBDiagnosticBuilder;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  The Process Type of the Crash Log
 */
@@ -68,7 +70,7 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  @param path the path to extract crash log info from.
  @return a Crash Log Info on success, nil otherwise.
  */
-+ (instancetype)fromCrashLogAtPath:(NSString *)path;
++ (nullable instancetype)fromCrashLogAtPath:(NSString *)path;
 
 /**
  Constructs a FBDiagnostic instance from the Crash Log.
@@ -77,4 +79,16 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  */
 - (FBDiagnostic *)toDiagnostic:(FBDiagnosticBuilder *)builder;
 
+#pragma mark Bulk Collection
+
+/**
+ Collects all Crash Log Info from the Default Path.
+
+ @param date the first date to search from.
+ @return an Array of all found Crash Log info.
+ */
++ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date;
+
 @end
+
+NS_ASSUME_NONNULL_END

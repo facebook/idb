@@ -12,6 +12,7 @@
 #import <sys/types.h>
 #import <sys/stat.h>
 
+#import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBTestRunConfiguration.h"
@@ -19,6 +20,8 @@
 #import "FBMultiFileReader.h"
 #import "FBLineReader.h"
 #import "FBXCTestError.h"
+
+static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
 @interface FBLogicTestRunner ()
 
@@ -50,6 +53,7 @@
 - (BOOL)runTestsWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
+  NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
 
   [self.configuration.reporter didBeginExecutingTestPlan];
 
@@ -143,12 +147,39 @@
   [testOutputPipe.fileHandleForReading closeFile];
 
   if (task.terminationStatus != 0 && task.terminationStatus != 1) {
-    return [[FBXCTestError describeFormat:@"Subprocess exited with code %d: %@ %@", task.terminationStatus, task.launchPath, task.arguments] failBool:error];
+    FBCrashLogInfo *crashLogInfo = [FBLogicTestRunner crashLogsForChildProcessOf:task since:startDate];
+    if (crashLogInfo) {
+      FBDiagnostic *diagnosticCrash = [crashLogInfo toDiagnostic:FBDiagnosticBuilder.builder];
+      return [[FBXCTestError
+        describeFormat:@"xctest process crashed\n %@", diagnosticCrash.asString]
+        failBool:error];
+    }
+    return [[FBXCTestError
+      describeFormat:@"Subprocess exited with a crashing code %d but no crash log was found: %@ %@", task.terminationStatus, task.launchPath, task.arguments]
+      failBool:error];
   }
 
   [self.configuration.reporter didFinishExecutingTestPlan];
 
   return YES;
+}
+
++ (nullable FBCrashLogInfo *)crashLogsForChildProcessOf:(NSTask *)task since:(NSDate *)sinceDate
+{
+  NSSet<NSNumber *> *possiblePPIDs = [NSSet setWithArray:@[
+    @(task.processIdentifier),
+    @(NSProcessInfo.processInfo.processIdentifier),
+  ]];
+
+  NSPredicate *crashLogInfoPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLogInfo, id _) {
+    return [possiblePPIDs containsObject:@(crashLogInfo.parentProcessIdentifier)];
+  }];
+  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^ FBCrashLogInfo * {
+    return [[[FBCrashLogInfo
+      crashInfoAfterDate:sinceDate]
+      filteredArrayUsingPredicate:crashLogInfoPredicate]
+      firstObject];
+  }];
 }
 
 @end

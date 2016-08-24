@@ -351,11 +351,6 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/CoreSimulator/CoreSimulator.log"];
 }
 
-- (NSString *)diagnosticReportsPath
-{
-  return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/DiagnosticReports"];
-}
-
 - (NSString *)applicationContainersPath
 {
   return [self.simulator.dataDirectory stringByAppendingPathComponent:@"Containers/Data/Application"];
@@ -371,37 +366,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
   return [self.coreSimulatorLogsDirectory stringByAppendingPathComponent:@"asl"];
 }
 
-+ (NSPredicate *)predicateForFilesWithBasePath:(NSString *)basePath afterDate:(NSDate *)date withExtension:(NSString *)extension
-{
-  NSFileManager *fileManager = NSFileManager.defaultManager;
-  NSPredicate *datePredicate = [NSPredicate predicateWithValue:YES];
-  if (date) {
-    datePredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *fileName, NSDictionary *_) {
-      NSString *path = [basePath stringByAppendingPathComponent:fileName];
-      NSDictionary *attributes = [fileManager attributesOfItemAtPath:path error:nil];
-      return [attributes.fileModificationDate isGreaterThanOrEqualTo:date];
-    }];
-  }
-  return [NSCompoundPredicate andPredicateWithSubpredicates:@[
-    [NSPredicate predicateWithFormat:@"pathExtension == %@", extension],
-    datePredicate
-  ]];
-}
-
 #pragma mark Crash Logs
-
-- (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date
-{
-  NSString *basePath = self.diagnosticReportsPath;
-
-  return [FBConcurrentCollectionOperations
-    filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
-    predicate:[FBSimulatorDiagnostics predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
-    map:^ FBCrashLogInfo * (NSString *fileName) {
-      NSString *path = [basePath stringByAppendingPathComponent:fileName];
-      return [FBCrashLogInfo fromCrashLogAtPath:path];
-    }];
-}
 
 - (NSArray<FBCrashLogInfo *> *)launchdSimSubprocessCrashesPathsAfterDate:(NSDate *)date
 {
@@ -414,7 +379,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     return [logInfo.parentProcessName isEqualToString:@"launchd_sim"] && logInfo.parentProcessIdentifier == launchdProcess.processIdentifier;
   }];
 
-  return [[self crashInfoAfterDate:date] filteredArrayUsingPredicate:parentProcessPredicate];
+  return [[FBCrashLogInfo crashInfoAfterDate:date] filteredArrayUsingPredicate:parentProcessPredicate];
 }
 
 + (NSPredicate *)predicateForUserLaunchedProcessesInHistory:(FBSimulatorHistory *)history
