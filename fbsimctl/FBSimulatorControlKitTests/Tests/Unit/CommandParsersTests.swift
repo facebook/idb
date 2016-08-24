@@ -187,6 +187,7 @@ let validActions: [([String], Action)] = [
   (["uninstall", "com.foo.bar"], Action.Uninstall("com.foo.bar")),
   (["upload", Fixtures.photoPath, Fixtures.videoPath], Action.Upload([Fixtures.photoDiagnostic, Fixtures.videoDiagnostic])),
   (["watchdog_override", "60", "com.foo.bar", "com.bar.baz"], Action.WatchdogOverride(["com.foo.bar", "com.bar.baz"], 60)),
+  (["set_location", "39.9", "116.39"], Action.SetLocation(39.9, 116.39)),
 ]
 
 let invalidActions: [[String]] = [
