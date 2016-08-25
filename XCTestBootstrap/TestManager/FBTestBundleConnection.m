@@ -220,9 +220,7 @@
     if (self.hasFinishedExecution) {
       return;
     }
-    [self failWithError:[[XCTestBootstrapError
-        describeFormat:@"Lost connection to test process with state '%@'", [FBTestBundleConnection stateStringForState:state]]
-        code:XCTestBootstrapErrorCodeLostConnection]];
+    [self bundleDisconnectedWithState:state];
   }];
 
   [self.logger logFormat:@"Listening for proxy connection request from the test bundle (all platforms)"];
@@ -285,6 +283,32 @@
     [proxyChannel cancel];
   }];
   return receipt;
+}
+
+- (void)bundleDisconnectedWithState:(FBTestBundleConnectionState)state
+{
+  dispatch_async(dispatch_get_main_queue(), ^{
+    pid_t pid = [self.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:nil];
+    if (pid >= 1) {
+      [self failWithError:[[XCTestBootstrapError
+        describeFormat:@"Lost connection to test process with state '%@'", [FBTestBundleConnection stateStringForState:state]]
+        code:XCTestBootstrapErrorCodeLostConnection]];
+      return;
+    }
+    // It make some time for the diagnostic to appear.
+    FBDiagnostic *diagnostic = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^ FBDiagnostic * {
+      return [self.deviceOperator attemptToFindCrashLogForProcess:self.context.testRunnerPID bundleID:self.context.testRunnerBundleID];
+    }];
+    if (!diagnostic.hasLogContent) {
+      [self failWithError:[[XCTestBootstrapError
+        describe:@"Test Process likely crashed but a crash log could not be obtained"]
+        code:XCTestBootstrapErrorCodeLostConnection]];
+      return;
+    }
+    [self failWithError:[[XCTestBootstrapError
+      describeFormat:@"Test Process crashed '%@'", diagnostic.asString]
+      code:XCTestBootstrapErrorCodeLostConnection]];
+  });
 }
 
 - (void)failWithError:(XCTestBootstrapError *)error

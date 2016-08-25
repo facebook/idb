@@ -304,6 +304,11 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
    intValue];
 }
 
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID
+{
+  return nil;
+}
+
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   pid_t PID = [self processIDWithBundleID:bundleID error:error];

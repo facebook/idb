@@ -89,6 +89,16 @@ typedef NS_OPTIONS(NSUInteger, FBCrashLogInfoProcessType) {
  */
 + (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date;
 
+#pragma mark Predicates
+
+/**
+ A Predicate for FBCrashLogInfo that passes for all Crash Logs with certain process info.
+
+ @param processID the Process ID of the Crash to Collect.
+ @return a Predicate.
+ */
++ (NSPredicate *)predicateForCrashLogsWithProcessID:(pid_t)processID;
+
 @end
 
 NS_ASSUME_NONNULL_END

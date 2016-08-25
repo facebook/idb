@@ -131,6 +131,30 @@
     processType:self.processType];
 }
 
+#pragma mark Bulk Collection
+
++ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date
+{
+  NSString *basePath = self.diagnosticReportsPath;
+
+  return [FBConcurrentCollectionOperations
+    filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
+    predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
+    map:^ FBCrashLogInfo * (NSString *fileName) {
+      NSString *path = [basePath stringByAppendingPathComponent:fileName];
+      return [FBCrashLogInfo fromCrashLogAtPath:path];
+    }];
+}
+
+#pragma mark Predicates
+
++ (NSPredicate *)predicateForCrashLogsWithProcessID:(pid_t)processID
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, id _) {
+    return crashLog.processIdentifier == processID;
+  }];
+}
+
 #pragma mark Private
 
 + (FBCrashLogInfoProcessType)processTypeForExecutablePath:(NSString *)executablePath
@@ -164,21 +188,6 @@
     [NSPredicate predicateWithFormat:@"pathExtension == %@", extension],
     datePredicate
   ]];
-}
-
-#pragma mark Bulk Collection
-
-+ (NSArray<FBCrashLogInfo *> *)crashInfoAfterDate:(NSDate *)date
-{
-  NSString *basePath = self.diagnosticReportsPath;
-
-  return [FBConcurrentCollectionOperations
-    filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
-    predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
-    map:^ FBCrashLogInfo * (NSString *fileName) {
-      NSString *path = [basePath stringByAppendingPathComponent:fileName];
-      return [FBCrashLogInfo fromCrashLogAtPath:path];
-    }];
 }
 
 @end
