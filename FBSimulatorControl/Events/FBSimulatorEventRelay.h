@@ -9,7 +9,7 @@
 
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
-@class FBProcessFetcher;
+@class FBSimulatorProcessFetcher;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param processFetcher the Process Query for obtaining process information.
  @param sink the sink to forward to.
  */
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink;
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink;
 
 /**
  The Simulator's `launchd_sim` process, if booted.

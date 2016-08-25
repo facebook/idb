@@ -11,6 +11,8 @@
 
 @class FBProcessInfo;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Queries for Processes running on the Host.
  Should not be called from multiple threads since buffers are re-used internally.
@@ -26,7 +28,7 @@
  @param processIdentifier the Process Identifier to obtain process info for.
  @return an FBProcessInfo object if a process with the given identifier could be found, nil otherwise.
  */
-- (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier;
+- (nullable FBProcessInfo *)processInfoFor:(pid_t)processIdentifier;
 
 /**
  Obtain process info for child processes.
@@ -34,7 +36,7 @@
  @param parent the Process Identifier to obtain the subprocesses of
  @return an NSArray<FBProcessInfo> of the parent's child processes.
  */
-- (NSArray *)subprocessesOf:(pid_t)parent;
+- (NSArray<FBProcessInfo *> *)subprocessesOf:(pid_t)parent;
 
 /**
  A Query for returning processes with a given subtring in their launch path.
@@ -42,7 +44,7 @@
  @param substring the substring that must exist in the launch path.
  @return an NSArray<FBProcessInfo> of the found processes.
  */
-- (NSArray *)processesWithLaunchPathSubstring:(NSString *)substring;
+- (NSArray<FBProcessInfo *> *)processesWithLaunchPathSubstring:(NSString *)substring;
 
 /**
  A Query for returning the processes with a given name.
@@ -53,7 +55,7 @@
  @param processName the name of the processes to fetch.
  @return an NSArray<FBProcessInfo> of the found processes.
  */
-- (NSArray *)processesWithProcessName:(NSString *)processName;
+- (NSArray<FBProcessInfo *> *)processesWithProcessName:(NSString *)processName;
 
 /**
  A Query for returning the first named child process of the provided parent.
@@ -82,3 +84,5 @@
 - (pid_t)processWithOpenFileTo:(const char *)filePath;
 
 @end
+
+NS_ASSUME_NONNULL_END

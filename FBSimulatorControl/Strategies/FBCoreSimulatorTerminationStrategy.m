@@ -11,12 +11,12 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessFetcher+Simulators.h"
+#import "FBSimulatorProcessFetcher.h"
 #import "FBProcessTerminationStrategy.h"
 
 @interface FBCoreSimulatorTerminationStrategy ()
 
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
@@ -26,12 +26,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)withProcessFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   return [[self alloc] initWithprocessFetcher:processFetcher logger:logger];
 }
 
-- (instancetype)initWithprocessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithprocessFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -50,7 +50,7 @@
 - (BOOL)killSpuriousCoreSimulatorServicesWithError:(NSError **)error
 {
   NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
-    [FBProcessFetcher coreSimulatorProcessesForCurrentXcode]
+    FBSimulatorProcessFetcher.coreSimulatorProcessesForCurrentXcode
   ];
   NSArray *processes = [[self.processFetcher coreSimulatorServiceProcesses] filteredArrayUsingPredicate:predicate];
 

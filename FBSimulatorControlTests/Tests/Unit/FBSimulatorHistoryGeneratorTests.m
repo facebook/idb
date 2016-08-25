@@ -31,7 +31,7 @@
   device.UDID = [NSUUID UUID];
   device.name = @"iPhoneMega";
 
-  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:FBSimulatorConfiguration.defaultConfiguration set:[FBSimulatorSet new] processFetcher:[FBProcessFetcher new] auxillaryDirectory:NSTemporaryDirectory() logger:nil];
+  FBSimulator *simulator = [[FBSimulator alloc] initWithDevice:(id)device configuration:FBSimulatorConfiguration.defaultConfiguration set:[FBSimulatorSet new] processFetcher:[FBSimulatorProcessFetcher new] auxillaryDirectory:NSTemporaryDirectory() logger:nil];
   self.generator = [FBSimulatorHistoryGenerator forSimulator:simulator];
 }
 

@@ -11,13 +11,14 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBProcessFetcher;
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlConfiguration;
+@class FBSimulatorProcessFetcher;
 @class FBiOSTargetQuery;
 @class SimDeviceSet;
+
 @protocol FBControlCoreLogger;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -175,7 +176,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBProcessFetcher that is used to obtain Simulator Process Information.
  */
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 
 /**
  An NSArray<FBSimulator> of all Simulators in the Set.

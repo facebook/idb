@@ -23,7 +23,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBFramebuffer.h"
-#import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -35,6 +34,7 @@
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorHID.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorBootStrategy ()
 
@@ -421,7 +421,7 @@
 
 - (FBProcessInfo *)launchdSimWithAllRequiredProcesses:(NSError **)error
 {
-  FBProcessFetcher *processFetcher = self.simulator.processFetcher;
+  FBSimulatorProcessFetcher *processFetcher = self.simulator.processFetcher;
   FBProcessInfo *launchdProcess = [processFetcher launchdProcessForSimDevice:self.simulator.device];
   if (!launchdProcess) {
     return [[[FBSimulatorError

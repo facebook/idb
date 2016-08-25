@@ -18,6 +18,7 @@
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorSubprocessTerminationStrategy ()
 
@@ -49,7 +50,7 @@
   // Confirm that the process has the launchd_sim as a parent process.
   // The interaction should restrict itself to simulator processes so this is a guard
   // to ensure that this interaction can't go around killing random processes.
-  pid_t parentProcessIdentifier = [self.simulator.processFetcher parentOf:process.processIdentifier];
+  pid_t parentProcessIdentifier = [self.simulator.processFetcher.processFetcher parentOf:process.processIdentifier];
   if (parentProcessIdentifier != self.simulator.launchdProcess.processIdentifier) {
     return [[FBSimulatorError
       describeFormat:@"Parent of %@ is not the launchd_sim (%@) it has a pid %d", process.shortDescription, self.simulator.launchdProcess.shortDescription, parentProcessIdentifier]

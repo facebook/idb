@@ -11,8 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBBinaryDescriptor;
-@class FBProcessInfo;
 @class FBSimulatorControlConfiguration;
 @class SimDevice;
 
@@ -27,11 +25,22 @@ NS_ASSUME_NONNULL_BEGIN
 extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
 
 /**
- Extension for obtaining Simulator Process information.
+ A class for obtaining information about Simulators that FBSimulatorControl cares about.
  */
-@interface FBProcessFetcher (Simulators)
+@interface FBSimulatorProcessFetcher : NSObject
 
-#pragma mark - Process Fetching
+/**
+ Creates and Returns a Process Fetcher.
+
+ @param processFetcher the Process Fetcher to use.
+ @return a new Simulator Process Fetcher.
+ */
++ (instancetype)fetcherWithProcessFetcher:(FBProcessFetcher *)processFetcher;
+
+/**
+ The Underlying Process Fetcher.
+ */
+@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 
 #pragma mark The Container 'Simulator.app'
 
@@ -117,25 +126,6 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID
  @return an NSPredicate that operates on an Collection of FBProcessInfo *.
  */
 + (NSPredicate *)coreSimulatorProcessesForCurrentXcode;
-
-/**
- Constructs a Predicate that matches Processes for the launchPath.
-
- @param launchPath the launch path to search for.
- @return an NSPredicate that operates on an Collection of FBProcessInfo *.
- */
-+ (NSPredicate *)processesWithLaunchPath:(NSString *)launchPath;
-
-/**
- Constructs a Predicate that matches against an Application.
- Installing an Application on a Simulator will result in it having a different launch path
- since the Application Bundle is moved into the Simulator's data directory.
- This predicate takes the discrepancy in launch paths into account.
-
- @param binary the binary of the Application to search for.
- @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
- */
-+ (NSPredicate *)processesForBinary:(FBBinaryDescriptor *)binary;
 
 @end
 

@@ -20,7 +20,6 @@
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
 #import "FBFramebuffer.h"
-#import "FBProcessFetcher+Simulators.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -30,6 +29,7 @@
 #import "FBSimulatorHID.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorConnection ()
 

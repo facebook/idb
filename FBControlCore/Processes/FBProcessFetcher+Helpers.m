@@ -14,6 +14,7 @@
 #import "FBProcessInfo.h"
 #import "FBControlCoreError.h"
 #import "FBRunLoopSpinner.h"
+#import "FBBinaryDescriptor.h"
 
 @implementation FBProcessFetcher (Helpers)
 
@@ -70,6 +71,21 @@
   }
 
   return application;
+}
+
++ (NSPredicate *)processesWithLaunchPath:(NSString *)launchPath
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *processInfo, NSDictionary *_) {
+    return [processInfo.launchPath isEqualToString:launchPath];
+  }];
+}
+
++ (NSPredicate *)processesForBinary:(FBBinaryDescriptor *)binary
+{
+  NSString *endPath = binary.path.lastPathComponent;
+  return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *processInfo, NSDictionary *_) {
+    return [processInfo.launchPath.lastPathComponent isEqualToString:endPath];
+  }];
 }
 
 #pragma mark Private

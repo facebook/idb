@@ -22,7 +22,6 @@
 #import <FBSimulatorControl/FBFramebufferVideoConfiguration.h>
 #import <FBSimulatorControl/FBInteraction.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
-#import <FBSimulatorControl/FBProcessFetcher+Simulators.h>
 #import <FBSimulatorControl/FBProcessTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimDeviceWrapper.h>
 #import <FBSimulatorControl/FBSimulator+Connection.h>
@@ -71,6 +70,7 @@
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>
 #import <FBSimulatorControl/FBSimulatorPool.h>
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
+#import <FBSimulatorControl/FBSimulatorProcessFetcher.h>
 #import <FBSimulatorControl/FBSimulatorResourceManager.h>
 #import <FBSimulatorControl/FBSimulatorSet+Private.h>
 #import <FBSimulatorControl/FBSimulatorSet.h>

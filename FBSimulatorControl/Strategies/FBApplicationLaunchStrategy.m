@@ -11,19 +11,23 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulatorError.h"
-#import "FBSimulator.h"
+#import "FBApplicationLaunchStrategy.h"
+#import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Connection.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
-#import "FBApplicationLaunchStrategy.h"
-#import "FBSimulatorConnection.h"
-#import "FBSimulatorEventSink.h"
+#import "FBSimulator.h"
 #import "FBSimulatorBridge.h"
+#import "FBSimulatorConnection.h"
+#import "FBSimulatorDiagnostics.h"
+#import "FBSimulatorError.h"
+#import "FBSimulatorEventSink.h"
+#import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimDeviceWrapper.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBApplicationLaunchStrategy ()
 
@@ -136,7 +140,7 @@
   }
 
   // Get the Process Info, report to the event sink
-  process = [simulator.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  process = [simulator.processFetcher.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
   if (!process) {
     return [[[[FBSimulatorError
       describeFormat:@"Could not get Process Info for launched application process %d", processIdentifier]

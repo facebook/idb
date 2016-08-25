@@ -66,7 +66,7 @@
   _configuration = configuration;
 
   _allSimulators = @[];
-  _processFetcher = [FBProcessFetcher new];
+  _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
   _inflationStrategy = [FBSimulatorInflationStrategy forSet:self];
 
   return self;

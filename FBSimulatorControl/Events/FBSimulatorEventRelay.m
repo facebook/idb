@@ -17,8 +17,8 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBDispatchSourceNotifier.h"
-#import "FBProcessFetcher+Simulators.h"
 #import "FBSimulatorConnection.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorEventRelay ()
 
@@ -30,7 +30,7 @@
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
 
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) SimDevice *simDevice;
 
 @property (nonatomic, strong, readonly) NSMutableDictionary *processTerminationNotifiers;
@@ -40,7 +40,7 @@
 
 @implementation FBSimulatorEventRelay
 
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink
 {
   self = [super init];
   if (!self) {
@@ -322,7 +322,7 @@
   // This Environment Variable exists to allow interested parties to know the UDID of the Launched Simulator,
   // without having to inspect the Simulator Application's launchd_sim first.
   NSRunningApplication *launchedApplication = notification.userInfo[NSWorkspaceApplicationKey];
-  FBProcessInfo *simulatorProcess = [self.processFetcher processInfoFor:launchedApplication.processIdentifier];
+  FBProcessInfo *simulatorProcess = [self.processFetcher.processFetcher processInfoFor:launchedApplication.processIdentifier];
   if (![simulatorProcess.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID] isEqual:self.simDevice.UDID.UUIDString]) {
     return;
   }

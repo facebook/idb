@@ -20,11 +20,12 @@
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimDeviceWrapper ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 
 - (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error;
 
@@ -111,7 +112,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher
 {
   BOOL timeoutResiliance = (configuration.options & FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance) == FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance;
   return timeoutResiliance
@@ -119,7 +120,7 @@
     : [[FBSimDeviceWrapper alloc] initWithSimulator:simulator processFetcher:processFetcher];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator processFetcher:(FBProcessFetcher *)processFetcher
+- (instancetype)initWithSimulator:(FBSimulator *)simulator processFetcher:(FBSimulatorProcessFetcher *)processFetcher
 {
   if (!(self = [self init])) {
     return nil;
@@ -279,7 +280,7 @@
     return nil;
   }
 
-  FBProcessInfo *processInfo = [self.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  FBProcessInfo *processInfo = [self.processFetcher.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
   if (!processInfo) {
     return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
   }

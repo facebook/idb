@@ -15,7 +15,6 @@
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
-#import "FBProcessFetcher+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"

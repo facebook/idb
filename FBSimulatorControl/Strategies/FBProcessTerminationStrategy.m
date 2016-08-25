@@ -14,6 +14,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorError.h"
+#import "FBSimulatorProcessFetcher.h"
 
 static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrategyConfigurationDefault = {
   .signo = SIGKILL,
@@ -25,7 +26,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @interface FBProcessTerminationStrategy ()
 
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, assign, readonly) FBProcessTerminationStrategyConfiguration configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
@@ -40,7 +41,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 - (BOOL)killProcess:(FBProcessInfo *)process error:(NSError **)error
 {
   // Obtain the NSRunningApplication for the given Application.
-  NSRunningApplication *application = [self.processFetcher runningApplicationForProcess:process];
+  NSRunningApplication *application = [self.processFetcher.processFetcher runningApplicationForProcess:process];
   // If the Application Handle doesn't exist, assume it isn't an Application and use good-ole kill(2)
   if ([application isKindOfClass:NSNull.class]) {
     [self.logger.debug logFormat:@"Application Handle for %@ does not exist, falling back to kill(2)", process.shortDescription];
@@ -68,7 +69,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
   }
   return [[[[FBSimulatorError
     describeFormat:@"Could not terminate Application %@", application]
-    attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
+    attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher.processFetcher]
     logger:self.logger]
     failBool:error];
 }
@@ -77,7 +78,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @implementation FBProcessTerminationStrategy
 
-+ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   BOOL useWorkspaceKilling = (configuration.options & FBProcessTerminationStrategyOptionsUseNSRunningApplication) == FBProcessTerminationStrategyOptionsUseNSRunningApplication;
   return useWorkspaceKilling
@@ -85,12 +86,12 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processFetcher:processFetcher logger:logger];
 }
 
-+ (instancetype)withProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)withProcessFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   return [self withConfiguration:FBProcessTerminationStrategyConfigurationDefault processFetcher:processFetcher logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(processFetcher);
   NSAssert(configuration.signo > 0 && configuration.signo < 32, @"Signal must be greater than 0 (SIGHUP) and less than 32 (SIGUSR2) was %d", configuration.signo);
@@ -111,7 +112,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 {
   BOOL checkExists = (self.configuration.options & FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal) == FBProcessTerminationStrategyOptionsCheckProcessExistsBeforeSignal;
   NSError *innerError = nil;
-  if (checkExists && ![self.processFetcher processExists:process error:&innerError]) {
+  if (checkExists && ![self.processFetcher.processFetcher processExists:process error:&innerError]) {
     return [[[[FBSimulatorError
       describeFormat:@"Could not find that process %@ exists", process]
       logger:self.logger]
@@ -127,21 +128,21 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     if (errorCode == EPERM) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to kill process %@ as the sending process does not have the privelages", process.shortDescription]
-        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
+        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher.processFetcher]
         logger:self.logger]
         failBool:error];
     }
     if (errorCode == ESRCH) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to kill process %@ as the sending process does not exist", process.shortDescription]
-        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
+        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher.processFetcher]
         logger:self.logger]
         failBool:error];
     }
     if (errorCode == EINVAL) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to kill process %@ as the signal %d was not a valid signal number", process.shortDescription, self.configuration.signo]
-        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
+        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher.processFetcher]
         logger:self.logger]
         failBool:error];
     }
@@ -158,7 +159,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
   // It may take some time for the process to have truly died, so wait for it to be so.
   [self.logger.debug logFormat:@"Waiting on %@ to dissappear from the process table", process.shortDescription];
-  if (![self.processFetcher waitForProcessToDie:process timeout:FBControlCoreGlobalConfiguration.fastTimeout]) {
+  if (![self.processFetcher.processFetcher waitForProcessToDie:process timeout:FBControlCoreGlobalConfiguration.fastTimeout]) {
     // If this is a SIGKILL and it's taken a while for the process to dissapear, perhaps the process isn't
     // well behaved when responding to other terminating signals.
     // There's nothing more than can be done with a SIGKILL.
@@ -166,7 +167,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     if (self.configuration.signo == SIGKILL || !backoff) {
       return [[[[FBSimulatorError
         describeFormat:@"Timed out waiting for %@ to dissapear from the process table", process.shortDescription]
-        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
+        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher.processFetcher]
         logger:self.logger]
         failBool:error];
     }
@@ -178,7 +179,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     if (![[FBProcessTerminationStrategy withConfiguration:configuration processFetcher:self.processFetcher logger:self.logger] killProcess:process error:&innerError]) {
       return [[[[[FBSimulatorError
         describeFormat:@"Attempted to SIGKILL %@ after failed kill with signo %d", process.shortDescription, self.configuration.signo]
-        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]
+        attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher.processFetcher]
         logger:self.logger]
         causedBy:innerError]
         failBool:error];

@@ -10,8 +10,8 @@
 #import <Foundation/Foundation.h>
 
 @protocol FBControlCoreLogger;
-@class FBProcessFetcher;
 @class FBProcessInfo;
+@class FBSimulatorProcessFetcher;
 
 /**
  An Option Set for Process Termination.
@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Creates and returns a strategy with the default configuration.
@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger to use.
  @return a new Process Termination Strategy instance.
  */
-+ (instancetype)withProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)withProcessFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Terminates a Process of the provided Process Info.

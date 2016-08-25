@@ -190,7 +190,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
 
 #pragma mark Queries
 
-- (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier
+- (nullable FBProcessInfo *)processInfoFor:(pid_t)processIdentifier
 {
   return ProcessInfoForProcessIdentifier(
     processIdentifier,
@@ -199,7 +199,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   );
 }
 
-- (NSArray *)subprocessesOf:(pid_t)parent
+- (NSArray<FBProcessInfo *> *)subprocessesOf:(pid_t)parent
 {
   NSMutableArray *subprocesses = [NSMutableArray array];
 
@@ -214,7 +214,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   return [subprocesses copy];
 }
 
-- (NSArray *)processesWithLaunchPathSubstring:(NSString *)substring
+- (NSArray<FBProcessInfo *> *)processesWithLaunchPathSubstring:(NSString *)substring
 {
   NSMutableArray *subprocesses = [NSMutableArray array];
 
@@ -233,7 +233,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   return [subprocesses copy];
 }
 
-- (NSArray *)processesWithProcessName:(NSString *)processName;
+- (NSArray<FBProcessInfo *> *)processesWithProcessName:(NSString *)processName
 {
   NSMutableArray *subprocesses = [NSMutableArray array];
   size_t bufferSize = self.argumentBufferSize;

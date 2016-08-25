@@ -19,7 +19,6 @@
 #import <XCTestBootstrap/FBTestManager.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBProcessFetcher+Simulators.h"
 #import "FBProcessTerminationStrategy.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
@@ -33,13 +32,14 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorPredicates.h"
+#import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
 @interface FBSimulatorTerminationStrategy ()
 
 @property (nonatomic, weak, readonly) FBSimulatorSet *set;
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBProcessTerminationStrategy *processTerminationStrategy;
 
@@ -55,7 +55,7 @@
   return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher processTerminationStrategy:processTerminationStrategy logger:set.logger];
 }
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher processTerminationStrategy:(FBProcessTerminationStrategy *)processTerminationStrategy logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(processFetcher);
   NSParameterAssert(configuration);
@@ -166,8 +166,8 @@
 {
   NSPredicate *predicate = [NSCompoundPredicate notPredicateWithSubpredicate:
     [NSCompoundPredicate andPredicateWithSubpredicates:@[
-      [FBProcessFetcher simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
-      [FBProcessFetcher simulatorApplicationProcessesLaunchedBySimulatorControl]
+      [FBSimulatorProcessFetcher simulatorsProcessesLaunchedUnderConfiguration:self.configuration],
+      [FBSimulatorProcessFetcher simulatorApplicationProcessesLaunchedBySimulatorControl]
     ]
   ]];
 

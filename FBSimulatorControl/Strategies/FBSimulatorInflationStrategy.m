@@ -15,12 +15,12 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorSet.h"
-#import "FBProcessFetcher+Simulators.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorInflationStrategy ()
 
 @property (nonatomic, weak, readonly) FBSimulatorSet *set;
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 
 @end
 
@@ -31,7 +31,7 @@
   return [[self alloc] initWithSet:set processFetcher:set.processFetcher];
 }
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set processFetcher:(FBProcessFetcher *)processFetcher
+- (instancetype)initWithSet:(FBSimulatorSet *)set processFetcher:(FBSimulatorProcessFetcher *)processFetcher
 {
   self = [super init];
   if (!self) {

@@ -9,10 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessFetcher;
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorControlConfiguration;
+@class FBSimulatorProcessFetcher;
 @class SimDevice;
 
 /**
@@ -36,7 +36,7 @@ typedef void (^FBSimDeviceWrapperCallback)(void);
  @param processFetcher the Process Query to obtain process information.
  @return a new SimDevice wrapper.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher;
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher;
 
 /**
  'Shutting Down' a Simulator can be a little hairier than just calling '-[SimDevice shutdownWithError:]'.

@@ -9,8 +9,11 @@
 
 #import <FBControlCore/FBProcessFetcher.h>
 
+@class FBBinaryDescriptor;
 @class FBProcessInfo;
 @class NSRunningApplication;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  Higher-Level wrappers around FBProcessFetcher
@@ -60,4 +63,25 @@
  */
 - (NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process;
 
+/**
+ Constructs a Predicate that matches Processes for the launchPath.
+
+ @param launchPath the launch path to search for.
+ @return an NSPredicate that operates on an Collection of FBProcessInfo *.
+ */
++ (NSPredicate *)processesWithLaunchPath:(NSString *)launchPath;
+
+/**
+ Constructs a Predicate that matches against an Application.
+ Installing an Application on a Simulator will result in it having a different launch path
+ since the Application Bundle is moved into the Simulator's data directory.
+ This predicate takes the discrepancy in launch paths into account.
+
+ @param binary the binary of the Application to search for.
+ @return an NSPredicate that operates on an Collection of id<FBProcessInfo>.
+ */
++ (NSPredicate *)processesForBinary:(FBBinaryDescriptor *)binary;
+
 @end
+
+NS_ASSUME_NONNULL_END

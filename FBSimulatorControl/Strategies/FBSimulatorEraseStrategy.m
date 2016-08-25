@@ -20,7 +20,7 @@
 
 @property (nonatomic, weak, readonly) FBSimulatorSet *set;
 @property (nonatomic, copy, readonly) FBSimulatorControlConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @end
@@ -32,7 +32,7 @@
   return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher logger:set.logger];
 }
 
-- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithSet:(FBSimulatorSet *)set configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
