@@ -17,6 +17,8 @@
 @class FBProcessInfo;
 @class FBTestLaunchConfiguration;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Fixtures for Tests.
  */
@@ -107,8 +109,13 @@
 - (FBProcessInfo *)processInfo2a;
 
 /**
- An iOS Unit Test XCTest Bundle
+ An iOS Unit Test XCTest Target.
+ Will check that the bundle is codesigned, and sign it if is not.
+
+ @return path to the Unit Test Bundle.
  */
-- (NSString *)iOSUnitTestBundlePath;
+- (nullable NSString *)iOSUnitTestBundlePath;
 
 @end
+
+NS_ASSUME_NONNULL_END

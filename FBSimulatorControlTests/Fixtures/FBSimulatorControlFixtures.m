@@ -9,6 +9,8 @@
 
 #import "FBSimulatorControlFixtures.h"
 
+#import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
@@ -159,9 +161,22 @@
     environment:self.appLaunch2.environment];
 }
 
-- (NSString *)iOSUnitTestBundlePath
+- (nullable NSString *)iOSUnitTestBundlePath
 {
-  return FBSimulatorControlFixtures.iOSUnitTestBundlePath;
+  NSString *bundlePath = FBSimulatorControlFixtures.iOSUnitTestBundlePath;
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    return bundlePath;
+  }
+  id<FBCodesignProvider> codesign = FBCodeSignCommand.codeSignCommandWithAdHocIdentity;
+  if ([codesign cdHashForBundleAtPath:bundlePath error:nil]) {
+    return bundlePath;
+  }
+  NSError *error = nil;
+  if ([codesign signBundleAtPath:bundlePath error:&error]) {
+    return bundlePath;
+  }
+  XCTFail(@"Bundle at path %@ could not be codesigned: %@", bundlePath, error);
+  return nil;
 }
 
 @end
