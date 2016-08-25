@@ -32,6 +32,7 @@
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
 #import "FBTestManagerContext.h"
+#import "FBTestBundleResult.h"
 
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
@@ -98,11 +99,9 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
       failBool:error];
   }
   NSError *innerError = nil;
-  if (![self.bundleConnection connectWithTimeout:timeout error:&innerError]) {
-    return [[[XCTestBootstrapError
-      describe:@"Failed to connect to the bundle"]
-      causedBy:innerError]
-      failBool:error];
+  FBTestBundleResult *bundleResult = [self.bundleConnection connectWithTimeout:timeout];
+  if (bundleResult) {
+    return [XCTestBootstrapError failBoolWithError:bundleResult.error errorOut:error];
   }
   if (![self.daemonConnection connectWithTimeout:timeout error:&innerError]) {
     return [[[XCTestBootstrapError
@@ -115,7 +114,11 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (BOOL)executeTestPlanWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.bundleConnection startTestPlanWithError:error] && [self.daemonConnection notifyTestPlanStartedWithError:error];
+  FBTestBundleResult *bundleResult = [self.bundleConnection startTestPlan];
+  if (bundleResult) {
+    return [XCTestBootstrapError failBoolWithError:bundleResult.error errorOut:error];
+  }
+  return [self.daemonConnection notifyTestPlanStartedWithError:error];
 }
 
 - (void)disconnectTestRunnerAndTestManagerDaemon
@@ -132,11 +135,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (BOOL)waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:(NSTimeInterval)timeout
 {
-  return
-  [[[FBRunLoopSpinner new]
+  return [[[FBRunLoopSpinner new]
     timeout:timeout]
-   spinUntilTrue:^BOOL{
-     return self.daemonConnection.hasFinishedExecution && self.bundleConnection.hasFinishedExecution;
+    spinUntilTrue:^ BOOL {
+      if ([self.bundleConnection checkForResult]) {
+        return YES;
+      }
+      return self.daemonConnection.hasFinishedExecution;
    }];
 }
 
