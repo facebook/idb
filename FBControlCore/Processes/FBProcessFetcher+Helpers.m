@@ -34,6 +34,19 @@
   return [self processInfoFor:processIdentifierNumber.intValue];
 }
 
+- (NSArray<FBProcessInfo *> *)processInfoForJobDictionaries:(NSArray<NSDictionary<NSString *, id> *> *)jobDictionaries
+{
+  NSMutableArray<FBProcessInfo *> *processes = [NSMutableArray array];
+  for (NSDictionary<NSString *, id> *job in jobDictionaries) {
+    FBProcessInfo *process = [self processInfoForJobDictionary:job];
+    if (!process) {
+      continue;
+    }
+    [processes addObject:process];
+  }
+  return [processes copy];
+}
+
 - (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error
 {
   FBProcessInfo *actual = [self processInfoFor:process.processIdentifier];

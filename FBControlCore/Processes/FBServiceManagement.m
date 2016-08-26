@@ -39,6 +39,22 @@
   return [jobInformation copy];
 }
 
++ (NSArray<NSDictionary<NSString *, id> *> *)jobsWithProgramWithLaunchPathSubstring:(NSString *)launchPathSubstring
+{
+  CFArrayRef jobs = SMCopyAllJobDictionaries(kSMDomainUserLaunchd);
+  NSMutableArray<NSDictionary<NSString *, id> *> *matchingJobs = [NSMutableArray array];
+
+  for (CFIndex index = 0; index < CFArrayGetCount(jobs); index++) {
+    NSDictionary *job = (__bridge NSDictionary *) CFArrayGetValueAtIndex(jobs, index);
+    NSString *jobLaunchPath = job[@"Program"];
+    if (![jobLaunchPath containsString:launchPathSubstring]) {
+      continue;
+    }
+    [matchingJobs addObject:job];
+  }
+  return [matchingJobs copy];
+}
+
 @end
 
 #pragma clang diagnostic pop

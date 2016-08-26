@@ -32,6 +32,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSDictionary<NSString *, NSDictionary<NSString *, id> *> *)jobInformationForUserServicesNamed:(NSArray<NSString *> *)serviceNames;
 
+/**
+ Returns the Job Information for all Services with a given substring in their launch path.
+
+ @param launchPathSubstring the Launch Paths substring to search for.
+ @return the Jobs Matching the Substring of the Launch Path.
+ */
++ (NSArray<NSDictionary<NSString *, id> *> *)jobsWithProgramWithLaunchPathSubstring:(NSString *)launchPathSubstring;
+
 @end
 
 NS_ASSUME_NONNULL_END
