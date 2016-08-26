@@ -11,12 +11,7 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBDeviceOperator.h"
-#import "FBFileManager.h"
-#import "FBProductBundle.h"
-#import "FBSimulatorTestPreparationStrategy.h"
-#import "FBTestRunnerConfiguration.h"
-#import "FBTestLaunchConfiguration.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBSimulatorTestPreparationStrategyTests : XCTestCase
 @end
@@ -33,7 +28,8 @@
   FBSimulatorTestPreparationStrategy *strategy =
   [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:self.defaultTestLaunch
                                                          workingDirectory:nil
-                                                              fileManager:nil];
+                                                              fileManager:nil
+                                                                 codesign:nil];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
 
@@ -43,7 +39,8 @@
   FBSimulatorTestPreparationStrategy *strategy =
   [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:testLaunch
                                                          workingDirectory:@""
-                                                              fileManager:nil];
+                                                              fileManager:nil
+                                                                 codesign:nil];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
 
@@ -53,15 +50,17 @@
   FBSimulatorTestPreparationStrategy *strategy =
   [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:testLaunch
                                                          workingDirectory:@""
-                                                              fileManager:nil];
+                                                              fileManager:nil
+                                                                 codesign:nil];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
 
 - (void)testSimulatorPreparation
 {
-  id xctConfigArg = [OCMArg checkWithBlock:^BOOL(NSString *path){return [self.class isGoodConfigurationPath:path];}];
-  NSDictionary *plist =
-  @{
+  id xctConfigArg = [OCMArg checkWithBlock:^ BOOL (NSString *path){
+    return [self.class isGoodConfigurationPath:path];
+  }];
+  NSDictionary *plist = @{
     @"CFBundleIdentifier" : @"bundleID",
     @"CFBundleExecutable" : @"exec",
   };
@@ -74,19 +73,23 @@
   [[[[fileManagerMock stub] andReturnValue:@NO] ignoringNonObjectArgs] fileExistsAtPath:[OCMArg any]];
 
   NSError *error;
-  FBProductBundle *productBundle =
-  [[[FBProductBundleBuilder builderWithFileManager:fileManagerMock]
+  FBProductBundle *productBundle = [[[FBProductBundleBuilder
+    builderWithFileManager:fileManagerMock]
     withBundlePath:@"/app"]
-   buildWithError:&error];
+    buildWithError:&error];
   XCTAssertNil(error);
 
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
   [[[deviceOperatorMock expect] andReturn:productBundle] applicationBundleWithBundleID:@"bundleId" error:[OCMArg anyObjectRef]];
 
-  FBSimulatorTestPreparationStrategy *strategy =
-  [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:self.defaultTestLaunch
-                                                         workingDirectory:@"/heaven"
-                                                              fileManager:fileManagerMock];
+  OCMockObject<FBCodesignProvider> *codesignMock = [OCMockObject mockForProtocol:@protocol(FBCodesignProvider)];
+  [[[codesignMock stub] andReturn:@"aaa1111"] cdHashForBundleAtPath:OCMArg.any error:OCMArg.anyObjectRef];
+
+  FBSimulatorTestPreparationStrategy *strategy = [FBSimulatorTestPreparationStrategy
+    strategyWithTestLaunchConfiguration:self.defaultTestLaunch
+    workingDirectory:@"/heaven"
+    fileManager:fileManagerMock
+    codesign:codesignMock];
   FBTestRunnerConfiguration *configuration = [strategy prepareTestWithDeviceOperator:deviceOperatorMock error:nil];
 
   NSDictionary *env = configuration.launchEnvironment;

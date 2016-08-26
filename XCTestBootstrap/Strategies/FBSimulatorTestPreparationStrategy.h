@@ -14,6 +14,7 @@
 @class FBTestLaunchConfiguration;
 
 @protocol FBFileManager;
+@protocol FBCodesignProvider;
 
 /**
  Strategy used to run XCTest with Simulators.
@@ -22,25 +23,28 @@
 @interface FBSimulatorTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 
 /**
- Creates and returns a strategy with given paramenters
+ Creates and returns a strategy with given paramenters.
+ Will use default implementations of the File Manager and Codesign.
 
- @param testLaunchConfiguration configuration used to launch test
- @param workingDirectory directory used to prepare all bundles
- @returns Prepared FBSimulatorTestRunStrategy
+ @param testLaunchConfiguration configuration used to launch test.
+ @param workingDirectory directory used to prepare all bundles.
+ @return A new FBSimulatorTestRunStrategy Instance.
  */
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
                                    workingDirectory:(NSString *)workingDirectory;
 
 /**
- Creates and returns a strategy with given paramenters
+ Creates and returns a strategy with given paramenters.
 
- @param testLaunchConfiguration configuration used to launch test
- @param workingDirectory directory used to prepare all bundles
- @param fileManager file manager used to prepare all bundles
- @returns Prepared FBSimulatorTestRunStrategy
+ @param testLaunchConfiguration configuration used to launch test.
+ @param workingDirectory directory used to prepare all bundles.
+ @param fileManager file manager used to prepare all bundles.
+ @param codesign a codesign provider
+ @return A new FBSimulatorTestRunStrategy Instance.
  */
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
                                    workingDirectory:(NSString *)workingDirectory
-                                        fileManager:(id<FBFileManager>)fileManager;
+                                        fileManager:(id<FBFileManager>)fileManager
+                                           codesign:(id<FBCodesignProvider>)codesign;
 
 @end

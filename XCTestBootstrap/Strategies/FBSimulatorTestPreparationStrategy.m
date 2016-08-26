@@ -24,9 +24,12 @@
 
 
 @interface FBSimulatorTestPreparationStrategy ()
-@property (nonatomic, copy) NSString *workingDirectory;
-@property (nonatomic, copy) FBTestLaunchConfiguration *testLaunchConfiguration;
-@property (nonatomic, strong) id<FBFileManager> fileManager;
+
+@property (nonatomic, copy, readonly) NSString *workingDirectory;
+@property (nonatomic, copy, readonly) FBTestLaunchConfiguration *testLaunchConfiguration;
+@property (nonatomic, strong, readonly) id<FBFileManager> fileManager;
+@property (nonatomic, strong, readonly) id<FBCodesignProvider> codesign;
+
 @end
 
 @implementation FBSimulatorTestPreparationStrategy
@@ -34,22 +37,36 @@
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
                                    workingDirectory:(NSString *)workingDirectory
 {
-  return
-  [self strategyWithTestLaunchConfiguration:testLaunchConfiguration
-                           workingDirectory:workingDirectory
-                                fileManager:[NSFileManager defaultManager]
-   ];
+  id<FBFileManager> fileManager = NSFileManager.defaultManager;
+  id<FBCodesignProvider> codesign = FBCodeSignCommand.codeSignCommandWithAdHocIdentity;
+  return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 
 + (instancetype)strategyWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
                                    workingDirectory:(NSString *)workingDirectory
                                         fileManager:(id<FBFileManager>)fileManager
+                                           codesign:(id<FBCodesignProvider>)codesign
 {
-  FBSimulatorTestPreparationStrategy *strategy = [self.class new];
-  strategy.testLaunchConfiguration = testLaunchConfiguration;
-  strategy.workingDirectory = workingDirectory;
-  strategy.fileManager = fileManager;
-  return strategy;
+  return [[self alloc] initWithTestLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
+}
+
+
+- (instancetype)initWithTestLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration
+                               workingDirectory:(NSString *)workingDirectory
+                                    fileManager:(id<FBFileManager>)fileManager
+                                       codesign:(id<FBCodesignProvider>)codesign
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _testLaunchConfiguration = testLaunchConfiguration;
+  _workingDirectory = workingDirectory;
+  _fileManager = fileManager;
+  _codesign = codesign;
+
+  return self;
 }
 
 #pragma mark - FBTestPreparationStrategy protocol
@@ -63,7 +80,7 @@
 
   // Check the bundle is codesigned (if required).
   NSError *innerError;
-  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater && ![FBCodeSignCommand.codeSignCommandWithAdHocIdentity cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath error:&innerError]) {
+  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater && ![self.codesign cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath error:&innerError]) {
     return [[[XCTestBootstrapError
       describeFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]
       causedBy:innerError]

@@ -27,7 +27,7 @@
 
   self.testManagerMock = [OCMockObject niceMockForClass:FBTestManager.class];
   [[[self.testManagerMock stub] andReturn:self.testManagerMock] testManagerWithContext:OCMArg.any operator:OCMArg.any reporter:OCMArg.any logger:OCMArg.any];
-  [[[[self.testManagerMock stub] ignoringNonObjectArgs] andReturnValue:@(YES)] connectWithTimeout:0 error:OCMArg.anyObjectRef];
+  [[[[self.testManagerMock stub] ignoringNonObjectArgs] andReturn:nil] connectWithTimeout:0];
 }
 
 - (void)tearDown
