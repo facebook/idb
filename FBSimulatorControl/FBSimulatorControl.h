@@ -75,3 +75,4 @@
 #import <FBSimulatorControl/FBSimulatorSet+Private.h>
 #import <FBSimulatorControl/FBSimulatorSet.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
+#import <FBSimulatorControl/FBSimulatorTestRunStrategy.h>

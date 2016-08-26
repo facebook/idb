@@ -9,17 +9,8 @@
 
 #import "FBSimulatorInteraction+XCTest.h"
 
-#import <CoreSimulator/SimDevice.h>
-
-#import <FBControlCore/FBControlCore.h>
-
-#import <XCTestBootstrap/XCTestBootstrap.h>
-
-#import "FBSimulator+Private.h"
-#import "FBSimulatorControlOperator.h"
-#import "FBSimulatorError.h"
+#import "FBSimulatorTestRunStrategy.h"
 #import "FBSimulatorInteraction+Private.h"
-#import "FBSimulatorResourceManager.h"
 
 @implementation FBSimulatorInteraction (XCTest)
 
@@ -35,49 +26,19 @@
 
 - (instancetype)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(id<FBTestManagerTestReporter>)reporter workingDirectory:(NSString *)workingDirectory
 {
-  NSParameterAssert(testLaunchConfiguration.applicationLaunchConfiguration);
-  NSParameterAssert(testLaunchConfiguration.testBundlePath);
-  NSParameterAssert(workingDirectory);
-  [XCTestBootstrapFrameworkLoader loadPrivateFrameworksOrAbort];
-
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy
-      strategyWithTestLaunchConfiguration:testLaunchConfiguration
-      workingDirectory:workingDirectory];
-    FBSimulatorControlOperator *operator = [FBSimulatorControlOperator operatorWithSimulator:self.simulator];
-    FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
-      strategyWithDeviceOperator:operator
-      testPrepareStrategy:testPrepareStrategy
-      reporter:reporter
-      logger:simulator.logger];
-
-    NSError *innerError = nil;
-    FBTestManager *testManager = [testRunStrategy startTestManagerWithAttributes:testLaunchConfiguration.applicationLaunchConfiguration.arguments
-                                                                     environment:testLaunchConfiguration.applicationLaunchConfiguration.environment
-                                                                           error:&innerError];
-    if (!testManager) {
-      return [[[FBSimulatorError
-        describeFormat:@"Failed start test manager"]
-        causedBy:innerError]
-        failBool:error];
-    }
-    [simulator.eventSink testmanagerDidConnect:testManager];
-
-    return YES;
+    return [[FBSimulatorTestRunStrategy
+      strategyWithSimulator:simulator configuration:testLaunchConfiguration workingDirectory:workingDirectory reporter:reporter]
+      connectAndStartWithError:error] != nil;
   }];
 }
 
 - (instancetype)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    for (FBTestManager *testManager in simulator.resourceSink.testManagers.copy) {
-      if (![testManager waitUntilTestingHasFinishedWithTimeout:timeout]) {
-        return [[FBSimulatorError
-                 describeFormat:@"Timeout waiting for test to finish"]
-                failBool:error];
-      }
-    }
-    return YES;
+    return [[FBSimulatorTestRunStrategy
+      strategyWithSimulator:simulator configuration:nil workingDirectory:nil reporter:nil]
+      waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:timeout error:error] != nil;
   }];
 }
 
