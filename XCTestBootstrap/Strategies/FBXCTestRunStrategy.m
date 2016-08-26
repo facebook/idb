@@ -10,7 +10,7 @@
 #import "FBXCTestRunStrategy.h"
 
 #import <Foundation/Foundation.h>
-
+#import <XCTestBootstrap/XCTestBootstrap.h>
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBDeviceOperator.h"
@@ -99,11 +99,12 @@
     reporter:self.reporter
     logger:self.logger];
 
-  if (![testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error]) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed connect to test runner or test manager daemon"]
-      causedBy:innerError]
-     fail:error];
+  FBTestManagerResult *result = [testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  if (result) {
+    return[[[XCTestBootstrapError
+      describeFormat:@"Test Manager Connection Failed: %@", result.description]
+      causedBy:result.error]
+      fail:error];
   }
   return testManager;
 }

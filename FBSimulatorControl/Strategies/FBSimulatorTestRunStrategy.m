@@ -97,16 +97,15 @@
   return self;
 }
 
-- (nullable instancetype)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (FBTestManagerResult *)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout
 {
   for (FBTestManager *testManager in self.simulator.resourceSink.testManagers.copy) {
-    if (![testManager waitUntilTestingHasFinishedWithTimeout:timeout]) {
-      return [[FBSimulatorError
-        describeFormat:@"Timeout waiting for test to finish"]
-        fail:error];
+    FBTestManagerResult *result = [testManager waitUntilTestingHasFinishedWithTimeout:timeout];
+    if (!result.didEndSuccessfully) {
+      return result;
     }
   }
-  return self;
+  return FBTestManagerResult.success;
 }
 
 @end

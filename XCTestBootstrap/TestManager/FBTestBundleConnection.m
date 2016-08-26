@@ -357,7 +357,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 - (FBTestBundleResult *)concludeWithResult:(FBTestBundleResult *)result
 {
-  [self.logger logFormat:@"Test Completed with Result %@", result];
+  [self.logger logFormat:@"Test Completed with Result: %@", result];
   self.result = result;
   self.state = FBTestBundleConnectionStateResultAvailable;
   return result;

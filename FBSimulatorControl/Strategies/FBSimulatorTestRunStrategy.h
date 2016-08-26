@@ -10,7 +10,9 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulator;
+@class FBSimulator;
 @class FBTestLaunchConfiguration;
+@class FBTestManagerResult;
 @protocol FBTestManagerTestReporter;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -43,10 +45,9 @@ NS_ASSUME_NONNULL_BEGIN
  Starts the Connection to the Test Host.
 
  @param timeout a Timeout to wait for the the tests to complete in.
- @param error an error out for any error that occurs.
- @return the reciver for chaining. Will be nil if an error occurs.
+ @return a Test Manager Result.
  */
-- (nullable instancetype)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (FBTestManagerResult *)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout;
 
 @end
 

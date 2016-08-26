@@ -14,6 +14,7 @@
 #import "FBTestManagerProcessInteractionDelegate.h"
 #import "FBTestManagerProcessInteractionOperator.h"
 #import "FBTestManagerContext.h"
+#import "FBTestManagerResult.h"
 
 @interface FBTestManager ()
 
@@ -55,20 +56,23 @@
 
 #pragma mark Public
 
-- (BOOL)connectWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (nullable FBTestManagerResult *)connectWithTimeout:(NSTimeInterval)timeout
 {
-  return [self.mediator connectTestRunnerWithTestManagerDaemonWithTimeout:timeout error:error]
-      && [self.mediator executeTestPlanWithTimeout:timeout error:error];
+  FBTestManagerResult *result = [self.mediator connectToTestManagerDaemonAndBundleWithTimeout:timeout];
+  if (result) {
+    return result;
+  }
+  return [self.mediator executeTestPlanWithTimeout:timeout];
 }
 
-- (void)disconnect
-{
-  [self.mediator disconnectTestRunnerAndTestManagerDaemon];
-}
-
-- (BOOL)waitUntilTestingHasFinishedWithTimeout:(NSTimeInterval)timeout
+- (FBTestManagerResult *)waitUntilTestingHasFinishedWithTimeout:(NSTimeInterval)timeout
 {
   return [self.mediator waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:timeout];
+}
+
+- (FBTestManagerResult *)disconnect
+{
+  return [self.mediator disconnectTestRunnerAndTestManagerDaemon];
 }
 
 - (NSString *)description

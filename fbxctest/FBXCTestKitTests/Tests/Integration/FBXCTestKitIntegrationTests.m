@@ -100,32 +100,9 @@
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
   success = [testRunner executeTestsWithError:&error];
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
-
-  XCTAssertTrue(self.reporter.printReportWasCalled);
-  NSArray<NSArray<NSString *> *> *expected = @[
-    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
-    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningInMacOSXApp"],
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
-    @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
-  ];
-  XCTAssertEqualObjects(expected, self.reporter.startedTests);
-  expected = @[
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
-  ];
-  XCTAssertEqualObjects(expected, self.reporter.passedTests);
-  expected = @[
-    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsMobileSafari"],
-    @[@"iOSUnitTestFixtureTests", @"testHostProcessIsXctest"],
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningInMacOSXApp"],
-    @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
-  ];
-  XCTAssertEqualObjects(expected, self.reporter.failedTests);
+  XCTAssertFalse(success);
+  XCTAssertNotNil(error);
+  XCTAssertFalse(self.reporter.printReportWasCalled);
 }
 
 - (void)testRunsiOSLogicTestsWithoutApplication

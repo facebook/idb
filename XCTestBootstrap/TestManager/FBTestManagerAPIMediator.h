@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBTestManagerContext;
+@class FBTestManagerResult;
 
 @protocol FBTestManagerProcessInteractionDelegate;
 @protocol FBTestManagerTestReporter;
@@ -58,36 +59,36 @@ NS_ASSUME_NONNULL_BEGIN
  This connection is established synchronously, until a timeout occurs.
 
  @param timeout a maximum time to wait for the connection to be established.
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return YES if connection has been established successfuly, NO otherwise.
+ @return A TestManager Result if an early-error occured, nil otherwise.
  */
-- (BOOL)connectTestRunnerWithTestManagerDaemonWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (nullable FBTestManagerResult *)connectToTestManagerDaemonAndBundleWithTimeout:(NSTimeInterval)timeout;
 
 /**
  Executes the Test Plan over the established connection.
- This should be called after `-[FBTestManagerAPIMediator connectTestRunnerWithTestManagerDaemonWithTimeout:error:]`
+ This should be called after `-[FBTestManagerAPIMediator connectToTestManagerDaemonAndBundleWithTimeout:]`
  has successfully completed.
  Events will be delivered to the reporter asynchronously.
 
  @param timeout a maximum time to wait for the connection to be established.
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return YES if the Test Plan execution has started succesfully, NO otherwise.
+ @return A TestManager Result if an early-error occured, nil otherwise.
  */
-- (BOOL)executeTestPlanWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
-
-/**
- Terminates connection between test runner(XCTest bundle) and testmanagerd
- */
-- (void)disconnectTestRunnerAndTestManagerDaemon;
+- (nullable FBTestManagerResult *)executeTestPlanWithTimeout:(NSTimeInterval)timeout;
 
 /**
  Connecting mediator does not wait till test execution has finished.
  This method can be used in order to wait till test execution has finished.
 
- @param timeout the the maximum time to wait for test to finish.
- @return YES if the test execution has finished, NO otherwise.
+ @param timeout the the maximum time to wait for tests to finish.
+ @return A TestManager Result.
  */
-- (BOOL)waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:(NSTimeInterval)timeout;
+- (FBTestManagerResult *)waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:(NSTimeInterval)timeout;
+
+/**
+ Terminates connection between test runner(XCTest bundle) and testmanagerd.
+
+ @return the TestManager Result.
+ */
+- (FBTestManagerResult *)disconnectTestRunnerAndTestManagerDaemon;
 
 @end
 

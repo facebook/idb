@@ -9,8 +9,11 @@
 
 #import "FBSimulatorInteraction+XCTest.h"
 
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 #import "FBSimulatorTestRunStrategy.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorError.h"
 
 @implementation FBSimulatorInteraction (XCTest)
 
@@ -36,9 +39,13 @@
 - (instancetype)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    return [[FBSimulatorTestRunStrategy
+    FBTestManagerResult *result = [[FBSimulatorTestRunStrategy
       strategyWithSimulator:simulator configuration:nil workingDirectory:nil reporter:nil]
-      waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:timeout error:error] != nil;
+      waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:timeout];
+    if (!result.didEndSuccessfully) {
+      return [FBSimulatorError failBoolWithError:result.error errorOut:error];
+    }
+    return YES;
   }];
 }
 
