@@ -25,6 +25,15 @@
   }];
 }
 
+- (nullable FBProcessInfo *)processInfoForJobDictionary:(NSDictionary<NSString *, id> *)jobDictionary
+{
+  NSNumber *processIdentifierNumber = jobDictionary[@"PID"];
+  if (!processIdentifierNumber) {
+    return nil;
+  }
+  return [self processInfoFor:processIdentifierNumber.intValue];
+}
+
 - (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error
 {
   FBProcessInfo *actual = [self processInfoFor:process.processIdentifier];

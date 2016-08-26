@@ -30,6 +30,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBProcessInfo *)processInfoFor:(pid_t)processIdentifier timeout:(NSTimeInterval)timeout;
 
 /**
+ Queryies for the Process Info for a launchd job dictionary.
+
+ @param jobDictionary the Job Dictionary to use.
+ @return the Process Info of the Job Dictionary, if available.
+ */
+- (nullable FBProcessInfo *)processInfoForJobDictionary:(NSDictionary<NSString *, id> *)jobDictionary;
+
+/**
  A that determines if the provided process is currently running.
 
  @param process the Process to look for

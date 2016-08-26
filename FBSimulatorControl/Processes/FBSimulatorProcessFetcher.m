@@ -88,17 +88,23 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 
 - (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids
 {
-  NSMutableDictionary<NSString *, FBProcessInfo *> *dictionary = [NSMutableDictionary dictionary];
-  NSSet<NSString *> *fetchSet = [NSSet setWithArray:udids];
+  NSDictionary<NSString *, NSString *> *launchdSimServiceNames = [FBSimulatorProcessFetcher launchdSimServiceNamesForUDIDs:udids];
+  NSDictionary<NSString *, NSDictionary<NSString *, id> *> *jobs = [FBServiceManagement jobInformationForUserServicesNamed:launchdSimServiceNames.allValues];
 
-  for (FBProcessInfo *process in self.launchdProcesses) {
-    NSString *udid = [FBSimulatorProcessFetcher udidForLaunchdSim:process];
-    if (!udid || ![fetchSet containsObject:udid]) {
+  NSMutableDictionary<NSString *, FBProcessInfo *> *processes = [NSMutableDictionary dictionary];
+  for (NSString *udid in launchdSimServiceNames.allKeys) {
+    NSString *serviceName = launchdSimServiceNames[udid];
+    NSDictionary<NSString *, id> *job = jobs[serviceName];
+    if (!job) {
       continue;
     }
-    dictionary[udid] = process;
+    FBProcessInfo *process = [self.processFetcher processInfoForJobDictionary:job];
+    if (!process) {
+      continue;
+    }
+    processes[udid] = process;
   }
-  return [dictionary copy];
+  return [processes copy];
 }
 
 - (NSDictionary<FBProcessInfo *, NSString *> *)launchdProcessesToContainingDeviceSet
@@ -117,7 +123,11 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 
 - (FBProcessInfo *)launchdProcessForSimDevice:(SimDevice *)simDevice
 {
-  return [self launchdProcessesByUDIDs:@[simDevice.UDID.UUIDString]][simDevice.UDID.UUIDString];
+  NSDictionary<NSString *, id> *jobInfo = [FBServiceManagement jobInformationForUserServiceNamed:simDevice.launchdJobName];
+  if (!jobInfo) {
+    return nil;
+  }
+  return [self.processFetcher processInfoForJobDictionary:jobInfo];
 }
 
 #pragma mark CoreSimulatorService
@@ -223,6 +233,20 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
     characterSet = [NSCharacterSet characterSetWithCharactersInString:@"."];
   });
   return characterSet;
+}
+
++ (NSDictionary<NSString *, NSString *> *)launchdSimServiceNamesForUDIDs:(NSArray<NSString *> *)udids
+{
+  NSMutableDictionary<NSString *, NSString *> *dictionary = [NSMutableDictionary dictionary];
+  for (NSString *udid in udids) {
+    dictionary[udid] = [self launchdSimServiceNameForUDID:udid];
+  }
+  return [dictionary copy];
+}
+
++ (NSString *)launchdSimServiceNameForUDID:(NSString *)udid
+{
+  return [NSString stringWithFormat:@"com.apple.CoreSimulator.SimDevice.%@.launchd_sim", udid];
 }
 
 + (NSSet<NSString *> *)launchdSimEnvironmentSubtractableComponents

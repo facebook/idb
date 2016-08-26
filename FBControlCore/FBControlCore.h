@@ -40,6 +40,7 @@
 #import <FBControlCore/FBProcessLaunchConfiguration+Private.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBRunLoopSpinner.h>
+#import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSubstringUtilities.h>
 #import <FBControlCore/FBTask+Private.h>
 #import <FBControlCore/FBTask.h>
