@@ -336,7 +336,8 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   // Set the Crash Date Check.
   self.lastCrashCheckDate = NSDate.date;
 
-  pid_t pid = [self.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:nil];
+  NSError *error;
+  pid_t pid = [self.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:&error];
   if (pid >= 1) {
     return nil;
   }
