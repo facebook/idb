@@ -103,6 +103,7 @@
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
   XCTAssertFalse(self.reporter.printReportWasCalled);
+  XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 }
 
 - (void)testRunsiOSLogicTestsWithoutApplication
@@ -156,6 +157,7 @@
   success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
+  XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 
   XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
@@ -215,6 +217,7 @@
   success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
+  XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 
   XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
