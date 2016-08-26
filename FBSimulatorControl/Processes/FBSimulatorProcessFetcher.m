@@ -42,8 +42,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
   // All Simulator Versions from Xcode 5-7, have Simulator.app in their path:
   // iOS Simulator.app/Contents/MacOS/iOS Simulator
   // Simulator.app/Contents/MacOS/Simulator
-  NSArray<NSDictionary<NSString *, id> *> *jobs = [FBServiceManagement jobsWithProgramWithLaunchPathSubstring:@"Simulator.app"];
-  return [self.processFetcher processInfoForJobDictionaries:jobs];
+  return [self.processFetcher processesWithLaunchPathSubstring:@"Simulator.app"];
 }
 
 - (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut
