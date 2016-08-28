@@ -47,6 +47,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<FBProcessInfo *> *)processInfoForJobDictionaries:(NSArray<NSDictionary<NSString *, id> *> *)jobDictionaries;
 
 /**
+ Retrieves the Process Info for an array of NSRunningApplication objects.
+ Jobs without valid processes will not be included in the resulting array.
+
+ @param runningApplications the Running Applications array to obtain process info for.
+ @return the Process Info for the Jobs that could be obtained.
+ */
+- (NSArray<FBProcessInfo *> *)processInfoForRunningApplications:(NSArray<NSRunningApplication *> *)runningApplications;
+
+/**
  A that determines if the provided process is currently running.
 
  @param process the Process to look for
