@@ -87,6 +87,17 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   return self;
 }
 
+#pragma mark - NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"TestManager %@ for (%@)",
+    self.result ?: @"Awaiting Result",
+    self.context
+  ];
+}
+
 #pragma mark - Public
 
 - (nullable FBTestManagerResult *)connectToTestManagerDaemonAndBundleWithTimeout:(NSTimeInterval)timeout
@@ -259,6 +270,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (id)_XCT_didFinishExecutingTestPlan
 {
   [self.daemonConnection notifyTestPlanEnded];
+  [self.daemonConnection disconnect];
+  [self.bundleConnection disconnect];
   return nil;
 }
 

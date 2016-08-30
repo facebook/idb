@@ -191,19 +191,23 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   return nil;
 }
 
-- (void)disconnect
+- (FBTestBundleResult *)disconnect
 {
   [self.logger logFormat:@"Disconnecting Test Bundle in state '%@'", [FBTestBundleConnection stateStringForState:self.state]];
 
-  if (self.state != FBTestBundleConnectionStateResultAvailable) {
-    [self concludeWithResult:FBTestBundleResult.clientRequestedDisconnect];
-    self.state = FBTestBundleConnectionStateResultAvailable;
+  FBTestBundleResult *result = nil;
+  if (self.state == FBTestBundleConnectionStateEndedTestPlan) {
+    result = [self concludeWithResult:FBTestBundleResult.success];
+  } else {
+    result = [self concludeWithResult:FBTestBundleResult.clientRequestedDisconnect];
   }
   [self.testBundleConnection suspend];
   [self.testBundleConnection cancel];
   self.testBundleConnection = nil;
   self.testBundleProxy = nil;
   self.testBundleProtocolVersion = 0;
+
+  return result;
 }
 
 #pragma mark Private

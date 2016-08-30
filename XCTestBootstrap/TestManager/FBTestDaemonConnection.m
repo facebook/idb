@@ -181,13 +181,20 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 {
   [self.logger logFormat:@"Disconnecting Daemon from state '%@'", [FBTestDaemonConnection stringForDaemonConnectionState:self.state]];
 
+  FBTestDaemonResult *result = nil;
+  if (self.state == FBTestDaemonConnectionStateEndedTestPlan) {
+    result = [self concludeWithResult:FBTestDaemonResult.success];
+  } else {
+    result = [self concludeWithResult:FBTestDaemonResult.clientRequestedDisconnect];
+  }
+
   [self.daemonConnection suspend];
   [self.daemonConnection cancel];
   self.daemonConnection = nil;
   self.daemonProxy = nil;
   self.daemonProtocolVersion = 0;
 
-  return self.result ?: [self concludeWithResult:FBTestDaemonResult.clientRequestedDisconnect];
+  return result;
 }
 
 #pragma mark Private
@@ -243,7 +250,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 
 - (FBTestDaemonResult *)daemonDisconnectedWithState:(FBTestDaemonConnectionState)state
 {
-  [self.logger logFormat:@"Daemon Connection Disconnected in state '%@'", [FBTestDaemonConnection stringForDaemonConnectionState:state]];
+  [self.logger logFormat:@"Notified that daemon disconnected from state '%@'", [FBTestDaemonConnection stringForDaemonConnectionState:state]];
   if (self.result) {
     return self.result;
   }
@@ -296,7 +303,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
   if (self.result) {
     return self.result;
   }
-  [self.logger logFormat:@"Daemon Connection Ended with result %@", result];
+  [self.logger logFormat:@"Daemon Connection Ended with result: %@", result];
   self.result = result;
   self.state = FBTestDaemonConnectionStateResultAvailable;
   return result;

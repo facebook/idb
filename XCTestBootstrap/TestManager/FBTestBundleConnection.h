@@ -57,13 +57,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Checks that a Result is available.
+
+ @return a Result if unsuccessful, nil otherwise.
  */
 - (nullable FBTestBundleResult *)checkForResult;
 
 /**
  Disconnects any active connection.
+
+ @return a Result.
  */
-- (void)disconnect;
+- (FBTestBundleResult *)disconnect;
 
 /**
  Properties set through the Constructor.

@@ -49,6 +49,7 @@
   }
 
   _mediator = mediator;
+  _context = context;
   _processOperator = processOperator;
 
   return self;
@@ -77,7 +78,7 @@
 
 - (NSString *)description
 {
-  return self.context.description;
+  return self.mediator.description;
 }
 
 @end

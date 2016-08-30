@@ -27,6 +27,11 @@
   return nil;
 }
 
+- (NSString *)description
+{
+  return @"Daemon Connection ended normally";
+}
+
 @end
 
 @interface FBTestDaemonResult_ClientRequestedDisconnect : FBTestDaemonResult
