@@ -11,6 +11,7 @@
 
 #import "XCTestBootstrapError.h"
 #import "FBTestBundleResult.h"
+#import "FBTestDaemonResult.h"
 
 @interface FBTestManagerResult_Success : FBTestManagerResult
 @end
@@ -217,6 +218,13 @@
   }
   NSParameterAssert(bundleResult.error);
   return [[FBTestManagerResult_InternalError alloc] initWithError:bundleResult.error];
+}
+
++ (instancetype)daemonConnectionFailed:(FBTestDaemonResult *)daemonResult
+{
+  NSParameterAssert(daemonResult.didEndSuccessfully == NO);
+  NSParameterAssert(daemonResult.error);
+  return [[FBTestManagerResult_InternalError alloc] initWithError:daemonResult.error];
 }
 
 + (instancetype)internalError:(XCTestBootstrapError *)error

@@ -34,6 +34,7 @@
 #import "FBTestManagerContext.h"
 #import "FBTestBundleResult.h"
 #import "FBTestManagerResult.h"
+#import "FBTestDaemonResult.h"
 
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
@@ -98,12 +99,9 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   if (bundleResult) {
     return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
   }
-  NSError *innerError = nil;
-  if (![self.daemonConnection connectWithTimeout:timeout error:&innerError]) {
-    XCTestBootstrapError *error = [[XCTestBootstrapError
-      describe:@"Failed to connect to the daemon"]
-      causedBy:innerError];
-    return [self concludeWithResult:[FBTestManagerResult internalError:error]];
+  FBTestDaemonResult *daemonResult = [self.daemonConnection connectWithTimeout:timeout];
+  if (daemonResult) {
+    return [self concludeWithResult:[FBTestManagerResult daemonConnectionFailed:daemonResult]];
   }
   return nil;
 }
@@ -114,12 +112,9 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   if (bundleResult) {
     return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
   }
-  NSError *innerError = nil;
-  if (![self.daemonConnection notifyTestPlanStartedWithError:&innerError]) {
-    XCTestBootstrapError *error = [[XCTestBootstrapError
-      describe:@"Failed to notify the Daemon Connection that the test plan started"]
-      causedBy:innerError];
-    return [self concludeWithResult:[FBTestManagerResult internalError:error]];
+  FBTestDaemonResult *daemonResult = [self.daemonConnection notifyTestPlanStarted];
+  if (daemonResult) {
+    return [self concludeWithResult:[FBTestManagerResult daemonConnectionFailed:daemonResult]];
   }
   return nil;
 }
@@ -131,10 +126,14 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     if (bundleResult && !bundleResult.didEndSuccessfully) {
       return [FBTestManagerResult bundleConnectionFailed:bundleResult];
     }
-    if (!self.daemonConnection.hasFinishedExecution) {
-      return nil;
+    FBTestDaemonResult *daemonResult = [self.daemonConnection checkForResult];
+    if (daemonResult && !daemonResult.didEndSuccessfully) {
+      return [FBTestManagerResult daemonConnectionFailed:daemonResult];
     }
-    return FBTestManagerResult.success;
+    if (daemonResult && bundleResult) {
+      return FBTestManagerResult.success;
+    }
+    return nil;
   }];
   return [self concludeWithResult:result ?: [FBTestManagerResult timedOutAfter:timeout]];
 }
@@ -259,7 +258,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_didFinishExecutingTestPlan
 {
-  [self.daemonConnection notifyTestPlanEndedWithError:nil];
+  [self.daemonConnection notifyTestPlanEnded];
   return nil;
 }
 

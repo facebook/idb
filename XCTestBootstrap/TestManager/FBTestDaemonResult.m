@@ -1,0 +1,122 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+#import "FBTestDaemonResult.h"
+
+#import "XCTestBootstrapError.h"
+
+@interface FBTestDaemonResult_Success : FBTestDaemonResult
+
+@end
+
+@implementation FBTestDaemonResult_Success
+
+- (BOOL)didEndSuccessfully
+{
+  return YES;
+}
+
+- (NSError *)error
+{
+  return nil;
+}
+
+@end
+
+@interface FBTestDaemonResult_ClientRequestedDisconnect : FBTestDaemonResult
+@end
+
+@implementation FBTestDaemonResult_ClientRequestedDisconnect
+
+- (BOOL)didEndSuccessfully
+{
+  return YES;
+}
+
+- (NSError *)error
+{
+  return nil;
+}
+
+- (FBDiagnostic *)diagnostic
+{
+  return nil;
+}
+
+- (NSString *)description
+{
+  return @"Daemon Connection ended when client requested disconnect";
+}
+
+@end
+
+@interface FBTestDaemonResult_EndedInError : FBTestDaemonResult
+@property (nonatomic, strong, readonly) NSError *underlyingError;
+@end
+
+@implementation FBTestDaemonResult_EndedInError
+
+- (instancetype)initWithError:(NSError *)error
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _underlyingError = error;
+
+  return self;
+}
+
+- (BOOL)didEndSuccessfully
+{
+  return NO;
+}
+
+- (NSError *)error
+{
+  return self.underlyingError;
+}
+
+@end
+
+@implementation FBTestDaemonResult
+
+#pragma mark Constructors
+
++ (instancetype)success
+{
+  return [FBTestDaemonResult_Success new];
+}
+
++ (instancetype)clientRequestedDisconnect
+{
+  return [FBTestDaemonResult_ClientRequestedDisconnect new];
+}
+
++ (instancetype)failedInError:(XCTestBootstrapError *)error
+{
+  return [[FBTestDaemonResult_EndedInError alloc] initWithError:error.build];
+}
+
+#pragma mark Public Methods
+
+- (BOOL)didEndSuccessfully
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
+}
+
+- (NSError *)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+@end

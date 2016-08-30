@@ -11,6 +11,7 @@
 
 @class FBDiagnostic;
 @class FBTestBundleResult;
+@class FBTestDaemonResult;
 @class XCTestBootstrapError;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -50,6 +51,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Test Manger Result.
  */
 + (instancetype)bundleConnectionFailed:(FBTestBundleResult *)bundleResult;
+
+/**
+ A Test Run in which the Daemon Connection Failed
+
+ @param daemonResult the Daemon Result
+ @return a Test Manger Result.
+ */
++ (instancetype)daemonConnectionFailed:(FBTestDaemonResult *)daemonResult;
 
 /**
  A Test Run in which an internal error occured.
