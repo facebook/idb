@@ -84,14 +84,18 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 - (NSDictionary *)createOCUnitEndEventWithMessage:(NSString *)message success:(BOOL)success
 {
-  return @{
-           @"event" : @"end-ocunit",
-           @"testType" : _testType,
-           @"bundleName" : [_testBundlePath lastPathComponent],
-           @"targetName" : _testBundlePath,
-           @"succeeded" : success ? @YES : @NO,
-           @"message" : message ?: [NSNull null],
-           };
+  NSMutableDictionary<NSString *, id> *event = [NSMutableDictionary dictionary];
+  [event addEntriesFromDictionary:@{
+    @"event" : @"end-ocunit",
+    @"testType" : _testType,
+    @"bundleName" : [_testBundlePath lastPathComponent],
+    @"targetName" : _testBundlePath,
+    @"succeeded" : success ? @YES : @NO,
+  }];
+  if (message) {
+    event[@"message"] = message;
+  }
+  return [event copy];
 }
 
 #pragma mark FBXCTestReporter
