@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from util import (FBSimctl, Simulator, find_fbsimctl_path, DEFAULT_TIMEOUT, LONG_TIMEOUT)
+from util import (FBSimctl, Simulator, WebServer, find_fbsimctl_path, DEFAULT_TIMEOUT, LONG_TIMEOUT)
 import argparse
 import os
 import tempfile
@@ -137,6 +137,7 @@ class MultipleSimulatorTestCase(FBSimctlTestCase):
         self,
         methodName,
         fbsimctl_path,
+
     ):
         super(MultipleSimulatorTestCase, self).__init__(
             methodName=methodName,
@@ -151,6 +152,33 @@ class MultipleSimulatorTestCase(FBSimctlTestCase):
             event_type='ended',
             timeout=LONG_TIMEOUT,
         )
+
+
+class WebserverSimulatorTestCase(FBSimctlTestCase):
+    def __init__(
+        self,
+        methodName,
+        fbsimctl_path,
+        port,
+    ):
+        super(WebserverSimulatorTestCase, self).__init__(
+            methodName=methodName,
+            fbsimctl_path=fbsimctl_path,
+            use_custom_set=True,
+        )
+        self.port = port
+        self.webserver = WebServer(port)
+
+    def testRemotelyRecords(self):
+        arguments = [
+            'listen', '--http', str(self.port),
+        ]
+        # Launch the process, terminate and confirm teardown is successful
+        with self.fbsimctl.launch(arguments) as process:
+            process.wait_for_event('listen', 'started')
+            response = self.webserver.request('diagnose', {'type': 'all'})
+            self.assertEqual(response['status'], 'success')
+
 
 class SingleSimulatorTestCase(FBSimctlTestCase):
     def __init__(
@@ -253,6 +281,11 @@ class SuiteBuilder:
             self.loader.getTestCaseNames(FBSimctlTestCase)
         )
 
+    def _get_webserver_methods(self):
+        return self._filter_methods(
+            set(self.loader.getTestCaseNames(WebserverSimulatorTestCase)) - set(self._get_base_methods()),
+        )
+
     def _get_single_simulator_methods(self):
         return self._filter_methods(
             set(self.loader.getTestCaseNames(SingleSimulatorTestCase)) - set(self._get_base_methods()),
@@ -275,7 +308,7 @@ class SuiteBuilder:
             for method_name in self._get_base_methods()
             for use_custom_set in [True, False]
         ])
-        # Only run per-Simulator-Type tests against a custom set
+        # Only run per-Simulator-Type tests against a custom set.
         suite.addTests([
             SingleSimulatorTestCase(
                 methodName=method_name,
@@ -284,6 +317,15 @@ class SuiteBuilder:
             )
             for method_name in self._get_single_simulator_methods()
             for device_type in self.device_types
+        ])
+        # Only run per-Webserver-Type tests against a custom set.
+        suite.addTests([
+            WebserverSimulatorTestCase(
+                methodName=method_name,
+                fbsimctl_path=self.fbsimctl_path,
+                port=8090,
+            )
+            for method_name in self._get_webserver_methods()
         ])
         # Only run multiple-Simulator tests against a custom set.
         suite.addTests([

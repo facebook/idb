@@ -7,6 +7,7 @@ import os
 import shlex
 import subprocess
 import time
+import urllib.request
 
 # Setup the Logger
 logging.basicConfig(format='%(message)s')
@@ -204,3 +205,23 @@ class FBSimctl:
             arguments=self._make_arguments(arguments),
             timeout=timeout,
         )
+
+
+class WebServer:
+    def __init__(self, port):
+        self.__port = port
+
+    def request(self, path, payload):
+        url = 'http://localhost:{}/{}'.format(
+            self.__port,
+            path,
+        )
+        data = json.dumps(payload).encode('utf-8')
+        request = urllib.request.Request(
+            url=url,
+            data=data,
+            headers={'content-type': 'application/json'}
+        )
+        with urllib.request.urlopen(request) as f:
+            response = f.read().decode('utf-8')
+            return json.loads(response)
