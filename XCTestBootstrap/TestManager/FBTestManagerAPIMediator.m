@@ -351,12 +351,12 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 didFinishActivity:(XCActivityRecord *)arg3
 {
-  return [self handleUnimplementedXCTRequest:_cmd];
+  return nil;
 }
 
 - (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 willStartActivity:(XCActivityRecord *)arg3
 {
-  return [self handleUnimplementedXCTRequest:_cmd];
+  return nil;
 }
 
 - (id)_XCT_recordedOrientationChange:(NSString *)arg1
