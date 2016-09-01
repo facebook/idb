@@ -56,7 +56,11 @@
 - (void)forwardInvocation:(NSInvocation *)invocation
 {
   if ([self.interface respondsToSelector:invocation.selector]) {
-    [self.logger.debug log:NSStringFromSelector(invocation.selector)];
+
+    if ([FBControlCoreGlobalConfiguration debugLoggingEnabled]) {
+      [self.logger.debug log:NSStringFromSelector(invocation.selector)];
+    }
+
     [invocation invokeWithTarget:self.interface];
   } else {
     [super forwardInvocation:invocation];
