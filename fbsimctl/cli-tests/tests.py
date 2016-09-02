@@ -362,4 +362,7 @@ if __name__ == '__main__':
         verbosity=2,
         failfast=True,
     )
-    runner.run(suite_builder.build())
+    result = runner.run(suite_builder.build())
+    parser.exit(
+        status=0 if result.wasSuccessful() else 1,
+    )
