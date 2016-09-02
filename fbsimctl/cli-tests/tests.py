@@ -344,7 +344,7 @@ if __name__ == '__main__':
     parser.description = 'fbsimctl e2e test runner'
     parser.add_argument(
         '--fbsimctl-path',
-        default='executable-under-test/fbsimctl',
+        default='executable-under-test/bin/fbsimctl',
         help='The location of the fbsimctl executable',
     )
     parser.add_argument(
