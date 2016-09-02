@@ -104,7 +104,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 
 + (BOOL)useDirectLaunching
 {
-  return [NSProcessInfo.processInfo.environment[LaunchTypeEnvKey] isEqualToString:LaunchTypeSimulatorApp];
+  return ![NSProcessInfo.processInfo.environment[LaunchTypeEnvKey] isEqualToString:LaunchTypeSimulatorApp];
 }
 
 + (FBSimulatorLaunchOptions)launchOptions
