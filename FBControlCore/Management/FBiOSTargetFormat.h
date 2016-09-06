@@ -43,6 +43,11 @@ extern NSString *const FBiOSTargetFormatState;
  */
 extern NSString *const FBiOSTargetFormatProcessIdentifier;
 
+/**
+ The Process Identifier of the Target's Container Application where applicable.
+ */
+extern NSString *const FBiOSTargetFormatContainerApplicationProcessIdentifier;
+
 @protocol FBiOSTarget;
 
 /**

@@ -72,6 +72,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;
 
 /**
+ Process Information about the Container Application of the iOS Target. Currently only applies to Simulators.
+ */
+@property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
+
+/**
  The Configuration of the iOS Target's Device.
  */
 @property (nonatomic, copy, readonly) id<FBControlCoreConfiguration_Device> deviceConfiguration;

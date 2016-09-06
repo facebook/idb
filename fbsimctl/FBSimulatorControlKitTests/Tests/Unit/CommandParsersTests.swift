@@ -20,7 +20,8 @@ class FBiOSTargetFormatParserTests : XCTestCase {
       (["--device-name"], FBiOSTargetFormat(fields: [FBiOSTargetFormatDeviceName])),
       (["--os"], FBiOSTargetFormat(fields: [FBiOSTargetFormatOSVersion])),
       (["--state"], FBiOSTargetFormat(fields: [FBiOSTargetFormatState])),
-      (["--pid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatProcessIdentifier]))
+      (["--pid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatProcessIdentifier])),
+      (["--container_pid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatContainerApplicationProcessIdentifier]))
     ])
   }
 }
