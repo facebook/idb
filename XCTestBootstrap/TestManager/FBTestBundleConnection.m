@@ -477,6 +477,13 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   }
 }
 
+
+- (BOOL)hasFinishedExecution
+{
+    FBTestBundleConnectionState state = self.state;
+    return (state == FBTestBundleConnectionStateEndedTestPlan ||
+            state == FBTestBundleConnectionStateResultAvailable);
+}
 @end
 
 #pragma clang diagnostic pop

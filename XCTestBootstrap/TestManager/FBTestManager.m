@@ -76,6 +76,10 @@
   return [self.mediator disconnectTestRunnerAndTestManagerDaemon];
 }
 
+- (BOOL)testingHasFinished {
+    return [self.mediator testingHasFinished];
+}
+
 - (NSString *)description
 {
   return self.mediator.description;

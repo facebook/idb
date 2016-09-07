@@ -155,6 +155,10 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   return [self concludeWithResult:FBTestManagerResult.clientRequestedDisconnect];
 }
 
+- (BOOL)testingHasFinished {
+    return self.daemonConnection.hasFinishedExecution && self.bundleConnection.hasFinishedExecution;
+}
+
 #pragma mark Reporting
 
 - (nullable FBTestManagerResult *)checkForResult

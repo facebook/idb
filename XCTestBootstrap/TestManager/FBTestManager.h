@@ -60,6 +60,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTestManagerResult *)disconnect;
 
+/**
+ @return YES if the test is currently not running.
+ */
+- (BOOL)testingHasFinished;
+
 @end
 
 NS_ASSUME_NONNULL_END

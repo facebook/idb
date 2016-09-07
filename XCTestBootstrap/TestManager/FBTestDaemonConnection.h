@@ -87,6 +87,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (atomic, nullable, strong, readonly) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
 @property (atomic, nullable, strong, readonly) DTXConnection *daemonConnection;
 
+@property (nonatomic) BOOL hasFinishedExecution;
+
 @end
 
 NS_ASSUME_NONNULL_END
