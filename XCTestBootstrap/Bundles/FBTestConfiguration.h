@@ -36,6 +36,11 @@
  */
 @property (nonatomic, copy, readonly) NSString *path;
 
+/**
+ Determines whether should initialize for UITesting
+ */
+@property (nonatomic, assign, readonly) BOOL shouldInitializeForUITesting;
+
 @end
 
 /**

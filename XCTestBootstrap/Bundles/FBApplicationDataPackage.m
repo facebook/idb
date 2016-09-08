@@ -130,10 +130,11 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
   }
   NSError *innerError;
   package.testConfiguration =
-  [[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
-       withModuleName:self.testBundle.name]
-      withSessionIdentifier:self.testBundle.configuration.sessionIdentifier]
-     withTestBundlePath:deviceTestBundlePath]
+  [[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
+        withModuleName:self.testBundle.name]
+       withSessionIdentifier:self.testBundle.configuration.sessionIdentifier]
+      withTestBundlePath:deviceTestBundlePath]
+     withUITesting:self.testBundle.configuration.shouldInitializeForUITesting]
     saveAs:[localTestPlanDirPath stringByAppendingPathComponent:testConfigurationFileName]]
    buildWithError:&innerError];
   if (!package.testConfiguration) {
@@ -144,11 +145,12 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
   }
 
   package.testBundle =
-  [[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
-      withBundlePath:testBundlePath]
-     withSessionIdentifier:self.testBundle.configuration.sessionIdentifier]
-     withWorkingDirectory:workingDirectory]
-    withCodesignProvider:self.codesignProvider]
+  [[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+        withBundlePath:testBundlePath]
+       withSessionIdentifier:self.testBundle.configuration.sessionIdentifier]
+      withWorkingDirectory:workingDirectory]
+     withCodesignProvider:self.codesignProvider]
+    withUITesting:self.testBundle.configuration.shouldInitializeForUITesting]
    buildWithError:&innerError];
   if (!package.testBundle) {
     return

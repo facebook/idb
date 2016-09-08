@@ -19,6 +19,7 @@
 @property (nonatomic, copy) NSString *moduleName;
 @property (nonatomic, copy) NSString *testBundlePath;
 @property (nonatomic, copy) NSString *path;
+@property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @end
 
 @implementation FBTestConfiguration
@@ -101,6 +102,7 @@
   configuration.testBundlePath = self.testBundlePath;
   configuration.moduleName = self.moduleName;
   configuration.path = self.savePath;
+  configuration.shouldInitializeForUITesting = self.shouldInitializeForUITesting;
   return configuration;
 }
 
