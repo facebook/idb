@@ -39,6 +39,7 @@
 
   id testConfigurationMock = [OCMockObject mockForClass:FBTestConfiguration.class];
   [[[testConfigurationMock stub] andReturn:[self.class sessionIdentifier]] sessionIdentifier];
+  [[[testConfigurationMock stub] andReturnValue:@YES] shouldInitializeForUITesting];
 
   id testBundleMock = [OCMockObject mockForClass:FBTestBundle.class];
   [[[testBundleMock stub] andReturn:@"/test/Magic.xctest"] path];
@@ -75,6 +76,7 @@
 
   id testConfigurationMock = [OCMockObject mockForClass:FBTestConfiguration.class];
   [[[testConfigurationMock stub] andReturn:[self.class sessionIdentifier]] sessionIdentifier];
+  [[[testConfigurationMock stub] andReturnValue:@YES] shouldInitializeForUITesting];
 
   id testBundleMock = [OCMockObject mockForClass:FBTestBundle.class];
   [[[testBundleMock stub] andReturn:@"/test/Magic.xctest"] path];
