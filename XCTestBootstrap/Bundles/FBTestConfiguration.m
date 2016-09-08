@@ -90,6 +90,7 @@
     testConfiguration.productModuleName = self.moduleName;
     testConfiguration.reportResultsToIDE = YES;
     testConfiguration.pathToXcodeReportingSocket = nil;
+    testConfiguration.testsMustRunOnMainThread = self.shouldInitializeForUITesting;
     testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
     if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:error]) {
