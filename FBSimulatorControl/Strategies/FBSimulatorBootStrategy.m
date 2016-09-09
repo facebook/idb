@@ -35,6 +35,7 @@
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorHID.h"
 #import "FBSimulatorProcessFetcher.h"
+#import "FBFramebufferConnectStrategy.h"
 
 @interface FBSimulatorBootStrategy ()
 
@@ -48,7 +49,6 @@
 @interface FBSimulatorBootStrategy_Direct : FBSimulatorBootStrategy
 
 - (BOOL)shouldCreateFramebuffer;
-- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error;
 - (NSDictionary<NSString *, id> *)bootOptions;
 
 @end
@@ -61,11 +61,12 @@
   NSError *innerError = nil;
   FBFramebuffer *framebuffer = nil;
   if (self.shouldCreateFramebuffer) {
-    SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:&innerError];
-    if (!mainScreenService) {
+    framebuffer = [[FBFramebufferConnectStrategy
+      strategyWithConfiguration:self.configuration]
+      connect:self.simulator error:&innerError];
+    if (!framebuffer) {
       return [FBSimulatorError failWithError:innerError errorOut:error];
     }
-    framebuffer = [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:self.simulator];
   }
 
   // Create the HID Port
@@ -114,46 +115,6 @@
 
 @implementation FBSimulatorBootStrategy_Direct_Xcode7
 
-- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
-{
-  // If you're curious about where the knowledege for these parts of the CoreSimulator.framework comes from, take a look at:
-  // $DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS [VERSION].simruntime/Contents/Resources/profile.plist
-  // as well as the dissasembly for CoreSimulator.framework, SimulatorKit.Framework & the Simulator.app Executable.
-  //
-  // Creating the Framebuffer with the 'mainScreen' constructor will return a 'PurpleFBServer' and attach it to the '_registeredServices' ivar.
-  // This is the Framebuffer for the Simulator's main screen, which is distinct from 'PurpleFBTVOut' and 'Stark' Framebuffers for External Displays and CarPlay.
-  //
-  // -[SimDevice portForServiceNamed:error:] is gone in Xcode 8 Beta 5.
-  NSError *innerError = nil;
-  NSPort *purpleServerPort = [self.simulator.device portForServiceNamed:@"PurpleFBServer" error:&innerError];
-  if (!purpleServerPort) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not find the 'PurpleFBServer' Port for %@", self.simulator.device]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  // Setup the scale for the framebuffer service.
-  CGSize size = self.simulator.device.deviceType.mainScreenSize;
-  CGSize scaledSize = [self.configuration scaleSize:size];
-
-  // Create the service
-  SimDeviceFramebufferService *framebufferService = [NSClassFromString(@"SimDeviceFramebufferService")
-    framebufferServiceWithPort:purpleServerPort
-    deviceDimensions:size
-    scaledDimensions:scaledSize
-    error:&innerError];
-
-  if (!framebufferService) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to create the Main Screen Framebuffer for device %@", self.simulator.device]
-      causedBy:innerError]
-      fail:error];
-  }
-
-  return framebufferService;
-}
-
 - (BOOL)shouldCreateFramebuffer
 {
   // A Framebuffer is required in Xcode 7 currently, otherwise any interface that uses the Mach Interface for 'Host Support' will fail/hang.
@@ -183,21 +144,6 @@
 {
   // Framebuffer connection is optional on Xcode 8 so we should use the appropriate configuration.
   return self.configuration.shouldConnectFramebuffer;
-}
-
-- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
-{
-  NSError *innerError = nil;
-  SimDeviceFramebufferService *service = [NSClassFromString(@"SimDeviceFramebufferService")
-    mainScreenFramebufferServiceForDevice:self.simulator.device
-    error:&innerError];
-  if (!service) {
-    return [[[FBSimulatorError
-      describe:@"Failed to create Main Screen Service for Device"]
-      causedBy:innerError]
-      fail:error];
-  }
-  return service;
 }
 
 - (NSDictionary<NSString *, id> *)bootOptions
@@ -313,7 +259,7 @@
 {
   // The NSWorkspace API allows for arguments & environment to be provided to the launched application
   // Additionally, multiple Apps of the same application can be launched with the NSWorkspaceLaunchNewInstance option.
-  NSURL *applicationURL = [NSURL fileURLWithPath:FBApplicationDescriptor .xcodeSimulator.path];
+  NSURL *applicationURL = [NSURL fileURLWithPath:FBApplicationDescriptor.xcodeSimulator.path];
   NSDictionary *appLaunchConfiguration = @{
     NSWorkspaceLaunchConfigurationArguments : arguments,
     NSWorkspaceLaunchConfigurationEnvironment : environment,
