@@ -18,6 +18,8 @@
 
 #import <IDEFoundation/IDEFoundationTestInitializer.h>
 
+#import <objc/runtime.h>
+
 #import "FBDeviceControlError.h"
 #import "FBAMDevice.h"
 
@@ -133,33 +135,33 @@ static BOOL hasLoadedXcodeFrameworks = NO;
 + (BOOL)initializePrincipalClasses:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
-  if (![NSClassFromString(@"IDEFoundationTestInitializer") initializeTestabilityWithUI:NO error:&innerError]) {
+  if (![objc_lookUpClass("IDEFoundationTestInitializer") initializeTestabilityWithUI:NO error:&innerError]) {
     return [[[FBDeviceControlError describe:@"Failed to initialize testability"] causedBy:innerError] failBool:error];
   }
-  if (![NSClassFromString(@"DVTPlatform") loadAllPlatformsReturningError:&innerError]) {
+  if (![objc_lookUpClass("DVTPlatform") loadAllPlatformsReturningError:&innerError]) {
     return [[[FBDeviceControlError describe:@"Failed to load all platforms"] causedBy:innerError] failBool:error];
   }
-  if (![NSClassFromString(@"DVTPlatform") platformForIdentifier:@"com.apple.platform.iphoneos"]) {
+  if (![objc_lookUpClass("DVTPlatform") platformForIdentifier:@"com.apple.platform.iphoneos"]) {
     return [[[FBDeviceControlError describe:@"Platform 'com.apple.platform.iphoneos' hasn't been initialized yet"] causedBy:innerError] failBool:error];
   }
-  if (![NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"]) {
+  if (![objc_lookUpClass("DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"]) {
      return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.Mac' hasn't been initialized yet"] causedBy:innerError] failBool:error];
   }
-  if (![NSClassFromString(@"DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"]) {
+  if (![objc_lookUpClass("DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"]) {
     return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.iPhone' hasn't been initialized yet"] causedBy:innerError] failBool:error];
   }
-  [[NSClassFromString(@"DVTDeviceManager") defaultDeviceManager] startLocating];
+  [[objc_lookUpClass("DVTDeviceManager") defaultDeviceManager] startLocating];
   return YES;
 }
 
 + (void)enableDVTDebugLogging
 {
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSupport"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"iPhoneSimulator"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"DVTDevice"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Operations"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"Executable"] setLogLevel:10];
-  [[NSClassFromString(@"DVTLogAspect") logAspectWithName:@"CommandInvocation"] setLogLevel:10];
+  [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"iPhoneSupport"] setLogLevel:10];
+  [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"iPhoneSimulator"] setLogLevel:10];
+  [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"DVTDevice"] setLogLevel:10];
+  [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"Operations"] setLogLevel:10];
+  [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"Executable"] setLogLevel:10];
+  [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"CommandInvocation"] setLogLevel:10];
 }
 
 @end

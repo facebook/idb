@@ -18,6 +18,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <objc/runtime.h>
+
 #import "FBCoreSimulatorTerminationStrategy.h"
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -85,7 +87,7 @@
   // Xcode 8's Simulator.app uses the SimServiceContext to fetch the Device Set, rather than instantiating it directly.
   // Xcode 7's Simulator.app just creates the SimDeviceSet directly.
   SimDeviceSet *deviceSet = nil;
-  Class serviceContextClass = NSClassFromString(@"SimServiceContext");
+  Class serviceContextClass = objc_lookUpClass("SimServiceContext");
   if ([serviceContextClass respondsToSelector:@selector(sharedServiceContextForDeveloperDir:error:)]) {
     SimServiceContext *serviceContext = [serviceContextClass sharedServiceContextForDeveloperDir:FBControlCoreGlobalConfiguration.developerDirectory error:&innerError];
     deviceSet = deviceSetPath
@@ -93,8 +95,8 @@
       : [serviceContext defaultDeviceSetWithError:&innerError];
   } else {
     deviceSet = deviceSetPath
-      ? [NSClassFromString(@"SimDeviceSet") setForSetPath:configuration.deviceSetPath]
-      : [NSClassFromString(@"SimDeviceSet") defaultSet];
+      ? [objc_lookUpClass("SimDeviceSet") setForSetPath:configuration.deviceSetPath]
+      : [objc_lookUpClass("SimDeviceSet") defaultSet];
   }
 
   if (!deviceSet) {

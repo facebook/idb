@@ -14,6 +14,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <objc/runtime.h>
+
 #import "FBSimulatorControl+PrincipalClass.h"
 #import "FBSimulatorControlFrameworkLoader.h"
 
@@ -134,7 +136,7 @@
 
 + (NSString *_Nonnull)defaultDeviceSetPath
 {
-  Class deviceSetClass = NSClassFromString(@"SimDeviceSet");
+  Class deviceSetClass = objc_lookUpClass("SimDeviceSet");
   NSAssert(deviceSetClass, @"Expected SimDeviceSet to be loaded");
   return [deviceSetClass defaultSetPath] ?: [[deviceSetClass defaultSet] setPath];
 }

@@ -22,6 +22,8 @@
 
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
+#import <objc/runtime.h>
+
 #import "XCTestBootstrapError.h"
 #import "FBXCTestManagerLoggingForwarder.h"
 
@@ -183,7 +185,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 {
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
   NSError *error;
-  DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
+  DTXRemoteInvocationReceipt *recepit = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   if(![self.processDelegate testManagerMediator:self launchProcessWithPath:path bundleID:bundleID arguments:arguments environmentVariables:environment error:&error]) {
     [recepit invokeCompletionWithReturnValue:nil error:error];
   }
@@ -198,7 +200,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (id)_XCT_getProgressForLaunch:(id)token
 {
   [self.logger logFormat:@"Test process requested launch process status with token %@", token];
-  DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
+  DTXRemoteInvocationReceipt *recepit = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   [recepit invokeCompletionWithReturnValue:@1 error:nil];
   return recepit;
 }
@@ -207,7 +209,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 {
   [self.logger logFormat:@"Test process requested process termination with token %@", token];
   NSError *error;
-  DTXRemoteInvocationReceipt *recepit = [NSClassFromString(@"DTXRemoteInvocationReceipt") new];
+  DTXRemoteInvocationReceipt *recepit = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   if (!token) {
     error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
                                 code:0x1

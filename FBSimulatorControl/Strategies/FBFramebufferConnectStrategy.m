@@ -15,6 +15,8 @@
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
 
+#import <objc/runtime.h>
+
 #import "FBFramebuffer.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
@@ -111,7 +113,7 @@
   CGSize scaledSize = [self.configuration scaleSize:size];
 
   // Create the service
-  SimDeviceFramebufferService *framebufferService = [NSClassFromString(@"SimDeviceFramebufferService")
+  SimDeviceFramebufferService *framebufferService = [objc_lookUpClass("SimDeviceFramebufferService")
     framebufferServiceWithPort:purpleServerPort
     deviceDimensions:size
     scaledDimensions:scaledSize
@@ -134,7 +136,7 @@
 - (nullable SimDeviceFramebufferService *)createMainScreenService:(FBSimulator *)simulator error:(NSError **)error
 {
   NSError *innerError = nil;
-  SimDeviceFramebufferService *service = [NSClassFromString(@"SimDeviceFramebufferService")
+  SimDeviceFramebufferService *service = [objc_lookUpClass("SimDeviceFramebufferService")
     mainScreenFramebufferServiceForDevice:simulator.device
     error:&innerError];
   if (!service) {

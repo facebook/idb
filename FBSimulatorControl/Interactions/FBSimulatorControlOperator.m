@@ -18,6 +18,8 @@
 #import <sys/socket.h>
 #import <sys/un.h>
 
+#import <objc/runtime.h>
+
 #import <XCTestBootstrap/FBProductBundle.h>
 
 #import "FBSimulatorError.h"
@@ -65,7 +67,7 @@
       fail:error];
   }
 
-  DTXSocketTransport *transport = [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocket disconnectAction:^{
+  DTXSocketTransport *transport = [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:testManagerSocket disconnectAction:^{
     [logger log:@"Disconnected from test manager daemon socket"];
   }];
   if (!transport) {

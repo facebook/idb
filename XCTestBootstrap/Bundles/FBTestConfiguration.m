@@ -11,6 +11,8 @@
 
 #import <XCTest/XCTestConfiguration.h>
 
+#import <objc/runtime.h>
+
 #import "FBFileManager.h"
 #import "NSFileManager+FBFileManager.h"
 
@@ -83,7 +85,7 @@
 {
   if (self.savePath) {
     NSAssert(self.fileManager, @"fileManager is required to save test configuration");
-    XCTestConfiguration *testConfiguration = [NSClassFromString(@"XCTestConfiguration") new];
+    XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
     testConfiguration.sessionIdentifier = self.sessionIdentifier;
     testConfiguration.testBundleURL = (self.testBundlePath ? [NSURL fileURLWithPath:self.testBundlePath] : nil);
     testConfiguration.treatMissingBaselinesAsFailures = NO;

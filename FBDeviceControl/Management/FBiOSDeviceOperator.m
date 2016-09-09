@@ -27,6 +27,8 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import <objc/runtime.h>
+
 #import "FBDevice.h"
 #import "FBDeviceControlError.h"
 #import "FBAMDevice+Private.h"
@@ -169,7 +171,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
      fail:error];
   }
   return
-  [[NSClassFromString(@"DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
+  [[objc_lookUpClass("DTXSocketTransport") alloc] initWithConnectedSocket:socket disconnectAction:^{
     [logger log:@"Disconnected from test manager daemon socket"];
     FBAMDServiceConnectionInvalidate(connection);
   }];
@@ -363,7 +365,7 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
     DTXChannel *channel = self.device.dvtDevice.serviceHubProcessControlChannel;
-    DTXMessage *message = [[NSClassFromString(@"DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
+    DTXMessage *message = [[objc_lookUpClass("DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
         *error = responseMessage.error;

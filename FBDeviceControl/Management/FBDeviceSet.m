@@ -25,6 +25,8 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import <objc/runtime.h>
+
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDevice+Private.h"
 #import "FBAMDevice.h"
@@ -49,7 +51,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
     // This means that all the cached available devices can then be found.
     [FBDeviceControlFrameworkLoader initializeXCodeFrameworks];
 
-    DVTDeviceManager *deviceManager = [NSClassFromString(@"DVTDeviceManager") defaultDeviceManager];
+    DVTDeviceManager *deviceManager = [objc_lookUpClass("DVTDeviceManager") defaultDeviceManager];
     [self.logger.debug logFormat:@"Quering device manager for %f seconds to cache devices", FBDeviceSetDeviceManagerTickleTime];
     [deviceManager searchForDevicesWithType:nil options:@{@"id" : @"I_DONT_EXIST_AT_ALL"} timeout:FBDeviceSetDeviceManagerTickleTime error:nil];
     [self.logger.debug log:@"Finished querying devices to cache them"];
@@ -119,7 +121,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
 - (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
 {
   [self primeDeviceManager];
-  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[NSClassFromString(@"DVTiOSDevice") alliOSDevices]];
+  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [FBDeviceSet keyDVTDevicesByUDID:[objc_lookUpClass("DVTiOSDevice") alliOSDevices]];
   return dvtDevices[udid];
 }
 

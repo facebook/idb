@@ -20,6 +20,8 @@
 
 #import <IDEiOSSupportCore/DVTAbstractiOSDevice.h>
 
+#import <objc/runtime.h>
+
 #import "XCTestBootstrapError.h"
 #import "FBDeviceOperator.h"
 #import "FBTestManagerContext.h"
@@ -236,7 +238,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 - (DTXConnection *)setupTestBundleConnectionWithTransport:(DTXTransport *)transport
 {
   [self.logger logFormat:@"Creating the test bundle connection."];
-  DTXConnection *connection = [[NSClassFromString(@"DTXConnection") alloc] initWithTransport:transport];
+  DTXConnection *connection = [[objc_lookUpClass("DTXConnection") alloc] initWithTransport:transport];
   [connection registerDisconnectHandler:^{
     [self bundleDisconnectedWithState:self.state];
   }];
