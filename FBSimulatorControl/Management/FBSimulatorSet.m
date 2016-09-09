@@ -229,7 +229,7 @@
 - (NSArray<FBSimulatorConfiguration *> *)configurationsForAbsentDefaultSimulators
 {
   NSSet<FBSimulatorConfiguration *> *existingConfigurations = [NSSet setWithArray:[self.allSimulators valueForKey:@"configuration"]];
-  NSMutableSet<FBSimulatorConfiguration *> *absentConfigurations = [NSMutableSet setWithArray:FBSimulatorConfiguration.allAvailableDefaultConfigurations];
+  NSMutableSet<FBSimulatorConfiguration *> *absentConfigurations = [NSMutableSet setWithArray:[FBSimulatorConfiguration allAvailableDefaultConfigurationsWithLogger:self.logger]];
   [absentConfigurations minusSet:existingConfigurations];
   return [absentConfigurations allObjects];
 }

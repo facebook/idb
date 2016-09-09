@@ -81,8 +81,21 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns an Array of all the Simulator Configurations that are available for the current environment.
  This means each available runtime is combined with each available device.
+
+ @param logger a logger to log missing Devices and OS Versions to.
+ @return an array of all possible Simulator Configurations.
  */
-+ (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurations;
++ (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurationsWithLogger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Returns an Array of all the Simulator Configurations that are available for the current environment.
+ This means each available runtime is combined with each available device.
+
+ @param absentOSVersionsOut The OS Version Configurations that are missing.
+ @param absentDeviceTypesOut The Simulator Configurations that are missing.
+ @return an array of all possible Simulator Configurations.
+ */
++ (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:(NSArray<NSString *> *_Nullable * _Nullable)absentOSVersionsOut absentDeviceTypesOut:(NSArray<NSString *> *_Nullable * _Nullable)absentDeviceTypesOut;
 
 #pragma mark Obtaining CoreSimulator Classes
 

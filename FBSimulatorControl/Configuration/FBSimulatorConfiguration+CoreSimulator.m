@@ -70,9 +70,25 @@
   return YES;
 }
 
-+ (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurations
++ (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurationsWithLogger:(nullable id<FBControlCoreLogger>)logger
+{
+  NSArray<NSString *> *absentOSVersions = nil;
+  NSArray<NSString *> *absentDeviceTypes = nil;
+  NSArray<FBSimulatorConfiguration *> *configurations = [self allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:&absentOSVersions absentDeviceTypesOut:&absentDeviceTypes];
+  for (NSString *absentOSVersion in absentOSVersions) {
+    [logger.error logFormat:@"OS Version configuration for '%@' is missing", absentOSVersion];
+  }
+  for (NSString *absentDeviceType in absentDeviceTypes) {
+    [logger.error logFormat:@"Device Type configuration for '%@' is missing", absentDeviceType];
+  }
+  return configurations;
+}
+
++ (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:(NSArray<NSString *> **)absentOSVersionsOut absentDeviceTypesOut:(NSArray<NSString *> **)absentDeviceTypesOut
 {
   NSMutableArray<FBSimulatorConfiguration *> *configurations = [NSMutableArray array];
+  NSMutableArray<NSString *> *absentOSVersions = [NSMutableArray array];
+  NSMutableArray<NSString *> *absentDeviceTypes = [NSMutableArray array];
   NSArray<SimDeviceType *> *deviceTypes = self.supportedDeviceTypes;
 
   for (SimRuntime *runtime in self.supportedRuntimes) {
@@ -80,18 +96,33 @@
       continue;
     }
     id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
-    NSAssert(os, @"Runtime %@ does not have a valid FBControlCoreConfiguration_OS entry", runtime.name);
+    if (!os) {
+      [absentOSVersions addObject:runtime.name];
+      continue;
+    }
 
     for (SimDeviceType *deviceType in deviceTypes) {
       if (![runtime supportsDeviceType:deviceType]) {
         continue;
       }
       id<FBControlCoreConfiguration_Device> device = FBControlCoreConfigurationVariants.nameToDevice[deviceType.name];
-      NSAssert(device, @"No FBControlCoreConfiguration_Device for device with name '%@'", deviceType.name);
+      if (!device) {
+        [absentDeviceTypes addObject:deviceType.name];
+        continue;
+      }
+
       FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDevice:device] withOS:os];
       [configurations addObject:configuration];
     }
   }
+
+  if (absentOSVersionsOut) {
+    *absentOSVersionsOut = absentOSVersions;
+  }
+  if (absentDeviceTypesOut) {
+    *absentDeviceTypesOut = absentDeviceTypes;
+  }
+
   return [configurations copy];
 }
 
