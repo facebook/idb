@@ -126,6 +126,18 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)iPhoneSE;
 - (instancetype)iPhoneSE;
 
+/**
+ An iPhone 7.
+ */
++ (instancetype)iPhone7;
+- (instancetype)iPhone7;
+
+/**
+ An iPhone 7 Plus.
+ */
++ (instancetype)iPhone7Plus;
+- (instancetype)iPhone7Plus;
+
 #pragma mark iPad Devices
 
 /**
@@ -171,6 +183,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)watch42mm;
 - (instancetype)watch42mm;
+
+/**
+ The 38mm Apple Watch Series 2.
+ */
++ (instancetype)watchSeries2_38mm;
+- (instancetype)watchSeries2_38mm;
+
+/**
+ The 42mm Apple Watch Series 2.
+ */
++ (instancetype)watchSeries2_42mm;
+- (instancetype)watchSeries2_42mm;
 
 #pragma mark Apple TV Devices
 

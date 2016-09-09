@@ -89,6 +89,12 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBControlCoreConfiguration_Device_iPhoneSE : FBControlCoreConfiguration_Device_iPhone_Base
 @end
 
+@interface FBControlCoreConfiguration_Device_iPhone7 : FBControlCoreConfiguration_Device_iPhone_Base
+@end
+
+@interface FBControlCoreConfiguration_Device_iPhone7Plus : FBControlCoreConfiguration_Device_iPhone_Base
+@end
+
 @interface FBControlCoreConfiguration_Device_iPad_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Device>
 @end
 
@@ -126,6 +132,12 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 @interface FBControlCoreConfiguration_Device_AppleWatch42mm : FBControlCoreConfiguration_Device_watchOS_Base
+@end
+
+@interface FBControlCoreConfiguration_Device_AppleWatchSeries2_38mm : FBControlCoreConfiguration_Device_watchOS_Base
+@end
+
+@interface FBControlCoreConfiguration_Device_AppleWatchSeries2_42mm : FBControlCoreConfiguration_Device_watchOS_Base
 @end
 
 #pragma mark OS Versions

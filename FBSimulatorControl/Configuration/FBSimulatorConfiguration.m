@@ -254,6 +254,26 @@
   return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhoneSE.class];
 }
 
++ (instancetype)iPhone7
+{
+  return [self.defaultConfiguration iPhone7];
+}
+
+- (instancetype)iPhone7
+{
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone7.class];
+}
+
++ (instancetype)iPhone7Plus
+{
+  return [self.defaultConfiguration iPhone7Plus];
+}
+
+- (instancetype)iPhone7Plus
+{
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_iPhone7Plus.class];
+}
+
 #pragma mark iPad Devices
 
 + (instancetype)iPad2
@@ -328,6 +348,26 @@
 - (instancetype)watch42mm
 {
   return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_AppleWatch42mm.class];
+}
+
++ (instancetype)watchSeries2_38mm
+{
+  return [self.defaultConfiguration watch42mm];
+}
+
+- (instancetype)watchSeries2_38mm
+{
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_AppleWatchSeries2_38mm.class];
+}
+
++ (instancetype)watchSeries2_42mm
+{
+  return [self.defaultConfiguration watch42mm];
+}
+
+- (instancetype)watchSeries2_42mm
+{
+  return [self updateNamedDeviceClass:FBControlCoreConfiguration_Device_AppleWatchSeries2_42mm.class];
 }
 
 #pragma mark Apple TV Devices
