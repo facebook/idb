@@ -305,7 +305,7 @@
 
 - (NSSet<NSString *> *)productTypes
 {
-  return [NSSet setWithArray:@[@"iPhone8,2"]];
+  return [NSSet setWithArray:@[@"iPhone8,4"]];
 }
 
 - (NSString *)deviceArchitecture
@@ -325,6 +325,11 @@
 - (NSString *)deviceName
 {
   return @"iPhone 7";
+}
+
+- (NSSet<NSString *> *)productTypes
+{
+  return [NSSet setWithArray:@[@"iPhone9,1", @"iPhone9,3"]];
 }
 
 - (NSString *)deviceArchitecture
@@ -349,6 +354,11 @@
 - (NSString *)deviceArchitecture
 {
   return @"arm64";
+}
+
+- (NSSet<NSString *> *)productTypes
+{
+  return [NSSet setWithArray:@[@"iPhone9,2", @"iPhone9,4"]];
 }
 
 - (NSString *)simulatorArchitecture
