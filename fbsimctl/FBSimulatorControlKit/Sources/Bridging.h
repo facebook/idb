@@ -56,4 +56,78 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ A representation of a HTTP Request.
+ */
+@interface HttpRequest : NSObject
+
+/**
+ The Body of the Request.
+ */
+@property (nonatomic, strong, readonly) NSData *body;
+
+@end
+
+/**
+ A representation of a HTTP Response.
+ */
+@interface HttpResponse : NSObject
+
+/**
+ Creates a Response with the given status code.
+ */
++ (instancetype)responseWithStatusCode:(NSInteger)statusCode body:(NSData *)body;
+
+/**
+ Creates a 500 Response.
+ */
++ (instancetype)internalServerError:(NSData *)body;
+
+/**
+ Creates a 200 Response.
+ */
++ (instancetype)ok:(NSData *)body;
+
+@property (nonatomic, assign, readonly) NSInteger statusCode;
+@property (nonatomic, strong, readonly) NSData *body;
+
+@end
+
+@interface HttpRoute : NSObject
+
++ (instancetype)routeWithMethod:(NSString *)method path:(NSString *)path handler:(HttpResponse *(^)(HttpRequest *))handler;
+
+@property (nonatomic, copy, readonly) NSString *method;
+@property (nonatomic, copy, readonly) NSString *path;
+@property (nonatomic, copy, readonly) HttpResponse *(^handler)(HttpRequest *request);
+
+@end
+
+/**
+ A Bridge between the Objective-C HTTP WebServer Implementation that can be used directly in FBSimulatorControlKit.
+ */
+@interface HttpServer : NSObject
+
+/**
+ Creates a Webserver.
+
+ @param port the port to bind on.
+ */
++ (instancetype)serverWithPort:(in_port_t)port routes:(NSArray<HttpRoute *> *)routes;
+
+/**
+ Starts the Webserver.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)startWithError:(NSError **)error;
+
+/**
+ Stops the Webserver.
+ */
+- (void)stop;
+
+@end
+
 NS_ASSUME_NONNULL_END

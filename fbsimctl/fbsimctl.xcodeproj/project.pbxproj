@@ -27,6 +27,7 @@
 		AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */; };
 		AA3ADDB81C2B0B2D004E4FA9 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */; };
 		AA3DB6401CB3A971000BE7A1 /* SimulatorReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */; };
+		AA3F8BDE1D70AD40002197D3 /* GCDWebServers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */; };
 		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
 		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
 		AA5AA62C1CCE003900EC0298 /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5AA62B1CCE003900EC0298 /* CommandPerformer.swift */; };
@@ -38,6 +39,7 @@
 		AA75CD1B1D244198003C45B0 /* FBDeviceControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA75CD171D244100003C45B0 /* FBDeviceControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AA78DCD61C4E9A09006FAB41 /* EventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */; };
 		AA83D5EC1C58E368003B253E /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA83D5EA1C58E368003B253E /* Events.swift */; };
+		AA8F94241D74AFE500DB0F14 /* GCDWebServers.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		AAA6C3AB1D08899600720BF6 /* iOSReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */; };
 		AAA6C3AF1D0953F400720BF6 /* iOSRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6C3AE1D0953F400720BF6 /* iOSRunner.swift */; };
 		AAA6EC531C933DAE0083A62C /* Fixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA6EC521C933DAE0083A62C /* Fixtures.swift */; };
@@ -47,8 +49,6 @@
 		AAAD4A2F1CB3AF6C00B2068C /* Subjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */; };
 		AAB97CAB1CCE8EAD0056A3C2 /* CommandRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
-		AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; };
-		AAD999571C68D80B0014D61F /* Swifter.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AAD999541C68D1460014D61F /* Swifter.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
 		AAE9E9551D23B4140033EF28 /* DeviceRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE9E9541D23B4140033EF28 /* DeviceRunners.swift */; };
@@ -84,8 +84,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				AA8F94241D74AFE500DB0F14 /* GCDWebServers.framework in CopyFiles */,
 				AA75CD1B1D244198003C45B0 /* FBDeviceControl.framework in CopyFiles */,
-				AAD999571C68D80B0014D61F /* Swifter.framework in CopyFiles */,
 				AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -121,6 +121,7 @@
 		AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AbstractTypes.swift; sourceTree = "<group>"; };
 		AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		AA3DB63F1CB3A971000BE7A1 /* SimulatorReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorReporter.swift; sourceTree = "<group>"; };
+		AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GCDWebServers.framework; path = Carthage/Build/Mac/GCDWebServers.framework; sourceTree = "<group>"; };
 		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		AA5AA62B1CCE003900EC0298 /* CommandPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
@@ -144,7 +145,6 @@
 		AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Subjects.swift; sourceTree = "<group>"; };
 		AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandRunners.swift; sourceTree = "<group>"; };
 		AACF9F521C46E5C100B17E82 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
-		AAD999541C68D1460014D61F /* Swifter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Swifter.framework; path = Carthage/Build/Mac/Swifter.framework; sourceTree = "<group>"; };
 		AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBSimulatorControlKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlKit.h; sourceTree = "<group>"; };
 		AAE35AC61C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -172,8 +172,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA3F8BDE1D70AD40002197D3 /* GCDWebServers.framework in Frameworks */,
 				AA719E4C1D672DBD00947611 /* Foundation.framework in Frameworks */,
-				AAD999561C68D1460014D61F /* Swifter.framework in Frameworks */,
 				AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */,
 				AA75CD1A1D244152003C45B0 /* FBDeviceControl.framework in Frameworks */,
 			);
@@ -270,10 +270,10 @@
 		AA93B7CB1BE8361F00CF6A56 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */,
 				AA719E4B1D672DBD00947611 /* Foundation.framework */,
 				AA75CD171D244100003C45B0 /* FBDeviceControl.framework */,
 				AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */,
-				AAD999541C68D1460014D61F /* Swifter.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";

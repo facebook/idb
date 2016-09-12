@@ -2,6 +2,7 @@
 
 from util import (FBSimctl, Simulator, WebServer, find_fbsimctl_path, DEFAULT_TIMEOUT, LONG_TIMEOUT)
 import argparse
+import contextlib
 import os
 import tempfile
 import unittest
@@ -167,18 +168,37 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             use_custom_set=True,
         )
         self.port = port
-        self.webserver = WebServer(port)
 
-    def testRemotelyRecords(self):
+    @contextlib.contextmanager
+    def launchWebserver(self):
         arguments = [
-            'listen', '--http', str(self.port),
+            '--simulators', 'listen', '--http', str(self.port),
         ]
-        # Launch the process, terminate and confirm teardown is successful
         with self.fbsimctl.launch(arguments) as process:
             process.wait_for_event('listen', 'started')
-            response = self.webserver.request('diagnose', {'type': 'all'})
+            yield WebServer(self.port)
+
+    def testDiagnostics(self):
+        with self.launchWebserver() as webserver:
+            response = webserver.request('diagnose', {'type': 'all'})
             self.assertEqual(response['status'], 'success')
 
+    def testListSimulators(self):
+        iphone6 = self.assertCreatesSimulator(['iPhone 6'])
+        iphone6s = self.assertCreatesSimulator(['iPhone 6s'])
+        with self.launchWebserver() as webserver:
+            response = webserver.request('list', {})
+            self.assertEqual(response['status'], 'success')
+            actual = [
+                Simulator(event['subject']).get_udid()
+                for event
+                in response['events']
+            ]
+            expected = [
+                iphone6.get_udid(),
+                iphone6s.get_udid(),
+            ]
+            self.assertEqual(expected.sort(), actual.sort())
 
 class SingleSimulatorTestCase(FBSimctlTestCase):
     def __init__(

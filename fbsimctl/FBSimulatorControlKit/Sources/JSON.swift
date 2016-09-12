@@ -76,6 +76,10 @@ public indirect enum JSON {
     return try JSON.encode(object)
   }
 
+  var data: NSData { get {
+    return try! NSJSONSerialization.dataWithJSONObject(self.decode(), options: NSJSONWritingOptions())
+  }}
+
   func decode() -> AnyObject {
     switch self {
     case .JDictionary(let dictionary):

@@ -15,6 +15,8 @@
 
 #import <sys/socket.h>
 
+#import <GCDWebServers/GCDWebServers.h>
+
 @implementation Constants
 
 + (int32_t)sol_socket
@@ -152,6 +154,137 @@
 - (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
 {
   // Ignore prefixing as 'subject' will be included instead.
+  return self;
+}
+
+@end
+
+@implementation HttpRequest
+
+- (instancetype)initWithBody:(NSData *)body
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _body = body;
+
+  return self;
+}
+
+@end
+
+@implementation HttpResponse
+
++ (instancetype)responseWithStatusCode:(NSInteger)statusCode body:(NSData *)body
+{
+  return [[self alloc] initWithStatusCode:statusCode body:body];
+}
+
++ (instancetype)internalServerError:(NSData *)body
+{
+  return [[self alloc] initWithStatusCode:500 body:body];
+}
+
++ (instancetype)ok:(NSData *)body
+{
+  return [[self alloc] initWithStatusCode:200 body:body];
+}
+
+- (instancetype)initWithStatusCode:(NSInteger)statusCode body:(NSData *)body
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _statusCode = statusCode;
+  _body = body;
+
+  return self;
+}
+
+@end
+
+@interface HttpServer()
+
+@property (nonatomic, assign, readonly) in_port_t port;
+@property (nonatomic, strong, readonly) GCDWebServer *server;
+
+@end
+
+@implementation HttpServer
+
++ (instancetype)serverWithPort:(in_port_t)port routes:(NSArray<HttpRoute *> *)routes;
+{
+  GCDWebServer *server = [HttpServer webServerWithRoutes:routes];
+  return [[self alloc] initWithPort:port server:server];
+}
+
+- (instancetype)initWithPort:(in_port_t)port server:(GCDWebServer *)server
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _port = port;
+  _server = server;
+
+  return self;
+}
+
+- (BOOL)startWithError:(NSError **)error
+{
+  NSDictionary *options = @{
+    GCDWebServerOption_Port: @(self.port),
+    GCDWebServerOption_ServerName : [[NSBundle bundleForClass:self.class] bundleIdentifier],
+  };
+  return [self.server startWithOptions:options error:error];
+}
+
+- (void)stop
+{
+  [self.server stop];
+}
+
++ (GCDWebServer *)webServerWithRoutes:(NSArray<HttpRoute *> *)routes
+{
+  [GCDWebServer setLogLevel:5];
+  GCDWebServer *webServer = [[GCDWebServer alloc] init];
+  for (HttpRoute *route in routes) {
+    [webServer addHandlerForMethod:route.method path:route.path requestClass:GCDWebServerDataRequest.class processBlock:^ GCDWebServerResponse *(GCDWebServerDataRequest *gcdRequest) {
+      HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data];
+      HttpResponse *response = route.handler(request);
+      GCDWebServerDataResponse *gcdResponse = [GCDWebServerDataResponse responseWithData:response.body contentType:@"application/json"];
+      gcdResponse.statusCode = response.statusCode;
+      return gcdResponse;
+    }];
+  }
+  return webServer;
+}
+
+@end
+
+@implementation HttpRoute
+
++ (instancetype)routeWithMethod:(NSString *)method path:(NSString *)path handler:(HttpResponse *(^)(HttpRequest *))handler
+{
+  return [[self alloc] initWithMethod:method path:path handler:handler];
+}
+
+- (instancetype)initWithMethod:(NSString *)method path:(NSString *)path handler:(HttpResponse *(^)(HttpRequest *))handler
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _method = method;
+  _path = path;
+  _handler = handler;
+
   return self;
 }
 
