@@ -78,7 +78,7 @@ extern FBiOSTargetType FBiOSTargetTypeFromTargetTypeStrings(NSArray<NSString *> 
     }
   }
 
-  return FBiOSTargetTypeNone;
+  return targetType;
 }
 
 extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTarget> right)
