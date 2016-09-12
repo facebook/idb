@@ -65,6 +65,7 @@
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration+Private.h>
 #import <FBSimulatorControl/FBSimulatorLaunchConfiguration.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtl.h>
+#import <FBSimulatorControl/FBSimulatorScale.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
 #import <FBSimulatorControl/FBSimulatorNotificationEventSink.h>
 #import <FBSimulatorControl/FBSimulatorPool+Private.h>

@@ -790,12 +790,12 @@ struct FBSimulatorLaunchConfigurationParser {
       .succeeded("--locale", Parser<Any>.ofLocale)
   }}
 
-  static var scaleParser: Parser<FBSimulatorLaunchConfiguration_Scale> { get {
+  static var scaleParser: Parser<FBSimulatorScale> { get {
     return Parser.alternative([
-      Parser.ofString("--scale=25", FBSimulatorLaunchConfiguration_Scale_25()),
-      Parser.ofString("--scale=50", FBSimulatorLaunchConfiguration_Scale_50()),
-      Parser.ofString("--scale=75", FBSimulatorLaunchConfiguration_Scale_75()),
-      Parser.ofString("--scale=100", FBSimulatorLaunchConfiguration_Scale_100())
+      Parser.ofString("--scale=25", FBSimulatorScale_25()),
+      Parser.ofString("--scale=50", FBSimulatorScale_50()),
+      Parser.ofString("--scale=75", FBSimulatorScale_75()),
+      Parser.ofString("--scale=100", FBSimulatorScale_100())
     ])
   }}
 

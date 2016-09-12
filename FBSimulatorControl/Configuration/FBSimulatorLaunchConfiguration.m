@@ -10,45 +10,8 @@
 #import "FBSimulatorLaunchConfiguration.h"
 #import "FBSimulatorLaunchConfiguration+Private.h"
 
+#import "FBSimulatorScale.h"
 #import "FBFramebufferVideoConfiguration.h"
-
-#pragma mark Scales
-
-@implementation FBSimulatorLaunchConfiguration_Scale_25
-
-- (NSString *)scaleString
-{
-  return @"0.25";
-}
-
-@end
-
-@implementation FBSimulatorLaunchConfiguration_Scale_50
-
-- (NSString *)scaleString
-{
-  return @"0.50";
-}
-
-@end
-
-@implementation FBSimulatorLaunchConfiguration_Scale_75
-
-- (NSString *)scaleString
-{
-  return @"0.75";
-}
-
-@end
-
-@implementation FBSimulatorLaunchConfiguration_Scale_100
-
-- (NSString *)scaleString
-{
-  return @"1.00";
-}
-
-@end
 
 @implementation FBSimulatorLaunchConfiguration
 
@@ -63,14 +26,14 @@
   dispatch_once(&onceToken, ^{
     configuration = [[self alloc]
       initWithOptions:FBSimulatorLaunchOptionsConnectBridge
-      scale:FBSimulatorLaunchConfiguration_Scale_100.new
+      scale:FBSimulatorScale_100.new
       localizationOverride:nil
       video:FBFramebufferVideoConfiguration.defaultConfiguration];
   });
   return configuration;
 }
 
-- (instancetype)initWithOptions:(FBSimulatorLaunchOptions)options scale:(id<FBSimulatorLaunchConfiguration_Scale>)scale localizationOverride:(FBLocalizationOverride *)localizationOverride video:(FBFramebufferVideoConfiguration *)video
+- (instancetype)initWithOptions:(FBSimulatorLaunchOptions)options scale:(id<FBSimulatorScale>)scale localizationOverride:(FBLocalizationOverride *)localizationOverride video:(FBFramebufferVideoConfiguration *)video
 {
   self = [super init];
   if (!self) {
@@ -201,7 +164,7 @@
 
 - (instancetype)scale25Percent
 {
-  return [self withScale:FBSimulatorLaunchConfiguration_Scale_25.new];
+  return [self withScale:FBSimulatorScale_25.new];
 }
 
 + (instancetype)scale50Percent
@@ -211,7 +174,7 @@
 
 - (instancetype)scale50Percent
 {
-  return [self withScale:FBSimulatorLaunchConfiguration_Scale_50.new];
+  return [self withScale:FBSimulatorScale_50.new];
 }
 
 + (instancetype)scale75Percent
@@ -221,7 +184,7 @@
 
 - (instancetype)scale75Percent
 {
-  return [self withScale:FBSimulatorLaunchConfiguration_Scale_75.new];
+  return [self withScale:FBSimulatorScale_75.new];
 }
 
 + (instancetype)scale100Percent
@@ -231,10 +194,10 @@
 
 - (instancetype)scale100Percent
 {
-  return [self withScale:FBSimulatorLaunchConfiguration_Scale_100.new];
+  return [self withScale:FBSimulatorScale_100.new];
 }
 
-- (instancetype)withScale:(id<FBSimulatorLaunchConfiguration_Scale>)scale
+- (instancetype)withScale:(id<FBSimulatorScale>)scale
 {
   if (!scale) {
     return nil;
