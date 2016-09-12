@@ -13,10 +13,9 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBTestBundle.h"
-#import "FBTestConfiguration.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 #import "FBXCTestBootstrapFixtures.h"
-#import "NSFileManager+FBFileManager.h"
 
 @interface FBTestBundleTests : XCTestCase
 @end

@@ -11,9 +11,8 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBCodesignProvider.h"
-#import "FBFileManager.h"
-#import "FBProductBundle.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 #import "FBXCTestBootstrapFixtures.h"
 
 @interface FBProductBundleTests : XCTestCase

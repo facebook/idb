@@ -11,11 +11,7 @@
 
 #import <OCMock/OCMock.h>
 
-#import "FBApplicationDataPackage.h"
-#import "FBCodesignProvider.h"
-#import "FBFileManager.h"
-#import "FBTestBundle.h"
-#import "FBTestConfiguration.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @class FBTestBundle;
 

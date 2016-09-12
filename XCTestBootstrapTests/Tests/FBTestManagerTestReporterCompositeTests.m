@@ -10,10 +10,7 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
-#import "FBTestManagerAPIMediator.h"
-#import "FBTestManagerResultSummary.h"
-#import "FBTestManagerTestReporter.h"
-#import "FBTestManagerTestReporterComposite.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBTestManagerTestReporterCompositeTests : XCTestCase
 

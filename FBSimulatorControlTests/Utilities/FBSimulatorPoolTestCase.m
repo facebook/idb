@@ -13,7 +13,6 @@
 
 #import "CoreSimulatorDoubles.h"
 #import "FBSimulatorControlFixtures.h"
-#import "FBSimulatorPool.h"
 
 @interface FBSimulatorPoolTestCase ()
 
