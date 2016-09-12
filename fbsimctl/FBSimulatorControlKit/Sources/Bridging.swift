@@ -57,6 +57,12 @@ extension String : CustomStringConvertible {
   }}
 }
 
+extension FBiOSTargetType : Accumulator {
+  public func append(other: FBiOSTargetType) -> FBiOSTargetType {
+    return self == FBiOSTargetType.All ? self.intersect(other) : self.union(other)
+  }
+}
+
 extension FBiOSTargetQuery {
   public static func simulatorStates(states: [FBSimulatorState]) -> FBiOSTargetQuery {
     return self.allTargets().simulatorStates(states)
@@ -85,7 +91,7 @@ extension FBiOSTargetQuery : Accumulator {
     let deviceArray = Array(deviceSet) as! [FBControlCoreConfiguration_Device]
     let osVersionsSet = other.osVersions as NSSet
     let osVersionsArray = Array(osVersionsSet) as! [FBControlCoreConfiguration_OS]
-    let targetType = self.targetType.union(other.targetType)
+    let targetType = self.targetType.append(other.targetType)
 
     return self
       .udids(Array(other.udids))

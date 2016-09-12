@@ -164,6 +164,9 @@
 
 - (NSArray<FBSimulator *> *)query:(FBiOSTargetQuery *)query
 {
+  if ([query excludesAll:FBiOSTargetTypeSimulator]) {
+    return @[];
+  }
   return (NSArray<FBSimulator *> *) [query filter:self.allSimulators];
 }
 

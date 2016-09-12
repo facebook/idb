@@ -92,6 +92,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<id<FBiOSTarget>> *)filter:(NSArray<id<FBiOSTarget>> *)targets;
 
 /**
+ Determines whether the Query excludes all of a specific target type.
+
+ @param targetType the Target Type to determine whether if it is excluded.
+ @return YES if all targets of the given type are excluded from the query, NO otherwise.
+ */
+- (BOOL)excludesAll:(FBiOSTargetType)targetType;
+
+/**
  The UDIDs to Match against.
  An Empty Set means that no UDID filtering will occur.
  */

@@ -21,7 +21,7 @@
 
 - (instancetype)init
 {
-  return [self initWithUDIDs:NSSet.new states:NSIndexSet.new targetType:FBiOSTargetTypeNone osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
+  return [self initWithUDIDs:NSSet.new states:NSIndexSet.new targetType:FBiOSTargetTypeAll osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
 }
 
 - (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSIndexSet *)states targetType:(FBiOSTargetType)targetType osVersions:(NSSet<id<FBControlCoreConfiguration_OS>> *)osVersions devices:(NSSet<id<FBControlCoreConfiguration_Device>> *)devices range:(NSRange)range
@@ -133,14 +133,12 @@
 - (NSArray<id<FBiOSTarget>> *)filter:(NSArray<id<FBiOSTarget>> *)targets
 {
   NSMutableArray<NSPredicate *> *predicates = [NSMutableArray array];
+  [predicates addObject:[FBiOSTargetPredicates targetType:self.targetType]];
   if (self.udids.count > 0) {
     [predicates addObject:[FBiOSTargetPredicates udids:self.udids.allObjects]];
   }
   if (self.states.count > 0) {
     [predicates addObject:[FBiOSTargetPredicates states:self.states]];
-  }
-  if (self.targetType != FBiOSTargetTypeNone) {
-    [predicates addObject:[FBiOSTargetPredicates targetType:self.targetType]];
   }
   if (self.osVersions.count > 0) {
     [predicates addObject:[FBiOSTargetPredicates osVersions:self.osVersions.allObjects]];
@@ -149,7 +147,6 @@
     [predicates addObject:[FBiOSTargetPredicates devices:self.devices.allObjects]];
   }
 
-
   NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:predicates];
   targets = [targets filteredArrayUsingPredicate:predicate];
   if (self.range.location == NSNotFound && self.range.length == 0) {
@@ -157,6 +154,11 @@
   }
   NSRange range = NSIntersectionRange(self.range, NSMakeRange(0, targets.count));
   return [targets subarrayWithRange:range];
+}
+
+- (BOOL)excludesAll:(FBiOSTargetType)targetType
+{
+  return (self.targetType & targetType) == FBiOSTargetTypeNone;
 }
 
 #pragma mark NSCopying

@@ -37,6 +37,7 @@ typedef NS_OPTIONS(NSUInteger, FBiOSTargetType) {
   FBiOSTargetTypeNone = 0,
   FBiOSTargetTypeSimulator = 1 << 0,
   FBiOSTargetTypeDevice = 1 << 1,
+  FBiOSTargetTypeAll = FBiOSTargetTypeSimulator | FBiOSTargetTypeDevice,
 };
 
 NS_ASSUME_NONNULL_BEGIN
