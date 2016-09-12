@@ -9,6 +9,8 @@
 
 #import "FBSimulatorProcessFetcher.h"
 
+#import <AppKit/AppKit.h>
+
 #import <CoreSimulator/SimDevice.h>
 
 #import <FBControlCore/FBControlCore.h>
@@ -39,10 +41,8 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 
 - (NSArray<FBProcessInfo *> *)simulatorApplicationProcesses
 {
-  // All Simulator Versions from Xcode 5-7, have Simulator.app in their path:
-  // iOS Simulator.app/Contents/MacOS/iOS Simulator
-  // Simulator.app/Contents/MacOS/Simulator
-  return [self.processFetcher processesWithLaunchPathSubstring:@"Simulator.app"];
+  NSArray<NSRunningApplication *> *runningApplications = [NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.apple.iphonesimulator"];
+  return [self.processFetcher processInfoForRunningApplications:runningApplications];
 }
 
 - (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut

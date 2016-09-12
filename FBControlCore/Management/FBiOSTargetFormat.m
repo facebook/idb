@@ -21,6 +21,7 @@ NSString *const FBiOSTargetFormatDeviceName = @"device-name";
 NSString *const FBiOSTargetFormatOSVersion = @"os";
 NSString *const FBiOSTargetFormatState = @"state";
 NSString *const FBiOSTargetFormatProcessIdentifier = @"pid";
+NSString *const FBiOSTargetFormatContainerApplicationProcessIdentifier = @"container_pid";
 
 @implementation FBiOSTargetFormat
 
@@ -60,6 +61,7 @@ NSString *const FBiOSTargetFormatProcessIdentifier = @"pid";
       FBiOSTargetFormatDeviceName,
       FBiOSTargetFormatOSVersion,
       FBiOSTargetFormatProcessIdentifier,
+      FBiOSTargetFormatContainerApplicationProcessIdentifier,
     ]];
   });
   return format;
@@ -195,6 +197,8 @@ NSString *const FBiOSTargetFormatProcessIdentifier = @"pid";
     return FBSimulatorStateStringFromState(target.state);
   } else if ([field isEqualToString:FBiOSTargetFormatProcessIdentifier]) {
     return @(target.launchdProcess.processIdentifier);
+  } else if ([field isEqualToString:FBiOSTargetFormatContainerApplicationProcessIdentifier]) {
+    return @(target.containerApplication.processIdentifier);
   }
   return nil;
 }

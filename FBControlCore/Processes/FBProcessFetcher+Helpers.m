@@ -47,6 +47,19 @@
   return [processes copy];
 }
 
+- (NSArray<FBProcessInfo *> *)processInfoForRunningApplications:(NSArray<NSRunningApplication *> *)runningApplications
+{
+  NSMutableArray<FBProcessInfo *> *processes = [NSMutableArray array];
+  for (NSRunningApplication *runningApplication in runningApplications) {
+    FBProcessInfo *process = [self processInfoFor:runningApplication.processIdentifier];
+    if (!process) {
+      continue;
+    }
+    [processes addObject:process];
+  }
+  return [processes copy];
+}
+
 - (BOOL)processExists:(FBProcessInfo *)process error:(NSError **)error
 {
   FBProcessInfo *actual = [self processInfoFor:process.processIdentifier];

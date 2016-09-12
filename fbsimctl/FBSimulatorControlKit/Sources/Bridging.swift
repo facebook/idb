@@ -112,6 +112,7 @@ extension FBiOSTargetFormat {
       FBiOSTargetFormatOSVersion,
       FBiOSTargetFormatState,
       FBiOSTargetFormatProcessIdentifier,
+      FBiOSTargetFormatContainerApplicationProcessIdentifier,
     ]
   }}
 }

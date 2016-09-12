@@ -84,6 +84,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return FBiOSTargetTypeDevice;
 }
 
+- (FBProcessInfo *)containerApplication
+{
+  return nil;
+}
+
 - (FBProcessInfo *)launchdProcess
 {
   return nil;
