@@ -357,9 +357,6 @@
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
-  // Start Listening to Framebuffer events if one exists.
-  [connection.framebuffer startListeningInBackground];
-
   // Broadcast the availability of the new bridge.
   [self.simulator.eventSink connectionDidConnect:connection];
 

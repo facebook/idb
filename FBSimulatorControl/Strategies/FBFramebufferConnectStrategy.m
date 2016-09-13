@@ -65,18 +65,24 @@
 
 - (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
 {
-  if (simulator.state != FBSimulatorStateShutdown) {
-    return [[FBSimulatorError
-      describeFormat:@"Cannot connect Framebuffer unless shutdown, actual state %@", [FBSimulator stateStringFromSimulatorState:simulator.state]]
-      fail:error];
+  NSError *innerError = nil;
+  if (![self meetsPreconditionsForConnectingToSimulator:simulator error:&innerError]) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
-  NSError *innerError = nil;
   SimDeviceFramebufferService *mainScreenService = [self createMainScreenService:simulator error:&innerError];
   if (!mainScreenService) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  return [FBFramebuffer withFramebufferService:mainScreenService configuration:self.configuration simulator:simulator];
+  return [[FBFramebuffer
+    withFramebufferService:mainScreenService configuration:self.configuration simulator:simulator]
+    startListeningInBackground];
+}
+
+- (BOOL)meetsPreconditionsForConnectingToSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
 }
 
 - (nullable SimDeviceFramebufferService *)createMainScreenService:(FBSimulator *)simulator error:(NSError **)error
@@ -88,6 +94,16 @@
 @end
 
 @implementation FBFramebufferConnectStrategy_Xcode7
+
+- (BOOL)meetsPreconditionsForConnectingToSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  if (simulator.state != FBSimulatorStateShutdown) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot connect Framebuffer unless shutdown, actual state %@", [FBSimulator stateStringFromSimulatorState:simulator.state]]
+      failBool:error];
+  }
+  return YES;
+}
 
 - (nullable SimDeviceFramebufferService *)createMainScreenService:(FBSimulator *)simulator error:(NSError **)error
 {
@@ -132,6 +148,16 @@
 @end
 
 @implementation FBFramebufferConnectStrategy_Xcode8
+
+- (BOOL)meetsPreconditionsForConnectingToSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  if (simulator.state != FBSimulatorStateShutdown && simulator.state != FBSimulatorStateBooted) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot connect Framebuffer unless shutdown or booted, actual state %@", [FBSimulator stateStringFromSimulatorState:simulator.state]]
+      failBool:error];
+  }
+  return YES;
+}
 
 - (nullable SimDeviceFramebufferService *)createMainScreenService:(FBSimulator *)simulator error:(NSError **)error
 {

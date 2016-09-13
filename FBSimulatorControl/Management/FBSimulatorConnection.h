@@ -55,17 +55,26 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBSimulatorBridge *)connectToBridge:(NSError **)error;
 
-#pragma mark Properties
-
 /**
- The FBSimulatorFramebuffer owned by the reciever.
+ Connects to the Framebuffer.
+
+ @param error an error out for any error that occurs.
+ @return a Framebuffer if successful, nil otherwise.
  */
-@property (nonatomic, strong, readonly, nullable) FBFramebuffer *framebuffer;
+- (nullable FBFramebuffer *)connectToFramebuffer:(NSError **)error;
+
+#pragma mark Properties
 
 /**
  The FBSimulatorHID owned by the reciever.
  */
 @property (nonatomic, strong, readonly, nullable) FBSimulatorHID *hid;
+
+/**
+ The FBSimulatorFramebuffer owned by the reciever.
+ -[FBSimulatorConnection connectToFramebuffer:], can be used to populate this value.
+ */
+@property (nonatomic, strong, readonly, nullable) FBFramebuffer *framebuffer;
 
 @end
 

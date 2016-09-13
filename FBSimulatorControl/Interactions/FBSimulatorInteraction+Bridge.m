@@ -13,6 +13,7 @@
 #import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
 #import "FBSimulator+Connection.h"
+#import "FBSimulator+Framebuffer.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
@@ -72,7 +73,12 @@
 - (instancetype)interactWithVideo:(BOOL (^)(NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup))block
 {
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBFramebufferVideo *video = [simulator connectWithError:nil].framebuffer.video;
+    NSError *innerError = nil;
+    FBFramebuffer *framebuffer = [simulator framebufferWithError:&innerError];
+    if (!framebuffer) {
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    }
+    FBFramebufferVideo *video = framebuffer.video;
     if (!video) {
       return [[[FBSimulatorError
         describe:@"Simulator Does not have a FBFramebufferVideo instance"]
