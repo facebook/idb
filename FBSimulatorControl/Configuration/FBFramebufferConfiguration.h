@@ -13,6 +13,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 @class FBDiagnostic;
+@protocol FBSimulatorScale;
 
 /**
  Options for FBFramebufferVideo.
@@ -23,21 +24,22 @@ typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
   FBFramebufferVideoOptionsFinalFrame = 1 << 2, /** If Set, will repeat the last frame just before a video is stopped **/
 };
 
-/**
- A Configuration Value for FBFramebufferVideo.
-
- */
-@interface FBFramebufferVideoConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBDebugDescribeable>
+NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Diagnostic Value to determine the video path.
+ A Configuration Value for a Framebuffer.
  */
-@property (nonatomic, copy, readonly) FBDiagnostic *diagnostic;
+@interface FBFramebufferConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
- YES if the Video Component should automatically record when the first frame comes in.
+ The Options for the Video Component.
  */
-@property (nonatomic, assign, readonly) FBFramebufferVideoOptions options;
+@property (nonatomic, assign, readonly) FBFramebufferVideoOptions videoOptions;
+
+/**
+ YES to show a debug window, NO otherwise.
+ */
+@property (nonatomic, assign, readonly) BOOL showDebugWindow;
 
 /**
  The Timescale used in Video Encoding.
@@ -50,35 +52,46 @@ typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
 @property (nonatomic, assign, readonly) CMTimeRoundingMethod roundingMethod;
 
 /**
+ The Scale of the Framebuffer.
+ */
+@property (nonatomic, nullable, copy, readonly) id<FBSimulatorScale> scale;
+
+/**
+ The Diagnostic Value to determine the video path.
+ */
+@property (nonatomic, nullable, copy, readonly) FBDiagnostic *diagnostic;
+
+/**
  The FileType of the Video.
  */
-@property (nonatomic, copy, readonly) NSString *fileType;
+@property (nonatomic, nullable, copy, readonly) NSString *fileType;
 
 #pragma mark Defaults & Initializers
 
 /**
- The Default Value of FBFramebufferVideoConfiguration.
+ The Default Value of FBFramebufferConfiguration.
  Uses Reasonable Defaults.
  */
 + (instancetype)defaultConfiguration;
 
 /**
- The Default Value of FBFramebufferVideoConfiguration.
+ The Default Value of FBFramebufferConfiguration.
  Use this in preference to 'defaultConfiguration' if video encoding is problematic.
  */
 + (instancetype)prudentConfiguration;
 
 /**
- Creates and Returns a new FBFramebufferVideoConfiguration Value with the provided parameters.
+ Creates and Returns a new FBFramebufferConfiguration Value with the provided parameters.
 
  @param diagnostic The Diagnostic Value to determine the video path
- @param options The Flags for FBFramebufferVideo.
+ @param scale the Scale of the Framebuffer.
+ @param videoOptions The Flags for FBFramebufferVideo.
  @param timescale The Timescale used in Video Encoding.
  @param roundingMethod The Rounding Method used for Video Frames.
  @param fileType The FileType of the Video.
- @return a FBFramebufferVideoConfiguration instance.
+ @return a FBFramebufferConfiguration instance.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic options:(FBFramebufferVideoOptions)options timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(NSString *)fileType;
++ (instancetype)withDiagnostic:(nullable FBDiagnostic *)diagnostic scale:(nullable id<FBSimulatorScale>)scale videoOptions:(FBFramebufferVideoOptions)videoOptions timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(nullable NSString *)fileType;
 
 #pragma mark Diagnostics
 
@@ -93,8 +106,8 @@ typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
 /**
  Returns a new Configuration with the Options Applied.
  */
-- (instancetype)withOptions:(FBFramebufferVideoOptions)options;
-+ (instancetype)withOptions:(FBFramebufferVideoOptions)options;
+- (instancetype)withVideoOptions:(FBFramebufferVideoOptions)videoOptions;
++ (instancetype)withVideoOptions:(FBFramebufferVideoOptions)videoOptions;
 
 #pragma mark Timescale
 
@@ -120,4 +133,22 @@ typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
 - (instancetype)withFileType:(NSString *)fileType;
 + (instancetype)withFileType:(NSString *)fileType;
 
+#pragma mark Scale
+
+/**
+ Returns a new Configuration with the Scale Applied.
+ */
+- (instancetype)withScale:(nullable id<FBSimulatorScale>)scale;
++ (instancetype)withScale:(nullable id<FBSimulatorScale>)scale;
+
+/**
+ Scales the provided size with the receiver's scale/
+
+ @param size the size to scale.
+ @return a scaled size.
+ */
+- (CGSize)scaleSize:(CGSize)size;
+
 @end
+
+NS_ASSUME_NONNULL_END

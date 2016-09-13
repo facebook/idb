@@ -16,7 +16,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBFramebufferFrame.h"
-#import "FBFramebufferVideoConfiguration.h"
+#import "FBFramebufferConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 
@@ -31,7 +31,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 @interface FBFramebufferVideo ()
 
-@property (nonatomic, strong, readonly) FBFramebufferVideoConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
@@ -53,13 +53,13 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 #pragma mark Initializers
 
-+ (instancetype)withConfiguration:(FBFramebufferVideoConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withConfiguration:(FBFramebufferConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.media", DISPATCH_QUEUE_SERIAL);
   return [[self alloc] initWithConfiguration:configuration onQueue:queue logger:[logger onQueue:queue] eventSink:eventSink];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferVideoConfiguration *)configuration onQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -74,7 +74,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   _frameQueue = [FBCapacityQueue withCapacity:20];
   _timebase = NULL;
 
-  BOOL autorecord = (configuration.options & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord;
+  BOOL autorecord = (configuration.videoOptions & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord;
   _state = autorecord ? FBFramebufferVideoStateWaitingForFirstFrame : FBFramebufferVideoStateNotStarted;
 
   return self;
@@ -486,12 +486,12 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 - (BOOL)immediateStart
 {
-  return (self.configuration.options & FBFramebufferVideoOptionsImmediateFrameStart) == FBFramebufferVideoOptionsImmediateFrameStart;
+  return (self.configuration.videoOptions & FBFramebufferVideoOptionsImmediateFrameStart) == FBFramebufferVideoOptionsImmediateFrameStart;
 }
 
 - (BOOL)pushFinalFrame
 {
-  return (self.configuration.options & FBFramebufferVideoOptionsFinalFrame) == FBFramebufferVideoOptionsFinalFrame;
+  return (self.configuration.videoOptions & FBFramebufferVideoOptionsFinalFrame) == FBFramebufferVideoOptionsFinalFrame;
 }
 
 #pragma mark String Formatting

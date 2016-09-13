@@ -23,6 +23,8 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBFramebuffer.h"
+#import "FBFramebufferConfiguration.h"
+#import "FBFramebufferConnectStrategy.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -30,12 +32,11 @@
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorHID.h"
 #import "FBSimulatorLaunchConfiguration+Helpers.h"
 #import "FBSimulatorLaunchConfiguration.h"
-#import "FBSimulatorHID.h"
+#import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorProcessFetcher.h"
-#import "FBFramebufferConnectStrategy.h"
 
 @interface FBSimulatorBootStrategy ()
 
@@ -61,8 +62,14 @@
   NSError *innerError = nil;
   FBFramebuffer *framebuffer = nil;
   if (self.shouldCreateFramebuffer) {
+    FBFramebufferConfiguration *configuration = self.configuration.framebuffer;
+    if (!configuration) {
+      configuration = FBFramebufferConfiguration.defaultConfiguration;
+      [self.simulator.logger logFormat:@"No Framebuffer Launch Configuration provided, but required. Using default of %@", configuration];
+    }
+
     framebuffer = [[FBFramebufferConnectStrategy
-      strategyWithConfiguration:self.configuration]
+      strategyWithConfiguration:configuration]
       connect:self.simulator error:&innerError];
     if (!framebuffer) {
       return [FBSimulatorError failWithError:innerError errorOut:error];

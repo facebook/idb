@@ -19,21 +19,28 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
+#import "FBSimulatorScale.h"
 
 @implementation FBSimulatorLaunchConfiguration (Helpers)
 
- - (NSArray *)xcodeSimulatorApplicationArgumentsForSimulator:(FBSimulator *)simulator error:(NSError **)error
+- (NSArray<NSString *> *)xcodeSimulatorApplicationArgumentsForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   // These arguments are based on the NSUserDefaults that are serialized for the Simulator.app.
   // These can be seen with `defaults read com.apple.iphonesimulator` and has default location of ~/Library/Preferences/com.apple.iphonesimulator.plist
   // NSUserDefaults for any application can be overriden in the NSArgumentDomain:
   // https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/UserDefaults/AboutPreferenceDomains/AboutPreferenceDomains.html#//apple_ref/doc/uid/10000059i-CH2-96930
-  NSMutableArray *arguments = [NSMutableArray arrayWithArray:@[
+  NSMutableArray<NSString *> *arguments = [NSMutableArray arrayWithArray:@[
     @"--args",
     @"-CurrentDeviceUDID", simulator.udid,
     @"-ConnectHardwareKeyboard", @"0",
-    [self lastScaleCommandLineSwitchForSimulator:simulator], self.scaleString
   ]];
+  NSString *scale = self.scale.scaleString;
+  if (scale) {
+    [arguments addObjectsFromArray:@[
+      [self lastScaleCommandLineSwitchForSimulator:simulator], scale,
+    ]];
+  }
+
   NSString *setPath = simulator.set.deviceSet.setPath;
   if (setPath) {
     if (!FBControlCoreGlobalConfiguration.supportsCustomDeviceSets) {
@@ -51,7 +58,7 @@
 
 - (BOOL)shouldConnectFramebuffer
 {
-  return (self.options & FBSimulatorLaunchOptionsConnectFramebuffer) == FBSimulatorLaunchOptionsConnectFramebuffer;
+  return self.framebuffer != nil;
 }
 
 - (BOOL)shouldLaunchViaWorkspace

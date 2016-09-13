@@ -79,19 +79,45 @@ class FBSimulatorLaunchConfigurationTests : XCTestCase {
     )
   }
 
-  func testParsesOptions() {
+  func testParsesConnectBridge() {
+    self.assertParses(
+      FBSimulatorLaunchConfigurationParser.parser,
+      ["--connect-bridge"],
+      FBSimulatorLaunchConfiguration
+        .defaultConfiguration()
+        .withOptions(FBSimulatorLaunchOptions.ConnectBridge)
+    )
+  }
+
+  func testUseNSWorkspace() {
+    self.assertParses(
+      FBSimulatorLaunchConfigurationParser.parser,
+      ["--use-nsworkspace"],
+      FBSimulatorLaunchConfiguration
+        .defaultConfiguration()
+        .withOptions(FBSimulatorLaunchOptions.UseNSWorkspace)
+    )
+  }
+
+  func testParsesDirectLaunchToMakeFramebuffer() {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
       ["--direct-launch"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer))
+      FBSimulatorLaunchConfiguration.defaultConfiguration()
+        .withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
+        .withFramebuffer(FBFramebufferConfiguration.defaultConfiguration())
     )
   }
 
   func testParsesAllTheAbove() {
     self.assertParses(
       FBSimulatorLaunchConfigurationParser.parser,
-      ["--locale", "en_GB", "--scale=75", "--direct-launch","--record-video"],
-      FBSimulatorLaunchConfiguration.defaultConfiguration().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_GB"))).scale75Percent().withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer))
+      ["--locale", "en_GB", "--scale=75", "--direct-launch", "--connect-bridge"],
+      FBSimulatorLaunchConfiguration.defaultConfiguration()
+        .withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_GB")))
+        .scale75Percent()
+        .withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectBridge))
+        .withFramebuffer(FBFramebufferConfiguration.defaultConfiguration())
     )
   }
 }
@@ -245,7 +271,9 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["create", "iPhone 6"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["shutdown"], ["diagnose"],
     ]
-    let launchConfiguration = FBSimulatorLaunchConfiguration.withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer))
+    let launchConfiguration = FBSimulatorLaunchConfiguration.defaultConfiguration()
+      .withOptions(FBSimulatorLaunchOptions.EnableDirectLaunch)
+      .withFramebuffer(FBFramebufferConfiguration.defaultConfiguration())
     let diagnoseAction = Action.Diagnose(FBSimulatorDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [Action.List, Action.Create(CreationSpecification.iPhone6Configuration), Action.Boot(launchConfiguration), Action.Listen(Server.Http(8090)), Action.Shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)

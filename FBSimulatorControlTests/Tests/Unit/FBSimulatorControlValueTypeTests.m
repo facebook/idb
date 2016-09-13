@@ -20,17 +20,6 @@
 
 @implementation FBSimulatorControlValueTypeTests
 
-- (void)testVideoConfigurations
-{
-  NSArray<FBFramebufferVideoConfiguration *> *values = @[
-    [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsAutorecord | FBFramebufferVideoOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
-    [[[FBFramebufferVideoConfiguration withOptions:FBFramebufferVideoOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
-  [self assertJSONSerialization:values];
-}
-
 - (void)testAppLaunchConfigurations
 {
   NSArray<FBApplicationLaunchConfiguration *> *values = @[
@@ -94,11 +83,41 @@
   NSArray<FBSimulatorLaunchConfiguration *> *values = @[
     [[[FBSimulatorLaunchConfiguration
       withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
-      withOptions:FBSimulatorLaunchOptionsShowDebugWindow]
+      withOptions:FBSimulatorLaunchOptionsEnableDirectLaunch]
       scale75Percent],
     [[FBSimulatorLaunchConfiguration
       withOptions:FBSimulatorLaunchOptionsUseNSWorkspace]
       scale25Percent]
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
+}
+
+- (void)testLaunchConfigurationScaleAppliedToFramebufferConfiguration
+{
+  FBSimulatorLaunchConfiguration *launchConfiguration = [[[FBSimulatorLaunchConfiguration
+    withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
+    withOptions:FBSimulatorLaunchOptionsEnableDirectLaunch]
+    withFramebuffer:FBFramebufferConfiguration.defaultConfiguration];
+  XCTAssertNotNil(launchConfiguration.framebuffer);
+  XCTAssertNil(launchConfiguration.scale);
+  XCTAssertNil(launchConfiguration.scale);
+
+  launchConfiguration = [launchConfiguration scale75Percent];
+  XCTAssertEqualObjects(launchConfiguration.scale, FBSimulatorScale_75.new);
+  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale_75.new);
+  XCTAssertNotEqualObjects(launchConfiguration.scale, FBSimulatorScale_50.new);
+  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale_50.new);
+}
+
+- (void)testFramebufferConfigurations
+{
+  NSArray<FBFramebufferConfiguration *> *values = @[
+    FBFramebufferConfiguration.prudentConfiguration,
+    FBFramebufferConfiguration.defaultConfiguration,
+    [[[FBFramebufferConfiguration withVideoOptions:FBFramebufferVideoOptionsAutorecord | FBFramebufferVideoOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
+    [[[FBFramebufferConfiguration withVideoOptions:FBFramebufferVideoOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];

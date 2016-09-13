@@ -11,17 +11,16 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBFramebufferVideoConfiguration;
+@class FBFramebufferConfiguration;
+@protocol FBSimulatorScale;
 
 /**
  An Option Set for Direct Launching.
  */
 typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
   FBSimulatorLaunchOptionsConnectBridge = 1 << 0, /** Connects the Simulator Bridge on boot, rather than lazily on-demand */
-  FBSimulatorLaunchOptionsConnectFramebuffer = 1 << 1, /** Connects the Simulator Framebuffer on launch. Currently. Connecting the Framebuffer on boot is currently the only way of connecting to the Framebuffer */
-  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 2, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
-  FBSimulatorLaunchOptionsShowDebugWindow = 1 << 3, /** Relays the Simulator Framebuffer to a window */
-  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 4, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
+  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 1, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
+  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 2, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
 };
 
 NS_ASSUME_NONNULL_BEGIN
@@ -42,20 +41,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, strong, readonly) FBLocalizationOverride *localizationOverride;
 
 /**
- A Decimal representing the Scaling Factor at which to launch the Simulator.
+ The Scale of the Framebuffer.
  */
-@property (nonatomic, copy, readonly) NSDecimalNumber *scaleValue;
+@property (nonatomic, nullable, copy, readonly) id<FBSimulatorScale> scale;
 
 /**
- A String representing the Scaling Factor at which to launch the Simulator.
+ Configuration for the Framebuffer.
+ If nil, means that the Framebuffer will not be connected on launch
  */
-@property (nonatomic, copy, readonly) NSString *scaleString;
-
-/**
- Configuration for Framebuffer Video encoding.
- Only applies if FBSimulatorLaunchOptionsEnableDirectLaunch & FBSimulatorLaunchOptionsConnectFramebuffer is flagged.
- */
-@property (nonatomic, copy, readonly) FBFramebufferVideoConfiguration *video;
+@property (nonatomic, nullable, copy, readonly) FBFramebufferConfiguration *framebuffer;
 
 #pragma mark Default Instance
 
@@ -96,12 +90,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)scale100Percent;
 
 /**
- Scales the provided size with the receiver's scale/
-
- @param size the size to scale.
- @return a scaled size.
+ Returns a new Configuration with the Scale Applied.
  */
-- (CGSize)scaleSize:(CGSize)size;
++ (instancetype)withScale:(nullable id<FBSimulatorScale>)scale;
+- (instancetype)withScale:(nullable id<FBSimulatorScale>)scale;
 
 #pragma mark Locale
 
@@ -111,13 +103,13 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride;
 - (instancetype)withLocalizationOverride:(nullable FBLocalizationOverride *)localizationOverride;
 
-#pragma mark Video
+#pragma mark Framebuffer
 
 /**
- Set Video Configuration
+ Set Framebuffer Configuration
  */
-+ (instancetype)withVideo:(FBFramebufferVideoConfiguration *)video;
-- (instancetype)withVideo:(FBFramebufferVideoConfiguration *)video;
++ (instancetype)withFramebuffer:(nullable FBFramebufferConfiguration *)framebuffer;
+- (instancetype)withFramebuffer:(nullable FBFramebufferConfiguration *)framebuffer;
 
 @end
 

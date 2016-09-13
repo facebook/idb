@@ -113,15 +113,14 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   if (self.useDirectLaunching) {
     options = options | FBSimulatorLaunchOptionsEnableDirectLaunch;
   }
-  if ([NSProcessInfo.processInfo.environment[RecordVideoEnvKey] boolValue]) {
-    options = options | FBSimulatorLaunchOptionsConnectFramebuffer;
-  }
   return options;
 }
 
-+ (FBFramebufferVideoConfiguration *)defaultVideoConfiguration
++ (FBFramebufferConfiguration *)defaultFramebufferConfiguration
 {
-  return [FBFramebufferVideoConfiguration.defaultConfiguration withOptions:FBFramebufferVideoConfiguration.defaultConfiguration.options | FBFramebufferVideoOptionsAutorecord];
+  return [NSProcessInfo.processInfo.environment[RecordVideoEnvKey] boolValue]
+    ? [FBFramebufferConfiguration withVideoOptions:FBFramebufferConfiguration.defaultConfiguration.videoOptions | FBFramebufferVideoOptionsAutorecord]
+    : nil;
 }
 
 + (NSString *)defaultDeviceSetPath
@@ -137,7 +136,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
 {
   return [[FBSimulatorLaunchConfiguration
     withOptions:self.launchOptions]
-    withVideo:self.defaultVideoConfiguration];
+    withFramebuffer:self.defaultFramebufferConfiguration];
 }
 
 #pragma mark XCTestCase

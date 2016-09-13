@@ -22,7 +22,7 @@
  @param error an error out for any error that occurs.
  @return an NSArray<NSString> of boot arguments, or nil if an error occurred.
  */
- - (NSArray *)xcodeSimulatorApplicationArgumentsForSimulator:(FBSimulator *)simulator error:(NSError **)error;
+ - (NSArray<NSString *> *)xcodeSimulatorApplicationArgumentsForSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
 /**
  Whether the reciever represents a configuration that should call SimDevice booting directly.

@@ -123,6 +123,23 @@ extension FBiOSTargetFormat : Accumulator {
   }
 }
 
+extension FBSimulatorLaunchConfiguration : Accumulator {
+  public func append(other: FBSimulatorLaunchConfiguration) -> Self {
+    var configuration = self
+    if let locale = other.localizationOverride ?? self.localizationOverride {
+      configuration = configuration.withLocalizationOverride(locale)
+    }
+    if let framebuffer = other.framebuffer ?? self.framebuffer {
+      configuration = configuration.withFramebuffer(framebuffer)
+    }
+    if let scale = other.scale ?? self.scale {
+      configuration = configuration.withScale(scale)
+    }
+    configuration = configuration.withOptions(self.options.union(other.options))
+    return configuration;
+  }
+}
+
 extension IndividualCreationConfiguration {
   public var simulatorConfiguration : FBSimulatorConfiguration { get {
     var configuration = FBSimulatorConfiguration.defaultConfiguration()

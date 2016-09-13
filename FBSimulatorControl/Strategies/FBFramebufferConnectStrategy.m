@@ -26,11 +26,11 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorLaunchConfiguration.h"
+#import "FBFramebufferConfiguration.h"
 
 @interface FBFramebufferConnectStrategy ()
 
-@property (nonatomic, strong, readonly) FBSimulatorLaunchConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
 
 - (nullable SimDeviceFramebufferService *)createMainScreenService:(FBSimulator *)simulator error:(NSError **)error;
 
@@ -44,14 +44,14 @@
 
 @implementation FBFramebufferConnectStrategy
 
-+ (instancetype)strategyWithConfiguration:(FBSimulatorLaunchConfiguration *)configuration
++ (instancetype)strategyWithConfiguration:(FBFramebufferConfiguration *)configuration
 {
   return FBControlCoreGlobalConfiguration.isXcode8OrGreater
     ? [[FBFramebufferConnectStrategy_Xcode8 alloc] initWithConfiguration:configuration]
     : [[FBFramebufferConnectStrategy_Xcode7 alloc] initWithConfiguration:configuration];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorLaunchConfiguration *)configuration
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration
 {
   self = [super init];
   if (!self) {

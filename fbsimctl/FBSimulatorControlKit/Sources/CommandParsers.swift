@@ -761,25 +761,15 @@ struct FBSimulatorDiagnosticQueryParser {
  */
 struct FBSimulatorLaunchConfigurationParser {
   static var parser: Parser<FBSimulatorLaunchConfiguration> { get {
-    return Parser
-      .ofThreeSequenced(
-        self.localeParser.optional(),
-        self.scaleParser.optional(),
-        self.optionsParser.optional()
-      )
-      .fmap { (locale, scale, options) in
-        if locale == nil && scale == nil && options == nil {
-          throw ParseError.Custom("Simulator Launch Configuration must contain at least a locale or scale")
-        }
-        var configuration = FBSimulatorLaunchConfiguration.defaultConfiguration().copy() as! FBSimulatorLaunchConfiguration
-        if let locale = locale {
-          configuration = configuration.withLocalizationOverride(FBLocalizationOverride.withLocale(locale))
-        }
-        if let scale = scale {
-          configuration = configuration.withScale(scale)
-        }
-        if let options = options {
-          configuration = configuration.withOptions(options)
+    return Parser<FBSimulatorLaunchConfiguration>
+      .accumulate(1, [
+        self.optionsParser.fmap { FBSimulatorLaunchConfiguration.withOptions($0) },
+        self.scaleParser.fmap { FBSimulatorLaunchConfiguration.withScale($0) },
+        self.localeParser.fmap { FBSimulatorLaunchConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) }
+      ])
+      .fmap { configuration in
+        if configuration.options.contains(FBSimulatorLaunchOptions.EnableDirectLaunch) && configuration.framebuffer == nil {
+          return configuration.withFramebuffer(FBFramebufferConfiguration.defaultConfiguration())
         }
         return configuration
       }
@@ -800,13 +790,11 @@ struct FBSimulatorLaunchConfigurationParser {
   }}
 
   static var optionsParser: Parser<FBSimulatorLaunchOptions> { get {
-    return Parser<FBSimulatorLaunchOptions>
-      .union(1, [
-        Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
-        Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch.union(.ConnectFramebuffer)),
-        Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
-        Parser.ofString("--debug-window", FBSimulatorLaunchOptions.ShowDebugWindow)
-      ])
+    return Parser<FBSimulatorLaunchOptions>.alternative([
+      Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
+      Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
+      Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
+    ])
   }}
 }
 

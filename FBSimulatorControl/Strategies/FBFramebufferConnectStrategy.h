@@ -10,8 +10,8 @@
 #import <Foundation/Foundation.h>
 
 @class FBFramebuffer;
+@class FBFramebufferConfiguration;
 @class FBSimulator;
-@class FBSimulatorLaunchConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration to use
  @return a new Framebuffer Connect Strategy
  */
-+ (instancetype)strategyWithConfiguration:(FBSimulatorLaunchConfiguration *)configuration;
++ (instancetype)strategyWithConfiguration:(FBFramebufferConfiguration *)configuration;
 
 /**
  Connects the Simulator to the Framebuffer
