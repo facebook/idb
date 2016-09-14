@@ -9,7 +9,11 @@
 
 import Foundation
 
-struct SimpleSubject : JSONDescribeable, CustomStringConvertible {
+public protocol EventReporterSubject : CustomStringConvertible {
+  var jsonDescription: JSON { get }
+}
+
+struct SimpleSubject : EventReporterSubject {
   let eventName: EventName
   let eventType: EventType
   let subject: EventReporterSubject
@@ -43,7 +47,7 @@ struct SimpleSubject : JSONDescribeable, CustomStringConvertible {
   }}
 }
 
-struct ControlCoreSubject : JSONDescribeable, CustomStringConvertible {
+struct ControlCoreSubject : EventReporterSubject {
   let value: ControlCoreValue
 
   init(_ value: ControlCoreValue) {
@@ -62,7 +66,7 @@ struct ControlCoreSubject : JSONDescribeable, CustomStringConvertible {
   }}
 }
 
-struct iOSTargetSubject: JSONDescribeable, CustomStringConvertible {
+struct iOSTargetSubject: EventReporterSubject {
   let target: FBiOSTarget
   let format: FBiOSTargetFormat
 
@@ -76,7 +80,7 @@ struct iOSTargetSubject: JSONDescribeable, CustomStringConvertible {
   }}
 }
 
-struct iOSTargetWithSubject : JSONDescribeable, CustomStringConvertible {
+struct iOSTargetWithSubject : EventReporterSubject {
   let targetSubject: iOSTargetSubject
   let eventName: EventName
   let eventType: EventType
@@ -111,7 +115,7 @@ struct iOSTargetWithSubject : JSONDescribeable, CustomStringConvertible {
   }}
 }
 
-struct LogSubject : JSONDescribeable, CustomStringConvertible {
+struct LogSubject : EventReporterSubject {
   let logString: String
   let level: Int32
 
@@ -139,7 +143,7 @@ struct LogSubject : JSONDescribeable, CustomStringConvertible {
   }}
 }
 
-struct ArraySubject<A where A : JSONDescribeable, A : CustomStringConvertible> : JSONDescribeable, CustomStringConvertible {
+struct ArraySubject<A where A : EventReporterSubject> : EventReporterSubject {
   let array: [A]
 
   init (_ array: [A]) {
@@ -152,5 +156,21 @@ struct ArraySubject<A where A : JSONDescribeable, A : CustomStringConvertible> :
 
   var description: String { get {
     return "[\(array.map({ $0.description }).joinWithSeparator(", "))]"
+  }}
+}
+
+extension String : EventReporterSubject {
+  public var jsonDescription: JSON { get {
+    return JSON.JString(self)
+  }}
+
+  public var description: String { get {
+    return self
+  }}
+}
+
+extension Bool : EventReporterSubject {
+  public var jsonDescription: JSON { get {
+    return JSON.JNumber(NSNumber(bool: self))
   }}
 }

@@ -119,26 +119,6 @@ public indirect enum JSON {
 }
 
 /**
- Protocol for opting-in objects for being describeable in terms of the JSON Type.
- */
-public protocol JSONDescribeable {
-  var jsonDescription: JSON { get }
-}
-/**
- Automatic Coercions
- */
-extension String : JSONDescribeable {
-  public var jsonDescription: JSON { get {
-    return JSON.JString(self)
-  }}
-}
-extension Bool : JSONDescribeable {
-  public var jsonDescription: JSON { get {
-    return JSON.JNumber(NSNumber(bool: self))
-  }}
-}
-
-/**
  Simple, Chainable Parsers for the JSON Type
 */
 extension JSON {

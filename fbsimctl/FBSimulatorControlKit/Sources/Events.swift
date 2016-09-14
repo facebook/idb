@@ -10,8 +10,6 @@
 import Foundation
 import FBSimulatorControl
 
-public typealias EventReporterSubject = protocol<JSONDescribeable, CustomStringConvertible>
-
 public enum EventName : String {
   case Approve = "approve"
   case Boot = "boot"

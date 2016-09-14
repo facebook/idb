@@ -51,12 +51,6 @@ public typealias ControlCoreValue = protocol<FBJSONSerializable, CustomStringCon
   }
 }
 
-extension String : CustomStringConvertible {
-  public var description: String { get {
-    return self
-  }}
-}
-
 extension FBiOSTargetType : Accumulator {
   public func append(other: FBiOSTargetType) -> FBiOSTargetType {
     return self == FBiOSTargetType.All ? self.intersect(other) : self.union(other)

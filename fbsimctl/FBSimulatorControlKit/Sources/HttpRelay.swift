@@ -16,7 +16,7 @@ extension HttpRequest {
   }
 }
 
-private class HttpEventReporter : EventReporter, JSONDescribeable {
+private class HttpEventReporter : EventReporter {
   var events: [EventReporterSubject] = []
 
   private func report(subject: EventReporterSubject) {

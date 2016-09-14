@@ -9,7 +9,7 @@
 
 import Foundation
 
-struct SignalInfo : JSONDescribeable, CustomStringConvertible {
+struct SignalInfo : EventReporterSubject {
   let signo: Int32
   let name: String
 

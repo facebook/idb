@@ -310,7 +310,7 @@ public func == (left: Server, right: Server) -> Bool {
   }
 }
 
-extension Server : JSONDescribeable, CustomStringConvertible {
+extension Server : EventReporterSubject {
   public var jsonDescription: JSON { get {
     switch self {
     case .StdIO:
