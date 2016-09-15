@@ -9,10 +9,14 @@
 
 #import <XCTest/XCTest.h>
 
+#import "FBSimulatorControlTestCase.h"
+
 @class FBSimulator;
 @class FBSimulatorControl;
 @class FBSimulatorPool;
 @protocol FBInteraction;
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  FBSimulatorControl Assertion Helpers.
@@ -67,6 +71,87 @@
 @end
 
 /**
+ Assertion helpers for FBSimulatorControlTestCase.
+ */
+@interface FBSimulatorControlTestCase (FBSimulatorControlAssertions)
+
+/**
+ Asserts that a Simulator with the default configuration can be obtained
+
+ @return a Simulator if succesful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertObtainsSimulator;
+
+/**
+ Asserts that a Simulator with the provided configuration can be obtained
+
+ @param configuration the configiuration of the Simulator to obtain.
+ @return a Simulator if succesful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
+
+/**
+ Asserts that a booted Simulator with the default configuration can be obtained.
+
+ @return a Simulator if succesful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertObtainsBootedSimulator;
+
+/**
+ Asserts that a booted Simulator with the provided configurations can be obtained.
+
+ @param configuration the Simulator Configuration to obtain.
+ @param launchConfiguration the Launch configuration to boot with.
+ @return a Simulator if succesful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorLaunchConfiguration *)launchConfiguration;
+
+/**
+ An Assertion for:
+ - Installing the Application (if relevant).
+ - Launching the Application with the given configuration.
+
+ @param simulator the booted Simulator.
+ @param application the Application to install.
+ @param applicationLaunchConfiguration the Application to then launch.
+ @return a Simulator if successful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+
+/**
+ An Assertion for:
+ - Obtaining a Simulator with a given configuration.
+ - Launching it with the launch configuration.
+ - Installing the Application (if relevant).
+ - Launching the Application with the given configuration.
+
+ @param simulatorConfiguration the Configuration of the Simulator to launch.
+ @param simulatorLaunchConfiguration the Launch Configuration for the Simulator.
+ @param application the Application to install.
+ @param applicationLaunchConfiguration the Application to then launch.
+ @return a Simulator if successful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+
+/**
+ An Assertion for:
+ - Obtaining a Simulator with a given configuration.
+ - Launching it with the launch configuration.
+ - Installing the Application (if relevant).
+ - Launching the Aplication with the given configuration.
+ - Relaunching the same Application.
+
+ @param simulatorConfiguration the Configuration of the Simulator to launch.
+ @param simulatorLaunchConfiguration the Launch Configuration for the Simulator.
+ @param application the Application to install.
+ @param applicationLaunchConfiguration the Application to then launch.
+ @return a Simulator if successful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+
+@end
+
+/**
  Assertion Helpers for FBSimulatorControl Notifications.
  */
 @interface FBSimulatorControlNotificationAssertions : NSObject
@@ -106,11 +191,13 @@
 /**
  Assertion failure if the Notifications that fire on booting haven't been recieved;
  */
-- (void)bootingNotificationsFired;
+- (void)bootingNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration;
 
 /**
  Assertion failure if the Notifications that fire on shutdown haven't been recieved;
  */
-- (void)shutdownNotificationsFired;
+- (void)shutdownNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -23,13 +23,13 @@
 
 - (void)testPhotoUpload
 {
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertInteractionSuccessful:[simulator.interact uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path]]];
 }
 
 - (void)testVideoUploadSuccess
 {
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   [self assertInteractionSuccessful:[simulator.interact uploadVideos:@[FBSimulatorControlFixtures.video0Path]]];
 }
 

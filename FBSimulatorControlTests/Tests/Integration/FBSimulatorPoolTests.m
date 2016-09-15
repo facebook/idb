@@ -14,6 +14,7 @@
 #import "CoreSimulatorDoubles.h"
 #import "FBSimulatorControlTestCase.h"
 #import "FBSimulatorPoolTestCase.h"
+#import "FBSimulatorControlAssertions.h"
 
 @interface FBSimulatorPoolTests : FBSimulatorPoolTestCase
 
@@ -131,12 +132,12 @@
   FBSimulatorAllocationOptions options = self.allocationOptions;
   self.allocationOptions = options | FBSimulatorAllocationOptionsEraseOnFree;
 
-  FBSimulator *simulator = [self obtainSimulator];
+  FBSimulator *simulator = [self assertObtainsSimulator];
   NSString *simulatorUUID = simulator.udid;
   [self addTemporaryFileToSimulator:simulator];
   [self assertFreesSimulator:simulator];
 
-  simulator = [self obtainSimulator];
+  simulator = [self assertObtainsSimulator];
   XCTAssertEqualObjects(simulatorUUID, simulator.udid);
   [self assertTemporaryFileForSimulator:simulator exists:NO];
   [self assertFreesSimulator:simulator];
@@ -147,11 +148,11 @@
   FBSimulatorAllocationOptions options = self.allocationOptions;
   self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
 
-  FBSimulator *simulator = [self obtainSimulator];
+  FBSimulator *simulator = [self assertObtainsSimulator];
   NSString *simulatorUUID = simulator.udid;
   [self assertFreesSimulator:simulator];
 
-  simulator = [self obtainSimulator];
+  simulator = [self assertObtainsSimulator];
   XCTAssertNotEqualObjects(simulatorUUID, simulator.udid);
   [self assertFreesSimulator:simulator];
 }
@@ -161,7 +162,7 @@
   FBSimulatorAllocationOptions options = self.allocationOptions;
   self.allocationOptions = options | FBSimulatorAllocationOptionsDeleteOnFree;
 
-  FBSimulator *simulator = [self obtainSimulator];
+  FBSimulator *simulator = [self assertObtainsSimulator];
   NSString *simulatorUUID = simulator.udid;
   [self assertFreesSimulator:simulator];
 
@@ -175,7 +176,7 @@
   NSMutableSet *simulatorUUIDs = [NSMutableSet set];
 
   for (NSInteger index = 0; index < 4; index++) {
-    FBSimulator *simulator = [self obtainSimulator];
+    FBSimulator *simulator = [self assertObtainsSimulator];
     [simulators addObject:simulator];
     [simulatorUUIDs addObject:simulator.udid];
   }

@@ -18,6 +18,8 @@
 @class FBSimulatorControlNotificationAssertions;
 @class FBSimulatorLaunchConfiguration;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Environment Keys and Values for how the Simulator should be launched.
  */
@@ -30,21 +32,6 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
  Should be overridden to provide Integration tests for Simulators.
  */
 @interface FBSimulatorControlTestCase : XCTestCase
-
-/**
- Creates a Session with the provided configuration.
- */
-- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration;
-
-/**
- Creates a Session with the default configuration.
- */
-- (FBSimulator *)obtainSimulator;
-
-/**
- Create a Session with a booted Simulator of the default configuration.
- */
-- (FBSimulator *)obtainBootedSimulator;
 
 /**
  The Per-TestCase Management Options for created FBSimulatorControl instances.
@@ -92,3 +79,5 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 + (BOOL)useDirectLaunching;
 
 @end
+
+NS_ASSUME_NONNULL_END

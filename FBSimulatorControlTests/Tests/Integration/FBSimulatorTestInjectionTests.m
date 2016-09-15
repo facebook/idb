@@ -41,7 +41,7 @@
 
 - (void)testInjectsApplicationTestIntoSampleApp
 {
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
     startTestWithLaunchConfiguration:self.testLaunch reporter:self]
@@ -54,7 +54,7 @@
 - (void)testInjectsApplicationTestIntoSampleAppOnIOS81Simulator
 {
   self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_8_1;
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
     startTestWithLaunchConfiguration:self.testLaunch reporter:self]
@@ -67,7 +67,7 @@
 - (void)testInjectsApplicationTestIntoSafari
 {
 
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   id<FBInteraction> interaction = [[simulator.interact
     startTestWithLaunchConfiguration:[self.testLaunch withApplicationLaunchConfiguration:self.safariAppLaunch] reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
@@ -88,7 +88,7 @@
   NSURL *outputFileURL =
       [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
   FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   id<FBInteraction> interaction = [[[simulator.interact installApplication:self.tableSearchApplication]
       startTestWithLaunchConfiguration:self.testLaunch reporter:reporter]
       waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];

@@ -99,6 +99,74 @@
 
 @end
 
+@implementation FBSimulatorControlTestCase (FBSimulatorControlAssertions)
+
+- (nullable FBSimulator *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
+{
+  NSError *error = nil;
+  FBSimulator *simulator = [self.control.pool allocateSimulatorWithConfiguration:configuration options:self.allocationOptions error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(simulator);
+  return simulator;
+}
+
+- (nullable FBSimulator *)assertObtainsSimulator
+{
+  return [self assertObtainsSimulatorWithConfiguration:self.simulatorConfiguration];
+}
+
+- (nullable FBSimulator *)assertObtainsBootedSimulator
+{
+  return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:self.simulatorLaunchConfiguration];
+}
+
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorLaunchConfiguration *)launchConfiguration
+{
+  FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
+  [self.assert consumeAllNotifications];
+  [self assertInteractionSuccessful:[simulator.interact bootSimulator:launchConfiguration]];
+  [self.assert bootingNotificationsFired:launchConfiguration];
+  [self.assert consumeAllNotifications];
+  return simulator;
+}
+
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+{
+  [self assertInteractionSuccessful:[[simulator.interact installApplication:application] launchApplication:applicationLaunchConfiguration]];
+  [self assertLastLaunchedApplicationIsRunning:simulator];
+
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
+  [self assertSimulatorBooted:simulator];
+  [self assertInteractionFailed:[simulator.interact launchApplication:applicationLaunchConfiguration]];
+
+  return simulator;
+}
+
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration launchConfiguration:simulatorLaunchConfiguration];
+  return [self assertSimulator:simulator launchesApplication:application withApplicationLaunchConfiguration:applicationLaunchConfiguration];
+}
+
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+{
+  FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration launches:simulatorLaunchConfiguration thenLaunchesApplication:application  withApplicationLaunchConfiguration:applicationLaunchConfiguration];
+  FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
+
+  [self assertInteractionSuccessful:simulator.interact.relaunchLastLaunchedApplication];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
+  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert noNotificationsToConsume];
+  FBProcessInfo *secondLaunch = simulator.history.lastLaunchedApplicationProcess;
+
+  XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
+
+  return simulator;
+}
+
+@end
+
 @interface FBSimulatorControlNotificationAssertions ()
 
 @property (nonatomic, strong, readonly) NSMutableArray *notificationsRecieved;
@@ -239,14 +307,14 @@
   [self failIfFalse:(self.notificationsRecieved.count == 0) line:__LINE__ withFormat:@"Expected no notifications but got %@", [self.notificationsRecieved valueForKey:@"name"]];
 }
 
-- (void)bootingNotificationsFired
+- (void)bootingNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration
 {
-  [self consumeNotifications:self.expectedBootNotificationNames];
+  [self consumeNotifications:[FBSimulatorControlNotificationAssertions expectedBootNotificationNamesForConfiguration:launchConfiguration]];
 }
 
-- (void)shutdownNotificationsFired
+- (void)shutdownNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration
 {
-  [self consumeNotifications:self.expectedShutdownNotificationNames];
+  [self consumeNotifications:[FBSimulatorControlNotificationAssertions expectedShutdownNotificationNamesForConfiguration:launchConfiguration]];
 }
 
 #pragma mark Helpers
@@ -275,17 +343,22 @@
   [self.testCase recordFailureWithDescription:string inFile:@(__FILE__) atLine:line expected:YES];
 }
 
-- (NSArray *)expectedBootNotificationNames
++ (NSArray<NSString *> *)expectedBootNotificationNamesForConfiguration:(FBSimulatorLaunchConfiguration *)configuration
 {
-  if (FBSimulatorControlTestCase.useDirectLaunching) {
-    return @[FBSimulatorDidLaunchNotification, FBSimulatorConnectionDidConnectNotification];
+  NSMutableArray<NSString *> *notificationNames = [NSMutableArray array];
+  if (configuration.shouldConnectBridge) {
+    [notificationNames addObject:FBSimulatorConnectionDidConnectNotification];
   }
-  return @[FBSimulatorDidLaunchNotification, FBSimulatorConnectionDidConnectNotification, FBSimulatorApplicationDidLaunchNotification];
+  [notificationNames addObject:FBSimulatorDidLaunchNotification];
+  if (!configuration.shouldUseDirectLaunch) {
+    [notificationNames addObject:FBSimulatorApplicationDidLaunchNotification];
+  }
+  return [notificationNames copy];
 }
 
-- (NSArray *)expectedShutdownNotificationNames
++ (NSArray<NSString *> *)expectedShutdownNotificationNamesForConfiguration:(FBSimulatorLaunchConfiguration *)configuration
 {
-  if (FBSimulatorControlTestCase.useDirectLaunching) {
+  if (configuration.shouldUseDirectLaunch) {
     return @[FBSimulatorDidTerminateNotification, FBSimulatorConnectionDidDisconnectNotification];
   }
   return @[FBSimulatorDidTerminateNotification, FBSimulatorConnectionDidDisconnectNotification, FBSimulatorApplicationDidTerminateNotification];

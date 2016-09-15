@@ -42,7 +42,7 @@
     return;
   }
 
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
   [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
@@ -60,7 +60,7 @@
     return;
   }
 
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
 
   [self assertFindsNeedle:@"syslogd" fromHaystackBlock:^ NSString * {
     return simulator.diagnostics.syslog.asString;
@@ -73,7 +73,7 @@
     return;
   }
 
-  FBSimulator *simulator = [self obtainBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
   [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
 

@@ -70,28 +70,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   return _assert;
 }
 
-#pragma mark Helper Actions
-
-- (FBSimulator *)obtainSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
-{
-  NSError *error = nil;
-  FBSimulator *simulator = [self.control.pool allocateSimulatorWithConfiguration:configuration options:self.allocationOptions error:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(simulator);
-  return simulator;
-}
-
-- (FBSimulator *)obtainSimulator
-{
-  return [self obtainSimulatorWithConfiguration:self.simulatorConfiguration];
-}
-
-- (FBSimulator *)obtainBootedSimulator
-{
-  FBSimulator *simulator = [self obtainSimulator];
-  [self assertInteractionSuccessful:[simulator.interact bootSimulator:self.simulatorLaunchConfiguration]];
-  return simulator;
-}
+#pragma mark Configuration
 
 + (BOOL)isRunningOnTravis
 {
