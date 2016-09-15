@@ -122,6 +122,12 @@
 
 - (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorLaunchConfiguration *)launchConfiguration
 {
+  NSError *error = nil;
+  if (![configuration checkRuntimeRequirementsReturningError:&error]) {
+    XCTFail(@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error);
+    return nil;
+  }
+
   FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
   [self.assert consumeAllNotifications];
   [self assertInteractionSuccessful:[simulator.interact bootSimulator:launchConfiguration]];

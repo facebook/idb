@@ -41,28 +41,15 @@
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
-  NSError *error = nil;
-  if (![configuration checkRuntimeRequirementsReturningError:&error]) {
-    NSLog(@"Could not run test for configuration %@ since: %@", configuration, error);
-    return;
-  }
-
-  FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
-  [self.assert noNotificationsToConsume];
-
   FBSimulatorLaunchConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
-  [self assertInteractionSuccessful:[simulator.interact bootSimulator:launchConfiguration]];
-  [self.assert bootingNotificationsFired:launchConfiguration];
-  [self.assert noNotificationsToConsume];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration launchConfiguration:self.simulatorLaunchConfiguration];
 
-  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
+  [self assertSimulatorBooted:simulator];
   XCTAssertEqual(simulator.history.launchedAgentProcesses.count, 0u);
   XCTAssertEqual(simulator.history.launchedApplicationProcesses.count, 0u);
-  [self assertSimulatorBooted:simulator];
 
   [self assertShutdownSimulatorAndTerminateSession:simulator];
   [self.assert shutdownNotificationsFired:launchConfiguration];
-  [self.assert noNotificationsToConsume];
 }
 
 - (void)testLaunchesiPhone
