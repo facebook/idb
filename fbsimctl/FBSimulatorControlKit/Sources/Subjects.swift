@@ -11,6 +11,26 @@ import Foundation
 
 public protocol EventReporterSubject : CustomStringConvertible {
   var jsonDescription: JSON { get }
+  var subSubjects: [EventReporterSubject] { get }
+}
+
+extension EventReporterSubject {
+  public var subSubjects: [EventReporterSubject] { get {
+    return [self]
+  }}
+}
+
+extension EventReporterSubject  {
+  public func append(other: EventReporterSubject) -> EventReporterSubject {
+    let joined = self.subSubjects + other.subSubjects
+    guard let firstElement = joined.first else {
+      return CompositeSubject([])
+    }
+    if joined.count == 1 {
+      return firstElement
+    }
+    return CompositeSubject(joined)
+  }
 }
 
 struct SimpleSubject : EventReporterSubject {
@@ -143,19 +163,39 @@ struct LogSubject : EventReporterSubject {
   }}
 }
 
-struct ArraySubject<A where A : EventReporterSubject> : EventReporterSubject {
-  let array: [A]
+struct CompositeSubject: EventReporterSubject {
+  let array: [EventReporterSubject]
 
-  init (_ array: [A]) {
+  init (_ array: [EventReporterSubject]) {
     self.array = array
   }
+
+  var subSubjects: [EventReporterSubject] { get {
+    return self.array
+  }}
 
   var jsonDescription: JSON { get {
     return JSON.JArray(self.array.map { $0.jsonDescription } )
   }}
 
   var description: String { get {
-    return "[\(array.map({ $0.description }).joinWithSeparator(", "))]"
+    return "[\(self.array.map({ $0.description }).joinWithSeparator(", "))]"
+  }}
+}
+
+struct StringsSubject: EventReporterSubject {
+  let strings: [String]
+
+  init (_ strings: [String]) {
+    self.strings = strings
+  }
+
+  var jsonDescription: JSON { get {
+    return JSON.JArray(self.strings.map { $0.jsonDescription } )
+  }}
+
+  var description: String { get {
+    return "[\(self.strings.map({ $0.description }).joinWithSeparator(", "))]"
   }}
 }
 

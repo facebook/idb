@@ -25,7 +25,7 @@ struct SequenceRunner : Runner {
   let runners: [Runner]
 
   func run() -> CommandResult {
-    var output = CommandResult.Success
+    var output = CommandResult.Success(nil)
     for runner in runners {
       output = output.append(runner.run())
       switch output {
@@ -64,7 +64,7 @@ struct RelayRunner : Runner {
     do {
       try relay.start()
       try relay.stop()
-      return .Success
+      return .Success(nil)
     } catch let error as CustomStringConvertible {
       return .Failure(error.description)
     } catch {

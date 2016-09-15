@@ -45,11 +45,13 @@ public class HumanReadableEventReporter : EventReporter {
   }
 
   public func report(subject: EventReporterSubject) {
-    let description = subject.description
-    if description.isEmpty {
-      return
+    for item in subject.subSubjects {
+      let string = item.description
+      if string.isEmpty {
+        return
+      }
+      self.writer.write(string)
     }
-    self.writer.write(description)
   }
 }
 
@@ -63,10 +65,13 @@ public class JSONEventReporter : NSObject, EventReporter {
   }
 
   public func report(subject: EventReporterSubject) {
-    guard let string = try? subject.jsonDescription.serializeToString(pretty) else {
-      return
+    for item in subject.subSubjects {
+      guard let line = try? item.jsonDescription.serializeToString(pretty) else {
+        assertionFailure("\(item) could not be encoded to a string")
+        break
+      }
+      self.writer.write(line as String)
     }
-    self.writer.write(string as String)
   }
 }
 

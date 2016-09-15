@@ -51,7 +51,10 @@ struct CLIRunner : Runner {
       case .Failure(let message):
         self.reporter.reportError(message)
         return 1
-      case .Success:
+      case .Success(.Some(let subject)):
+        self.reporter.report(subject)
+        fallthrough
+      default:
         return 0
     }
   }

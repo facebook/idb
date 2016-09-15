@@ -32,10 +32,10 @@ struct iOSActionProvider {
     switch action {
     case .List:
       let format = self.context.format
-      return iOSTargetRunner(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
-        let subject = iOSTargetSubject(target: target, format: format)
-        reporter.reporter.reportSimple(EventName.List, EventType.Discrete, subject)
-      }
+      let subject = iOSTargetSubject(target: target, format: format)
+      return CommandResultRunner(result: .Success(
+        SimpleSubject(EventName.List, EventType.Discrete, subject)
+      ))
     case .Install(let appPath):
       return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
         try target.installApplicationWithPath(appPath)
@@ -75,6 +75,6 @@ struct iOSTargetRunner : Runner {
     } catch {
       return .Failure("Unknown Error")
     }
-    return .Success
+    return .Success(nil)
   }
 }

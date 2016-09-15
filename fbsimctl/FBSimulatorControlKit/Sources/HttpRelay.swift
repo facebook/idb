@@ -57,12 +57,12 @@ private class HttpEventReporter : EventReporter {
 extension ActionPerformer {
   func dispatchAction(action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> HttpResponse {
     let reporter = HttpEventReporter()
-    var result = CommandResult.Success
+    var result: CommandResult? = nil
     dispatch_sync(dispatch_get_main_queue()) {
       result = self.perform(reporter, action: action, queryOverride: queryOverride)
     }
 
-    return reporter.interactionResultResponse(result)
+    return reporter.interactionResultResponse(result!)
   }
 }
 

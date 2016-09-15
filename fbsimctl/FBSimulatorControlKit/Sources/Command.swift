@@ -241,7 +241,7 @@ extension Action {
   public var reportable: (EventName, EventReporterSubject?) { get {
     switch self {
     case .Approve(let bundleIDs):
-      return (EventName.Approve, ArraySubject(bundleIDs))
+      return (EventName.Approve, StringsSubject(bundleIDs))
     case .Boot:
       return (EventName.Boot, nil)
     case .ClearKeychain(let bundleID):
@@ -289,7 +289,7 @@ extension Action {
     case .Upload:
       return (EventName.Diagnose, nil)
     case .WatchdogOverride(let bundleIDs, _):
-      return (EventName.WatchdogOverride, ArraySubject(bundleIDs))
+      return (EventName.WatchdogOverride, StringsSubject(bundleIDs))
     case .SetLocation:
       return (EventName.SetLocation, nil)
     }

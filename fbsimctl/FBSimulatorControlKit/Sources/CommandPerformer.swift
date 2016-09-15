@@ -51,16 +51,22 @@ extension CommandPerformer {
 }
 
 /**
- Enum for defining the result of a translation.
+ Defines the Result of a Command.
  */
 public enum CommandResult {
-  case Success
+  case Success(EventReporterSubject?)
   case Failure(String)
 
   func append(second: CommandResult) -> CommandResult {
     switch (self, second) {
+    case (.Success(.Some(let leftSubject)), .Success(.Some(let rightSubject))):
+      return .Success(leftSubject.append(rightSubject))
+    case (.Success(.Some(let leftSubject)), .Success(.None)):
+      return .Success(leftSubject)
+    case (.Success(.None), .Success(.Some(let rightSubject))):
+      return .Success(rightSubject)
     case (.Success, .Success):
-      return .Success
+      return .Success(nil)
     case (.Success, .Failure(let secondString)):
       return .Failure(secondString)
     case (.Failure(let firstString), .Success):

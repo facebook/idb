@@ -107,7 +107,7 @@ struct HelpRunner : Runner {
 
   func run() -> CommandResult {
     reporter.reportSimpleBridge(EventName.Help, EventType.Discrete, self.help.description as NSString)
-    return self.help.userInitiated ? CommandResult.Success : CommandResult.Failure("")
+    return self.help.userInitiated ? .Success(nil) : .Failure("")
   }
 }
 
@@ -115,18 +115,19 @@ struct CommandRunner : Runner {
   let context: iOSRunnerContext<Command>
 
   func run() -> CommandResult {
+    var result = CommandResult.Success(nil)
     for action in self.context.value.actions {
       guard let query = self.context.value.query ?? self.context.defaults.queryForAction(action) else {
         return CommandResult.Failure("No Query Provided")
       }
       let context = self.context.replace((action, query))
       let runner = ActionRunner(context: context)
-      let result = runner.run()
+      result = result.append(runner.run())
       if case .Failure = result {
         return result
       }
     }
-    return .Success
+    return result
   }
 }
 
@@ -215,6 +216,6 @@ struct ListDeviceSetsRunner : Runner {
     for deviceSet in Set(launchdProcessesToDeviceSets.values).sort() {
       self.context.reporter.reportSimple(EventName.ListDeviceSets, EventType.Discrete, deviceSet)
     }
-    return CommandResult.Success
+    return CommandResult.Success(nil)
   }
 }

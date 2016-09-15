@@ -21,9 +21,9 @@ struct SimulatorCreationRunner : Runner {
         self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
         self.context.reporter.reportSimpleBridge(EventName.Create, EventType.Ended, simulator)
       }
-      return CommandResult.Success
+      return .Success(nil)
     } catch let error as NSError {
-      return CommandResult.Failure("Failed to Create Simulator \(error.description)")
+      return .Failure("Failed to Create Simulator \(error.description)")
     }
   }
 
@@ -59,7 +59,7 @@ struct SimulatorActionRunner : Runner {
 
     switch action {
     case .Approve(let bundleIDs):
-      return SimulatorInteractionRunner(reporter, EventName.Approve, ArraySubject(bundleIDs)) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.Approve, StringsSubject(bundleIDs)) { interaction in
         interaction.authorizeLocationSettings(bundleIDs)
       }
     case .Boot(let maybeLaunchConfiguration):
@@ -143,7 +143,7 @@ struct SimulatorActionRunner : Runner {
     case .Upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
     case .WatchdogOverride(let bundleIDs, let timeout):
-      return SimulatorInteractionRunner(reporter, EventName.WatchdogOverride, ArraySubject(bundleIDs)) { interaction in
+      return SimulatorInteractionRunner(reporter, EventName.WatchdogOverride, StringsSubject(bundleIDs)) { interaction in
         interaction.overrideWatchDogTimerForApplications(bundleIDs, withTimeout: timeout)
       }
     default:
@@ -198,7 +198,7 @@ private struct DiagnosticsRunner : Runner {
       reporter.reportValue(EventName.Diagnostic, EventType.Discrete, diagnostic)
     }
     reporter.reportValue(EventName.Diagnose, EventType.Ended, query)
-    return .Success
+    return .Success(nil)
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {
@@ -232,7 +232,7 @@ private struct SearchRunner : Runner {
     let diagnostics = simulator.diagnostics.allDiagnostics()
     let results = search.search(diagnostics)
     self.reporter.report(EventName.Search, EventType.Discrete, ControlCoreSubject(results))
-    return .Success
+    return .Success(nil)
   }
 }
 
@@ -259,7 +259,7 @@ private struct UploadRunner : Runner {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let interaction = SimulatorInteractionRunner(self.reporter, EventName.Upload, ArraySubject(paths)) { interaction in
+      let interaction = SimulatorInteractionRunner(self.reporter, EventName.Upload, StringsSubject(paths)) { interaction in
         interaction.uploadMedia(paths)
       }
       let result = interaction.run()
@@ -282,6 +282,6 @@ private struct UploadRunner : Runner {
       self.reporter.report(EventName.Upload, EventType.Discrete, ControlCoreSubject(destinationDiagnostic))
     }
 
-    return CommandResult.Success
+    return .Success(nil)
   }
 }
