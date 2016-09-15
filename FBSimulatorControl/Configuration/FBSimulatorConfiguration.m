@@ -506,9 +506,21 @@
 
 #pragma mark Deriving new Configurations
 
+- (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device andOS:(id<FBControlCoreConfiguration_OS>)os
+{
+  NSParameterAssert(device);
+  NSParameterAssert(os);
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
+}
+
 - (instancetype)updateNamedDeviceClass:(Class)class
 {
-  return [self withDevice:[class new]];
+  id<FBControlCoreConfiguration_Device> device = [class new];
+  if ([FBSimulatorConfiguration device:device andOSPairSupported:self.os]) {
+    return [self withDevice:device];
+  }
+  id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
+  return [self withDevice:device andOS:os];
 }
 
 - (instancetype)updateOSVersionClass:(Class)class
