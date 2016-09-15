@@ -16,6 +16,15 @@ extension HttpRequest {
   }
 }
 
+enum ResponseKeys : String {
+  case Success = "success"
+  case Failure = "failure"
+  case Status = "status"
+  case Message = "message"
+  case Events = "events"
+  case Subject = "subject"
+}
+
 private class HttpEventReporter : EventReporter {
   var events: [EventReporterSubject] = []
 
@@ -29,8 +38,8 @@ private class HttpEventReporter : EventReporter {
 
   static func errorResponse(errorMessage: String?) -> HttpResponse {
     let json = JSON.JDictionary([
-      "status" : JSON.JString("failure"),
-      "message": JSON.JString(errorMessage ?? "Unknown Error")
+      ResponseKeys.Status.rawValue : JSON.JString(ResponseKeys.Failure.rawValue),
+      ResponseKeys.Message.rawValue : JSON.JString(errorMessage ?? "Unknown Error")
     ])
     return HttpResponse.internalServerError(json.data)
   }
@@ -39,16 +48,20 @@ private class HttpEventReporter : EventReporter {
     switch result {
     case .Failure(let string):
       let json = JSON.JDictionary([
-        "status" : JSON.JString("failure"),
-        "message": JSON.JString(string),
-        "events" : self.jsonDescription
+        ResponseKeys.Status.rawValue : JSON.JString(ResponseKeys.Failure.rawValue),
+        ResponseKeys.Message.rawValue : JSON.JString(string),
+        ResponseKeys.Events.rawValue : self.jsonDescription
       ])
       return HttpResponse.internalServerError(json.data)
-    case .Success:
-      let json = JSON.JDictionary([
-        "status" : JSON.JString("success"),
-        "events" : self.jsonDescription
-      ])
+    case .Success(let subject):
+      var dictionary = [
+        ResponseKeys.Status.rawValue : JSON.JString(ResponseKeys.Success.rawValue),
+        ResponseKeys.Events.rawValue : self.jsonDescription
+      ]
+      if let subject = subject {
+        dictionary[ResponseKeys.Subject.rawValue] = subject.jsonDescription
+      }
+      let json = JSON.JDictionary(dictionary)
       return HttpResponse.ok(json.data)
     }
   }

@@ -192,7 +192,7 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             actual = [
                 Simulator(event['subject']).get_udid()
                 for event
-                in response['events']
+                in response['subject']
             ]
             expected = [
                 iphone6.get_udid(),
