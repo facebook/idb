@@ -147,9 +147,10 @@ let validQueries: [([String], FBiOSTargetQuery)] = [
   (["--simulators", "--devices", "iPhone 6s"], FBiOSTargetQuery.targetType(FBiOSTargetType.Simulator.union(FBiOSTargetType.Device)).devices([FBControlCoreConfiguration_Device_iPhone6S()])),
   (["--first", "2", "iPhone 6"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).ofCount(2)),
   (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
+  (["0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"], FBiOSTargetQuery.udids(["0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"])),
   (["iPhone 5", "iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPad2()])),
   (["--state=creating", "--state=booting", "--state=shutdown"], FBiOSTargetQuery.simulatorStates([.Creating, .Booting, .Shutdown])),
-  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
+  (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8", "0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8", "0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"])),
   (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
 ]
 
@@ -158,6 +159,7 @@ let invalidQueries: [[String]] = [
   ["Nexus Chromebook Pixel G4 Droid S5 S1 S4 4S"],
   ["makingtea"],
   ["B8EEA6C4-47E5-92DE-014E0ECD8139"],
+  ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaag"],
   ["Nexus 5", "iPhone 5", "iPad 2"],
   ["jelly", "--state=creating", "--state=booting", "shutdown"],
   ["banana", "B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "D7DA55E9-26FF-44FD-91A1-5B30DB68A4BB"],

@@ -34,13 +34,26 @@ extension Parser {
     return Parser<String>.single("Anything", f: { $0 } )
   }}
 
-  public static var ofUDID: Parser<NSUUID> { get {
+  public static var ofUDID: Parser<String> { get {
     let expected = NSStringFromClass(NSUUID.self)
-    return Parser<NSUUID>.single("A \(expected)") { token in
-      guard let uuid = NSUUID(UUIDString: token) else {
+    return Parser<String>.single("A \(expected) or UDID") { token in
+      if let _ = NSUUID(UUIDString: token) {
+        return token;
+      }
+
+      if token.characters.count != 40 {
         throw ParseError.CouldNotInterpret(expected, token)
       }
-      return uuid
+
+      let hex = NSCharacterSet(charactersInString: "0123456789ABCDEFabcdef")
+
+      let non_hex = hex.invertedSet
+
+      if token.rangeOfCharacterFromSet(non_hex) == nil {
+        return token
+      }
+
+      throw ParseError.CouldNotInterpret(expected, token)
     }
   }}
 
@@ -681,7 +694,7 @@ public struct FBiOSTargetQueryParsers {
   static var uuidParser: Parser<FBiOSTargetQuery> { get {
     return Parser<FBiOSTargetQuery>
       .ofUDID
-      .fmap { FBiOSTargetQuery.udids([$0.UUIDString]) }
+      .fmap { FBiOSTargetQuery.udids([$0]) }
   }}
 
   static var simulatorStateParser: Parser<FBiOSTargetQuery> { get {
