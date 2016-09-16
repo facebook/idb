@@ -27,6 +27,13 @@ struct DeviceActionRunner : Runner {
       return runner
     }
 
-    return CommandResultRunner.unimplementedActionRunner(action, target: device, format: context.format)
+    switch action {
+    case .LaunchApp(let launch):
+      return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) {
+        try device.deviceOperator!.launchApplicationWithBundleID(launch.bundleID, arguments: launch.arguments, environment: launch.environment);
+      }
+    default:
+      return CommandResultRunner.unimplementedActionRunner(action, target: device, format: context.format)
+    }
   }
 }
