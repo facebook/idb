@@ -25,8 +25,9 @@ extension FBiOSTargetQuery {
       throw ParseError.CouldNotInterpret("UDID is not 40 characters long", token)
     }
     let nonDeviceUDIDSet = NSCharacterSet(charactersInString: "0123456789ABCDEFabcdef").invertedSet
-    if token.rangeOfCharacterFromSet(nonDeviceUDIDSet) == nil {
-      throw ParseError.CouldNotInterpret("UDID contains non-hex characters", token)
+    if let range = token.rangeOfCharacterFromSet(nonDeviceUDIDSet) {
+      let invalidCharacters = token.substringWithRange(range)
+      throw ParseError.CouldNotInterpret("UDID contains non-hex character '\(invalidCharacters)'", token)
     }
     return token
   }
