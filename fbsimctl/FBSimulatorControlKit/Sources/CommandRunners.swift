@@ -139,6 +139,9 @@ struct ActionRunner : Runner {
     let query = self.context.value.1
 
     switch action {
+    case .List:
+      let context = self.context.replace(query)
+      return ListRunner(context: context).run()
     case .ListDeviceSets:
       let context = self.context.replace(FBSimulatorProcessFetcher(processFetcher: FBProcessFetcher()))
       return ListDeviceSetsRunner(context: context).run()
@@ -205,6 +208,18 @@ struct ServerRunner : Runner, CommandPerformer {
       deviceControl: self.context.deviceControl
     )
     return CommandRunner(context: context).run()
+  }
+}
+
+struct ListRunner : Runner {
+  let context: iOSRunnerContext<FBiOSTargetQuery>
+
+  func run() -> CommandResult {
+    let targets = self.context.query(self.context.value)
+    let subjects: [EventReporterSubject] = targets.map { target in
+      SimpleSubject(EventName.List, EventType.Discrete, iOSTargetSubject(target: target, format: self.context.format))
+    }
+    return .Success(CompositeSubject(subjects))
   }
 }
 

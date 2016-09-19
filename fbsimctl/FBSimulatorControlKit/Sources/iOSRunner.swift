@@ -30,12 +30,6 @@ struct iOSActionProvider {
     let (action, target, reporter) = self.context.value
 
     switch action {
-    case .List:
-      let format = self.context.format
-      let subject = iOSTargetSubject(target: target, format: format)
-      return CommandResultRunner(result: .Success(
-        SimpleSubject(EventName.List, EventType.Discrete, subject)
-      ))
     case .Install(let appPath):
       return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
         try target.installApplicationWithPath(appPath)
