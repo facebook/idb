@@ -40,22 +40,17 @@
   [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
 }
 
-+ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration control:(FBSimulatorControl *)control logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
-  SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration error:&innerError];
-  if (!deviceSet) {
-    return [[[FBSimulatorError describe:@"Failed to create device set"] causedBy:innerError] fail:error];
-  }
-
-  FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet control:control logger:logger];
+  FBSimulatorSet *set = [[FBSimulatorSet alloc] initWithConfiguration:configuration deviceSet:deviceSet logger:logger];
   if (![set performSetPreconditionsWithConfiguration:configuration Error:&innerError]) {
     return [[[FBSimulatorError describe:@"Failed meet simulator set preconditions"] causedBy:innerError] fail:error];
   }
   return set;
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet control:(FBSimulatorControl *)control logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -64,7 +59,6 @@
 
   _logger = logger;
   _deviceSet = deviceSet;
-  _control = control;
   _configuration = configuration;
 
   _allSimulators = @[];
@@ -72,37 +66,6 @@
   _inflationStrategy = [FBSimulatorInflationStrategy forSet:self];
 
   return self;
-}
-
-+ (SimDeviceSet *)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error
-{
-  NSString *deviceSetPath = configuration.deviceSetPath;
-  NSError *innerError = nil;
-  if (deviceSetPath != nil) {
-    if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath] causedBy:innerError] fail:error];
-    }
-  }
-
-  // Xcode 8's Simulator.app uses the SimServiceContext to fetch the Device Set, rather than instantiating it directly.
-  // Xcode 7's Simulator.app just creates the SimDeviceSet directly.
-  SimDeviceSet *deviceSet = nil;
-  Class serviceContextClass = objc_lookUpClass("SimServiceContext");
-  if ([serviceContextClass respondsToSelector:@selector(sharedServiceContextForDeveloperDir:error:)]) {
-    SimServiceContext *serviceContext = [serviceContextClass sharedServiceContextForDeveloperDir:FBControlCoreGlobalConfiguration.developerDirectory error:&innerError];
-    deviceSet = deviceSetPath
-      ? [serviceContext deviceSetWithPath:configuration.deviceSetPath error:&innerError]
-      : [serviceContext defaultDeviceSetWithError:&innerError];
-  } else {
-    deviceSet = deviceSetPath
-      ? [objc_lookUpClass("SimDeviceSet") setForSetPath:configuration.deviceSetPath]
-      : [objc_lookUpClass("SimDeviceSet") defaultSet];
-  }
-
-  if (!deviceSet) {
-    return [[[FBSimulatorError describeFormat:@"Failed to get device set for %@", deviceSetPath] causedBy:innerError] fail:error];
-  }
-  return deviceSet;
 }
 
 - (BOOL)performSetPreconditionsWithConfiguration:(FBSimulatorControlConfiguration *)configuration Error:(NSError **)error

@@ -7,6 +7,7 @@
 #import <objc/NSObject.h>
 
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
+#import <CoreSimulator/CDStructures.h>
 
 @class NSArray, NSDictionary, NSMutableDictionary, NSString, SimDeviceNotificationManager, SimServiceContext;
 @protocol OS_dispatch_queue;

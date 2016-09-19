@@ -72,6 +72,7 @@
 #import <FBSimulatorControl/FBSimulatorPredicates.h>
 #import <FBSimulatorControl/FBSimulatorProcessFetcher.h>
 #import <FBSimulatorControl/FBSimulatorResourceManager.h>
+#import <FBSimulatorControl/FBSimulatorServiceContext.h>
 #import <FBSimulatorControl/FBSimulatorSet+Private.h>
 #import <FBSimulatorControl/FBSimulatorSet.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
