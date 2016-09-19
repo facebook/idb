@@ -174,6 +174,7 @@ let validActions: [([String], Action)] = [
   (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], Action.Boot(FBSimulatorLaunchConfiguration.defaultConfiguration().scale25Percent().withOptions(FBSimulatorLaunchOptions.ConnectBridge.union(FBSimulatorLaunchOptions.UseNSWorkspace)))),
   (["boot"], Action.Boot(nil)),
   (["clear_keychain", "com.foo.bar"], Action.ClearKeychain("com.foo.bar")),
+  (["config"], Action.Config),
   (["create", "--all-missing-defaults"], Action.Create(CreationSpecification.AllMissingDefaults)),
   (["create", "iOS 9.0"], Action.Create(CreationSpecification.iOS9CreationSpecification)),
   (["create", "iPhone 6s", "iOS 9.3"], Action.Create(CreationSpecification.compoundConfiguration0)),

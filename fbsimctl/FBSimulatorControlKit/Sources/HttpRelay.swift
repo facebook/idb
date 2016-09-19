@@ -198,6 +198,10 @@ class HttpRelay : Relay {
     }
   }}
 
+  private static var configRoute: ActionRoute { get {
+    return ActionRoute.get(EventName.Config, action: Action.Config)
+  }}
+
   private static var diagnoseRoute: ActionRoute { get {
     return ActionRoute.post(EventName.Diagnose) { json in
       let query = try FBSimulatorDiagnosticQuery.inflateFromJSON(json.decode())
@@ -300,6 +304,7 @@ class HttpRelay : Relay {
   private static var actionRoutes: [ActionRoute] { get {
     return [
       self.clearKeychainRoute,
+      self.configRoute,
       self.diagnoseRoute,
       self.launchRoute,
       self.listRoute,

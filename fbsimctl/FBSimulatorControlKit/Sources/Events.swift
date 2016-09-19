@@ -14,6 +14,7 @@ public enum EventName : String {
   case Approve = "approve"
   case Boot = "boot"
   case ClearKeychain = "clear_keychain"
+  case Config = "config"
   case Create = "create"
   case Delete = "delete"
   case Diagnose = "diagnose"
@@ -34,6 +35,7 @@ public enum EventName : String {
   case Record = "record"
   case Relaunch = "relaunch"
   case Search = "search"
+  case SetLocation = "set_location"
   case Shutdown = "shutdown"
   case Signalled = "signalled"
   case StateChange = "state"
@@ -42,7 +44,6 @@ public enum EventName : String {
   case Uninstall = "uninstall"
   case Upload = "upload"
   case WatchdogOverride = "watchdog_override"
-  case SetLocation = "set_location"
 }
 
 public enum EventType : String {

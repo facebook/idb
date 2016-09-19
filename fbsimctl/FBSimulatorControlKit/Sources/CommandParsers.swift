@@ -400,6 +400,7 @@ extension Action : Parsable {
         self.approveParser,
         self.bootParser,
         self.clearKeychainParser,
+        self.configParser,
         self.createParser,
         self.deleteParser,
         self.diagnoseParser,
@@ -441,6 +442,10 @@ extension Action : Parsable {
     return Parser
       .succeeded(EventName.ClearKeychain.rawValue, Parser<Any>.ofBundleID)
       .fmap { Action.ClearKeychain($0) }
+  }}
+
+  static var configParser: Parser<Action> { get {
+    return Parser.ofString(EventName.Config.rawValue, Action.Config)
   }}
 
   static var createParser: Parser<Action> { get {

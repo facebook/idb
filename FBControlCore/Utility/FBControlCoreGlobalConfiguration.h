@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBJSONConversion.h>
+
 @protocol FBControlCoreLogger;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -27,7 +29,7 @@ extern NSString *const FBControlCoreDebugLogging;
  Environment Globals & other derived constants.
  These values can be accessed before the Private Frameworks are loaded.
  */
-@interface FBControlCoreGlobalConfiguration : NSObject
+@interface FBControlCoreGlobalConfiguration : NSObject <FBJSONSerializable>
 
 /**
  The File Path to of Xcode's /Xcode.app/Contents/Developer directory.

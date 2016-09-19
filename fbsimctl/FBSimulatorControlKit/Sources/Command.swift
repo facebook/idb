@@ -62,6 +62,7 @@ public enum Action {
   case Approve([String])
   case Boot(FBSimulatorLaunchConfiguration?)
   case ClearKeychain(String)
+  case Config
   case Create(CreationSpecification)
   case Delete
   case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
@@ -186,6 +187,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftConfiguration == rightConfiguration
   case (.ClearKeychain(let leftBundleID), .ClearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
+  case (.Config, .Config):
+    return true
   case (.Create(let leftSpecification), .Create(let rightSpecification)):
     return leftSpecification == rightSpecification
   case (.Delete, .Delete):
@@ -246,6 +249,8 @@ extension Action {
       return (EventName.Boot, nil)
     case .ClearKeychain(let bundleID):
       return (EventName.ClearKeychain, bundleID)
+    case .Config:
+      return (EventName.Config, nil)
     case .Create:
       return (EventName.Create, nil)
     case .Delete:

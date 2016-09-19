@@ -148,6 +148,11 @@ static id<FBControlCoreLogger> logger;
   ];
 }
 
+- (NSString *)description
+{
+  return [FBControlCoreGlobalConfiguration description];
+}
+
 + (BOOL)debugLoggingEnabled
 {
   return [NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging] boolValue];
@@ -161,6 +166,16 @@ static id<FBControlCoreLogger> logger;
   id value = infoPlist[key];
   NSCAssert(value, @"'%@' does not exist in plist '%@'", key, infoPlist.allKeys);
   return value;
+}
+
+#pragma mark FBJSONConversion
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+     @"developer_directory" : FBControlCoreGlobalConfiguration.developerDirectory,
+     @"xcode_version" : FBControlCoreGlobalConfiguration.xcodeVersionNumber,
+  };
 }
 
 #pragma mark Private
