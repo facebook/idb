@@ -3,6 +3,7 @@
 set -e
 
 BUILD_DIRECTORY=build
+CLI_E2E_PATH=fbsimctl/cli-tests/executable-under-test
 
 function assert_has_carthage() {
   if ! command -v carthage; then
@@ -257,7 +258,8 @@ case $TARGET in
         build_test_deps
         cli_framework_test fbsimctl;;
       e2e-test)
-        cli_build fbsimctl fbsimctl/cli-tests/executable-under-test
+        rm -r "$CLI_E2E_PATH" || true
+        cli_build fbsimctl "$CLI_E2E_PATH"
         cli_e2e_test fbsimctl;;
       *)
         echo "Unknown Command $COMMAND"
