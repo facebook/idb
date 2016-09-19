@@ -146,7 +146,7 @@ struct ActionRunner : Runner {
       let context = self.context.replace(query)
       return ListRunner(context: context).run()
     case .ListDeviceSets:
-      let context = self.context.replace(FBSimulatorProcessFetcher(processFetcher: FBProcessFetcher()))
+      let context = self.context.replace((self.context.simulatorControl.serviceContext, self.context.simulatorControl.set.processFetcher))
       return ListDeviceSetsRunner(context: context).run()
     case .Listen(let server):
       let context = self.context.replace((server, query))
@@ -227,13 +227,25 @@ struct ListRunner : Runner {
 }
 
 struct ListDeviceSetsRunner : Runner {
-  let context: iOSRunnerContext<FBSimulatorProcessFetcher>
+  let context: iOSRunnerContext<(FBSimulatorServiceContext?, FBSimulatorProcessFetcher)>
 
   func run() -> CommandResult {
-    let launchdProcessesToDeviceSets = self.context.value.launchdProcessesToContainingDeviceSet()
-    for deviceSet in Set(launchdProcessesToDeviceSets.values).sort() {
-      self.context.reporter.reportSimple(EventName.ListDeviceSets, EventType.Discrete, deviceSet)
+    let deviceSets = self.deviceSets
+    let subjects: [EventReporterSubject] = deviceSets.map { deviceSet in
+      SimpleSubject(EventName.ListDeviceSets, EventType.Discrete, deviceSet)
     }
-    return CommandResult.Success(nil)
+    return .Success(CompositeSubject(subjects))
   }
+
+  private var deviceSets: [String] { get {
+    let (maybeServiceContext, processFetcher) = self.context.value
+    var deviceSets: Set<String> = []
+
+    if let serviceContext = maybeServiceContext {
+      deviceSets.unionInPlace(serviceContext.pathsOfAllDeviceSets())
+    }
+    let launchdProcessesToDeviceSets = processFetcher.launchdProcessesToContainingDeviceSet()
+    deviceSets.unionInPlace(launchdProcessesToDeviceSets.values)
+    return Array(deviceSets).sort()
+  }}
 }
