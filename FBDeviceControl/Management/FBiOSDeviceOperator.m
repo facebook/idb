@@ -260,8 +260,12 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
+  // Get the device here in the main thread. There is an assertion for main thread in
+  // it's initialization.
+  id device = self.device.dvtDevice;
+
   id object = [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return [self.device.dvtDevice installApplicationSync:path options:nil];
+    return [device installApplicationSync:path options:nil];
   }];
   if ([object isKindOfClass:NSError.class]) {
     if (error) {
