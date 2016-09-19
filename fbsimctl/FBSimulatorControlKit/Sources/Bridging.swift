@@ -16,6 +16,22 @@ extension FBSimulatorState {
   }}
 }
 
+extension FBiOSTargetQuery {
+  static func parseUDIDToken(token: String) throws -> String {
+    if let _ = NSUUID(UUIDString: token) {
+      return token
+    }
+    if token.characters.count != 40 {
+      throw ParseError.CouldNotInterpret("UDID is not 40 characters long", token)
+    }
+    let nonDeviceUDIDSet = NSCharacterSet(charactersInString: "0123456789ABCDEFabcdef").invertedSet
+    if token.rangeOfCharacterFromSet(nonDeviceUDIDSet) == nil {
+      throw ParseError.CouldNotInterpret("UDID contains non-hex characters", token)
+    }
+    return token
+  }
+}
+
 extension NSURL {
   static func urlRelativeTo(basePath: String, component: String, isDirectory: Bool) -> NSURL {
     let url = NSURL(fileURLWithPath: basePath)

@@ -79,6 +79,8 @@ public class Defaults {
         return nil
       case .List:
         fallthrough
+      case .Listen:
+        fallthrough
       case .Search:
         fallthrough
       case .Diagnose:

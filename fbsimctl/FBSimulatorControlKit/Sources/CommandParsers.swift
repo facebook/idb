@@ -35,25 +35,9 @@ extension Parser {
   }}
 
   public static var ofUDID: Parser<String> { get {
-    let expected = NSStringFromClass(NSUUID.self)
-    return Parser<String>.single("A \(expected) or UDID") { token in
-      if let _ = NSUUID(UUIDString: token) {
-        return token;
-      }
-
-      if token.characters.count != 40 {
-        throw ParseError.CouldNotInterpret(expected, token)
-      }
-
-      let hex = NSCharacterSet(charactersInString: "0123456789ABCDEFabcdef")
-
-      let non_hex = hex.invertedSet
-
-      if token.rangeOfCharacterFromSet(non_hex) == nil {
-        return token
-      }
-
-      throw ParseError.CouldNotInterpret(expected, token)
+    let message = "A Device or Simulator UDID"
+    return Parser<String>.single(message) { token in
+      return try FBiOSTargetQuery.parseUDIDToken(token)
     }
   }}
 

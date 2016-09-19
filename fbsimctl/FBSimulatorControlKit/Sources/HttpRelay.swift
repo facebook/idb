@@ -85,19 +85,60 @@ enum HttpMethod : String {
 }
 
 struct ActionRoute {
+  enum Handler {
+    case Constant(Action)
+    case Parser(JSON throws -> Action)
+  }
+
   let method: HttpMethod
   let endpoint: EventName
-  let actionParser: JSON throws -> Action
+  let handler: Handler
 
-  func httpRoute(performer: ActionPerformer) -> HttpRoute {
-    let actionParser = self.actionParser
-    return HttpRoute(method: self.method.rawValue, path: "/" + self.endpoint.rawValue) { request in
-      do {
+  static func post(endpoint: EventName, handler: JSON throws -> Action) -> ActionRoute {
+    return ActionRoute(method: HttpMethod.POST, endpoint: endpoint, handler: Handler.Parser(handler))
+  }
+
+  static func get(endpoint: EventName, action: Action) -> ActionRoute {
+    return ActionRoute(method: HttpMethod.GET, endpoint: endpoint, handler: Handler.Constant(action))
+  }
+
+  private var pathHandler: HttpRequest throws -> FBiOSTargetQuery? { get {
+    return { request in
+      guard let queryPath = request.pathComponents.dropFirst().first where request.pathComponents.count == 3 else {
+        return nil
+      }
+      return FBiOSTargetQuery.udids([
+        try FBiOSTargetQuery.parseUDIDToken(queryPath)
+      ])
+    }
+  }}
+
+  private var bodyHandler: HttpRequest throws -> (Action, FBiOSTargetQuery?) { get {
+    switch self.handler {
+    case .Constant(let action):
+      return { _ in (action, nil) }
+    case .Parser(let actionParser):
+      return { request in
         let json = try request.jsonBody()
         let action = try actionParser(json)
         let query = try? FBiOSTargetQuery.inflateFromJSON(json.getValue("simulators").decode())
-        return performer.dispatchAction(action, queryOverride: query)
+        return (action, query)
+      }
+    }
+  }}
+
+  private func requestHandler(performer: ActionPerformer) -> HttpRequest -> HttpResponse {
+    let bodyHandler = self.bodyHandler
+    let pathHandler = self.pathHandler
+
+    return { request in
+      do {
+        let pathQuery = try pathHandler(request)
+        let (action, bodyQuery) = try bodyHandler(request)
+        return performer.dispatchAction(action, queryOverride: pathQuery ?? bodyQuery)
       } catch let error as JSONError {
+        return HttpEventReporter.errorResponse(error.description)
+      } catch let error as ParseError {
         return HttpEventReporter.errorResponse(error.description)
       } catch let error as NSError {
         return HttpEventReporter.errorResponse(error.description)
@@ -105,6 +146,13 @@ struct ActionRoute {
         return HttpEventReporter.errorResponse(nil)
       }
     }
+  }
+
+  func httpRoutes(performer: ActionPerformer) -> [HttpRoute] {
+    return [
+      HttpRoute(method: self.method.rawValue, path: "/.*/" + self.endpoint.rawValue, handler: self.requestHandler(performer)),
+      HttpRoute(method: self.method.rawValue, path: "/" + self.endpoint.rawValue, handler: self.requestHandler(performer)),
+    ]
   }
 }
 
@@ -127,7 +175,7 @@ class HttpRelay : Relay {
 
     self.httpServer = HttpServer(
       port: portNumber,
-      routes: HttpRelay.actionRoutes.map { $0.httpRoute(performer) }
+      routes: HttpRelay.actionRoutes.flatMap { $0.httpRoutes(performer) }
     )
   }
 
@@ -144,21 +192,21 @@ class HttpRelay : Relay {
   }
 
   private static var clearKeychainRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.ClearKeychain) { json in
+    return ActionRoute.post(EventName.ClearKeychain) { json in
       let bundleID = try json.getValue("bundle_id").getString()
       return Action.ClearKeychain(bundleID)
     }
   }}
 
   private static var diagnoseRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Diagnose) { json in
+    return ActionRoute.post(EventName.Diagnose) { json in
       let query = try FBSimulatorDiagnosticQuery.inflateFromJSON(json.decode())
       return Action.Diagnose(query, DiagnosticFormat.Content)
     }
   }}
 
   private static var launchRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Launch) { json in
+    return ActionRoute.post(EventName.Launch) { json in
       if let agentLaunch = try? FBAgentLaunchConfiguration.inflateFromJSON(json.decode()) {
         return Action.LaunchAgent(agentLaunch)
       }
@@ -171,13 +219,11 @@ class HttpRelay : Relay {
   }}
 
   private static var listRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.List) { _ in
-      return Action.List
-    }
+    return ActionRoute.get(EventName.List, action: Action.List)
   }}
 
   private static var openRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Open) { json in
+    return ActionRoute.post(EventName.Open) { json in
       let urlString = try json.getValue("url").getString()
       guard let url = NSURL(string: urlString) else {
         throw JSONError.Parse("\(urlString) is not a valid URL")
@@ -187,28 +233,28 @@ class HttpRelay : Relay {
   }}
 
   private static var recordRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Record) { json in
+    return ActionRoute.post(EventName.Record) { json in
       let start = try json.getValue("start").getBool()
       return Action.Record(start)
     }
   }}
 
   private static var relaunchRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Relaunch) { json in
+    return ActionRoute.post(EventName.Relaunch) { json in
       let launchConfiguration = try FBApplicationLaunchConfiguration.inflateFromJSON(json.decode())
       return Action.Relaunch(launchConfiguration)
     }
   }}
 
   private static var searchRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Search) { json in
+    return ActionRoute.post(EventName.Search) { json in
       let search = try FBBatchLogSearch.inflateFromJSON(json.decode())
       return Action.Search(search)
     }
   }}
 
   private static var setLocationRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.SetLocation) { json in
+    return ActionRoute.post(EventName.SetLocation) { json in
       let latitude = try json.getValue("latitude").getNumber().doubleValue
       let longitude = try json.getValue("longitude").getNumber().doubleValue
       return Action.SetLocation(latitude, longitude)
@@ -216,7 +262,7 @@ class HttpRelay : Relay {
   }}
 
   private static var tapRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Tap) { json in
+    return ActionRoute.post(EventName.Tap) { json in
       let x = try json.getValue("x").getNumber().doubleValue
       let y = try json.getValue("y").getNumber().doubleValue
       return Action.Tap(x, y)
@@ -224,7 +270,7 @@ class HttpRelay : Relay {
   }}
 
   private static var terminateRoute: ActionRoute { get {
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Terminate) { json in
+    return ActionRoute.post(EventName.Terminate) { json in
       let bundleID = try json.getValue("bundle_id").getString()
       return Action.Terminate(bundleID)
     }
@@ -246,7 +292,7 @@ class HttpRelay : Relay {
       }
     }
 
-    return ActionRoute(method: HttpMethod.POST, endpoint: EventName.Upload) { json in
+    return ActionRoute.post(EventName.Upload) { json in
       return Action.Upload(try jsonToDiagnostics(json))
     }
   }}

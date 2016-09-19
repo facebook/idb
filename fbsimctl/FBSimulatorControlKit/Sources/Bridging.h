@@ -66,6 +66,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, readonly) NSData *body;
 
+/**
+ The components of the request.
+ */
+@property (nonatomic, copy, readonly) NSArray<NSString *> *pathComponents;
+
 @end
 
 /**
@@ -93,12 +98,34 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ A representation of a HTTP Routing.
+ */
 @interface HttpRoute : NSObject
 
+/**
+ Creates a new route.
+
+ @param method the HTTP Method to use.
+ @param path the Relative Path to use.
+ @param handler a handler for the request.
+ @return a new HTTP Route.
+ */
 + (instancetype)routeWithMethod:(NSString *)method path:(NSString *)path handler:(HttpResponse *(^)(HttpRequest *))handler;
 
+/**
+ The HTTP Method.
+ */
 @property (nonatomic, copy, readonly) NSString *method;
+
+/**
+ The Relative Path to use.
+ */
 @property (nonatomic, copy, readonly) NSString *path;
+
+/**
+ The Handler to use.
+ */
 @property (nonatomic, copy, readonly) HttpResponse *(^handler)(HttpRequest *request);
 
 @end

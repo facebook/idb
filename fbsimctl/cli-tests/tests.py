@@ -169,6 +169,15 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
         )
         self.port = port
 
+    def extractSimulatorSubjects(self, response):
+        print(response['subject'])
+        self.assertEqual(response['status'], 'success')
+        return [
+            Simulator(event['subject']).get_udid()
+            for event
+            in response['subject']
+        ]
+
     @contextlib.contextmanager
     def launchWebserver(self):
         arguments = [
@@ -180,25 +189,25 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
 
     def testDiagnostics(self):
         with self.launchWebserver() as webserver:
-            response = webserver.request('diagnose', {'type': 'all'})
+            response = webserver.post('diagnose', {'type': 'all'})
             self.assertEqual(response['status'], 'success')
 
     def testListSimulators(self):
         iphone6 = self.assertCreatesSimulator(['iPhone 6'])
         iphone6s = self.assertCreatesSimulator(['iPhone 6s'])
         with self.launchWebserver() as webserver:
-            response = webserver.request('list', {})
-            self.assertEqual(response['status'], 'success')
-            actual = [
-                Simulator(event['subject']).get_udid()
-                for event
-                in response['subject']
-            ]
+            actual = self.extractSimulatorSubjects(
+                webserver.get('list'),
+            )
             expected = [
                 iphone6.get_udid(),
                 iphone6s.get_udid(),
             ]
             self.assertEqual(expected.sort(), actual.sort())
+            actual = self.extractSimulatorSubjects(
+                webserver.get(iphone6.get_udid() + '/list'),
+            )
+            expected = [iphone6.get_udid()]
 
 class SingleSimulatorTestCase(FBSimctlTestCase):
     def __init__(

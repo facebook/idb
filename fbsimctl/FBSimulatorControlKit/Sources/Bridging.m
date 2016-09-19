@@ -161,7 +161,7 @@
 
 @implementation HttpRequest
 
-- (instancetype)initWithBody:(NSData *)body
+- (instancetype)initWithBody:(NSData *)body pathComponents:(NSArray<NSString *> *)pathComponents
 {
   self = [super init];
   if (!self) {
@@ -169,6 +169,7 @@
   }
 
   _body = body;
+  _pathComponents = pathComponents;
 
   return self;
 }
@@ -254,9 +255,11 @@
   [GCDWebServer setLogLevel:5];
   GCDWebServer *webServer = [[GCDWebServer alloc] init];
   for (HttpRoute *route in routes) {
-    [webServer addHandlerForMethod:route.method path:route.path requestClass:GCDWebServerDataRequest.class processBlock:^ GCDWebServerResponse *(GCDWebServerDataRequest *gcdRequest) {
-      HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data];
+    [webServer addHandlerForMethod:route.method pathRegex:route.path requestClass:GCDWebServerDataRequest.class processBlock:^ GCDWebServerResponse *(GCDWebServerDataRequest *gcdRequest) {
+      NSArray<NSString *> *components = [gcdRequest.path componentsSeparatedByString:@"/"];
+      HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data pathComponents:components];
       HttpResponse *response = route.handler(request);
+
       GCDWebServerDataResponse *gcdResponse = [GCDWebServerDataResponse responseWithData:response.body contentType:@"application/json"];
       gcdResponse.statusCode = response.statusCode;
       return gcdResponse;

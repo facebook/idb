@@ -211,17 +211,30 @@ class WebServer:
     def __init__(self, port):
         self.__port = port
 
-    def request(self, path, payload):
-        url = 'http://localhost:{}/{}'.format(
+    def get(self, path):
+        request = urllib.request.Request(
+            url=self._make_url(path),
+            method='GET',
+        )
+        return self._perform_request(request)
+
+    def post(self, path, payload):
+        data = json.dumps(payload).encode('utf-8')
+        request = urllib.request.Request(
+            url=self._make_url(path),
+            data=data,
+            method='POST',
+            headers={'content-type': 'application/json'},
+        )
+        return self._perform_request(request)
+
+    def _make_url(self, path):
+        return 'http://localhost:{}/{}'.format(
             self.__port,
             path,
         )
-        data = json.dumps(payload).encode('utf-8')
-        request = urllib.request.Request(
-            url=url,
-            data=data,
-            headers={'content-type': 'application/json'}
-        )
+
+    def _perform_request(self, request):
         with urllib.request.urlopen(request) as f:
             response = f.read().decode('utf-8')
             return json.loads(response)
