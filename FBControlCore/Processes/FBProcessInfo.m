@@ -18,7 +18,7 @@
 
 #pragma mark NSObject
 
-- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath arguments:(NSArray *)arguments environment:(NSDictionary *)environment
+- (instancetype)initWithProcessIdentifier:(pid_t)processIdentifier launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment
 {
   NSParameterAssert(launchPath);
   NSParameterAssert(arguments);

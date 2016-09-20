@@ -163,7 +163,7 @@ static inline NSArray *ReadArchs(FILE *file, uint32_t magic)
 
 @implementation FBBinaryParser
 
-+ (NSSet *)architecturesForBinaryAtPath:(NSString *)binaryPath error:(NSError **)error
++ (NSSet<NSString *> *)architecturesForBinaryAtPath:(NSString *)binaryPath error:(NSError **)error
 {
   FILE *file = fopen(binaryPath.UTF8String, "rb");
   if (file == NULL) {
