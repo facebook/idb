@@ -59,7 +59,7 @@
 
 - (void)testLaunchesiPad
 {
-  [self testLaunchesSingleSimulator:FBSimulatorConfiguration.iPad2];
+  [self testLaunchesSingleSimulator:FBSimulatorConfiguration.iPadRetina];
 }
 
 - (void)testLaunchesWatch
@@ -78,7 +78,7 @@
   // Create the sessions in sequence, then boot them in paralell.
   FBSimulator *simulator1 = [self assertObtainsSimulatorWithConfiguration:FBSimulatorConfiguration.iPhone5];
   FBSimulator *simulator2 = [self assertObtainsSimulatorWithConfiguration:FBSimulatorConfiguration.iPhone5];
-  FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:FBSimulatorConfiguration.iPad2];
+  FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:FBSimulatorConfiguration.iPadRetina];
 
   XCTAssertEqual(self.control.pool.allocatedSimulators.count, 3u);
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
