@@ -10,10 +10,10 @@
 import Foundation
 import FBSimulatorControl
 
-@objc public class CLIBootstrapper : NSObject {
-  public static func bootstrap() -> Int32 {
-    let arguments = Array(NSProcessInfo.processInfo().arguments.dropFirst(1))
-    let environment = NSProcessInfo.processInfo().environment
+@objc open class CLIBootstrapper : NSObject {
+  open static func bootstrap() -> Int32 {
+    let arguments = Array(ProcessInfo.processInfo.arguments.dropFirst(1))
+    let environment = ProcessInfo.processInfo.environment
 
     // The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
     do {
@@ -39,19 +39,19 @@ struct CLIRunner : Runner {
 
   func run() -> CommandResult {
     switch self.cli {
-    case .Run(let command):
+    case .run(let command):
       return BaseCommandRunner(reporter: self.reporter, command: command).run()
-    case .Show(let help):
+    case .show(let help):
       return HelpRunner(reporter: self.reporter, help: help).run()
     }
   }
 
   func runForStatus() -> Int32 {
     switch self.run() {
-      case .Failure(let message):
+      case .failure(let message):
         self.reporter.reportError(message)
         return 1
-      case .Success(.Some(let subject)):
+      case .success(.some(let subject)):
         self.reporter.report(subject)
         fallthrough
       default:

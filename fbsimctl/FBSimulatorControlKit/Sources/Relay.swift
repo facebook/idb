@@ -23,9 +23,9 @@ protocol Relay {
 class SynchronousRelay : Relay {
   let relay: Relay
   let reporter: EventReporter
-  let started: Void -> Void
+  let started: (Void) -> Void
 
-  init(relay: Relay, reporter: EventReporter, started: Void -> Void) {
+  init(relay: Relay, reporter: EventReporter, started: @escaping (Void) -> Void) {
     self.relay = relay
     self.reporter = reporter
     self.started = started
@@ -45,7 +45,7 @@ class SynchronousRelay : Relay {
     self.started()
 
     // Start the event loop.
-    NSRunLoop.currentRunLoop().spinRunLoopWithTimeout(DBL_MAX) { signalled }
+    RunLoop.current.spinRunLoop(withTimeout: DBL_MAX) { signalled }
     handler.unregister()
   }
 
@@ -59,9 +59,9 @@ class SynchronousRelay : Relay {
  */
 class FileHandleRelay : Relay {
   let commandBuffer: CommandBuffer
-  let input: NSFileHandle
+  let input: FileHandle
 
-  init(commandBuffer: CommandBuffer, input: NSFileHandle) {
+  init(commandBuffer: CommandBuffer, input: FileHandle) {
     self.commandBuffer = commandBuffer
     self.input = input
   }
@@ -69,7 +69,7 @@ class FileHandleRelay : Relay {
   convenience init(commandBuffer: CommandBuffer) {
     self.init(
       commandBuffer: commandBuffer,
-      input: NSFileHandle.fileHandleWithStandardInput()
+      input: FileHandle.standardInput
     )
   }
 
@@ -77,7 +77,7 @@ class FileHandleRelay : Relay {
     let commandBuffer = self.commandBuffer
     self.input.readabilityHandler = { handle in
       let data = handle.availableData
-      commandBuffer.append(data)
+      let _ = commandBuffer.append(data)
     }
   }
 

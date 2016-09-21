@@ -10,12 +10,12 @@
 import Foundation
 import FBSimulatorControl
 
-public enum DefaultsError : ErrorType, CustomStringConvertible {
-  case UnreadableRCFile(String)
+public enum DefaultsError : Error, CustomStringConvertible {
+  case unreadableRCFile(String)
 
   public var description: String { get {
     switch self {
-    case .UnreadableRCFile(let underlyingError):
+    case .unreadableRCFile(let underlyingError):
       return "Unreadable RC File " + underlyingError
     }
   }}
@@ -32,7 +32,7 @@ extension Configuration : Defaultable {
 }
 
 extension Configuration {
-  func updateIfNonDefault(configuration: Configuration) -> Configuration {
+  func updateIfNonDefault(_ configuration: Configuration) -> Configuration {
     if self == Configuration.defaultValue {
       return configuration
     }
@@ -40,17 +40,17 @@ extension Configuration {
   }
 }
 
-let DefaultsRCFile: NSURL = NSURL.urlRelativeTo(NSHomeDirectory(), component: ".fbsimctlrc", isDirectory: false)
+let DefaultsRCFile: URL = URL.urlRelativeTo(NSHomeDirectory(), component: ".fbsimctlrc", isDirectory: false)
 
 /**
  Provides Default Values, with overrides from a .rc file
  as well as updates to defaults to avoid repetitious commands.
 */
-public class Defaults {
+open class Defaults {
   let logWriter: Writer
   let format: FBiOSTargetFormat
   let configuration: Configuration
-  private var query: FBiOSTargetQuery?
+  fileprivate var query: FBiOSTargetQuery?
 
   init(logWriter: Writer, format: FBiOSTargetFormat, configuration: Configuration) {
     self.logWriter = logWriter
@@ -58,13 +58,13 @@ public class Defaults {
     self.configuration = configuration
   }
 
-  func updateLastQuery(query: FBiOSTargetQuery) {
+  func updateLastQuery(_ query: FBiOSTargetQuery) {
     // TODO: Create the CLI equivalent of the configuration and save.
     let _ = Defaults.queryHistoryLocation(configuration)
     self.query = query
   }
 
-  func queryForAction(action: Action) -> FBiOSTargetQuery? {
+  func queryForAction(_ action: Action) -> FBiOSTargetQuery? {
     // Always use the last query, if present
     if let query = self.query {
       return query
@@ -73,31 +73,31 @@ public class Defaults {
     // Depending on what state the simulator is expected to be in.
     // Descructive of machine-killing actions shouldn't have defaults.
     switch action {
-      case .Boot:
+      case .boot:
         fallthrough
-      case .Delete:
+      case .delete:
         return nil
-      case .List:
+      case .list:
         fallthrough
-      case .Listen:
+      case .listen:
         fallthrough
-      case .Search:
+      case .search:
         fallthrough
-      case .Diagnose:
+      case .diagnose:
         return FBiOSTargetQuery.allTargets()
-      case .Approve:
-        return FBiOSTargetQuery.simulatorStates([.Shutdown])
+      case .approve:
+        return FBiOSTargetQuery.simulatorStates([.shutdown])
       default:
-        return FBiOSTargetQuery.simulatorStates([.Booted])
+        return FBiOSTargetQuery.simulatorStates([.booted])
     }
   }
 
-  static func create(configuration: Configuration, logWriter: Writer) throws -> Defaults {
+  static func create(_ configuration: Configuration, logWriter: Writer) throws -> Defaults {
     do {
       var configuration: Configuration = configuration
       var format: FBiOSTargetFormat? = nil
 
-      if let rcContents = try? String(contentsOfURL: DefaultsRCFile) {
+      if let rcContents = try?  String(contentsOf: DefaultsRCFile) {
         let rcTokens = Arguments.fromString(rcContents)
         let (_, result) = try self.rcFileParser.parse(rcTokens)
         if let rcConfiguration = result.0 {
@@ -110,15 +110,15 @@ public class Defaults {
 
       return Defaults(
         logWriter: logWriter,
-        format: format ?? FBiOSTargetFormat.defaultFormat(),
+        format: format ?? FBiOSTargetFormat.default(),
         configuration: configuration
       )
     } catch let error as ParseError {
-      throw DefaultsError.UnreadableRCFile(error.description)
+      throw DefaultsError.unreadableRCFile(error.description)
     }
   }
 
-  private static var rcFileParser: Parser<(Configuration?, FBiOSTargetFormat?)> { get {
+  fileprivate static var rcFileParser: Parser<(Configuration?, FBiOSTargetFormat?)> { get {
     return Parser
       .ofTwoSequenced(
         Configuration.parser.optional(),
@@ -126,8 +126,8 @@ public class Defaults {
       )
   }}
 
-  private static func queryHistoryLocation(configuration: Configuration) -> NSURL {
+  fileprivate static func queryHistoryLocation(_ configuration: Configuration) -> URL {
     let setPath = configuration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
-    return NSURL.urlRelativeTo(setPath, component: ".fbsimctl_last_query", isDirectory: false)
+    return URL.urlRelativeTo(setPath, component: ".fbsimctl_last_query", isDirectory: false)
   }
 }

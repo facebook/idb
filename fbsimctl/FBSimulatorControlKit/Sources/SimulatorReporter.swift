@@ -10,10 +10,10 @@
 import Foundation
 import FBSimulatorControl
 
-public class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
-  unowned public let simulator: FBSimulator
-  public let reporter: EventReporter
-  public let format: FBiOSTargetFormat
+open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
+  unowned open let simulator: FBSimulator
+  open let reporter: EventReporter
+  open let format: FBiOSTargetFormat
 
   init(simulator: FBSimulator, format: FBiOSTargetFormat, reporter: EventReporter) {
     self.simulator = simulator
@@ -23,67 +23,67 @@ public class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
     simulator.userEventSink = self
   }
 
-  public var target: FBiOSTarget { get {
+  open var target: FBiOSTarget { get {
     return self.simulator
   }}
 
-  public func containerApplicationDidLaunch(applicationProcess: FBProcessInfo) {
+  open func containerApplicationDidLaunch(_ applicationProcess: FBProcessInfo) {
     self.reportValue(EventName.Launch, EventType.Discrete, applicationProcess)
   }
 
-  public func containerApplicationDidTerminate(applicationProcess: FBProcessInfo, expected: Bool) {
+  open func containerApplicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
     self.reportValue(EventName.Terminate, EventType.Discrete, applicationProcess)
   }
 
-  public func connectionDidConnect(connection: FBSimulatorConnection) {
+  open func connectionDidConnect(_ connection: FBSimulatorConnection) {
     self.reportValue(EventName.Launch, EventType.Discrete, connection)
   }
 
-  public func connectionDidDisconnect(connection: FBSimulatorConnection, expected: Bool) {
+  open func connectionDidDisconnect(_ connection: FBSimulatorConnection, expected: Bool) {
     self.reportValue(EventName.Terminate, EventType.Discrete, connection)
   }
 
-  public func testmanagerDidConnect(testManager: FBTestManager) {
+  open func testmanagerDidConnect(_ testManager: FBTestManager) {
 
   }
 
-  public func testmanagerDidDisconnect(testManager: FBTestManager) {
+  open func testmanagerDidDisconnect(_ testManager: FBTestManager) {
 
   }
 
-  public func simulatorDidLaunch(launchdProcess: FBProcessInfo) {
+  open func simulatorDidLaunch(_ launchdProcess: FBProcessInfo) {
     self.reportValue(EventName.Launch, EventType.Discrete, launchdProcess)
   }
 
-  public func simulatorDidTerminate(launchdProcess: FBProcessInfo, expected: Bool) {
+  open func simulatorDidTerminate(_ launchdProcess: FBProcessInfo, expected: Bool) {
     self.reportValue(EventName.Terminate, EventType.Discrete, launchdProcess)
   }
 
-  public func agentDidLaunch(launchConfig: FBAgentLaunchConfiguration, didStart agentProcess: FBProcessInfo, stdOut: NSFileHandle, stdErr: NSFileHandle) {
+  open func agentDidLaunch(_ launchConfig: FBAgentLaunchConfiguration, didStart agentProcess: FBProcessInfo, stdOut: FileHandle, stdErr: FileHandle) {
     self.reportValue(EventName.Launch, EventType.Discrete, agentProcess)
   }
 
-  public func agentDidTerminate(agentProcess: FBProcessInfo, expected: Bool) {
+  open func agentDidTerminate(_ agentProcess: FBProcessInfo, expected: Bool) {
     self.reportValue(EventName.Terminate, EventType.Discrete, agentProcess)
   }
 
-  public func applicationDidLaunch(launchConfig: FBApplicationLaunchConfiguration, didStart applicationProcess: FBProcessInfo) {
+  open func applicationDidLaunch(_ launchConfig: FBApplicationLaunchConfiguration, didStart applicationProcess: FBProcessInfo) {
     self.reportValue(EventName.Launch, EventType.Discrete, applicationProcess)
   }
 
-  public func applicationDidTerminate(applicationProcess: FBProcessInfo, expected: Bool) {
+  open func applicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
     self.reportValue(EventName.Terminate, EventType.Discrete, applicationProcess)
   }
 
-  public func diagnosticAvailable(log: FBDiagnostic) {
+  open func diagnosticAvailable(_ log: FBDiagnostic) {
     self.reportValue(EventName.Diagnostic, EventType.Discrete, log)
   }
 
-  public func didChangeState(state: FBSimulatorState) {
+  open func didChange(_ state: FBSimulatorState) {
     self.reportValue(EventName.StateChange, EventType.Discrete, state.description as NSString)
   }
 
-  public func terminationHandleAvailable(terminationHandle: FBTerminationHandleProtocol) {
+  open func terminationHandleAvailable(_ terminationHandle: FBTerminationHandleProtocol) {
 
   }
 }

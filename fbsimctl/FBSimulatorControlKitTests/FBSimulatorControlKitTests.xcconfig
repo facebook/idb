@@ -3,7 +3,7 @@
 
 // Target Specific Settings
 EMBEDDED_CONTENT_CONTAINS_SWIFT = YES
-SWIFT_VERSION = 2.3
+SWIFT_VERSION = 3.0
 PRODUCT_NAME = FBSimulatorControlKitTests
 INFOPLIST_FILE = $(PROJECT_DIR)/FBSimulatorControlKitTests/Info.plist
 PRODUCT_BUNDLE_IDENTIFIER = com.facebook.FBSimulatorControlKitTests

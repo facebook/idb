@@ -12,7 +12,7 @@ import Foundation
 /**
  Base Options that are also used in Help.
  */
-public struct OutputOptions : OptionSetType {
+public struct OutputOptions : OptionSet {
   public let rawValue : Int
   public init(rawValue: Int) {
     self.rawValue = rawValue
@@ -33,12 +33,12 @@ public struct Help {
 }
 
 public enum CLI {
-  case Show(Help)
-  case Run(Command)
+  case show(Help)
+  case run(Command)
 }
 
 public extension CLI {
-  public static func fromArguments(arguments: [String], environment: [String : String]) -> CLI {
+  public static func fromArguments(_ arguments: [String], environment: [String : String]) -> CLI {
     let help = Help(outputOptions: OutputOptions(), userInitiated: false, command: nil)
 
     do {
@@ -46,10 +46,10 @@ public extension CLI {
       return cli.appendEnvironment(environment)
     } catch let error as ParseError {
       print("Failed to Parse Command \(error)")
-      return CLI.Show(help)
+      return CLI.show(help)
     } catch let error as NSError {
       print("Failed to Parse Command \(error)")
-      return CLI.Show(help)
+      return CLI.show(help)
     }
   }
 }

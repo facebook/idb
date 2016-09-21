@@ -11,37 +11,37 @@ import XCTest
 @testable import FBSimulatorControlKit
 
 public extension XCTestCase {
-  func assertParses<A : Equatable>(parser: Parser<A>, _ tokens: [String], _ expected: A) {
+  func assertParses<A : Equatable>(_ parser: Parser<A>, _ tokens: [String], _ expected: A) {
     do {
       let (_, actual) = try parser.parse(tokens)
       XCTAssertEqual(expected, actual)
     } catch let err {
-      XCTFail("Query '\(tokens.joinWithSeparator(" "))' failed to parse \(err)")
+      XCTFail("Query '\(tokens.joined(separator: " "))' failed to parse \(err)")
     }
   }
 
-  func assertParsesAll<A : Equatable>(parser: Parser<A>, _ tokenExpectedPairs: [([String], A)]) {
+  func assertParsesAll<A : Equatable>(_ parser: Parser<A>, _ tokenExpectedPairs: [([String], A)]) {
     for (tokens, expected) in tokenExpectedPairs {
       self.assertParses(parser, tokens, expected)
     }
   }
 
-  func assertParseFails<A>(parser: Parser<A>, _ tokens: [String]) {
+  func assertParseFails<A>(_ parser: Parser<A>, _ tokens: [String]) {
     do {
       let (_, actual) = try parser.parse(tokens)
-      XCTFail("Query '\(tokens.joinWithSeparator(" "))' should have failed to parse but did \(actual)")
+      XCTFail("Query '\(tokens.joined(separator: " "))' should have failed to parse but did \(actual)")
     } catch {
       // Passed
     }
   }
 
-  func assertFailsToParseAll<A>(parser: Parser<A>, _ tokensList: [[String]]) {
+  func assertFailsToParseAll<A>(_ parser: Parser<A>, _ tokensList: [[String]]) {
     for tokens in tokensList {
       self.assertParseFails(parser, tokens)
     }
   }
 
-  func assertCLIRunsSuccessfully(arguments: [String]) -> [String] {
+  func assertCLIRunsSuccessfully(_ arguments: [String]) -> [String] {
     let writer = TestWriter()
     let cli = CLI.fromArguments(arguments, environment: [:])
     let reporter = cli.createReporter(writer)
@@ -51,19 +51,19 @@ public extension XCTestCase {
     return writer.output
   }
 
-  func temporaryDirectory() -> NSURL {
-    return NSURL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests", isDirectory: true)
+  func temporaryDirectory() -> URL {
+    return URL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests", isDirectory: true)
   }
 }
 
 class TestWriter : Writer, CustomStringConvertible {
   var output: [String] = []
 
-  func write(string: String) {
+  func write(_ string: String) {
     output.append(string)
   }
 
   var description: String { get {
-    return output.joinWithSeparator("\n")
+    return output.joined(separator: "\n")
   }}
 }

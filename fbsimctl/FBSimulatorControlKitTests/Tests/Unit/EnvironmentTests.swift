@@ -20,8 +20,8 @@ class EnvironmentTests : XCTestCase {
 
   func testAppendsEnvironmentToLaunchConfiguration() {
     let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], options: FBProcessLaunchOptions())
-    let actual = Action.LaunchApp(launchConfig).appendEnvironment(testEnvironment)
-    let expected  = Action.LaunchApp(launchConfig.withEnvironmentAdditions([
+    let actual = Action.launchApp(launchConfig).appendEnvironment(testEnvironment)
+    let expected  = Action.launchApp(launchConfig.withEnvironmentAdditions([
       "FOO" : "BAR",
       "BING" : "BONG",
     ]))
@@ -30,8 +30,8 @@ class EnvironmentTests : XCTestCase {
 
   func testAppendsEnvironmentToXCTestLaunchConfiguration() {
     let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], options: FBProcessLaunchOptions())
-    let actual = Action.LaunchXCTest(launchConfig, "com.example.App", nil).appendEnvironment(testEnvironment)
-    let expected  = Action.LaunchXCTest(launchConfig.withEnvironmentAdditions([
+    let actual = Action.launchXCTest(launchConfig, "com.example.App", nil).appendEnvironment(testEnvironment)
+    let expected  = Action.launchXCTest(launchConfig.withEnvironmentAdditions([
       "FOO" : "BAR",
       "BING" : "BONG",
     ]), "com.example.App", nil)

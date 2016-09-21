@@ -13,7 +13,7 @@ import Foundation
  A Protocol for performing an Command producing an CommandResult.
  */
 protocol CommandPerformer {
-  func perform(command: Command, reporter: EventReporter) -> CommandResult
+  func perform(_ command: Command, reporter: EventReporter) -> CommandResult
 }
 
 /**
@@ -25,7 +25,7 @@ struct ActionPerformer {
   let query: FBiOSTargetQuery
   let format: FBiOSTargetFormat?
 
-  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> CommandResult {
+  func perform(_ reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> CommandResult {
     let command = Command(
       configuration: self.configuration,
       actions: [action],
@@ -37,15 +37,15 @@ struct ActionPerformer {
 }
 
 extension CommandPerformer {
-  func perform(input: String, reporter: EventReporter) -> CommandResult {
+  func perform(_ input: String, reporter: EventReporter) -> CommandResult {
     do {
       let arguments = Arguments.fromString(input)
       let (_, command) = try Command.parser.parse(arguments)
       return self.perform(command, reporter: reporter)
     } catch let error as ParseError {
-      return .Failure("Error: \(error.description)")
+      return .failure("Error: \(error.description)")
     } catch let error as NSError {
-      return .Failure(error.description)
+      return .failure(error.description)
     }
   }
 }
@@ -54,25 +54,25 @@ extension CommandPerformer {
  Defines the Result of a Command.
  */
 public enum CommandResult {
-  case Success(EventReporterSubject?)
-  case Failure(String)
+  case success(EventReporterSubject?)
+  case failure(String)
 
-  func append(second: CommandResult) -> CommandResult {
+  func append(_ second: CommandResult) -> CommandResult {
     switch (self, second) {
-    case (.Success(.Some(let leftSubject)), .Success(.Some(let rightSubject))):
-      return .Success(leftSubject.append(rightSubject))
-    case (.Success(.Some(let leftSubject)), .Success(.None)):
-      return .Success(leftSubject)
-    case (.Success(.None), .Success(.Some(let rightSubject))):
-      return .Success(rightSubject)
-    case (.Success, .Success):
-      return .Success(nil)
-    case (.Success, .Failure(let secondString)):
-      return .Failure(secondString)
-    case (.Failure(let firstString), .Success):
-      return .Failure(firstString)
-    case (.Failure(let firstString), .Failure(let secondString)):
-      return .Failure("\(firstString)\n\(secondString)")
+    case (.success(.some(let leftSubject)), .success(.some(let rightSubject))):
+      return .success(leftSubject.append(rightSubject))
+    case (.success(.some(let leftSubject)), .success(.none)):
+      return .success(leftSubject)
+    case (.success(.none), .success(.some(let rightSubject))):
+      return .success(rightSubject)
+    case (.success, .success):
+      return .success(nil)
+    case (.success, .failure(let secondString)):
+      return .failure(secondString)
+    case (.failure(let firstString), .success):
+      return .failure(firstString)
+    case (.failure(let firstString), .failure(let secondString)):
+      return .failure("\(firstString)\n\(secondString)")
     }
   }
 }
@@ -80,8 +80,8 @@ public enum CommandResult {
 extension CommandResult : CustomStringConvertible, CustomDebugStringConvertible {
   public var description: String { get {
     switch self {
-    case .Success: return "Success"
-    case .Failure(let string): return "Failure '\(string)'"
+    case .success: return "Success"
+    case .failure(let string): return "Failure '\(string)'"
     }
   }}
 

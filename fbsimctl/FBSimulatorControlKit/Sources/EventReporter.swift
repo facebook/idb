@@ -12,39 +12,39 @@ import FBSimulatorControl
 import XCTestBootstrap
 
 public protocol EventReporter {
-  func report(subject: EventReporterSubject)
+  func report(_ subject: EventReporterSubject)
 }
 
 extension EventReporter {
-  func reportSimpleBridge(eventName: EventName, _ eventType: EventType, _ subject: ControlCoreValue) {
+  func reportSimpleBridge(_ eventName: EventName, _ eventType: EventType, _ subject: ControlCoreValue) {
     self.reportSimple(eventName, eventType, ControlCoreSubject(subject))
   }
 
-  func reportSimple(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
+  func reportSimple(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     self.report(SimpleSubject(eventName, eventType, subject))
   }
 
-  func reportError(message: String) {
+  func reportError(_ message: String) {
     self.reportSimpleBridge(EventName.Failure, EventType.Discrete, message as NSString)
   }
 
-  func logDebug(string: String) {
+  func logDebug(_ string: String) {
     self.report(LogSubject(logString: string, level: Constants.asl_level_debug()))
   }
 
-  func logInfo(string: String) {
+  func logInfo(_ string: String) {
     self.report(LogSubject(logString: string, level: Constants.asl_level_info()))
   }
 }
 
-public class HumanReadableEventReporter : EventReporter {
+open class HumanReadableEventReporter : EventReporter {
   let writer: Writer
 
   init(writer: Writer) {
     self.writer = writer
   }
 
-  public func report(subject: EventReporterSubject) {
+  open func report(_ subject: EventReporterSubject) {
     for item in subject.subSubjects {
       let string = item.description
       if string.isEmpty {
@@ -55,7 +55,7 @@ public class HumanReadableEventReporter : EventReporter {
   }
 }
 
-public class JSONEventReporter : NSObject, EventReporter {
+open class JSONEventReporter : NSObject, EventReporter {
   let writer: Writer
   let pretty: Bool
 
@@ -64,7 +64,7 @@ public class JSONEventReporter : NSObject, EventReporter {
     self.pretty = pretty
   }
 
-  public func report(subject: EventReporterSubject) {
+  open func report(_ subject: EventReporterSubject) {
     for item in subject.subSubjects {
       guard let line = try? item.jsonDescription.serializeToString(pretty) else {
         assertionFailure("\(item) could not be encoded to a string")
@@ -76,7 +76,7 @@ public class JSONEventReporter : NSObject, EventReporter {
 }
 
 public extension OutputOptions {
-  public func createReporter(writer: Writer) -> EventReporter {
+  public func createReporter(_ writer: Writer) -> EventReporter {
     if self.contains(OutputOptions.JSON) {
       let pretty = self.contains(OutputOptions.Pretty)
       return JSONEventReporter(writer: writer, pretty: pretty)
@@ -90,23 +90,23 @@ public extension OutputOptions {
 }
 
 public extension Help {
-  public func createReporter(writer: Writer) -> EventReporter {
+  public func createReporter(_ writer: Writer) -> EventReporter {
     return self.outputOptions.createReporter(writer)
   }
 }
 
 public extension Command {
-  public func createReporter(writer: Writer) -> EventReporter {
+  public func createReporter(_ writer: Writer) -> EventReporter {
     return self.configuration.outputOptions.createReporter(writer)
   }
 }
 
 public extension CLI {
-  public func createReporter(writer: Writer) -> EventReporter {
+  public func createReporter(_ writer: Writer) -> EventReporter {
     switch self {
-    case .Run(let command):
+    case .run(let command):
       return command.createReporter(writer)
-    case .Show(let help):
+    case .show(let help):
       return help.createReporter(writer)
     }
   }

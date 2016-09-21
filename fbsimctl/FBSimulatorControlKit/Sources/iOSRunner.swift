@@ -12,14 +12,14 @@ import FBSimulatorControl
 import FBDeviceControl
 
 extension CommandResultRunner {
-  static func unimplementedActionRunner(action: Action, target: FBiOSTarget, format: FBiOSTargetFormat) -> Runner {
+  static func unimplementedActionRunner(_ action: Action, target: FBiOSTarget, format: FBiOSTargetFormat) -> Runner {
     let (eventName, maybeSubject) = action.reportable
     var actionMessage = eventName.rawValue
     if let subject = maybeSubject {
       actionMessage += " \(subject.description)"
     }
     let message = "Action \(actionMessage) is unimplemented for target \(format.format(target))"
-    return CommandResultRunner(result: CommandResult.Failure(message))
+    return CommandResultRunner(result: CommandResult.failure(message))
   }
 }
 
@@ -30,9 +30,9 @@ struct iOSActionProvider {
     let (action, target, reporter) = self.context.value
 
     switch action {
-    case .Install(let appPath):
+    case .install(let appPath):
       return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
-        try target.installApplicationWithPath(appPath)
+        try target.installApplication(withPath: appPath)
       }
     default:
       return nil
@@ -44,9 +44,9 @@ struct iOSTargetRunner : Runner {
   let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
-  let action: Void throws -> Void
+  let action:(Void)throws -> Void
 
-  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: Void throws -> Void) {
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> Void) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
@@ -63,12 +63,12 @@ struct iOSTargetRunner : Runner {
         self.reporter.report(name, EventType.Ended, self.subject)
       }
     } catch let error as NSError {
-      return .Failure(error.description)
+      return .failure(error.description)
     } catch let error as JSONError {
-      return .Failure(error.description)
+      return .failure(error.description)
     } catch {
-      return .Failure("Unknown Error")
+      return .failure("Unknown Error")
     }
-    return .Success(nil)
+    return .success(nil)
   }
 }

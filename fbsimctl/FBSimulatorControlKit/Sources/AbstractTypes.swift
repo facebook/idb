@@ -15,5 +15,5 @@ import Foundation
  */
 public protocol Accumulator {
   init()
-  func append(other: Self) -> Self
+  func append(_ other: Self) -> Self
 }

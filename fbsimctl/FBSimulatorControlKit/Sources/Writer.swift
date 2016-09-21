@@ -13,35 +13,35 @@ import Foundation
  A Protocol for writing Strings out.
  */
 public protocol Writer {
-  func write(string: String)
+  func write(_ string: String)
 }
 
 /**
  A Writer Implementation for a File Handle
  */
-public class FileHandleWriter : Writer {
-  let fileHandle: NSFileHandle
+open class FileHandleWriter : Writer {
+  let fileHandle: FileHandle
 
-  init(fileHandle: NSFileHandle) {
+  init(fileHandle: FileHandle) {
     self.fileHandle = fileHandle
   }
 
-  public func write(string: String) {
+  open func write(_ string: String) {
     var output = string
     if (output.characters.last != "\n") {
       output.append("\n" as Character)
     }
-    guard let data = output.dataUsingEncoding(NSUTF8StringEncoding) else {
+    guard let data = output.data(using: String.Encoding.utf8) else {
       return
     }
-    self.fileHandle.writeData(data)
+    self.fileHandle.write(data)
   }
 
-  public static var stdOutWriter: FileHandleWriter { get {
-    return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardOutput())
+  open static var stdOutWriter: FileHandleWriter { get {
+    return FileHandleWriter(fileHandle: FileHandle.standardOutput)
   }}
 
-  public static var stdErrWriter: FileHandleWriter { get {
-    return FileHandleWriter(fileHandle: NSFileHandle.fileHandleWithStandardError())
+  open static var stdErrWriter: FileHandleWriter { get {
+    return FileHandleWriter(fileHandle: FileHandle.standardError)
   }}
 }

@@ -22,7 +22,7 @@ public protocol iOSReporter : class {
  Conveniences for a Reporter.
  */
 extension iOSReporter {
-  public func report(eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
+  public func report(_ eventName: EventName, _ eventType: EventType, _ subject: EventReporterSubject) {
     let targetSubject = iOSTargetSubject(target: self.target, format: self.format)
     self.reporter.report(iOSTargetWithSubject(
       targetSubject: targetSubject,
@@ -32,7 +32,7 @@ extension iOSReporter {
     ))
   }
 
-  public func reportValue(eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
+  public func reportValue(_ eventName: EventName, _ eventType: EventType, _ value: ControlCoreValue) {
     self.report(eventName, eventType, ControlCoreSubject(value))
   }
 }

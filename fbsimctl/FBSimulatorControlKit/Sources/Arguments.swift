@@ -10,15 +10,15 @@
 import Foundation
 
 struct Arguments {
-  static func fromString(string: String) -> [String] {
+  static func fromString(_ string: String) -> [String] {
     let characterSet = NSMutableCharacterSet()
-    characterSet.formUnionWithCharacterSet(NSCharacterSet.alphanumericCharacterSet())
-    characterSet.formUnionWithCharacterSet(NSCharacterSet.symbolCharacterSet())
-    characterSet.formUnionWithCharacterSet(NSCharacterSet.punctuationCharacterSet())
+    characterSet.formUnion(with: CharacterSet.alphanumerics)
+    characterSet.formUnion(with: CharacterSet.symbols)
+    characterSet.formUnion(with: CharacterSet.punctuationCharacters)
     characterSet.invert()
 
     return string
-      .stringByTrimmingCharactersInSet(characterSet)
-      .componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
+      .trimmingCharacters(in: characterSet as CharacterSet)
+      .components(separatedBy: CharacterSet.whitespaces)
   }
 }

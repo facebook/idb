@@ -13,10 +13,10 @@ import FBSimulatorControl
 let EnvironmentPrefix = "FBSIMCTL_CHILD_"
 
 public extension CLI {
-  func appendEnvironment(environment: [String : String]) -> CLI {
+  func appendEnvironment(_ environment: [String : String]) -> CLI {
     switch self {
-    case .Run(let command):
-      return .Run(command.appendEnvironment(environment))
+    case .run(let command):
+      return .run(command.appendEnvironment(environment))
     default:
       return self
     }
@@ -24,7 +24,7 @@ public extension CLI {
 }
 
 public extension Command {
-  func appendEnvironment(environment: [String : String]) -> Command {
+  func appendEnvironment(_ environment: [String : String]) -> Command {
     return Command(
       configuration: self.configuration,
       actions: self.actions.map { $0.appendEnvironment(environment) },
@@ -35,22 +35,22 @@ public extension Command {
 }
 
 public extension Action {
-  func appendEnvironment(environment: [String : String]) -> Action {
+  func appendEnvironment(_ environment: [String : String]) -> Action {
     switch self {
-    case .LaunchApp(let configuration):
-      return .LaunchApp(
+    case .launchApp(let configuration):
+      return .launchApp(
         configuration.withEnvironmentAdditions(
           Action.subprocessEnvironment(environment)
         )
       )
-    case .LaunchAgent(let configuration):
-      return .LaunchAgent(
+    case .launchAgent(let configuration):
+      return .launchAgent(
         configuration.withEnvironmentAdditions(
           Action.subprocessEnvironment(environment)
         )
       )
-    case .LaunchXCTest(let configuration, let bundle, let timeout):
-      return .LaunchXCTest(
+    case .launchXCTest(let configuration, let bundle, let timeout):
+      return .launchXCTest(
         configuration.withEnvironmentAdditions(
           Action.subprocessEnvironment(environment)
         ),
@@ -62,13 +62,13 @@ public extension Action {
     }
   }
 
-  private static func subprocessEnvironment(environment: [String : String]) -> [String : String] {
+  fileprivate static func subprocessEnvironment(_ environment: [String : String]) -> [String : String] {
     var additions: [String : String] = [:]
     for (key, value) in environment {
       if !key.hasPrefix(EnvironmentPrefix) {
         continue
       }
-      additions[key.stringByReplacingOccurrencesOfString(EnvironmentPrefix, withString: "")] = value
+      additions[key.replacingOccurrences(of: EnvironmentPrefix, with: "")] = value
     }
     return additions
   }

@@ -13,21 +13,21 @@ import FBSimulatorControl
 /**
  Errors for the JSON Type
 */
-public enum JSONError : ErrorType {
-  case NonEncodable(AnyObject)
-  case Serialization(NSError)
-  case Stringifying(NSData)
-  case Parse(String)
+public enum JSONError : Error {
+  case nonEncodable(AnyObject)
+  case serialization(NSError)
+  case stringifying(Data)
+  case parse(String)
 
   public var description: String { get {
     switch self {
-    case .NonEncodable(let object):
+    case .nonEncodable(let object):
       return "\(object) is not JSON Encodable"
-    case .Serialization(let error):
+    case .serialization(let error):
       return "Serialization \(error.description)"
-    case .Stringifying(let data):
+    case .stringifying(let data):
       return "Stringifying \(data.description)"
-    case .Parse(let string):
+    case .parse(let string):
       return "Parsing \(string)"
     }
   }}
@@ -37,83 +37,83 @@ public enum JSONError : ErrorType {
  The JSON Type.
  */
 public indirect enum JSON {
-  case JDictionary([String : JSON])
-  case JArray([JSON])
-  case JString(String)
-  case JNumber(NSNumber)
-  case JNull
+  case jDictionary([String : JSON])
+  case jArray([JSON])
+  case jString(String)
+  case jNumber(NSNumber)
+  case jNull
 
-  static func encode(object: AnyObject) throws -> JSON {
+  static func encode(_ object: AnyObject) throws -> JSON {
     switch object {
     case let array as NSArray:
       var encoded: [JSON] = []
       for element in array {
-        encoded.append(try encode(element))
+        encoded.append(try encode(element as AnyObject))
       }
-      return JSON.JArray(encoded)
+      return JSON.jArray(encoded)
     case let dictionary as NSDictionary:
       var encoded: [String : JSON] = [:]
       for (key, value) in dictionary {
         guard let key = key as? NSString else {
-          throw JSONError.NonEncodable(object)
+          throw JSONError.nonEncodable(object)
         }
-        encoded[key as String] = try encode(value)
+        encoded[key as String] = try encode(value as AnyObject)
       }
-      return JSON.JDictionary(encoded)
+      return JSON.jDictionary(encoded)
     case let string as NSString:
-      return JSON.JString(string as String)
+      return JSON.jString(string as String)
     case let number as NSNumber:
-      return JSON.JNumber(number)
+      return JSON.jNumber(number)
     case is NSNull:
-      return JSON.JNull
+      return JSON.jNull
     default:
-      throw JSONError.NonEncodable(object)
+      throw JSONError.nonEncodable(object)
     }
   }
 
-  static func fromData(data: NSData) throws -> JSON {
-    let object = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
-    return try JSON.encode(object)
+  static func fromData(_ data: Data) throws -> JSON {
+    let object = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions())
+    return try JSON.encode(object as AnyObject)
   }
 
-  var data: NSData { get {
-    return try! NSJSONSerialization.dataWithJSONObject(self.decode(), options: NSJSONWritingOptions())
+  var data: Data { get {
+    return try! JSONSerialization.data(withJSONObject: self.decode(), options: JSONSerialization.WritingOptions())
   }}
 
   func decode() -> AnyObject {
     switch self {
-    case .JDictionary(let dictionary):
+    case .jDictionary(let dictionary):
       let decoded = NSMutableDictionary()
       for (key, value) in dictionary {
         decoded[key] = value.decode()
       }
-      return decoded.copy()
-    case .JArray(let array):
+      return decoded.copy() as AnyObject
+    case .jArray(let array):
       let decoded = NSMutableArray()
       for value in array {
-        decoded.addObject(value.decode())
+        decoded.add(value.decode())
       }
-      return decoded.copy()
-    case .JString(let string):
-      return string
-    case .JNumber(let number):
+      return decoded.copy() as AnyObject
+    case .jString(let string):
+      return string as AnyObject
+    case .jNumber(let number):
       return number
-    case .JNull:
+    case .jNull:
       return NSNull()
     }
   }
 
-  func serializeToString(pretty: Bool) throws -> NSString {
+  func serializeToString(_ pretty: Bool) throws -> NSString {
     do {
-      let writingOptions = pretty ? NSJSONWritingOptions.PrettyPrinted : NSJSONWritingOptions()
+      let writingOptions = pretty ? JSONSerialization.WritingOptions.prettyPrinted : JSONSerialization.WritingOptions()
       let jsonObject = self.decode()
-      let data = try NSJSONSerialization.dataWithJSONObject(jsonObject, options: writingOptions)
-      guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
-        throw JSONError.Stringifying(data)
+      let data = try JSONSerialization.data(withJSONObject: jsonObject, options: writingOptions)
+      guard let string = NSString(data: data, encoding: String.Encoding.utf8.rawValue) else {
+        throw JSONError.stringifying(data)
       }
       return string
     } catch let error as NSError {
-      throw JSONError.Serialization(error)
+      throw JSONError.serialization(error)
     }
   }
 }
@@ -122,28 +122,28 @@ public indirect enum JSON {
  Simple, Chainable Parsers for the JSON Type
 */
 extension JSON {
-  func getValue(key: String) throws -> JSON {
+  func getValue(_ key: String) throws -> JSON {
     guard let value = try getOptionalValue(key) else {
-      throw JSONError.Parse("Could not find \(key) in dictionary \(self)")
+      throw JSONError.parse("Could not find \(key) in dictionary \(self)")
     }
     return value
   }
 
-  func getOptionalValue(key: String) throws -> JSON? {
+  func getOptionalValue(_ key: String) throws -> JSON? {
     switch self {
-    case .JDictionary(let dictionary):
+    case .jDictionary(let dictionary):
       guard let value = dictionary[key] else {
         return nil
       }
       return value
     default:
-      throw JSONError.Parse("\(self) not a dictionary")
+      throw JSONError.parse("\(self) not a dictionary")
     }
   }
 
   func getOptionalArray() -> [JSON]? {
     switch self {
-    case .JArray(let array):
+    case .jArray(let array):
       return array
     default:
       return nil
@@ -152,14 +152,14 @@ extension JSON {
 
   func getArray() throws -> [JSON] {
     guard let array = getOptionalArray() else {
-      throw JSONError.Parse("\(self) not an array")
+      throw JSONError.parse("\(self) not an array")
     }
     return array
   }
 
   func getOptionalDictionary() -> [String : JSON]? {
     switch self {
-    case .JDictionary(let dictionary):
+    case .jDictionary(let dictionary):
       return dictionary
     default:
       return nil
@@ -168,35 +168,35 @@ extension JSON {
 
   func getDictionary() throws -> [String : JSON] {
     guard let dictionary = getOptionalDictionary() else {
-       throw JSONError.Parse("\(self) not a dictionary")
+       throw JSONError.parse("\(self) not a dictionary")
     }
     return dictionary
   }
 
   func getString() throws -> String {
     switch self {
-    case .JString(let string):
+    case .jString(let string):
       return string
     default:
-      throw JSONError.Parse("\(self) not a string")
+      throw JSONError.parse("\(self) not a string")
     }
   }
 
   func getNumber() throws -> NSNumber {
     switch self {
-    case .JNumber(let number):
+    case .jNumber(let number):
       return number
     default:
-      throw JSONError.Parse("\(self) is not a number")
+      throw JSONError.parse("\(self) is not a number")
     }
   }
 
   func getBool() throws -> Bool {
     switch self {
-    case .JNumber(let number):
+    case .jNumber(let number):
       return number.boolValue
     default:
-      throw JSONError.Parse("\(self) is not a number/boolean")
+      throw JSONError.parse("\(self) is not a number/boolean")
     }
   }
 

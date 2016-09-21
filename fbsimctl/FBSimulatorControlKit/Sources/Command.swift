@@ -24,9 +24,9 @@ public struct Configuration {
  Options for Creating a Server for listening to commands on.
  */
 public enum Server {
-  case StdIO
-  case Socket(in_port_t)
-  case Http(in_port_t)
+  case stdIO
+  case socket(in_port_t)
+  case http(in_port_t)
 }
 
 /**
@@ -42,8 +42,8 @@ public struct IndividualCreationConfiguration {
  A Specification for the 'Create' Action.
  */
 public enum CreationSpecification {
-  case AllMissingDefaults
-  case Individual(IndividualCreationConfiguration)
+  case allMissingDefaults
+  case individual(IndividualCreationConfiguration)
 }
 
 /**
@@ -59,33 +59,33 @@ public enum DiagnosticFormat : String {
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
-  case Approve([String])
-  case Boot(FBSimulatorLaunchConfiguration?)
-  case ClearKeychain(String?)
-  case Config
-  case Create(CreationSpecification)
-  case Delete
-  case Diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
-  case Erase
-  case Install(String)
-  case LaunchAgent(FBAgentLaunchConfiguration)
-  case LaunchApp(FBApplicationLaunchConfiguration)
-  case LaunchXCTest(FBApplicationLaunchConfiguration, String, NSTimeInterval?)
-  case List
-  case ListApps
-  case ListDeviceSets
-  case Listen(Server)
-  case Open(NSURL)
-  case Record(Bool)
-  case Relaunch(FBApplicationLaunchConfiguration)
-  case Search(FBBatchLogSearch)
-  case Shutdown
-  case Tap(Double, Double)
-  case Terminate(String)
-  case Uninstall(String)
-  case Upload([FBDiagnostic])
-  case WatchdogOverride([String], NSTimeInterval)
-  case SetLocation(Double,Double)
+  case approve([String])
+  case boot(FBSimulatorLaunchConfiguration?)
+  case clearKeychain(String?)
+  case config
+  case create(CreationSpecification)
+  case delete
+  case diagnose(FBSimulatorDiagnosticQuery, DiagnosticFormat)
+  case erase
+  case install(String)
+  case launchAgent(FBAgentLaunchConfiguration)
+  case launchApp(FBApplicationLaunchConfiguration)
+  case launchXCTest(FBApplicationLaunchConfiguration, String, TimeInterval?)
+  case list
+  case listApps
+  case listDeviceSets
+  case listen(Server)
+  case open(URL)
+  case record(Bool)
+  case relaunch(FBApplicationLaunchConfiguration)
+  case search(FBBatchLogSearch)
+  case shutdown
+  case tap(Double, Double)
+  case terminate(String)
+  case uninstall(String)
+  case upload([FBDiagnostic])
+  case watchdogOverride([String], TimeInterval)
+  case setLocation(Double,Double)
 }
 
 /**
@@ -119,7 +119,7 @@ extension Configuration : Accumulator {
     return Configuration.defaultValue
   }}
 
-  public func append(other: Configuration) -> Configuration {
+  public func append(_ other: Configuration) -> Configuration {
     return Configuration(
       outputOptions: self.outputOptions.union(other.outputOptions),
       managementOptions: self.managementOptions.union(other.managementOptions),
@@ -127,17 +127,17 @@ extension Configuration : Accumulator {
     )
   }
 
-  public static func ofOutputOptions(output: OutputOptions) -> Configuration {
+  public static func ofOutputOptions(_ output: OutputOptions) -> Configuration {
     let query = self.identity
     return Configuration(outputOptions: output, managementOptions: query.managementOptions, deviceSetPath: query.deviceSetPath)
   }
 
-  public static func ofManagementOptions(managementOptions: FBSimulatorManagementOptions) -> Configuration {
+  public static func ofManagementOptions(_ managementOptions: FBSimulatorManagementOptions) -> Configuration {
     let query = self.identity
     return Configuration(outputOptions: query.outputOptions, managementOptions: managementOptions, deviceSetPath: query.deviceSetPath)
   }
 
-  public static func ofDeviceSetPath(deviceSetPath: String) -> Configuration {
+  public static func ofDeviceSetPath(_ deviceSetPath: String) -> Configuration {
     let query = self.identity
     return Configuration(outputOptions: query.outputOptions, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: deviceSetPath)
   }
@@ -157,7 +157,7 @@ extension IndividualCreationConfiguration : Accumulator {
     self.auxDirectory = nil
   }
 
-  public func append(other: IndividualCreationConfiguration) -> IndividualCreationConfiguration {
+  public func append(_ other: IndividualCreationConfiguration) -> IndividualCreationConfiguration {
     return IndividualCreationConfiguration(
       osVersion: other.osVersion ?? self.osVersion,
       deviceType: other.deviceType ?? self.deviceType,
@@ -169,9 +169,9 @@ extension IndividualCreationConfiguration : Accumulator {
 extension CreationSpecification : Equatable {}
 public func == (left: CreationSpecification, right: CreationSpecification) -> Bool {
   switch (left, right) {
-  case (.AllMissingDefaults, .AllMissingDefaults):
+  case (.allMissingDefaults, .allMissingDefaults):
     return true
-  case (.Individual(let leftConfiguration), .Individual(let rightConfiguration)):
+  case (.individual(let leftConfiguration), .individual(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
   default:
     return false
@@ -181,59 +181,59 @@ public func == (left: CreationSpecification, right: CreationSpecification) -> Bo
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
-  case (.Approve(let leftBundleIDs), .Approve(let rightBundleIDs)):
+  case (.approve(let leftBundleIDs), .approve(let rightBundleIDs)):
     return leftBundleIDs == rightBundleIDs
-  case (.Boot(let leftConfiguration), .Boot(let rightConfiguration)):
+  case (.boot(let leftConfiguration), .boot(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
-  case (.ClearKeychain(let leftBundleID), .ClearKeychain(let rightBundleID)):
+  case (.clearKeychain(let leftBundleID), .clearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
-  case (.Config, .Config):
+  case (.config, .config):
     return true
-  case (.Create(let leftSpecification), .Create(let rightSpecification)):
+  case (.create(let leftSpecification), .create(let rightSpecification)):
     return leftSpecification == rightSpecification
-  case (.Delete, .Delete):
+  case (.delete, .delete):
     return true
-  case (.Diagnose(let leftQuery, let leftFormat), .Diagnose(let rightQuery, let rightFormat)):
+  case (.diagnose(let leftQuery, let leftFormat), .diagnose(let rightQuery, let rightFormat)):
     return leftQuery == rightQuery && leftFormat == rightFormat
-  case (.Erase, .Erase):
+  case (.erase, .erase):
     return true
-  case (.Install(let leftApp), .Install(let rightApp)):
+  case (.install(let leftApp), .install(let rightApp)):
     return leftApp == rightApp
-  case (.LaunchAgent(let leftLaunch), .LaunchAgent(let rightLaunch)):
+  case (.launchAgent(let leftLaunch), .launchAgent(let rightLaunch)):
     return leftLaunch == rightLaunch
-  case (.LaunchApp(let leftLaunch), .LaunchApp(let rightLaunch)):
+  case (.launchApp(let leftLaunch), .launchApp(let rightLaunch)):
     return leftLaunch == rightLaunch
-  case (.LaunchXCTest(let leftLaunch, let leftBundle, let leftTimeout), .LaunchXCTest(let rightLaunch, let rightBundle, let rightTimeout)):
+  case (.launchXCTest(let leftLaunch, let leftBundle, let leftTimeout), .launchXCTest(let rightLaunch, let rightBundle, let rightTimeout)):
     return leftLaunch == rightLaunch && leftBundle == rightBundle && leftTimeout == rightTimeout
-  case (.List, .List):
+  case (.list, .list):
     return true
-  case (.ListApps, .ListApps):
+  case (.listApps, .listApps):
     return true
-  case (.ListDeviceSets, .ListDeviceSets):
+  case (.listDeviceSets, .listDeviceSets):
     return true
-  case (.Listen(let leftServer), .Listen(let rightServer)):
+  case (.listen(let leftServer), .listen(let rightServer)):
     return leftServer == rightServer
-  case (.Open(let leftURL), .Open(let rightURL)):
+  case (.open(let leftURL), .open(let rightURL)):
     return leftURL == rightURL
-  case (.Record(let leftStart), .Record(let rightStart)):
+  case (.record(let leftStart), .record(let rightStart)):
     return leftStart == rightStart
-  case (.Relaunch(let leftLaunch), .Relaunch(let rightLaunch)):
+  case (.relaunch(let leftLaunch), .relaunch(let rightLaunch)):
     return leftLaunch == rightLaunch
-  case (.Search(let leftSearch), .Search(let rightSearch)):
+  case (.search(let leftSearch), .search(let rightSearch)):
     return leftSearch == rightSearch
-  case (.Shutdown, .Shutdown):
+  case (.shutdown, .shutdown):
     return true
-  case (.Tap(let leftX, let leftY), .Tap(let rightX, let rightY)):
+  case (.tap(let leftX, let leftY), .tap(let rightX, let rightY)):
     return leftX == rightX && leftY == rightY
-  case (.SetLocation(let leftLat, let leftLon), .SetLocation(let rightLat, let rightLon)):
+  case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
     return leftLat == rightLat && leftLon == rightLon
-  case (.Terminate(let leftBundleID), .Terminate(let rightBundleID)):
+  case (.terminate(let leftBundleID), .terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
-  case (.Uninstall(let leftBundleID), .Uninstall(let rightBundleID)):
+  case (.uninstall(let leftBundleID), .uninstall(let rightBundleID)):
     return leftBundleID == rightBundleID
-  case (.Upload(let leftPaths), .Upload(let rightPaths)):
+  case (.upload(let leftPaths), .upload(let rightPaths)):
     return leftPaths == rightPaths
-  case (.WatchdogOverride(let leftBundleIDs, let leftTimeout), .WatchdogOverride(let rightBundleIDs, let rightTimeout)):
+  case (.watchdogOverride(let leftBundleIDs, let leftTimeout), .watchdogOverride(let rightBundleIDs, let rightTimeout)):
     return leftBundleIDs == rightBundleIDs && leftTimeout == rightTimeout
   default:
     return false
@@ -243,59 +243,59 @@ public func == (left: Action, right: Action) -> Bool {
 extension Action {
   public var reportable: (EventName, EventReporterSubject?) { get {
     switch self {
-    case .Approve(let bundleIDs):
+    case .approve(let bundleIDs):
       return (EventName.Approve, StringsSubject(bundleIDs))
-    case .Boot:
+    case .boot:
       return (EventName.Boot, nil)
-    case .ClearKeychain(let bundleID):
+    case .clearKeychain(let bundleID):
       return (EventName.ClearKeychain, bundleID)
-    case .Config:
+    case .config:
       return (EventName.Config, nil)
-    case .Create:
+    case .create:
       return (EventName.Create, nil)
-    case .Delete:
+    case .delete:
       return (EventName.Delete, nil)
-    case .Diagnose(let query, _):
+    case .diagnose(let query, _):
       return (EventName.Diagnose, ControlCoreSubject(query))
-    case .Erase:
+    case .erase:
       return (EventName.Erase, nil)
-    case .Install:
+    case .install:
       return (EventName.Install, nil)
-    case .LaunchAgent(let launch):
+    case .launchAgent(let launch):
       return (EventName.Launch, ControlCoreSubject(launch))
-    case .LaunchApp(let launch):
+    case .launchApp(let launch):
       return (EventName.Launch, ControlCoreSubject(launch))
-    case .LaunchXCTest(let launch, _, _):
+    case .launchXCTest(let launch, _, _):
         return (EventName.LaunchXCTest, ControlCoreSubject(launch))
-    case .List:
+    case .list:
         return (EventName.List, nil)
-    case .ListApps:
+    case .listApps:
       return (EventName.ListApps, nil)
-    case .ListDeviceSets:
+    case .listDeviceSets:
       return (EventName.ListDeviceSets, nil)
-    case .Listen:
+    case .listen:
       return (EventName.Listen, nil)
-    case .Open(let url):
+    case .open(let url):
       return (EventName.Open, url.absoluteString)
-    case .Record(let start):
+    case .record(let start):
       return (EventName.Record, start)
-    case .Relaunch(let appLaunch):
+    case .relaunch(let appLaunch):
       return (EventName.Relaunch, ControlCoreSubject(appLaunch))
-    case .Search(let search):
+    case .search(let search):
       return (EventName.Search, ControlCoreSubject(search))
-    case .Shutdown:
+    case .shutdown:
       return (EventName.Shutdown, nil)
-    case .Tap:
+    case .tap:
       return (EventName.Tap, nil)
-    case .Terminate(let bundleID):
+    case .terminate(let bundleID):
       return (EventName.Record, bundleID)
-    case .Uninstall(let bundleID):
+    case .uninstall(let bundleID):
       return (EventName.Uninstall, bundleID)
-    case .Upload:
+    case .upload:
       return (EventName.Diagnose, nil)
-    case .WatchdogOverride(let bundleIDs, _):
+    case .watchdogOverride(let bundleIDs, _):
       return (EventName.WatchdogOverride, StringsSubject(bundleIDs))
-    case .SetLocation:
+    case .setLocation:
       return (EventName.SetLocation, nil)
     }
   }}
@@ -304,11 +304,11 @@ extension Action {
 extension Server : Equatable { }
 public func == (left: Server, right: Server) -> Bool {
   switch (left, right) {
-  case (.StdIO, .StdIO):
+  case (.stdIO, .stdIO):
     return true
-  case (.Socket(let leftPort), .Socket(let rightPort)):
+  case (.socket(let leftPort), .socket(let rightPort)):
     return leftPort == rightPort
-  case (.Http(let leftPort), .Http(let rightPort)):
+  case (.http(let leftPort), .http(let rightPort)):
     return leftPort == rightPort
   default:
     return false
@@ -318,28 +318,28 @@ public func == (left: Server, right: Server) -> Bool {
 extension Server : EventReporterSubject {
   public var jsonDescription: JSON { get {
     switch self {
-    case .StdIO:
-      return JSON.JDictionary([
-        "type" : JSON.JString("stdio")
+    case .stdIO:
+      return JSON.jDictionary([
+        "type" : JSON.jString("stdio")
       ])
-    case .Socket(let port):
-      return JSON.JDictionary([
-        "type" : JSON.JString("socket"),
-        "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+    case .socket(let port):
+      return JSON.jDictionary([
+        "type" : JSON.jString("socket"),
+        "port" : JSON.jNumber(NSNumber(value: Int32(port) as Int32))
       ])
-    case .Http(let port):
-      return JSON.JDictionary([
-        "type" : JSON.JString("http"),
-        "port" : JSON.JNumber(NSNumber(int: Int32(port)))
+    case .http(let port):
+      return JSON.jDictionary([
+        "type" : JSON.jString("http"),
+        "port" : JSON.jNumber(NSNumber(value: Int32(port) as Int32))
       ])
     }
   }}
 
   public var description: String { get {
     switch self {
-    case .StdIO: return "stdio"
-    case .Socket(let port): return "Socket: Port \(port)"
-    case .Http(let port): return "HTTP: Port \(port)"
+    case .stdIO: return "stdio"
+    case .socket(let port): return "Socket: Port \(port)"
+    case .http(let port): return "HTTP: Port \(port)"
     }
   }}
 }

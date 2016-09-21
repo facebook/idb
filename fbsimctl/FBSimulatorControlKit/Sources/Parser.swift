@@ -10,21 +10,21 @@
 import Foundation
 import FBSimulatorControl
 
-public enum ParseError : ErrorType, CustomStringConvertible {
-  case EndOfInput
-  case DoesNotMatch(String, String)
-  case CouldNotInterpret(String, String)
-  case Custom(String)
+public enum ParseError : Error, CustomStringConvertible {
+  case endOfInput
+  case doesNotMatch(String, String)
+  case couldNotInterpret(String, String)
+  case custom(String)
 
   public var description: String { get {
     switch self {
-    case .EndOfInput:
+    case .endOfInput:
       return "End of Input"
-    case .DoesNotMatch(let expected, let actual):
+    case .doesNotMatch(let expected, let actual):
       return "'\(actual)' does not match '\(expected)'"
-    case .CouldNotInterpret(let typeName, let actual):
+    case .couldNotInterpret(let typeName, let actual):
       return "\(actual) could not be interpreted as \(typeName)"
-    case .Custom(let message):
+    case .custom(let message):
       return message
     }
   }}
@@ -35,14 +35,14 @@ public enum ParseError : ErrorType, CustomStringConvertible {
  */
 public struct Parser<A> : CustomStringConvertible {
   let matchDescription: String
-  let output: [String] throws -> ([String], A)
+  let output: ([String]) throws -> ([String], A)
 
-  init(_ matchDescription: String, output: [String] throws -> ([String], A)) {
+  init(_ matchDescription: String, output: @escaping ([String]) throws -> ([String], A)) {
     self.matchDescription = matchDescription
     self.output = output
   }
 
-  public func parse(tokens: [String]) throws -> ([String], A) {
+  public func parse(_ tokens: [String]) throws -> ([String], A) {
     let (nextTokens, value) = try output(tokens)
     return (nextTokens, value)
   }
@@ -56,7 +56,7 @@ public struct Parser<A> : CustomStringConvertible {
   Primitives
 */
 extension Parser {
-  func fmap<B>(f: A throws -> B) -> Parser<B> {
+  func fmap<B>(_ f: @escaping (A) throws -> B) -> Parser<B> {
     return Parser<B>(self.matchDescription) { input in
       let (tokensOut, a) = try self.output(input)
       let b = try f(a)
@@ -64,7 +64,7 @@ extension Parser {
     }
   }
 
-  func bind<B>(f: A -> Parser<B>) -> Parser<B> {
+  func bind<B>(_ f: @escaping (A) -> Parser<B>) -> Parser<B> {
     return Parser<B>(self.matchDescription) { tokens in
       let (tokensA, valueA) = try self.parse(tokens)
       let (tokensB, valueB) = try f(valueA).parse(tokensA)
@@ -76,14 +76,14 @@ extension Parser {
     return Parser<A?>(self.matchDescription) { tokens in
       do {
         let (tokens, value) = try self.parse(tokens)
-        return (tokens, Optional.Some(value))
+        return (tokens, Optional.some(value))
       } catch {
         return (tokens, nil)
       }
     }
   }
 
-  func handle(f: ParseError -> A) -> Parser<A> {
+  func handle(_ f: @escaping (ParseError) -> A) -> Parser<A> {
     return Parser<A>(self.matchDescription) { tokens in
       do {
         return try self.parse(tokens)
@@ -93,7 +93,7 @@ extension Parser {
     }
   }
 
-  func sequence<B>(p: Parser<B>) -> Parser<B> {
+  func sequence<B>(_ p: Parser<B>) -> Parser<B> {
     return self
       .bind({ _ in p })
       .describe("\(self) followed by \(p)")
@@ -104,11 +104,11 @@ extension Parser {
   Derivatives
 */
 extension Parser {
-  func fallback(a: A) -> Parser<A> {
+  func fallback(_ a: A) -> Parser<A> {
     return self.handle { _ in a }
   }
 
-  func describe(description: String) -> Parser<A> {
+  func describe(_ description: String) -> Parser<A> {
     return Parser(description, output: self.output)
   }
 
@@ -121,51 +121,51 @@ extension Parser {
   static var noRemaining: Parser<NSNull> { get {
     return Parser<NSNull>("No Remaining") { tokens in
       if tokens.count > 0 {
-        throw ParseError.Custom("There were remaining tokens \(tokens)")
+        throw ParseError.custom("There were remaining tokens \(tokens)")
       }
       return ([], NSNull())
     }
   }}
 
-  static func fail(error: ParseError) -> Parser<A> {
+  static func fail(_ error: ParseError) -> Parser<A> {
     return Parser<A>("fail Parser") { _ in
       throw error
     }
   }
 
-  static func single(description: String, f: String throws -> A) -> Parser<A> {
+  static func single(_ description: String, f: @escaping (String) throws -> A) -> Parser<A> {
     return Parser<A>(description) { tokens in
       guard let actual = tokens.first else {
-        throw ParseError.EndOfInput
+        throw ParseError.endOfInput
       }
       return try (Array(tokens.dropFirst(1)), f(actual))
     }
   }
 
-  static func ofString(string: String, _ constant: A) -> Parser<A> {
+  static func ofString(_ string: String, _ constant: A) -> Parser<A> {
     return Parser.single(string) { token in
       if token != string {
-        throw ParseError.DoesNotMatch(token, string)
+        throw ParseError.doesNotMatch(token, string)
       }
       return constant
     }
   }
 
-  static func ofFlag(flag: String) -> Parser<Bool> {
+  static func ofFlag(_ flag: String) -> Parser<Bool> {
     return Parser<Bool>
       .ofString(flag, true)
       .fallback(false)
       .describe("Flag \(flag)")
   }
 
-  static func succeeded(token: String, _ by: Parser<A>) -> Parser<A> {
+  static func succeeded(_ token: String, _ by: Parser<A>) -> Parser<A> {
     return Parser<()>
       .ofString(token, ())
       .sequence(by)
       .describe("\(token) followed by \(by)")
   }
 
-  static func ofTwoSequenced<B>(a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
+  static func ofTwoSequenced<B>(_ a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
     return
       a.bind({ valueA in
         return b.fmap { valueB in
@@ -175,7 +175,7 @@ extension Parser {
       .describe("\(a) followed by \(b)")
   }
 
-  static func ofThreeSequenced<B, C>(a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>) -> Parser<(A, B, C)> {
+  static func ofThreeSequenced<B, C>(_ a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>) -> Parser<(A, B, C)> {
     return
       a.bind({ valueA in
         return b.bind { valueB in
@@ -187,7 +187,7 @@ extension Parser {
       .describe("\(a) followed by \(b) followed by \(c)")
   }
 
-  static func ofFourSequenced<B, C, D>(a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>, _ d: Parser<D>) -> Parser<(A, B, C, D)> {
+  static func ofFourSequenced<B, C, D>(_ a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>, _ d: Parser<D>) -> Parser<(A, B, C, D)> {
     return
       a.bind({ valueA in
         return b.bind { valueB in
@@ -201,22 +201,22 @@ extension Parser {
       .describe("\(a) followed by \(b) followed by \(c) followed by \(d)")
   }
 
-  static func alternative(parsers: [Parser<A>]) -> Parser<A> {
+  static func alternative(_ parsers: [Parser<A>]) -> Parser<A> {
     return Parser<A>("Any of \(parsers)") { tokens in
       for parser in parsers {
         do {
           return try parser.parse(tokens)
         } catch {}
       }
-      throw ParseError.DoesNotMatch(parsers.description, tokens.description)
+      throw ParseError.doesNotMatch(parsers.description, tokens.description)
     }
   }
 
-  static func manyCount(count: Int, _ parser: Parser<A>) -> Parser<[A]> {
+  static func manyCount(_ count: Int, _ parser: Parser<A>) -> Parser<[A]> {
     return self.manySepCount(count, parser, Parser.passthrough)
   }
 
-  static func manySepCount<B>(count: Int, _ parser: Parser<A>, _ separator: Parser<B>) -> Parser<[A]> {
+  static func manySepCount<B>(_ count: Int, _ parser: Parser<A>, _ separator: Parser<B>) -> Parser<[A]> {
     assert(count >= 0, "Count should be >= 0")
     return Parser<[A]>("At least \(count) of \(parser)") { tokens in
       var values: [A] = []
@@ -238,20 +238,20 @@ extension Parser {
       } catch { }
 
       if (parseCount < count) {
-        throw ParseError.Custom("Only \(parseCount) of \(parser)")
+        throw ParseError.custom("Only \(parseCount) of \(parser)")
       }
       return (runningArgs, values)
     }
   }
 
-  static func manyTill<B>(terminatingParser: Parser<B>,  _ parser: Parser<A>) -> Parser<[A]> {
+  static func manyTill<B>(_ terminatingParser: Parser<B>,  _ parser: Parser<A>) -> Parser<[A]> {
     return Parser<[A]>("Many of \(parser)") { tokens in
       var values: [A] = []
       var runningArgs = tokens
 
       while (runningArgs.count > 0) {
         do {
-          try terminatingParser.parse(runningArgs)
+          let _ = try terminatingParser.parse(runningArgs)
           break
         } catch {
           let output = try parser.parse(runningArgs)
@@ -263,35 +263,35 @@ extension Parser {
     }
   }
 
-  static func many(parser: Parser<A>) -> Parser<[A]> {
+  static func many(_ parser: Parser<A>) -> Parser<[A]> {
     return self.manyCount(0, parser)
   }
 
-  static func alternativeMany(parsers: [Parser<A>]) -> Parser<[A]> {
+  static func alternativeMany(_ parsers: [Parser<A>]) -> Parser<[A]> {
     return Parser.many(Parser.alternative(parsers))
   }
 
-  static func alternativeMany(count: Int, _ parsers: [Parser<A>]) -> Parser<[A]> {
+  static func alternativeMany(_ count: Int, _ parsers: [Parser<A>]) -> Parser<[A]> {
     return Parser.manyCount(count, Parser.alternative(parsers))
   }
 
-  static func union<B : SetAlgebraType>(parsers: [Parser<B>]) -> Parser<B> {
+  static func union<B : SetAlgebra>(_ parsers: [Parser<B>]) -> Parser<B> {
     return Parser.union(0, parsers)
   }
 
-  static func union<B : SetAlgebraType>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
+  static func union<B : SetAlgebra>(_ count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
     return Parser<B>
       .alternativeMany(count, parsers)
       .fmap { sets in
         var result = B()
         for set in sets {
-          result.unionInPlace(set)
+          result.formUnion(set)
         }
         return result
       }
   }
 
-  static func accumulate<B : Accumulator>(count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
+  static func accumulate<B : Accumulator>(_ count: Int, _ parsers: [Parser<B>]) -> Parser<B> {
     return Parser<B>
       .alternativeMany(count, parsers)
       .fmap { values in
@@ -303,7 +303,7 @@ extension Parser {
       }
   }
 
-  static func exhaustive(parser: Parser<A>) -> Parser<A> {
+  static func exhaustive(_ parser: Parser<A>) -> Parser<A> {
     return Parser
       .ofTwoSequenced(parser, Parser.noRemaining)
       .fmap { (original, _) in

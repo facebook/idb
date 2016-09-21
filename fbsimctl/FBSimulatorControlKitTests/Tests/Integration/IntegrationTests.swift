@@ -15,13 +15,13 @@ import FBSimulatorControl
 
 class IntegrationTests : XCTestCase {
   func testNoInterferenceBeetweenDeviceSets() {
-    let set1 = NSURL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_1", isDirectory: true)
-    let set2 = NSURL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_2", isDirectory: true)
+    let set1 = URL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_1", isDirectory: true)
+    let set2 = URL.urlRelativeTo(NSTemporaryDirectory(), component: "FBSimulatorControlKitTests/set_2", isDirectory: true)
 
-    if ((try? NSFileManager.defaultManager().createDirectoryAtURL(set1, withIntermediateDirectories: true, attributes: [:])) == nil) {
+    if ((try? FileManager.default.createDirectory(at: set1, withIntermediateDirectories: true, attributes: [:])) == nil) {
       XCTFail("Could not create directory at \(set1)")
     }
-    if ((try? NSFileManager.defaultManager().createDirectoryAtURL(set2, withIntermediateDirectories: true, attributes: [:])) == nil) {
+    if ((try? FileManager.default.createDirectory(at: set2, withIntermediateDirectories: true, attributes: [:])) == nil) {
       XCTFail("Could not create directory at \(set2)")
     }
 
@@ -48,8 +48,9 @@ class IntegrationTests : XCTestCase {
     self.assertCLIRunsSuccessfully(set2, ["delete"])
   }
 
-  func assertCLIRunsSuccessfully(simulatorSet: NSURL, _ command: [String]) -> [String] {
-    let arguments = ["--set", simulatorSet.path!, "--simulators"] + command
+  @discardableResult
+  func assertCLIRunsSuccessfully(_ simulatorSet: URL, _ command: [String]) -> [String] {
+    let arguments = ["--set", simulatorSet.path, "--simulators"] + command
     return self.assertCLIRunsSuccessfully(arguments)
   }
 }

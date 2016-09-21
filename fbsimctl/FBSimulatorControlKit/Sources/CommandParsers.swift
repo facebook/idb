@@ -14,8 +14,8 @@ import FBSimulatorControl
 extension Parser {
   public static var ofInt: Parser<Int> { get {
     return Parser<Int>.single("Of Int") { token in
-      guard let integer = NSNumberFormatter().numberFromString(token)?.integerValue else {
-        throw ParseError.CouldNotInterpret("Int", token)
+      guard let integer = NumberFormatter().number(from: token)?.intValue else {
+        throw ParseError.couldNotInterpret("Int", token)
       }
       return integer
     }
@@ -23,8 +23,8 @@ extension Parser {
 
   public static var ofDouble: Parser<Double> { get {
     return Parser<Double>.single("Of Double") { token in
-      guard let double = NSNumberFormatter().numberFromString(token)?.doubleValue else {
-        throw ParseError.CouldNotInterpret("Double", token)
+      guard let double = NumberFormatter().number(from: token)?.doubleValue else {
+        throw ParseError.couldNotInterpret("Double", token)
       }
       return double
     }
@@ -41,11 +41,11 @@ extension Parser {
     }
   }}
 
-  public static var ofURL: Parser<NSURL> { get {
-    let expected = NSStringFromClass(NSURL.self)
-    return Parser<NSURL>.single("A \(expected)") { token in
-      guard let url = NSURL(string: token) else {
-        throw ParseError.CouldNotInterpret(expected, token)
+  public static var ofURL: Parser<URL> { get {
+    let expected = "A URL"
+    return Parser<URL>.single(expected) { token in
+      guard let url = URL(string: token) else {
+        throw ParseError.couldNotInterpret(expected, token)
       }
       return url
     }
@@ -54,13 +54,13 @@ extension Parser {
   public static var ofDirectory: Parser<String> { get {
     let expected = "A Directory"
     return Parser<String>.single(expected) { token  in
-      let path = (token as NSString).stringByStandardizingPath
+      let path = (token as NSString).standardizingPath
       var isDirectory: ObjCBool = false
-      if !NSFileManager.defaultManager().fileExistsAtPath(path, isDirectory: &isDirectory) {
-        throw ParseError.Custom("'\(path)' should exist, but doesn't")
+      if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
+        throw ParseError.custom("'\(path)' should exist, but doesn't")
       }
-      if (!isDirectory) {
-        throw ParseError.Custom("'\(path)' should be a directory, but isn't")
+      if (!isDirectory.boolValue) {
+        throw ParseError.custom("'\(path)' should be a directory, but isn't")
       }
       return path
     }
@@ -69,13 +69,13 @@ extension Parser {
   public static var ofFile: Parser<String> { get {
     let expected = "A File"
     return Parser<String>.single(expected) { token in
-      let path = (token as NSString).stringByStandardizingPath
+      let path = (token as NSString).standardizingPath
       var isDirectory: ObjCBool = false
-      if !NSFileManager.defaultManager().fileExistsAtPath(path, isDirectory: &isDirectory) {
-        throw ParseError.Custom("'\(path)' should exist, but doesn't")
+      if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
+        throw ParseError.custom("'\(path)' should exist, but doesn't")
       }
-      if (isDirectory) {
-        throw ParseError.Custom("'\(path)' should be a file, but isn't")
+      if (isDirectory.boolValue) {
+        throw ParseError.custom("'\(path)' should be a file, but isn't")
       }
       return path
     }
@@ -85,9 +85,9 @@ extension Parser {
     let expected = "An Application"
     return Parser<FBApplicationDescriptor>.single(expected) { token in
       do {
-        return try FBApplicationDescriptor.applicationWithPath(token)
+        return try FBApplicationDescriptor.application(withPath: token)
       } catch let error as NSError {
-        throw ParseError.Custom("Could not get an app \(token) \(error.description)")
+        throw ParseError.custom("Could not get an app \(token) \(error.description)")
       }
     }
   }}
@@ -96,17 +96,17 @@ extension Parser {
     let expected = "A Binary"
     return Parser<FBBinaryDescriptor>.single(expected) { token in
       do {
-        return try FBBinaryDescriptor.binaryWithPath(token)
+        return try FBBinaryDescriptor.binary(withPath: token)
       } catch let error as NSError {
-        throw ParseError.Custom("Could not get an binary \(token) \(error.description)")
+        throw ParseError.custom("Could not get an binary \(token) \(error.description)")
       }
     }
   }}
 
-  public static var ofLocale: Parser<NSLocale> { get {
+  public static var ofLocale: Parser<Locale> { get {
     let expected = "A Locale"
-    return Parser<NSLocale>.single(expected) { token in
-      return NSLocale(localeIdentifier: token)
+    return Parser<Locale>.single(expected) { token in
+      return Locale(identifier: token)
     }
   }}
 
@@ -115,17 +115,17 @@ extension Parser {
       .alternative([
         Parser.ofApplication.fmap { $0.bundleID },
         Parser<String>.single("A Bundle ID") { token in
-          let components = token.componentsSeparatedByCharactersInSet(NSCharacterSet(charactersInString: "."))
+          let components = token.components(separatedBy: CharacterSet(charactersIn: "."))
           if components.count < 2 {
-            throw ParseError.Custom("Bundle ID must contain a '.'")
+            throw ParseError.custom("Bundle ID must contain a '.'")
           }
           return token
         }
       ])
   }}
 
-  public static var ofDate: Parser<NSDate> { get {
-    return Parser<NSDate>.ofDouble.fmap { NSDate(timeIntervalSince1970: $0) }
+  public static var ofDate: Parser<Date> { get {
+    return Parser<Date>.ofDouble.fmap { Date(timeIntervalSince1970: $0) }
   }}
 
   public static var ofDashSeparator: Parser<NSNull> { get {
@@ -164,27 +164,27 @@ extension FBSimulatorManagementOptions : Parsable {
   }}
 
   static var deleteAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--delete-all", .DeleteAllOnFirstStart)
+    return Parser.ofString("--delete-all", .deleteAllOnFirstStart)
   }}
 
   static var killAllOnFirstParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--kill-all", .KillAllOnFirstStart)
+    return Parser.ofString("--kill-all", .killAllOnFirstStart)
   }}
 
   static var killSpuriousSimulatorsOnFirstStartParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--kill-spurious", .KillSpuriousSimulatorsOnFirstStart)
+    return Parser.ofString("--kill-spurious", .killSpuriousSimulatorsOnFirstStart)
   }}
 
   static var ignoreSpuriousKillFailParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--ignore-spurious-kill-fail", .IgnoreSpuriousKillFail)
+    return Parser.ofString("--ignore-spurious-kill-fail", .ignoreSpuriousKillFail)
   }}
 
   static var killSpuriousCoreSimulatorServicesParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--kill-spurious-services", .KillSpuriousCoreSimulatorServices)
+    return Parser.ofString("--kill-spurious-services", .killSpuriousCoreSimulatorServices)
   }}
 
   static var useSimDeviceTimeoutResilianceParser: Parser<FBSimulatorManagementOptions> { get {
-    return Parser.ofString("--timeout-resiliance", .UseSimDeviceTimeoutResiliance)
+    return Parser.ofString("--timeout-resiliance", .useSimDeviceTimeoutResiliance)
   }}
 }
 
@@ -192,7 +192,7 @@ extension Configuration : Parsable {
   public static var parser: Parser<Configuration> { get {
     let outputOptionsParsers = OutputOptions.parsers.map { $0.fmap(Configuration.ofOutputOptions) }
     let managementOptionsParsers = FBSimulatorManagementOptions.parsers.map { $0.fmap(Configuration.ofManagementOptions) }
-    let parsers = Array([outputOptionsParsers, managementOptionsParsers, [self.deviceSetPathParser]].flatten())
+    let parsers = Array([outputOptionsParsers, managementOptionsParsers, [self.deviceSetPathParser]].joined())
     return Parser<Configuration>.accumulate(0, parsers)
   }}
 
@@ -214,7 +214,7 @@ extension IndividualCreationConfiguration : Parsable {
     return Parser.single("A Device Name") { token in
       let nameToDevice = FBControlCoreConfigurationVariants.nameToDevice()
       guard let device = nameToDevice[token] else {
-        throw ParseError.Custom("\(token) is not a valid device name")
+        throw ParseError.custom("\(token) is not a valid device name")
       }
       return device
     }
@@ -234,7 +234,7 @@ extension IndividualCreationConfiguration : Parsable {
     return Parser.single("An OS Version") { token in
       let nameToOSVersion = FBControlCoreConfigurationVariants.nameToOSVersion()
       guard let osVersion = nameToOSVersion[token] else {
-        throw ParseError.Custom("\(token) is not a valid device name")
+        throw ParseError.custom("\(token) is not a valid device name")
       }
       return osVersion
     }
@@ -268,8 +268,8 @@ extension IndividualCreationConfiguration : Parsable {
 extension CreationSpecification : Parsable {
   public static var parser: Parser<CreationSpecification> { get {
     return Parser.alternative([
-      Parser.ofString("--all-missing-defaults", CreationSpecification.AllMissingDefaults),
-      IndividualCreationConfiguration.parser.fmap { CreationSpecification.Individual($0) },
+      Parser.ofString("--all-missing-defaults", CreationSpecification.allMissingDefaults),
+      IndividualCreationConfiguration.parser.fmap { CreationSpecification.individual($0) },
     ])
   }}
 }
@@ -277,11 +277,11 @@ extension CreationSpecification : Parsable {
 extension FBSimulatorState : Parsable {
   public static var parser: Parser<FBSimulatorState> { get {
     return Parser.alternative([
-        Parser.ofString("--state=creating", FBSimulatorState.Creating),
-        Parser.ofString("--state=shutdown", FBSimulatorState.Shutdown),
-        Parser.ofString("--state=booting", FBSimulatorState.Booting),
-        Parser.ofString("--state=booted", FBSimulatorState.Booted),
-        Parser.ofString("--state=shutting-down", FBSimulatorState.ShuttingDown),
+        Parser.ofString("--state=creating", FBSimulatorState.creating),
+        Parser.ofString("--state=shutdown", FBSimulatorState.shutdown),
+        Parser.ofString("--state=booting", FBSimulatorState.booting),
+        Parser.ofString("--state=booted", FBSimulatorState.booted),
+        Parser.ofString("--state=shutting-down", FBSimulatorState.shuttingDown),
     ])
   }}
 }
@@ -289,8 +289,8 @@ extension FBSimulatorState : Parsable {
 extension FBProcessLaunchOptions : Parsable {
   public static var parser: Parser<FBProcessLaunchOptions> { get {
     return Parser<FBProcessLaunchOptions>.union([
-      Parser.ofString("--stdout", FBProcessLaunchOptions.WriteStdout),
-      Parser.ofString("--stderr", FBProcessLaunchOptions.WriteStderr),
+      Parser.ofString("--stdout", FBProcessLaunchOptions.writeStdout),
+      Parser.ofString("--stderr", FBProcessLaunchOptions.writeStderr),
     ])
   }}
 }
@@ -298,8 +298,8 @@ extension FBProcessLaunchOptions : Parsable {
 extension FBiOSTargetType : Parsable {
   public static var parser: Parser<FBiOSTargetType> { get {
     return Parser<FBiOSTargetType>.alternative([
-      Parser.ofString("--simulators", FBiOSTargetType.Simulator),
-      Parser.ofString("--devices", FBiOSTargetType.Device),
+      Parser.ofString("--simulators", FBiOSTargetType.simulator),
+      Parser.ofString("--devices", FBiOSTargetType.device),
     ])
   }}
 }
@@ -308,9 +308,9 @@ extension FBCrashLogInfoProcessType : Parsable {
   public static var parser: Parser<FBCrashLogInfoProcessType> { get {
     return Parser<FBCrashLogInfoProcessType>
       .union([
-        Parser.ofString("--application", FBCrashLogInfoProcessType.Application),
-        Parser.ofString("--system", FBCrashLogInfoProcessType.System),
-        Parser.ofString("--custom-agent", FBCrashLogInfoProcessType.CustomAgent)
+        Parser.ofString("--application", FBCrashLogInfoProcessType.application),
+        Parser.ofString("--system", FBCrashLogInfoProcessType.system),
+        Parser.ofString("--custom-agent", FBCrashLogInfoProcessType.customAgent)
       ])
   }}
 }
@@ -319,8 +319,8 @@ extension CLI : Parsable {
   public static var parser: Parser<CLI> { get {
     return Parser
       .alternative([
-        Command.parser.fmap { CLI.Run($0) } ,
-        Help.parser.fmap { CLI.Show($0) },
+        Command.parser.fmap { CLI.run($0) } ,
+        Help.parser.fmap { CLI.show($0) },
       ])
   }}
 }
@@ -372,14 +372,14 @@ extension Server : Parsable {
         self.socketParser,
         self.httpParser
       ])
-      .fallback(Server.StdIO)
+      .fallback(Server.stdIO)
   }}
 
   static var socketParser: Parser<Server> { get {
     return Parser
       .succeeded("--socket", Parser<Int>.ofInt)
       .fmap { portNumber in
-        return Server.Socket(UInt16(portNumber))
+        return Server.socket(UInt16(portNumber))
       }
   }}
 
@@ -387,7 +387,7 @@ extension Server : Parsable {
     return Parser
       .succeeded("--http", Parser<Int>.ofInt)
       .fmap { portNumber in
-        return Server.Http(UInt16(portNumber))
+        return Server.http(UInt16(portNumber))
       }
   }}
 }
@@ -429,33 +429,33 @@ extension Action : Parsable {
   static var approveParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Approve.rawValue, Parser.manyCount(1, Parser<Any>.ofBundleID))
-      .fmap { Action.Approve($0) }
+      .fmap { Action.approve($0) }
   }}
 
   static var bootParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Boot.rawValue, FBSimulatorLaunchConfigurationParser.parser.optional())
-      .fmap { Action.Boot($0) }
+      .fmap { Action.boot($0) }
   }}
 
   static var clearKeychainParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.ClearKeychain.rawValue, Parser<Any>.ofBundleID.optional())
-      .fmap { Action.ClearKeychain($0) }
+      .fmap { Action.clearKeychain($0) }
   }}
 
   static var configParser: Parser<Action> { get {
-    return Parser.ofString(EventName.Config.rawValue, Action.Config)
+    return Parser.ofString(EventName.Config.rawValue, Action.config)
   }}
 
   static var createParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Create.rawValue, CreationSpecification.parser)
-      .fmap { Action.Create($0) }
+      .fmap { Action.create($0) }
   }}
 
   static var deleteParser: Parser<Action> { get {
-    return Parser.ofString(EventName.Delete.rawValue, Action.Delete)
+    return Parser.ofString(EventName.Delete.rawValue, Action.delete)
   }}
 
   static var diagnoseParser: Parser<Action> { get {
@@ -468,12 +468,12 @@ extension Action : Parsable {
         )
       )
       .fmap { (format, query) in
-        Action.Diagnose(query, format)
+        Action.diagnose(query, format)
       }
   }}
 
   static var eraseParser: Parser<Action> { get {
-    return Parser.ofString(EventName.Erase.rawValue, Action.Erase)
+    return Parser.ofString(EventName.Erase.rawValue, Action.erase)
   }}
 
   static var launchAgentParser: Parser<Action> { get {
@@ -482,7 +482,7 @@ extension Action : Parsable {
         EventName.Launch.rawValue,
         FBProcessLaunchConfigurationParsers.agentLaunchParser
       )
-      .fmap { Action.LaunchAgent($0) }
+      .fmap { Action.launchAgent($0) }
   }}
 
   static var launchAppParser: Parser<Action> { get {
@@ -491,7 +491,7 @@ extension Action : Parsable {
         EventName.Launch.rawValue,
         FBProcessLaunchConfigurationParsers.appLaunchParser
       )
-      .fmap { Action.LaunchApp($0) }
+      .fmap { Action.launchApp($0) }
   }}
 
   static var launchXCTestParser: Parser<Action> { get {
@@ -505,26 +505,26 @@ extension Action : Parsable {
         )
       )
       .fmap { (timeout, bundle, appLaunch) in
-        Action.LaunchXCTest(appLaunch, bundle, timeout)
+        Action.launchXCTest(appLaunch, bundle, timeout)
       }
   }}
 
   static var listenParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Listen.rawValue, Server.parser)
-      .fmap { Action.Listen($0) }
+      .fmap { Action.listen($0) }
   }}
 
   static var listParser: Parser<Action> { get {
-    return Parser.ofString(EventName.List.rawValue, Action.List)
+    return Parser.ofString(EventName.List.rawValue, Action.list)
   }}
 
   static var listAppsParser: Parser<Action> { get {
-    return Parser.ofString(EventName.ListApps.rawValue, Action.ListApps)
+    return Parser.ofString(EventName.ListApps.rawValue, Action.listApps)
   }}
 
   static var listDeviceSetsParser: Parser<Action> { get {
-    return Parser.ofString(EventName.ListDeviceSets.rawValue, Action.ListDeviceSets)
+    return Parser.ofString(EventName.ListDeviceSets.rawValue, Action.listDeviceSets)
   }}
 
   static var openParser: Parser<Action> { get {
@@ -533,19 +533,19 @@ extension Action : Parsable {
         EventName.Open.rawValue,
         Parser<Any>.ofURL
       )
-      .fmap { Action.Open($0) }
+      .fmap { Action.open($0) }
   }}
 
   static var installParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Install.rawValue, Parser<Any>.ofAny)
-      .fmap { Action.Install($0) }
+      .fmap { Action.install($0) }
   }}
 
   static var relaunchParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Relaunch.rawValue, FBProcessLaunchConfigurationParsers.appLaunchParser)
-      .fmap { Action.Relaunch($0) }
+      .fmap { Action.relaunch($0) }
   }}
 
   static var recordParser: Parser<Action> { get {
@@ -554,11 +554,11 @@ extension Action : Parsable {
         Parser.ofString("start", true),
         Parser.ofString("stop", false)
       ]))
-      .fmap { Action.Record($0) }
+      .fmap { Action.record($0) }
   }}
 
   static var shutdownParser: Parser<Action> { get {
-    return Parser.ofString(EventName.Shutdown.rawValue, Action.Shutdown)
+    return Parser.ofString(EventName.Shutdown.rawValue, Action.shutdown)
   }}
 
   static var tapParser: Parser<Action> { get {
@@ -571,7 +571,7 @@ extension Action : Parsable {
         )
       )
       .fmap { (x,y) in
-        Action.Tap(x, y)
+        Action.tap(x, y)
       }
   }}
     
@@ -585,20 +585,20 @@ extension Action : Parsable {
         )
       )
       .fmap { (latitude, longitude) in
-        Action.SetLocation(latitude, longitude)
+        Action.setLocation(latitude, longitude)
       }
   }}
 
   static var terminateParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Terminate.rawValue, Parser<Any>.ofBundleID)
-      .fmap { Action.Terminate($0) }
+      .fmap { Action.terminate($0) }
   }}
 
   static var uninstallParser: Parser<Action> { get {
     return Parser
       .succeeded(EventName.Uninstall.rawValue, Parser<Any>.ofBundleID)
-      .fmap { Action.Uninstall($0) }
+      .fmap { Action.uninstall($0) }
   }}
 
   static var uploadParser: Parser<Action> { get {
@@ -611,7 +611,7 @@ extension Action : Parsable {
         let diagnostics: [FBDiagnostic] = paths.map { path in
           return FBDiagnosticBuilder().updatePath(path).build()
         }
-        return Action.Upload(diagnostics)
+        return Action.upload(diagnostics)
       }
   }}
 
@@ -624,7 +624,7 @@ extension Action : Parsable {
           Parser.manyCount(1, Parser<Any>.ofBundleID)
         )
       )
-      .fmap { Action.WatchdogOverride($1, $0) }
+      .fmap { Action.watchdogOverride($1, $0) }
   }}
 }
 
@@ -741,7 +741,7 @@ struct FBSimulatorDiagnosticQueryParser {
         FBCrashLogInfoProcessType.parser
       )
       .fmap { (date, processType) in
-        FBSimulatorDiagnosticQuery.crashesOfType(processType, since: date)
+        FBSimulatorDiagnosticQuery.crashes(of: processType, since: date)
       }
   }}
 
@@ -752,7 +752,7 @@ struct FBSimulatorDiagnosticQueryParser {
         Parser.manyCount(1, Parser<Any>.ofAny)
       )
       .fmap { (bundleID, fileNames) in
-        FBSimulatorDiagnosticQuery.filesInApplicationOfBundleID(bundleID, withFilenames: fileNames)
+        FBSimulatorDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames)
       }
   }}
 }
@@ -770,14 +770,14 @@ struct FBSimulatorLaunchConfigurationParser {
         self.localeParser.fmap { FBSimulatorLaunchConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) }
       ])
       .fmap { configuration in
-        if configuration.options.contains(FBSimulatorLaunchOptions.EnableDirectLaunch) && configuration.framebuffer == nil {
-          return configuration.withFramebuffer(FBFramebufferConfiguration.defaultConfiguration())
+        if configuration.options.contains(FBSimulatorLaunchOptions.enableDirectLaunch) && configuration.framebuffer == nil {
+          return configuration.withFramebuffer(FBFramebufferConfiguration.default())
         }
         return configuration
       }
   }}
 
-  static var localeParser: Parser<NSLocale> { get {
+  static var localeParser: Parser<Locale> { get {
     return Parser
       .succeeded("--locale", Parser<Any>.ofLocale)
   }}
@@ -793,9 +793,9 @@ struct FBSimulatorLaunchConfigurationParser {
 
   static var optionsParser: Parser<FBSimulatorLaunchOptions> { get {
     return Parser<FBSimulatorLaunchOptions>.alternative([
-      Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.ConnectBridge),
-      Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.EnableDirectLaunch),
-      Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.UseNSWorkspace),
+      Parser.ofString("--connect-bridge", FBSimulatorLaunchOptions.connectBridge),
+      Parser.ofString("--direct-launch", FBSimulatorLaunchOptions.enableDirectLaunch),
+      Parser.ofString("--use-nsworkspace", FBSimulatorLaunchOptions.useNSWorkspace),
     ])
   }}
 }

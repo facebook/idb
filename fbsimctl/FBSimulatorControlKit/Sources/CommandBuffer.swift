@@ -15,7 +15,7 @@ import Foundation
 protocol CommandBuffer {
   var performer: CommandPerformer { get }
   var reporter: EventReporter { get }
-  func append(data: NSData) -> [CommandResult]
+  func append(_ data: Data) -> [CommandResult]
 }
 
 /**
@@ -24,23 +24,23 @@ protocol CommandBuffer {
 class LineBuffer : CommandBuffer {
   internal let performer: CommandPerformer
   internal let reporter: EventReporter
-  private var buffer: String = ""
+  fileprivate var buffer: String = ""
 
   init (performer: CommandPerformer, reporter: EventReporter) {
     self.performer = performer
     self.reporter = reporter
   }
 
-  func append(data: NSData) -> [CommandResult] {
-    let string = String(data: data, encoding: NSUTF8StringEncoding)!
-    self.buffer.appendContentsOf(string)
+  func append(_ data: Data) -> [CommandResult] {
+    let string = String(data: data, encoding: String.Encoding.utf8)!
+    self.buffer.append(string)
     return self.runBuffer()
   }
 
-  private func runBuffer() -> [CommandResult] {
+  fileprivate func runBuffer() -> [CommandResult] {
     let buffer = self.buffer
     let lines = buffer
-      .componentsSeparatedByCharactersInSet(NSCharacterSet.newlineCharacterSet())
+      .components(separatedBy: CharacterSet.newlines)
       .filter { line in
         line != ""
     }
@@ -50,7 +50,7 @@ class LineBuffer : CommandBuffer {
 
     self.buffer = ""
     var results: [CommandResult] = []
-    dispatch_sync(dispatch_get_main_queue()) {
+    DispatchQueue.main.sync {
       for line in lines {
         results.append(self.lineAvailable(line))
       }
@@ -58,7 +58,7 @@ class LineBuffer : CommandBuffer {
     return results
   }
 
-  private func lineAvailable(line: String) -> CommandResult {
+  fileprivate func lineAvailable(_ line: String) -> CommandResult {
     return self.performer.perform(line, reporter: self.reporter)
   }
 }

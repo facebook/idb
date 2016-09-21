@@ -12,15 +12,18 @@ import Foundation
 let DefaultReadLength = 1024
 let DefaultWriteCharacters = 512
 
-func acceptCallback(socket: CFSocket!, callback: CFSocketCallBackType, address: NSData!, data: UnsafePointer<Void>, info: UnsafeMutablePointer<Void>) -> Void {
-  if callback != CFSocketCallBackType.AcceptCallBack {
+func acceptCallback(socket: CFSocket?, callback: CFSocketCallBackType, address: CFData?, data: UnsafeRawPointer?, info: UnsafeMutableRawPointer?) -> Void {
+  if callback != CFSocketCallBackType.acceptCallBack {
     return
   }
-  let socketRelay = Unmanaged<SocketRelay>.fromOpaque(COpaquePointer(info)).takeUnretainedValue()
-  let localEventReporter = socketRelay.localEventReporter
-  localEventReporter.logInfo("Accept \(sockaddr_in.fromData(address))")
+  guard let data = data, let info = info else {
+    return
+  }
 
-  let acceptHandle = UnsafePointer<CFSocketNativeHandle>(data).memory
+  let socketRelay = Unmanaged<SocketRelay>.fromOpaque(info).takeUnretainedValue()
+  let localEventReporter = socketRelay.localEventReporter
+
+  let acceptHandle = data.load(as: CFSocketNativeHandle.self)
   let socketHandle = CFSocketGetNative(socket)
   localEventReporter.logInfo("Accept Handle \(acceptHandle) Socket Handle \(socketHandle)")
   assert(acceptHandle != socketHandle, "Accept and Socket FD are the same")
@@ -42,9 +45,9 @@ func acceptCallback(socket: CFSocket!, callback: CFSocketCallBackType, address: 
 }
 
 extension sockaddr_in6 {
-  static func fromData(data: NSData) -> sockaddr_in6 {
+  static func fromData(_ data: Data) -> sockaddr_in6 {
     var addr = sockaddr_in6()
-    data.getBytes(&addr, length: strideof(sockaddr_in6))
+    (data as NSData).getBytes(&addr, length: MemoryLayout<sockaddr_in6>.stride)
     return addr
   }
 
@@ -54,9 +57,9 @@ extension sockaddr_in6 {
 }
 
 extension sockaddr_in {
-  static func fromData(data: NSData) -> sockaddr_in {
+  static func fromData(_ data: Data) -> sockaddr_in {
     var addr = sockaddr_in()
-    data.getBytes(&addr, length: strideof(sockaddr_in))
+    (data as NSData).getBytes(&addr, length: MemoryLayout<sockaddr_in>.stride)
     return addr
   }
 
@@ -65,40 +68,40 @@ extension sockaddr_in {
   }
 }
 
-extension NSStreamStatus {
+extension Stream.Status {
   public var description: String {
     switch (self) {
-    case NotOpen: return "None"
-    case Opening: return "Opening"
-    case Open: return "Open"
-    case Reading: return "Reading"
-    case Writing: return "Writing"
-    case AtEnd: return "AtEnd"
-    case Closed: return "Closed"
-    case Error: return "Error"
+    case .notOpen: return "None"
+    case .opening: return "Opening"
+    case .open: return "Open"
+    case .reading: return "Reading"
+    case .writing: return "Writing"
+    case .atEnd: return "AtEnd"
+    case .closed: return "Closed"
+    case .error: return "Error"
     }
   }
 }
 
-extension NSStreamEvent {
+extension Stream.Event {
   public var description: String {
     switch (self.rawValue) {
-    case NSStreamEvent.None.rawValue: return "None"
-    case NSStreamEvent.OpenCompleted.rawValue: return "OpenCompleted"
-    case NSStreamEvent.HasBytesAvailable.rawValue: return "HasBytesAvailable"
-    case NSStreamEvent.HasSpaceAvailable.rawValue: return "HasSpaceAvailable"
-    case NSStreamEvent.ErrorOccurred.rawValue: return "ErrorOccured"
-    case NSStreamEvent.EndEncountered.rawValue: return "EndEncountered"
+    case Stream.Event().rawValue: return "None"
+    case Stream.Event.openCompleted.rawValue: return "OpenCompleted"
+    case Stream.Event.hasBytesAvailable.rawValue: return "HasBytesAvailable"
+    case Stream.Event.hasSpaceAvailable.rawValue: return "HasSpaceAvailable"
+    case Stream.Event.errorOccurred.rawValue: return "ErrorOccured"
+    case Stream.Event.endEncountered.rawValue: return "EndEncountered"
     default: return "Unknown"
     }
   }
 }
 
 protocol SocketConnectionDelegate {
-  func connectionClosed(socketConnection: SocketConnection)
+  func connectionClosed(_ socketConnection: SocketConnection)
 }
 
-internal class InputDelegate : NSObject, NSStreamDelegate {
+internal class InputDelegate : NSObject, StreamDelegate {
   let commandBuffer: CommandBuffer
   let localEventReporter: EventReporter
 
@@ -107,22 +110,22 @@ internal class InputDelegate : NSObject, NSStreamDelegate {
     self.localEventReporter = localEventReporter
   }
 
-  @objc func stream(stream: NSStream, handleEvent eventCode: NSStreamEvent) {
-    guard let stream = stream as? NSInputStream else {
+  @objc func stream(_ stream: Stream, handle eventCode: Stream.Event) {
+    guard let stream = stream as? InputStream else {
       return
     }
 
     self.localEventReporter.logInfo("Input Event \(eventCode.description)")
     switch (eventCode.rawValue) {
-    case NSStreamEvent.HasBytesAvailable.rawValue:
-      let buffer = UnsafeMutablePointer<UInt8>.alloc(DefaultReadLength)
+    case Stream.Event.hasBytesAvailable.rawValue:
+      let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: DefaultReadLength)
       let count = stream.read(buffer, maxLength: DefaultReadLength)
-      let data = NSData(bytesNoCopy: buffer, length: count)
-      buffer.destroy()
+      let data = Data(bytesNoCopy: UnsafeMutablePointer<UInt8>(buffer), count: count, deallocator: .free)
+      buffer.deinitialize()
 
       let commandBuffer = self.commandBuffer
-      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)) {
-        commandBuffer.append(data)
+      DispatchQueue.global(qos: DispatchQoS.userInitiated.qosClass).async {
+        let _ = commandBuffer.append(data)
       }
     default:
       return
@@ -130,65 +133,64 @@ internal class InputDelegate : NSObject, NSStreamDelegate {
   }
 }
 
-internal class OutputDelegate : NSObject, NSStreamDelegate, Writer {
+internal class OutputDelegate : NSObject, StreamDelegate, Writer {
   var buffer: String = ""
-  let stream: NSOutputStream
+  let stream: OutputStream
   let localEventReporter: EventReporter
 
-  init (stream: NSOutputStream, localEventReporter: EventReporter) {
+  init (stream: OutputStream, localEventReporter: EventReporter) {
     self.stream = stream
     self.localEventReporter = localEventReporter
   }
 
-  @objc func stream(stream: NSStream, handleEvent eventCode: NSStreamEvent) {
+  @objc func stream(_ stream: Stream, handle eventCode: Stream.Event) {
     assert(stream == self.stream, "Handled delegate from unexpected stream")
 
     self.localEventReporter.logInfo("CommandResult Event \(eventCode.description)")
     switch (eventCode.rawValue) {
-    case NSStreamEvent.HasSpaceAvailable.rawValue:
+    case Stream.Event.hasSpaceAvailable.rawValue:
       self.flushAvailable()
     default:
       return
     }
   }
 
-  func write(string: String) {
-    buffer.appendContentsOf(string)
+  func write(_ string: String) {
+    buffer.append(string)
     self.flushAvailable()
   }
 
   func flushAvailable() {
     while (buffer.characters.count > 0 && self.stream.hasSpaceAvailable) {
       // TODO: Buffer appropriately
-      let range = buffer.characters.indices
-      let slice = buffer.substringWithRange(range)
+      let slice = buffer
       self.buffer = ""
 
-      let data = slice.dataUsingEncoding(NSUTF8StringEncoding)!
-      let cData = UnsafeMutablePointer<UInt8>.alloc(data.length)
-      data.getBytes(cData, length: data.length)
-      stream.write(cData, maxLength: data.length)
-      cData.destroy()
+      let data = slice.data(using: String.Encoding.utf8)!
+      let cData = UnsafeMutablePointer<UInt8>.allocate(capacity: data.count)
+      (data as NSData).getBytes(cData, length: data.count)
+      stream.write(cData, maxLength: data.count)
+      cData.deinitialize()
     }
   }
 }
 
 
 class SocketConnection {
-  private let readStream: NSInputStream
-  private let readStreamDelegate: InputDelegate
+  fileprivate let readStream: InputStream
+  fileprivate let readStreamDelegate: InputDelegate
 
-  private let writeStream: NSOutputStream
-  private let writeStreamDelegate: OutputDelegate
+  fileprivate let writeStream: OutputStream
+  fileprivate let writeStreamDelegate: OutputDelegate
 
-  init(readStream: NSInputStream, readStreamDelegate: InputDelegate, writeStream: NSOutputStream, writeStreamDelegate: OutputDelegate) {
+  init(readStream: InputStream, readStreamDelegate: InputDelegate, writeStream: OutputStream, writeStreamDelegate: OutputDelegate) {
     self.readStream = readStream
     self.readStreamDelegate = readStreamDelegate
     self.writeStream = writeStream
     self.writeStreamDelegate = writeStreamDelegate
   }
 
-  convenience init(readStream: NSInputStream, writeStream: NSOutputStream, delegate: SocketConnectionDelegate, commandBuffer: CommandBuffer, outputOptions: OutputOptions, localEventReporter: EventReporter) {
+  convenience init(readStream: InputStream, writeStream: OutputStream, delegate: SocketConnectionDelegate, commandBuffer: CommandBuffer, outputOptions: OutputOptions, localEventReporter: EventReporter) {
     let write = OutputDelegate(stream: writeStream, localEventReporter: localEventReporter)
     let read = InputDelegate(
       commandBuffer: LineBuffer(performer: commandBuffer.performer, reporter: outputOptions.createReporter(write)),
@@ -198,15 +200,15 @@ class SocketConnection {
   }
 
   func start() {
-    assert(self.readStream.streamStatus == NSStreamStatus.NotOpen, "Expected an unopened Read Stream")
-    assert(self.writeStream.streamStatus == NSStreamStatus.NotOpen, "Expected an unopened Write Stream")
+    assert(self.readStream.streamStatus == Stream.Status.notOpen, "Expected an unopened Read Stream")
+    assert(self.writeStream.streamStatus == Stream.Status.notOpen, "Expected an unopened Write Stream")
 
     self.readStream.delegate = self.readStreamDelegate
-    self.readStream.scheduleInRunLoop(NSRunLoop.currentRunLoop(), forMode: NSDefaultRunLoopMode)
+    self.readStream.schedule(in: RunLoop.current, forMode: RunLoopMode.defaultRunLoopMode)
     self.readStream.open()
 
     self.writeStream.delegate = self.writeStreamDelegate
-    self.writeStream.scheduleInRunLoop(NSRunLoop.currentRunLoop(), forMode: NSDefaultRunLoopMode)
+    self.writeStream.schedule(in: RunLoop.current, forMode: RunLoopMode.defaultRunLoopMode)
     self.writeStream.open()
   }
 
@@ -247,66 +249,66 @@ class SocketRelay : Relay, SocketConnectionDelegate {
 
   }
 
-  private func socketContext() -> CFSocketContext {
+  fileprivate func socketContext() -> CFSocketContext {
     return CFSocketContext(
       version: 0,
-      info: UnsafeMutablePointer(Unmanaged.passUnretained(self).toOpaque()),
+      info: Unmanaged.passUnretained(self).toOpaque(),
       retain: nil,
       release: nil,
       copyDescription: nil
     )
   }
 
-  private func setSocketOptions(socket: CFSocket) {
+  fileprivate func setSocketOptions(_ socket: CFSocket) {
     let socketDescriptor = CFSocketGetNative(socket)
     var yes: Int32 = 1
-    let result = setsockopt(socketDescriptor, Constants.sol_socket(), Constants.so_reuseaddr(), &yes, UInt32(strideof(Int32)))
+    let result = setsockopt(socketDescriptor, Constants.sol_socket(), Constants.so_reuseaddr(), &yes, UInt32(MemoryLayout<Int32>.stride))
     assert(result != -1, "Expected to be able to setsockopt")
   }
 
-  private func createSocket4() -> CFSocket {
+  fileprivate func createSocket4() -> CFSocket {
     var context = socketContext()
     let sock = CFSocketCreate(
       kCFAllocatorDefault,
       PF_INET,
       SOCK_STREAM,
       IPPROTO_TCP,
-      CFSocketCallBackType.AcceptCallBack.rawValue,
+      CFSocketCallBackType.acceptCallBack.rawValue,
       acceptCallback,
       &context
     )
-    setSocketOptions(sock)
+    setSocketOptions(sock!)
 
     var addr = sockaddr_in(
-      sin_len: UInt8(strideof(sockaddr_in)),
+      sin_len: UInt8(MemoryLayout<sockaddr_in>.stride),
       sin_family: UInt8(AF_INET),
       sin_port: self.socketOptions.portNumberNetworkByteOrder(),
       sin_addr: in_addr(s_addr: UInt32(0).bigEndian),
       sin_zero: (0, 0, 0, 0, 0, 0, 0, 0)
     )
 
-    let data: CFDataRef = NSData(bytes: &addr, length: strideof(sockaddr_in))
-    let error = CFSocketSetAddress(sock, data)
-    assert(error == CFSocketError.Success, "Could not bind ipv4")
+    let data = Data(bytes: &addr, count: MemoryLayout.stride(ofValue: addr))
+    let error = CFSocketSetAddress(sock, data as CFData!)
+    assert(error == CFSocketError.success, "Could not bind ipv4")
 
-    return sock
+    return sock!
   }
 
-  private func createSocket6() -> CFSocket {
+  fileprivate func createSocket6() -> CFSocket {
     var context = socketContext()
     let sock = CFSocketCreate(
       kCFAllocatorDefault,
       PF_INET6,
       SOCK_STREAM,
       IPPROTO_TCP,
-      CFSocketCallBackType.AcceptCallBack.rawValue,
+      CFSocketCallBackType.acceptCallBack.rawValue,
       acceptCallback,
       &context
     )
-    setSocketOptions(sock)
+    setSocketOptions(sock!)
 
     var addr = sockaddr_in6(
-      sin6_len: UInt8(strideof(sockaddr_in6)),
+      sin6_len: UInt8(MemoryLayout<sockaddr_in6>.stride),
       sin6_family: UInt8(AF_INET6),
       sin6_port: self.socketOptions.portNumberNetworkByteOrder(),
       sin6_flowinfo: 0,
@@ -314,11 +316,11 @@ class SocketRelay : Relay, SocketConnectionDelegate {
       sin6_scope_id: 0
     )
 
-    let data: CFDataRef = NSData(bytes: &addr, length: strideof(sockaddr_in6))
-    let error = CFSocketSetAddress(sock, data)
-    assert(error == CFSocketError.Success, "Could not bind ipv6")
+    let data = Data(bytes: &addr, count: MemoryLayout.stride(ofValue: addr))
+    let error = CFSocketSetAddress(sock, data as CFData!)
+    assert(error == CFSocketError.success, "Could not bind ipv6")
 
-    return sock
+    return sock!
   }
 
   func createSocketsAndRunInRunLoop() {
@@ -340,7 +342,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
       CFRunLoopAddSource(
         CFRunLoopGetCurrent(),
         source,
-        kCFRunLoopDefaultMode
+        CFRunLoopMode.defaultMode
       )
 
       let native = CFSocketGetNative(socket)
@@ -349,7 +351,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     }
   }
 
-  func registerConnection(inputStream: NSInputStream, outputStream: NSOutputStream) {
+  func registerConnection(_ inputStream: InputStream, outputStream: OutputStream) {
     let connection = SocketConnection(
       readStream: inputStream,
       writeStream: outputStream,
@@ -363,7 +365,7 @@ class SocketRelay : Relay, SocketConnectionDelegate {
     connection.start()
   }
 
-  func connectionClosed(socketConnection: SocketConnection) {
+  func connectionClosed(_ socketConnection: SocketConnection) {
 
   }
 }
