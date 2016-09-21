@@ -31,7 +31,7 @@
 #import "FBDevice+Private.h"
 #import "FBAMDevice.h"
 
-static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 1;
+static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 
 @implementation FBDeviceSet
 
