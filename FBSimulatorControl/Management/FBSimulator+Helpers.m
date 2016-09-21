@@ -199,7 +199,10 @@
     ]];
   }
   if (self.productFamily == FBControlCoreProductFamilyAppleWatch || self.productFamily == FBControlCoreProductFamilyAppleTV) {
-    return [NSSet setWithArray:@[
+    return FBControlCoreGlobalConfiguration.isXcode8OrGreater ? [NSSet setWithArray:@[
+       @"com.apple.nsurlsessiond",
+       @"com.apple.mobileassetd",
+    ]] : [NSSet setWithArray:@[
        @"com.apple.networkd",
        @"com.apple.mobileassetd",
     ]];

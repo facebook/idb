@@ -461,6 +461,11 @@
   return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_9_3.class];
 }
 
+- (instancetype)iOS_10_0
+{
+  return [self updateOSVersionClass:FBControlCoreConfiguration_iOS_10_0.class];
+}
+
 #pragma mark tvOS Versions
 
 - (instancetype)tvOS_9_0
@@ -478,6 +483,11 @@
   return [self updateOSVersionClass:FBControlCoreConfiguration_tvOS_9_2.class];
 }
 
+- (instancetype)tvOS_10_0
+{
+  return [self updateOSVersionClass:FBControlCoreConfiguration_tvOS_10_0.class];
+}
+
 #pragma mark watchOS Versions
 
 - (instancetype)watchOS_2_0
@@ -493,6 +503,11 @@
 - (instancetype)watchOS_2_2
 {
   return [self updateOSVersionClass:FBControlCoreConfiguration_watchOS_2_2.class];
+}
+
+- (instancetype)watchOS_3_0
+{
+  return [self updateOSVersionClass:FBControlCoreConfiguration_watchOS_3_0.class];
 }
 
 #pragma mark Auxillary Directory
