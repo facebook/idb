@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBTerminationHandle.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A class for wrapping `dispatch_source` with some conveniences.
  */
@@ -25,3 +27,5 @@
 + (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler;
 
 @end
+
+NS_ASSUME_NONNULL_END

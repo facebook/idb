@@ -16,6 +16,8 @@
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Interactions for FBSimulator Instances.
  */
@@ -29,3 +31,5 @@
 + (instancetype)withSimulator:(FBSimulator *)simulator;
 
 @end
+
+NS_ASSUME_NONNULL_END

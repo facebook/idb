@@ -13,6 +13,8 @@
 
 @class FBSimulatorDiagnostics;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A Value object for searching for, and returning diagnostics.
  */
@@ -26,14 +28,14 @@
  @param names the names to search for.
  @return a FBSimulatorDiagnosticQuery.
  */
-+ (nonnull instancetype)named:(nonnull NSArray<NSString *> *)names;
++ (instancetype)named:(NSArray<NSString *> *)names;
 
 /**
  A Query for all static diagnostics.
 
  @return a FBSimulatorDiagnosticQuery.
  */
-+ (nonnull instancetype)all;
++ (instancetype)all;
 
 /**
  A Query for Diagnostics in an Application's Sandbox.
@@ -42,7 +44,7 @@
  @param filenames the filenames to search for.
  @return a FBSimulatorDiagnosticQuery.
  */
-+ (nonnull instancetype)filesInApplicationOfBundleID:(nonnull NSString *)bundleID withFilenames:(nonnull NSArray<NSString *> *)filenames;
++ (instancetype)filesInApplicationOfBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames;
 
 /**
  A Query for Crashes of a Process Type, after a date.
@@ -51,7 +53,7 @@
  @param date the date to search from.
  @return a FBSimulatorDiagnosticQuery.
  */
-+ (nonnull instancetype)crashesOfType:(FBCrashLogInfoProcessType)processType since:(nonnull NSDate *)date;
++ (instancetype)crashesOfType:(FBCrashLogInfoProcessType)processType since:(NSDate *)date;
 
 #pragma mark Performing
 
@@ -61,6 +63,8 @@
  @param diagnostics the Simulator diagnostics object to fetch from.
  @return an Array of Diagnostics that match
  */
-- (nonnull NSArray<FBDiagnostic *> *)perform:(nonnull FBSimulatorDiagnostics *)diagnostics;
+- (NSArray<FBDiagnostic *> *)perform:(FBSimulatorDiagnostics *)diagnostics;
 
 @end
+
+NS_ASSUME_NONNULL_END

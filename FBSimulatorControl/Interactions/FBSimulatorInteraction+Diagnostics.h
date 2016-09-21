@@ -9,7 +9,9 @@
 
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 
-@class FBApplicationDescriptor ;
+@class FBApplicationDescriptor;
+
+NS_ASSUME_NONNULL_BEGIN
 
 @interface FBSimulatorInteraction (Diagnostics)
 
@@ -35,3 +37,5 @@
 - (instancetype)onApplication:(FBApplicationDescriptor *)application executeLLDBCommand:(NSString *)command;
 
 @end
+
+NS_ASSUME_NONNULL_END

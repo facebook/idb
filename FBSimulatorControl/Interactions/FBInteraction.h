@@ -11,6 +11,8 @@
 
 #import <FBSimulatorControl/FBInteraction.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Represents a Synchronous Action that can Succed or Fail.
  */
@@ -73,3 +75,5 @@
 - (instancetype)fail:(NSError *)error;
 
 @end
+
+NS_ASSUME_NONNULL_END

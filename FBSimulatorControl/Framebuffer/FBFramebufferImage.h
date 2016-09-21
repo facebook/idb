@@ -14,6 +14,8 @@
 @class FBDiagnostic;
 @protocol FBSimulatorEventSink;
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  A Simulator Framebuffer Delegate that stores an image of the most recent image.
 
@@ -44,6 +46,8 @@
 /**
  The Latest Image from the Framebuffer.
  */
-@property (atomic, assign, readonly) CGImageRef image;
+@property (atomic, assign, nullable, readonly) CGImageRef image;
 
 @end
+
+NS_ASSUME_NONNULL_END

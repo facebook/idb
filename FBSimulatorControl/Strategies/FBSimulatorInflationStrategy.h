@@ -21,7 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorInflationStrategy : NSObject
 
-
 /**
  Creates and returns a new Inflation Strategy.
 

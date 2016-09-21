@@ -145,12 +145,12 @@
 
 #pragma mark Properties
 
-- (NSArray *)allocatedSimulators
+- (NSArray<FBSimulator *> *)allocatedSimulators
 {
   return [self.set.allSimulators filteredArrayUsingPredicate:[FBSimulatorPredicates allocatedByPool:self]];
 }
 
-- (NSArray *)unallocatedSimulators
+- (NSArray<FBSimulator *> *)unallocatedSimulators
 {
   return [self.set.allSimulators filteredArrayUsingPredicate:[FBSimulatorPredicates unallocatedByPool:self]];
 }

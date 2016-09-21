@@ -13,6 +13,8 @@
 
 @class FBSimulator;
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface FBSimulatorLaunchConfiguration (Helpers)
 
 /**
@@ -45,3 +47,5 @@
 - (BOOL)shouldConnectBridge;
 
 @end
+
+NS_ASSUME_NONNULL_END

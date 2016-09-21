@@ -12,6 +12,8 @@
 #import <CoreVideo/CoreVideo.h>
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  An NSObject Container for a Framebuffer's Frame.
  */
@@ -56,3 +58,5 @@
 - (instancetype)updateWithCurrentTimeInTimebase:(CMTimebaseRef)timebase timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod;
 
 @end
+
+NS_ASSUME_NONNULL_END

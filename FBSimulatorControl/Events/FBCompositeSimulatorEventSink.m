@@ -11,18 +11,18 @@
 
 @interface FBCompositeSimulatorEventSink ()
 
-@property (nonatomic, copy, readwrite) NSArray *sinks;
+@property (nonatomic, copy, readwrite) NSArray<id<FBSimulatorEventSink>> *sinks;
 
 @end
 
 @implementation FBCompositeSimulatorEventSink
 
-+ (id<FBSimulatorEventSink>)withSinks:(NSArray *)sinks
++ (instancetype)withSinks:(NSArray<id<FBSimulatorEventSink>> *)sinks;
 {
   return [[FBCompositeSimulatorEventSink alloc] initWithSinks:sinks];
 }
 
-- (instancetype)initWithSinks:(NSArray *)sinks
+- (instancetype)initWithSinks:(NSArray<id<FBSimulatorEventSink>> *)sinks;
 {
   self = [super init];
   if (!self) {

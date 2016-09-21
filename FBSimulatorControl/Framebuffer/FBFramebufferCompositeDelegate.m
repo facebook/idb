@@ -11,18 +11,18 @@
 
 @interface FBFramebufferCompositeDelegate ()
 
-@property (nonatomic, copy, readwrite) NSArray *delegates;
+@property (nonatomic, copy, readwrite) NSArray<id<FBFramebufferDelegate>> *delegates;
 
 @end
 
 @implementation FBFramebufferCompositeDelegate
 
-+ (instancetype)withDelegates:(NSArray *)delegates
++ (instancetype)withDelegates:(NSArray<id<FBFramebufferDelegate>> *)delegates
 {
   return [[FBFramebufferCompositeDelegate alloc] initWithDelegates:delegates];
 }
 
-- (instancetype)initWithDelegates:(NSArray *)delegates
+- (instancetype)initWithDelegates:(NSArray<id<FBFramebufferDelegate>> *)delegates
 {
   self = [super init];
   if (!self) {

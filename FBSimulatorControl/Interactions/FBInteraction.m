@@ -227,7 +227,7 @@
 
 - (instancetype)init
 {
-  return [self initWithInteraction:nil];
+  return [self initWithInteraction:FBInteraction.succeed];
 }
 
 - (instancetype)initWithInteraction:(id<FBInteraction>)interaction
