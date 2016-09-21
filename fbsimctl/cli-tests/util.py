@@ -14,8 +14,8 @@ logging.basicConfig(format='%(message)s')
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-DEFAULT_TIMEOUT = 60
-LONG_TIMEOUT = 400
+DEFAULT_TIMEOUT = 120
+LONG_TIMEOUT = 500
 
 def find_fbsimctl_path(expected_path):
     if os.path.exists(expected_path):
