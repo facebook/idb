@@ -1,6 +1,6 @@
 language: objective-c
 before_install:
-  brew install carthage python3
+  brew install python3
 osx_image: xcode8
 env:
 - TARGET=framework COMMAND=test FBSIMULATORCONTROL_DEVICE_SET=default FBSIMULATORCONTROL_LAUNCH_TYPE=simulator_app
