@@ -115,14 +115,26 @@
   return [services copy];
 }
 
-#pragma mark Stopping Services
+#pragma mark Manipulating Services
 
 - (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error
 {
   NSError *innerError = nil;
   if (![self runWithArguments:@[@"stop", serviceName] error:&innerError]) {
     return [[[FBSimulatorError
-      describeFormat:@"Failed to stop service %@", serviceName]
+      describeFormat:@"Failed to stop service '%@'", serviceName]
+      causedBy:innerError]
+      fail:error];
+  }
+  return serviceName;
+}
+
+- (nullable NSString *)startServiceWithName:(NSString *)serviceName error:(NSError **)error
+{
+  NSError *innerError = nil;
+  if (![self runWithArguments:@[@"start", serviceName] error:&innerError]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to start service '%@'", serviceName]
       causedBy:innerError]
       fail:error];
   }
