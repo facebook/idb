@@ -440,7 +440,7 @@ extension Action : Parsable {
 
   static var clearKeychainParser: Parser<Action> { get {
     return Parser
-      .succeeded(EventName.ClearKeychain.rawValue, Parser<Any>.ofBundleID)
+      .succeeded(EventName.ClearKeychain.rawValue, Parser<Any>.ofBundleID.optional())
       .fmap { Action.ClearKeychain($0) }
   }}
 

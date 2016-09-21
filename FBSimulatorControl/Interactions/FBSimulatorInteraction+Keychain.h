@@ -17,9 +17,8 @@
 /**
  Cleans the keychain of the Simulator.
 
- @param bundleID the Bundle ID of the Application to terminate
  @return the reciever for chaining.
  */
-- (instancetype)clearKeychainForApplication:(NSString *)bundleID;
+- (instancetype)clearKeychain;
 
 @end

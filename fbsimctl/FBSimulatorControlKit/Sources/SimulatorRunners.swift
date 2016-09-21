@@ -67,9 +67,12 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(launchConfiguration)) { interaction in
         interaction.prepareForLaunch(launchConfiguration).bootSimulator(launchConfiguration)
       }
-    case .ClearKeychain(let bundleID):
-      return SimulatorInteractionRunner(reporter, EventName.ClearKeychain, bundleID) { interaction in
-        interaction.clearKeychainForApplication(bundleID)
+    case .ClearKeychain(let maybeBundleID):
+      return SimulatorInteractionRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) { interaction in
+        if let bundleID = maybeBundleID {
+          interaction.terminateApplicationWithBundleID(bundleID)
+        }
+        interaction.clearKeychain()
       }
     case .Delete:
       return iOSTargetRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {

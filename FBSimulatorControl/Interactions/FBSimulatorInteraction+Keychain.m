@@ -17,24 +17,9 @@
 
 @implementation FBSimulatorInteraction (Keychain)
 
-- (instancetype)clearKeychainForApplication:(NSString *)bundleID
+- (instancetype)clearKeychain
 {
-  NSParameterAssert(bundleID);
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    // Kill application if its running.
-    [[simulator.interact terminateApplicationWithBundleID:bundleID] perform:nil];
-
-    // Ensure that application is installed on simulator.
-    NSError *innerError = nil;
-    FBApplicationDescriptor *application = [simulator installedApplicationWithBundleID:bundleID error:&innerError];
-    if (!application) {
-      return [[[[FBSimulatorError
-        describeFormat:@"Failed to find application with bundleID %@", bundleID]
-        causedBy:innerError]
-        inSimulator:simulator]
-        failBool:error];
-    }
-
     return [[FBKeychainClearStrategy withSimulator:simulator] clearKeychainWithError:error];
   }];
 }
