@@ -146,7 +146,7 @@ struct ActionRunner : Runner {
       let context = self.context.replace(query)
       return ListRunner(context: context).run()
     case .listDeviceSets:
-      let context = self.context.replace((self.context.simulatorControl.serviceContext, self.context.simulatorControl.set.processFetcher))
+      let context = self.context.replace(self.context.simulatorControl.serviceContext)
       return ListDeviceSetsRunner(context: context).run()
     case .listen(let server):
       let context = self.context.replace((server, query))
@@ -227,7 +227,7 @@ struct ListRunner : Runner {
 }
 
 struct ListDeviceSetsRunner : Runner {
-  let context: iOSRunnerContext<(FBSimulatorServiceContext?, FBSimulatorProcessFetcher)>
+  let context: iOSRunnerContext<FBSimulatorServiceContext>
 
   func run() -> CommandResult {
     let deviceSets = self.deviceSets
@@ -238,14 +238,7 @@ struct ListDeviceSetsRunner : Runner {
   }
 
   fileprivate var deviceSets: [String] { get {
-    let (maybeServiceContext, processFetcher) = self.context.value
-    var deviceSets: Set<String> = []
-
-    if let serviceContext = maybeServiceContext {
-      deviceSets.formUnion(serviceContext.pathsOfAllDeviceSets())
-    }
-    let launchdProcessesToDeviceSets = processFetcher.launchdProcessesToContainingDeviceSet()
-    deviceSets.formUnion(launchdProcessesToDeviceSets.values)
-    return Array(deviceSets).sorted()
+    let serviceContext = self.context.value
+    return serviceContext.pathsOfAllDeviceSets().sorted()
   }}
 }

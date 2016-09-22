@@ -18,6 +18,7 @@
 #import <objc/runtime.h>
 
 #import "FBSimulatorError.h"
+#import "FBSimulatorServiceContext.h"
 
 @implementation FBSimulatorConfiguration (CoreSimulator)
 
@@ -166,12 +167,12 @@
 
 + (NSArray<SimRuntime *> *)supportedRuntimes
 {
-  return [objc_lookUpClass("SimRuntime") supportedRuntimes];
+  return FBSimulatorServiceContext.sharedServiceContext.supportedRuntimes;
 }
 
 + (NSArray<SimDeviceType *> *)supportedDeviceTypes
 {
-  return [objc_lookUpClass("SimDeviceType") supportedDeviceTypes];
+  return FBSimulatorServiceContext.sharedServiceContext.supportedDeviceTypes;
 }
 
 + (NSArray<SimRuntime *> *)supportedRuntimesForDevice:(id<FBControlCoreConfiguration_Device>)device

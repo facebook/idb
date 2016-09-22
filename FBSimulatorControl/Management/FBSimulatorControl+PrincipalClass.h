@@ -62,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Service Context.
  */
-@property (nonatomic, strong, nullable, readonly) FBSimulatorServiceContext *serviceContext;
+@property (nonatomic, strong, readonly) FBSimulatorServiceContext *serviceContext;
 
 /**
  The Configuration that FBSimulatorControl was instantiated with.

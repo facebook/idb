@@ -44,11 +44,8 @@
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   NSError *innerError = nil;
-  SimServiceContext *simServiceContext = nil;
-  if (![self serviceContextWithServiceContextOut:&simServiceContext error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-  SimDeviceSet *deviceSet = [self createDeviceSetWithConfiguration:configuration serviceContext:simServiceContext error:&innerError];
+  FBSimulatorServiceContext *serviceContext = [FBSimulatorServiceContext sharedServiceContext];
+  SimDeviceSet *deviceSet = [serviceContext createDeviceSetWithConfiguration:configuration error:&innerError];
   if (!deviceSet) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -56,51 +53,9 @@
   if (!set) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  FBSimulatorServiceContext *serviceContext = simServiceContext ? [FBSimulatorServiceContext contextWithServiceContext:simServiceContext] : nil;
   return [[FBSimulatorControl alloc] initWithConfiguration:configuration serviceContext:serviceContext set:set logger:logger];
 }
 
-+ (BOOL)serviceContextWithServiceContextOut:(SimServiceContext **)serviceContextOut error:(NSError **)error
-{
-  Class serviceContextClass = objc_lookUpClass("SimServiceContext");
-  if (![serviceContextClass respondsToSelector:@selector(sharedServiceContextForDeveloperDir:error:)]) {
-    return YES;
-  }
-  NSError *innerError = nil;
-  SimServiceContext *serviceContext = [serviceContextClass sharedServiceContextForDeveloperDir:FBControlCoreGlobalConfiguration.developerDirectory error:&innerError];
-  if (!serviceContext) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-  *serviceContextOut = serviceContext;
-  return YES;
-}
-
-+ (SimDeviceSet *)createDeviceSetWithConfiguration:(FBSimulatorControlConfiguration *)configuration serviceContext:(nullable SimServiceContext *)serviceContext error:(NSError **)error
-{
-  NSString *deviceSetPath = configuration.deviceSetPath;
-  NSError *innerError = nil;
-  if (deviceSetPath != nil) {
-    if (![NSFileManager.defaultManager createDirectoryAtPath:deviceSetPath withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-      return [[[FBSimulatorError describeFormat:@"Failed to create custom SimDeviceSet directory at %@", deviceSetPath] causedBy:innerError] fail:error];
-    }
-  }
-
-  SimDeviceSet *deviceSet = nil;
-  if (serviceContext) {
-    deviceSet = deviceSetPath
-      ? [serviceContext deviceSetWithPath:configuration.deviceSetPath error:&innerError]
-      : [serviceContext defaultDeviceSetWithError:&innerError];
-  } else {
-    deviceSet = deviceSetPath
-      ? [objc_lookUpClass("SimDeviceSet") setForSetPath:configuration.deviceSetPath]
-      : [objc_lookUpClass("SimDeviceSet") defaultSet];
-  }
-
-  if (!deviceSet) {
-    return [[[FBSimulatorError describeFormat:@"Failed to get device set for %@", deviceSetPath] causedBy:innerError] fail:error];
-  }
-  return deviceSet;
-}
 
 - (nullable instancetype)initWithConfiguration:(FBSimulatorControlConfiguration *)configuration serviceContext:(nullable FBSimulatorServiceContext *)serviceContext set:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger
 {
