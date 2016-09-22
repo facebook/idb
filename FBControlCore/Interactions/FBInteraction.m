@@ -9,71 +9,7 @@
 
 #import "FBInteraction.h"
 
-#import "FBSimulatorError.h"
-
-@interface FBInteraction ()
-
-#pragma mark Primitives
-
-/**
- Chains an interaction using the provided block
-
- @param block the block to perform the interaction with. Passes an NSError to return error information and the interaction for further chaining.
- @return the reciever, for chaining.
- */
-+ (id<FBInteraction>)interact:(BOOL (^)(NSError **error))block;
-
-/**
- Creates an Interaction that allways Fails.
-
- @param error the error to fail the interaction with.
- @return an Interaction that allways Fails.
- */
-+ (id<FBInteraction>)fail:(NSError *)error;
-
-/**
- Creates an Interaction that always Succeeds.
-
- @return an Interaction that always Succeeds.
- */
-+ (id<FBInteraction>)succeed;
-
-/**
- Creates an Interaction that will retry a base interaction a number of times, before failing.
-
- @param retries the number of retries, must be 1 or greater.
- @param interaction the base interaction to retry.
- @return a retrying interaction.
- */
-+ (id<FBInteraction>)retry:(NSUInteger)retries interaction:(id<FBInteraction>)interaction;
-
-/**
- Ignores any failure that occurs to the base interaction.
-
- @param interaction the interaction to attempt.
- @return an interaction that allways succeds.
- */
-+ (id<FBInteraction>)ignoreFailure:(id<FBInteraction>)interaction;
-
-/**
- Takes an NSArray<id<FBInteraction>> and returns an id<FBInteracton>.
- Any failing interaction will terminate the chain.
-
- @param interactions the interactions to chain together.
- */
-+ (id<FBInteraction>)sequence:(NSArray *)interactions;
-
-/**
- Joins to interactions together.
- Equivalent to [FBInteraction sequence:@[first, second]]
-
- @param first the interaction to perform first.
- @param second the interaction to perform second.
- @return a chained interaction.
- */
-+ (id<FBInteraction>)first:(id<FBInteraction>)first second:(id<FBInteraction>)second;
-
-@end
+#import "FBControlCoreError.h"
 
 @interface FBInteraction_Block : NSObject <FBInteraction>
 
@@ -109,13 +45,13 @@
 
 @interface FBInteraction_Sequence : NSObject <FBInteraction>
 
-@property (nonatomic, copy, readonly) NSArray *interactions;
+@property (nonatomic, copy, readonly) NSArray<id<FBInteraction>> *interactions;
 
 @end
 
 @implementation FBInteraction_Sequence
 
-- (instancetype)initWithInteractions:(NSArray *)interactions
+- (instancetype)initWithInteractions:(NSArray<id<FBInteraction>> *)interactions
 {
   self = [super init];
   if (!self) {
@@ -132,7 +68,7 @@
   for (id<FBInteraction> interaction in self.interactions) {
     NSError *innerError = nil;
     if (![interaction perform:&innerError]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+      return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
   }
   return YES;
@@ -213,7 +149,7 @@
       return YES;
     }
   }
-  return [[[FBSimulatorError
+  return [[[FBControlCoreError
     describeFormat:@"Failed interaction after %ld retries", self.retries]
     causedBy:innerError]
     failBool:error];
@@ -286,7 +222,7 @@
   }];
 }
 
-+ (id<FBInteraction>)sequence:(NSArray *)interactions
++ (id<FBInteraction>)sequence:(NSArray<id<FBInteraction>> *)interactions
 {
   return [[FBInteraction_Sequence alloc] initWithInteractions:interactions];
 }

@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBInteraction.h>
+#import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulator.h>
 
 @class FBApplicationDescriptor ;
