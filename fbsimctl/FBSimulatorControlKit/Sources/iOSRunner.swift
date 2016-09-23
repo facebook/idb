@@ -31,9 +31,12 @@ struct iOSActionProvider {
 
     switch action {
     case .install(let appPath):
-      return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
-        try target.installApplication(withPath: appPath)
-      }
+      return iOSTargetRunner(
+        reporter: reporter,
+        name: EventName.Install,
+        subject: ControlCoreSubject(appPath as NSString),
+        interaction: FBCommandInteractions.installApplication(withPath: appPath, command: target)
+      )
     default:
       return nil
     }
@@ -44,13 +47,17 @@ struct iOSTargetRunner : Runner {
   let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
-  let action:(Void)throws -> Void
+  let interaction: FBInteractionProtocol
 
-  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> Void) {
+  init(reporter: iOSReporter, name: EventName?, subject: EventReporterSubject, interaction: FBInteractionProtocol) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
-    self.action = action
+    self.interaction = interaction
+  }
+
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> Void) {
+    self.init(reporter: reporter, name: name, subject: subject, interaction: Interaction(action))
   }
 
   func run() -> CommandResult {
@@ -58,7 +65,7 @@ struct iOSTargetRunner : Runner {
       if let name = self.name {
         self.reporter.report(name, EventType.Started, self.subject)
       }
-      try self.action()
+      try self.interaction.perform()
       if let name = self.name {
         self.reporter.report(name, EventType.Ended, self.subject)
       }
@@ -69,6 +76,6 @@ struct iOSTargetRunner : Runner {
     } catch {
       return .failure("Unknown Error")
     }
-    return .success(nil)
+    return .success(self.subject)
   }
 }

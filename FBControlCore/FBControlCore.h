@@ -16,6 +16,7 @@
 #import <FBControlCore/FBCapacityQueue.h>
 #import <FBControlCore/FBCollectionInformation.h>
 #import <FBControlCore/FBCollectionOperations.h>
+#import <FBControlCore/FBCommandInteractions.h>
 #import <FBControlCore/FBConcurrentCollectionOperations.h>
 #import <FBControlCore/FBControlCoreConfigurationVariants.h>
 #import <FBControlCore/FBControlCoreError.h>
