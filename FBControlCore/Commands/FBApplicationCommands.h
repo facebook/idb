@@ -45,6 +45,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error;
 
+/**
+ Kills application with given bundleID
+
+ @param bundleID bundle ID of installed application
+ @param error an error out for any error that occurs.
+ @return YES if the operation succeeds, otherwise NO.
+ */
+- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

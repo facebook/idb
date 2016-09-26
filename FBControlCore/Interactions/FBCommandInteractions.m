@@ -34,4 +34,11 @@
   }];
 }
 
++ (id<FBInteraction>)killApplicationWithBundleID:(NSString *)bundleID command:(id<FBApplicationCommands>)command
+{
+  return [FBInteraction interact:^ BOOL (NSError **error) {
+    return [command killApplicationWithBundleID:bundleID error:error];
+  }];
+}
+
 @end

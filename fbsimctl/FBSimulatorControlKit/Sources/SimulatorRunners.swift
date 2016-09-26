@@ -135,10 +135,6 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) { interaction in
         interaction.setLocation(latitude, longitude: longitude)
       }
-    case .terminate(let bundleID):
-      return SimulatorInteractionRunner(reporter, EventName.Terminate, bundleID) { interaction in
-        interaction.terminateApplication(withBundleID: bundleID)
-      }
     case .uninstall(let bundleID):
       return SimulatorInteractionRunner(reporter, EventName.Uninstall, bundleID) { interaction in
         interaction.uninstallApplication(withBundleID: bundleID)

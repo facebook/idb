@@ -47,6 +47,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (id<FBInteraction>)launchApplication:(FBApplicationLaunchConfiguration *)configuration command:(id<FBApplicationCommands>)command;
 
+/**
+ Kills application with given bundleID
+
+ @param bundleID bundle ID of installed application
+ @param command the command to use.
+ @return an Interaction for further invocation.
+ */
++ (id<FBInteraction>)killApplicationWithBundleID:(NSString *)bundleID command:(id<FBApplicationCommands>)command;
+
 @end
 
 NS_ASSUME_NONNULL_END
