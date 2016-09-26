@@ -12,7 +12,7 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBTestRunConfiguration.h"
+#import "FBXCTestConfiguration.h"
 #import "FBXCTestLogger.h"
 #import "FBXCTestReporterAdapter.h"
 #import "FBXCTestError.h"
@@ -22,18 +22,18 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 @interface FBApplicationTestRunner ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBTestRunConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 
 @end
 
 @implementation FBApplicationTestRunner
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBTestRunConfiguration *)configuration
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
 {
   return [[self alloc] initWithSimulator:simulator configuration:configuration];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBTestRunConfiguration *)configuration
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
 {
   self = [super init];
   if (!self) {

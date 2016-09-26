@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Configuration pased to FBXCTestRunner.
  */
-@interface FBTestRunConfiguration : NSObject
+@interface FBXCTestConfiguration : NSObject
 
 /**
  Creates a configuration, passing dependencies. Is not usable until `loadWithArguments` is called.

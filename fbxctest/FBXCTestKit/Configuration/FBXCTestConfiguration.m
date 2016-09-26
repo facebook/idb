@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBTestRunConfiguration.h"
+#import "FBXCTestConfiguration.h"
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
@@ -21,7 +21,7 @@ static NSString *const iOSXCTestShimFileName = @"otest-shim-ios.dylib";
 static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
 static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
 
-@interface FBTestRunConfiguration ()
+@interface FBXCTestConfiguration ()
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readwrite) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readwrite) FBSimulatorConfiguration *targetDeviceConfiguration;
@@ -39,7 +39,7 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
 
 @end
 
-@implementation FBTestRunConfiguration
+@implementation FBXCTestConfiguration
 
 - (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
 {
@@ -114,7 +114,7 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
 
   if (shimsRequired) {
     NSError *innerError = nil;
-    NSString *shimDirectory = [FBTestRunConfiguration findShimDirectoryWithError:&innerError];
+    NSString *shimDirectory = [FBXCTestConfiguration findShimDirectoryWithError:&innerError];
     if (!shimDirectory) {
       return [FBXCTestError failBoolWithError:innerError errorOut:error];
     }

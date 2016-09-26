@@ -11,20 +11,20 @@
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
-#import "FBTestRunConfiguration.h"
+#import "FBXCTestConfiguration.h"
 #import "FBXCTestLogger.h"
 #import "FBXCTestError.h"
 
 @interface FBXCTestSimulatorFetcher ()
 
-@property (nonatomic, strong, readonly) FBTestRunConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
 @implementation FBXCTestSimulatorFetcher
 
-+ (instancetype)withConfiguration:(FBTestRunConfiguration *)configuration error:(NSError **)error
++ (instancetype)withConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error
 {
   NSString *setPath = [configuration.workingDirectory stringByAppendingPathComponent:@"sim"];
   id<FBControlCoreLogger> logger = configuration.logger;
@@ -41,7 +41,7 @@
   return [[self alloc] initWithConfiguration:configuration simulatorControl:simulatorControl logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBTestRunConfiguration *)configuration simulatorControl:(FBSimulatorControl *)simulatorControl logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration simulatorControl:(FBSimulatorControl *)simulatorControl logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {

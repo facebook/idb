@@ -11,7 +11,7 @@
 
 @class FBSimulator;
 @class FBSimulatorControl;
-@class FBTestRunConfiguration;
+@class FBXCTestConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a Fetcher for the given Configuration.
  */
-+ (nullable instancetype)withConfiguration:(FBTestRunConfiguration *)configuration error:(NSError **)error;
++ (nullable instancetype)withConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error;
 
 /**
  Gets a Simulator capable of running a logic test.

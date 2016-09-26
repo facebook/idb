@@ -18,7 +18,7 @@
 #import "FBJSONTestReporter.h"
 #import "FBMultiFileReader.h"
 #import "FBLineReader.h"
-#import "FBTestRunConfiguration.h"
+#import "FBXCTestConfiguration.h"
 #import "FBXCTestError.h"
 #import "FBXCTestReporterAdapter.h"
 #import "FBXCTestLogger.h"
@@ -27,12 +27,12 @@
 #import "FBLogicTestRunner.h"
 
 @interface FBXCTestRunner ()
-@property (nonatomic, strong) FBTestRunConfiguration *configuration;
+@property (nonatomic, strong) FBXCTestConfiguration *configuration;
 @end
 
 @implementation FBXCTestRunner
 
-+ (instancetype)testRunnerWithConfiguration:(FBTestRunConfiguration *)configuration
++ (instancetype)testRunnerWithConfiguration:(FBXCTestConfiguration *)configuration
 {
   FBXCTestRunner *runner = [self new];
   runner->_configuration = configuration;
@@ -125,7 +125,7 @@
   NSTask *task = [[NSTask alloc] init];
   task.launchPath = xctestPath;
   task.arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
-  task.environment = [FBTestRunConfiguration
+  task.environment = [FBXCTestConfiguration
     buildEnvironmentWithEntries:@{
       @"DYLD_INSERT_LIBRARIES": otestQueryPath,
       @"OTEST_QUERY_OUTPUT_FILE": otestQueryOutputPath,

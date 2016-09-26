@@ -14,8 +14,6 @@
 		050D46031D6070AC0038F72D /* FBXCTestKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 050D45E81D6070690038F72D /* FBXCTestKit.framework */; };
 		050D46051D6071290038F72D /* FBXCTestKit.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 050D46041D6071290038F72D /* FBXCTestKit.xcconfig */; };
 		050D46071D6071A40038F72D /* FBXCTestKitTests.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 050D46061D6071A40038F72D /* FBXCTestKitTests.xcconfig */; };
-		050D46151D6072800038F72D /* FBTestRunConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D46081D6072800038F72D /* FBTestRunConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		050D46161D6072800038F72D /* FBTestRunConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46091D6072800038F72D /* FBTestRunConfiguration.m */; };
 		050D46191D6072800038F72D /* FBJSONTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D460D1D6072800038F72D /* FBJSONTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		050D461A1D6072800038F72D /* FBJSONTestReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D460E1D6072800038F72D /* FBJSONTestReporter.m */; };
 		050D461B1D6072800038F72D /* FBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D460F1D6072800038F72D /* FBXCTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -48,6 +46,8 @@
 		AAB44FF81D62351A0059E922 /* FBXCTestLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = AAB44FF61D62351A0059E922 /* FBXCTestLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAB44FF91D62351A0059E922 /* FBXCTestLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB44FF71D62351A0059E922 /* FBXCTestLogger.m */; };
 		AAB44FFD1D6236970059E922 /* FBXCTestReporterDouble.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB44FFC1D6236970059E922 /* FBXCTestReporterDouble.m */; };
+		AAFD567C1D95131600522DE3 /* FBXCTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAFD567D1D95131600522DE3 /* FBXCTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,8 +89,6 @@
 		050D46001D6070A50038F72D /* XCTestBootstrap.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTestBootstrap.framework; path = "../../../Library/Developer/Xcode/DerivedData/fbxctest-ggloazodethqmqakznelmdxzqbcu/Build/Products/Debug/XCTestBootstrap.framework"; sourceTree = "<group>"; };
 		050D46041D6071290038F72D /* FBXCTestKit.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = FBXCTestKit.xcconfig; sourceTree = "<group>"; };
 		050D46061D6071A40038F72D /* FBXCTestKitTests.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = FBXCTestKitTests.xcconfig; sourceTree = "<group>"; };
-		050D46081D6072800038F72D /* FBTestRunConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestRunConfiguration.h; sourceTree = "<group>"; };
-		050D46091D6072800038F72D /* FBTestRunConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestRunConfiguration.m; sourceTree = "<group>"; };
 		050D460D1D6072800038F72D /* FBJSONTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONTestReporter.h; sourceTree = "<group>"; };
 		050D460E1D6072800038F72D /* FBJSONTestReporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBJSONTestReporter.m; sourceTree = "<group>"; };
 		050D460F1D6072800038F72D /* FBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporter.h; sourceTree = "<group>"; };
@@ -129,6 +127,8 @@
 		AAB44FF71D62351A0059E922 /* FBXCTestLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestLogger.m; sourceTree = "<group>"; };
 		AAB44FFB1D6236970059E922 /* FBXCTestReporterDouble.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterDouble.h; sourceTree = "<group>"; };
 		AAB44FFC1D6236970059E922 /* FBXCTestReporterDouble.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterDouble.m; sourceTree = "<group>"; };
+		AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestConfiguration.h; sourceTree = "<group>"; };
+		AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestConfiguration.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -165,13 +165,12 @@
 		050D45E91D6070690038F72D /* FBXCTestKit */ = {
 			isa = PBXGroup;
 			children = (
-				050D46081D6072800038F72D /* FBTestRunConfiguration.h */,
-				050D46091D6072800038F72D /* FBTestRunConfiguration.m */,
 				050D462E1D6079C10038F72D /* FBXCTestBootstrapper.h */,
-				050D462F1D6079C10038F72D /* FBXCTestBootstrapper.m */,
 				050D45EA1D6070690038F72D /* FBXCTestKit.h */,
-				050D46041D6071290038F72D /* FBXCTestKit.xcconfig */,
+				050D462F1D6079C10038F72D /* FBXCTestBootstrapper.m */,
 				050D45EC1D6070690038F72D /* Info.plist */,
+				050D46041D6071290038F72D /* FBXCTestKit.xcconfig */,
+				AAFD56791D95131600522DE3 /* Configuration */,
 				050D460C1D6072800038F72D /* Reporters */,
 				AA9A9E461D62F235000B8180 /* Runners */,
 				050D46121D6072800038F72D /* Utility */,
@@ -313,6 +312,15 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
+		AAFD56791D95131600522DE3 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */,
+				AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -321,6 +329,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA9A9E491D62F235000B8180 /* FBXCTestRunner.h in Headers */,
+				AAFD567C1D95131600522DE3 /* FBXCTestConfiguration.h in Headers */,
 				050D461E1D6072800038F72D /* FBXCTestError.h in Headers */,
 				5B92E3CF1D62006300BCBB36 /* FBLineReader.h in Headers */,
 				050D461C1D6072800038F72D /* FBXCTestReporterAdapter.h in Headers */,
@@ -329,7 +338,6 @@
 				AA9A9E4D1D62F251000B8180 /* FBApplicationTestRunner.h in Headers */,
 				050D45EB1D6070690038F72D /* FBXCTestKit.h in Headers */,
 				AAB44FF81D62351A0059E922 /* FBXCTestLogger.h in Headers */,
-				050D46151D6072800038F72D /* FBTestRunConfiguration.h in Headers */,
 				050D46191D6072800038F72D /* FBJSONTestReporter.h in Headers */,
 				AA36AD301D6C917B00156B08 /* FBLogicTestRunner.h in Headers */,
 				050D46301D6079C10038F72D /* FBXCTestBootstrapper.h in Headers */,
@@ -467,8 +475,8 @@
 				5B92E3D01D62006300BCBB36 /* FBLineReader.m in Sources */,
 				5B92E3D21D62006300BCBB36 /* FBMultiFileReader.m in Sources */,
 				AA36AD311D6C917B00156B08 /* FBLogicTestRunner.m in Sources */,
-				050D46161D6072800038F72D /* FBTestRunConfiguration.m in Sources */,
 				AA2CEBB11D65C57F0051962D /* FBXCTestSimulatorFetcher.m in Sources */,
+				AAFD567D1D95131600522DE3 /* FBXCTestConfiguration.m in Sources */,
 				AAB44FF91D62351A0059E922 /* FBXCTestLogger.m in Sources */,
 				050D461A1D6072800038F72D /* FBJSONTestReporter.m in Sources */,
 				050D461D1D6072800038F72D /* FBXCTestReporterAdapter.m in Sources */,

@@ -10,7 +10,7 @@
 #import "FBXCTestBootstrapper.h"
 
 #import "FBJSONTestReporter.h"
-#import "FBTestRunConfiguration.h"
+#import "FBXCTestConfiguration.h"
 #import "FBXCTestRunner.h"
 #import "FBXCTestLogger.h"
 
@@ -30,7 +30,7 @@
     return handleError(error, nil);
   }
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:nil processUnderTestEnvironment:@{}];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:nil processUnderTestEnvironment:@{}];
   if (![configuration loadWithArguments:[NSProcessInfo processInfo].arguments
                        workingDirectory:workingDirectory
                                   error:&error]) {

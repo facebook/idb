@@ -43,7 +43,7 @@
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
   BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -93,7 +93,7 @@
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:processUnderTestEnvironment];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:processUnderTestEnvironment];
   BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -109,7 +109,7 @@
 - (void)testRunsiOSLogicTestsWithoutApplication
 {
   NSError *error = nil;
-  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+  if (![FBXCTestConfiguration findShimDirectoryWithError:&error]) {
     NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
@@ -118,7 +118,7 @@
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
   BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -138,7 +138,7 @@
 - (void)testiOSLogicTestEndsOnCrashingTest
 {
   NSError *error = nil;
-  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+  if (![FBXCTestConfiguration findShimDirectoryWithError:&error]) {
     NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
@@ -148,7 +148,7 @@
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:processUnderTestEnvironment];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:processUnderTestEnvironment];
   BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -169,7 +169,7 @@
 - (void)testMacOSXLogicTest
 {
   NSError *error = nil;
-  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+  if (![FBXCTestConfiguration findShimDirectoryWithError:&error]) {
     NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
@@ -178,7 +178,7 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
   BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -198,7 +198,7 @@
 - (void)testMacOSXLogicTestEndsOnCrashingTest
 {
   NSError *error = nil;
-  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+  if (![FBXCTestConfiguration findShimDirectoryWithError:&error]) {
     NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
@@ -208,7 +208,7 @@
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:processUnderTestEnvironment];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:processUnderTestEnvironment];
   BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -229,7 +229,7 @@
 - (void)testReportsMacOSXTestList
 {
   NSError *error = nil;
-  if (![FBTestRunConfiguration findShimDirectoryWithError:&error]) {
+  if (![FBXCTestConfiguration findShimDirectoryWithError:&error]) {
     NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
     return;
   }
@@ -238,7 +238,7 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
-  FBTestRunConfiguration *configuration = [[FBTestRunConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter processUnderTestEnvironment:@{}];
   BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);

@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBSimulator;
-@class FBTestRunConfiguration;
+@class FBXCTestConfiguration;
 
 /**
  A Runner for Application Tests.
@@ -23,7 +23,7 @@
  @param simulator the Simulator to use for hosting the Application.
  @param configuration the the configuration to use.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBTestRunConfiguration *)configuration;
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration;
 
 /**
  Run the Application Tests.
