@@ -37,6 +37,26 @@
   return operator;
 }
 
+#pragma mark - FBApplicationCommands
+
+- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
+{
+  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:path error:error];
+  if (![[self.simulator.interact installApplication:application] perform:error]) {
+    return NO;
+  }
+  return YES;
+}
+
+- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  return ([self.simulator installedApplicationWithBundleID:bundleID error:error] != nil);
+}
+
+- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+{
+  return [self.simulator launchApplication:configuration error:error];
+}
 
 #pragma mark - FBDeviceOperator protocol
 
@@ -153,20 +173,6 @@
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
 {
   return YES;
-}
-
-- (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
-{
-  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:path error:error];
-  if (![[self.simulator.interact installApplication:application] perform:error]) {
-    return NO;
-  }
-  return YES;
-}
-
-- (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  return ([self.simulator installedApplicationWithBundleID:bundleID error:error] != nil);
 }
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error

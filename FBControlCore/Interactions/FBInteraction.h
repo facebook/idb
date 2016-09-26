@@ -111,6 +111,14 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Chaining
 
 /**
+ Chains and interaction using the provided interaction.
+
+ @param next the interaction to chain.
+ @return the reciever, for chaining.
+ */
+- (instancetype)chainNext:(id<FBInteraction>)next;
+
+/**
  Chains an interaction using the provided block.
 
  @param block the block to perform the interaction with. Passes an NSError to return error information and the Interaction Subclass for further chaining.

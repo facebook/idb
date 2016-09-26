@@ -37,6 +37,13 @@ struct iOSActionProvider {
         subject: ControlCoreSubject(appPath as NSString),
         interaction: FBCommandInteractions.installApplication(withPath: appPath, command: target)
       )
+    case .launchApp(let appLaunch):
+      return iOSTargetRunner(
+        reporter: reporter,
+        name: EventName.Launch,
+        subject: ControlCoreSubject(appLaunch),
+        interaction: FBCommandInteractions.launchApplication(appLaunch, command: target)
+      )
     default:
       return nil
     }

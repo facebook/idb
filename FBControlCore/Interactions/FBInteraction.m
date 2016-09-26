@@ -236,6 +236,14 @@
 
 #pragma mark Chainable Interactions
 
+- (instancetype)chainNext:(id<FBInteraction>)next
+{
+  NSParameterAssert(next);
+  FBInteraction *interaction = [self copy];
+  interaction->_interaction = [FBInteraction first:self.interaction second:next];
+  return interaction;
+}
+
 - (instancetype)interact:(BOOL (^)(NSError **error, id interaction))block
 {
   __weak id weakInteraction = self;
@@ -262,15 +270,6 @@
 - (BOOL)perform:(NSError **)error
 {
   return [self.interaction perform:error];
-}
-
-#pragma mark Private
-
-- (instancetype)chainNext:(id<FBInteraction>)next
-{
-  FBInteraction *interaction = [self copy];
-  interaction->_interaction = [FBInteraction first:self.interaction second:next];
-  return interaction;
 }
 
 @end

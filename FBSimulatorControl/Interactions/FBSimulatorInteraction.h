@@ -12,7 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulator.h>
 
-@class FBApplicationDescriptor ;
+@class FBApplicationDescriptor;
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 

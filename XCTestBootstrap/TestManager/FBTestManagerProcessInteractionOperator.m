@@ -9,6 +9,8 @@
 
 #import "FBTestManagerProcessInteractionOperator.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBDeviceOperator.h"
 
 @implementation FBTestManagerProcessInteractionOperator
@@ -34,14 +36,14 @@
 
 #pragma mark - FBTestManagerMediatorDelegate
 
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchProcessWithPath:(NSString *)path bundleID:(NSString *)bundleID arguments:(NSArray *)arguments environmentVariables:(NSDictionary *)environment error:(NSError **)error
+- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error
 {
-  if (![self.deviceOperator isApplicationInstalledWithBundleID:bundleID error:error]) {
+  if (![self.deviceOperator isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
     if (![self.deviceOperator installApplicationWithPath:path error:error]) {
       return NO;
     }
   }
-  if (![self.deviceOperator launchApplicationWithBundleID:bundleID arguments:arguments environment:environment error:error]) {
+  if (![self.deviceOperator launchApplication:configuration error:error]) {
     return NO;
   }
   return YES;

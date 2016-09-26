@@ -12,6 +12,7 @@
 #import <FBControlCore/FBInteraction.h>
 
 @protocol FBApplicationCommands;
+@class FBApplicationLaunchConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -37,6 +38,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return an Interaction for further invocation.
  */
 + (id<FBInteraction>)isApplicationInstalledWithBundleID:(NSString *)bundleID command:(id<FBApplicationCommands>)command;
+
+/**
+ Launches an Application with the provided Application Launch Configuration.
+
+ @param configuration the Application Launch Configuration to use.
+ @return an Interaction for further invocation.
+ */
++ (id<FBInteraction>)launchApplication:(FBApplicationLaunchConfiguration *)configuration command:(id<FBApplicationCommands>)command;
 
 @end
 

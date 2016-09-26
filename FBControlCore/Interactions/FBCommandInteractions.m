@@ -27,4 +27,11 @@
   }];
 }
 
++ (id<FBInteraction>)launchApplication:(FBApplicationLaunchConfiguration *)configuration command:(id<FBApplicationCommands>)command
+{
+  return [FBInteraction interact:^ BOOL (NSError **error) {
+    return [command launchApplication:configuration error:error];
+  }];
+}
+
 @end

@@ -281,16 +281,16 @@ static const NSUInteger FBMaxConosleMarkerLength = 1000;
   return [self installedApplicationWithBundleIdentifier:bundleID] != nil;
 }
 
-- (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment error:(NSError **)error
+- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
 {
   NSAssert(error, @"error is required for hub commands");
-  NSString *remotePath = [self applicationPathForApplicationWithBundleID:bundleID error:error];
+  NSString *remotePath = [self applicationPathForApplicationWithBundleID:configuration.bundleID error:error];
   NSDictionary *options = @{@"StartSuspendedKey" : @NO};
   SEL aSelector = NSSelectorFromString(@"launchSuspendedProcessWithDevicePath:bundleIdentifier:environment:arguments:options:");
   NSNumber *PID =
   [self executeHubProcessControlSelector:aSelector
                                    error:error
-                               arguments:remotePath, bundleID, environment, arguments, options, nil];
+                               arguments:remotePath, configuration.bundleID, configuration.environment, configuration.arguments, options, nil];
   if (!PID) {
     return NO;
   }

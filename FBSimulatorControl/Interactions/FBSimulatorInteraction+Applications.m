@@ -74,10 +74,7 @@
 {
   NSParameterAssert(appLaunch);
 
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    return [[FBApplicationLaunchStrategy withSimulator:simulator]
-      launchApplication:appLaunch error:error] != nil;
-  }];
+  return [self chainNext:[FBCommandInteractions launchApplication:appLaunch command:self.simulator]];
 }
 
 - (instancetype)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch

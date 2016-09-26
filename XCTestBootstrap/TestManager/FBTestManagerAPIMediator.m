@@ -185,31 +185,38 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 {
   [self.logger logFormat:@"Test process requested process launch with bundleID %@", bundleID];
   NSError *error;
-  DTXRemoteInvocationReceipt *recepit = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
-  if(![self.processDelegate testManagerMediator:self launchProcessWithPath:path bundleID:bundleID arguments:arguments environmentVariables:environment error:&error]) {
-    [recepit invokeCompletionWithReturnValue:nil error:error];
+  DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
+  FBApplicationLaunchConfiguration *launch = [FBApplicationLaunchConfiguration
+    configurationWithBundleID:bundleID
+    bundleName:bundleID
+    arguments:arguments
+    environment:environment
+    options:0];
+
+  if(![self.processDelegate testManagerMediator:self launchApplication:launch atPath:path error:&error]) {
+    [receipt invokeCompletionWithReturnValue:nil error:error];
   }
   else {
-    id token = @(recepit.hash);
+    id token = @(receipt.hash);
     self.tokenToBundleIDMap[token] = bundleID;
-    [recepit invokeCompletionWithReturnValue:token error:nil];
+    [receipt invokeCompletionWithReturnValue:token error:nil];
   }
-  return recepit;
+  return receipt;
 }
 
 - (id)_XCT_getProgressForLaunch:(id)token
 {
   [self.logger logFormat:@"Test process requested launch process status with token %@", token];
-  DTXRemoteInvocationReceipt *recepit = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
-  [recepit invokeCompletionWithReturnValue:@1 error:nil];
-  return recepit;
+  DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
+  [receipt invokeCompletionWithReturnValue:@1 error:nil];
+  return receipt;
 }
 
 - (id)_XCT_terminateProcess:(id)token
 {
   [self.logger logFormat:@"Test process requested process termination with token %@", token];
   NSError *error;
-  DTXRemoteInvocationReceipt *recepit = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
+  DTXRemoteInvocationReceipt *receipt = [objc_lookUpClass("DTXRemoteInvocationReceipt") new];
   if (!token) {
     error = [NSError errorWithDomain:@"XCTestIDEInterfaceErrorDomain"
                                 code:0x1
@@ -228,8 +235,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   if (error) {
     [self.logger logFormat:@"Failed to kill process with token %@ dure to %@", token, error];
   }
-  [recepit invokeCompletionWithReturnValue:token error:error];
-  return recepit;
+  [receipt invokeCompletionWithReturnValue:token error:error];
+  return receipt;
 }
 
 #pragma mark iOS 10.x

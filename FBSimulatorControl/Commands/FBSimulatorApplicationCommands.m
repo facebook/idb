@@ -15,6 +15,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorError.h"
 #import "FBSimDeviceWrapper.h"
+#import "FBApplicationLaunchStrategy.h"
 
 @interface FBSimulatorApplicationCommands ()
 
@@ -87,6 +88,11 @@
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   return [self.simulator installedApplicationWithBundleID:bundleID error:error] != nil;
+}
+
+- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+{
+  return [[FBApplicationLaunchStrategy withSimulator:self.simulator] launchApplication:configuration error:error] != nil;
 }
 
 @end
