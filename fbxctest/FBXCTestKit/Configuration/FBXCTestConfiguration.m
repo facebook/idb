@@ -289,7 +289,7 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
     MacQueryShimFileName : @NO,
   };
 
-  id<FBCodesignProvider> codesign = FBCodeSignCommand.codeSignCommandWithAdHocIdentity;
+  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   for (NSString *filename in shims) {
     NSString *shimPath = [directory stringByAppendingPathComponent:iOSXCTestShimFileName];
     if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {

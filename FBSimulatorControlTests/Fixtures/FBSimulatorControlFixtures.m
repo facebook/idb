@@ -167,7 +167,7 @@
   if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
     return bundlePath;
   }
-  id<FBCodesignProvider> codesign = FBCodeSignCommand.codeSignCommandWithAdHocIdentity;
+  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   if ([codesign cdHashForBundleAtPath:bundlePath error:nil]) {
     return bundlePath;
   }

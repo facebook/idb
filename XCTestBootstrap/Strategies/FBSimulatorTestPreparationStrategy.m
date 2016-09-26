@@ -11,7 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBCodeSignCommand.h"
 #import "FBDeviceOperator.h"
 #import "FBFileManager.h"
 #import "FBProductBundle.h"
@@ -38,7 +37,7 @@
                                    workingDirectory:(NSString *)workingDirectory
 {
   id<FBFileManager> fileManager = NSFileManager.defaultManager;
-  id<FBCodesignProvider> codesign = FBCodeSignCommand.codeSignCommandWithAdHocIdentity;
+  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   return [self strategyWithTestLaunchConfiguration:testLaunchConfiguration workingDirectory:workingDirectory fileManager:fileManager codesign:codesign];
 }
 

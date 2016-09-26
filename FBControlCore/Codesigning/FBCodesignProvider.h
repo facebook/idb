@@ -38,4 +38,27 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ A Default implementation of a Codesign Provider.
+ */
+@interface FBCodesignProvider : NSObject <FBCodesignProvider>
+
+/**
+ Identity used to codesign bundle.
+ */
+@property (nonatomic, copy, readonly) NSString *identityName;
+
+/**
+ @param identityName identity used to codesign bundle
+ @return code sign command that signs bundles with given identity
+ */
++ (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName;
+
+/**
+ @return code sign command that signs bundles with the ad hoc identity.
+ */
++ (instancetype)codeSignCommandWithAdHocIdentity;
+
+@end
+
 NS_ASSUME_NONNULL_END

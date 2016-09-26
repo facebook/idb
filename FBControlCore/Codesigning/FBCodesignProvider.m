@@ -7,15 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBCodeSignCommand.h"
+#import "FBCodesignProvider.h"
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "XCTestBootstrapError.h"
+#import "FBControlCoreError.h"
 
 static NSString *const CDHashPrefix = @"CDHash=";
 
-@implementation FBCodeSignCommand
+@implementation FBCodesignProvider
 
 + (instancetype)codeSignCommandWithIdentityName:(NSString *)identityName
 {
@@ -59,18 +59,18 @@ static NSString *const CDHashPrefix = @"CDHash=";
     taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-dvvvv", bundlePath]]
     startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
   if (task.error) {
-    return [[[XCTestBootstrapError
+    return [[[FBControlCoreError
       describe:@"Could not execute codesign"]
       causedBy:task.error]
       fail:error];
   }
   NSString *output = task.stdErr;
   NSString *cdHash = [[[FBLogSearch
-    withText:output predicate:FBCodeSignCommand.logSearchPredicateForCDHash]
+    withText:output predicate:FBCodesignProvider.logSearchPredicateForCDHash]
     firstMatchingLine]
     stringByReplacingOccurrencesOfString:CDHashPrefix withString:@""];
   if (!cdHash) {
-    return [[[XCTestBootstrapError
+    return [[[FBControlCoreError
       describeFormat:@"Could not find '%@' in output: %@", CDHashPrefix, output]
       causedBy:task.error]
       fail:error];

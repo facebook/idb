@@ -8,8 +8,6 @@
  */
 
 #import <XCTestBootstrap/FBApplicationDataPackage.h>
-#import <XCTestBootstrap/FBCodeSignCommand.h>
-#import <XCTestBootstrap/FBCodesignProvider.h>
 #import <XCTestBootstrap/FBDeviceOperator.h>
 #import <XCTestBootstrap/FBDeviceTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBFileManager.h>

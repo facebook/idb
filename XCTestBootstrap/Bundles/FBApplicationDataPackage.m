@@ -9,7 +9,8 @@
 
 #import "FBApplicationDataPackage.h"
 
-#import "FBCodesignProvider.h"
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 #import "NSFileManager+FBFileManager.h"
