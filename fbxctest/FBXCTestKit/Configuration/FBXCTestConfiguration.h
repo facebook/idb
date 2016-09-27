@@ -12,6 +12,7 @@
 @class FBSimulator;
 @class FBSimulatorConfiguration;
 @class FBXCTestLogger;
+@class FBXCTestShimConfiguration;
 
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
@@ -47,10 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) BOOL runWithoutSimulator;
 @property (nonatomic, assign, readonly) BOOL listTestsOnly;
 
-@property (nonatomic, copy, nullable, readonly) NSString *shimDirectory;
-@property (nonatomic, copy, nullable, readonly) NSString *iOSSimulatorOtestShimPath;
-@property (nonatomic, copy, nullable, readonly) NSString *macOtestShimPath;
-@property (nonatomic, copy, nullable, readonly) NSString *macOtestQueryPath;
+@property (nonatomic, copy, nullable, readonly) FBXCTestShimConfiguration *shims;
 
 /**
  Loads the Configuration, with the provided parameters.
@@ -66,14 +64,6 @@ NS_ASSUME_NONNULL_BEGIN
  Locates the expected Installation Root.
  */
 + (nullable NSString *)fbxctestInstallationRoot;
-
-/**
- Attempts to locate the shims that are used for querying and running logic tests.
-
- @param error an error out for any error that occurs.
- @return the shim directory if successful, NO otherwise.
- */
-+ (nullable NSString *)findShimDirectoryWithError:(NSError **)error;
 
 /**
  Gets the path to the xctest executable for the given simulator (or for a mac test).

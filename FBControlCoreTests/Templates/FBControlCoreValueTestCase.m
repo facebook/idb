@@ -11,7 +11,7 @@
 
 @implementation FBControlCoreValueTestCase
 
-- (void)assertEqualityOfCopy:(NSArray *)values
+- (void)assertEqualityOfCopy:(NSArray<NSObject *> *)values
 {
   for (id value in values) {
     id valueCopy = [value copy];
@@ -22,7 +22,7 @@
   }
 }
 
-- (void)assertUnarchiving:(NSArray *)values
+- (void)assertUnarchiving:(NSArray<NSKeyedArchiver *> *)values
 {
   for (id value in values) {
     NSData *valueData = [NSKeyedArchiver archivedDataWithRootObject:value];
@@ -31,7 +31,7 @@
   }
 }
 
-- (void)assertJSONSerialization:(NSArray *)values
+- (void)assertJSONSerialization:(NSArray<id<FBJSONSerializable>> *)values
 {
   for (id value in values) {
     id json = [value jsonSerializableRepresentation];
@@ -46,7 +46,7 @@
   }
 }
 
-- (void)assertJSONDeserialization:(NSArray *)values
+- (void)assertJSONDeserialization:(NSArray<id<FBJSONDeserializable>> *)values
 {
   for (id value in values) {
     id json = [value jsonSerializableRepresentation];

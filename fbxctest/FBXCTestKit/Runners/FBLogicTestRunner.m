@@ -20,6 +20,7 @@
 #import "FBMultiFileReader.h"
 #import "FBLineReader.h"
 #import "FBXCTestError.h"
+#import "FBXCTestShimConfiguration.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
@@ -59,7 +60,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
   NSString *xctestPath = [self.configuration xctestPathForSimulator:simulator];
   NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"usr/bin/simctl"];
-  NSString *otestShimPath = simulator ? self.configuration.iOSSimulatorOtestShimPath : self.configuration.macOtestShimPath;
+  NSString *otestShimPath = simulator ? self.configuration.shims.iOSSimulatorOtestShimPath : self.configuration.shims.macOtestShimPath;
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
   NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary dictionaryWithDictionary:@{
     @"DYLD_INSERT_LIBRARIES": otestShimPath,

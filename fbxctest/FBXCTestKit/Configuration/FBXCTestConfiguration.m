@@ -16,10 +16,7 @@
 #import "FBJSONTestReporter.h"
 #import "FBXCTestError.h"
 #import "FBXCTestLogger.h"
-
-static NSString *const iOSXCTestShimFileName = @"otest-shim-ios.dylib";
-static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
-static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
+#import "FBXCTestShimConfiguration.h"
 
 @interface FBXCTestConfiguration ()
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
@@ -32,10 +29,11 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
 @property (nonatomic, copy, readwrite) NSString *simulatorName;
 @property (nonatomic, copy, readwrite) NSString *simulatorOS;
 @property (nonatomic, copy, readwrite) NSString *testFilter;
-@property (nonatomic, copy, readwrite) NSString *shimDirectory;
 
 @property (nonatomic, assign, readwrite) BOOL runWithoutSimulator;
 @property (nonatomic, assign, readwrite) BOOL listTestsOnly;
+
+@property (nonatomic, copy, nullable, readwrite) FBXCTestShimConfiguration *shims;
 
 @end
 
@@ -114,11 +112,11 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
 
   if (shimsRequired) {
     NSError *innerError = nil;
-    NSString *shimDirectory = [FBXCTestConfiguration findShimDirectoryWithError:&innerError];
-    if (!shimDirectory) {
+    FBXCTestShimConfiguration *shimConfiguration = [FBXCTestShimConfiguration defaultShimConfigurationWithError:&innerError];
+    if (!shimConfiguration) {
       return [FBXCTestError failBoolWithError:innerError errorOut:error];
     }
-    self.shimDirectory = shimDirectory;
+    self.shims = shimConfiguration;
   }
   if (!self.reporter) {
     self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType];
@@ -232,22 +230,7 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
   }
 }
 
-#pragma mark Shim File Paths
-
-- (NSString *)iOSSimulatorOtestShimPath
-{
-  return [self.shimDirectory stringByAppendingPathComponent:iOSXCTestShimFileName];
-}
-
-- (NSString *)macOtestShimPath
-{
-  return [self.shimDirectory stringByAppendingPathComponent:MacXCTestShimFileName];
-}
-
-- (NSString *)macOtestQueryPath
-{
-  return [self.shimDirectory stringByAppendingPathComponent:MacQueryShimFileName];
-}
+#pragma mark Helpers
 
 + (NSString *)fbxctestInstallationRoot
 {
@@ -260,55 +243,6 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
     stringByDeletingLastPathComponent]
     stringByDeletingLastPathComponent];
   return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
-}
-
-+ (NSString *)findShimDirectoryWithError:(NSError **)error
-{
-  // If an environment variable is provided, use it
-  NSString *environmentDefinedDirectory = NSProcessInfo.processInfo.environment[@"TEST_SHIMS_DIRECTORY"];
-  if (environmentDefinedDirectory) {
-    return [self confirmExistenceOfRequiredShimsInDirectory:environmentDefinedDirectory withError:error];
-  }
-
-  // Otherwise, expect it to be relative to the location of the current executable.
-  NSString *libPath = [[self fbxctestInstallationRoot] stringByAppendingPathComponent:@"lib"];
-  return [self confirmExistenceOfRequiredShimsInDirectory:libPath withError:error];
-}
-
-+ (NSString *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory withError:(NSError **)error
-{
-  if (![NSFileManager.defaultManager fileExistsAtPath:directory]) {
-    return [[FBXCTestError
-      describeFormat:@"A shim directory was expected at '%@', but it was not there", directory]
-      fail:error];
-  }
-
-  NSDictionary<NSString *, NSNumber *> *shims = @{
-    iOSXCTestShimFileName : FBControlCoreGlobalConfiguration.isXcode8OrGreater ? @YES : @NO,
-    MacXCTestShimFileName : @NO,
-    MacQueryShimFileName : @NO,
-  };
-
-  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
-  for (NSString *filename in shims) {
-    NSString *shimPath = [directory stringByAppendingPathComponent:iOSXCTestShimFileName];
-    if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
-      return [[FBXCTestError
-        describeFormat:@"The iOS xctest Simulator Shim was expected at the location '%@', but it was not there", shimPath]
-        fail:error];
-    }
-    if (!shims[filename].boolValue) {
-      continue;
-    }
-    NSError *innerError = nil;
-    if (![codesign cdHashForBundleAtPath:shimPath error:&innerError]) {
-      return [[[FBXCTestError
-        describeFormat:@"Shim at path %@ was required to be signed, but it was not", shimPath]
-        causedBy:innerError]
-        fail:error];
-    }
-  }
-  return directory;
 }
 
 - (NSString *)xctestPathForSimulator:(nullable FBSimulator *)simulator

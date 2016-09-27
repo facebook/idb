@@ -25,6 +25,7 @@
 #import "FBApplicationTestRunner.h"
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBLogicTestRunner.h"
+#import "FBXCTestShimConfiguration.h"
 
 @interface FBXCTestRunner ()
 @property (nonatomic, strong) FBXCTestConfiguration *configuration;
@@ -114,7 +115,7 @@
   [self.configuration.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = [self.configuration xctestPathForSimulator:nil];
-  NSString *otestQueryPath = self.configuration.macOtestQueryPath;
+  NSString *otestQueryPath = self.configuration.shims.macOtestQueryPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
 
   if (mkfifo([otestQueryOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {

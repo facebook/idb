@@ -19,21 +19,21 @@
 /**
  Asserts that values are equal when copied.
  */
-- (void)assertEqualityOfCopy:(NSArray *)values;
+- (void)assertEqualityOfCopy:(NSArray<NSObject *> *)values;
 
 /**
  Asserts that values archive and unarchive to the same value.
  */
-- (void)assertUnarchiving:(NSArray *)values;
+- (void)assertUnarchiving:(NSArray<NSKeyedArchiver *> *)values;
 
 /**
  Asserts that values can be JSON Serialized
  */
-- (void)assertJSONSerialization:(NSArray *)values;
+- (void)assertJSONSerialization:(NSArray<id<FBJSONSerializable>> *)values;
 
 /**
  Asserts that values can be serialized and deserialized via json.
  */
-- (void)assertJSONDeserialization:(NSArray *)values;
+- (void)assertJSONDeserialization:(NSArray<id<FBJSONDeserializable>> *)values;
 
 @end
