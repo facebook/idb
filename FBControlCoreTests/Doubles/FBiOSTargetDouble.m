@@ -52,4 +52,14 @@
   return NO;
 }
 
+- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
+{
+  return NO;
+}
+
+- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  return NO;
+}
+
 @end
