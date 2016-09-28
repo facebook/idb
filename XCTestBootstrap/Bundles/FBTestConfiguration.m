@@ -9,12 +9,11 @@
 
 #import "FBTestConfiguration.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <XCTest/XCTestConfiguration.h>
 
 #import <objc/runtime.h>
-
-#import "FBFileManager.h"
-#import "NSFileManager+FBFileManager.h"
 
 @interface FBTestConfiguration ()
 @property (nonatomic, copy) NSUUID *sessionIdentifier;

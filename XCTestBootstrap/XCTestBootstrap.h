@@ -10,7 +10,6 @@
 #import <XCTestBootstrap/FBApplicationDataPackage.h>
 #import <XCTestBootstrap/FBDeviceOperator.h>
 #import <XCTestBootstrap/FBDeviceTestPreparationStrategy.h>
-#import <XCTestBootstrap/FBFileManager.h>
 #import <XCTestBootstrap/FBProductBundle.h>
 #import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBTestBundle.h>
@@ -32,6 +31,5 @@
 #import <XCTestBootstrap/FBTestRunnerConfiguration.h>
 #import <XCTestBootstrap/FBXCTestManagerLoggingForwarder.h>
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
-#import <XCTestBootstrap/NSFileManager+FBFileManager.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>
 #import <XCTestBootstrap/XCTestBootstrapFrameworkLoader.h>

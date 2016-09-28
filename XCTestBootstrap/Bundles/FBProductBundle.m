@@ -12,8 +12,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBFileManager.h"
-#import "NSFileManager+FBFileManager.h"
 #import "XCTestBootstrapError.h"
 
 @interface FBProductBundle ()

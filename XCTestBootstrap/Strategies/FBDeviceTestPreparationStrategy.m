@@ -9,6 +9,8 @@
 
 #import "FBDeviceTestPreparationStrategy.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBApplicationDataPackage.h"
 #import "FBDeviceOperator.h"
 #import "FBProductBundle.h"
@@ -16,7 +18,6 @@
 #import "FBTestConfiguration.h"
 #import "FBTestLaunchConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
-#import "NSFileManager+FBFileManager.h"
 #import "XCTestBootstrapError.h"
 
 @interface FBDeviceTestPreparationStrategy ()

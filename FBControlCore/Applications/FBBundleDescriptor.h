@@ -15,11 +15,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBBinaryDescriptor;
+@protocol FBFileManager;
 
 /**
  Concrete value wrapper around a Application artifact.
  */
 @interface FBBundleDescriptor : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
+
+#pragma mark Initializers
 
 /**
  The Designated Initializer.
@@ -42,6 +45,20 @@ NS_ASSUME_NONNULL_BEGIN
  @returns a new FBBundleDescriptor instance, if all arguments are non-nil. Nil otherwise
  */
 + (nullable instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary;
+
+#pragma mark Public Methods
+
+/**
+ Relocates the reciever into a destination directory.
+
+ @param destinationDirectory the Destination Path to relocate to. Must not be nil.
+ @param fileManager the fileManager to use. Must not be nil.
+ @param error an error out for any error that occurs.
+ */
+- (nullable instancetype)relocateBundleIntoDirectory:(NSString *)destinationDirectory fileManager:(id<FBFileManager>)fileManager error:(NSError **)error;
+
+
+#pragma mark Properties
 
 /**
  The name of the Application. See CFBundleName.

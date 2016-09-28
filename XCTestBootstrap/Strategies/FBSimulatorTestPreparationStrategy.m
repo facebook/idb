@@ -12,13 +12,11 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBDeviceOperator.h"
-#import "FBFileManager.h"
 #import "FBProductBundle.h"
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
 #import "FBTestLaunchConfiguration.h"
-#import "NSFileManager+FBFileManager.h"
 #import "XCTestBootstrapError.h"
 
 

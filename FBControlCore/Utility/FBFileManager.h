@@ -76,4 +76,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ NSFileManager implements the FBFileManager methods by default.
+ */
+@interface NSFileManager (FBFileManager) <FBFileManager>
+
+@end
+
 NS_ASSUME_NONNULL_END

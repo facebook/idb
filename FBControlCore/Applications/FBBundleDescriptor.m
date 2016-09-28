@@ -10,6 +10,8 @@
 #import "FBBundleDescriptor.h"
 
 #import "FBBinaryDescriptor.h"
+#import "FBFileManager.h"
+#import "FBControlCoreError.h"
 
 @implementation FBBundleDescriptor
 
@@ -130,6 +132,44 @@
     @"path" : self.path,
     @"binary" : self.binary.jsonSerializableRepresentation,
   };
+}
+
+#pragma mark Public Methods
+
+- (nullable instancetype)relocateBundleIntoDirectory:(NSString *)destinationDirectory fileManager:(id<FBFileManager>)fileManager error:(NSError **)error
+{
+  NSParameterAssert(destinationDirectory);
+  NSParameterAssert(fileManager);
+
+  NSError *innerError = nil;
+  NSString *bundleName = self.path.lastPathComponent;
+
+  if (![fileManager fileExistsAtPath:destinationDirectory] && ![fileManager createDirectoryAtPath:destinationDirectory withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not create destination directory at  '%@'", destinationDirectory]
+      fail:error];
+  }
+
+  NSString *targetBundlePath = [destinationDirectory stringByAppendingPathComponent:bundleName];
+  if ([fileManager fileExistsAtPath:targetBundlePath] && ![fileManager removeItemAtPath:targetBundlePath error:&innerError]) {
+    return [[[FBControlCoreError
+      describeFormat:@"Could not destination item at path '%@'", targetBundlePath]
+      causedBy:innerError]
+      fail:error];
+  }
+
+  if(![fileManager copyItemAtPath:self.path toPath:targetBundlePath error:&innerError]) {
+    return [[[FBControlCoreError
+      describeFormat:@"Could not move from '%@' to '%@'", self.path, targetBundlePath]
+      causedBy:innerError]
+      fail:error];
+  }
+
+  return [[self.class alloc]
+    initWithName:self.name
+    path:targetBundlePath
+    bundleID:self.bundleID
+    binary:self.binary];
 }
 
 @end
