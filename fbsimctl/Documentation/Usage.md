@@ -80,9 +80,9 @@ To get a list of all the diagnostics available for booted Simulators:
 ```
 $ fbsimctl --state=booted diagnose
 # Information about each log is printed to a single line
-C3F0183E-B497-4916-9E99-82FB8A842624 | iPhone 5s | Booted | iPhone 5s | iOS 8.4: diagnostic: Path Log Short Name 'system_log' | Content 1 | Path /Users/lawrencelomax/Library/Logs/CoreSimulator/C3F0183E-B497-4916-9E99-82FB8A842624/system.log
-C3F0183E-B497-4916-9E99-82FB8A842624 | iPhone 5s | Booted | iPhone 5s | iOS 8.4: diagnostic: Path Log Short Name 'coresimulator' | Content 1 | Path /Users/lawrencelomax/Library/Logs/CoreSimulator/CoreSimulator.log
-C3F0183E-B497-4916-9E99-82FB8A842624 | iPhone 5s | Booted | iPhone 5s | iOS 8.4: diagnostic: Path Log Short Name 'launchd_bootstrap' | Content 1 | Path /Users/lawrencelomax/Library/Developer/CoreSimulator/Devices/C3F0183E-B497-4916-9E99-82FB8A842624/data/var/run/launchd_bootstrap.plist
+C3F0183E-B497-4916-9E99-82FB8A842624 | iPhone 5s | Booted | iPhone 5s | iOS 8.4: diagnostic: Path Log Short Name 'system_log' | Content 1 | Path /Users/user/Library/Logs/CoreSimulator/C3F0183E-B497-4916-9E99-82FB8A842624/system.log
+C3F0183E-B497-4916-9E99-82FB8A842624 | iPhone 5s | Booted | iPhone 5s | iOS 8.4: diagnostic: Path Log Short Name 'coresimulator' | Content 1 | Path /Users/user/Library/Logs/CoreSimulator/CoreSimulator.log
+C3F0183E-B497-4916-9E99-82FB8A842624 | iPhone 5s | Booted | iPhone 5s | iOS 8.4: diagnostic: Path Log Short Name 'launchd_bootstrap' | Content 1 | Path /Users/user/Library/Developer/CoreSimulator/Devices/C3F0183E-B497-4916-9E99-82FB8A842624/data/var/run/launchd_bootstrap.plist
 # Find an read the system log instantly, page it into less
 $ fbsimctl --state=booted diagnose | grep system_log | awk '{print $NF}' | xargs less
 ```
@@ -96,12 +96,24 @@ The `listen` action of `fbsimctl`, can be used to accept a stream of commands ov
 
 When you wish to complete the `listen` action, send a `SIGHUP` to the `fbsimctl` process.
 
-## Video Recording & Chaining
+## Video Recording with Xcode 8
 
-`fbsimctl` suppors chaining of actions within one process invocation. This is done by separating actions with `--`. This exists mainly to enable video recording by keeping the `fbsimctl` process alive:
+Since Xcode 8, `fbsimctl` can record the video of any booted Simulator, regardless of where it was booted. Here's a simple one-liner for recording a video and printing the location of the file to `stdout`:
+```
+# Start video recording for all booted Simulators. Send a Ctrl-C to stop video recording and print the path to the video
+$ fbsimctl --debug-logging record start -- listen -- record stop > /dev/null && fbsimctl --state=booted diagnose | grep video | awk '{print $NF}'
+/Users/user/Library/Developer/CoreSimulator/Devices/932105B4-3658-4E11-8010-81FB8587EA75/data/fbsimulatorcontrol/diagnostics/video.mp4
+```
+
+This is a great command to alias in your shell for easy recall. The video for each booted simulator will be printed to `stdout` so you can combine with `open(1)`, `cp(1)` or any other command that you wish to use.
+
+## Video Recording with Xcode 7
+
+In Xcode 7, it's not quite a simple to record a video as in Xcode 8. In order to record a video for Simulators from Xcode 7, you'll need to boot the Simulator 'Headlessly' and start recording as the Simulator boots. Fortunately, `fbsimctl` makes this possible with it's support of chaining actions inside the same process. Chaining is done through a `--` argument to separate each action:
 
 ```
-fbsimctl F0F071BB-8775-472C-8378-262BB6D31212 boot --direct-launch \
+# Boot a Simulator headlessly, start video recording.
+$ fbsimctl F0F071BB-8775-472C-8378-262BB6D31212 boot --direct-launch \
   -- record start \
   -- listen --http 8090 \
   -- shutdown \
