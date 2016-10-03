@@ -24,7 +24,7 @@
 /**
  Asserts that values archive and unarchive to the same value.
  */
-- (void)assertUnarchiving:(NSArray<NSKeyedArchiver *> *)values;
+- (void)assertUnarchiving:(NSArray<id<NSCoding>> *)values;
 
 /**
  Asserts that values can be JSON Serialized

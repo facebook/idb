@@ -22,7 +22,7 @@
   }
 }
 
-- (void)assertUnarchiving:(NSArray<NSKeyedArchiver *> *)values
+- (void)assertUnarchiving:(NSArray<id<NSCoding>> *)values
 {
   for (id value in values) {
     NSData *valueData = [NSKeyedArchiver archivedDataWithRootObject:value];
