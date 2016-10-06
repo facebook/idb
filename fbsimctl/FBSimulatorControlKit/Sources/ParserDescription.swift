@@ -128,6 +128,16 @@ extension LeafParserDescription {
 }
 
 /**
+ * DEF_FMT: String
+ *
+ * Format for presenting a name and its description on a single line. The
+ * format indents the definition by one tabstop, then displays the name, in a
+ * 25 character wide window, left-aligned and padded with spaces (if necessary),
+ * followed by another tab, and then the definition.
+ */
+internal let DEF_FMT = "\t%-25s\t%s"
+
+/**
  * PrimitiveDesc(name:, desc:)
  *
  * Describes a primitive piece of data. Examples include integers, floats,
@@ -144,7 +154,7 @@ public struct PrimitiveDesc : LeafParserDescription {
   public var summary: String { return "<\(name)>" }
 
   public var description: String {
-    return String(format: "\t%-20s\t%s",
+    return String(format: DEF_FMT,
                   (summary as NSString).utf8String!,
                   (desc as NSString).utf8String!)
   }
@@ -166,7 +176,7 @@ public struct FlagDesc : LeafParserDescription {
   public var summary: String { return "--\(name)" }
 
   public var description: String {
-    return String(format: "\t%-20s\t%s",
+    return String(format: DEF_FMT,
                   (summary as NSString).utf8String!,
                   (desc as NSString).utf8String!)
   }

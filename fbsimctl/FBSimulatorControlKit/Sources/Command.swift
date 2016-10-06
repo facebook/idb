@@ -50,9 +50,9 @@ public enum CreationSpecification {
   An Enumeration specifying the output format of diagnostics.
 */
 public enum DiagnosticFormat : String {
-  case CurrentFormat = "--current-format"
-  case Path = "--path"
-  case Content = "--content"
+  case CurrentFormat = "current-format"
+  case Path = "path"
+  case Content = "content"
 }
 
 /**

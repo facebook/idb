@@ -34,10 +34,10 @@ public enum ParseError : Error, CustomStringConvertible {
  Protocol for parsing a list of tokens.
  */
 public struct Parser<A> : CustomStringConvertible {
-  let matchDescription: String
+  let matchDescription: ParserDescription
   let output: ([String]) throws -> ([String], A)
 
-  init(_ matchDescription: String, output: @escaping ([String]) throws -> ([String], A)) {
+  init(_ matchDescription: ParserDescription, output: @escaping ([String]) throws -> ([String], A)) {
     self.matchDescription = matchDescription
     self.output = output
   }
@@ -47,9 +47,9 @@ public struct Parser<A> : CustomStringConvertible {
     return (nextTokens, value)
   }
 
-  public var description: String { get {
-    return self.matchDescription
-  }}
+  public var description: String {
+    return self.matchDescription.normalised.usage
+  }
 }
 
 /**
@@ -73,7 +73,7 @@ extension Parser {
   }
 
   func optional() -> Parser<A?> {
-    return Parser<A?>(self.matchDescription) { tokens in
+    return Parser<A?>(OptionalDesc(child: self.matchDescription)) { tokens in
       do {
         let (tokens, value) = try self.parse(tokens)
         return (tokens, Optional.some(value))
@@ -96,7 +96,10 @@ extension Parser {
   func sequence<B>(_ p: Parser<B>) -> Parser<B> {
     return self
       .bind({ _ in p })
-      .describe("\(self) followed by \(p)")
+      .describe(SequenceDesc(children: [
+        self.matchDescription,
+        p.matchDescription
+      ]))
   }
 }
 
@@ -108,18 +111,66 @@ extension Parser {
     return self.handle { _ in a }
   }
 
-  func describe(_ description: String) -> Parser<A> {
+  /**
+   * sectionize
+   *
+   * Wrap the description of this parser in a `SectionDesc`.
+   */
+  func sectionize(_ tag: String,
+                  _ name: String,
+                  _ explain: String) -> Parser<A> {
+    let desc = SectionDesc(
+      tag: tag,
+      name: name,
+      desc: explain,
+      child: matchDescription)
+
+    return Parser(desc, output: output)
+  }
+
+  /**
+   * topLevel
+   *
+   * Version of this parser where the description has been updated to indicate
+   * that it is used to parse the whole argument list from the CLI. When
+   * printing the usage statement, we will prepend the name of the app to the
+   * front of the description to show this to users.
+   */
+  var topLevel: Parser<A> {
+    let appPath = CommandLine.arguments.first!
+    let appName = (appPath as NSString).lastPathComponent
+    let desc = SequenceDesc(children: [CmdDesc(cmd: appName), matchDescription])
+    return Parser(desc, output: output)
+  }
+
+  /**
+   * withExpandedDesc
+   *
+   * Version of this parser where the description has been expanded to span
+   * multiple lines, if it can.
+   */
+  var withExpandedDesc: Parser<A> {
+    switch matchDescription {
+    case let choice as ChoiceDesc:
+      return Parser(choice.expanded, output: output)
+
+    default:
+      return self
+    }
+  }
+
+  func describe(_ description: ParserDescription) -> Parser<A> {
     return Parser(description, output: self.output)
   }
 
-  static var passthrough: Parser<NSNull> { get {
-    return Parser<NSNull>("") { tokens in
+  static var passthrough: Parser<NSNull> {
+    return Parser<NSNull>(SequenceDesc(children: [])) { tokens in
       return (tokens, NSNull())
     }
-  }}
+  }
 
   static var noRemaining: Parser<NSNull> { get {
-    return Parser<NSNull>("No Remaining") { tokens in
+    return Parser<NSNull>(SequenceDesc(children: [])) { tokens in
       if tokens.count > 0 {
         throw ParseError.custom("There were remaining tokens \(tokens)")
       }
@@ -128,12 +179,12 @@ extension Parser {
   }}
 
   static func fail(_ error: ParseError) -> Parser<A> {
-    return Parser<A>("fail Parser") { _ in
+    return Parser<A>(ChoiceDesc(children: [])) { _ in
       throw error
     }
   }
 
-  static func single(_ description: String, f: @escaping (String) throws -> A) -> Parser<A> {
+  static func single(_ description: ParserDescription, f: @escaping (String) throws -> A) -> Parser<A> {
     return Parser<A>(description) { tokens in
       guard let actual = tokens.first else {
         throw ParseError.endOfInput
@@ -143,7 +194,7 @@ extension Parser {
   }
 
   static func ofString(_ string: String, _ constant: A) -> Parser<A> {
-    return Parser.single(string) { token in
+    return Parser.single(CmdDesc(cmd: string)) { token in
       if token != string {
         throw ParseError.doesNotMatch(token, string)
       }
@@ -151,18 +202,30 @@ extension Parser {
     }
   }
 
-  static func ofFlag(_ flag: String) -> Parser<Bool> {
-    return Parser<Bool>
-      .ofString(flag, true)
-      .fallback(false)
-      .describe("Flag \(flag)")
+  static func ofFlag<T>(_ flag: String,
+                        _ val: T,
+                        _ explanation: String) -> Parser<T> {
+    return Parser<T>
+      .ofString("--" + flag, val)
+      .describe(FlagDesc(name: flag, desc: explanation))
   }
 
-  static func succeeded(_ token: String, _ by: Parser<A>) -> Parser<A> {
+  static func ofFlag(_ flag: String, _ explanation: String) -> Parser<Bool> {
+    return ofFlag(flag, true, explanation).fallback(false)
+  }
+
+  static func ofFlagWithArg<A>(_ flag: String,
+                               _ arg: Parser<A>,
+                               _ explanation: String) -> Parser<A> {
     return Parser<()>
-      .ofString(token, ())
-      .sequence(by)
-      .describe("\(token) followed by \(by)")
+      .ofFlag(flag, (), explanation)
+      .sequence(arg)
+  }
+
+  static func ofCommandWithArg(_ cmd: String, _ arg: Parser<A>) -> Parser<A> {
+    return Parser<()>
+      .ofString(cmd, ())
+      .sequence(arg)
   }
 
   static func ofTwoSequenced<B>(_ a: Parser<A>, _ b: Parser<B>) -> Parser<(A, B)> {
@@ -171,8 +234,10 @@ extension Parser {
         return b.fmap { valueB in
           return (valueA, valueB)
         }
-      })
-      .describe("\(a) followed by \(b)")
+      }).describe(SequenceDesc(children: [
+        a.matchDescription,
+        b.matchDescription
+      ]))
   }
 
   static func ofThreeSequenced<B, C>(_ a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>) -> Parser<(A, B, C)> {
@@ -183,8 +248,11 @@ extension Parser {
             return (valueA, valueB, valueC)
           }
         }
-      })
-      .describe("\(a) followed by \(b) followed by \(c)")
+      }).describe(SequenceDesc(children: [
+        a.matchDescription,
+        b.matchDescription,
+        c.matchDescription
+      ]))
   }
 
   static func ofFourSequenced<B, C, D>(_ a: Parser<A>, _ b: Parser<B>, _ c: Parser<C>, _ d: Parser<D>) -> Parser<(A, B, C, D)> {
@@ -197,12 +265,17 @@ extension Parser {
             }
           }
         }
-      })
-      .describe("\(a) followed by \(b) followed by \(c) followed by \(d)")
+      }).describe(SequenceDesc(children: [
+        a.matchDescription,
+        b.matchDescription,
+        c.matchDescription,
+        d.matchDescription
+      ]))
   }
 
   static func alternative(_ parsers: [Parser<A>]) -> Parser<A> {
-    return Parser<A>("Any of \(parsers)") { tokens in
+    let descs = parsers.map { $0.matchDescription }
+    return Parser<A>(ChoiceDesc(children: descs)) { tokens in
       for parser in parsers {
         do {
           return try parser.parse(tokens)
@@ -218,7 +291,11 @@ extension Parser {
 
   static func manySepCount<B>(_ count: Int, _ parser: Parser<A>, _ separator: Parser<B>) -> Parser<[A]> {
     assert(count >= 0, "Count should be >= 0")
-    return Parser<[A]>("At least \(count) of \(parser)") { tokens in
+    let desc = AtleastDesc(lowerBound: count,
+                           child: parser.matchDescription,
+                           sep: separator.matchDescription)
+
+    return Parser<[A]>(desc) { tokens in
       var values: [A] = []
       var runningArgs = tokens
       var parseCount = 0
@@ -245,7 +322,12 @@ extension Parser {
   }
 
   static func manyTill<B>(_ terminatingParser: Parser<B>,  _ parser: Parser<A>) -> Parser<[A]> {
-    return Parser<[A]>("Many of \(parser)") { tokens in
+    let desc = SequenceDesc(children: [
+      AtleastDesc(lowerBound: 0, child: parser.matchDescription),
+      OptionalDesc(child: terminatingParser.matchDescription)
+    ])
+
+    return Parser<[A]>(desc) { tokens in
       var values: [A] = []
       var runningArgs = tokens
 
