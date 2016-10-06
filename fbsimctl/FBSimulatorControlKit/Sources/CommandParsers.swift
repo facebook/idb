@@ -143,88 +143,84 @@ extension Parser {
 
 extension OutputOptions : Parsable {
   public static var parser: Parser<OutputOptions> {
-    return Parser<OutputOptions>.union(parsers)
+    return Parser<OutputOptions>.union([singleParser])
   }
 
-  static var parsers: [Parser<OutputOptions>] {
-    return [
+  static var singleParser: Parser<OutputOptions> {
+    return Parser.alternative([
       Parser<OutputOptions>
-        .ofFlag("debug-logging", OutputOptions.DebugLogging,
-                "Debug Logging Explanation"),
+        .ofFlag("debug-logging", OutputOptions.DebugLogging, ""),
       Parser<OutputOptions>
-        .ofFlag("json", OutputOptions.JSON,
-                "JSON Explanation"),
+        .ofFlag("json", OutputOptions.JSON, ""),
       Parser<OutputOptions>
-        .ofFlag("pretty", OutputOptions.Pretty,
-                "Pretty Explanation"),
-    ]
+        .ofFlag("pretty", OutputOptions.Pretty, ""),
+    ])
+      .sectionize("output", "Output Options", "")
   }
 }
 
 extension FBSimulatorManagementOptions : Parsable {
   public static var parser: Parser<FBSimulatorManagementOptions> {
-    return Parser<FBSimulatorManagementOptions>.union(self.parsers)
+    return Parser<FBSimulatorManagementOptions>.union([singleParser])
   }
 
-  static var parsers: [Parser<FBSimulatorManagementOptions>] {
-    return [
+  static var singleParser: Parser<FBSimulatorManagementOptions> {
+    return Parser.alternative([
       self.deleteAllOnFirstParser,
       self.killAllOnFirstParser,
       self.killSpuriousSimulatorsOnFirstStartParser,
       self.ignoreSpuriousKillFailParser,
       self.killSpuriousCoreSimulatorServicesParser,
       self.useSimDeviceTimeoutResilianceParser
-    ]
+    ])
+      .sectionize("management", "Simulator Management", "")
   }
 
   static var deleteAllOnFirstParser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>
-      .ofFlag("delete-all", .deleteAllOnFirstStart,
-              "Delete All Explanation")
+      .ofFlag("delete-all", .deleteAllOnFirstStart, "")
   }
 
   static var killAllOnFirstParser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>
-      .ofFlag("kill-all", .killAllOnFirstStart,
-              "Kill All Explanation")
+      .ofFlag("kill-all", .killAllOnFirstStart, "")
   }
 
   static var killSpuriousSimulatorsOnFirstStartParser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>
-      .ofFlag("kill-spurious", .killSpuriousSimulatorsOnFirstStart,
-              "Kill Spurious Explanation")
+      .ofFlag("kill-spurious", .killSpuriousSimulatorsOnFirstStart, "")
   }
 
   static var ignoreSpuriousKillFailParser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>
-      .ofFlag("ignore-spurious-kill-fail", .ignoreSpuriousKillFail,
-              "Ignore Spurious Kill Fail Explanation")
+      .ofFlag("ignore-spurious-kill-fail", .ignoreSpuriousKillFail, "")
   }
 
   static var killSpuriousCoreSimulatorServicesParser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>
-      .ofFlag("kill-spurious-services", .killSpuriousCoreSimulatorServices,
-              "Kill Spurious Services Explanation")
+      .ofFlag("kill-spurious-services", .killSpuriousCoreSimulatorServices, "")
   }
 
   static var useSimDeviceTimeoutResilianceParser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>
-      .ofFlag("timeout-resiliance", .useSimDeviceTimeoutResiliance,
-              "Timeout Resiliance Explanation")
+      .ofFlag("timeout-resiliance", .useSimDeviceTimeoutResiliance, "")
   }
 }
 
 extension Configuration : Parsable {
   public static var parser: Parser<Configuration> {
-    let outputOptionsParsers = OutputOptions.parsers.map { $0.fmap(Configuration.ofOutputOptions) }
-    let managementOptionsParsers = FBSimulatorManagementOptions.parsers.map { $0.fmap(Configuration.ofManagementOptions) }
-    let parsers = Array([outputOptionsParsers, managementOptionsParsers, [self.deviceSetPathParser]].joined())
-    return Parser<Configuration>.accumulate(0, parsers)
+    let outputOptionsParsers = OutputOptions.singleParser.fmap(Configuration.ofOutputOptions)
+    let managementOptionsParsers = FBSimulatorManagementOptions.singleParser.fmap(Configuration.ofManagementOptions)
+    return Parser<Configuration>.accumulate(0, [
+      outputOptionsParsers,
+      managementOptionsParsers,
+      self.deviceSetPathParser
+    ])
   }
 
   static var deviceSetPathParser: Parser<Configuration> {
     return Parser<Configuration>
-      .ofFlagWithArg("set", Parser<Any>.ofDirectory, "Set Explanation")
+      .ofFlagWithArg("set", Parser<Any>.ofDirectory, "")
       .fmap(Configuration.ofDeviceSetPath)
   }
 }
@@ -282,8 +278,7 @@ extension IndividualCreationConfiguration : Parsable {
 
   static var auxDirectoryParser: Parser<String> {
     return Parser<String>
-      .ofFlagWithArg("aux", Parser<Any>.ofDirectory,
-                     "Explanation of AUX Directory")
+      .ofFlagWithArg("aux", Parser<Any>.ofDirectory, "")
   }
 
   static var auxDirectoryConfigurationParser: Parser<IndividualCreationConfiguration> {
@@ -303,7 +298,7 @@ extension CreationSpecification : Parsable {
       Parser<CreationSpecification>
         .ofFlag("all-missing-defaults",
                 CreationSpecification.allMissingDefaults,
-                "All Missing Defaults Explanation"),
+                ""),
       IndividualCreationConfiguration.parser.fmap { CreationSpecification.individual($0) },
     ])
   }
@@ -312,16 +307,11 @@ extension CreationSpecification : Parsable {
 extension FBSimulatorState : Parsable {
   public static var parser: Parser<FBSimulatorState> {
     return Parser.alternative([
-        stateFlag("creating", FBSimulatorState.creating,
-                  "Creating explanation"),
-        stateFlag("shutdown", FBSimulatorState.shutdown,
-                  "Shutdown explanation"),
-        stateFlag("booting", FBSimulatorState.booting,
-                  "Booting explanation"),
-        stateFlag("booted", FBSimulatorState.booted,
-                  "Booted explanation"),
-        stateFlag("shutting-down", FBSimulatorState.shuttingDown,
-                  "Shutting down explanation")
+        stateFlag("creating", FBSimulatorState.creating, ""),
+        stateFlag("shutdown", FBSimulatorState.shutdown, ""),
+        stateFlag("booting", FBSimulatorState.booting, ""),
+        stateFlag("booted", FBSimulatorState.booted, ""),
+        stateFlag("shutting-down", FBSimulatorState.shuttingDown, "")
     ])
   }
 
@@ -337,11 +327,9 @@ extension FBProcessLaunchOptions : Parsable {
   public static var parser: Parser<FBProcessLaunchOptions> {
     return Parser<FBProcessLaunchOptions>.union([
       Parser<FBProcessLaunchOptions>.ofFlag(
-        "stdout", FBProcessLaunchOptions.writeStdout,
-        "STDOUT Explanation."),
+        "stdout", FBProcessLaunchOptions.writeStdout, ""),
       Parser<FBProcessLaunchOptions>.ofFlag(
-        "stderr", FBProcessLaunchOptions.writeStderr,
-        "STDERR Explanation."),
+        "stderr", FBProcessLaunchOptions.writeStderr, ""),
     ])
   }
 }
@@ -350,11 +338,9 @@ extension FBiOSTargetType : Parsable {
   public static var parser: Parser<FBiOSTargetType> {
     return Parser<FBiOSTargetType>.alternative([
       Parser<FBiOSTargetType>.ofFlag(
-        "simulators", FBiOSTargetType.simulator,
-        "Explanation of simulators"),
+        "simulators", FBiOSTargetType.simulator, ""),
       Parser<FBiOSTargetType>.ofFlag(
-        "devices", FBiOSTargetType.device,
-        "Explanation of devices"),
+        "devices", FBiOSTargetType.device, ""),
     ])
   }
 }
@@ -364,14 +350,11 @@ extension FBCrashLogInfoProcessType : Parsable {
     return Parser<FBCrashLogInfoProcessType>
       .union([
         Parser<FBCrashLogInfoProcessType>
-          .ofFlag("application", FBCrashLogInfoProcessType.application,
-                  "Explanation of Application"),
+          .ofFlag("application", FBCrashLogInfoProcessType.application, ""),
         Parser<FBCrashLogInfoProcessType>
-          .ofFlag("system", FBCrashLogInfoProcessType.system,
-                  "Explanation of System"),
+          .ofFlag("system", FBCrashLogInfoProcessType.system, ""),
         Parser<FBCrashLogInfoProcessType>
-          .ofFlag("custom-agent", FBCrashLogInfoProcessType.customAgent,
-                  "Explanation of Custom Agent")
+          .ofFlag("custom-agent", FBCrashLogInfoProcessType.customAgent, "")
       ])
   }
 }
@@ -386,7 +369,7 @@ extension CLI : Parsable {
       .withExpandedDesc
       .sectionize(
         "fbsimctl", "Help",
-        "Brief description of the purpose of this app.")
+        "fbsimclt is a Mac OS X library for managing and manipulating iOS Simulators")
   }
 }
 
@@ -441,8 +424,7 @@ extension Server : Parsable {
 
   static var socketParser: Parser<Server> {
     return Parser<Server>
-      .ofFlagWithArg("socket", Parser<Int>.ofInt,
-                     "Explanation of socket")
+      .ofFlagWithArg("socket", Parser<Int>.ofInt, "")
       .fmap { portNumber in
         return Server.socket(UInt16(portNumber))
       }
@@ -450,8 +432,7 @@ extension Server : Parsable {
 
   static var httpParser:  Parser<Server> {
     return Parser<Server>
-      .ofFlagWithArg("http", Parser<Int>.ofInt,
-                     "Explanation of HTTP")
+      .ofFlagWithArg("http", Parser<Int>.ofInt, "")
       .fmap { portNumber in
         return Server.http(UInt16(portNumber))
       }
@@ -490,6 +471,8 @@ extension Action : Parsable {
         self.watchdogOverrideParser,
         self.setLocationParser,
       ])
+      .withExpandedDesc
+      .sectionize("action", "Action", "")
   }
 
   static var approveParser: Parser<Action> {
@@ -497,6 +480,7 @@ extension Action : Parsable {
       .ofCommandWithArg(EventName.Approve.rawValue,
                         Parser.manyCount(1, Parser<String>.ofBundleID))
       .fmap { Action.approve($0) }
+      .sectionize("approve", "Action: Approve", "")
   }
 
   static var bootParser: Parser<Action> {
@@ -504,6 +488,7 @@ extension Action : Parsable {
       .ofCommandWithArg(EventName.Boot.rawValue,
                         FBSimulatorLaunchConfigurationParser.parser.optional())
       .fmap { Action.boot($0) }
+      .sectionize("boot", "Action: Boot", "")
   }
 
   static var clearKeychainParser: Parser<Action> {
@@ -511,6 +496,7 @@ extension Action : Parsable {
       .ofCommandWithArg(EventName.ClearKeychain.rawValue,
                         Parser<String>.ofBundleID.optional())
       .fmap { Action.clearKeychain($0) }
+      .sectionize("clear_keychain", "Action: Clear Keychain", "")
   }
 
   static var configParser: Parser<Action> {
@@ -521,6 +507,7 @@ extension Action : Parsable {
     return Parser<CreationSpecification>
       .ofCommandWithArg(EventName.Create.rawValue, CreationSpecification.parser)
       .fmap { Action.create($0) }
+      .sectionize("create", "Action: Create", "")
   }
 
   static var deleteParser: Parser<Action> {
@@ -539,6 +526,7 @@ extension Action : Parsable {
       .fmap { (format, query) in
         Action.diagnose(query, format)
       }
+      .sectionize("diagnose", "Action: Diagnose", "")
   }
 
   static var eraseParser: Parser<Action> {
@@ -552,6 +540,7 @@ extension Action : Parsable {
         FBProcessLaunchConfigurationParsers.agentLaunchParser
       )
       .fmap { Action.launchAgent($0) }
+      .sectionize("launch(agent)", "Action: Launch (Agent)", "")
   }
 
   static var launchAppParser: Parser<Action> {
@@ -561,12 +550,12 @@ extension Action : Parsable {
         FBProcessLaunchConfigurationParsers.appLaunchParser
       )
       .fmap { Action.launchApp($0) }
+      .sectionize("launch(app)", "Action: Launch (App)", "")
   }
 
   static var launchXCTestParser: Parser<Action> {
     let optionalTimeoutFlag = Parser<Double>
-      .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble,
-                     "Explain Test Timeout.")
+      .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble, "")
       .optional()
 
     let cmdParser = Parser<(Double?, String, FBApplicationLaunchConfiguration)>
@@ -583,12 +572,14 @@ extension Action : Parsable {
       .fmap { (timeout, bundle, appLaunch) in
         Action.launchXCTest(appLaunch, bundle, timeout)
       }
+      .sectionize("launch_xctest", "Action: Launch XCTest", "")
   }
 
   static var listenParser: Parser<Action> {
     return Parser<Server>
       .ofCommandWithArg(EventName.Listen.rawValue, Server.parser)
       .fmap { Action.listen($0) }
+      .sectionize("listen", "Action: Listen", "")
   }
 
   static var listParser: Parser<Action> {
@@ -623,6 +614,7 @@ extension Action : Parsable {
       .ofCommandWithArg(EventName.Relaunch.rawValue,
                         FBProcessLaunchConfigurationParsers.appLaunchParser)
       .fmap { Action.relaunch($0) }
+      .sectionize("relaunch", "Action: Relaunch", "")
   }
 
   static var recordParser: Parser<Action> {
@@ -708,6 +700,7 @@ extension Action : Parsable {
         )
       )
       .fmap { Action.watchdogOverride($1, $0) }
+      .sectionize("watchdog_override", "Action: Watchdog Override", "")
   }
 }
 
@@ -717,16 +710,13 @@ extension DiagnosticFormat : Parsable {
       .alternative([
         Parser<DiagnosticFormat>
           .ofFlag(DiagnosticFormat.CurrentFormat.rawValue,
-                  DiagnosticFormat.CurrentFormat,
-                  "Explain Current Format"),
+                  DiagnosticFormat.CurrentFormat, ""),
         Parser<DiagnosticFormat>
           .ofFlag(DiagnosticFormat.Path.rawValue,
-                  DiagnosticFormat.Path,
-                  "Explain Path"),
+                  DiagnosticFormat.Path, ""),
         Parser<DiagnosticFormat>
           .ofFlag(DiagnosticFormat.Content.rawValue,
-                  DiagnosticFormat.Content,
-                  "Explain Content"),
+                  DiagnosticFormat.Content, ""),
       ])
   }
 }
@@ -736,8 +726,13 @@ public struct FBiOSTargetFormatParsers {
     let parsers = FBiOSTargetFormat.allFields.map { field in
       return Parser.ofString("--" + field, field)
     }
+
+    let altParser = Parser
+      .alternative(parsers)
+      .sectionize("target-format", "Target Format", "")
+
     return Parser
-      .alternativeMany(1, parsers)
+      .manyCount(1, altParser)
       .fmap { FBiOSTargetFormat(fields: $0) }
     }
 }
@@ -748,6 +743,8 @@ public struct FBiOSTargetQueryParsers {
       self.allParser,
       self.unionParser
     ])
+      .sectionize("targets", "Targets",
+                  "")
   }
 
   static var allParser: Parser<FBiOSTargetQuery> {
@@ -756,7 +753,11 @@ public struct FBiOSTargetQueryParsers {
   }
 
   static var unionParser: Parser<FBiOSTargetQuery> {
-    return Parser<FBiOSTargetQuery>.accumulate(1, [
+    return Parser<FBiOSTargetQuery>.accumulate(1, [singleQueryParser])
+  }
+
+  static var singleQueryParser: Parser<FBiOSTargetQuery> {
+    return Parser.alternative([
       self.firstParser,
       self.uuidParser,
       self.simulatorStateParser,
@@ -764,11 +765,12 @@ public struct FBiOSTargetQueryParsers {
       self.osVersionsParser,
       self.deviceParser
     ])
+      .sectionize("targets/query", "Target: Queries", "")
   }
 
   static var firstParser: Parser<FBiOSTargetQuery> {
     return Parser<Int>
-      .ofFlagWithArg("first", Parser<Int>.ofInt, "Explanatin of First")
+      .ofFlagWithArg("first", Parser<Int>.ofInt, "")
       .fmap { FBiOSTargetQuery.ofCount($0) }
   }
 
@@ -816,11 +818,13 @@ struct FBSimulatorDiagnosticQueryParser {
         self.crashesParser,
       ])
       .fallback(FBSimulatorDiagnosticQuery.all())
+      .withExpandedDesc
+      .sectionize("diagnose/query", "Diagnose: Query", "")
     }
 
   static var namedParser: Parser<FBSimulatorDiagnosticQuery> {
     let nameParser = Parser<String>
-      .ofFlagWithArg("name", Parser<String>.ofAny, "Explaining name.")
+      .ofFlagWithArg("name", Parser<String>.ofAny, "")
 
     return Parser
       .manyCount(1, nameParser)
@@ -831,8 +835,7 @@ struct FBSimulatorDiagnosticQueryParser {
 
   static var crashesParser: Parser<FBSimulatorDiagnosticQuery> {
     let crashDateParser = Parser<Date>
-      .ofFlagWithArg("crashes-since", Parser<Date>.ofDate,
-                     "Explain crashes since")
+      .ofFlagWithArg("crashes-since", Parser<Date>.ofDate, "")
 
     return Parser
       .ofTwoSequenced(
@@ -878,38 +881,31 @@ struct FBSimulatorLaunchConfigurationParser {
 
   static var localeParser: Parser<Locale> {
     return Parser<Locale>
-      .ofFlagWithArg("locale", Parser<Locale>.ofLocale,
-                     "Explanation of Locale.")
+      .ofFlagWithArg("locale", Parser<Locale>.ofLocale, "")
   }
 
   static var scaleParser: Parser<FBSimulatorScale> {
     return Parser.alternative([
       Parser<FBSimulatorScale>
-        .ofFlag("scale=25", FBSimulatorScale_25(),
-                "Explanation of Scale 25"),
+        .ofFlag("scale=25", FBSimulatorScale_25(), ""),
       Parser<FBSimulatorScale>
-        .ofFlag("scale=50", FBSimulatorScale_50(),
-                "Explanation of Scale 50"),
+        .ofFlag("scale=50", FBSimulatorScale_50(), ""),
       Parser<FBSimulatorScale>
-        .ofFlag("scale=75", FBSimulatorScale_75(),
-                "Explanation of Scale 75"),
+        .ofFlag("scale=75", FBSimulatorScale_75(), ""),
       Parser<FBSimulatorScale>
-        .ofFlag("scale=100", FBSimulatorScale_100(),
-                "Explanation of Scale 100")
+        .ofFlag("scale=100", FBSimulatorScale_100(), "")
     ])
   }
 
   static var optionsParser: Parser<FBSimulatorLaunchOptions> {
     return Parser<FBSimulatorLaunchOptions>.alternative([
       Parser<FBSimulatorLaunchOptions>
-        .ofFlag("connect-bridge", FBSimulatorLaunchOptions.connectBridge,
-                "Explanation of Connect Bridge"),
+        .ofFlag("connect-bridge", FBSimulatorLaunchOptions.connectBridge, ""),
       Parser<FBSimulatorLaunchOptions>
         .ofFlag("direct-launch", FBSimulatorLaunchOptions.enableDirectLaunch,
-                "Explanation of Direct Launch"),
+                ""),
       Parser<FBSimulatorLaunchOptions>
-        .ofFlag("use-nsworkspace", FBSimulatorLaunchOptions.useNSWorkspace,
-                "Explanation of Use NSWorkspace"),
+        .ofFlag("use-nsworkspace", FBSimulatorLaunchOptions.useNSWorkspace, ""),
     ])
   }
 }

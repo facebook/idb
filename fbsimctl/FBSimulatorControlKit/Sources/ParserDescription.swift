@@ -236,6 +236,7 @@ public struct SectionDesc : ParserDescription {
       .joined(separator: "\n")
 
     return [header, "\t" + child.summary, desc, flagDescs]
+      .filter { !$0.isEmpty }
       .joined(separator: "\n\n")
   }
 }
