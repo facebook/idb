@@ -13,7 +13,8 @@ import FBSimulatorControl
 
 extension Parser {
   public static var ofInt: Parser<Int> {
-    let desc = PrimitiveDesc(name: "int", desc: "Explaining integers")
+    let desc = PrimitiveDesc(name: "int",
+                             desc: "Signed integer.")
     return Parser<Int>.single(desc) { token in
       guard let integer = NumberFormatter().number(from: token)?.intValue else {
         throw ParseError.couldNotInterpret("Int", token)
@@ -23,7 +24,8 @@ extension Parser {
   }
 
   public static var ofDouble: Parser<Double> {
-    let desc = PrimitiveDesc(name: "double", desc: "Explaining doubles")
+    let desc = PrimitiveDesc(name: "double",
+                             desc: "Double-precision floating point number.")
     return Parser<Double>.single(desc) { token in
       guard let double = NumberFormatter().number(from: token)?.doubleValue else {
         throw ParseError.couldNotInterpret("Double", token)
@@ -33,19 +35,19 @@ extension Parser {
   }
 
   public static var ofAny: Parser<String> {
-    let desc = PrimitiveDesc(name: "string", desc: "Explaining strings")
+    let desc = PrimitiveDesc(name: "string", desc: "String without spaces.")
     return Parser<String>.single(desc, f: { $0 } )
   }
 
   public static var ofUDID: Parser<String> {
-    let desc = PrimitiveDesc(name: "udid", desc: "A Device or Simulator UDID")
+    let desc = PrimitiveDesc(name: "udid", desc: "Device or simulator Unique Device Identifier.")
     return Parser<String>.single(desc) { token in
       return try FBiOSTargetQuery.parseUDIDToken(token)
     }
   }
 
   public static var ofURL: Parser<URL> {
-    let expected = "A URL"
+    let expected = "URL."
     let desc = PrimitiveDesc(name: "url", desc: expected)
     return Parser<URL>.single(desc) { token in
       guard let url = URL(string: token) else {
@@ -56,7 +58,7 @@ extension Parser {
   }
 
   public static var ofDirectory: Parser<String> {
-    let desc = PrimitiveDesc(name: "directory", desc: "A Directory")
+    let desc = PrimitiveDesc(name: "directory", desc: "Path to a directory.")
     return Parser<String>.single(desc) { token  in
       let path = (token as NSString).standardizingPath
       var isDirectory: ObjCBool = false
@@ -71,7 +73,7 @@ extension Parser {
   }
 
   public static var ofFile: Parser<String> {
-    let desc = PrimitiveDesc(name: "file", desc: "A File")
+    let desc = PrimitiveDesc(name: "file", desc: "Path to a file.")
     return Parser<String>.single(desc) { token in
       let path = (token as NSString).standardizingPath
       var isDirectory: ObjCBool = false
@@ -86,7 +88,7 @@ extension Parser {
   }
 
   public static var ofApplication: Parser<FBApplicationDescriptor> {
-    let desc = PrimitiveDesc(name: "application", desc: "An Application")
+    let desc = PrimitiveDesc(name: "application", desc: "Path to an application.")
     return Parser<FBApplicationDescriptor>.single(desc) { token in
       do {
         return try FBApplicationDescriptor.application(withPath: token)
@@ -97,7 +99,7 @@ extension Parser {
   }
 
   public static var ofBinary: Parser<FBBinaryDescriptor> {
-    let desc = PrimitiveDesc(name: "binary", desc: "A Binary")
+    let desc = PrimitiveDesc(name: "binary", desc: "Path to a binary.")
     return Parser<FBBinaryDescriptor>.single(desc) { token in
       do {
         return try FBBinaryDescriptor.binary(withPath: token)
@@ -108,14 +110,14 @@ extension Parser {
   }
 
   public static var ofLocale: Parser<Locale> {
-    let desc = PrimitiveDesc(name: "locale", desc: "A Locale")
+    let desc = PrimitiveDesc(name: "locale", desc: "Locale identifier.")
     return Parser<Locale>.single(desc) { token in
       return Locale(identifier: token)
     }
   }
 
   public static var ofBundleID: Parser<String> {
-    let desc = PrimitiveDesc(name: "bundle-id", desc: "A Bundle ID")
+    let desc = PrimitiveDesc(name: "bundle-id", desc: "Bundle ID.")
     return Parser<String>
       .alternative([
         Parser.ofApplication.fmap { $0.bundleID },
@@ -132,7 +134,7 @@ extension Parser {
   public static var ofDate: Parser<Date> {
     return Parser<Date>
       .ofDouble
-      .describe(PrimitiveDesc(name: "date", desc: "A Date"))
+      .describe(PrimitiveDesc(name: "date", desc: "Time since UNIX epoch (seconds)"))
       .fmap { Date(timeIntervalSince1970: $0) }
   }
 
@@ -235,7 +237,7 @@ extension IndividualCreationConfiguration : Parsable {
   }
 
   static var deviceParser: Parser<FBControlCoreConfiguration_Device> {
-    let desc = PrimitiveDesc(name: "device-name", desc: "A Device Name")
+    let desc = PrimitiveDesc(name: "device-name", desc: "Device Name.")
     return Parser.single(desc) { token in
       let nameToDevice = FBControlCoreConfigurationVariants.nameToDevice()
       guard let device = nameToDevice[token] else {
@@ -256,7 +258,7 @@ extension IndividualCreationConfiguration : Parsable {
   }
 
   static var osVersionParser: Parser<FBControlCoreConfiguration_OS> {
-    let desc = PrimitiveDesc(name: "os-version", desc: "An OS Version")
+    let desc = PrimitiveDesc(name: "os-version", desc: "OS Version.")
     return Parser.single(desc) { token in
       let nameToOSVersion = FBControlCoreConfigurationVariants.nameToOSVersion()
       guard let osVersion = nameToOSVersion[token] else {
@@ -424,18 +426,21 @@ extension Server : Parsable {
 
   static var socketParser: Parser<Server> {
     return Parser<Server>
-      .ofFlagWithArg("socket", Parser<Int>.ofInt, "")
-      .fmap { portNumber in
-        return Server.socket(UInt16(portNumber))
-      }
+      .ofFlagWithArg("socket", portParser, "")
+      .fmap(Server.socket)
   }
 
   static var httpParser:  Parser<Server> {
     return Parser<Server>
-      .ofFlagWithArg("http", Parser<Int>.ofInt, "")
-      .fmap { portNumber in
-        return Server.http(UInt16(portNumber))
-      }
+      .ofFlagWithArg("http", portParser, "")
+      .fmap(Server.http)
+  }
+
+  private static var portParser: Parser<UInt16> {
+    return Parser<Int>.ofInt
+      .fmap { UInt16($0) }
+      .describe(PrimitiveDesc(name: "port",
+                              desc: "Port number (16-bit unsigned integer)."))
   }
 }
 
