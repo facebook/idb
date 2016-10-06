@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		27B700E21D9D27F30067A882 /* ParserDescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */; };
+		27B700E41D9D40A90067A882 /* ParserDescriptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B700E31D9D40A90067A882 /* ParserDescriptionTests.swift */; };
 		AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */; };
 		AA1B7F571C2866410038C6A5 /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; };
 		AA1B7F591C2866570038C6A5 /* FBSimulatorControl.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = AA93B7C91BE8361800CF6A56 /* FBSimulatorControl.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -103,6 +105,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserDescription.swift; sourceTree = "<group>"; };
+		27B700E31D9D40A90067A882 /* ParserDescriptionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParserDescriptionTests.swift; sourceTree = "<group>"; };
 		AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HttpRelay.swift; sourceTree = "<group>"; };
 		AA1B7F5C1C2867EE0038C6A5 /* Bridging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Bridging.swift; sourceTree = "<group>"; };
 		AA1B7F5D1C2867EE0038C6A5 /* Command.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
@@ -225,6 +229,7 @@
 				AA1B7F681C2867EE0038C6A5 /* SocketRelay.swift */,
 				AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */,
 				AAF2D34D1C32EA4D00434516 /* Writer.swift */,
+				274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -333,6 +338,7 @@
 			children = (
 				AAFD4A341CC5082D00FF38FA /* CommandParsersTests.swift */,
 				AAFD4A351CC5082D00FF38FA /* EnvironmentTests.swift */,
+				27B700E31D9D40A90067A882 /* ParserDescriptionTests.swift */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -419,6 +425,7 @@
 				TargetAttributes = {
 					AA93B7AF1BE8351000CF6A56 = {
 						CreatedOnToolsVersion = 7.1;
+						LastSwiftMigration = 0800;
 					};
 					AAE35AC11C2865C10073CC70 = {
 						CreatedOnToolsVersion = 7.2;
@@ -477,6 +484,7 @@
 				AAFE7AB31C92F19D00D92E46 /* CLIBootstrapper.swift in Sources */,
 				AA1B7F711C2867EE0038C6A5 /* CommandBuffer.swift in Sources */,
 				AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */,
+				27B700E21D9D27F30067A882 /* ParserDescription.swift in Sources */,
 				AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */,
 				AA75CD161D243F73003C45B0 /* DeviceReporter.swift in Sources */,
 				AAAD4A2F1CB3AF6C00B2068C /* Subjects.swift in Sources */,
@@ -517,6 +525,7 @@
 				AAFD4A391CC5084600FF38FA /* IntegrationTests.swift in Sources */,
 				AA2AFD751C294158000123BA /* TestHelpers.swift in Sources */,
 				AAA6EC531C933DAE0083A62C /* Fixtures.swift in Sources */,
+				27B700E41D9D40A90067A882 /* ParserDescriptionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
