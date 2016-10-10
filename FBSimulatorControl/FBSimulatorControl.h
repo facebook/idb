@@ -52,7 +52,6 @@
 #import <FBSimulatorControl/FBSimulatorInteraction+Agents.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Applications.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Bridge.h>
-#import <FBSimulatorControl/FBSimulatorInteraction+Diagnostics.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Keychain.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Lifecycle.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Private.h>
