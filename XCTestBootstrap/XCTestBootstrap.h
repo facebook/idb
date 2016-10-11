@@ -48,3 +48,4 @@
 #import <XCTestBootstrap/FBXCTestShimConfiguration.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>
 #import <XCTestBootstrap/XCTestBootstrapFrameworkLoader.h>
+#import <XCTestBootstrap/FBCodeSignProvider.h>

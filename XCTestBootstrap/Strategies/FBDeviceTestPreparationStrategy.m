@@ -8,9 +8,7 @@
  */
 
 #import "FBDeviceTestPreparationStrategy.h"
-
 #import <FBControlCore/FBControlCore.h>
-
 #import "FBApplicationDataPackage.h"
 #import "FBDeviceOperator.h"
 #import "FBProductBundle.h"
@@ -19,6 +17,9 @@
 #import "FBTestLaunchConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
 #import "XCTestBootstrapError.h"
+#import <CocoaLumberjack/CocoaLumberjack.h>
+
+static const DDLogLevel ddLogLevel = DDLogLevelInfo;
 
 @interface FBDeviceTestPreparationStrategy ()
 @property (nonatomic, copy) NSString *applicationPath;
@@ -33,7 +34,7 @@
                         applicationDataPath:(NSString *)applicationDataPath
                     testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration;
 {
-  NSLog(@"Creating %@ for %@", NSStringFromClass(self.class), @{
+  DDLogInfo(@"Creating %@ for %@", NSStringFromClass(self.class), @{
                                                                 @"applicationPath" : applicationPath,
                                                                 @"applicationDataPath" : applicationDataPath,
                                                                 @"testLaunchConfiguration" : testLaunchConfiguration

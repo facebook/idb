@@ -9,9 +9,7 @@
 
 #import "FBProductBundle.h"
 #import "FBProductBundle+Private.h"
-
 #import <FBControlCore/FBControlCore.h>
-
 #import "XCTestBootstrapError.h"
 
 @interface FBProductBundle ()

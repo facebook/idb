@@ -8,8 +8,10 @@
  */
 
 #import "FBControlCoreLogger.h"
-
 #import <asl.h>
+#import <CocoaLumberjack/CocoaLumberjack.h>
+
+static const DDLogLevel ddLogLevel = DDLogLevelDebug;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
@@ -230,8 +232,7 @@ const char *NewLine = "\n";
     if (self.fileDescriptor >= STDIN_FILENO) {
       int result = asl_add_output_file(client, self.fileDescriptor, ASL_MSG_FMT_STD, ASL_TIME_FMT_LCL, filterLimit, ASL_ENCODE_SAFE);
       if (result != 0) {
-        NSLog(@"Failed to add File Descriptor %@ to client with error %@",
-              @(self.fileDescriptor), @(result));
+        DDLogError(@"Failed to add File Descriptor %@ to client with error %@", @(self.fileDescriptor), @(result));
         /*
         asl_log(client, NULL, ASL_LEVEL_ERR, "Failed to add File Descriptor %d to client with error %d", self.fileDescriptor, result);
         */
@@ -275,8 +276,10 @@ const char *NewLine = "\n";
 - (id<FBControlCoreLogger>)log:(NSString *)string
 {
   string = self.prefix ? [self.prefix stringByAppendingFormat:@" %@", string] : string;
-  NSLog(@"%@", string);
-  //asl_log(self.client, NULL, self.currentLevel, string.UTF8String, NULL);
+  DDLogDebug(@"%@", string);
+  /*
+  asl_log(self.client, NULL, self.currentLevel, string.UTF8String, NULL);
+  */
   return self;
 }
 

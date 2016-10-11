@@ -38,6 +38,9 @@
 #import "FBTestBundleResult.h"
 #import "FBTestManagerResult.h"
 #import "FBTestDaemonResult.h"
+#import <CocoaLumberjack/CocoaLumberjack.h>
+
+static const DDLogLevel ddLogLevel = DDLogLevelDebug;
 
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
@@ -316,8 +319,8 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (id)_XCT_testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSNumber *)line
 {
-  NSLog(@"Test failed: %@", message);
-  NSLog(@"File: %@:%@", file, line);
+  DDLogInfo(@"Test failed: %@", message);
+  DDLogInfo(@"File: %@:%@", file, line);
   return nil;
 }
 
