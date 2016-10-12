@@ -12,7 +12,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "FBControlCoreLogger.h"
-#import "FBTaskExecutor.h"
+#import "FBTaskBuilder.h"
 
 NSString *const FBControlCoreStderrLogging = @"FBCONTROLCORE_LOGGING";
 NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
@@ -26,7 +26,7 @@ static id<FBControlCoreLogger> logger;
   static dispatch_once_t onceToken;
   static NSString *directory;
   dispatch_once(&onceToken, ^{
-    directory = [[[FBTaskExecutor.sharedInstance
+    directory = [[[FBTaskBuilder
       taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
       startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout]
       stdOut];

@@ -8,25 +8,188 @@
  */
 
 #import "FBTask.h"
-#import "FBTask+Private.h"
 
-#import "FBTaskExecutor.h"
 #import "FBRunLoopSpinner.h"
+#import "FBTaskConfiguration.h"
+#import "FBControlCoreError.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-retain-cycles"
+
+NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
+
+@interface FBTaskOutput : NSObject
+
+- (NSString *)contents;
+- (id)attachWithError:(NSError **)error;
+- (void)teardownResources;
+
+@end
+
+@interface FBTaskOutput_Memory : FBTaskOutput
+
+@property (nonatomic, strong, readonly) NSMutableData *data;
+@property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
+
+@end
+
+@interface FBTaskOutput_File : FBTaskOutput
+
+@property (nonatomic, copy, nullable, readonly) NSString *filePath;
+@property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
+
+@end
+
+@interface FBTaskConfiguration (FBTaskOutput)
+
+- (FBTaskOutput *)createTaskOutput;
+
+@end
+
+@implementation FBTaskOutput
+
+- (NSString *)contents
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (id)attachWithError:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (void)teardownResources
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+@end
+
+@implementation FBTaskOutput_Memory
+
+- (instancetype)initWithData:(NSMutableData *)data
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _data = data;
+  return self;
+}
+
+- (NSString *)contents
+{
+  @synchronized(self) {
+    return [[[NSString alloc]
+      initWithData:self.data encoding:NSUTF8StringEncoding]
+      stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+  }
+}
+
+- (id)attachWithError:(NSError **)error
+{
+  NSAssert(self.pipe == nil, @"Cannot attach when already attached to pipe %@", self.pipe);
+  self.pipe = [NSPipe pipe];
+  self.pipe.fileHandleForReading.readabilityHandler = ^(NSFileHandle *handle) {
+    NSData *data = handle.availableData;
+    @synchronized(self) {
+      [self.data appendData:data];
+    }
+  };
+  return self.pipe;
+}
+
+- (void)teardownResources
+{
+  self.pipe.fileHandleForReading.readabilityHandler = nil;
+  self.pipe = nil;
+}
+
+@end
+
+@implementation FBTaskOutput_File
+
+- (instancetype)initWithPath:(NSString *)filePath
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _filePath = filePath;
+  return self;
+}
+
+- (NSString *)stdOut
+{
+  @synchronized(self) {
+    return [NSString stringWithContentsOfFile:self.filePath usedEncoding:nil error:nil];
+  }
+}
+
+- (id)attachWithError:(NSError **)error
+{
+  NSAssert(self.fileHandle == nil, @"Cannot attach when already attached to file %@", self.fileHandle);
+  if (!self.filePath) {
+    self.fileHandle = NSFileHandle.fileHandleWithNullDevice;
+    return self.fileHandle;
+  }
+
+  if (![NSFileManager.defaultManager createFileAtPath:self.filePath contents:nil attributes:nil]) {
+    return [[FBControlCoreError
+      describeFormat:@"Could not create file for writing at %@", self.filePath]
+      fail:error];
+  }
+  self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:self.filePath];
+  return self.fileHandle;
+}
+
+- (void)teardownResources
+{
+  [self.fileHandle closeFile];
+  self.fileHandle = nil;
+}
+
+@end
+
+@interface FBTask ()
+
+@property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
+
+@property (nonatomic, strong, readwrite) NSTask *task;
+@property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdOutSlot;
+@property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdErrSlot;
+
+@property (nonatomic, copy, nullable, readwrite) void (^terminationHandler)(FBTask *);
+@property (atomic, assign, readwrite) BOOL hasTerminated;
+@property (atomic, strong, readwrite) NSError *runningError;
+
+@end
 
 @implementation FBTask
 
 #pragma mark Initializers
 
-+ (instancetype)taskWithNSTask:(NSTask *)nsTask acceptableStatusCodes:(NSSet *)acceptableStatusCodes stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
++ (FBTaskOutput *)createTaskOutput:(id)output
 {
-  FBTask *task = stdOutPath || stdErrPath
-    ? [[FBTask_FileBacked alloc] initWithTask:nsTask acceptableStatusCodes:acceptableStatusCodes stdOutPath:stdOutPath stdErrPath:stdErrPath]
-    : [[FBTask_InMemory alloc] initWithTask:nsTask acceptableStatusCodes:acceptableStatusCodes];
-  [task decorateTask:nsTask];
-  return task;
+  if ([output isKindOfClass:NSMutableData.class]) {
+    return [[FBTaskOutput_Memory alloc] initWithData:output];
+  }
+  return [[FBTaskOutput_File alloc] initWithPath:output];
 }
 
-- (instancetype)initWithTask:(NSTask *)task acceptableStatusCodes:(NSSet *)acceptableStatusCodes
++ (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
+{
+  NSTask *task = [configuration createNSTask];
+  FBTaskOutput *stdOut = [self createTaskOutput:configuration.stdOut];
+  FBTaskOutput *stdErr = [self createTaskOutput:configuration.stdErr];
+  return [[self alloc] initWithTask:task acceptableStatusCodes:configuration.acceptableStatusCodes stdOut:stdOut stdErr:stdErr];
+}
+
+- (instancetype)initWithTask:(NSTask *)task acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr
 {
   self = [super init];
   if (!self) {
@@ -34,7 +197,10 @@
   }
 
   _task = task;
-  _acceptableStatusCodes = acceptableStatusCodes ?: [NSSet setWithObject:@0];
+  _acceptableStatusCodes = acceptableStatusCodes;
+  _stdOutSlot = stdOut;
+  _stdErrSlot = stdErr;
+
   return self;
 }
 
@@ -62,7 +228,7 @@
   return [self launchWithTerminationHandler:nil];
 }
 
-- (instancetype)startAsynchronouslyWithTerminationHandler:(void (^)(id<FBTask> task))handler
+- (instancetype)startAsynchronouslyWithTerminationHandler:(void (^)(FBTask *task))handler
 {
   return [self launchWithTerminationHandler:handler];
 }
@@ -87,10 +253,32 @@
   return self;
 }
 
-- (instancetype)launchWithTerminationHandler:(void (^)(id<FBTask> task))handler
+- (instancetype)launchWithTerminationHandler:(void (^)(FBTask *task))handler
 {
+  // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
+  // This Retain is matched by a release in -[FBTask completeTermination].
+  CFRetain((__bridge CFTypeRef)(self));
+
   self.terminationHandler = handler;
-  CFRetain((__bridge CFTypeRef)(self.task));
+  self.task.terminationHandler = ^(NSTask *_) {
+    [self terminate];
+  };
+
+  NSError *error = nil;
+  id stdOut = [self.stdOutSlot attachWithError:&error];
+  if (!stdOut) {
+    [self terminate];
+    return self;
+  }
+  self.task.standardOutput = stdOut;
+
+  id stdErr = [self.stdErrSlot attachWithError:&error];
+  if (!stdErr) {
+    [self terminate];
+    return self;
+  }
+  self.task.standardError = stdErr;
+
   [self.task launch];
   return self;
 }
@@ -104,14 +292,12 @@
 
 - (NSString *)stdOut
 {
-  [self doesNotRecognizeSelector:_cmd];
-  return nil;
+  return [self.stdOutSlot contents];
 }
 
 - (NSString *)stdErr
 {
-  [self doesNotRecognizeSelector:_cmd];
-  return nil;
+  return [self.stdErrSlot contents];
 }
 
 - (NSError *)error
@@ -129,15 +315,6 @@
 
 #pragma mark Private
 
-- (NSTask *)decorateTask:(NSTask *)task
-{
-  __weak typeof(self) weakSelf = self;
-  task.terminationHandler = ^(NSTask *_) {
-    [weakSelf terminate];
-  };
-  return task;
-}
-
 - (void)teardownTask
 {
   if (self.task.isRunning) {
@@ -149,7 +326,8 @@
 
 - (void)teardownResources
 {
-  [self doesNotRecognizeSelector:_cmd];
+  [self.stdOutSlot teardownResources];
+  [self.stdErrSlot teardownResources];
 }
 
 - (void)completeTermination
@@ -159,10 +337,11 @@
     self.runningError = [self errorForDescription:description];
   }
 
-  CFRelease((__bridge CFTypeRef)(self.task));
+  // Matches the release in -[FBTask launchWithTerminationHandler:].
+  CFRelease((__bridge CFTypeRef)(self));
   self.hasTerminated = YES;
 
-  void (^terminationHandler)(id<FBTask>) = self.terminationHandler;
+  void (^terminationHandler)(FBTask *) = self.terminationHandler;
   if (!terminationHandler) {
     return;
   }
@@ -189,7 +368,7 @@
     userInfo[@"exitcode"] = @(self.task.terminationStatus);
   }
 
-  return [NSError errorWithDomain:FBTaskExecutorErrorDomain code:0 userInfo:userInfo];
+  return [NSError errorWithDomain:FBTaskErrorDomain code:0 userInfo:userInfo];
 }
 
 - (NSString *)description
@@ -201,126 +380,4 @@
 
 @end
 
-@implementation FBTask_InMemory
-
-- (instancetype)initWithTask:(NSTask *)task acceptableStatusCodes:(NSSet *)acceptableStatusCodes
-{
-  self = [super initWithTask:task acceptableStatusCodes:acceptableStatusCodes];
-  if (!self) {
-    return nil;
-  }
-
-  _stdOutData = [NSMutableData data];
-  _stdErrData = [NSMutableData data];
-  return self;
-}
-
-- (NSString *)stdOut
-{
-  @synchronized(self) {
-    return [[[NSString alloc]
-      initWithData:self.stdOutData encoding:NSUTF8StringEncoding]
-      stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-  }
-}
-
-- (NSString *)stdErr
-{
-  @synchronized(self) {
-    return [[[NSString alloc]
-      initWithData:self.stdErrData encoding:NSUTF8StringEncoding]
-      stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-  }
-}
-
-- (NSTask *)decorateTask:(NSTask *)task
-{
-  __weak typeof(self) weakSelf = self;
-
-  self.stdOutPipe = [NSPipe pipe];
-  self.stdOutPipe.fileHandleForReading.readabilityHandler = ^(NSFileHandle *handle) {
-    NSData *data = handle.availableData;
-    @synchronized(weakSelf) {
-      [weakSelf.stdOutData appendData:data];
-    }
-  };
-  [task setStandardOutput:self.stdOutPipe];
-
-  self.stdErrPipe = [NSPipe pipe];
-  self.stdErrPipe.fileHandleForReading.readabilityHandler = ^(NSFileHandle *handle) {
-    NSData *data = handle.availableData;
-    @synchronized(weakSelf) {
-      [weakSelf.stdErrData appendData:data];
-    }
-  };
-  [task setStandardError:self.stdErrPipe];
-
-  return [super decorateTask:task];
-}
-
-- (void)teardownResources
-{
-  self.stdOutPipe.fileHandleForReading.readabilityHandler = nil;
-  self.stdErrPipe.fileHandleForReading.readabilityHandler = nil;
-  self.stdOutPipe = nil;
-  self.stdErrPipe = nil;
-}
-
-@end
-
-@implementation FBTask_FileBacked
-
-- (instancetype)initWithTask:(NSTask *)task acceptableStatusCodes:(NSSet *)acceptableStatusCodes stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath
-{
-  self = [super initWithTask:task acceptableStatusCodes:acceptableStatusCodes];
-  if (!self) {
-    return nil;
-  }
-
-  _stdOutPath = stdOutPath;
-  _stdErrPath = stdErrPath;
-  return self;
-}
-
-- (NSString *)stdOut
-{
-  @synchronized(self) {
-    return [NSString stringWithContentsOfFile:self.stdOutPath usedEncoding:nil error:nil];
-  }
-}
-
-- (NSString *)stdErr
-{
-  @synchronized(self) {
-    return [NSString stringWithContentsOfFile:self.stdErrPath usedEncoding:nil error:nil];
-  }
-}
-
-- (NSTask *)decorateTask:(NSTask *)task
-{
-  if (self.stdOutPath && ![NSFileManager.defaultManager createFileAtPath:self.stdOutPath contents:nil attributes:nil]) {
-    self.runningError = [self errorForDescription:[NSString stringWithFormat:@"Could not create stdout file at %@", self.stdOutPath]];
-    return task;
-  }
-  if (self.stdErrPath && ![NSFileManager.defaultManager createFileAtPath:self.stdErrPath contents:nil attributes:nil]) {
-    self.runningError = [self errorForDescription:[NSString stringWithFormat:@"Could not create stdErr file at %@", self.stdErrPath]];
-    return task;
-  }
-
-  self.stdOutFileHandle = self.stdOutPath ? [NSFileHandle fileHandleForWritingAtPath:self.stdOutPath] : NSFileHandle.fileHandleWithNullDevice;
-  task.standardOutput = self.stdOutFileHandle;
-  self.stdErrFileHandle = self.stdErrPath ? [NSFileHandle fileHandleForWritingAtPath:self.stdErrPath] : NSFileHandle.fileHandleWithNullDevice;
-  task.standardError = self.stdErrFileHandle;
-
-  return [super decorateTask:task];
-}
-
-- (void)teardownResources
-{
-  [self.stdOutFileHandle closeFile];
-  self.stdOutFileHandle = nil;
-  [self.stdErrFileHandle closeFile];
-  self.stdErrFileHandle = nil;
-}
-
-@end
+#pragma clang diagnostic pop

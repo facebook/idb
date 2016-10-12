@@ -234,7 +234,7 @@
 - (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
 {
   // Construct and start the task.
-  id<FBTask> task = [[[[[FBTaskExecutor.sharedInstance
+  FBTask *task = [[[[[FBTaskBuilder
     withLaunchPath:FBApplicationDescriptor.xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]

@@ -47,11 +47,8 @@
 #import <FBControlCore/FBRunLoopSpinner.h>
 #import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSubstringUtilities.h>
-#import <FBControlCore/FBTask+Private.h>
 #import <FBControlCore/FBTask.h>
-#import <FBControlCore/FBTaskExecutor+Convenience.h>
-#import <FBControlCore/FBTaskExecutor+Private.h>
-#import <FBControlCore/FBTaskExecutor.h>
+#import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTerminationHandle.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
