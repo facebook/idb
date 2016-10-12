@@ -17,8 +17,6 @@
 
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestReporter.h"
-#import "FBMultiFileReader.h"
-#import "FBLineReader.h"
 #import "FBXCTestError.h"
 #import "FBXCTestShimConfiguration.h"
 

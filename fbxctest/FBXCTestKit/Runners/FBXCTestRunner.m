@@ -10,14 +10,13 @@
 #import "FBXCTestRunner.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
-#import <sys/types.h>
-#import <sys/stat.h>
-#import <XCTestBootstrap/FBTestManagerResultSummary.h>
+#import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import <sys/types.h>
+#import <sys/stat.h>
+
 #import "FBJSONTestReporter.h"
-#import "FBMultiFileReader.h"
-#import "FBLineReader.h"
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestError.h"
 #import "FBXCTestReporterAdapter.h"

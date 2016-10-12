@@ -2,7 +2,7 @@
 
 #import "FBMultiFileReader.h"
 
-#import "FBXCTestError.h"
+#import "FBControlCoreError.h"
 
 @interface FBIOReadInfo : NSObject
 
@@ -35,7 +35,7 @@
 {
   NSNumber *fileDescriptor = @(handle.fileDescriptor);
   if (self.consumers[fileDescriptor] != nil) {
-    return [[FBXCTestError describeFormat:@"Cannot add file descriptor %@ more than once.", fileDescriptor] failBool:error];
+    return [[FBControlCoreError describeFormat:@"Cannot add file descriptor %@ more than once.", fileDescriptor] failBool:error];
   }
   self.consumers[fileDescriptor] = consumer;
 
@@ -58,7 +58,7 @@
       }
     });
     if (info.io == NULL) {
-      return [[FBXCTestError describeFormat:@"Failed to create IO channel for fd %@.", fileDescriptor] failBool:error];
+      return [[FBControlCoreError describeFormat:@"Failed to create IO channel for fd %@.", fileDescriptor] failBool:error];
     }
     // Report partial results with as little as 1 byte read.
     dispatch_io_set_low_water(info.io, 1);
@@ -92,7 +92,7 @@
   dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_MSEC * 500);
   dispatch_group_wait(group, timeout);
 
-  FBXCTestError *errorObject = nil;
+  FBControlCoreError *errorObject = nil;
   for (FBIOReadInfo *info in infos) {
     dispatch_sync(queue, ^{
       if (!info.done) {
@@ -103,7 +103,7 @@
       info.io = NULL;
     });
     if (info.errorCode != 0) {
-      errorObject = [FBXCTestError describeFormat:@"Reading from file descriptor failed with error %d.", info.errorCode];
+      errorObject = [FBControlCoreError describeFormat:@"Reading from file descriptor failed with error %d.", info.errorCode];
     }
   }
 
