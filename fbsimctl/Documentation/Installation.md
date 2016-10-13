@@ -21,7 +21,7 @@ The Formula uses the [build script at the root of the `FBSimulatorControl` repo]
 # Carthage is required
 $ brew install carthage
 # Build fbsimctl and place it in the 'output' directory
-$ ./build.sh cli build output
+$ ./build.sh fbsimctl build output
 # Lists all Simulators & Devices
 $ ./output/fbsimctl list
 ```
