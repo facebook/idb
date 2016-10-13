@@ -12,7 +12,7 @@ import FBSimulatorControl
 
 @objc open class CLIBootstrapper : NSObject {
   open static func bootstrap() -> Int32 {
-    let arguments = Array(ProcessInfo.processInfo.arguments.dropFirst(1))
+    let arguments = Array(CommandLine.arguments.dropFirst(1))
     let environment = ProcessInfo.processInfo.environment
 
     // The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
