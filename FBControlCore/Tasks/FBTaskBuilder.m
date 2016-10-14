@@ -14,6 +14,7 @@
 #import "FBTask.h"
 #import "FBRunLoopSpinner.h"
 #import "FBTaskConfiguration.h"
+#import "FBLineReader.h"
 
 @interface FBTaskBuilder ()
 
@@ -118,6 +119,18 @@
 - (instancetype)withStdErrToDevNull
 {
   self.stdErr = nil;
+  return self;
+}
+
+- (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
+{
+  self.stdOut = [FBLineReader lineReaderWithConsumer:reader];
+  return self;
+}
+
+- (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
+{
+  self.stdErr = [FBLineReader lineReaderWithConsumer:reader];
   return self;
 }
 

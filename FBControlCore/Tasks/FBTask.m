@@ -12,6 +12,7 @@
 #import "FBRunLoopSpinner.h"
 #import "FBTaskConfiguration.h"
 #import "FBControlCoreError.h"
+#import "FBLineReader.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -37,6 +38,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @property (nonatomic, copy, nullable, readonly) NSString *filePath;
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
+
+@end
+
+@interface FBTaskOutput_LineReader : FBTaskOutput_Memory
+
+@property (nonatomic, strong, nullable, readwrite) FBLineReader *reader;
 
 @end
 
@@ -94,10 +101,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   NSAssert(self.pipe == nil, @"Cannot attach when already attached to pipe %@", self.pipe);
   self.pipe = [NSPipe pipe];
   self.pipe.fileHandleForReading.readabilityHandler = ^(NSFileHandle *handle) {
-    NSData *data = handle.availableData;
-    @synchronized(self) {
-      [self.data appendData:data];
-    }
+    [self dataAvailable:handle.availableData];
   };
   return self.pipe;
 }
@@ -106,6 +110,13 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   self.pipe.fileHandleForReading.readabilityHandler = nil;
   self.pipe = nil;
+}
+
+- (void)dataAvailable:(NSData *)data
+{
+  @synchronized(self) {
+    [self.data appendData:data];
+  }
 }
 
 @end
@@ -155,6 +166,27 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
+@implementation FBTaskOutput_LineReader
+
+- (instancetype)initWithReader:(FBLineReader *)reader
+{
+  self = [super initWithData:NSMutableData.data];
+  if (!self) {
+    return nil;
+  }
+
+  _reader = reader;
+  return self;
+}
+
+- (void)dataAvailable:(NSData *)data
+{
+  [super dataAvailable:data];
+  [self.reader consumeData:data];
+}
+
+@end
+
 @interface FBTask ()
 
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
@@ -177,6 +209,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   if ([output isKindOfClass:NSMutableData.class]) {
     return [[FBTaskOutput_Memory alloc] initWithData:output];
+  }
+  if ([output isKindOfClass:FBLineReader.class]) {
+    return [[FBTaskOutput_LineReader alloc] initWithReader:output];
   }
   return [[FBTaskOutput_File alloc] initWithPath:output];
 }

@@ -104,6 +104,22 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withStdErrToDevNull;
 
 /**
+ Redirects stdout to the reader block, on a per line basis.
+
+ @param reader the block to use for reading lines
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdOutLineReader:(void (^)(NSString *))reader;
+
+/**
+ Redirects stderr to the reader block, on a per line basis.
+
+ @param reader the block to use for reading lines
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdErrLineReader:(void (^)(NSString *))reader;
+
+/**
  The Set of Return Codes that are considered non-erroneous.
 
  @param statusCodes the non-erroneous stats codes.

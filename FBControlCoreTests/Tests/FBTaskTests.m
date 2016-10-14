@@ -69,4 +69,24 @@
   }
 }
 
+- (void)testLineReader
+{
+  NSString *filePath = FBControlCoreFixtures.assetsdCrashPathWithCustomDeviceSet;
+  NSMutableArray<NSString *> *lines = [NSMutableArray array];
+
+  FBTask *task = [[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/grep" arguments:@[@"CoreFoundation", filePath]]
+    withStdOutLineReader:^(NSString *line) {
+      [lines addObject:line];
+    }]
+    build]
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+
+  XCTAssertTrue(task.hasTerminated);
+  XCTAssertNil(task.error);
+
+  XCTAssertEqual(lines.count, 8u);
+  XCTAssertEqualObjects(lines[0], @"0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180");
+}
+
 @end
