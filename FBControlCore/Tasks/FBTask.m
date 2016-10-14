@@ -13,6 +13,7 @@
 #import "FBTaskConfiguration.h"
 #import "FBControlCoreError.h"
 #import "FBLineReader.h"
+#import "FBControlCoreLogger.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -44,6 +45,10 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @interface FBTaskOutput_LineReader : FBTaskOutput_Memory
 
 @property (nonatomic, strong, nullable, readwrite) FBLineReader *reader;
+
+@end
+
+@interface FBTaskOutput_Logger : FBTaskOutput_LineReader
 
 @end
 
@@ -134,7 +139,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return self;
 }
 
-- (NSString *)stdOut
+- (NSString *)contents
 {
   @synchronized(self) {
     return [NSString stringWithContentsOfFile:self.filePath usedEncoding:nil error:nil];
@@ -187,6 +192,19 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
+@implementation FBTaskOutput_Logger
+
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+{
+  FBLineReader *reader = [FBLineReader lineReaderWithConsumer:^(NSString *line) {
+    [logger log:line];
+  }];
+
+  return [super initWithReader:reader];
+}
+
+@end
+
 @interface FBTask ()
 
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
@@ -212,6 +230,9 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   }
   if ([output isKindOfClass:FBLineReader.class]) {
     return [[FBTaskOutput_LineReader alloc] initWithReader:output];
+  }
+  if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
+    return [[FBTaskOutput_Logger alloc] initWithLogger:output];
   }
   return [[FBTaskOutput_File alloc] initWithPath:output];
 }

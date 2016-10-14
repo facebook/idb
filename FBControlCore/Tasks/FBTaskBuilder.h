@@ -13,6 +13,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBControlCoreLogger;
+
 /**
  An interface to building FBTask instances
  */
@@ -118,6 +120,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return the reciever, for chaining.
  */
 - (instancetype)withStdErrLineReader:(void (^)(NSString *))reader;
+
+/**
+ Redirects stdout to the provided logger, on a per line basis.
+
+ @param logger the logger to use for logging lines.
+ @return the reciver, for chaining.
+ */
+- (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger;
+
+/**
+ Redirects stderr to the provided logger, on a per line basis.
+
+ @param logger the logger to use for logging lines.
+ @return the reciver, for chaining.
+ */
+- (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
 
 /**
  The Set of Return Codes that are considered non-erroneous.

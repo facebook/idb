@@ -134,6 +134,18 @@
   return self;
 }
 
+- (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger
+{
+  self.stdOut = logger;
+  return self;
+}
+
+- (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger
+{
+  self.stdErr = logger;
+  return self;
+}
+
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes
 {
   NSParameterAssert(statusCodes);
