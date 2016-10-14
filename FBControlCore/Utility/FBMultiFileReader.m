@@ -24,11 +24,16 @@
 
 @implementation FBMultiFileReader
 
-+ (instancetype)fileReader
+- (instancetype)init
 {
-  FBMultiFileReader *reader = [self new];
-  reader.consumers = [NSMutableDictionary dictionary];
-  return reader;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _consumers = [NSMutableDictionary dictionary];
+
+  return self;
 }
 
 - (BOOL)addFileHandle:(NSFileHandle *)handle withConsumer:(void (^)(NSData *data))consumer error:(NSError **)error

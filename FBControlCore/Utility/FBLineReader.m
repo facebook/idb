@@ -4,8 +4,8 @@
 
 @interface FBLineReader ()
 
-@property (nonatomic, strong) void (^consumer)(NSString *);
-@property (nonatomic, strong) NSMutableData *buffer;
+@property (nonatomic, copy, readonly) void (^consumer)(NSString *);
+@property (nonatomic, strong, readonly) NSMutableData *buffer;
 
 @end
 
@@ -13,10 +13,20 @@
 
 + (instancetype)lineReaderWithConsumer:(void (^)(NSString *))consumer
 {
-  FBLineReader *reader = [self new];
-  reader.consumer = consumer;
-  reader.buffer = [NSMutableData data];
-  return reader;
+  return [[self alloc] initWithConsumer:consumer];
+}
+
+- (instancetype)initWithConsumer:(void (^)(NSString *))consumer
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _consumer = consumer;
+  _buffer = [NSMutableData data];
+
+  return self;
 }
 
 - (void)consumeData:(NSData *)data
@@ -41,7 +51,7 @@
   if (self.buffer.length != 0) {
     NSString *line = [[NSString alloc] initWithData:self.buffer encoding:NSUTF8StringEncoding];
     self.consumer(line);
-    self.buffer = [NSMutableData data];
+    self.buffer.data = [NSData data];
   }
 }
 

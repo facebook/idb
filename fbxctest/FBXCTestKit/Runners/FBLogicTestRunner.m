@@ -99,7 +99,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     return [[FBXCTestError describeFormat:@"Failed to open fifo for reading: %@", otestShimOutputPath] failBool:error];
   }
 
-  FBMultiFileReader *multiReader = [FBMultiFileReader fileReader];
+  FBMultiFileReader *multiReader = [FBMultiFileReader new];
 
   FBLineReader *otestLineReader = [FBLineReader lineReaderWithConsumer:^(NSString *line){
     if ([line length] == 0) {

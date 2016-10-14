@@ -141,7 +141,7 @@
     return [[FBXCTestError describeFormat:@"Failed to open fifo for reading: %@", otestQueryOutputPath] failBool:error];
   }
 
-  FBMultiFileReader *multiReader = [FBMultiFileReader fileReader];
+  FBMultiFileReader *multiReader = [FBMultiFileReader new];
   NSMutableData *queryOutput = [NSMutableData data];
 
   if (![multiReader
