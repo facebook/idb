@@ -20,7 +20,6 @@
 #import <FBSimulatorControl/FBFramebufferVideo.h>
 #import <FBSimulatorControl/FBFramebufferConfiguration.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
-#import <FBSimulatorControl/FBProcessTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimDeviceWrapper.h>
 #import <FBSimulatorControl/FBSimulator+Connection.h>
 #import <FBSimulatorControl/FBSimulator+Helpers.h>

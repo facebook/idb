@@ -19,7 +19,6 @@
 #import <XCTestBootstrap/FBTestManager.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBProcessTerminationStrategy.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Connection.h"
@@ -51,7 +50,7 @@
 
 + (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
-  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:set.processFetcher logger:set.logger];
+  FBProcessTerminationStrategy *processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:set.processFetcher.processFetcher logger:set.logger];
   return [[self alloc] initWithSet:set configuration:set.configuration processFetcher:set.processFetcher processTerminationStrategy:processTerminationStrategy logger:set.logger];
 }
 

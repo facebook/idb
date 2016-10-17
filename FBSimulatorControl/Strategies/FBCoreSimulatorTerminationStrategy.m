@@ -12,7 +12,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorProcessFetcher.h"
-#import "FBProcessTerminationStrategy.h"
 
 @interface FBCoreSimulatorTerminationStrategy ()
 
@@ -40,7 +39,7 @@
 
   _processFetcher = processFetcher;
   _logger = logger;
-  _processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:processFetcher logger:logger];
+  _processTerminationStrategy = [FBProcessTerminationStrategy withProcessFetcher:processFetcher.processFetcher logger:logger];
 
   return self;
 }
