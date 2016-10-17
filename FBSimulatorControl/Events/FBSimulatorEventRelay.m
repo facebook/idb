@@ -16,7 +16,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBDispatchSourceNotifier.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorProcessFetcher.h"
 

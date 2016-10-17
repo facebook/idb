@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A class for wrapping `dispatch_source` with some conveniences.
  */
-@interface FBDispatchSourceNotifier : NSObject<FBTerminationHandle>
+@interface FBDispatchSourceNotifier : NSObject <FBTerminationHandle>
 
 /**
  Creates and returns an `FBDispatchSourceNotifier` that will call the `handler` when the provided `processIdentifier` quits
