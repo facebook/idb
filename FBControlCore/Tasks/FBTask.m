@@ -205,17 +205,140 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
+@interface FBTaskProcess : NSObject
+
+@property (nonatomic, assign, readonly) int terminationStatus;
+@property (nonatomic, assign, readonly) BOOL isRunning;
+
+- (pid_t)launchWithError:(NSError **)error;
+- (void)mountStandardOut:(id)stdOut;
+- (void)mountStandardErr:(id)stdOut;
+- (void)terminate;
+
+@end
+
+@interface FBTaskProcess_NSTask : FBTaskProcess
+
+@property (nonatomic, strong, readwrite) NSTask *task;
+
+- (instancetype)initWithTask:(NSTask *)task;
+
+@end
+
+@implementation FBTaskProcess
+
++ (instancetype)fromConfiguration:(FBTaskConfiguration *)configuration
+{
+  NSTask *task = [[NSTask alloc] init];
+  task.environment = configuration.environment;
+  task.launchPath = configuration.launchPath;
+  task.arguments = configuration.arguments;
+  return [[FBTaskProcess_NSTask alloc] initWithTask:task];
+}
+
+- (BOOL)isRunning
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
+}
+
+- (int)terminationStatus
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return 0;
+}
+
+- (void)mountStandardOut:(id)stdOut
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (void)mountStandardErr:(id)stdOut
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (void)terminate
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (pid_t)launchWithError:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return 0;
+}
+
+@end
+
+@implementation FBTaskProcess_NSTask
+
+- (instancetype)initWithTask:(NSTask *)task
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _task = task;
+  return self;
+}
+
+- (pid_t)processIdentifier
+{
+  return self.task.processIdentifier;
+}
+
+- (int)terminationStatus
+{
+  return self.task.terminationStatus;
+}
+
+- (BOOL)isRunning
+{
+  return self.task.isRunning;
+}
+
+- (void)mountStandardOut:(id)stdOut
+{
+  self.task.standardOutput = stdOut;
+}
+
+- (void)mountStandardErr:(id)stdErr
+{
+  self.task.standardError = stdErr;
+}
+
+- (pid_t)launchWithError:(NSError **)error
+{
+  self.task.terminationHandler = ^(NSTask *_) {
+    [self terminate];
+  };
+  [self.task launch];
+  return self.task.processIdentifier;
+}
+
+- (void)terminate
+{
+  [self.task terminate];
+  [self.task waitUntilExit];
+  self.task.terminationHandler = nil;
+}
+
+@end
+
 @interface FBTask ()
 
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
-@property (nonatomic, strong, readwrite) NSTask *task;
+@property (nonatomic, strong, nullable, readwrite) FBTaskProcess *process;
 @property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdErrSlot;
 
-@property (nonatomic, copy, nullable, readwrite) void (^terminationHandler)(FBTask *);
-@property (atomic, assign, readwrite) BOOL hasTerminated;
-@property (atomic, strong, readwrite) NSError *runningError;
+@property (atomic, assign, readwrite) pid_t processIdentifier;
+@property (atomic, assign, readwrite) BOOL completedTeardown;
+@property (atomic, copy, nullable, readwrite) NSString *emittedError;
+@property (atomic, copy, nullable, readwrite) void (^terminationHandler)(FBTask *);
 
 @end
 
@@ -239,20 +362,20 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
 {
-  NSTask *task = [configuration createNSTask];
+  FBTaskProcess *task = [FBTaskProcess fromConfiguration:configuration];
   FBTaskOutput *stdOut = [self createTaskOutput:configuration.stdOut];
   FBTaskOutput *stdErr = [self createTaskOutput:configuration.stdErr];
-  return [[self alloc] initWithTask:task acceptableStatusCodes:configuration.acceptableStatusCodes stdOut:stdOut stdErr:stdErr];
+  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr acceptableStatusCodes:configuration.acceptableStatusCodes];
 }
 
-- (instancetype)initWithTask:(NSTask *)task acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr
+- (instancetype)initWithProcess:(FBTaskProcess *)process stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _task = task;
+  _process = process;
   _acceptableStatusCodes = acceptableStatusCodes;
   _stdOutSlot = stdOut;
   _stdErrSlot = stdErr;
@@ -264,15 +387,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (void)terminate
 {
-  @synchronized(self) {
-    if (self.hasTerminated) {
-      return;
-    }
-
-    [self teardownTask];
-    [self teardownResources];
-    [self completeTermination];
-  }
+  [self terminateWithErrorMessage:nil];
 }
 
 #pragma mark - FBTask Protocl
@@ -293,20 +408,18 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   [self launchWithTerminationHandler:nil];
   BOOL completed = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return !self.task.isRunning;
+    return !self.process.isRunning;
   }];
 
+  NSString *errorMessage = nil;
   if (!completed) {
-    NSString *message = [NSString stringWithFormat:
-      @"Shell command '%@' took longer than %f seconds to execute",
-      self.task,
+    errorMessage = [NSString stringWithFormat:
+      @"Launched process '%@' took longer than %f seconds to terminate",
+      self.process,
       timeout
     ];
-    self.runningError = [self errorForDescription:message];
   }
-
-  [self terminate];
-  return self;
+  return [self terminateWithErrorMessage:errorMessage];
 }
 
 - (instancetype)launchWithTerminationHandler:(void (^)(FBTask *task))handler
@@ -316,35 +429,30 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   CFRetain((__bridge CFTypeRef)(self));
 
   self.terminationHandler = handler;
-  self.task.terminationHandler = ^(NSTask *_) {
-    [self terminate];
-  };
 
   NSError *error = nil;
   id stdOut = [self.stdOutSlot attachWithError:&error];
   if (!stdOut) {
-    [self terminate];
-    return self;
+    return [self terminateWithErrorMessage:error.description];
   }
-  self.task.standardOutput = stdOut;
+  [self.process mountStandardOut:stdOut];
 
   id stdErr = [self.stdErrSlot attachWithError:&error];
   if (!stdErr) {
-    [self terminate];
-    return self;
+    return [self terminateWithErrorMessage:error.description];
   }
-  self.task.standardError = stdErr;
+  [self.process mountStandardErr:stdErr];
 
-  [self.task launch];
+  pid_t pid = [self.process launchWithError:&error];
+  if (pid < 1) {
+    return [self terminateWithErrorMessage:error.description];
+  }
+  self.processIdentifier = pid;
+
   return self;
 }
 
 #pragma mark Accessors
-
-- (pid_t)processIdentifier
-{
-  return self.task.processIdentifier;
-}
 
 - (NSString *)stdOut
 {
@@ -356,28 +464,62 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return [self.stdErrSlot contents];
 }
 
-- (NSError *)error
+- (nullable NSError *)error
 {
-  return self.runningError;
+  if (!self.emittedError) {
+    return nil;
+  }
+
+  FBControlCoreError *error = [[[[FBControlCoreError
+    describe:self.emittedError]
+    inDomain:FBTaskErrorDomain]
+    extraInfo:@"stdout" value:self.stdOut]
+    extraInfo:@"stderr" value:self.stdErr];
+
+  if (!self.process.isRunning) {
+    [error extraInfo:@"exitcode" value:@(self.process.terminationStatus)];
+  }
+  return [error build];
+}
+
+- (BOOL)hasTerminated
+{
+  return self.completedTeardown;
 }
 
 - (BOOL)wasSuccessful
 {
   @synchronized(self)
   {
-    return self.hasTerminated && self.runningError == nil;
+    return self.hasTerminated && self.emittedError == nil;
   }
 }
 
 #pragma mark Private
 
-- (void)teardownTask
+- (instancetype)terminateWithErrorMessage:(nullable NSString *)errorMessage
 {
-  if (self.task.isRunning) {
-    [self.task terminate];
-    [self.task waitUntilExit];
+  @synchronized(self) {
+    if (!self.emittedError) {
+      self.emittedError = errorMessage;
+    }
+    if (self.completedTeardown) {
+      return self;
+    }
+
+    [self teardownProcess];
+    [self teardownResources];
+    [self completeTermination];
+    self.completedTeardown = YES;
+    return self;
   }
-  self.task.terminationHandler = nil;
+}
+
+- (void)teardownProcess
+{
+  if (self.process.isRunning) {
+    [self.process terminate];
+  }
 }
 
 - (void)teardownResources
@@ -388,14 +530,13 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (void)completeTermination
 {
-  if (self.runningError == nil && [self.acceptableStatusCodes containsObject:@(self.task.terminationStatus)] == NO) {
-    NSString *description = [NSString stringWithFormat:@"Returned non-zero status code %d", self.task.terminationStatus];
-    self.runningError = [self errorForDescription:description];
+  NSAssert(self.process.isRunning == NO, @"Process should be terminated before calling completeTermination");
+  if (self.emittedError == nil && [self.acceptableStatusCodes containsObject:@(self.process.terminationStatus)] == NO) {
+    self.emittedError = [NSString stringWithFormat:@"Returned non-zero status code %d", self.process.terminationStatus];
   }
 
   // Matches the release in -[FBTask launchWithTerminationHandler:].
   CFRelease((__bridge CFTypeRef)(self));
-  self.hasTerminated = YES;
 
   void (^terminationHandler)(FBTask *) = self.terminationHandler;
   if (!terminationHandler) {
@@ -407,30 +548,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   self.terminationHandler = nil;
 }
 
-- (NSError *)errorForDescription:(NSString *)description
-{
-  NSParameterAssert(description);
-  NSMutableDictionary *userInfo = [@{
-    NSLocalizedDescriptionKey : description,
-  } mutableCopy];
-  if (self.stdOut) {
-    userInfo[@"stdout"] = self.stdOut;
-  }
-  if (self.stdErr) {
-    userInfo[@"stderr"] = self.stdErr;
-  }
-
-  if (!self.task.isRunning) {
-    userInfo[@"exitcode"] = @(self.task.terminationStatus);
-  }
-
-  return [NSError errorWithDomain:FBTaskErrorDomain code:0 userInfo:userInfo];
-}
-
 - (NSString *)description
 {
-  @synchronized(self) {
-    return self.task.description;
+  @synchronized(self)
+  {
+    return self.process.description;
   }
 }
 

@@ -31,6 +31,7 @@
   XCTAssertTrue(task.hasTerminated);
   XCTAssertNil(task.error);
   XCTAssertEqualObjects(task.stdOut, expected);
+  XCTAssertGreaterThan(task.processIdentifier, 1);
 }
 
 - (void)testStringsOfCurrentBinary
@@ -46,6 +47,7 @@
   XCTAssertTrue(task.hasTerminated);
   XCTAssertNil(task.error);
   XCTAssertTrue([task.stdOut containsString:NSStringFromSelector(_cmd)]);
+  XCTAssertGreaterThan(task.processIdentifier, 1);
 }
 
 - (void)testBundleContents
@@ -59,6 +61,7 @@
 
   XCTAssertTrue(task.hasTerminated);
   XCTAssertNil(task.error);
+  XCTAssertGreaterThan(task.processIdentifier, 1);
 
   NSArray<NSString *> *fileNames = [task.stdOut componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
   XCTAssertGreaterThanOrEqual(fileNames.count, 2u);
@@ -84,6 +87,7 @@
 
   XCTAssertTrue(task.hasTerminated);
   XCTAssertNil(task.error);
+  XCTAssertGreaterThan(task.processIdentifier, 1);
 
   XCTAssertEqual(lines.count, 8u);
   XCTAssertEqualObjects(lines[0], @"0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180");

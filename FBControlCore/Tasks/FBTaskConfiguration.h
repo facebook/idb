@@ -59,11 +59,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, strong, nullable, readonly) id stdErr;
 
-/**
- Creates and Returns an NSTask for the reciever's configuration.
- */
-- (NSTask *)createNSTask;
-
 @end
 
 NS_ASSUME_NONNULL_END

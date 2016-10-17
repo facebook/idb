@@ -28,13 +28,4 @@
   return self;
 }
 
-- (NSTask *)createNSTask
-{
-  NSTask *task = [[NSTask alloc] init];
-  task.environment = self.environment;
-  task.launchPath = self.launchPath;
-  task.arguments = self.arguments;
-  return task;
-}
-
 @end
