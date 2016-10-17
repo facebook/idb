@@ -5,6 +5,14 @@ set -e
 BUILD_DIRECTORY=build
 CLI_E2E_PATH=fbsimctl/cli-tests/executable-under-test
 
+function assert_xcode_version() {
+  local version=$1
+  if ! xcodebuild -version | grep -q "Xcode $version\."; then
+    echo "building fbsimctl requires Xcode $version"
+    exit 1
+  fi
+}
+
 function assert_has_carthage() {
   if ! command -v carthage; then
       echo "build needs 'carthage' to bootstrap dependencies"
@@ -14,6 +22,7 @@ function assert_has_carthage() {
 }
 
 function build_fbsimctl_deps() {
+  assert_xcode_version 8
   assert_has_carthage
   pushd fbsimctl
   carthage bootstrap --platform Mac
