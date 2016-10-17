@@ -334,6 +334,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, strong, nullable, readwrite) FBTaskProcess *process;
 @property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdErrSlot;
+@property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
 
 @property (atomic, assign, readwrite) pid_t processIdentifier;
 @property (atomic, assign, readwrite) BOOL completedTeardown;
@@ -365,10 +366,10 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   FBTaskProcess *task = [FBTaskProcess fromConfiguration:configuration];
   FBTaskOutput *stdOut = [self createTaskOutput:configuration.stdOut];
   FBTaskOutput *stdErr = [self createTaskOutput:configuration.stdErr];
-  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr acceptableStatusCodes:configuration.acceptableStatusCodes];
+  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcess *)process stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes
+- (instancetype)initWithProcess:(FBTaskProcess *)process stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -379,6 +380,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   _acceptableStatusCodes = acceptableStatusCodes;
   _stdOutSlot = stdOut;
   _stdErrSlot = stdErr;
+  _configurationDescription = configurationDescription;
 
   return self;
 }
@@ -550,10 +552,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (NSString *)description
 {
-  @synchronized(self)
-  {
-    return self.process.description;
-  }
+  return [NSString
+    stringWithFormat:@"%@ | Has Terminated %d",
+    self.configurationDescription,
+    self.hasTerminated
+  ];
 }
 
 @end
