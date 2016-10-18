@@ -204,7 +204,7 @@ class HttpRelay : Relay {
 
   fileprivate static var diagnoseRoute: ActionRoute { get {
     return ActionRoute.post(EventName.Diagnose) { json in
-      let query = try FBSimulatorDiagnosticQuery.inflate(fromJSON: json.decode())
+      let query = try FBDiagnosticQuery.inflate(fromJSON: json.decode())
       return Action.diagnose(query, DiagnosticFormat.Content)
     }
   }}

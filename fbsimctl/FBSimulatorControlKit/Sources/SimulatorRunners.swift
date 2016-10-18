@@ -179,10 +179,10 @@ private struct SimulatorInteractionRunner : Runner {
 private struct DiagnosticsRunner : Runner {
   let reporter: SimulatorReporter
   let subject: ControlCoreValue
-  let query: FBSimulatorDiagnosticQuery
+  let query: FBDiagnosticQuery
   let format: DiagnosticFormat
 
-  init(_ reporter: SimulatorReporter, _ subject: ControlCoreValue, _ query: FBSimulatorDiagnosticQuery, _ format: DiagnosticFormat) {
+  init(_ reporter: SimulatorReporter, _ subject: ControlCoreValue, _ query: FBDiagnosticQuery, _ format: DiagnosticFormat) {
     self.reporter = reporter
     self.subject = subject
     self.query = query

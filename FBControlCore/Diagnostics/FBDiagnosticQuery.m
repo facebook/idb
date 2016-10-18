@@ -7,30 +7,18 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorDiagnosticQuery.h"
+#import "FBDiagnosticQuery.h"
 
-#import <FBControlCore/FBControlCore.h>
+#import "FBDiagnostic.h"
+#import "FBControlCoreError.h"
 
-#import "FBSimulatorDiagnostics.h"
-#import "FBSimulatorError.h"
+static NSString *const FBDiagnosticQueryTypeAll = @"all";
+static NSString *const FBDiagnosticQueryTypeAppFiles = @"app_files";
+static NSString *const FBDiagnosticQueryTypeCrashes = @"crashes";
+static NSString *const FBDiagnosticQueryTypeNamed = @"named";
 
-static NSString *const FBSimulatorDiagnosticQueryTypeAll = @"all";
-static NSString *const FBSimulatorDiagnosticQueryTypeAppFiles = @"app_files";
-static NSString *const FBSimulatorDiagnosticQueryTypeCrashes = @"crashes";
-static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 
-@interface FBSimulatorDiagnosticQuery_All : FBSimulatorDiagnosticQuery
-
-@end
-
-@implementation FBSimulatorDiagnosticQuery_All
-
-#pragma mark Public
-
-- (nonnull NSArray<FBDiagnostic *> *)perform:(nonnull FBSimulatorDiagnostics *)diagnostics
-{
-  return [diagnostics allDiagnostics];
-}
+@implementation FBDiagnosticQuery_All
 
 #pragma mark NSCopying
 
@@ -43,13 +31,13 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
 {
-  return [FBSimulatorDiagnosticQuery_All new];
+  return [FBDiagnosticQuery_All new];
 }
 
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : FBSimulatorDiagnosticQueryTypeAll,
+    @"type" : FBDiagnosticQueryTypeAll,
   };
 }
 
@@ -62,13 +50,7 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 
 @end
 
-@interface FBSimulatorDiagnosticQuery_Named : FBSimulatorDiagnosticQuery
-
-@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *names;
-
-@end
-
-@implementation FBSimulatorDiagnosticQuery_Named
+@implementation FBDiagnosticQuery_Named
 
 #pragma mark Initializers
 
@@ -83,18 +65,9 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
   return self;
 }
 
-#pragma mark Public
-
-- (nonnull NSArray<FBDiagnostic *> *)perform:(nonnull FBSimulatorDiagnostics *)diagnostics
-{
-  return [[[diagnostics namedDiagnostics]
-    objectsForKeys:self.names notFoundMarker:(id)NSNull.null]
-    filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
-}
-
 #pragma mark NSObject
 
-- (BOOL)isEqual:(FBSimulatorDiagnosticQuery_Named *)object
+- (BOOL)isEqual:(FBDiagnosticQuery_Named *)object
 {
   return [super isEqual:object] && [self.names isEqualToArray:object.names];
 }
@@ -137,7 +110,7 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 {
   NSArray<NSString *> *names = json[@"names"];
   if (![FBCollectionInformation isArrayHeterogeneous:names withClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a NSArray<NSString *> for 'names'", names] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a NSArray<NSString *> for 'names'", names] fail:error];
   }
   return [[self alloc] initWithNames:names];
 }
@@ -145,7 +118,7 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : FBSimulatorDiagnosticQueryTypeNamed,
+    @"type" : FBDiagnosticQueryTypeNamed,
     @"names" : self.names,
   };
 }
@@ -162,14 +135,7 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 
 @end
 
-@interface FBSimulatorDiagnosticQuery_ApplicationLogs : FBSimulatorDiagnosticQuery
-
-@property (nonatomic, copy, readonly, nonnull) NSString *bundleID;
-@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenames;
-
-@end
-
-@implementation FBSimulatorDiagnosticQuery_ApplicationLogs
+@implementation FBDiagnosticQuery_ApplicationLogs
 
 #pragma mark Initializers
 
@@ -186,16 +152,9 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
   return self;
 }
 
-#pragma mark Public
-
-- (nonnull NSArray<FBDiagnostic *> *)perform:(nonnull FBSimulatorDiagnostics *)diagnostics
-{
-  return [diagnostics diagnosticsForApplicationWithBundleID:self.bundleID withFilenames:self.filenames fallbackToGlobalSearch:YES];
-}
-
 #pragma mark NSObject
 
-- (BOOL)isEqual:(FBSimulatorDiagnosticQuery_ApplicationLogs *)object
+- (BOOL)isEqual:(FBDiagnosticQuery_ApplicationLogs *)object
 {
   return [super isEqual:object] && [self.bundleID isEqualToString:object.bundleID] && [self.filenames isEqualToArray:object.filenames];
 }
@@ -240,11 +199,11 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 {
   NSArray<NSString *> *filenames = json[@"filenames"];
   if (![FBCollectionInformation isArrayHeterogeneous:filenames withClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a NSArray<NSString *> for 'filenames'", filenames] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a NSArray<NSString *> for 'filenames'", filenames] fail:error];
   }
   NSString *bundleID = json[@"bundle_id"];
   if (![bundleID isKindOfClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a String for 'bundle_id'", bundleID] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a String for 'bundle_id'", bundleID] fail:error];
   }
 
   return [[self alloc] initWithBundleID:bundleID filenames:filenames];
@@ -253,7 +212,7 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : FBSimulatorDiagnosticQueryTypeAppFiles,
+    @"type" : FBDiagnosticQueryTypeAppFiles,
     @"bundle_id" : self.bundleID,
     @"filenames" : self.filenames,
   };
@@ -272,14 +231,7 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 
 @end
 
-@interface FBSimulatorDiagnosticQuery_Crashes : FBSimulatorDiagnosticQuery
-
-@property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
-@property (nonatomic, copy, readonly, nonnull) NSDate *date;
-
-@end
-
-@implementation FBSimulatorDiagnosticQuery_Crashes
+@implementation FBDiagnosticQuery_Crashes
 
 #pragma mark Initializers
 
@@ -296,16 +248,9 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
   return self;
 }
 
-#pragma mark Public
-
-- (nonnull NSArray<FBDiagnostic *> *)perform:(nonnull FBSimulatorDiagnostics *)diagnostics
-{
-  return [diagnostics subprocessCrashesAfterDate:self.date withProcessType:self.processType];
-}
-
 #pragma mark NSObject
 
-- (BOOL)isEqual:(FBSimulatorDiagnosticQuery_Crashes *)object
+- (BOOL)isEqual:(FBDiagnosticQuery_Crashes *)object
 {
   return [super isEqual:object] && self.processType == object.processType && [self.date isEqual:object.date];
 }
@@ -350,13 +295,13 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 {
   NSArray<NSString *> *typeStrings = json[@"process_types"];
   if (![FBCollectionInformation isArrayHeterogeneous:typeStrings withClass:NSString.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a NSArray<NSString *> for 'process_types'", typeStrings] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a NSArray<NSString *> for 'process_types'", typeStrings] fail:error];
   }
-  FBCrashLogInfoProcessType processType = [FBSimulatorDiagnosticQuery_Crashes processTypeFromTypeStrings:typeStrings];
+  FBCrashLogInfoProcessType processType = [FBDiagnosticQuery_Crashes processTypeFromTypeStrings:typeStrings];
 
   NSNumber *timestamp = json[@"since"];
   if (![timestamp isKindOfClass:NSNumber.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a unix timestamp for 'since'", timestamp] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a unix timestamp for 'since'", timestamp] fail:error];
   }
   NSDate *date = [NSDate dateWithTimeIntervalSince1970:timestamp.doubleValue];
 
@@ -366,29 +311,29 @@ static NSString *const FBSimulatorDiagnosticQueryTypeNamed = @"named";
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"type" : FBSimulatorDiagnosticQueryTypeCrashes,
+    @"type" : FBDiagnosticQueryTypeCrashes,
     @"since" : @(self.date.timeIntervalSince1970),
-    @"process_types" : [FBSimulatorDiagnosticQuery_Crashes typeStringsFromProcessType:self.processType],
+    @"process_types" : [FBDiagnosticQuery_Crashes typeStringsFromProcessType:self.processType],
   };
 }
 
 #pragma mark Private
 
-static NSString *const FBSimulatorDiagnosticQueryCrashesApplication = @"application";
-static NSString *const FBSimulatorDiagnosticQueryCrashesCustomAgent = @"custom_agent";
-static NSString *const FBSimulatorDiagnosticQueryCrashesSystem = @"system";
+static NSString *const FBDiagnosticQueryCrashesApplication = @"application";
+static NSString *const FBDiagnosticQueryCrashesCustomAgent = @"custom_agent";
+static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
 
 + (nonnull NSArray<NSString *> *)typeStringsFromProcessType:(FBCrashLogInfoProcessType)processType
 {
   NSMutableArray<NSString *> *array = [NSMutableArray array];
   if ((processType & FBCrashLogInfoProcessTypeApplication) == FBCrashLogInfoProcessTypeApplication) {
-    [array addObject:FBSimulatorDiagnosticQueryCrashesApplication];
+    [array addObject:FBDiagnosticQueryCrashesApplication];
   }
   if ((processType & FBCrashLogInfoProcessTypeCustomAgent) == FBCrashLogInfoProcessTypeCustomAgent) {
-    [array addObject:FBSimulatorDiagnosticQueryCrashesCustomAgent];
+    [array addObject:FBDiagnosticQueryCrashesCustomAgent];
   }
   if ((processType & FBCrashLogInfoProcessTypeSystem) == processType) {
-    [array addObject:FBSimulatorDiagnosticQueryCrashesSystem];
+    [array addObject:FBDiagnosticQueryCrashesSystem];
   }
   return [array copy];
 }
@@ -397,13 +342,13 @@ static NSString *const FBSimulatorDiagnosticQueryCrashesSystem = @"system";
 {
   NSSet<NSString *> *set = [NSSet setWithArray:typeStrings];
   FBCrashLogInfoProcessType processType = 0;
-  if ([set containsObject:FBSimulatorDiagnosticQueryCrashesApplication]) {
+  if ([set containsObject:FBDiagnosticQueryCrashesApplication]) {
     processType = processType | FBCrashLogInfoProcessTypeApplication;
   }
-  if ([set containsObject:FBSimulatorDiagnosticQueryCrashesCustomAgent]) {
+  if ([set containsObject:FBDiagnosticQueryCrashesCustomAgent]) {
     processType = processType | FBCrashLogInfoProcessTypeCustomAgent;
   }
-  if ([set containsObject:FBSimulatorDiagnosticQueryCrashesSystem]) {
+  if ([set containsObject:FBDiagnosticQueryCrashesSystem]) {
     processType = processType | FBCrashLogInfoProcessTypeSystem;
   }
   return processType;
@@ -415,40 +360,40 @@ static NSString *const FBSimulatorDiagnosticQueryCrashesSystem = @"system";
 {
   return [NSString stringWithFormat:
     @"Crashes %@ %@",
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorDiagnosticQuery_Crashes typeStringsFromProcessType:self.processType]],
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBDiagnosticQuery_Crashes typeStringsFromProcessType:self.processType]],
     self.date
   ];
 }
 
 @end
 
-@implementation FBSimulatorDiagnosticQuery
+@implementation FBDiagnosticQuery
 
 #pragma mark Initializers
 
 + (nonnull instancetype)named:(nonnull NSArray<NSString *> *)names
 {
-  return [[FBSimulatorDiagnosticQuery_Named alloc] initWithNames:names];
+  return [[FBDiagnosticQuery_Named alloc] initWithNames:names];
 }
 
 + (nonnull instancetype)all
 {
-  return [FBSimulatorDiagnosticQuery_All new];
+  return [FBDiagnosticQuery_All new];
 }
 
 + (nonnull instancetype)filesInApplicationOfBundleID:(nonnull NSString *)bundleID withFilenames:(nonnull NSArray<NSString *> *)filenames
 {
-  return [[FBSimulatorDiagnosticQuery_ApplicationLogs alloc] initWithBundleID:bundleID filenames:filenames];
+  return [[FBDiagnosticQuery_ApplicationLogs alloc] initWithBundleID:bundleID filenames:filenames];
 }
 
 + (nonnull instancetype)crashesOfType:(FBCrashLogInfoProcessType)processType since:(nonnull NSDate *)date
 {
-  return [[FBSimulatorDiagnosticQuery_Crashes alloc] initWithProcessType:processType since:date];
+  return [[FBDiagnosticQuery_Crashes alloc] initWithProcessType:processType since:date];
 }
 
 #pragma mark NSObject
 
-- (BOOL)isEqual:(FBSimulatorDiagnosticQuery *)object
+- (BOOL)isEqual:(FBDiagnosticQuery *)object
 {
   return [object isKindOfClass:self.class];
 }
@@ -490,22 +435,22 @@ static NSString *const FBSimulatorDiagnosticQueryCrashesSystem = @"system";
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
-    return [[FBSimulatorError describeFormat:@"%@ is not a NSDictionary<NSString, id>", json] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a NSDictionary<NSString, id>", json] fail:error];
   }
   NSString *type = json[@"type"];
-  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeAll]) {
-    return [FBSimulatorDiagnosticQuery_All new];
+  if ([type isEqualToString:FBDiagnosticQueryTypeAll]) {
+    return [FBDiagnosticQuery_All new];
   }
-  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeNamed] ) {
-    return [FBSimulatorDiagnosticQuery_Named inflateFromJSON:json error:error];
+  if ([type isEqualToString:FBDiagnosticQueryTypeNamed] ) {
+    return [FBDiagnosticQuery_Named inflateFromJSON:json error:error];
   }
-  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeCrashes]) {
-    return [FBSimulatorDiagnosticQuery_Crashes inflateFromJSON:json error:error];
+  if ([type isEqualToString:FBDiagnosticQueryTypeCrashes]) {
+    return [FBDiagnosticQuery_Crashes inflateFromJSON:json error:error];
   }
-  if ([type isEqualToString:FBSimulatorDiagnosticQueryTypeAppFiles]) {
-    return [FBSimulatorDiagnosticQuery_ApplicationLogs inflateFromJSON:json error:error];
+  if ([type isEqualToString:FBDiagnosticQueryTypeAppFiles]) {
+    return [FBDiagnosticQuery_ApplicationLogs inflateFromJSON:json error:error];
   }
-  return [[FBSimulatorError describe:@"%@ is not a valid type"] fail:error];
+  return [[FBControlCoreError describe:@"%@ is not a valid type"] fail:error];
 }
 
 - (id)jsonSerializableRepresentation

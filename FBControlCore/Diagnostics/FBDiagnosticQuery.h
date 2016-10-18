@@ -11,14 +11,14 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBSimulatorDiagnostics;
-
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBSimulatorDiagnostics;
+
 /**
- A Value object for searching for, and returning diagnostics.
+ A value object for describing which diagnostics to fetch.
  */
-@interface FBSimulatorDiagnosticQuery : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBDiagnosticQuery : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 #pragma mark Initializers
 
@@ -26,14 +26,14 @@ NS_ASSUME_NONNULL_BEGIN
  A Query for all diagnostics that match a given name.
 
  @param names the names to search for.
- @return a FBSimulatorDiagnosticQuery.
+ @return a FBDiagnosticQuery.
  */
 + (instancetype)named:(NSArray<NSString *> *)names;
 
 /**
  A Query for all static diagnostics.
 
- @return a FBSimulatorDiagnosticQuery.
+ @return a FBDiagnosticQuery.
  */
 + (instancetype)all;
 
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param bundleID the Application Bundle ID to search in.
  @param filenames the filenames to search for.
- @return a FBSimulatorDiagnosticQuery.
+ @return a FBDiagnosticQuery.
  */
 + (instancetype)filesInApplicationOfBundleID:(NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames;
 
@@ -51,19 +51,33 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param processType the Process Types to search for.
  @param date the date to search from.
- @return a FBSimulatorDiagnosticQuery.
+ @return a FBDiagnosticQuery.
  */
 + (instancetype)crashesOfType:(FBCrashLogInfoProcessType)processType since:(NSDate *)date;
 
-#pragma mark Performing
+@end
 
-/**
- Returns an array of the diagnostics that match the query.
+@interface FBDiagnosticQuery_All : FBDiagnosticQuery
 
- @param diagnostics the Simulator diagnostics object to fetch from.
- @return an Array of Diagnostics that match
- */
-- (NSArray<FBDiagnostic *> *)perform:(FBSimulatorDiagnostics *)diagnostics;
+@end
+
+@interface FBDiagnosticQuery_Named : FBDiagnosticQuery
+
+@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *names;
+
+@end
+
+@interface FBDiagnosticQuery_ApplicationLogs : FBDiagnosticQuery
+
+@property (nonatomic, copy, readonly, nonnull) NSString *bundleID;
+@property (nonatomic, copy, readonly, nonnull) NSArray<NSString *> *filenames;
+
+@end
+
+@interface FBDiagnosticQuery_Crashes : FBDiagnosticQuery
+
+@property (nonatomic, assign, readonly) FBCrashLogInfoProcessType processType;
+@property (nonatomic, copy, readonly, nonnull) NSDate *date;
 
 @end
 

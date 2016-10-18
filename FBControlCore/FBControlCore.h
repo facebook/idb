@@ -28,6 +28,7 @@
 #import <FBControlCore/FBCrashLogInfo.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBDiagnostic.h>
+#import <FBControlCore/FBDiagnosticQuery.h>
 #import <FBControlCore/FBDispatchSourceNotifier.h>
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBFileManager.h>

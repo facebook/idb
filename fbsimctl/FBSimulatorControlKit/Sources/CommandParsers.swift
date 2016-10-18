@@ -520,12 +520,12 @@ extension Action : Parsable {
   }
 
   static var diagnoseParser: Parser<Action> {
-    return Parser<(DiagnosticFormat, FBSimulatorDiagnosticQuery)>
+    return Parser<(DiagnosticFormat, FBDiagnosticQuery)>
       .ofCommandWithArg(
         EventName.Diagnose.rawValue,
         Parser.ofTwoSequenced(
           DiagnosticFormat.parser.fallback(DiagnosticFormat.CurrentFormat),
-          FBSimulatorDiagnosticQueryParser.parser
+          FBDiagnosticQueryParser.parser
         )
       )
       .fmap { (format, query) in
@@ -811,34 +811,34 @@ public struct FBiOSTargetQueryParsers {
 }
 
 /**
- A separate struct for FBSimulatorDiagnosticQuery is needed as Parsable protcol conformance cannot be
- applied to FBSimulatorDiagnosticQuery as it is a non-final.
+ A separate struct for FBDiagnosticQuery is needed as Parsable protcol conformance cannot be
+ applied to FBDiagnosticQuery as it is a non-final.
  */
-struct FBSimulatorDiagnosticQueryParser {
-  internal static var parser: Parser<FBSimulatorDiagnosticQuery> {
+struct FBDiagnosticQueryParser {
+  internal static var parser: Parser<FBDiagnosticQuery> {
     return Parser
       .alternative([
         self.appFilesParser,
         self.namedParser,
         self.crashesParser,
       ])
-      .fallback(FBSimulatorDiagnosticQuery.all())
+      .fallback(FBDiagnosticQuery.all())
       .withExpandedDesc
       .sectionize("diagnose/query", "Diagnose: Query", "")
     }
 
-  static var namedParser: Parser<FBSimulatorDiagnosticQuery> {
+  static var namedParser: Parser<FBDiagnosticQuery> {
     let nameParser = Parser<String>
       .ofFlagWithArg("name", Parser<String>.ofAny, "")
 
     return Parser
       .manyCount(1, nameParser)
       .fmap { names in
-        FBSimulatorDiagnosticQuery.named(names)
+        FBDiagnosticQuery.named(names)
       }
   }
 
-  static var crashesParser: Parser<FBSimulatorDiagnosticQuery> {
+  static var crashesParser: Parser<FBDiagnosticQuery> {
     let crashDateParser = Parser<Date>
       .ofFlagWithArg("crashes-since", Parser<Date>.ofDate, "")
 
@@ -848,18 +848,18 @@ struct FBSimulatorDiagnosticQueryParser {
         FBCrashLogInfoProcessType.parser
       )
       .fmap { (date, processType) in
-        FBSimulatorDiagnosticQuery.crashes(of: processType, since: date)
+        FBDiagnosticQuery.crashes(of: processType, since: date)
       }
   }
 
-  static var appFilesParser: Parser<FBSimulatorDiagnosticQuery> {
+  static var appFilesParser: Parser<FBDiagnosticQuery> {
     return Parser
       .ofTwoSequenced(
         Parser<Any>.ofBundleID,
         Parser.manyCount(1, Parser<Any>.ofAny)
       )
       .fmap { (bundleID, fileNames) in
-        FBSimulatorDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames)
+        FBDiagnosticQuery.files(inApplicationOfBundleID: bundleID, withFilenames: fileNames)
       }
   }
 }
