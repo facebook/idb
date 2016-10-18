@@ -93,4 +93,33 @@
   XCTAssertEqualObjects(lines[0], @"0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180");
 }
 
+- (void)testUpdatesStateWithAsynchronousTermination
+{
+  FBTask *task = [[[FBTaskBuilder
+    withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
+    build]
+    startAsynchronously];
+
+  BOOL didUpdateTerminationState = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
+    return task.hasTerminated;
+  }];
+  XCTAssertTrue(didUpdateTerminationState);
+}
+
+- (void)testCallsHandlerWithAsynchronousTermination
+{
+  __block BOOL didCallTerminationHandler = NO;
+  [[[FBTaskBuilder
+    withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
+    build]
+    startAsynchronouslyWithTerminationHandler:^(FBTask *_) {
+      didCallTerminationHandler = YES;
+    }];
+
+  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
+    return didCallTerminationHandler;
+  }];
+  XCTAssertTrue(didCallTerminationHandler);
+}
+
 @end

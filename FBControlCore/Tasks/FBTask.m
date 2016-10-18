@@ -210,7 +210,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @property (nonatomic, assign, readonly) int terminationStatus;
 @property (nonatomic, assign, readonly) BOOL isRunning;
 
-- (pid_t)launchWithError:(NSError **)error;
+- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler;
 - (void)mountStandardOut:(id)stdOut;
 - (void)mountStandardErr:(id)stdOut;
 - (void)terminate;
@@ -263,7 +263,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
 
-- (pid_t)launchWithError:(NSError **)error
+- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return 0;
@@ -309,10 +309,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   self.task.standardError = stdErr;
 }
 
-- (pid_t)launchWithError:(NSError **)error
+- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler
 {
   self.task.terminationHandler = ^(NSTask *_) {
     [self terminate];
+    terminationHandler(self);
   };
   [self.task launch];
   return self.task.processIdentifier;
@@ -424,36 +425,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   return [self terminateWithErrorMessage:errorMessage];
 }
 
-- (instancetype)launchWithTerminationHandler:(void (^)(FBTask *task))handler
-{
-  // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
-  // This Retain is matched by a release in -[FBTask completeTermination].
-  CFRetain((__bridge CFTypeRef)(self));
-
-  self.terminationHandler = handler;
-
-  NSError *error = nil;
-  id stdOut = [self.stdOutSlot attachWithError:&error];
-  if (!stdOut) {
-    return [self terminateWithErrorMessage:error.description];
-  }
-  [self.process mountStandardOut:stdOut];
-
-  id stdErr = [self.stdErrSlot attachWithError:&error];
-  if (!stdErr) {
-    return [self terminateWithErrorMessage:error.description];
-  }
-  [self.process mountStandardErr:stdErr];
-
-  pid_t pid = [self.process launchWithError:&error];
-  if (pid < 1) {
-    return [self terminateWithErrorMessage:error.description];
-  }
-  self.processIdentifier = pid;
-
-  return self;
-}
-
 #pragma mark Accessors
 
 - (NSString *)stdOut
@@ -498,6 +469,38 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 }
 
 #pragma mark Private
+
+- (instancetype)launchWithTerminationHandler:(void (^)(FBTask *task))handler
+{
+  // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
+  // This Retain is matched by a release in -[FBTask completeTermination].
+  CFRetain((__bridge CFTypeRef)(self));
+
+  self.terminationHandler = handler;
+
+  NSError *error = nil;
+  id stdOut = [self.stdOutSlot attachWithError:&error];
+  if (!stdOut) {
+    return [self terminateWithErrorMessage:error.description];
+  }
+  [self.process mountStandardOut:stdOut];
+
+  id stdErr = [self.stdErrSlot attachWithError:&error];
+  if (!stdErr) {
+    return [self terminateWithErrorMessage:error.description];
+  }
+  [self.process mountStandardErr:stdErr];
+
+  pid_t pid = [self.process launchWithError:&error terminationHandler:^(FBTaskProcess *_) {
+    [self terminateWithErrorMessage:nil];
+  }];
+  if (pid < 1) {
+    return [self terminateWithErrorMessage:error.description];
+  }
+  self.processIdentifier = pid;
+
+  return self;
+}
 
 - (instancetype)terminateWithErrorMessage:(nullable NSString *)errorMessage
 {
