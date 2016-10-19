@@ -14,6 +14,7 @@ import FBSimulatorControl
  Errors for the JSON Type
 */
 public enum JSONError : Error {
+  case notContainer(JSON)
   case nonEncodable(AnyObject)
   case serialization(NSError)
   case stringifying(Data)
@@ -21,6 +22,8 @@ public enum JSONError : Error {
 
   public var description: String { get {
     switch self {
+    case .notContainer(let object):
+      return "\(object) is not a container"
     case .nonEncodable(let object):
       return "\(object) is not JSON Encodable"
     case .serialization(let error):
@@ -103,15 +106,28 @@ public indirect enum JSON {
     }
   }
 
+  public func decodeContainer() throws -> AnyObject {
+    switch self {
+    case .jArray:
+      return self.decode()
+    case .jDictionary:
+      return self.decode()
+    default:
+      throw JSONError.notContainer(self)
+    }
+  }
+
   func serializeToString(_ pretty: Bool) throws -> NSString {
     do {
       let writingOptions = pretty ? JSONSerialization.WritingOptions.prettyPrinted : JSONSerialization.WritingOptions()
-      let jsonObject = self.decode()
+      let jsonObject = try self.decodeContainer()
       let data = try JSONSerialization.data(withJSONObject: jsonObject, options: writingOptions)
       guard let string = NSString(data: data, encoding: String.Encoding.utf8.rawValue) else {
         throw JSONError.stringifying(data)
       }
       return string
+    } catch let error as JSONError {
+      throw error
     } catch let error as NSError {
       throw JSONError.serialization(error)
     }

@@ -75,11 +75,12 @@ open class JSONEventReporter : NSObject, EventReporter {
         assertionFailure("\(json) does not have a \(JSONKeys.EventType.rawValue)")
         return
       }
-      guard let line = try? json.serializeToString(pretty) else {
-        assertionFailure("\(item) could not be encoded to a string")
-        return
+      do {
+        let line = try json.serializeToString(pretty)
+        self.writer.write(line as String)
+      } catch let error {
+        assertionFailure("Failed to Serialize \(json) to string: \(error)")
       }
-      self.writer.write(line as String)
     }
   }
 }
