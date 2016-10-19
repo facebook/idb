@@ -26,7 +26,6 @@ public struct Configuration {
 public enum Server {
   case empty
   case stdin
-  case socket(in_port_t)
   case http(in_port_t)
 }
 
@@ -309,8 +308,6 @@ public func == (left: Server, right: Server) -> Bool {
     return true
   case (.stdin, .stdin):
     return true
-  case (.socket(let leftPort), .socket(let rightPort)):
-    return leftPort == rightPort
   case (.http(let leftPort), .http(let rightPort)):
     return leftPort == rightPort
   default:
@@ -329,11 +326,6 @@ extension Server : EventReporterSubject {
       return JSON.jDictionary([
         "type" : JSON.jString("stdin")
       ])
-    case .socket(let port):
-      return JSON.jDictionary([
-        "type" : JSON.jString("socket"),
-        "port" : JSON.jNumber(NSNumber(value: Int32(port) as Int32))
-      ])
     case .http(let port):
       return JSON.jDictionary([
         "type" : JSON.jString("http"),
@@ -346,7 +338,6 @@ extension Server : EventReporterSubject {
     switch self {
     case .empty: return "empty"
     case .stdin: return "stdin"
-    case .socket(let port): return "Socket: Port \(port)"
     case .http(let port): return "HTTP: Port \(port)"
     }
   }}

@@ -205,7 +205,6 @@ let validActions: [([String], Action)] = [
   (["list_device_sets"], Action.listDeviceSets),
   (["listen", "--stdin"], Action.listen(Server.stdin)),
   (["listen", "--http", "43"], Action.listen(Server.http(43))),
-  (["listen", "--socket", "42"], Action.listen(Server.socket(42))),
   (["listen"], Action.listen(Server.empty)),
   (["open", "aoo://bar/baz"], Action.open(URL(string: "aoo://bar/baz")!)),
   (["open", "http://facebook.com"], Action.open(URL(string: "http://facebook.com")!)),
