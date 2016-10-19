@@ -294,7 +294,7 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
 
 
 class SuiteBuilder:
-    def __init__(self, fbsimctl_path, name_filter=None, device_types=['iPhone 6', 'iPad Air 2']):
+    def __init__(self, fbsimctl_path, device_types, name_filter=None):
         self.fbsimctl_path = fbsimctl_path
         self.device_types = device_types
         self.name_filter = name_filter
@@ -381,10 +381,20 @@ if __name__ == '__main__':
         default=None,
         help='A substring to match tests against, will only run matching tests',
     )
+    parser.add_argument(
+        '--device-type',
+        action='append',
+        help='The iOS Device Type to run tests against. Multiple may be given.',
+        default=[],
+    )
     arguments = parser.parse_args()
+    arguments.device_type = list(set(arguments.device_type))
+    if not len(arguments.device_type):
+        arguments.device_type = ['iPhone 6']
 
     suite_builder = SuiteBuilder(
         fbsimctl_path=find_fbsimctl_path(arguments.fbsimctl_path),
+        device_types=arguments.device_type,
         name_filter=arguments.name_filter,
     )
     runner = unittest.TextTestRunner(
