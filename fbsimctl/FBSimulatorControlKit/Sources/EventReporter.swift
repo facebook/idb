@@ -66,9 +66,18 @@ open class JSONEventReporter : NSObject, EventReporter {
 
   open func report(_ subject: EventReporterSubject) {
     for item in subject.subSubjects {
-      guard let line = try? item.jsonDescription.serializeToString(pretty) else {
+      let json = item.jsonDescription
+      guard let _ = try? json.getValue(JSONKeys.EventName.rawValue).getString() else {
+        assertionFailure("\(json) does not have a \(JSONKeys.EventName.rawValue)")
+        return
+      }
+      guard let _ = try? json.getValue(JSONKeys.EventType.rawValue).getString() else {
+        assertionFailure("\(json) does not have a \(JSONKeys.EventType.rawValue)")
+        return
+      }
+      guard let line = try? json.serializeToString(pretty) else {
         assertionFailure("\(item) could not be encoded to a string")
-        break
+        return
       }
       self.writer.write(line as String)
     }
