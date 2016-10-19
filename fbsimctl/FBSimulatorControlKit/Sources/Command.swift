@@ -24,7 +24,8 @@ public struct Configuration {
  Options for Creating a Server for listening to commands on.
  */
 public enum Server {
-  case stdIO
+  case empty
+  case stdin
   case socket(in_port_t)
   case http(in_port_t)
 }
@@ -304,7 +305,9 @@ extension Action {
 extension Server : Equatable { }
 public func == (left: Server, right: Server) -> Bool {
   switch (left, right) {
-  case (.stdIO, .stdIO):
+  case (.empty, .empty):
+    return true
+  case (.stdin, .stdin):
     return true
   case (.socket(let leftPort), .socket(let rightPort)):
     return leftPort == rightPort
@@ -318,9 +321,13 @@ public func == (left: Server, right: Server) -> Bool {
 extension Server : EventReporterSubject {
   public var jsonDescription: JSON { get {
     switch self {
-    case .stdIO:
+    case .empty:
       return JSON.jDictionary([
-        "type" : JSON.jString("stdio")
+        "type" : JSON.jString("empty")
+      ])
+    case .stdin:
+      return JSON.jDictionary([
+        "type" : JSON.jString("stdin")
       ])
     case .socket(let port):
       return JSON.jDictionary([
@@ -337,7 +344,8 @@ extension Server : EventReporterSubject {
 
   public var description: String { get {
     switch self {
-    case .stdIO: return "stdio"
+    case .empty: return "empty"
+    case .stdin: return "stdin"
     case .socket(let port): return "Socket: Port \(port)"
     case .http(let port): return "HTTP: Port \(port)"
     }

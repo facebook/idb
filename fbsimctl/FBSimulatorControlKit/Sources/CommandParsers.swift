@@ -418,16 +418,15 @@ extension Server : Parsable {
   public static var parser: Parser<Server> {
     return Parser
       .alternative([
-        self.socketParser,
-        self.httpParser
+        self.httpParser,
+        self.stdinParser,
       ])
-      .fallback(Server.stdIO)
+      .fallback(Server.empty)
   }
 
-  static var socketParser: Parser<Server> {
+  static var stdinParser: Parser<Server> {
     return Parser<Server>
-      .ofFlagWithArg("socket", portParser, "")
-      .fmap(Server.socket)
+      .ofFlag("stdin", Server.stdin, "Listen for commands on stdin")
   }
 
   static var httpParser:  Parser<Server> {

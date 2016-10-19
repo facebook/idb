@@ -18,6 +18,19 @@ protocol Relay {
 }
 
 /**
+ A Relay that does nothing
+ */
+class EmptyRelay : Relay {
+  func start() {
+
+  }
+
+  func stop() {
+
+  }
+}
+
+/**
  Wraps an existing Relay, spinning the run loop after the underlying relay has started.
  */
 class SynchronousRelay : Relay {

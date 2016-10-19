@@ -187,7 +187,9 @@ struct ServerRunner : Runner, CommandPerformer {
 
   var baseRelay: Relay { get {
     switch self.context.value.0 {
-    case .stdIO:
+    case .empty:
+      return EmptyRelay()
+    case .stdin:
       let commandBuffer = LineBuffer(performer: self, reporter: self.context.reporter)
       return FileHandleRelay(commandBuffer: commandBuffer)
     case .socket(let portNumber):

@@ -89,12 +89,12 @@ $ fbsimctl --state=booted diagnose | grep system_log | awk '{print $NF}' | xargs
 
 ## `listen`
 
-The `listen` action of `fbsimctl`, can be used to accept a stream of commands over `stdin`, or to start a HTTP Server for accepting commands:
+The `listen` action of `fbsimctl` will keep the `fbsimctl` process running, until a `SIGINT`, `SIGHUP` or `SIGTERM` is sent to the process. This can be used to keep a Simulator alive that was previously launched with `--direct-launch`. 
 
-- `listen` with no arguments will accept commands over `stdin`. A command will interpreted, when a newline character is sent.
+Additionally, it is possible to listen on an interface for incoming commands:
+
+- `listen --stdin` with no arguments will accept commands over `stdin`. A command will interpreted, when a newline character is sent.
 - `listen --http [PORT-NUMBER]` will start a HTTP server on `PORT-NUMBER`. Many of the common `fbsimctl` actions are exposed with individual endpoints.
-
-When you wish to complete the `listen` action, send a `SIGHUP` to the `fbsimctl` process.
 
 ## Video Recording with Xcode 8
 
