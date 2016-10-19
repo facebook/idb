@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from util import (FBSimctl, Simulator, WebServer, find_fbsimctl_path, DEFAULT_TIMEOUT, LONG_TIMEOUT)
+from util import (FBSimctl, Simulator, WebServer, find_fbsimctl_path, Fixtures, DEFAULT_TIMEOUT, LONG_TIMEOUT)
 import argparse
+import base64
 import contextlib
 import os
 import tempfile
@@ -205,9 +206,21 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             ]
             self.assertEqual(expected.sort(), actual.sort())
             actual = self.extractSimulatorSubjects(
-                webserver.get(iphone6.get_udid() + '/list'),
+                webserver.get(iphone6.get_udid() + 'list'),
             )
             expected = [iphone6.get_udid()]
+
+    def testUploadsVideo(self):
+        simulator = self.assertCreatesSimulator(['iPhone 6'])
+        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
+        with open(Fixtures.VIDEO, 'rb') as f, self.launchWebserver() as webserver:
+            data = base64.b64encode(f.read()).decode()
+            webserver.post(simulator.get_udid() + '/upload', {
+                'short_name': 'video',
+                'file_type': 'mp4',
+                'data': data,
+            })
+        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
 
 class SingleSimulatorTestCase(FBSimctlTestCase):
     def __init__(
@@ -262,6 +275,12 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
     def testLaunchesThenTerminatesSystemApplication(self):
         (simulator, bundle_id) = self.testLaunchesSystemApplication()
         self.assertEventSuccesful([simulator.get_udid(), 'terminate', bundle_id], 'terminate')
+
+    def testUploadsVideo(self):
+        simulator = self.assertCreatesSimulator([self.device_type])
+        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
+        self.assertEventSuccesful([simulator.get_udid(), 'upload', Fixtures.VIDEO], 'upload')
+        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
 
     def testRecordsVideo(self):
         (simulator, _) = self.testLaunchesSystemApplication()

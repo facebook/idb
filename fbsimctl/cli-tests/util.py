@@ -238,3 +238,12 @@ class WebServer:
         with urllib.request.urlopen(request) as f:
             response = f.read().decode('utf-8')
             return json.loads(response)
+
+
+class Fixtures:
+    VIDEO = os.path.realpath(
+        os.path.join(
+            __file__,
+            '../../../FBSimulatorControlTests/Fixtures/video0.mp4',
+        ),
+    )
