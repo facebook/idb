@@ -264,11 +264,11 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
         self.assertEventSuccesful([simulator.get_udid(), 'terminate', bundle_id], 'terminate')
 
     def testRecordsVideo(self):
-        simulator = self.assertCreatesSimulator([self.device_type])
+        (simulator, _) = self.testLaunchesSystemApplication()
         arguments = [
-            simulator.get_udid(), 'boot', '--direct-launch',
-            '--', 'record', 'start',
+            simulator.get_udid(), 'record', 'start',
             '--', 'listen',
+            '--', 'record', 'stop',
             '--', 'shutdown',
         ]
         # Launch the process, terminate and confirm teardown is successful
