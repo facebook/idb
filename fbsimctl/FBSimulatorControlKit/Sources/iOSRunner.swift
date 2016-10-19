@@ -90,6 +90,6 @@ struct iOSTargetRunner : Runner {
     } catch {
       return .failure("Unknown Error")
     }
-    return .success(self.subject)
+    return .success(nil)
   }
 }
