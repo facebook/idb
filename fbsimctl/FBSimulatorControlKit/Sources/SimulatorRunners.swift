@@ -123,6 +123,8 @@ struct SimulatorActionRunner : Runner {
       }
     case .search(let search):
       return SearchRunner(reporter, search)
+    case .serviceInfo(let identifier):
+      return ServiceInfoRunner(reporter: reporter, identifier: identifier)
     case .shutdown:
       return iOSTargetRunner(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.kill(simulator)
@@ -232,6 +234,22 @@ private struct SearchRunner : Runner {
     let results = search.search(diagnostics)
     self.reporter.report(EventName.Search, EventType.Discrete, ControlCoreSubject(results))
     return .success(nil)
+  }
+}
+
+private struct ServiceInfoRunner : Runner {
+  let reporter: SimulatorReporter
+  let identifier: String
+
+  func run() -> CommandResult {
+    var pid: pid_t = 0
+    guard let _ = try? self.reporter.simulator.launchctl.serviceName(forBundleID: self.identifier, processIdentifierOut: &pid) else {
+      return .failure("Could not get service for name \(identifier)")
+    }
+    guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {
+      return .failure("Could not get process info for pid \(pid)")
+    }
+    return .success(SimpleSubject(EventName.ServiceInfo, EventType.Discrete, ControlCoreSubject(processInfo)))
   }
 }
 

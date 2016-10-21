@@ -212,6 +212,7 @@ let validActions: [([String], Action)] = [
   (["record", "stop"], Action.record(false)),
   (["relaunch", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: FBProcessLaunchOptions()))),
   (["relaunch", "com.foo.bar"], Action.relaunch(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
+  (["service_info", "com.foo.bar"], Action.serviceInfo("com.foo.bar")),
   (["shutdown"], Action.shutdown),
   (["shutdown"], Action.shutdown),
   (["terminate", "com.foo.bar"], Action.terminate("com.foo.bar")),

@@ -270,6 +270,7 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
         simulator = self.assertCreatesSimulator([self.device_type])
         self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
         self.assertEventSuccesful([simulator.get_udid(), 'launch', 'com.apple.Preferences'], 'launch')
+        self.assertEventsFromRun([simulator.get_udid(), 'service_info', 'com.apple.Preferences'], 'service_info', 'discrete')
         return (simulator, 'com.apple.Preferences')
 
     def testLaunchesThenTerminatesSystemApplication(self):

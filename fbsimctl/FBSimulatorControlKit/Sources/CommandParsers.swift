@@ -460,20 +460,21 @@ extension Action : Parsable {
         self.launchAgentParser,
         self.launchAppParser,
         self.launchXCTestParser,
-        self.listenParser,
-        self.listParser,
         self.listAppsParser,
         self.listDeviceSetsParser,
+        self.listenParser,
+        self.listParser,
         self.openParser,
         self.recordParser,
         self.relaunchParser,
+        self.serviceInfoParser,
+        self.setLocationParser,
         self.shutdownParser,
         self.tapParser,
         self.terminateParser,
         self.uninstallParser,
         self.uploadParser,
         self.watchdogOverrideParser,
-        self.setLocationParser,
       ])
       .withExpandedDesc
       .sectionize("action", "Action", "")
@@ -649,6 +650,15 @@ extension Action : Parsable {
       .fmap { (x,y) in
         Action.tap(x, y)
       }
+  }
+
+  static var serviceInfoParser: Parser<Action> {
+    return Parser
+      .ofCommandWithArg(
+        EventName.ServiceInfo.rawValue,
+        Parser<String>.ofBundleID
+      )
+      .fmap(Action.serviceInfo)
   }
 
   static var setLocationParser: Parser<Action> {

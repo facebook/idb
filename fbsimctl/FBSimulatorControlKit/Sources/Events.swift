@@ -35,6 +35,7 @@ public enum EventName : String {
   case Record = "record"
   case Relaunch = "relaunch"
   case Search = "search"
+  case ServiceInfo = "service_info"
   case SetLocation = "set_location"
   case Shutdown = "shutdown"
   case Signalled = "signalled"

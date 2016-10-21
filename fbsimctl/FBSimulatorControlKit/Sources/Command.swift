@@ -79,6 +79,7 @@ public enum Action {
   case record(Bool)
   case relaunch(FBApplicationLaunchConfiguration)
   case search(FBBatchLogSearch)
+  case serviceInfo(String)
   case setLocation(Double,Double)
   case shutdown
   case tap(Double, Double)
@@ -221,6 +222,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftLaunch == rightLaunch
   case (.search(let leftSearch), .search(let rightSearch)):
     return leftSearch == rightSearch
+  case (.serviceInfo(let leftIdentifier), .serviceInfo(let rightIdentifier)):
+    return leftIdentifier == rightIdentifier
   case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
     return leftLat == rightLat && leftLon == rightLon
   case (.shutdown, .shutdown):
@@ -283,6 +286,8 @@ extension Action {
       return (EventName.Relaunch, ControlCoreSubject(appLaunch))
     case .search(let search):
       return (EventName.Search, ControlCoreSubject(search))
+    case .serviceInfo:
+      return (EventName.ServiceInfo, nil)
     case .setLocation:
       return (EventName.SetLocation, nil)
     case .shutdown:
