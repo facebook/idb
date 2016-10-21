@@ -79,13 +79,13 @@ public enum Action {
   case record(Bool)
   case relaunch(FBApplicationLaunchConfiguration)
   case search(FBBatchLogSearch)
+  case setLocation(Double,Double)
   case shutdown
   case tap(Double, Double)
   case terminate(String)
   case uninstall(String)
   case upload([FBDiagnostic])
   case watchdogOverride([String], TimeInterval)
-  case setLocation(Double,Double)
 }
 
 /**
@@ -221,12 +221,12 @@ public func == (left: Action, right: Action) -> Bool {
     return leftLaunch == rightLaunch
   case (.search(let leftSearch), .search(let rightSearch)):
     return leftSearch == rightSearch
+  case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
+    return leftLat == rightLat && leftLon == rightLon
   case (.shutdown, .shutdown):
     return true
   case (.tap(let leftX, let leftY), .tap(let rightX, let rightY)):
     return leftX == rightX && leftY == rightY
-  case (.setLocation(let leftLat, let leftLon), .setLocation(let rightLat, let rightLon)):
-    return leftLat == rightLat && leftLon == rightLon
   case (.terminate(let leftBundleID), .terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.uninstall(let leftBundleID), .uninstall(let rightBundleID)):
@@ -283,6 +283,8 @@ extension Action {
       return (EventName.Relaunch, ControlCoreSubject(appLaunch))
     case .search(let search):
       return (EventName.Search, ControlCoreSubject(search))
+    case .setLocation:
+      return (EventName.SetLocation, nil)
     case .shutdown:
       return (EventName.Shutdown, nil)
     case .tap:
@@ -295,8 +297,6 @@ extension Action {
       return (EventName.Diagnose, nil)
     case .watchdogOverride(let bundleIDs, _):
       return (EventName.WatchdogOverride, StringsSubject(bundleIDs))
-    case .setLocation:
-      return (EventName.SetLocation, nil)
     }
   }}
 }
