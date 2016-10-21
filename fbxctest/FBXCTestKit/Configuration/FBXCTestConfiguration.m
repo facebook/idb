@@ -39,7 +39,7 @@
 
 @implementation FBXCTestConfiguration
 
-- (instancetype)initWithReporter:(id<FBXCTestReporter>)reporter processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
+- (instancetype)initWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
 {
   self = [super init];
   if (!self) {
@@ -48,8 +48,7 @@
 
   _reporter = reporter;
   _processUnderTestEnvironment = environment ?: @{};
-  _logger = FBXCTestLogger.loggerInDefaultDirectory;
-  [FBControlCoreGlobalConfiguration setDefaultLogger:_logger];
+  _logger = logger;
 
   return self;
 }

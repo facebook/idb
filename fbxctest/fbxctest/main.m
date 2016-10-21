@@ -14,7 +14,7 @@
 int main(int argc, const char *argv[])
 {
   @autoreleasepool {
-    if (![FBXCTestBootstrapper bootstrap]) {
+    if (![FBXCTestBootstrapper.new bootstrap]) {
       return 2;
     }
   }

@@ -28,12 +28,13 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a configuration, passing dependencies. Is not usable until `loadWithArguments` is called.
 
  @param reporter a reporter to inject.
+ @param logger the logger to inject.
  @param environment environment additions for the process under test.
  @return a new test run configuration.
  */
-- (instancetype)initWithReporter:(nullable id<FBXCTestReporter>)reporter processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
+- (instancetype)initWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
 
-@property (nonatomic, strong, readonly) FBXCTestLogger *logger;
+@property (nonatomic, strong, readonly, nullable) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) FBSimulatorConfiguration *targetDeviceConfiguration;
 

@@ -34,11 +34,15 @@ static NSString *const OutputLogDirectoryEnv = @"FBXCTEST_LOG_DIRECTORY";
   return NSTemporaryDirectory();
 }
 
-+ (instancetype)loggerInDefaultDirectory
++ (instancetype)defaultLoggerInDefaultDirectory
 {
-  NSString *directory = self.logDirectory;
-  NSString *filename = [NSString stringWithFormat:@"%@_test.log", NSProcessInfo.processInfo.globallyUniqueString];
-  NSString *path = [directory stringByAppendingPathComponent:filename];
+  NSString *name = [NSString stringWithFormat:@"%@_test.log", NSProcessInfo.processInfo.globallyUniqueString];
+  return [self loggerInDefaultDirectory:name];
+}
+
++ (instancetype)loggerInDefaultDirectory:(NSString *)name
+{
+  NSString *path = [self.logDirectory stringByAppendingPathComponent:name];
 
   BOOL success = [NSFileManager.defaultManager createFileAtPath:path contents:nil attributes:nil];
   NSAssert(success, @"Expected to create file at path %@, but could not", path);
