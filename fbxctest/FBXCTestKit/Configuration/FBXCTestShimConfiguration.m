@@ -17,10 +17,24 @@
 static NSString *const iOSXCTestShimFileName = @"otest-shim-ios.dylib";
 static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
 static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
+static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIMS";
 
 @implementation FBXCTestShimConfiguration
 
 #pragma mark Initializers
+
++ (NSDictionary<NSString *, NSNumber *> *)shimFilenamesToCodesigningRequired
+{
+  NSMutableDictionary<NSString *, NSNumber *> *shims = [NSMutableDictionary dictionaryWithDictionary:@{
+    iOSXCTestShimFileName : @NO,
+    MacXCTestShimFileName : @NO,
+    MacQueryShimFileName : @NO,
+  }];
+  if (NSProcessInfo.processInfo.environment[ConfirmShimsAreSignedEnv].boolValue && FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    shims[iOSXCTestShimFileName] = @YES;
+  }
+  return [shims copy];
+}
 
 + (nullable NSString *)findShimDirectoryWithError:(NSError **)error
 {
@@ -43,11 +57,7 @@ static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
       fail:error];
   }
 
-  NSDictionary<NSString *, NSNumber *> *shims = @{
-    iOSXCTestShimFileName : FBControlCoreGlobalConfiguration.isXcode8OrGreater ? @YES : @NO,
-    MacXCTestShimFileName : @NO,
-    MacQueryShimFileName : @NO,
-  };
+  NSDictionary<NSString *, NSNumber *> *shims = self.shimFilenamesToCodesigningRequired;
 
   id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
   for (NSString *filename in shims) {
