@@ -18,6 +18,7 @@
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestReporter.h"
 #import "FBXCTestError.h"
+#import "FBXCTestLogger.h"
 #import "FBXCTestShimConfiguration.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -10;
@@ -107,7 +108,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     }
     NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[line dataUsingEncoding:NSUTF8StringEncoding] options:0 error:error];
     if (event == nil) {
-      NSLog(@"Received unexpected output from otest-shim:\n%@", line);
+      [self.configuration.logger logFormat:@"Received unexpected output from otest-shim:\n%@", line];
     }
     [self.configuration.reporter handleExternalEvent:event];
   }];
