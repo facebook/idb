@@ -9,6 +9,8 @@
 
 #import "FBXCTestLogger.h"
 
+static NSString *const OutputLogDirectoryEnv = @"FBXCTEST_LOG_DIRECTORY";
+
 @interface FBXCTestLogger ()
 
 @property (nonatomic, copy, readonly) NSString *filePath;
@@ -19,10 +21,25 @@
 
 @implementation FBXCTestLogger
 
-+ (instancetype)loggerInTemporaryDirectory
++ (NSString *)logDirectory
 {
+  NSString *directory = NSProcessInfo.processInfo.environment[OutputLogDirectoryEnv];
+  if (directory) {
+    return directory;
+  }
+  directory = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingPathComponent:@"tmp"];
+  if ([NSFileManager.defaultManager fileExistsAtPath:directory]) {
+    return directory;
+  }
+  return NSTemporaryDirectory();
+}
+
++ (instancetype)loggerInDefaultDirectory
+{
+  NSString *directory = self.logDirectory;
   NSString *filename = [NSString stringWithFormat:@"%@_test.log", NSProcessInfo.processInfo.globallyUniqueString];
-  NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
+  NSString *path = [directory stringByAppendingPathComponent:filename];
+
   BOOL success = [NSFileManager.defaultManager createFileAtPath:path contents:nil attributes:nil];
   NSAssert(success, @"Expected to create file at path %@, but could not", path);
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];

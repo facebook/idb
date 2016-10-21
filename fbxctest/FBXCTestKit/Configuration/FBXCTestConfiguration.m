@@ -48,16 +48,14 @@
 
   _reporter = reporter;
   _processUnderTestEnvironment = environment ?: @{};
+  _logger = FBXCTestLogger.loggerInDefaultDirectory;
+  [FBControlCoreGlobalConfiguration setDefaultLogger:_logger];
 
   return self;
 }
 
 - (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error
 {
-  // Sets the default logger for all Frameworks.
-  self.logger = [FBXCTestLogger loggerInTemporaryDirectory];
-  [FBControlCoreGlobalConfiguration setDefaultLogger:self.logger];
-
   arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
   NSUInteger nextArgument = 0;
   NSString *testFilter = nil;
