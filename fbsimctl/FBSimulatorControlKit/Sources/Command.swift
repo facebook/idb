@@ -288,7 +288,7 @@ extension Action {
     case .tap:
       return (EventName.Tap, nil)
     case .terminate(let bundleID):
-      return (EventName.Record, bundleID)
+      return (EventName.Terminate, bundleID)
     case .uninstall(let bundleID):
       return (EventName.Uninstall, bundleID)
     case .upload:
