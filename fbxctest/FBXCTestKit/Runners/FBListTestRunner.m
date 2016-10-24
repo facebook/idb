@@ -12,6 +12,8 @@
 #import <sys/types.h>
 #import <sys/stat.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestReporter.h"
 #import "FBXCTestShimConfiguration.h"
@@ -54,46 +56,38 @@
     return [[[FBXCTestError describeFormat:@"Failed to create a named pipe %@", otestQueryOutputPath] causedBy:posixError] failBool:error];
   }
 
-  NSTask *task = [[NSTask alloc] init];
-  task.launchPath = xctestPath;
-  task.arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
-  task.environment = [FBXCTestConfiguration
-    buildEnvironmentWithEntries:@{
-      @"DYLD_INSERT_LIBRARIES": otestQueryPath,
-      @"OTEST_QUERY_OUTPUT_FILE": otestQueryOutputPath,
-      @"OtestQueryBundlePath": self.configuration.testBundlePath,
-    }
-    simulator:nil];
-  task.standardOutput = [NSFileHandle fileHandleWithStandardError];
-  task.standardError = [NSFileHandle fileHandleWithStandardError];
-  [task launch];
+  NSArray<NSString *> *arguments = @[@"-XCTest", @"All", self.configuration.testBundlePath];
+  NSDictionary<NSString *, NSString *> *environment = @{
+    @"DYLD_INSERT_LIBRARIES": otestQueryPath,
+    @"OTEST_QUERY_OUTPUT_FILE": otestQueryOutputPath,
+    @"OtestQueryBundlePath": self.configuration.testBundlePath,
+  };
+
+  FBTask *task = [[[[[FBTaskBuilder
+    withLaunchPath:xctestPath]
+    withArguments:arguments]
+    withEnvironmentAdditions:environment]
+    build]
+    startAsynchronously];
 
   NSFileHandle *otestQueryOutputHandle = [NSFileHandle fileHandleForReadingAtPath:otestQueryOutputPath];
   if (otestQueryOutputHandle == nil) {
     return [[FBXCTestError describeFormat:@"Failed to open fifo for reading: %@", otestQueryOutputPath] failBool:error];
   }
-
-  FBMultiFileReader *multiReader = [FBMultiFileReader new];
   NSMutableData *queryOutput = [NSMutableData data];
+  otestQueryOutputHandle.readabilityHandler = ^(NSFileHandle *fileHandle) {
+    [queryOutput appendData:fileHandle.availableData];
+  };
 
-  if (![multiReader
-        addFileHandle:otestQueryOutputHandle
-        withConsumer:^(NSData *data) {
-          [queryOutput appendData:data];
-        }
-        error:error]) {
-    return NO;
-  }
-
-  if (![multiReader
-        readWhileBlockRuns:^{
-          [task waitUntilExit];
-        }
-        error:error]) {
-    return NO;
-  }
-
+  [task waitForCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
   [otestQueryOutputHandle closeFile];
+
+  if (!task.wasSuccessful) {
+    return [[[FBXCTestError
+      describe:@"Listing of Tests Failed"]
+      causedBy:task.error]
+      failBool:error];
+  }
 
   NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:queryOutput options:0 error:error];
   if (testNames == nil) {
@@ -108,10 +102,6 @@
     NSString *methodName = [testName substringFromIndex:slashRange.location + 1];
     [self.configuration.reporter testCaseDidStartForTestClass:className method:methodName];
     [self.configuration.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
-  }
-
-  if (task.terminationStatus != 0) {
-    return [[FBXCTestError describeFormat:@"Subprocess exited with code %d: %@ %@", task.terminationStatus, task.launchPath, task.arguments] failBool:error];
   }
 
   [self.configuration.reporter didFinishExecutingTestPlan];
