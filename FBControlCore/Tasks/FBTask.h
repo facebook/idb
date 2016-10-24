@@ -25,6 +25,8 @@ extern NSString *const FBTaskErrorDomain;
  */
 @interface FBTask : NSObject <FBTerminationHandle>
 
+#pragma mark Initializers
+
 /**
  Creates a Task with the provided configuration.
 
@@ -32,6 +34,8 @@ extern NSString *const FBTaskErrorDomain;
  @return a task.
  */
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration;
+
+#pragma mark Starting a Task
 
 /**
  Runs the reciever, returning when the Task has completed or when the timeout is hit.
@@ -55,6 +59,18 @@ extern NSString *const FBTaskErrorDomain;
  @return the reciever, for chaining.
  */
 - (instancetype)startAsynchronously;
+
+#pragma mark Awaiting Completion
+
+/**
+ Runs the reciever, returning when the Task has completed or when the timeout is hit.
+
+ @param timeout the the maximum time to evaluate the task.
+ @return the reciever, for chaining.
+ */
+- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+#pragma mark Accessors
 
 /**
  Returns the Process Identifier of the Launched Process.

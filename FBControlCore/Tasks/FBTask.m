@@ -410,7 +410,15 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (instancetype)startSynchronouslyWithTimeout:(NSTimeInterval)timeout
 {
   [self launchWithTerminationHandler:nil];
-  BOOL completed = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+  [self waitForCompletionWithTimeout:timeout error:nil];
+  return self;
+}
+
+#pragma mark Awaiting Completion
+
+- (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+{
+  BOOL completed = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
     return !self.process.isRunning;
   }];
 
@@ -422,7 +430,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
       timeout
     ];
   }
-  return [self terminateWithErrorMessage:errorMessage];
+  [self terminateWithErrorMessage:errorMessage];
+
+  if (self.error && error) {
+    *error = self.error;
+  }
+  return completed;
 }
 
 #pragma mark Accessors
