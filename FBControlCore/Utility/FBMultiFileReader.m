@@ -18,7 +18,7 @@
 
 @interface FBMultiFileReader ()
 
-@property (nonatomic, strong) NSMutableDictionary<NSNumber *, void (^)(NSData *)> *consumers;
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, id<FBFileDataConsumer>> *consumers;
 
 @end
 
@@ -36,7 +36,7 @@
   return self;
 }
 
-- (BOOL)addFileHandle:(NSFileHandle *)handle withConsumer:(void (^)(NSData *data))consumer error:(NSError **)error
+- (BOOL)addFileHandle:(NSFileHandle *)handle withConsumer:(id<FBFileDataConsumer>)consumer error:(NSError **)error;
 {
   NSNumber *fileDescriptor = @(handle.fileDescriptor);
   if (self.consumers[fileDescriptor] != nil) {
@@ -85,8 +85,8 @@
         const void *buffer;
         size_t size;
         __unused dispatch_data_t map = dispatch_data_create_map(data, &buffer, &size);
-        void (^consumer)(NSData *) = self.consumers[fileDescriptor];
-        consumer([NSData dataWithBytes:buffer length:size]);
+        id<FBFileDataConsumer> consumer = self.consumers[fileDescriptor];
+        [consumer consumeData:[NSData dataWithBytes:buffer length:size]];
       }
     });
   }

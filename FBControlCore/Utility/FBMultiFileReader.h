@@ -2,6 +2,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBFileDataConsumer.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -17,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs in registering consumers.
  @return YES if successful, NO otherwisse.
  */
-- (BOOL)addFileHandle:(NSFileHandle *)handle withConsumer:(void (^)(NSData *data))consumer error:(NSError **)error;
+- (BOOL)addFileHandle:(NSFileHandle *)handle withConsumer:(id<FBFileDataConsumer>)consumer error:(NSError **)error;
 
 /**
  Reads from all file handeles, until the provided block returns.

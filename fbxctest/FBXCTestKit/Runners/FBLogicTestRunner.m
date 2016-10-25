@@ -112,24 +112,14 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     }
     [self.configuration.reporter handleExternalEvent:event];
   }];
-  if (![multiReader
-        addFileHandle:otestShimOutputHandle
-        withConsumer:^(NSData *data) {
-          [otestLineReader consumeData:data];
-        }
-        error:error]) {
+  if (![multiReader addFileHandle:otestShimOutputHandle withConsumer:otestLineReader error:error]) {
     return NO;
   }
 
   FBLineReader *testOutputLineReader = [FBLineReader lineReaderWithConsumer:^(NSString *line){
     [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
-  if (![multiReader
-        addFileHandle:testOutputPipe.fileHandleForReading
-        withConsumer:^(NSData *data) {
-          [testOutputLineReader consumeData:data];
-        }
-        error:error]) {
+  if (![multiReader addFileHandle:testOutputPipe.fileHandleForReading withConsumer:testOutputLineReader error:error]) {
     return NO;
   }
 

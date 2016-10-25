@@ -2,12 +2,14 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBMultiFileReader.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Reader of Text Data, calling the callback when a full line is available.
  */
-@interface FBLineReader : NSObject
+@interface FBLineReader : NSObject <FBFileDataConsumer>
 
 /**
  Creates a Consumer
@@ -16,18 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new Line Reader.
  */
 + (instancetype)lineReaderWithConsumer:(void (^)(NSString *))consumer;
-
-/**
- Consumes the provided text data.
-
- @param data the data to consume.
- */
-- (void)consumeData:(NSData *)data;
-
-/**
- Consumes an EOF.
- */
-- (void)consumeEndOfFile;
 
 @end
 
