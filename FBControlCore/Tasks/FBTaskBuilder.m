@@ -122,16 +122,26 @@
   return self;
 }
 
+- (instancetype)withStdOutConsumer:(id<FBFileDataConsumer>)consumer
+{
+  self.stdOut = consumer;
+  return self;
+}
+
+- (instancetype)withStdErrConsumer:(id<FBFileDataConsumer>)consumer
+{
+  self.stdErr = consumer;
+  return self;
+}
+
 - (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
 {
-  self.stdOut = [FBLineReader lineReaderWithConsumer:reader];
-  return self;
+  return [self withStdOutConsumer:[FBLineReader lineReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
 {
-  self.stdErr = [FBLineReader lineReaderWithConsumer:reader];
-  return self;
+  return [self withStdErrConsumer:[FBLineReader lineReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger

@@ -42,13 +42,13 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
-@interface FBTaskOutput_LineReader : FBTaskOutput_Memory
+@interface FBTaskOutput_Consumer : FBTaskOutput_Memory
 
 @property (nonatomic, strong, nullable, readwrite) FBLineReader *reader;
 
 @end
 
-@interface FBTaskOutput_Logger : FBTaskOutput_LineReader
+@interface FBTaskOutput_Logger : FBTaskOutput_Consumer
 
 @end
 
@@ -171,7 +171,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
-@implementation FBTaskOutput_LineReader
+@implementation FBTaskOutput_Consumer
 
 - (instancetype)initWithReader:(FBLineReader *)reader
 {
@@ -353,8 +353,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   if ([output isKindOfClass:NSMutableData.class]) {
     return [[FBTaskOutput_Memory alloc] initWithData:output];
   }
-  if ([output isKindOfClass:FBLineReader.class]) {
-    return [[FBTaskOutput_LineReader alloc] initWithReader:output];
+  if ([output conformsToProtocol:@protocol(FBFileDataConsumer)]) {
+    return [[FBTaskOutput_Consumer alloc] initWithReader:output];
   }
   if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
     return [[FBTaskOutput_Logger alloc] initWithLogger:output];

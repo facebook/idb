@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
+@protocol FBFileDataConsumer;
 
 /**
  An interface to building FBTask instances
@@ -104,6 +105,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return the reciever, for chaining.
  */
 - (instancetype)withStdErrToDevNull;
+
+/**
+ Redirects stdout data to the consumer.
+
+ @param consumer the consumer to consume the data.
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdOutConsumer:(id<FBFileDataConsumer>)consumer;
+
+/**
+ Redirects stderr data to the consumer.
+
+ @param consumer the consumer to consume the data.
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdErrConsumer:(id<FBFileDataConsumer>)consumer;
 
 /**
  Redirects stdout to the reader block, on a per line basis.
