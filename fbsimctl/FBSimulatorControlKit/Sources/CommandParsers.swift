@@ -10,6 +10,7 @@
 import Foundation
 import FBControlCore
 import FBSimulatorControl
+import FBDeviceControl
 
 extension Parser {
   public static var ofInt: Parser<Int> {
@@ -558,25 +559,68 @@ extension Action : Parsable {
       .sectionize("launch(app)", "Action: Launch (App)", "")
   }
 
-  static var launchXCTestParser: Parser<Action> {
+  static var launchXCTestSimulatorConfigurationParser: Parser<FBTestLaunchConfiguration> {
     let optionalTimeoutFlag = Parser<Double>
       .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble, "")
       .optional()
 
-    let cmdParser = Parser<(Double?, String, FBApplicationLaunchConfiguration)>
+    let parser = Parser.ofThreeSequenced(
+      optionalTimeoutFlag,
+      Parser<Any>.ofDirectory,
+      FBProcessLaunchConfigurationParsers.appLaunchParser
+    )
+
+    return parser
+      .fmap{ (timeout, bundle, appLaunch) in
+        var conf =
+          FBTestLaunchConfiguration()
+            .withTestBundlePath(bundle)
+            .withApplicationLaunchConfiguration(appLaunch)
+
+        if (timeout != nil) {
+          conf = conf.withTimeout(timeout!)
+        }
+        return conf
+      }
+  }
+
+  static var launchXCTestDeviceConfigurationParser: Parser<FBTestLaunchConfiguration> {
+    let optionalTimeoutFlag = Parser<Double>
+      .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble, "")
+      .optional()
+
+    let parser = Parser.ofThreeSequenced(
+      optionalTimeoutFlag,
+      Parser<Any>.ofDirectory,
+      Parser<Any>.ofDirectory
+    )
+
+    return parser
+      .fmap{ (timeout, testHostPath, testBundlePath) in
+        var conf =
+          FBTestLaunchConfiguration()
+          .withTestHostPath(testHostPath)
+          .withTestBundlePath(testBundlePath)
+
+        if (timeout != nil) {
+          conf = conf.withTimeout(timeout!)
+        }
+        return conf
+      }
+  }
+
+  static var launchXCTestParser: Parser<Action> {
+    let configurationParser = Parser<FBTestLaunchConfiguration>.alternative([
+      launchXCTestDeviceConfigurationParser,
+      launchXCTestSimulatorConfigurationParser
+      ]
+    )
+
+    return Parser
       .ofCommandWithArg(
         EventName.LaunchXCTest.rawValue,
-        Parser.ofThreeSequenced(
-          optionalTimeoutFlag,
-          Parser<Any>.ofDirectory,
-          FBProcessLaunchConfigurationParsers.appLaunchParser
-        )
-      )
-
-    return cmdParser
-      .fmap { (timeout, bundle, appLaunch) in
-        Action.launchXCTest(appLaunch, bundle, timeout)
-      }
+        configurationParser)
+      .fmap { Action.launchXCTest($0) }
       .sectionize("launch_xctest", "Action: Launch XCTest", "")
   }
 

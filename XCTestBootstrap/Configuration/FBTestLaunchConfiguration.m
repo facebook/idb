@@ -39,6 +39,18 @@
   return self;
 }
 
+- (instancetype)withTestHostPath:(NSString *)testHostPath
+{
+  _testHostPath = testHostPath;
+  return self;
+}
+
+- (instancetype)withTimeout:(NSTimeInterval)timeout
+{
+  _timeout = timeout;
+  return self;
+}
+
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -88,6 +100,17 @@
 - (NSString *)debugDescription
 {
   return [self description];
+}
+
+#pragma mark FBJSONSerializable
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    @"test_bundle_path" : self.testBundlePath,
+    @"test_app_bundle_id" : self.applicationLaunchConfiguration.bundleID,
+    @"test_host_path" : self.testHostPath
+  };
 }
 
 

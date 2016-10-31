@@ -92,12 +92,12 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
         interaction.launchApplication(launch)
       }
-    case .launchXCTest(let launch, let bundlePath, let timeout):
-      return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(launch)) { interaction in
-        let testLaunchConfiguration = FBTestLaunchConfiguration().withTestBundlePath(bundlePath).withApplicationLaunchConfiguration(launch).withUITesting(true)
-        interaction.startTest(with: testLaunchConfiguration)
-        if let timeout = timeout {
-            interaction.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: timeout)
+    case .launchXCTest(let configuration):
+      return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(configuration)) { interaction in
+        interaction.startTest(with: configuration)
+
+        if configuration.timeout > 0 {
+            interaction.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: configuration.timeout)
         }
       }
     case .listApps:

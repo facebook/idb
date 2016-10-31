@@ -19,13 +19,19 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value object with the information required to launch a XCTest.
  */
-@interface FBTestLaunchConfiguration : NSObject <NSCopying, FBDebugDescribeable>
+@interface FBTestLaunchConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /*! Configuration used to launch test runner application. */
-@property (nonatomic, copy, readonly) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
+@property (nonatomic, copy, readonly, nullable) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
 
 /*! Path to XCTest bundle used for testing */
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
+
+/*! Path to host app */
+@property (nonatomic, copy, readonly, nullable) NSString *testHostPath;
+
+/*! Timeout */
+@property (nonatomic, assign, readonly) NSTimeInterval timeout;
 
 /*! Determines whether should initialize for UITesting */
 @property (nonatomic, assign, readonly) BOOL shouldInitializeUITesting;
@@ -45,6 +51,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withTestBundlePath:(NSString *)testBundlePath;
+
+/**
+ Adds timeout.
+
+ @param timeout timeout
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTimeout:(NSTimeInterval)timeout;
+
+/**
+ Adds test host path.
+
+ @param testHostPath test host path
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestHostPath:(NSString *)testHostPath;
 
 /**
  Determines whether should initialize for UITesting
