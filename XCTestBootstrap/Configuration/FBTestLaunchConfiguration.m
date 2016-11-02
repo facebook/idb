@@ -86,9 +86,10 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-          @"Scale %@ | AppConfig %@ | UITesting %d",
+          @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d",
           self.testBundlePath,
           self.applicationLaunchConfiguration,
+          self.testHostPath,
           self.shouldInitializeUITesting
           ];
 }
@@ -105,11 +106,11 @@
 
 #pragma mark FBJSONSerializable
 
-- (id)jsonSerializableRepresentation
+- (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
     @"test_bundle_path" : self.testBundlePath,
-    @"test_app_bundle_id" : self.applicationLaunchConfiguration.bundleID,
+    @"test_app_bundle_id" : self.applicationLaunchConfiguration,
     @"test_host_path" : self.testHostPath
   };
 }

@@ -24,6 +24,8 @@
 		3E1499491D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1499471D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m */; };
 		3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14994D1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */; };
+		84415A171DB00C9400E018F3 /* FBDeviceTestRunStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = 84415A161DB00C9400E018F3 /* FBDeviceTestRunStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		848E26661DB6685E00928BFA /* FBDeviceTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = 848E26651DB6685E00928BFA /* FBDeviceTestRunStrategy.m */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */; };
@@ -588,6 +590,8 @@
 		3E1499471D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterTestCase.m; sourceTree = "<group>"; };
 		3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerTestReporterTestCaseFailure.h; sourceTree = "<group>"; };
 		3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterTestCaseFailure.m; sourceTree = "<group>"; };
+		84415A161DB00C9400E018F3 /* FBDeviceTestRunStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBDeviceTestRunStrategy.h; path = Strategies/FBDeviceTestRunStrategy.h; sourceTree = "<group>"; };
+		848E26651DB6685E00928BFA /* FBDeviceTestRunStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBDeviceTestRunStrategy.m; path = Strategies/FBDeviceTestRunStrategy.m; sourceTree = "<group>"; };
 		877123F21BDA797800530B1E /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
 		AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessTerminationStrategy.h; sourceTree = "<group>"; };
 		AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessTerminationStrategy.m; sourceTree = "<group>"; };
@@ -1264,6 +1268,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		84415A151DB00C1F00E018F3 /* Strategies */ = {
+			isa = PBXGroup;
+			children = (
+				84415A161DB00C9400E018F3 /* FBDeviceTestRunStrategy.h */,
+				848E26651DB6685E00928BFA /* FBDeviceTestRunStrategy.m */,
+			);
+			name = Strategies;
+			sourceTree = "<group>";
+		};
 		AA017F4A1BD7784700F45E9D /* Shims */ = {
 			isa = PBXGroup;
 			children = (
@@ -1878,6 +1891,7 @@
 				AAC8B22F1CEC51120034A865 /* FBDeviceControl-Info.plist */,
 				AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */,
 				AAC8B2441CEC51520034A865 /* Management */,
+				84415A151DB00C1F00E018F3 /* Strategies */,
 				AAC8B24C1CEC51520034A865 /* Utility */,
 			);
 			path = FBDeviceControl;
@@ -2421,6 +2435,7 @@
 				AAC8B2511CEC51520034A865 /* FBDevice.h in Headers */,
 				AAC8B22E1CEC51120034A865 /* FBDeviceControl.h in Headers */,
 				AAC8B2571CEC51520034A865 /* FBDeviceControlError.h in Headers */,
+				84415A171DB00C9400E018F3 /* FBDeviceTestRunStrategy.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3034,6 +3049,7 @@
 				AAC8B2581CEC51520034A865 /* FBDeviceControlError.m in Sources */,
 				AA682B1B1CEC9E8B009B6ECA /* FBDeviceSet.m in Sources */,
 				AAC8B2521CEC51520034A865 /* FBDevice.m in Sources */,
+				848E26661DB6685E00928BFA /* FBDeviceTestRunStrategy.m in Sources */,
 				AAC8B2541CEC51520034A865 /* FBiOSDeviceOperator.m in Sources */,
 				AA682B211CECD49B009B6ECA /* FBAMDevice.m in Sources */,
 				AAC8B25A1CEC51520034A865 /* FBDeviceControlFrameworkLoader.m in Sources */,
