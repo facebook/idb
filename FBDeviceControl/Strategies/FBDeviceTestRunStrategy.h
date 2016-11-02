@@ -10,9 +10,6 @@
 #import <Foundation/Foundation.h>
 
 @class FBDevice;
-@protocol FBDeviceOperator;
-@protocol FBControlCoreLogger;
-@class FBApplicationLaunchConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,7 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)strategyWithDevice:(FBDevice *)device
                       testHostPath:(nullable NSString *)testHostPath
-                    testBundlePath:(nullable NSString *)testBundlePath;
+                    testBundlePath:(nullable NSString *)testBundlePath
+                       withTimeout:(NSTimeInterval)timeout;
 
 - (BOOL)startWithError:(NSError **)error;
 

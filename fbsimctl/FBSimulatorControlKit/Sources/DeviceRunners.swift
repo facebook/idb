@@ -21,12 +21,17 @@ struct DeviceActionRunner : Runner {
     switch (action) {
       case .launchXCTest(let configuration):
         do {
-          let strategy = FBDeviceTestRunStrategy(device: device, testHostPath: configuration.testHostPath, testBundlePath: configuration.testBundlePath);
+          let strategy = FBDeviceTestRunStrategy(
+            device: device,
+            testHostPath: configuration.testHostPath,
+            testBundlePath: configuration.testBundlePath,
+            withTimeout: configuration.timeout
+          )
           try strategy.start();
         } catch let error as NSError {
-          return CommandResult.failure(error.description);
+          return CommandResult.failure(error.description)
         }
-        return CommandResult.success(configuration.description);
+        return CommandResult.success(configuration.description)
       default:
         return DeviceActionRunner.makeRunner(context).run()
     }

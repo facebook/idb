@@ -15,6 +15,7 @@
 @property (nonatomic, copy, readonly) NSString *testHostPath;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 @property (nonatomic, copy, readonly) NSString *filePath;
+@property (nonatomic, assign, readonly) NSTimeInterval timeout;
 
 @end
 
@@ -23,17 +24,24 @@
 + (instancetype)strategyWithDevice:(FBDevice *)device
                       testHostPath:(nullable NSString *)testHostPath
                     testBundlePath:(nullable NSString *)testBundlePath
+                       withTimeout:(NSTimeInterval)timeout
 {
-  return [[self alloc] initWithDevice:device testHostPath:testHostPath testBundlePath:testBundlePath];
+  return [[self alloc] initWithDevice:device testHostPath:testHostPath testBundlePath:testBundlePath withTimeout:timeout];
 }
 
 - (instancetype)initWithDevice:(FBDevice *)device
                   testHostPath:(nullable NSString *)testHostPath
                 testBundlePath:(nullable NSString *)testBundlePath
+                   withTimeout:(NSTimeInterval)timeout
 {
+  if (timeout <= 0) {
+    timeout = FBControlCoreGlobalConfiguration.slowTimeout;
+  }
+
   _device = device;
   _testHostPath = testHostPath;
   _testBundlePath = testBundlePath;
+  _timeout = timeout;
 
   return self;
 }
@@ -66,16 +74,46 @@
   return YES;
 }
 
+- (FBTask *)runXCodeBuild
+{
+  NSMutableArray<NSString *> *arguments = [[NSMutableArray alloc] init];
+
+  [arguments addObject: @"xcodebuild"];
+  [arguments addObject: @"test-without-building"];
+  [arguments addObject: @"-xctestrun"];
+  [arguments addObject: self.filePath];
+  [arguments addObject: @"-destination"];
+  [arguments addObject: [NSString stringWithFormat:@"id=%@", self.device.udid]];
+
+
+  FBTaskBuilder *taskBuilder = [FBTaskBuilder withLaunchPath:@"/usr/bin/xcrun" arguments: arguments];
+
+  taskBuilder = [taskBuilder withStdOutToLogger:self.device.logger];
+  taskBuilder = [taskBuilder withStdErrToLogger:self.device.logger];
+
+  FBTask *task = [taskBuilder build];
+
+  [task startSynchronouslyWithTimeout:self.timeout];
+  return task;
+}
+
 - (BOOL)startWithError:(NSError **)error
 {
   NSParameterAssert(self.device);
   NSParameterAssert(self.testHostPath);
   NSParameterAssert(self.testBundlePath);
+  NSParameterAssert(self.timeout > 0);
 
   if (![self createXCTestRunFileWithError:error]) {
     if (error) {
       [[[[[FBDeviceControlError alloc] init] describe:@"Failed to create xctestrun file"] causedBy:*error] fail:error];
     }
+    return NO;
+  }
+
+  FBTask *task = [self runXCodeBuild];
+  if (![task wasSuccessful]) {
+    [[[[[FBDeviceControlError alloc] init] describe:@"xcodebuild failed"] causedBy: [task error]] fail:error];
     return NO;
   }
 
