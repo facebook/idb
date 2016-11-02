@@ -27,6 +27,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)startWithError:(NSError **)error;
 
+- (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)buildXCTestRunProperties;
+
 @end
 
 NS_ASSUME_NONNULL_END

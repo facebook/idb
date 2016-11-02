@@ -14,11 +14,11 @@
 @property (nonatomic, strong, readonly) FBDevice *device;
 @property (nonatomic, copy, readonly) NSString *testHostPath;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
+@property (nonatomic, copy, readonly) NSString *filePath;
 
 @end
 
 @implementation FBDeviceTestRunStrategy
-
 
 + (instancetype)strategyWithDevice:(FBDevice *)device
                       testHostPath:(nullable NSString *)testHostPath
@@ -38,11 +38,46 @@
   return self;
 }
 
+- (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)buildXCTestRunProperties
+{
+  return @{
+    @"StubBundleId" : @{
+        @"TestHostPath" : self.testHostPath,
+        @"TestBundlePath" : self.testBundlePath,
+        @"UseUITargetAppProvidedByTests" : @YES,
+        @"IsUITestBundle" : @YES
+    }
+  };
+}
+
+- (BOOL)createXCTestRunFileWithError:(NSError **)error
+{
+  NSString *tmp = NSTemporaryDirectory();
+  NSString *file_name = [[[NSProcessInfo processInfo] globallyUniqueString] stringByAppendingPathExtension:@"xctestrun"];
+  _filePath = [tmp stringByAppendingPathComponent:file_name];
+
+  NSDictionary *testRunProperties = [self buildXCTestRunProperties];
+
+  if (![testRunProperties writeToFile:self.filePath atomically:false]) {
+    [[[[FBDeviceControlError alloc] init] describeFormat:@"Failed to write to file %@", self.filePath] fail:error];
+    return NO;
+  }
+
+  return YES;
+}
+
 - (BOOL)startWithError:(NSError **)error
 {
   NSParameterAssert(self.device);
   NSParameterAssert(self.testHostPath);
   NSParameterAssert(self.testBundlePath);
+
+  if (![self createXCTestRunFileWithError:error]) {
+    if (error) {
+      [[[[[FBDeviceControlError alloc] init] describe:@"Failed to create xctestrun file"] causedBy:*error] fail:error];
+    }
+    return NO;
+  }
 
   return YES;
 }
