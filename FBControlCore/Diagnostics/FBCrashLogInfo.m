@@ -14,6 +14,7 @@
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBDiagnostic.h"
 #import "FBConcurrentCollectionOperations.h"
+#import "NSPredicate+FBControlCore.h"
 
 @implementation FBCrashLogInfo
 
@@ -137,13 +138,14 @@
 {
   NSString *basePath = self.diagnosticReportsPath;
 
-  return [FBConcurrentCollectionOperations
+  return [[FBConcurrentCollectionOperations
     filterMap:[NSFileManager.defaultManager contentsOfDirectoryAtPath:basePath error:nil]
     predicate:[FBCrashLogInfo predicateForFilesWithBasePath:basePath afterDate:date withExtension:@"crash"]
     map:^ FBCrashLogInfo * (NSString *fileName) {
       NSString *path = [basePath stringByAppendingPathComponent:fileName];
       return [FBCrashLogInfo fromCrashLogAtPath:path];
-    }];
+    }]
+    filteredArrayUsingPredicate:NSPredicate.notNullPredicate];
 }
 
 #pragma mark Predicates
