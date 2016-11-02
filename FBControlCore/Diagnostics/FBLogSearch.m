@@ -219,9 +219,13 @@
   return [[FBLogSearchPredicate_Regex alloc] initWithRegularExpression:regex];
 }
 
-+ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
++ (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
-  NSArray *substrings = json[@"substrings"];
+  if (![FBCollectionInformation isArrayHeterogeneous:json.allKeys withClass:NSString.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a dictionary<string, id>", json] fail:error];
+  }
+
+  NSArray<NSString *> *substrings = json[@"substrings"];
   if ([FBCollectionInformation isArrayHeterogeneous:substrings withClass:NSString.class]) {
     return [self substrings:substrings];
   }

@@ -152,9 +152,9 @@
     return [[FBControlCoreError describeFormat:@"%@ is not a number for 'lines'", lines] fail:error];
   }
 
-  NSDictionary *jsonMapping = json[@"mapping"];
+  NSDictionary<NSString *, NSArray *> *jsonMapping = json[@"mapping"];
   if (![FBCollectionInformation isDictionaryHeterogeneous:jsonMapping keyClass:NSString.class valueClass:NSArray.class]) {
-    return [[FBControlCoreError describeFormat:@"%@ is not a dictionary of <array, array>", jsonMapping] fail:error];
+    return [[FBControlCoreError describeFormat:@"%@ is not a dictionary of <string, array> for 'mapping'", jsonMapping] fail:error];
   }
 
   NSMutableDictionary *predicateMapping = [NSMutableDictionary dictionary];
