@@ -69,8 +69,9 @@
   if (![configuration isKindOfClass:self.class]) {
     return NO;
   }
+
   return
-  [self.testBundlePath isEqualToString:configuration.testBundlePath] &&
+  (self.testHostPath == configuration.testHostPath || [self.testHostPath isEqualToString:configuration.testHostPath]) &&
   [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration] &&
   self.shouldInitializeUITesting == configuration.shouldInitializeUITesting;
 }

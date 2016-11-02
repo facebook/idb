@@ -119,17 +119,25 @@ extension Parser {
 
   public static var ofBundleID: Parser<String> {
     let desc = PrimitiveDesc(name: "bundle-id", desc: "Bundle ID.")
-    return Parser<String>
+    return Parser<String>.single(desc) { token in
+      let components = token.components(separatedBy: CharacterSet(charactersIn: "."))
+      if components.count < 2 {
+        throw ParseError.custom("Bundle ID must contain a '.'")
+      }
+      return token
+    }
+  }
+
+  public static var ofBundleIDOrApplicationDescriptor: Parser<(String, FBApplicationDescriptor?)> {
+    return Parser<(String, FBApplicationDescriptor?)>
       .alternative([
-        Parser.ofApplication.fmap { $0.bundleID },
-        Parser<String>.single(desc) { token in
-          let components = token.components(separatedBy: CharacterSet(charactersIn: "."))
-          if components.count < 2 {
-            throw ParseError.custom("Bundle ID must contain a '.'")
-          }
-          return token
-        }
+        Parser.ofApplication.fmap { (app) -> (String, FBApplicationDescriptor?) in (app.bundleID, app) },
+        Parser.ofBundleID.fmap{ (bundleId) -> (String, FBApplicationDescriptor?) in (bundleId, nil) },
       ])
+  }
+
+  public static var ofBundleIDOrApplicationDescriptorBundleID: Parser<String> {
+    return Parser.ofBundleIDOrApplicationDescriptor.fmap{ $0.0 }
   }
 
   public static var ofDate: Parser<Date> {
@@ -484,7 +492,7 @@ extension Action : Parsable {
   static var approveParser: Parser<Action> {
     return Parser<[String]>
       .ofCommandWithArg(EventName.Approve.rawValue,
-                        Parser.manyCount(1, Parser<String>.ofBundleID))
+                        Parser.manyCount(1, Parser<String>.ofBundleIDOrApplicationDescriptorBundleID))
       .fmap { Action.approve($0) }
       .sectionize("approve", "Action: Approve", "")
   }
@@ -500,7 +508,7 @@ extension Action : Parsable {
   static var clearKeychainParser: Parser<Action> {
     return Parser<String?>
       .ofCommandWithArg(EventName.ClearKeychain.rawValue,
-                        Parser<String>.ofBundleID.optional())
+                        Parser<String>.ofBundleIDOrApplicationDescriptorBundleID.optional())
       .fmap { Action.clearKeychain($0) }
       .sectionize("clear_keychain", "Action: Clear Keychain", "")
   }
@@ -559,62 +567,33 @@ extension Action : Parsable {
       .sectionize("launch(app)", "Action: Launch (App)", "")
   }
 
-  static var launchXCTestSimulatorConfigurationParser: Parser<FBTestLaunchConfiguration> {
-    let optionalTimeoutFlag = Parser<Double>
+  static var launchXCTestParser: Parser<Action> {
+        let optionalTimeoutFlag = Parser<Double>
       .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble, "")
       .optional()
 
     let parser = Parser.ofThreeSequenced(
       optionalTimeoutFlag,
       Parser<Any>.ofDirectory,
-      FBProcessLaunchConfigurationParsers.appLaunchParser
+      FBProcessLaunchConfigurationParsers.appLaunchAndApplicationDescriptorParser
     )
 
-    return parser
-      .fmap{ (timeout, bundle, appLaunch) in
+    let configurationParser = parser
+      .fmap{ (timeout, bundle, appLaunch) -> FBTestLaunchConfiguration in
         var conf =
           FBTestLaunchConfiguration()
             .withTestBundlePath(bundle)
-            .withApplicationLaunchConfiguration(appLaunch)
+            .withApplicationLaunchConfiguration(appLaunch.0)
+
+        if let testHostPath = appLaunch.1?.path {
+          conf = conf.withTestHostPath(testHostPath)
+        }
 
         if (timeout != nil) {
           conf = conf.withTimeout(timeout!)
         }
         return conf
-      }
-  }
-
-  static var launchXCTestDeviceConfigurationParser: Parser<FBTestLaunchConfiguration> {
-    let optionalTimeoutFlag = Parser<Double>
-      .ofFlagWithArg("test-timeout", Parser<Double>.ofDouble, "")
-      .optional()
-
-    let parser = Parser.ofThreeSequenced(
-      optionalTimeoutFlag,
-      Parser<Any>.ofDirectory,
-      Parser<Any>.ofDirectory
-    )
-
-    return parser
-      .fmap{ (timeout, testHostPath, testBundlePath) in
-        var conf =
-          FBTestLaunchConfiguration()
-          .withTestHostPath(testHostPath)
-          .withTestBundlePath(testBundlePath)
-
-        if (timeout != nil) {
-          conf = conf.withTimeout(timeout!)
-        }
-        return conf
-      }
-  }
-
-  static var launchXCTestParser: Parser<Action> {
-    let configurationParser = Parser<FBTestLaunchConfiguration>.alternative([
-      launchXCTestDeviceConfigurationParser,
-      launchXCTestSimulatorConfigurationParser
-      ]
-    )
+    }
 
     return Parser
       .ofCommandWithArg(
@@ -700,7 +679,7 @@ extension Action : Parsable {
     return Parser
       .ofCommandWithArg(
         EventName.ServiceInfo.rawValue,
-        Parser<String>.ofBundleID
+        Parser<String>.ofBundleIDOrApplicationDescriptorBundleID
       )
       .fmap(Action.serviceInfo)
   }
@@ -723,14 +702,14 @@ extension Action : Parsable {
   static var terminateParser: Parser<Action> {
     return Parser<String>
       .ofCommandWithArg(EventName.Terminate.rawValue,
-                        Parser<String>.ofBundleID)
+                        Parser<String>.ofBundleIDOrApplicationDescriptorBundleID)
       .fmap { Action.terminate($0) }
   }
 
   static var uninstallParser: Parser<Action> {
     return Parser<String>
       .ofCommandWithArg(EventName.Uninstall.rawValue,
-                        Parser<String>.ofBundleID)
+                        Parser<String>.ofBundleIDOrApplicationDescriptorBundleID)
       .fmap { Action.uninstall($0) }
   }
 
@@ -754,7 +733,7 @@ extension Action : Parsable {
         EventName.WatchdogOverride.rawValue,
         Parser.ofTwoSequenced(
           Parser<Double>.ofDouble,
-          Parser.manyCount(1, Parser<String>.ofBundleID)
+          Parser.manyCount(1, Parser<String>.ofBundleIDOrApplicationDescriptorBundleID)
         )
       )
       .fmap { Action.watchdogOverride($1, $0) }
@@ -908,7 +887,7 @@ struct FBDiagnosticQueryParser {
   static var appFilesParser: Parser<FBDiagnosticQuery> {
     return Parser
       .ofTwoSequenced(
-        Parser<Any>.ofBundleID,
+        Parser<Any>.ofBundleIDOrApplicationDescriptorBundleID,
         Parser.manyCount(1, Parser<Any>.ofAny)
       )
       .fmap { (bundleID, fileNames) in
@@ -973,16 +952,24 @@ struct FBSimulatorLaunchConfigurationParser {
  applied to FBProcessLaunchConfiguration as it is a non-final class.
  */
 struct FBProcessLaunchConfigurationParsers {
-  static var appLaunchParser: Parser<FBApplicationLaunchConfiguration> {
+  static var appLaunchAndApplicationDescriptorParser: Parser<(FBApplicationLaunchConfiguration, FBApplicationDescriptor?)> {
     return Parser
       .ofThreeSequenced(
         FBProcessLaunchOptions.parser,
-        Parser<Any>.ofBundleID,
+        Parser<Any>.ofBundleIDOrApplicationDescriptor,
         self.argumentParser
       )
-      .fmap { (options, bundleID, arguments) in
-        return FBApplicationLaunchConfiguration(bundleID: bundleID, bundleName: nil, arguments: arguments, environment : [:], options: options)
+      .fmap { (options, bundleIDOrApplicationDescriptor, arguments) in
+        let (bundleId, appDescriptor) = bundleIDOrApplicationDescriptor
+        return (
+          FBApplicationLaunchConfiguration(bundleID: bundleId, bundleName: nil, arguments: arguments, environment : [:], options: options),
+          appDescriptor
+        )
       }
+  }
+
+  static var appLaunchParser: Parser<FBApplicationLaunchConfiguration> {
+    return appLaunchAndApplicationDescriptorParser.fmap{ $0.0 }
   }
 
   static var agentLaunchParser: Parser<FBAgentLaunchConfiguration> {

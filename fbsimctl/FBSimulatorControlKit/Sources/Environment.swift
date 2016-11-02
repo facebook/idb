@@ -50,10 +50,12 @@ public extension Action {
         )
       )
     case .launchXCTest(let configuration):
-      configuration.applicationLaunchConfiguration?.withEnvironmentAdditions(
+      if let appLaunchConf = configuration.applicationLaunchConfiguration?.withEnvironmentAdditions(
         Action.subprocessEnvironment(environment)
-      )
-      return .launchXCTest(configuration);
+        ) {
+        configuration.withApplicationLaunchConfiguration(appLaunchConf)
+      }
+      return .launchXCTest(configuration)
     default:
       return self
     }

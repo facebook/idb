@@ -30,11 +30,13 @@ class EnvironmentTests : XCTestCase {
 
   func testAppendsEnvironmentToXCTestLaunchConfiguration() {
     let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], options: FBProcessLaunchOptions())
-    let actual = Action.launchXCTest(launchConfig, "com.example.App", nil).appendEnvironment(testEnvironment)
-    let expected  = Action.launchXCTest(launchConfig.withEnvironmentAdditions([
+
+    let actual = Action.launchXCTest(FBTestLaunchConfiguration().withApplicationLaunchConfiguration(launchConfig)).appendEnvironment(testEnvironment)
+    let expected = Action.launchXCTest(FBTestLaunchConfiguration().withApplicationLaunchConfiguration(launchConfig.withEnvironmentAdditions([
       "FOO" : "BAR",
       "BING" : "BONG",
-    ]), "com.example.App", nil)
+    ])))
+
     XCTAssertEqual(expected, actual)
   }
 }
