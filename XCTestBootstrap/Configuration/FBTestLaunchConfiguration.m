@@ -109,9 +109,9 @@
 - (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
-    @"test_bundle_path" : self.testBundlePath,
-    @"test_app_bundle_id" : self.applicationLaunchConfiguration,
-    @"test_host_path" : self.testHostPath
+    @"test_bundle_path" : self.testBundlePath ?: NSNull.null,
+    @"test_app_bundle_id" : self.applicationLaunchConfiguration ?: NSNull.null,
+    @"test_host_path" : self.testHostPath ?: NSNull.null,
   };
 }
 
