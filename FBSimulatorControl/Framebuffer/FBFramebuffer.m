@@ -16,8 +16,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
+#import <SimulatorKit/SimDeviceFramebufferBackingStore+Removed.h>
 #import <SimulatorKit/SimDeviceFramebufferService.h>
+#import <SimulatorKit/SimDeviceFramebufferService+Removed.h>
 
 #import <IOSurface/IOSurfaceBase.h>
 
@@ -46,7 +47,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @interface FBFramebuffer ()
 
-@property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
+@property (nonatomic, strong, nullable, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBFramebufferDelegate> delegate;
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
@@ -172,7 +173,18 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 {
   self.state = FBSimulatorFramebufferStateTerminated;
   [self.framebufferService unregisterClient:self];
-  [self.framebufferService suspend];
+
+  // Only call invalidate if the selector exists.
+  if ([self.framebufferService respondsToSelector:@selector(invalidate)]) {
+    // The call to this method has been dropped in Xcode 8.1, but exists in Xcode 8.0
+    // Don't call it on Xcode 8.1
+    if ([FBControlCoreGlobalConfiguration.xcodeVersionNumber isLessThan:[NSDecimalNumber decimalNumberWithString:@"8.1"]]) {
+      [self.framebufferService invalidate];
+    }
+  }
+
+  // Release the Service by removing the reference.
+  _framebufferService = nil;
 }
 
 #pragma mark Private

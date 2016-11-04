@@ -10,6 +10,9 @@
 
 @protocol OS_dispatch_queue;
 
+/**
+ Removed in Xcode 8.1
+ */
 @interface SimDeviceFramebufferBackingStore : NSObject
 {
     unsigned int _port;

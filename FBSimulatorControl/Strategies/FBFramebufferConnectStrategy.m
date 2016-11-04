@@ -14,6 +14,7 @@
 #import <CoreSimulator/SimDeviceType.h>
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
+#import <SimulatorKit/SimDeviceFramebufferService+Removed.h>
 
 #import <objc/runtime.h>
 

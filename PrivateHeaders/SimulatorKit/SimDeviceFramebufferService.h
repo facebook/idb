@@ -5,50 +5,47 @@
 //
 
 #import <objc/NSObject.h>
-#import <SimulatorKit/CDStructures.h>
 
-@class NSMachPort, NSMapTable, SimDeviceFramebufferBackingStore;
-@protocol OS_dispatch_queue, OS_dispatch_source;
+#import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
+#import <SimulatorKit/SimDisplayDamageRectangleDelegate-Protocol.h>
+#import <SimulatorKit/SimDisplayIOSurfaceRenderableDelegate-Protocol.h>
+#import <SimulatorKit/SimDisplayRotationAngleDelegate-Protocol.h>
 
-@interface SimDeviceFramebufferService : NSObject
+@class NSMapTable, NSString, NSUUID, SimDevice;
+@protocol OS_dispatch_queue;
+
+@interface SimDeviceFramebufferService : NSObject <SimDeviceIOPortConsumer, SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDisplayRotationAngleDelegate>
 {
-    SimDeviceFramebufferBackingStore *_framebufferBackingStore;
-    NSObject<OS_dispatch_source> *_receiveSource;
-    NSObject<OS_dispatch_queue> *_receiveQueue;
+    BOOL _consumerAttached;
+    int _displayClass;
+    SimDevice *_device;
+    NSString *_consumerIdentifier;
+    NSUUID *_consumerUUID;
     NSObject<OS_dispatch_queue> *_executionQueue;
     NSMapTable *_clientsToCallbackQueue;
-    struct CGSize _requestedDeviceDimensions;
-    struct CGSize _requestedScaledDimensions;
-    BOOL _haveReceivedAFullFlush;
-    BOOL _alwaysFlushEntireFramebuffer;
-    NSMachPort *_port;
 }
 
-+ (id)framebufferServiceWithPort:(id)arg1 deviceDimensions:(struct CGSize)arg2 scaledDimensions:(struct CGSize)arg3 error:(id *)arg4;
-+ (id)framebufferServiceWithName:(id)arg1 device:(id)arg2 deviceDimensions:(struct CGSize)arg3 scaledDimensions:(struct CGSize)arg4 error:(id *)arg5;
++ (id)framebufferServiceWithName:(id)arg1 device:(id)arg2 error:(id *)arg3;
 + (id)tvOutFramebufferServiceForDevice:(id)arg1 error:(id *)arg2;
 + (id)mainScreenFramebufferServiceForDevice:(id)arg1 error:(id *)arg2;
-@property (readonly, nonatomic) BOOL alwaysFlushEntireFramebuffer;
-@property (retain, nonatomic) NSMachPort *port;
-@property(readonly, nonatomic) NSObject<OS_dispatch_queue> *executionQueue; // @synthesize executionQueue=_executionQueue;
++ (id)portForDisplayClass:(int)arg1 io:(id)arg2;
+@property (retain, nonatomic) NSMapTable *clientsToCallbackQueue;
+@property (retain, nonatomic) NSObject<OS_dispatch_queue> *executionQueue;
+@property (nonatomic, assign) int displayClass; // @synthesize displayClass=_displayClass;
+@property (retain, nonatomic) NSUUID *consumerUUID;
+@property (copy, nonatomic) NSString *consumerIdentifier;
+@property (nonatomic, assign) BOOL consumerAttached; // @synthesize consumerAttached=_consumerAttached;
+@property (nonatomic, weak) SimDevice *device; // @synthesize device=_device;
+- (void)didReceiveDamageRect:(struct CGRect)arg1;
+- (void)didChangeIOSurface:(id)arg1;
+- (void)didChangeDisplayAngle:(double)arg1;
 - (void)requestDeviceDimensions:(struct CGSize)arg1 scaledDimensions:(struct CGSize)arg2;
-- (id)_ON_EXECUTION_QUEUE_framebufferBackingStoreCreatingIfNeededWithDimensions:(struct CGSize)arg1;
-- (void)_ON_EXECUTION_QUEUE_teardownFramebufferBackingStore;
-- (void)_ON_RECEIVE_QUEUE_didCancelReceiveSource;
-- (void)_ON_RECEIVE_QUEUE_processMachMessage:(void *)arg1;
-- (BOOL)_ON_RECEIVE_QUEUE_sendReplyToRenderServer:(struct PurpleFBMessage *)arg1 error:(id *)arg2;
-- (void)_ON_RECEIVE_QUEUE_processMachMessages;
-- (void)_ON_EXECUTION_QUEUE_suspend;
-- (void)suspend;
 - (void)resume;
-- (void)_sendErrorToClients:(id)arg1;
 - (void)_ON_EXECUTION_QUEUE_sendSetIOSurfaceToClients:(struct __IOSurface *)arg1;
-- (id)_ON_EXECUTION_QUEUE_callbackQueueForClient:(id)arg1;
 - (void)unregisterClient:(id)arg1;
 - (void)registerClient:(id)arg1 onQueue:(id)arg2;
-- (void)assertOnExecutionQueue;
 - (void)invalidate;
-- (id)initWithPort:(id)arg1 receiveSource:(id)arg2 receiveQueue:(id)arg3 deviceDimensions:(struct CGSize)arg4 scaledDimensions:(struct CGSize)arg5;
+- (void)dealloc;
 
 @end
 

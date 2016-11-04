@@ -14,7 +14,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <SimulatorKit/SimDeviceFramebufferBackingStore.h>
+#import <SimulatorKit/SimDeviceFramebufferBackingStore+Removed.h>
 
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferDelegate.h"
