@@ -33,7 +33,13 @@
   if (success) {
     return;
   }
-  [logger.error logFormat:@"Failed to private frameworks for %@ with error %@", self.loadingFrameworkName, error];
+  NSString *message = [NSString stringWithFormat:@"Failed to private frameworks for %@ with error %@", self.loadingFrameworkName, error];
+
+  // Log the message.
+  [logger.error log:message];
+  // Assertions give a better message in the crash report.
+  NSAssert(NO, message);
+  // However if assertions are compiled out, then we still need to abort.
   abort();
 }
 
