@@ -353,7 +353,7 @@
   }
 
   // Expect the launchd_sim process to be updated.
-  if (![self launchdSimWithAllRequiredProcesses:&innerError]) {
+  if (![self launchdSimPresentWithAllRequiredServices:&innerError]) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
@@ -369,7 +369,7 @@
   return nil;
 }
 
-- (FBProcessInfo *)launchdSimWithAllRequiredProcesses:(NSError **)error
+- (FBProcessInfo *)launchdSimPresentWithAllRequiredServices:(NSError **)error
 {
   FBSimulatorProcessFetcher *processFetcher = self.simulator.processFetcher;
   FBProcessInfo *launchdProcess = [processFetcher launchdProcessForSimDevice:self.simulator.device];
@@ -381,7 +381,12 @@
   }
   [self.simulator.eventSink simulatorDidLaunch:launchdProcess];
 
-  // Waitng for all required services to start
+  // Return early if we're not awaiting services.
+  if ((self.configuration.options & FBSimulatorBootOptionsAwaitServices) != FBSimulatorBootOptionsAwaitServices) {
+    return launchdProcess;
+  }
+
+  // Now wait for the services.
   NSSet<NSString *> *requiredServiceNames = self.simulator.requiredLaunchdServicesToVerifyBooted;
   BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
     NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];

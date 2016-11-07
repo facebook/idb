@@ -30,7 +30,7 @@
 
 - (instancetype)init
 {
-  return [self initWithOptions:0 scale:nil localizationOverride:nil framebuffer:nil];
+  return [self initWithOptions:FBSimulatorBootOptionsAwaitServices scale:nil localizationOverride:nil framebuffer:nil];
 }
 
 - (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(id<FBSimulatorScale>)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
