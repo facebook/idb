@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from util import (FBSimctl, Simulator, WebServer, Defaults, Fixtures)
+from util import (FBSimctl, Simulator, WebServer, Defaults, Fixtures, log)
 import argparse
 import base64
 import contextlib
@@ -320,29 +320,24 @@ class SuiteBuilder:
         self.name_filter = name_filter
         self.loader = unittest.defaultTestLoader
 
-    def _filter_methods(self, methods):
+    def _filter_methods(self, cls, methods):
+        log.info('All Tests for {} {}'.format(cls, methods))
         if not self.name_filter:
             return methods
-        return [method for method in methods if self.name_filter.lower() in method.lower()]
+        filtered = [method for method in methods if self.name_filter.lower() in method.lower()]
+        log.info('Filtered Tests for {}'.format(cls, filtered))
+        return filtered
 
     def _get_base_methods(self):
         return self._filter_methods(
+            FBSimctlTestCase,
             self.loader.getTestCaseNames(FBSimctlTestCase)
         )
 
-    def _get_webserver_methods(self):
+    def _get_extended_methods(self, cls):
         return self._filter_methods(
-            set(self.loader.getTestCaseNames(WebserverSimulatorTestCase)) - set(self._get_base_methods()),
-        )
-
-    def _get_single_simulator_methods(self):
-        return self._filter_methods(
-            set(self.loader.getTestCaseNames(SingleSimulatorTestCase)) - set(self._get_base_methods()),
-        )
-
-    def _get_multiple_simulator_methods(self):
-        return self._filter_methods(
-            set(self.loader.getTestCaseNames(MultipleSimulatorTestCase)) - set(self._get_base_methods()),
+            cls,
+            set(self.loader.getTestCaseNames(cls)) - set(self._get_base_methods()),
         )
 
     def build(self):
@@ -364,7 +359,7 @@ class SuiteBuilder:
                 fbsimctl_path=self.fbsimctl_path,
                 device_type=device_type,
             )
-            for method_name in self._get_single_simulator_methods()
+            for method_name in self._get_extended_methods(SingleSimulatorTestCase)
             for device_type in self.device_types
         ])
         # Only run per-Webserver-Type tests against a custom set.
@@ -374,7 +369,7 @@ class SuiteBuilder:
                 fbsimctl_path=self.fbsimctl_path,
                 port=8090,
             )
-            for method_name in self._get_webserver_methods()
+            for method_name in self._get_extended_methods(WebserverSimulatorTestCase)
         ])
         # Only run multiple-Simulator tests against a custom set.
         suite.addTests([
@@ -383,7 +378,7 @@ class SuiteBuilder:
                 fbsimctl_path=self.fbsimctl_path,
             )
             for method_name
-            in self._get_multiple_simulator_methods()
+            in self._get_extended_methods(MultipleSimulatorTestCase)
         ])
         return suite
 
