@@ -9,19 +9,7 @@
 #import <CoreSimulator/CDStructures.h>
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 
-@class NSArray;
-@class NSDictionary;
-@class NSMachPort;
-@class NSMutableArray;
-@class NSMutableDictionary;
-@class NSString;
-@class NSUUID;
-@class SimDeviceIO;
-@class SimDeviceNotificationManager;
-@class SimDevicePasteboard;
-@class SimDeviceSet;
-@class SimDeviceType;
-@class SimRuntime;
+@class NSArray, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceIO, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime;
 @protocol OS_dispatch_queue;
 
 @interface SimDevice : NSObject <SimDeviceNotifier>
@@ -59,7 +47,7 @@
 @property (retain, nonatomic) NSMutableDictionary *registeredServices;
 @property (retain, nonatomic) NSObject<OS_dispatch_queue> *bootstrapQueue;
 @property (retain, nonatomic) SimDeviceNotificationManager *notificationManager;
-@property (weak, nonatomic) SimDeviceSet *deviceSet; // @synthesize deviceSet=_deviceSet;
+@property (nonatomic, weak) SimDeviceSet *deviceSet;
 @property (retain, nonatomic) SimDeviceIO *io;
 @property (retain, nonatomic) SimDevicePasteboard *pasteboard;
 @property (copy, nonatomic) NSUUID *UDID;
@@ -73,7 +61,7 @@
 - (BOOL)darwinNotificationSetState:(unsigned long long)arg1 name:(id)arg2 error:(id *)arg3;
 - (BOOL)darwinNotificationGetState:(unsigned long long *)arg1 name:(id)arg2 error:(id *)arg3;
 - (BOOL)postDarwinNotification:(id)arg1 error:(id *)arg2;
-- (void)terminateApplicationWithID:(id)arg1 error:(id *)arg2;
+- (BOOL)terminateApplicationWithID:(id)arg1 error:(id *)arg2;
 - (int)launchApplicationWithID:(id)arg1 options:(id)arg2 error:(id *)arg3;
 - (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
 - (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;

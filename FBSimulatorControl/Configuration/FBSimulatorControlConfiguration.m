@@ -11,6 +11,7 @@
 
 #import <CoreSimulator/CDStructures.h>
 #import <CoreSimulator/SimDeviceSet.h>
+#import <CoreSimulator/SimDeviceSet+Removed.h>
 
 #import <FBControlCore/FBControlCore.h>
 

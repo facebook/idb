@@ -6,8 +6,7 @@
 
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 
-@class NSArray;
-@class NSObject;
+@class NSArray, NSObject;
 @protocol OS_dispatch_queue;
 
 @protocol SimPasteboard <SimDeviceNotifier>

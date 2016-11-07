@@ -6,11 +6,7 @@
 
 #import <objc/NSObject.h>
 
-@class NSArray;
-@class NSBundle;
-@class NSDictionary;
-@class NSString;
-@class SimRuntimePairingReuirements;
+@class NSArray, NSBundle, NSDictionary, NSString, SimRuntimePairingReuirements;
 
 @interface SimRuntime : NSObject
 {
@@ -26,12 +22,12 @@
     NSString *_versionString;
     NSString *_buildVersionString;
     NSString *_platformIdentifier;
-    NSString *_platformName;
     NSDictionary *_supportedFeatures;
     NSDictionary *_supportedFeaturesConditionalOnDeviceType;
     NSDictionary *_requiredHostServices;
     NSDictionary *_forwardHostNotifications;
     NSDictionary *_forwardHostNotificationsWithState;
+    NSString *_platformName;
     NSString *_platformPath;
     NSArray *_supportedProductFamilyIDs;
     SimRuntimePairingReuirements *_pairingRequirements;
@@ -43,9 +39,6 @@
 
 + (id)updatedMaxCoreSimulatorVersions;
 + (id)updatedMaxHostVersions;
-+ (id)supportedRuntimesByAlias;
-+ (id)supportedRuntimesByIdentifier;
-+ (id)supportedRuntimes;
 @property (nonatomic, assign) unsigned int maxCoreSimulatorFrameworkVersion;
 @property (nonatomic, assign) unsigned int minCoreSimulatorFrameworkVersion;
 @property (nonatomic, assign) unsigned int maxHostVersion;
@@ -57,13 +50,13 @@
 @property (retain, nonatomic) SimRuntimePairingReuirements *pairingRequirements;
 @property (copy, nonatomic) NSArray *supportedProductFamilyIDs;
 @property (copy, nonatomic) NSString *platformPath;
+@property (copy, nonatomic) NSString *platformName;
 @property (copy, nonatomic) NSDictionary *forwardHostNotificationsWithState;
 @property (copy, nonatomic) NSDictionary *forwardHostNotifications;
 @property (copy, nonatomic) NSDictionary *requiredHostServices;
 @property (copy, nonatomic) NSDictionary *supportedFeaturesConditionalOnDeviceType;
 @property (copy, nonatomic) NSDictionary *supportedFeatures;
 @property (nonatomic, assign) unsigned int version;
-@property (copy, nonatomic) NSString *platformName;
 @property (copy, nonatomic) NSString *platformIdentifier;
 @property (copy, nonatomic) NSString *buildVersionString;
 @property (copy, nonatomic) NSString *versionString;

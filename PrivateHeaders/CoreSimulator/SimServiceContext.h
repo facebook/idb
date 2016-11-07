@@ -30,8 +30,6 @@
 }
 
 + (void)setSharedContextConnectionType:(long long)arg1;
-+ (id)simContextWithConnectionType:(long long)arg1;
-+ (id)sharedServiceContext;
 + (id)serviceContextForDeveloperDir:(id)arg1 connectionType:(long long)arg2 error:(id *)arg3;
 + (id)sharedServiceContextForDeveloperDir:(id)arg1 error:(id *)arg2;
 @property(retain, nonatomic) NSObject<OS_dispatch_queue> *allDeviceSetsQueue; // @synthesize allDeviceSetsQueue=_allDeviceSetsQueue;
@@ -39,12 +37,13 @@
 @property(retain, nonatomic) NSObject<OS_dispatch_queue> *profileQueue; // @synthesize profileQueue=_profileQueue;
 @property(retain, nonatomic) SimProfilesPathMonitor *profileMonitor; // @synthesize profileMonitor=_profileMonitor;
 @property(retain, nonatomic) NSDate *lastConnectionTime; // @synthesize lastConnectionTime=_lastConnectionTime;
-@property(retain, nonatomic) NSObject<OS_dispatch_queue> *serviceConnectionQueue; // @synthesize serviceConnectionQueue=_serviceConnectionQueue;
-@property(retain, nonatomic) NSObject<OS_xpc_object> *serviceConnection; // @synthesize serviceConnection=_serviceConnection;
-@property(copy, nonatomic) NSString *developerDir; // @synthesize developerDir=_developerDir;
-@property(nonatomic) long long connectionType; // @synthesize connectionType=_connectionType;
+@property (retain, nonatomic) NSObject<OS_dispatch_queue> *serviceConnectionQueue;
+@property (retain, nonatomic) NSObject<OS_xpc_object> *serviceConnection;
+@property (copy, nonatomic) NSString *developerDir;
+@property (nonatomic, assign) long long connectionType;
 - (void)handleXPCEvent:(id)arg1;
 - (void)handleReconnectionBookkeeping;
+- (void)addProfilesForDeveloperDir:(id)arg1;
 - (void)supportedRuntimesAddProfilesAtPath:(id)arg1;
 - (void)supportedDeviceTypesAddProfilesAtPath:(id)arg1;
 - (void)serviceAddProfilesAtPath:(id)arg1;
@@ -62,8 +61,6 @@
 - (id)defaultDeviceSetWithError:(id *)arg1;
 - (void)dealloc;
 - (void)connect;
-- (BOOL)loadServiceWithError:(id *)arg1;
-- (void)removeOtherCoreSimulatorServiceJobs;
 - (id)initWithDeveloperDir:(id)arg1 connectionType:(long long)arg2;
 - (id)init;
 

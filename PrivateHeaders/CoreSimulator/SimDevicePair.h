@@ -8,11 +8,7 @@
 
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 
-@class NSMutableArray;
-@class NSUUID;
-@class SimDevice;
-@class SimDeviceNotificationManager;
-@class SimDeviceSet;
+@class NSMutableArray, NSUUID, SimDevice, SimDeviceNotificationManager, SimDeviceSet;
 @protocol OS_dispatch_queue;
 
 @interface SimDevicePair : NSObject <SimDeviceNotifier>

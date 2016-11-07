@@ -6,8 +6,7 @@
 
 #import <CoreSimulator/SimDeviceIO.h>
 
-@class NSArray;
-@class NSMutableDictionary;
+@class NSArray, NSMutableDictionary;
 
 @interface SimDeviceIOClient : SimDeviceIO
 {

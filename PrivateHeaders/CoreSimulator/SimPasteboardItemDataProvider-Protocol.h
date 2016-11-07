@@ -6,9 +6,7 @@
 
 #import <CoreSimulator/NSObject-Protocol.h>
 
-@class NSObject;
-@class NSString;
-@class SimPasteboardItem;
+@class NSObject, NSString, SimPasteboardItem;
 @protocol NSSecureCoding;
 
 @protocol SimPasteboardItemDataProvider <NSObject>

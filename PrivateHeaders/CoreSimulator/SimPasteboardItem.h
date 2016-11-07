@@ -8,12 +8,7 @@
 
 #import <CoreSimulator/NSPasteboardItemDataProvider-Protocol.h>
 
-@class NSArray;
-@class NSMapTable;
-@class NSMutableArray;
-@class NSMutableDictionary;
-@class NSPasteboardItem;
-@class NSString;
+@class NSArray, NSMapTable, NSMutableArray, NSMutableDictionary, NSPasteboardItem, NSString;
 
 @interface SimPasteboardItem : NSObject <NSPasteboardItemDataProvider>
 {

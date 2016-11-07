@@ -6,8 +6,7 @@
 
 #import <objc/NSObject.h>
 
-@class NSArray;
-@class NSMutableDictionary;
+@class NSArray, NSMutableDictionary;
 @protocol OS_dispatch_queue;
 
 @interface SimPasteboardPortMap : NSObject

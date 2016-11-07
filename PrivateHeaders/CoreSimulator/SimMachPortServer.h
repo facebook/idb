@@ -6,8 +6,7 @@
 
 #import <objc/NSObject.h>
 
-@class NSMachPort;
-@class NSString;
+@class NSMachPort, NSString;
 @protocol OS_dispatch_queue, OS_dispatch_source;
 
 @interface SimMachPortServer : NSObject

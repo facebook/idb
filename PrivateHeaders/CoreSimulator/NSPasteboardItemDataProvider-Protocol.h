@@ -6,9 +6,7 @@
 
 #import <CoreSimulator/NSObject-Protocol.h>
 
-@class NSPasteboard;
-@class NSPasteboardItem;
-@class NSString;
+@class NSPasteboard, NSPasteboardItem, NSString;
 
 @protocol NSPasteboardItemDataProvider <NSObject>
 - (void)pasteboard:(NSPasteboard *)arg1 item:(NSPasteboardItem *)arg2 provideDataForType:(NSString *)arg3;

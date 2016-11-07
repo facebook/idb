@@ -8,8 +8,7 @@
 
 #import <CoreSimulator/SimPasteboardItemDataProvider-Protocol.h>
 
-@class NSString;
-@class SimDevicePasteboardConnection;
+@class NSString, SimDevicePasteboardConnection;
 
 @interface SimDevicePasteboardItem : SimPasteboardItem <SimPasteboardItemDataProvider>
 {

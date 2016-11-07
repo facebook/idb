@@ -15,8 +15,11 @@
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
+#import <CoreSimulator/SimDeviceSet+Removed.h>
 #import <CoreSimulator/SimDeviceType.h>
+#import <CoreSimulator/SimDeviceType+Removed.h>
 #import <CoreSimulator/SimRuntime.h>
+#import <CoreSimulator/SimRuntime+Removed.h>
 #import <CoreSimulator/SimServiceContext.h>
 
 #import "FBSimulatorControlConfiguration.h"

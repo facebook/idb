@@ -615,6 +615,9 @@
 		AA0EE66F1D06AB5600422361 /* FBiOSTargetDescriptionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescriptionTests.m; sourceTree = "<group>"; };
 		AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFrameworkLoader.h; sourceTree = "<group>"; };
 		AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWeakFrameworkLoader.m; sourceTree = "<group>"; };
+		AA10FB471DD07B0000CE3CB2 /* SimDeviceSet+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceSet+Removed.h"; sourceTree = "<group>"; };
+		AA10FB481DD07B9C00CE3CB2 /* SimRuntime+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimRuntime+Removed.h"; sourceTree = "<group>"; };
+		AA10FB491DD07C0B00CE3CB2 /* SimDeviceType+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceType+Removed.h"; sourceTree = "<group>"; };
 		AA111CCC1BBE7C5A0054AFDD /* CoreSimulatorDoubles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreSimulatorDoubles.h; sourceTree = "<group>"; };
 		AA111CCD1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CoreSimulatorDoubles.m; sourceTree = "<group>"; };
 		AA1174B11CEA17DB00EB699E /* FBApplicationCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBApplicationCommands.h; sourceTree = "<group>"; };
@@ -1397,7 +1400,9 @@
 				AA50E2601D5B24D700A379E9 /* SimDevicePasteboardConnection.h */,
 				AA50E2611D5B24D700A379E9 /* SimDevicePasteboardItem.h */,
 				AA50E2621D5B24D700A379E9 /* SimDeviceSet.h */,
+				AA10FB471DD07B0000CE3CB2 /* SimDeviceSet+Removed.h */,
 				AA50E2631D5B24D700A379E9 /* SimDeviceType.h */,
+				AA10FB491DD07C0B00CE3CB2 /* SimDeviceType+Removed.h */,
 				AA50E2641D5B24D700A379E9 /* SimDisplayDescriptorState-Protocol.h */,
 				AA50E2651D5B24D700A379E9 /* SimLocalThrowable.h */,
 				AA50E2661D5B24D700A379E9 /* SimMachPortServer.h */,
@@ -1411,6 +1416,7 @@
 				AA50E26E1D5B24D700A379E9 /* SimPasteboardPortMap.h */,
 				AA50E26F1D5B24D700A379E9 /* SimProfilesPathMonitor.h */,
 				AA50E2701D5B24D700A379E9 /* SimRuntime.h */,
+				AA10FB481DD07B9C00CE3CB2 /* SimRuntime+Removed.h */,
 				AA50E2711D5B24D700A379E9 /* SimRuntimePairingReuirements.h */,
 				AA50E2721D5B24D700A379E9 /* SimServiceContext.h */,
 			);

@@ -32,10 +32,6 @@
     struct CGSize _mainScreenDPI;
 }
 
-+ (id)supportedDeviceTypesByAlias;
-+ (id)supportedDeviceTypesByIdentifier;
-+ (id)supportedDeviceTypes;
-+ (id)supportedDevices;
 @property (copy, nonatomic) NSDictionary *supportedFeaturesConditionalOnRuntime;
 @property (copy, nonatomic) NSDictionary *supportedFeatures;
 @property (copy, nonatomic) NSDictionary *aliases;

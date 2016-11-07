@@ -8,8 +8,7 @@
 
 #import <CoreSimulator/SimDeviceIOInterface-Protocol.h>
 
-@class NSArray;
-@class NSDictionary;
+@class NSArray, NSDictionary;
 
 @interface SimDeviceIOServer : SimDeviceIO <SimDeviceIOInterface>
 {

@@ -6,8 +6,8 @@
 
 #import <objc/NSObject.h>
 
-#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 #import <CoreSimulator/CDStructures.h>
+#import <CoreSimulator/SimDeviceNotifier-Protocol.h>
 
 @class NSArray, NSDictionary, NSMutableDictionary, NSString, SimDeviceNotificationManager, SimServiceContext;
 @protocol OS_dispatch_queue;
@@ -25,9 +25,6 @@
     NSDictionary *_defaultCreatedDevices;
 }
 
-+ (id)setForSetPath:(id)arg1 serviceContext:(id)arg2;
-+ (id)setForSetPath:(id)arg1;
-+ (id)defaultSet;
 + (id)defaultSetPath;
 @property (nonatomic, copy) NSDictionary *defaultCreatedDevices;
 @property (retain, nonatomic) SimDeviceNotificationManager *notificationManager;
@@ -74,14 +71,14 @@
 - (void)removeDeviceAsync:(id)arg1;
 - (void)addDevice:(id)arg1;
 - (void)addDeviceAsync:(id)arg1;
-- (void)updateDefaultDevicePairingsToBundledRuntimes;
-- (void)updateDefaultDevices;
+- (void)updateDefaultDevicePairingsForDeveloperDir:(id)arg1;
+- (void)updateDefaultDevicesForDeveloperDir:(id)arg1;
 - (id)devicePairsContainingDevice:(id)arg1;
 - (id)devicePairsContainingDeviceUDID:(id)arg1;
-@property(readonly, copy) NSArray *availableDevicePairs;
-@property(readonly, copy) NSArray *devicePairs;
-@property(readonly, copy) NSDictionary *devicePairsByUUID;
-@property (readonly, copy) NSArray *availableDevices;
+@property (atomic, copy, readonly) NSArray *availableDevicePairs;
+@property (atomic, copy, readonly) NSArray *devicePairs;
+@property (atomic, copy, readonly) NSDictionary *devicePairsByUUID;
+@property (atomic, copy, readonly) NSArray *availableDevices;
 @property (atomic, copy, readonly) NSArray *devices;
 - (BOOL)isDeviceInSet:(id)arg1;
 @property(readonly, copy) NSDictionary *devicesByUDID;

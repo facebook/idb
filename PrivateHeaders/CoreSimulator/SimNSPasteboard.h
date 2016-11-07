@@ -8,9 +8,7 @@
 
 #import <CoreSimulator/SimPasteboard-Protocol.h>
 
-@class NSArray;
-@class NSPasteboard;
-@class SimDeviceNotificationManager;
+@class NSArray, NSPasteboard, SimDeviceNotificationManager;
 @protocol OS_dispatch_queue, OS_dispatch_source;
 
 @interface SimNSPasteboard : NSObject <SimPasteboard>
