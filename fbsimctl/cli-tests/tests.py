@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from util import (FBSimctl, Simulator, WebServer, find_fbsimctl_path, Fixtures, DEFAULT_TIMEOUT, LONG_TIMEOUT)
+from util import (FBSimctl, Simulator, WebServer, Defaults, Fixtures)
 import argparse
 import base64
 import contextlib
@@ -47,7 +47,7 @@ class FBSimctlTestCase(unittest.TestCase):
         event_type,
         min_count=1,
         max_count=None,
-        timeout=DEFAULT_TIMEOUT,
+        timeout=Defaults.TIMEOUT,
     ):
         events = self.fbsimctl.run(arguments, timeout)
         matching_events = events.matching(event_name, event_type)
@@ -152,7 +152,7 @@ class MultipleSimulatorTestCase(FBSimctlTestCase):
             arguments=['create', '--all-missing-defaults'],
             event_name='create',
             event_type='ended',
-            timeout=LONG_TIMEOUT,
+            timeout=Defaults.LONG_TIMEOUT,
         )
 
 
@@ -411,9 +411,10 @@ if __name__ == '__main__':
     arguments.device_type = list(set(arguments.device_type))
     if not len(arguments.device_type):
         arguments.device_type = ['iPhone 6']
+    defaults = Defaults(arguments.fbsimctl_path)
 
     suite_builder = SuiteBuilder(
-        fbsimctl_path=find_fbsimctl_path(arguments.fbsimctl_path),
+        fbsimctl_path=defaults.fbsimctl_path,
         device_types=arguments.device_type,
         name_filter=arguments.name_filter,
     )

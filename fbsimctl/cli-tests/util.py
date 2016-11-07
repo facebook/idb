@@ -14,17 +14,22 @@ logging.basicConfig(format='%(message)s')
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-DEFAULT_TIMEOUT = 120
-LONG_TIMEOUT = 500
 
-def find_fbsimctl_path(expected_path):
-    if os.path.exists(expected_path):
-        fbsimctl_path = os.path.realpath(expected_path)
-        log.info('Using fbsimctl test executable at {}'.format(fbsimctl_path))
-        return fbsimctl_path
-    else:
-        log.info('Using fbsimctl on PATH')
-        return 'fbsimctl'
+class Defaults:
+    TIMEOUT = 120
+    LONG_TIMEOUT = 500
+
+    def __init__(self, expected_path):
+        self.fbsimctl_path = self.find_fbsimctl_path(expected_path)
+
+    def find_fbsimctl_path(self, expected_path):
+        if os.path.exists(expected_path):
+            fbsimctl_path = os.path.realpath(expected_path)
+            log.info('Using fbsimctl test executable at {}'.format(fbsimctl_path))
+            return fbsimctl_path
+        else:
+            log.info('Using fbsimctl on PATH')
+            return 'fbsimctl'
 
 
 class Events:
@@ -184,7 +189,7 @@ class FBSimctl:
         base_arguments.append('--json')
         return base_arguments + arguments
 
-    def run(self, arguments, timeout=DEFAULT_TIMEOUT):
+    def run(self, arguments, timeout=Defaults.TIMEOUT):
         arguments = self._make_arguments(arguments)
         log.info('Running Process with Arguments {0}'.format(
             ' '.join(arguments),
@@ -200,7 +205,7 @@ class FBSimctl:
         ]
         return Events(events)
 
-    def launch(self, arguments, timeout=DEFAULT_TIMEOUT):
+    def launch(self, arguments, timeout=Defaults.TIMEOUT):
         return FBSimctlProcess(
             arguments=self._make_arguments(arguments),
             timeout=timeout,
