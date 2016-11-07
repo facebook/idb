@@ -26,11 +26,7 @@ static id<FBControlCoreLogger> logger;
   static dispatch_once_t onceToken;
   static NSString *directory;
   dispatch_once(&onceToken, ^{
-    directory = [[[FBTaskBuilder
-      taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-      startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout]
-      stdOut];
-    NSCAssert(directory, @"Xcode Path could not be determined from `xcode-select`");
+    directory = [self findXcodeDeveloperDirectoryOrAssert];
   });
   return directory;
 }
@@ -202,6 +198,18 @@ static id<FBControlCoreLogger> logger;
   return [[self.developerDirectory
     stringByDeletingLastPathComponent]
     stringByAppendingPathComponent:@"Info.plist"];
+}
+
++ (NSString *)findXcodeDeveloperDirectoryOrAssert
+{
+  FBTask *task = [[FBTaskBuilder
+    taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  NSString *directory = [task stdOut];
+  NSAssert(directory, @"Xcode Path could not be determined from `xcode-select`: %@", task.error);
+  directory = [directory stringByResolvingSymlinksInPath];
+  NSAssert([NSFileManager.defaultManager fileExistsAtPath:directory], @"No Xcode Directory at: %@", directory);
+  return directory;
 }
 
 @end
