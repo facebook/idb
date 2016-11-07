@@ -188,27 +188,6 @@
     firstObject];
 }
 
-- (NSSet<NSString *> *)requiredLaunchdServicesToVerifyBooted
-{
-  if (self.productFamily == FBControlCoreProductFamilyiPhone || self.productFamily == FBControlCoreProductFamilyiPad) {
-    return [NSSet setWithArray:@[
-       @"com.apple.SpringBoard",
-       @"com.apple.SimulatorBridge",
-       @"com.apple.backboardd",
-       @"com.apple.mobile.installd",
-    ]];
-  }
-  if (self.productFamily == FBControlCoreProductFamilyAppleWatch || self.productFamily == FBControlCoreProductFamilyAppleTV) {
-    return FBControlCoreGlobalConfiguration.isXcode8OrGreater ? [NSSet setWithArray:@[
-       @"com.apple.nsurlsessiond",
-       @"com.apple.mobileassetd",
-    ]] : [NSSet setWithArray:@[
-       @"com.apple.networkd",
-       @"com.apple.mobileassetd",
-    ]];
-  }
-  return [NSSet set];
-}
 
 + (NSDictionary<NSString *, id> *)simulatorApplicationPreferences
 {

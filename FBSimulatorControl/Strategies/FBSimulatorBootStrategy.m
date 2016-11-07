@@ -387,7 +387,7 @@
   }
 
   // Now wait for the services.
-  NSSet<NSString *> *requiredServiceNames = self.simulator.requiredLaunchdServicesToVerifyBooted;
+  NSSet<NSString *> *requiredServiceNames = [NSSet setWithArray:self.requiredLaunchdServicesToVerifyBooted];
   BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
     NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];
     if (!services) {
@@ -407,6 +407,51 @@
   }
 
   return launchdProcess;
+}
+
+/*
+ A Set of launchd_sim service names that are used to determine whether relevant System daemons are available after booting.
+
+ There is a period of time between when CoreSimulator says that the Simulator is 'Booted'
+ and when it is stable enough state to launch Applications/Daemons, these Service Names
+ represent the Services that are known to signify readyness.
+
+ @return the required Service Names.
+ */
+- (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted
+{
+  FBControlCoreProductFamily family = self.simulator.productFamily;
+  if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
+    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+      return @[
+        @"com.apple.backboardd",
+        @"com.apple.medialibraryd",
+        @"com.apple.mobile.installd",
+        @"com.apple.SimulatorBridge",
+        @"com.apple.SpringBoard",
+        @"com.apple.cloudd",
+      ];
+    }
+    return @[
+      @"com.apple.backboardd",
+      @"com.apple.mobile.installd",
+      @"com.apple.SimulatorBridge",
+      @"com.apple.SpringBoard",
+    ];
+  }
+  if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {
+    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+      return @[
+        @"com.apple.mobileassetd",
+        @"com.apple.nsurlsessiond",
+      ];
+    }
+    return @[
+      @"com.apple.mobileassetd",
+      @"com.apple.networkd",
+    ];
+  }
+  return @[];
 }
 
 @end
