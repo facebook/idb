@@ -62,10 +62,10 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.Approve, StringsSubject(bundleIDs)) { interaction in
         interaction.authorizeLocationSettings(bundleIDs)
       }
-    case .boot(let maybeLaunchConfiguration):
-      let launchConfiguration = maybeLaunchConfiguration ?? FBSimulatorLaunchConfiguration.default()
-      return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(launchConfiguration)) { interaction in
-        interaction.prepare(forLaunch: launchConfiguration).bootSimulator(launchConfiguration)
+    case .boot(let maybeBootConfiguration):
+      let bootConfiguration = maybeBootConfiguration ?? FBSimulatorBootConfiguration.default()
+      return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(bootConfiguration)) { interaction in
+        interaction.prepare(forBoot: bootConfiguration).bootSimulator(bootConfiguration)
       }
     case .clearKeychain(let maybeBundleID):
       return SimulatorInteractionRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) { interaction in

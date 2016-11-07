@@ -60,7 +60,7 @@ public enum DiagnosticFormat : String {
  */
 public enum Action {
   case approve([String])
-  case boot(FBSimulatorLaunchConfiguration?)
+  case boot(FBSimulatorBootConfiguration?)
   case clearKeychain(String?)
   case config
   case create(CreationSpecification)

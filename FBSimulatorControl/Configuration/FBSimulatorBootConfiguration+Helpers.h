@@ -9,13 +9,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBSimulatorLaunchConfiguration.h>
+#import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
 
 @class FBSimulator;
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface FBSimulatorLaunchConfiguration (Helpers)
+@interface FBSimulatorBootConfiguration (Helpers)
 
 /**
  Creates and returns the arguments to pass to Xcode's Simulator.app for the reciever's configuration.

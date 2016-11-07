@@ -16,11 +16,11 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
-#import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorBootConfiguration.h"
 
 @implementation FBSimulatorInteraction (Setup)
 
-- (instancetype)prepareForLaunch:(FBSimulatorLaunchConfiguration *)configuration
+- (instancetype)prepareForBoot:(FBSimulatorBootConfiguration *)configuration
 {
   return [[self
     overridingLocalization:configuration.localizationOverride]

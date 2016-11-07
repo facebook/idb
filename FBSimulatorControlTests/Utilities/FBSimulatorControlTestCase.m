@@ -86,11 +86,11 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   return ![NSProcessInfo.processInfo.environment[LaunchTypeEnvKey] isEqualToString:LaunchTypeSimulatorApp];
 }
 
-+ (FBSimulatorLaunchOptions)launchOptions
++ (FBSimulatorBootOptions)launchOptions
 {
-  FBSimulatorLaunchOptions options = 0;
+  FBSimulatorBootOptions options = 0;
   if (self.useDirectLaunching) {
-    options = options | FBSimulatorLaunchOptionsEnableDirectLaunch;
+    options = options | FBSimulatorBootOptionsEnableDirectLaunch;
   }
   return options;
 }
@@ -111,9 +111,9 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   return nil;
 }
 
-+ (FBSimulatorLaunchConfiguration *)defaultLaunchConfiguration
++ (FBSimulatorBootConfiguration *)defaultLaunchConfiguration
 {
-  return [[FBSimulatorLaunchConfiguration
+  return [[FBSimulatorBootConfiguration
     withOptions:self.launchOptions]
     withFramebuffer:self.defaultFramebufferConfiguration];
 }

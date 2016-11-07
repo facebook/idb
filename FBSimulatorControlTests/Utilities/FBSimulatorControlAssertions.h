@@ -104,7 +104,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param launchConfiguration the Launch configuration to boot with.
  @return a Simulator if succesful, nil otherwise.
  */
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorLaunchConfiguration *)launchConfiguration;
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorBootConfiguration *)launchConfiguration;
 
 /**
  An Assertion for:
@@ -131,7 +131,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param applicationLaunchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
 
 /**
  An Assertion for:
@@ -147,7 +147,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param applicationLaunchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
 
 @end
 
@@ -191,12 +191,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Assertion failure if the Notifications that fire on booting haven't been recieved;
  */
-- (void)bootingNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration;
+- (void)bootingNotificationsFired:(FBSimulatorBootConfiguration *)launchConfiguration;
 
 /**
  Assertion failure if the Notifications that fire on shutdown haven't been recieved;
  */
-- (void)shutdownNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration;
+- (void)shutdownNotificationsFired:(FBSimulatorBootConfiguration *)launchConfiguration;
 
 @end
 

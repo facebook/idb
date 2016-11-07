@@ -498,9 +498,9 @@ extension Action : Parsable {
   }
 
   static var bootParser: Parser<Action> {
-    return Parser<FBSimulatorLaunchConfiguration?>
+    return Parser<FBSimulatorBootConfiguration?>
       .ofCommandWithArg(EventName.Boot.rawValue,
-                        FBSimulatorLaunchConfigurationParser.parser.optional())
+                        FBSimulatorBootConfigurationParser.parser.optional())
       .fmap { Action.boot($0) }
       .sectionize("boot", "Action: Boot", "")
   }
@@ -896,19 +896,19 @@ struct FBDiagnosticQueryParser {
 }
 
 /**
- A separate struct for FBSimulatorLaunchConfiguration is needed as Parsable protcol conformance cannot be
- applied to FBSimulatorLaunchConfiguration as it is a non-final class.
+ A separate struct for FBSimulatorBootConfiguration is needed as Parsable protcol conformance cannot be
+ applied to FBSimulatorBootConfiguration as it is a non-final class.
  */
-struct FBSimulatorLaunchConfigurationParser {
-  static var parser: Parser<FBSimulatorLaunchConfiguration> {
-    return Parser<FBSimulatorLaunchConfiguration>
+struct FBSimulatorBootConfigurationParser {
+  static var parser: Parser<FBSimulatorBootConfiguration> {
+    return Parser<FBSimulatorBootConfiguration>
       .accumulate(1, [
-        self.optionsParser.fmap { FBSimulatorLaunchConfiguration.withOptions($0) },
-        self.scaleParser.fmap { FBSimulatorLaunchConfiguration.withScale($0) },
-        self.localeParser.fmap { FBSimulatorLaunchConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) }
+        self.optionsParser.fmap { FBSimulatorBootConfiguration.withOptions($0) },
+        self.scaleParser.fmap { FBSimulatorBootConfiguration.withScale($0) },
+        self.localeParser.fmap { FBSimulatorBootConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) }
       ])
       .fmap { configuration in
-        if configuration.options.contains(FBSimulatorLaunchOptions.enableDirectLaunch) && configuration.framebuffer == nil {
+        if configuration.options.contains(FBSimulatorBootOptions.enableDirectLaunch) && configuration.framebuffer == nil {
           return configuration.withFramebuffer(FBFramebufferConfiguration.default())
         }
         return configuration
@@ -933,15 +933,15 @@ struct FBSimulatorLaunchConfigurationParser {
     ])
   }
 
-  static var optionsParser: Parser<FBSimulatorLaunchOptions> {
-    return Parser<FBSimulatorLaunchOptions>.alternative([
-      Parser<FBSimulatorLaunchOptions>
-        .ofFlag("connect-bridge", FBSimulatorLaunchOptions.connectBridge, ""),
-      Parser<FBSimulatorLaunchOptions>
-        .ofFlag("direct-launch", FBSimulatorLaunchOptions.enableDirectLaunch,
+  static var optionsParser: Parser<FBSimulatorBootOptions> {
+    return Parser<FBSimulatorBootOptions>.alternative([
+      Parser<FBSimulatorBootOptions>
+        .ofFlag("connect-bridge", FBSimulatorBootOptions.connectBridge, ""),
+      Parser<FBSimulatorBootOptions>
+        .ofFlag("direct-launch", FBSimulatorBootOptions.enableDirectLaunch,
                 ""),
-      Parser<FBSimulatorLaunchOptions>
-        .ofFlag("use-nsworkspace", FBSimulatorLaunchOptions.useNSWorkspace, ""),
+      Parser<FBSimulatorBootOptions>
+        .ofFlag("use-nsworkspace", FBSimulatorBootOptions.useNSWorkspace, ""),
     ])
   }
 }

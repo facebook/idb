@@ -28,8 +28,8 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHID.h"
-#import "FBSimulatorLaunchConfiguration+Helpers.h"
-#import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorBootConfiguration+Helpers.h"
+#import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBFramebufferConnectStrategy.h"
 

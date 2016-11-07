@@ -33,7 +33,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorBootConfiguration.h"
 
 /**
  Enumeration to keep track of internal state.

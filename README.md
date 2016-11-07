@@ -49,7 +49,7 @@ For a high level overview:
 - `FBSimulatorInteraction` and it's categories forms the API of possible ways of interacting with a Simulator. These range from booting Simulators, installing & running Applications, uploading photos & videos and more.
 - `FBSimulatorHistory` is a record of all the events that happen to a Simulator. It can be queried in a variety of ways and serialized to file.
 - `FBSimulatorDiagnositcs` is a facade around available diagnostics for a Simulator. It fetches static logs such as the System Log on-demand and receives new logs from components such as `FBFramebufferVideo`.
-- Configuration objects: `FBApplicationLaunchConfiguration`, `FBAgentLaunchConfiguration`, `FBSimulatorApplication`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorLaunchConfiguration`.
+- Configuration objects: `FBApplicationLaunchConfiguration`, `FBAgentLaunchConfiguration`, `FBSimulatorApplication`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`.
 
 To launch Safari on an iPhone 5, you can use the following:
 

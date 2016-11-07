@@ -17,10 +17,10 @@
 /**
  An Option Set for Direct Launching.
  */
-typedef NS_OPTIONS(NSUInteger, FBSimulatorLaunchOptions) {
-  FBSimulatorLaunchOptionsConnectBridge = 1 << 0, /** Connects the Simulator Bridge on boot, rather than lazily on-demand */
-  FBSimulatorLaunchOptionsEnableDirectLaunch = 1 << 1, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
-  FBSimulatorLaunchOptionsUseNSWorkspace = 1 << 2, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
+typedef NS_OPTIONS(NSUInteger, FBSimulatorBootOptions) {
+  FBSimulatorBootOptionsConnectBridge = 1 << 0, /** Connects the Simulator Bridge on boot, rather than lazily on-demand */
+  FBSimulatorBootOptionsEnableDirectLaunch = 1 << 1, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
+  FBSimulatorBootOptionsUseNSWorkspace = 1 << 2, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
 };
 
 NS_ASSUME_NONNULL_BEGIN
@@ -28,12 +28,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value Object for defining how to launch a Simulator.
  */
-@interface FBSimulatorLaunchConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulatorBootConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  Options for how the Simulator should be launched.
  */
-@property (nonatomic, assign, readonly) FBSimulatorLaunchOptions options;
+@property (nonatomic, assign, readonly) FBSimulatorBootOptions options;
 
 /**
  The Locale in which to Simulate, may be nil.
@@ -60,8 +60,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Set Direct Launch Options
  */
-+ (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
-- (instancetype)withOptions:(FBSimulatorLaunchOptions)options;
++ (instancetype)withOptions:(FBSimulatorBootOptions)options;
+- (instancetype)withOptions:(FBSimulatorBootOptions)options;
 
 #pragma mark Device Scale
 

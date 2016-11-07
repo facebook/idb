@@ -7,12 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorBootConfiguration.h"
 
 #import "FBSimulatorScale.h"
 #import "FBFramebufferConfiguration.h"
 
-@implementation FBSimulatorLaunchConfiguration
+@implementation FBSimulatorBootConfiguration
 
 @synthesize scale = _scale;
 
@@ -21,7 +21,7 @@
 + (instancetype)defaultConfiguration
 {
   static dispatch_once_t onceToken;
-  static FBSimulatorLaunchConfiguration *configuration;
+  static FBSimulatorBootConfiguration *configuration;
   dispatch_once(&onceToken, ^{
     configuration = [self new];
   });
@@ -33,7 +33,7 @@
   return [self initWithOptions:0 scale:nil localizationOverride:nil framebuffer:nil];
 }
 
-- (instancetype)initWithOptions:(FBSimulatorLaunchOptions)options scale:(id<FBSimulatorScale>)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(id<FBSimulatorScale>)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
 {
   self = [super init];
   if (!self) {
@@ -82,7 +82,7 @@
 
 #pragma mark NSObject
 
-- (BOOL)isEqual:(FBSimulatorLaunchConfiguration *)configuration
+- (BOOL)isEqual:(FBSimulatorBootConfiguration *)configuration
 {
   if (![configuration isKindOfClass:self.class]) {
     return NO;
@@ -107,7 +107,7 @@
     @"Scale %@ | %@ | Options %@ | %@",
     self.scaleString,
     self.localizationOverride ? self.localizationOverride : @"No Locale Override",
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorLaunchConfiguration stringsFromLaunchOptions:self.options]],
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromLaunchOptions:self.options]],
     self.framebuffer ?: @"No Framebuffer"
   ];
 }
@@ -129,7 +129,7 @@
   return @{
     @"scale" : self.scaleString ?: NSNull.null,
     @"localization_override" : self.localizationOverride.jsonSerializableRepresentation ?: NSNull.null,
-    @"options" : [FBSimulatorLaunchConfiguration stringsFromLaunchOptions:self.options],
+    @"options" : [FBSimulatorBootConfiguration stringsFromLaunchOptions:self.options],
     @"framebuffer" : self.framebuffer.jsonSerializableRepresentation ?: NSNull.null,
   };
 }
@@ -148,12 +148,12 @@
 
 #pragma mark Options
 
-+ (instancetype)withOptions:(FBSimulatorLaunchOptions)options
++ (instancetype)withOptions:(FBSimulatorBootOptions)options
 {
   return [self.defaultConfiguration withOptions:options];
 }
 
-- (instancetype)withOptions:(FBSimulatorLaunchOptions)options
+- (instancetype)withOptions:(FBSimulatorBootOptions)options
 {
   return [[self.class alloc] initWithOptions:options scale:self.scale localizationOverride:self.localizationOverride framebuffer:self.framebuffer];
 }
@@ -240,16 +240,16 @@
 
 #pragma mark Utility
 
-+ (NSArray<NSString *> *)stringsFromLaunchOptions:(FBSimulatorLaunchOptions)options
++ (NSArray<NSString *> *)stringsFromLaunchOptions:(FBSimulatorBootOptions)options
 {
   NSMutableArray<NSString *> *strings = [NSMutableArray array];
-  if ((options & FBSimulatorLaunchOptionsConnectBridge) == FBSimulatorLaunchOptionsConnectBridge) {
+  if ((options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) {
     [strings addObject:@"Connect Bridge"];
   }
-  if ((options & FBSimulatorLaunchOptionsEnableDirectLaunch) == FBSimulatorLaunchOptionsEnableDirectLaunch) {
+  if ((options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch) {
     [strings addObject:@"Direct Launch"];
   }
-  if ((options & FBSimulatorLaunchOptionsUseNSWorkspace) == FBSimulatorLaunchOptionsUseNSWorkspace) {
+  if ((options & FBSimulatorBootOptionsUseNSWorkspace) == FBSimulatorBootOptionsUseNSWorkspace) {
     [strings addObject:@"Use NSWorkspace"];
   }
   return [strings copy];

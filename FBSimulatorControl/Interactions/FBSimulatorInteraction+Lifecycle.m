@@ -27,7 +27,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorInteraction+Private.h"
-#import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorTerminationStrategy.h"
 
@@ -35,10 +35,10 @@
 
 - (instancetype)bootSimulator
 {
-  return [self bootSimulator:FBSimulatorLaunchConfiguration.defaultConfiguration];
+  return [self bootSimulator:FBSimulatorBootConfiguration.defaultConfiguration];
 }
 
-- (instancetype)bootSimulator:(FBSimulatorLaunchConfiguration *)configuration
+- (instancetype)bootSimulator:(FBSimulatorBootConfiguration *)configuration
 {
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     return [[FBSimulatorBootStrategy withConfiguration:configuration simulator:simulator] boot:error];

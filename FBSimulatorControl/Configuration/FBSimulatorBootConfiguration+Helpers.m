@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorLaunchConfiguration+Helpers.h"
+#import "FBSimulatorBootConfiguration+Helpers.h"
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
@@ -21,7 +21,7 @@
 #import "FBSimulatorSet.h"
 #import "FBSimulatorScale.h"
 
-@implementation FBSimulatorLaunchConfiguration (Helpers)
+@implementation FBSimulatorBootConfiguration (Helpers)
 
 - (NSArray<NSString *> *)xcodeSimulatorApplicationArgumentsForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
@@ -53,7 +53,7 @@
 
 - (BOOL)shouldUseDirectLaunch
 {
-  return (self.options & FBSimulatorLaunchOptionsEnableDirectLaunch) == FBSimulatorLaunchOptionsEnableDirectLaunch;
+  return (self.options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch;
 }
 
 - (BOOL)shouldConnectFramebuffer
@@ -63,12 +63,12 @@
 
 - (BOOL)shouldLaunchViaWorkspace
 {
-  return (self.options & FBSimulatorLaunchOptionsUseNSWorkspace) == FBSimulatorLaunchOptionsUseNSWorkspace;
+  return (self.options & FBSimulatorBootOptionsUseNSWorkspace) == FBSimulatorBootOptionsUseNSWorkspace;
 }
 
 - (BOOL)shouldConnectBridge
 {
-  return ((self.options & FBSimulatorLaunchOptionsConnectBridge) == FBSimulatorLaunchOptionsConnectBridge) || self.shouldUseDirectLaunch;
+  return ((self.options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) || self.shouldUseDirectLaunch;
 }
 
 #pragma mark Scale

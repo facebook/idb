@@ -80,13 +80,13 @@
 
 - (void)testLaunchConfigurations
 {
-  NSArray<FBSimulatorLaunchConfiguration *> *values = @[
-    [[[FBSimulatorLaunchConfiguration
+  NSArray<FBSimulatorBootConfiguration *> *values = @[
+    [[[FBSimulatorBootConfiguration
       withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
-      withOptions:FBSimulatorLaunchOptionsEnableDirectLaunch]
+      withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
       scale75Percent],
-    [[FBSimulatorLaunchConfiguration
-      withOptions:FBSimulatorLaunchOptionsUseNSWorkspace]
+    [[FBSimulatorBootConfiguration
+      withOptions:FBSimulatorBootOptionsUseNSWorkspace]
       scale25Percent]
   ];
   [self assertEqualityOfCopy:values];
@@ -96,9 +96,9 @@
 
 - (void)testLaunchConfigurationScaleAppliedToFramebufferConfiguration
 {
-  FBSimulatorLaunchConfiguration *launchConfiguration = [[[FBSimulatorLaunchConfiguration
+  FBSimulatorBootConfiguration *launchConfiguration = [[[FBSimulatorBootConfiguration
     withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
-    withOptions:FBSimulatorLaunchOptionsEnableDirectLaunch]
+    withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
     withFramebuffer:FBFramebufferConfiguration.defaultConfiguration];
   XCTAssertNotNil(launchConfiguration.framebuffer);
   XCTAssertNil(launchConfiguration.scale);

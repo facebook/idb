@@ -138,8 +138,8 @@ extension FBiOSTargetFormat : Accumulator {
   }
 }
 
-extension FBSimulatorLaunchConfiguration : Accumulator {
-  public func append(_ other: FBSimulatorLaunchConfiguration) -> Self {
+extension FBSimulatorBootConfiguration : Accumulator {
+  public func append(_ other: FBSimulatorBootConfiguration) -> Self {
     var configuration = self
     if let locale = other.localizationOverride ?? self.localizationOverride {
       configuration = configuration.withLocalizationOverride(locale)

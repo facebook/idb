@@ -33,14 +33,14 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHID.h"
-#import "FBSimulatorLaunchConfiguration+Helpers.h"
-#import "FBSimulatorLaunchConfiguration.h"
+#import "FBSimulatorBootConfiguration+Helpers.h"
+#import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorProcessFetcher.h"
 
 @interface FBSimulatorBootStrategy ()
 
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorLaunchConfiguration *configuration;
+@property (nonatomic, strong, readonly, nonnull) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly, nonnull) FBSimulator *simulator;
 
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error;
@@ -293,7 +293,7 @@
 
 @implementation FBSimulatorBootStrategy
 
-+ (instancetype)withConfiguration:(FBSimulatorLaunchConfiguration *)configuration simulator:(FBSimulator *)simulator
++ (instancetype)withConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   if (configuration.shouldUseDirectLaunch) {
     return FBControlCoreGlobalConfiguration.isXcode8OrGreater
@@ -306,7 +306,7 @@
   return [[FBSimulatorBootStrategy_Task alloc] initWithConfiguration:configuration simulator:simulator];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorLaunchConfiguration *)configuration simulator:(FBSimulator *)simulator
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   self = [super init];
   if (!self) {

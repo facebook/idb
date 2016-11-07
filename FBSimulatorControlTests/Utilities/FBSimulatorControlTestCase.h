@@ -13,10 +13,10 @@
 #import <FBSimulatorControl/FBSimulatorPool.h>
 
 @class FBSimulator;
+@class FBSimulatorBootConfiguration;
 @class FBSimulatorConfiguration;
 @class FBSimulatorControl;
 @class FBSimulatorControlNotificationAssertions;
-@class FBSimulatorLaunchConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -51,7 +51,7 @@ extern NSString *const FBSimulatorControlTestsLaunchTypeDirect;
 /**
  A default Simulator Launch Configuration.
  */
-@property (nonatomic, strong, readwrite) FBSimulatorLaunchConfiguration *simulatorLaunchConfiguration;
+@property (nonatomic, strong, readwrite) FBSimulatorBootConfiguration *simulatorLaunchConfiguration;
 
 /**
  The Per-Test-Case Device Set Path.

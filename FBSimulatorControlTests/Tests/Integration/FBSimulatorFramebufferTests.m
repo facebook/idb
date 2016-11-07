@@ -23,7 +23,7 @@
 
 - (void)testRecordsVideoForSimulatorApp
 {
-  FBSimulatorLaunchConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
+  FBSimulatorBootConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
   if (launchConfiguration.shouldUseDirectLaunch) {
     NSLog(@"Skipping running -[%@ %@] since the Simulator will be launched directly", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;

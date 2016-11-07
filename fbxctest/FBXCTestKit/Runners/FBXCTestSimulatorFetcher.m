@@ -70,13 +70,13 @@
     return nil;
   }
 
-  FBSimulatorLaunchConfiguration *launchConfiguration = [[FBSimulatorLaunchConfiguration
+  FBSimulatorBootConfiguration *bootConfiguration = [[FBSimulatorBootConfiguration
     defaultConfiguration]
-    withOptions:FBSimulatorLaunchOptionsEnableDirectLaunch];
+    withOptions:FBSimulatorBootOptionsEnableDirectLaunch];
 
   FBInteraction *launchInteraction = [[simulator.interact
-    prepareForLaunch:launchConfiguration]
-    bootSimulator:launchConfiguration];
+    prepareForBoot:bootConfiguration]
+    bootSimulator:bootConfiguration];
 
   if (![launchInteraction perform:error]) {
     [self.configuration.logger logFormat:@"Failed to boot simulator: %@", *error];

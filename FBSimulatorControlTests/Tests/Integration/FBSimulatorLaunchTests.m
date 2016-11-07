@@ -41,7 +41,7 @@
 
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
-  FBSimulatorLaunchConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
+  FBSimulatorBootConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration launchConfiguration:self.simulatorLaunchConfiguration];
 
   [self assertSimulatorBooted:simulator];

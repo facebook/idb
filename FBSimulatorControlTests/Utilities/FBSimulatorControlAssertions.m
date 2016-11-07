@@ -120,7 +120,7 @@
   return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:self.simulatorLaunchConfiguration];
 }
 
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorLaunchConfiguration *)launchConfiguration
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorBootConfiguration *)launchConfiguration
 {
   NSError *error = nil;
   if (![configuration checkRuntimeRequirementsReturningError:&error]) {
@@ -149,13 +149,13 @@
   return simulator;
 }
 
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration launchConfiguration:simulatorLaunchConfiguration];
   return [self assertSimulator:simulator launchesApplication:application withApplicationLaunchConfiguration:applicationLaunchConfiguration];
 }
 
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorLaunchConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
   FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration launches:simulatorLaunchConfiguration thenLaunchesApplication:application  withApplicationLaunchConfiguration:applicationLaunchConfiguration];
   FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
@@ -313,12 +313,12 @@
   [self failIfFalse:(self.notificationsRecieved.count == 0) line:__LINE__ withFormat:@"Expected no notifications but got %@", [self.notificationsRecieved valueForKey:@"name"]];
 }
 
-- (void)bootingNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration
+- (void)bootingNotificationsFired:(FBSimulatorBootConfiguration *)launchConfiguration
 {
   [self consumeNotifications:[FBSimulatorControlNotificationAssertions expectedBootNotificationNamesForConfiguration:launchConfiguration]];
 }
 
-- (void)shutdownNotificationsFired:(FBSimulatorLaunchConfiguration *)launchConfiguration
+- (void)shutdownNotificationsFired:(FBSimulatorBootConfiguration *)launchConfiguration
 {
   [self consumeNotifications:[FBSimulatorControlNotificationAssertions expectedShutdownNotificationNamesForConfiguration:launchConfiguration]];
 }
@@ -349,7 +349,7 @@
   [self.testCase recordFailureWithDescription:string inFile:@(__FILE__) atLine:line expected:YES];
 }
 
-+ (NSArray<NSString *> *)expectedBootNotificationNamesForConfiguration:(FBSimulatorLaunchConfiguration *)configuration
++ (NSArray<NSString *> *)expectedBootNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   NSMutableArray<NSString *> *notificationNames = [NSMutableArray array];
   if (configuration.shouldConnectBridge) {
@@ -362,7 +362,7 @@
   return [notificationNames copy];
 }
 
-+ (NSArray<NSString *> *)expectedShutdownNotificationNamesForConfiguration:(FBSimulatorLaunchConfiguration *)configuration
++ (NSArray<NSString *> *)expectedShutdownNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   if (configuration.shouldUseDirectLaunch) {
     return @[FBSimulatorDidTerminateNotification, FBSimulatorConnectionDidDisconnectNotification];
