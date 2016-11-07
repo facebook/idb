@@ -92,7 +92,9 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
         interaction.launchApplication(launch)
       }
-    case .launchXCTest(let configuration):
+    case .launchXCTest(var configuration):
+      // Always initialize for UI Testing until we make this optional
+      configuration = configuration.withUITesting(true)
       return SimulatorInteractionRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(configuration)) { interaction in
         interaction.startTest(with: configuration)
 

@@ -42,6 +42,10 @@ struct Fixtures {
   static var videoDiagnostic: FBDiagnostic { get {
     return FBDiagnosticBuilder().updatePath(self.videoPath).build()
   }}
+
+  static var testBundlePath: String { get {
+    return Bundle.main.bundlePath
+  }}
 }
 
 extension CreationSpecification {

@@ -46,7 +46,7 @@
 
 - (void)testStrategyWithMissingApplicationPath
 {
-  FBTestLaunchConfiguration *testLaunch = [[FBTestLaunchConfiguration new] withTestBundlePath:@""];
+  FBTestLaunchConfiguration *testLaunch = [FBTestLaunchConfiguration configurationWithTestBundlePath:@""];
   FBSimulatorTestPreparationStrategy *strategy =
   [FBSimulatorTestPreparationStrategy strategyWithTestLaunchConfiguration:testLaunch
                                                          workingDirectory:@""
@@ -112,7 +112,7 @@
 
 - (FBTestLaunchConfiguration *)defaultTestLaunch
 {
-  return [[[FBTestLaunchConfiguration new] withApplicationLaunchConfiguration:self.defaultAppLaunch] withTestBundlePath:@"/testBundle"];
+  return [[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/testBundle"] withApplicationLaunchConfiguration:self.defaultAppLaunch];
 }
 
 - (FBApplicationLaunchConfiguration *)defaultAppLaunch

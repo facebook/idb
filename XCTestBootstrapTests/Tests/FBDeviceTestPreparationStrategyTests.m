@@ -28,7 +28,7 @@
   FBDeviceTestPreparationStrategy *strategy =
   [FBDeviceTestPreparationStrategy strategyWithApplicationPath:nil
                                            applicationDataPath:@"/appData"
-                                       testLaunchConfiguration:[[FBTestLaunchConfiguration new] withTestBundlePath:@"/testBundle"]
+                                       testLaunchConfiguration:[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/testBundle"]
    ];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
@@ -38,7 +38,7 @@
   FBDeviceTestPreparationStrategy *strategy =
   [FBDeviceTestPreparationStrategy strategyWithApplicationPath:@"/app"
                                            applicationDataPath:nil
-                                       testLaunchConfiguration:[[FBTestLaunchConfiguration new] withTestBundlePath:@"/testBundle"]
+                                       testLaunchConfiguration:[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/testBundle"]
    ];
   XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
 }
@@ -81,7 +81,7 @@
   FBDeviceTestPreparationStrategy *strategy =
   [FBDeviceTestPreparationStrategy strategyWithApplicationPath:@"/app"
                                            applicationDataPath:@"/appData.xcappdata"
-                                       testLaunchConfiguration:[[FBTestLaunchConfiguration new] withTestBundlePath:@"/testBundle"]
+                                       testLaunchConfiguration:[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/testBundle"]
                                                    fileManager:fileManagerMock
    ];
   FBTestRunnerConfiguration *configuration = [strategy prepareTestWithDeviceOperator:deviceOperatorMock error:nil];

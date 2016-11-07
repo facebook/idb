@@ -581,8 +581,7 @@ extension Action : Parsable {
     let configurationParser = parser
       .fmap{ (timeout, bundle, appLaunch) -> FBTestLaunchConfiguration in
         var conf =
-          FBTestLaunchConfiguration()
-            .withTestBundlePath(bundle)
+          FBTestLaunchConfiguration(testBundlePath: bundle)
             .withApplicationLaunchConfiguration(appLaunch.0)
 
         if let testHostPath = appLaunch.1?.path {

@@ -64,11 +64,10 @@
 
 - (FBTestLaunchConfiguration *)testLaunch
 {
-  return
-  [[[[FBTestLaunchConfiguration new]
-     withTestBundlePath:self.iOSUnitTestBundlePath]
+  return [[[FBTestLaunchConfiguration
+    configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
     withApplicationLaunchConfiguration:self.tableSearchAppLaunch]
-   withUITesting:NO];
+    withUITesting:NO];
 }
 
 - (FBApplicationDescriptor *)tableSearchApplication

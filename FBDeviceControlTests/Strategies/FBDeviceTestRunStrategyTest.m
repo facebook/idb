@@ -23,9 +23,10 @@
 
   FBDevice *device = [[FBDevice alloc] init];
   FBDeviceTestRunStrategy *strategy = [FBDeviceTestRunStrategy
-                                       strategyWithDevice:device
-                                       testHostPath:testHostPath
-                                       testBundlePath:testBundlePath];
+    strategyWithDevice:device
+    testHostPath:testHostPath
+    testBundlePath:testBundlePath
+    withTimeout:0];
 
   NSDictionary *properties = [strategy buildXCTestRunProperties];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];

@@ -13,53 +13,75 @@
 
 #import "FBTestManagerTestReporter.h"
 
-@interface FBTestLaunchConfiguration ()
-@property (nonatomic, copy, readwrite) FBApplicationLaunchConfiguration *applicationLaunchConfiguration;
-@property (nonatomic, copy, readwrite) NSString *testBundlePath;
-@property (nonatomic, assign, readwrite) BOOL shouldInitializeUITesting;
-@end
-
 @implementation FBTestLaunchConfiguration
+
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _testBundlePath = testBundlePath;
+  _applicationLaunchConfiguration = applicationLaunchConfiguration;
+  _testHostPath = testHostPath;
+  _timeout = timeout;
+  _shouldInitializeUITesting = initializeUITesting;
+
+  return self;
+}
+
++ (instancetype)configurationWithTestBundlePath:(NSString *)testBundlePath
+{
+  NSParameterAssert(testBundlePath);
+  return [[FBTestLaunchConfiguration alloc] initWithTestBundlePath:testBundlePath applicationLaunchConfiguration:nil testHostPath:nil timeout:0 initializeUITesting:NO];
+}
 
 - (instancetype)withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
-  self.applicationLaunchConfiguration = applicationLaunchConfiguration;
-  return self;
-}
-
-- (instancetype)withUITesting:(BOOL)shouldInitializeUITesting
-{
-  self.shouldInitializeUITesting = shouldInitializeUITesting;
-  return self;
-}
-
-- (instancetype)withTestBundlePath:(NSString *)testBundlePath
-{
-  self.testBundlePath = testBundlePath;
-  return self;
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testBundlePath
+    applicationLaunchConfiguration:applicationLaunchConfiguration
+    testHostPath:self.testHostPath
+    timeout:self.timeout
+    initializeUITesting:self.shouldInitializeUITesting];
 }
 
 - (instancetype)withTestHostPath:(NSString *)testHostPath
 {
-  _testHostPath = testHostPath;
-  return self;
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testBundlePath
+    applicationLaunchConfiguration:self.applicationLaunchConfiguration
+    testHostPath:testHostPath
+    timeout:self.timeout
+    initializeUITesting:self.shouldInitializeUITesting];
 }
 
 - (instancetype)withTimeout:(NSTimeInterval)timeout
 {
-  _timeout = timeout;
-  return self;
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testBundlePath
+    applicationLaunchConfiguration:self.applicationLaunchConfiguration
+    testHostPath:self.testHostPath
+    timeout:timeout
+    initializeUITesting:self.shouldInitializeUITesting];
+}
+
+- (instancetype)withUITesting:(BOOL)shouldInitializeUITesting
+{
+  return [[FBTestLaunchConfiguration alloc]
+    initWithTestBundlePath:self.testBundlePath
+    applicationLaunchConfiguration:self.applicationLaunchConfiguration
+    testHostPath:self.testHostPath
+    timeout:self.timeout
+    initializeUITesting:shouldInitializeUITesting];
 }
 
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return
-  [[[[self.class alloc]
-     withTestBundlePath:self.testBundlePath]
-    withApplicationLaunchConfiguration:self.applicationLaunchConfiguration]
-   withUITesting:self.shouldInitializeUITesting];
+  return self;
 }
 
 #pragma mark NSObject
@@ -70,15 +92,16 @@
     return NO;
   }
 
-  return
-  (self.testHostPath == configuration.testHostPath || [self.testHostPath isEqualToString:configuration.testHostPath]) &&
-  [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration] &&
-  self.shouldInitializeUITesting == configuration.shouldInitializeUITesting;
+  return (self.testBundlePath == configuration.testBundlePath || [self.testBundlePath isEqualToString:configuration.testBundlePath]) &&
+         (self.applicationLaunchConfiguration == configuration.applicationLaunchConfiguration  || [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration]) &&
+         (self.testHostPath == configuration.testHostPath || [self.testHostPath isEqualToString:configuration.testHostPath]) &&
+         self.timeout == configuration.timeout &&
+         self.shouldInitializeUITesting == configuration.shouldInitializeUITesting;
 }
 
 - (NSUInteger)hash
 {
-  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ (unsigned)self.shouldInitializeUITesting;
+  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting;
 }
 
 #pragma mark FBDebugDescribeable
@@ -86,12 +109,12 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-          @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d",
-          self.testBundlePath,
-          self.applicationLaunchConfiguration,
-          self.testHostPath,
-          self.shouldInitializeUITesting
-          ];
+    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d",
+    self.testBundlePath,
+    self.applicationLaunchConfiguration,
+    self.testHostPath,
+    self.shouldInitializeUITesting
+  ];
 }
 
 - (NSString *)shortDescription
@@ -114,6 +137,5 @@
     @"test_host_path" : self.testHostPath ?: NSNull.null,
   };
 }
-
 
 @end
