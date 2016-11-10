@@ -141,14 +141,14 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
   // If the xctest process has stalled, we should sample it (if possible), then terminate it.
   if (!waitSuccessful) {
-    // We don't currently have the PID of the xctest process for simulators as it is wrapped with simctl.
-    NSString *message = @"The xctest process stalled";
-    if (!self.simulator) {
-      message = [message stringByAppendingFormat:@": %@", [FBLogicTestRunner sampleStalledProcess:task.processIdentifier]];
-    }
+    pid_t xctestProcessIdentifier = simulator
+      ? [FBLogicTestRunner xctestProcessIdentiferForSimctlParent:task.processIdentifier fetcher:simulator.processFetcher.processFetcher]
+      : task.processIdentifier;
+
+    NSString *sample = [FBLogicTestRunner sampleStalledProcess:xctestProcessIdentifier];
     [task terminate];
     return [[FBXCTestError
-      describe:message]
+      describeFormat:@"The xctest process stalled: %@", sample]
       failBool:error];
   }
 
@@ -171,6 +171,15 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
   [self.configuration.reporter didFinishExecutingTestPlan];
 
   return YES;
+}
+
++ (pid_t)xctestProcessIdentiferForSimctlParent:(pid_t)simctlProcessIdentifier fetcher:(FBProcessFetcher *)fetcher
+{
+  pid_t xctestProcessIdentifier = [fetcher subprocessOf:simctlProcessIdentifier withName:@"xctest"];
+  if (xctestProcessIdentifier < 1) {
+    return simctlProcessIdentifier;
+  }
+  return xctestProcessIdentifier;
 }
 
 + (nullable FBCrashLogInfo *)crashLogsForChildProcessOf:(pid_t)processIdentifier since:(NSDate *)sinceDate
