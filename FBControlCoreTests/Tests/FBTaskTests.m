@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBControlCoreFixtures.h"
+#import "FBControlCoreLoggerDouble.h"
 
 @interface FBTaskTests : XCTestCase
 
@@ -91,6 +92,21 @@
 
   XCTAssertEqual(lines.count, 8u);
   XCTAssertEqualObjects(lines[0], @"0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180");
+}
+
+- (void)testLoggerKeepsOutput
+{
+  NSString *bundlePath = [[NSBundle bundleForClass:self.class] bundlePath];
+
+  FBTask *task = [[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
+    withStdErrToLogger:[FBControlCoreLoggerDouble new]]
+    withStdOutToLogger:[FBControlCoreLoggerDouble new]]
+    build]
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+
+  XCTAssertNil(task.error);
+  XCTAssertTrue([task.stdOut containsString:@"directory"]);
 }
 
 - (void)testUpdatesStateWithAsynchronousTermination
