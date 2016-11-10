@@ -79,12 +79,12 @@
     [reader consumeData:fileHandle.availableData];
   };
 
-  [task waitForCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
+  [task waitForCompletionWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:nil];
   [otestQueryOutputHandle closeFile];
 
   if (!task.wasSuccessful) {
     return [[[FBXCTestError
-      describe:@"Listing of Tests Failed"]
+      describeFormat:@"Listing of Tests Failed %@", task.error.localizedDescription]
       causedBy:task.error]
       failBool:error];
   }
