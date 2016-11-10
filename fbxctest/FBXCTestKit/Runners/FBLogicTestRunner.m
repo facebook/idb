@@ -102,7 +102,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
   FBMultiFileReader *multiReader = [FBMultiFileReader new];
 
-  FBLineReader *otestLineReader = [FBLineReader lineReaderWithConsumer:^(NSString *line){
+  id<FBFileDataConsumer> otestLineReader = [FBLineFileDataConsumer lineReaderWithConsumer:^(NSString *line){
     if ([line length] == 0) {
       return;
     }
@@ -116,7 +116,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     return NO;
   }
 
-  FBLineReader *testOutputLineReader = [FBLineReader lineReaderWithConsumer:^(NSString *line){
+  id<FBFileDataConsumer> testOutputLineReader = [FBLineFileDataConsumer lineReaderWithConsumer:^(NSString *line){
     [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   if (![multiReader addFileHandle:testOutputPipe.fileHandleForReading withConsumer:testOutputLineReader error:error]) {
