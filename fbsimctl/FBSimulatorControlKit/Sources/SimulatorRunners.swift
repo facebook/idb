@@ -194,14 +194,18 @@ private struct DiagnosticsRunner : Runner {
   }
 
   func run() -> CommandResult {
-    let diagnostics = self.fetchDiagnostics()
-
     reporter.reportValue(EventName.Diagnose, EventType.Started, query)
-    for diagnostic in diagnostics {
-      reporter.reportValue(EventName.Diagnostic, EventType.Discrete, diagnostic)
-    }
+    let diagnostics = self.fetchDiagnostics()
     reporter.reportValue(EventName.Diagnose, EventType.Ended, query)
-    return .success(nil)
+
+    let subjects: [EventReporterSubject] = diagnostics.map { diagnostic in
+      return SimpleSubject(
+        EventName.Diagnostic,
+        EventType.Discrete,
+        ControlCoreSubject(diagnostic)
+      )
+    }
+    return .success(CompositeSubject(subjects))
   }
 
   func fetchDiagnostics() -> [FBDiagnostic] {

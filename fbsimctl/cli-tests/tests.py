@@ -199,8 +199,13 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             response = webserver.get(
                 iphone6.get_udid() + '/diagnose/coresimulator',
             )
-            print(response)
             self.assertEqual(response['status'], 'success')
+            event = response['subject'][0]
+            self.assertEqual(event['event_name'], 'diagnostic')
+            self.assertEqual(event['event_type'], 'discrete')
+            diagnostic = event['subject']
+            self.assertEqual(diagnostic['short_name'], 'coresimulator')
+            self.assertIsNotNone(diagnostic.get('contents'))
 
     def testListSimulators(self):
         iphone6 = self.assertCreatesSimulator(['iPhone 6'])
