@@ -87,6 +87,7 @@ enum HttpMethod : String {
 struct ActionRoute {
   enum Handler {
     case constant(Action)
+    case path(([String]) throws -> Action)
     case parser((JSON) throws -> Action)
   }
 
@@ -98,13 +99,17 @@ struct ActionRoute {
     return ActionRoute(method: HttpMethod.POST, endpoint: endpoint, handler: Handler.parser(handler))
   }
 
-  static func get(_ endpoint: EventName, action: Action) -> ActionRoute {
+  static func getConstant(_ endpoint: EventName, action: Action) -> ActionRoute {
     return ActionRoute(method: HttpMethod.GET, endpoint: endpoint, handler: Handler.constant(action))
   }
 
-  fileprivate var pathHandler:(HttpRequest)throws -> FBiOSTargetQuery? { get {
+  static func get(_ endpoint: EventName, handler: @escaping ([String]) throws -> Action) -> ActionRoute {
+    return ActionRoute(method: HttpMethod.GET, endpoint: endpoint, handler: Handler.path(handler))
+  }
+
+  fileprivate var pathQueryHandler:(HttpRequest)throws -> FBiOSTargetQuery? { get {
     return { request in
-      guard let queryPath = request.pathComponents.dropFirst().first , request.pathComponents.count == 3 else {
+      guard let queryPath = request.pathComponents.dropFirst().first, request.pathComponents.count >= 3 else {
         return nil
       }
       return FBiOSTargetQuery.udids([
@@ -113,10 +118,16 @@ struct ActionRoute {
     }
   }}
 
-  fileprivate var bodyHandler:(HttpRequest)throws -> (Action, FBiOSTargetQuery?) { get {
+  fileprivate var actionHandler:(HttpRequest)throws -> (Action, FBiOSTargetQuery?) { get {
     switch self.handler {
     case .constant(let action):
       return { _ in (action, nil) }
+    case .path(let pathHandler):
+      return { request in
+        let components = Array(request.pathComponents.dropFirst())
+        let action = try pathHandler(components)
+        return (action, nil)
+      }
     case .parser(let actionParser):
       return { request in
         let json = try request.jsonBody()
@@ -128,14 +139,14 @@ struct ActionRoute {
   }}
 
   fileprivate func requestHandler(_ performer: ActionPerformer) -> (HttpRequest) -> HttpResponse {
-    let bodyHandler = self.bodyHandler
-    let pathHandler = self.pathHandler
+    let actionHandler = self.actionHandler
+    let pathQueryHandler = self.pathQueryHandler
 
     return { request in
       do {
-        let pathQuery = try pathHandler(request)
-        let (action, bodyQuery) = try bodyHandler(request)
-        return performer.dispatchAction(action, queryOverride: pathQuery ?? bodyQuery)
+        let pathQuery = try pathQueryHandler(request)
+        let (action, actionQuery) = try actionHandler(request)
+        return performer.dispatchAction(action, queryOverride: pathQuery ?? actionQuery)
       } catch let error as JSONError {
         return HttpEventReporter.errorResponse(error.description)
       } catch let error as ParseError {
@@ -199,12 +210,22 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var configRoute: ActionRoute { get {
-    return ActionRoute.get(EventName.Config, action: Action.config)
+    return ActionRoute.getConstant(EventName.Config, action: Action.config)
   }}
 
-  fileprivate static var diagnoseRoute: ActionRoute { get {
+  fileprivate static var diagnosticQueryRoute: ActionRoute { get {
     return ActionRoute.post(EventName.Diagnose) { json in
       let query = try FBDiagnosticQuery.inflate(fromJSON: json.decode())
+      return Action.diagnose(query, DiagnosticFormat.Content)
+    }
+  }}
+
+  fileprivate static var diagnosticRoute: ActionRoute { get {
+    return ActionRoute.get(EventName.Diagnose) { components in
+      guard let name = components.last else {
+        throw ParseError.custom("No diagnostic name provided")
+      }
+      let query = FBDiagnosticQuery.named([name])
       return Action.diagnose(query, DiagnosticFormat.Content)
     }
   }}
@@ -223,7 +244,7 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var listRoute: ActionRoute { get {
-    return ActionRoute.get(EventName.List, action: Action.list)
+    return ActionRoute.getConstant(EventName.List, action: Action.list)
   }}
 
   fileprivate static var openRoute: ActionRoute { get {
@@ -305,7 +326,8 @@ class HttpRelay : Relay {
     return [
       self.clearKeychainRoute,
       self.configRoute,
-      self.diagnoseRoute,
+      self.diagnosticQueryRoute,
+      self.diagnosticRoute,
       self.launchRoute,
       self.listRoute,
       self.openRoute,

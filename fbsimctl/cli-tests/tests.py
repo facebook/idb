@@ -188,9 +188,18 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             process.wait_for_event('listen', 'started')
             yield WebServer(self.port)
 
-    def testDiagnostics(self):
+    def testDiagnosticSearch(self):
         with self.launchWebserver() as webserver:
             response = webserver.post('diagnose', {'type': 'all'})
+            self.assertEqual(response['status'], 'success')
+
+    def testGetCoreSimulatorLog(self):
+        iphone6 = self.assertCreatesSimulator(['iPhone 6'])
+        with self.launchWebserver() as webserver:
+            response = webserver.get(
+                iphone6.get_udid() + '/diagnose/coresimulator',
+            )
+            print(response)
             self.assertEqual(response['status'], 'success')
 
     def testListSimulators(self):
