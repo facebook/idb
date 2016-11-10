@@ -74,22 +74,22 @@
   if (otestQueryOutputHandle == nil) {
     return [[FBXCTestError describeFormat:@"Failed to open fifo for reading: %@", otestQueryOutputPath] failBool:error];
   }
-  FBAccumilatingFileDataConsumer *reader = [FBAccumilatingFileDataConsumer new];
+  NSMutableData *queryOutput = [NSMutableData data];
   otestQueryOutputHandle.readabilityHandler = ^(NSFileHandle *fileHandle) {
-    [reader consumeData:fileHandle.availableData];
+    [queryOutput appendData:fileHandle.availableData];
   };
 
-  [task waitForCompletionWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout error:nil];
+  [task waitForCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
   [otestQueryOutputHandle closeFile];
 
   if (!task.wasSuccessful) {
     return [[[FBXCTestError
-      describeFormat:@"Listing of Tests Failed %@", task.error.localizedDescription]
+      describe:@"Listing of Tests Failed"]
       causedBy:task.error]
       failBool:error];
   }
 
-  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:reader.data options:0 error:error];
+  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:queryOutput options:0 error:error];
   if (testNames == nil) {
     return NO;
   }

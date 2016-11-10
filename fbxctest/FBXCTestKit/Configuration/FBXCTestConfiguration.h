@@ -46,7 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *simulatorOS;
 @property (nonatomic, copy, readonly) NSString *testFilter;
 
-@property (nonatomic, assign, readwrite) NSTimeInterval testTimeout;
 @property (nonatomic, assign, readonly) BOOL runWithoutSimulator;
 @property (nonatomic, assign, readonly) BOOL listTestsOnly;
 

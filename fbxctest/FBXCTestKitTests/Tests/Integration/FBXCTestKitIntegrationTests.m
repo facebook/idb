@@ -34,13 +34,6 @@
   };
 }
 
-+ (NSDictionary<NSString *, NSString *> *)stallingProcessUnderTestEnvironment
-{
-  return @{
-    @"TEST_FIXTURE_SHOULD_STALL" : @"1",
-  };
-}
-
 - (void)testRunsiOSUnitTestInApplication
 {
   NSError *error;
@@ -69,7 +62,6 @@
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
     @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
-    @[@"iOSUnitTestFixtureTests", @"testPossibleStallingOfHostProcess"],
     @[@"iOSUnitTestFixtureTests", @"testWillAlwaysFail"],
     @[@"iOSUnitTestFixtureTests", @"testWillAlwaysPass"],
   ];
@@ -78,7 +70,6 @@
     @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
     @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
-    @[@"iOSUnitTestFixtureTests", @"testPossibleStallingOfHostProcess"],
     @[@"iOSUnitTestFixtureTests", @"testWillAlwaysPass"],
   ];
   XCTAssertEqualObjects(expected, self.reporter.passedTests);
@@ -140,8 +131,8 @@
   XCTAssertTrue(self.reporter.printReportWasCalled);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
   XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 10u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 10u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 9u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 9u);
 }
 
 - (void)testiOSLogicTestEndsOnCrashingTest
@@ -175,38 +166,6 @@
   XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 6u);
 }
 
-- (void)testiOSLogicTestEndsOnStallingTest
-{
-  NSError *error = nil;
-  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
-    return;
-  }
-
-  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
-  NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
-  NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.stallingProcessUnderTestEnvironment;
-
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processUnderTestEnvironment];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  configuration.testTimeout = 5;
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
-
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
-  XCTAssertFalse(success);
-  XCTAssertNotNil(error);
-  XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
-
-  XCTAssertFalse(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 8u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 7u);
-}
-
 - (void)testMacOSXLogicTest
 {
   NSError *error = nil;
@@ -232,8 +191,8 @@
   XCTAssertTrue(self.reporter.printReportWasCalled);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
   XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 10u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 10u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 9u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 9u);
 }
 
 - (void)testMacOSXLogicTestEndsOnCrashingTest
@@ -267,38 +226,6 @@
   XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 6u);
 }
 
-- (void)testMacOSXLogicTestEndsOnStallingTest
-{
-  NSError *error = nil;
-  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
-    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
-    return;
-  }
-
-  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
-  NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
-  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
-  NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.stallingProcessUnderTestEnvironment;
-
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processUnderTestEnvironment];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  configuration.testTimeout = 5;
-  XCTAssertTrue(success);
-  XCTAssertNil(error);
-
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
-  XCTAssertFalse(success);
-  XCTAssertNotNil(error);
-  XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
-
-  XCTAssertFalse(self.reporter.printReportWasCalled);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 8u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 7u);
-}
-
 - (void)testReportsMacOSXTestList
 {
   NSError *error = nil;
@@ -330,7 +257,6 @@
     @[@"MacUnitTestFixtureTests", @"testIsRunningOnIOS"],
     @[@"MacUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
     @[@"MacUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
-    @[@"MacUnitTestFixtureTests", @"testPossibleStallingOfHostProcess"],
     @[@"MacUnitTestFixtureTests", @"testWillAlwaysFail"],
     @[@"MacUnitTestFixtureTests", @"testWillAlwaysPass"],
   ];

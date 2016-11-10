@@ -18,9 +18,6 @@
 #import "FBXCTestLogger.h"
 #import "FBXCTestShimConfiguration.h"
 
-static NSTimeInterval const DefaultTimeout = 100000;
-static NSTimeInterval const DefaultLogicTestTimeout = 500;
-
 @interface FBXCTestConfiguration ()
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readwrite) id<FBXCTestReporter> reporter;
@@ -52,7 +49,6 @@ static NSTimeInterval const DefaultLogicTestTimeout = 500;
   _reporter = reporter;
   _processUnderTestEnvironment = environment ?: @{};
   _logger = logger;
-  _testTimeout = DefaultTimeout;
 
   return self;
 }
@@ -91,7 +87,6 @@ static NSTimeInterval const DefaultLogicTestTimeout = 500;
       }
     } else if ([argument isEqualToString:@"-logicTest"]) {
       [self addTestBundle:parameter runnerAppPath:nil error:error];
-      self.testTimeout = DefaultLogicTestTimeout;
     } else if ([argument isEqualToString:@"-appTest"]) {
       NSRange colonRange = [parameter rangeOfString:@":"];
       if (colonRange.length == 0) {
