@@ -377,8 +377,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (instancetype)startSynchronouslyWithTimeout:(NSTimeInterval)timeout
 {
   [self launchWithTerminationHandler:nil];
-  [self waitForCompletionWithTimeout:timeout error:nil];
-  return self;
+
+  NSError *error = nil;
+  if (![self waitForCompletionWithTimeout:timeout error:&error]) {
+    return [self terminateWithErrorMessage:error.description];
+  }
+  return [self terminateWithErrorMessage:nil];
 }
 
 #pragma mark Awaiting Completion
@@ -389,20 +393,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     return !self.process.isRunning;
   }];
 
-  NSString *errorMessage = nil;
   if (!completed) {
-    errorMessage = [NSString stringWithFormat:
-      @"Launched process '%@' took longer than %f seconds to terminate",
-      self.process,
-      timeout
-    ];
+    return [[FBControlCoreError
+      describeFormat:@"Launched process '%@' took longer than %f seconds to terminate", self, timeout]
+      failBool:error];
   }
-  [self terminateWithErrorMessage:errorMessage];
-
-  if (self.error && error) {
-    *error = self.error;
-  }
-  return completed;
+  return YES;
 }
 
 #pragma mark Accessors

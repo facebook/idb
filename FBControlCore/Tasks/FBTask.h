@@ -39,6 +39,7 @@ extern NSString *const FBTaskErrorDomain;
 
 /**
  Runs the reciever, returning when the Task has completed or when the timeout is hit.
+ If the timeout is reached, the process will be terminated.
 
  @param timeout the the maximum time to evaluate the task.
  @return the reciever, for chaining.
@@ -64,6 +65,7 @@ extern NSString *const FBTaskErrorDomain;
 
 /**
  Runs the reciever, returning when the Task has completed or when the timeout is hit.
+ If the timeout is reached, the process will not be automatically terminated.
 
  @param timeout the the maximum time to evaluate the task.
  @return the reciever, for chaining.
