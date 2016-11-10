@@ -141,7 +141,8 @@ struct ActionRunner : Runner {
     switch action {
     case .config:
       let config = FBControlCoreGlobalConfiguration()
-      return CommandResult.success(ControlCoreSubject(config))
+      let subject = SimpleSubject(EventName.Config, EventType.Discrete, ControlCoreSubject(config))
+      return CommandResult.success(subject)
     case .list:
       let context = self.context.replace(query)
       return ListRunner(context: context).run()
