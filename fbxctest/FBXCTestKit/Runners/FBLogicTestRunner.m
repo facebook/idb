@@ -22,7 +22,6 @@
 #import "FBXCTestShimConfiguration.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -10;
-static NSTimeInterval const RunnerTimeout = 100000;
 
 @interface FBLogicTestRunner ()
 
@@ -129,7 +128,7 @@ static NSTimeInterval const RunnerTimeout = 100000;
   }
 
   // Wait for the xctest process to finish.
-  [task waitForCompletionWithTimeout:RunnerTimeout error:&innerError];
+  [task waitForCompletionWithTimeout:self.configuration.testTimeout error:&innerError];
 
   // Fail if we can't close.
   if (![otestShimReader stopReadingWithError:&innerError]) {
