@@ -58,6 +58,14 @@
   }
 }
 
+- (void)testPossibleStallingOfHostProcess
+{
+  if ([NSProcessInfo.processInfo.environment[@"TEST_FIXTURE_SHOULD_STALL"] boolValue]) {
+    NSLog(@"'TEST_FIXTURE_SHOULD_STALL' is True, stalling");
+    sleep(INT_MAX);
+  }
+}
+
 - (void)testWillAlwaysPass
 {
   // do nothing

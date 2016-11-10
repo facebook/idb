@@ -62,6 +62,7 @@
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
     @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
+    @[@"iOSUnitTestFixtureTests", @"testPossibleStallingOfHostProcess"],
     @[@"iOSUnitTestFixtureTests", @"testWillAlwaysFail"],
     @[@"iOSUnitTestFixtureTests", @"testWillAlwaysPass"],
   ];
@@ -70,6 +71,7 @@
     @[@"iOSUnitTestFixtureTests", @"testIsRunningInIOSApp"],
     @[@"iOSUnitTestFixtureTests", @"testIsRunningOnIOS"],
     @[@"iOSUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
+    @[@"iOSUnitTestFixtureTests", @"testPossibleStallingOfHostProcess"],
     @[@"iOSUnitTestFixtureTests", @"testWillAlwaysPass"],
   ];
   XCTAssertEqualObjects(expected, self.reporter.passedTests);
@@ -131,8 +133,8 @@
   XCTAssertTrue(self.reporter.printReportWasCalled);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
   XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 9u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 9u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 10u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 10u);
 }
 
 - (void)testiOSLogicTestEndsOnCrashingTest
@@ -191,8 +193,8 @@
   XCTAssertTrue(self.reporter.printReportWasCalled);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
   XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 1u);
-  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 9u);
-  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 9u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 10u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 10u);
 }
 
 - (void)testMacOSXLogicTestEndsOnCrashingTest
@@ -257,6 +259,7 @@
     @[@"MacUnitTestFixtureTests", @"testIsRunningOnIOS"],
     @[@"MacUnitTestFixtureTests", @"testIsRunningOnMacOSX"],
     @[@"MacUnitTestFixtureTests", @"testPossibleCrashingOfHostProcess"],
+    @[@"MacUnitTestFixtureTests", @"testPossibleStallingOfHostProcess"],
     @[@"MacUnitTestFixtureTests", @"testWillAlwaysFail"],
     @[@"MacUnitTestFixtureTests", @"testWillAlwaysPass"],
   ];
