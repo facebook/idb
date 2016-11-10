@@ -128,7 +128,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
   }
 
   // Wait for the xctest process to finish.
-  [task waitForCompletionWithTimeout:self.configuration.testTimeout error:&innerError];
+  BOOL waitSuccessful = [task waitForCompletionWithTimeout:self.configuration.testTimeout error:&innerError];
 
   // Fail if we can't close.
   if (![otestShimReader stopReadingWithError:&innerError]) {
@@ -136,6 +136,19 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     return [[[FBXCTestError
       describeFormat:@"Failed to stop reading fifo: %@", otestShimOutputPath]
       causedBy:innerError]
+      failBool:error];
+  }
+
+  // If the xctest process has stalled, we should sample it (if possible), then terminate it.
+  if (!waitSuccessful) {
+    // We don't currently have the PID of the xctest process for simulators as it is wrapped with simctl.
+    NSString *message = @"The xctest process stalled";
+    if (!self.simulator) {
+      message = [message stringByAppendingFormat:@": %@", [FBLogicTestRunner sampleStalledProcess:task.processIdentifier]];
+    }
+    [task terminate];
+    return [[FBXCTestError
+      describe:message]
       failBool:error];
   }
 
@@ -176,6 +189,15 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
       filteredArrayUsingPredicate:crashLogInfoPredicate]
       firstObject];
   }];
+}
+
++ (nullable NSString *)sampleStalledProcess:(pid_t)processIdentifier
+{
+  return [[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @"1"]]
+    build]
+    startSynchronouslyWithTimeout:5]
+    stdOut];
 }
 
 @end

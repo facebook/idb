@@ -34,6 +34,13 @@
   };
 }
 
++ (NSDictionary<NSString *, NSString *> *)stallingProcessUnderTestEnvironment
+{
+  return @{
+    @"TEST_FIXTURE_SHOULD_STALL" : @"1",
+  };
+}
+
 - (void)testRunsiOSUnitTestInApplication
 {
   NSError *error;
@@ -226,6 +233,38 @@
   XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
   XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 7u);
   XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 6u);
+}
+
+- (void)testMacOSXLogicTestEndsOnStallingTest
+{
+  NSError *error = nil;
+  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
+  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
+  NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.stallingProcessUnderTestEnvironment;
+
+  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processUnderTestEnvironment];
+  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
+  configuration.testTimeout = 5;
+  XCTAssertTrue(success);
+  XCTAssertNil(error);
+
+  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
+  success = [testRunner executeTestsWithError:&error];
+  XCTAssertFalse(success);
+  XCTAssertNotNil(error);
+  XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
+
+  XCTAssertFalse(self.reporter.printReportWasCalled);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test-suite"].count, 1u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test-suite"].count, 0u);
+  XCTAssertEqual([self.reporter eventsWithName:@"begin-test"].count, 8u);
+  XCTAssertEqual([self.reporter eventsWithName:@"end-test"].count, 7u);
 }
 
 - (void)testReportsMacOSXTestList
