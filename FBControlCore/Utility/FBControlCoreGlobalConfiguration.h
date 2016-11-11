@@ -127,6 +127,14 @@ extern NSString *const FBControlCoreDebugLogging;
 + (void)setDefaultLogger:(id<FBControlCoreLogger>)logger;
 
 /**
+ Sets whether verbose debug logging should be enabled.
+ This affects a number of subsystems.
+
+ @param enabled YES if should be enabled, NO otherwise.
+ */
++ (void)setDebugLoggingEnabled:(BOOL)enabled;
+
+/**
  Update the current process environment to enable logging to stderr.
 
  @param stderrLogging YES if stderr logging should be enabled, NO otherwise.

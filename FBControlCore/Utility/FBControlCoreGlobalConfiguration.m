@@ -224,10 +224,15 @@ static id<FBControlCoreLogger> logger;
   logger = defaultLogger;
 }
 
++ (void)setDebugLoggingEnabled:(BOOL)enabled
+{
+  setenv(FBControlCoreDebugLogging.UTF8String, enabled ? "YES" : "NO", 1);
+}
+
 + (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging
 {
   setenv(FBControlCoreStderrLogging.UTF8String, stderrLogging ? "YES" : "NO", 1);
-  setenv(FBControlCoreDebugLogging.UTF8String, debugLogging ? "YES" : "NO", 1);
+  [self setDebugLoggingEnabled:debugLogging];
 }
 
 @end
