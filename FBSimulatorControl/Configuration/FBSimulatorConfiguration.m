@@ -48,11 +48,17 @@
   static dispatch_once_t onceToken;
   static FBSimulatorConfiguration *configuration;
   dispatch_once(&onceToken, ^{
-    id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone6.new;
-    id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
-    configuration = [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
+    configuration = [self makeDefaultConfiguration];
   });
   return configuration;
+}
+
++ (instancetype)makeDefaultConfiguration
+{
+  id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone6.new;
+  id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
+  NSAssert(os, @"Could not obtain OS for Default Device %@", device);
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
 }
 
 #pragma mark NSCopying
