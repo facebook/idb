@@ -87,6 +87,18 @@
   return configurations;
 }
 
++ (NSArray<id<FBControlCoreConfiguration_OS>> *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device
+{
+  NSMutableArray *array = [NSMutableArray array];
+  for (SimRuntime *runtime in [self supportedRuntimesForDevice:device]) {
+    id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
+    if (os) {
+      [array addObject:os];
+    }
+  }
+  return [array copy];
+}
+
 + (NSArray<FBSimulatorConfiguration *> *)allAvailableDefaultConfigurationsWithAbsentOSVersionsOut:(NSArray<NSString *> **)absentOSVersionsOut absentDeviceTypesOut:(NSArray<NSString *> **)absentDeviceTypesOut
 {
   NSMutableArray<FBSimulatorConfiguration *> *configurations = [NSMutableArray array];
@@ -184,18 +196,6 @@
       NSDecimalNumber *rightVersionNumber = [NSDecimalNumber decimalNumberWithString:right.versionString];
       return [leftVersionNumber compare:rightVersionNumber];
     }];
-}
-
-+ (NSArray<id<FBControlCoreConfiguration_OS>> *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device
-{
-  NSMutableArray *array = [NSMutableArray array];
-  for (SimRuntime *runtime in [self supportedRuntimesForDevice:device]) {
-    id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
-    if (os) {
-      [array addObject:os];
-    }
-  }
-  return [array copy];
 }
 
 - (NSPredicate *)runtimePredicate

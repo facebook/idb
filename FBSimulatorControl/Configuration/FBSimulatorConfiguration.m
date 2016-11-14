@@ -57,7 +57,12 @@
 {
   id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone6.new;
   id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
-  NSAssert(os, @"Could not obtain OS for Default Device %@", device);
+  NSAssert(
+    os,
+    @"Could not obtain OS for Default Device '%@'. Available OS Versions %@",
+    device,
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorConfiguration supportedOSVersionsForDevice:device]]
+  );
   return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:nil];
 }
 
