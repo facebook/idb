@@ -25,14 +25,17 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBXCTestConfiguration : NSObject
 
 /**
- Creates a configuration, passing dependencies. Is not usable until `loadWithArguments` is called.
+ Creates and loads a configuration.
 
+ @param arguments the Arguments to the fbxctest process
+ @param environment environment additions for the process under test.
+ @param workingDirectory the Working Directory to use.
  @param reporter a reporter to inject.
  @param logger the logger to inject.
- @param environment environment additions for the process under test.
+ @param error an error out for any error that occurs
  @return a new test run configuration.
  */
-- (instancetype)initWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger error:(NSError **)error;
 
 @property (nonatomic, strong, readonly, nullable) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
@@ -50,16 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) BOOL listTestsOnly;
 
 @property (nonatomic, copy, nullable, readonly) FBXCTestShimConfiguration *shims;
-
-/**
- Loads the Configuration, with the provided parameters.
-
- @param arguments the Arguments to the fbxctest process
- @param workingDirectory the Working Directory to use.
- @param error an error out for any error that occurs
- @return YES if succcessful, NO otherwise.
- */
-- (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error;
 
 /**
  Locates the expected Installation Root.

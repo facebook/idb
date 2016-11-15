@@ -38,12 +38,11 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processEnvironment];
   NSError *error = nil;
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
 
   XCTAssertNil(error);
-  XCTAssertTrue(success);
+  XCTAssertNotNil(configuration);
   XCTAssertFalse(configuration.runWithoutSimulator);
   XCTAssertFalse(configuration.listTestsOnly);
   XCTAssertNil(configuration.testFilter);
@@ -66,11 +65,10 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processEnvironment];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
 
   XCTAssertNil(error);
-  XCTAssertTrue(success);
+  XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
   XCTAssertFalse(configuration.runWithoutSimulator);
   XCTAssertFalse(configuration.listTestsOnly);
@@ -94,11 +92,10 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processEnvironment];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
 
   XCTAssertNil(error);
-  XCTAssertTrue(success);
+  XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue(configuration.runWithoutSimulator);
   XCTAssertFalse(configuration.listTestsOnly);
@@ -120,11 +117,10 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:@{}];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
 
   XCTAssertNil(error);
-  XCTAssertTrue(success);
+  XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue(configuration.runWithoutSimulator);
   XCTAssertTrue(configuration.listTestsOnly);

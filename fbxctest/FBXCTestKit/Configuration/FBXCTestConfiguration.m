@@ -39,6 +39,15 @@
 
 @implementation FBXCTestConfiguration
 
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger error:(NSError **)error
+{
+  FBXCTestConfiguration *configuration = [[self alloc] initWithReporter:reporter logger:logger processUnderTestEnvironment:environment];
+  if (![configuration loadWithArguments:arguments workingDirectory:workingDirectory error:error]) {
+    return nil;
+  }
+  return configuration;
+}
+
 - (instancetype)initWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
 {
   self = [super init];

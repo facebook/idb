@@ -45,8 +45,14 @@
     return [self printErrorMessage:error];
   }
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:nil logger:self.logger processUnderTestEnvironment:@{}];
-  if (![configuration loadWithArguments:NSProcessInfo.processInfo.arguments workingDirectory:workingDirectory error:&error]) {
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration
+    configurationFromArguments:NSProcessInfo.processInfo.arguments
+    processUnderTestEnvironment:@{}
+    workingDirectory:workingDirectory
+    reporter:nil
+    logger:self.logger
+    error:&error];
+  if (!configuration) {
     return [self printErrorMessage:error];
   }
 

@@ -43,13 +43,12 @@
   NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:@{}];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  XCTAssertTrue(success);
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
+  BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
@@ -93,15 +92,15 @@
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processUnderTestEnvironment];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  XCTAssertTrue(success);
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processUnderTestEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
+  BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
+
   XCTAssertFalse(self.reporter.printReportWasCalled);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
 }
@@ -118,13 +117,12 @@
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:@{}];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  XCTAssertTrue(success);
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
+  BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
@@ -148,13 +146,12 @@
   NSArray *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processUnderTestEnvironment];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  XCTAssertTrue(success);
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processUnderTestEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
+  BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
@@ -178,13 +175,12 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:@{}];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  XCTAssertTrue(success);
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
+  BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
@@ -208,13 +204,12 @@
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
   NSDictionary<NSString *, NSString *> *processUnderTestEnvironment = FBXCTestKitIntegrationTests.crashingProcessUnderTestEnvironment;
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:processUnderTestEnvironment];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  XCTAssertTrue(success);
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processUnderTestEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
+  BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
@@ -238,13 +233,12 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
-  FBXCTestConfiguration *configuration = [[FBXCTestConfiguration alloc] initWithReporter:self.reporter logger:nil processUnderTestEnvironment:@{}];
-  BOOL success = [configuration loadWithArguments:arguments workingDirectory:workingDirectory error:&error];
-  XCTAssertTrue(success);
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
 
   FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
-  success = [testRunner executeTestsWithError:&error];
+  BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
