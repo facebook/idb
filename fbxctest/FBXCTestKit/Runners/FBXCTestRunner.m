@@ -78,9 +78,7 @@
   if (!simulatorFetcher) {
     return NO;
   }
-  FBSimulator *simulator =  self.configuration.runnerAppPath
-    ? [simulatorFetcher fetchSimulatorForApplicationTestsWithError:error]
-    : [simulatorFetcher fetchSimulatorForLogicTestWithError:error];
+  FBSimulator *simulator = [simulatorFetcher fetchSimulatorForWithError:error];
   if (!simulator) {
     return NO;
   }

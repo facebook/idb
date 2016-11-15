@@ -30,22 +30,12 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)withConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error;
 
 /**
- Gets a Simulator capable of running a logic test.
- This means a Simulator will be used, but not booted.
+ Gets a Simulator for the configuration provided in the constructor.
 
  @param error an error out for any error that occurs.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)fetchSimulatorForLogicTestWithError:(NSError **)error;
-
-/**
- Gets a Simulator capable of running a logic test.
- This means a Simulator will be used, which is also booted.
-
- @param error an error out for any error that occurs.
- @return a Simulator if successful, nil otherwise.
- */
-- (nullable FBSimulator *)fetchSimulatorForApplicationTestsWithError:(NSError **)error;
+- (nullable FBSimulator *)fetchSimulatorForWithError:(NSError **)error;
 
 /**
  Return the Simulator after the Test Run is completed.

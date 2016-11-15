@@ -55,6 +55,13 @@
   return self;
 }
 
+- (nullable FBSimulator *)fetchSimulatorForWithError:(NSError **)error
+{
+  return self.configuration.runnerAppPath
+    ? [self fetchSimulatorForApplicationTestsWithError:error]
+    : [self fetchSimulatorForLogicTestWithError:error];
+}
+
 - (nullable FBSimulator *)fetchSimulatorForLogicTestWithError:(NSError **)error
 {
   return [self.simulatorControl.pool
