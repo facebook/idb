@@ -42,24 +42,24 @@
 
 - (BOOL)executeTestsWithError:(NSError **)error
 {
-  if (self.configuration.runWithoutSimulator) {
-    if (self.configuration.runnerAppPath != nil) {
-      return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
-    }
+  BOOL success = self.configuration.runWithoutSimulator ? [self runMacTestWithError:error] : [self runiOSTestWithError:error];
+  if (!success) {
+    return NO;
+  }
+  if (![self.configuration.reporter printReportWithError:error]) {
+    return NO;
+  }
+  return YES;
+}
 
-    if (self.configuration.listTestsOnly) {
-      if (![[FBListTestRunner runnerWithConfiguration:self.configuration] listTestsWithError:error]) {
-        return NO;
-      }
+- (BOOL)runMacTestWithError:(NSError **)error
+{
+  if (self.configuration.runnerAppPath != nil) {
+    return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
+  }
 
-      if (![self.configuration.reporter printReportWithError:error]) {
-        return NO;
-      }
-
-      return YES;
-    }
-
-    if (![[FBLogicTestRunner withSimulator:nil configuration:self.configuration] runTestsWithError:error]) {
+  if (self.configuration.listTestsOnly) {
+    if (![[FBListTestRunner runnerWithConfiguration:self.configuration] listTestsWithError:error]) {
       return NO;
     }
 
@@ -70,6 +70,14 @@
     return YES;
   }
 
+  if (![[FBLogicTestRunner withSimulator:nil configuration:self.configuration] runTestsWithError:error]) {
+    return NO;
+  }
+  return YES;
+}
+
+- (BOOL)runiOSTestWithError:(NSError **)error
+{
   if (self.configuration.listTestsOnly) {
     return [[FBXCTestError describe:@"Listing tests is only supported for macosx tests."] failBool:error];
   }
@@ -89,9 +97,6 @@
     return NO;
   }
 
-  if (![self.configuration.reporter printReportWithError:error]) {
-    return NO;
-  }
   return YES;
 }
 
@@ -99,10 +104,6 @@
 {
   if (self.configuration.runnerAppPath == nil) {
     return [[FBLogicTestRunner withSimulator:simulator configuration:self.configuration] runTestsWithError:error];
-  }
-
-  if (self.configuration.testFilter != nil) {
-    return [[FBXCTestError describe:@"Test filtering is only supported for logic tests."] failBool:error];
   }
 
   return [[FBApplicationTestRunner withSimulator:simulator configuration:self.configuration] runTestsWithError:error];

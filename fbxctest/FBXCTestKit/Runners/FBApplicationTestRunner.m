@@ -48,6 +48,10 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 - (BOOL)runTestsWithError:(NSError **)error
 {
+  if (self.configuration.testFilter != nil) {
+    return [[FBXCTestError describe:@"Test filtering is only supported for logic tests."] failBool:error];
+  }
+
   FBApplicationDescriptor *testRunnerApp = [FBApplicationDescriptor applicationWithPath:self.configuration.runnerAppPath error:error];
   if (!testRunnerApp) {
     [self.configuration.logger logFormat:@"Failed to open test runner application: %@", *error];
