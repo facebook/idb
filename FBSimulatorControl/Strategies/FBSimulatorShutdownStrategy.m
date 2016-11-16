@@ -65,15 +65,16 @@
   }
 
   // Xcode 7 has a 'Creating' step that we should wait on before confirming the simulator is ready.
-  // It is possible to recover from this with a few tricks.
+  // On many occasions this is the case as we wait for the Simulator to be usable.
   NSError *innerError = nil;
   if (simulator.state == FBSimulatorStateCreating) {
-
+    // Await the Simulator to be shutdown.
     [logger.debug logFormat:@"Simulator %@ is Creating, waiting for state to change to Shutdown", simulator.udid];
     if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
 
+      // Erase using the SimDevice directly to prevent infinite recursion.
       [logger.debug logFormat:@"Simulator %@ is stuck in Creating: erasing now", simulator.udid];
-      if (![simulator eraseWithError:&innerError]) {
+      if (![simulator.device eraseContentsAndSettingsWithError:&innerError]) {
         return [[[[[FBSimulatorError
           describe:@"Failed trying to prepare simulator for usage by erasing a stuck 'Creating' simulator %@"]
           causedBy:innerError]
