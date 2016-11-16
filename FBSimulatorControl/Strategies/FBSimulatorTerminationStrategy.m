@@ -31,6 +31,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorPredicates.h"
+#import "FBSimulatorShutdownStrategy.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
@@ -146,7 +147,7 @@
     // Shutdown will:
     // 1) Wait for a Simulator launched via Simulator.app to be in a consistent 'Shutdown' state.
     // 2) Shutdown a SimDevice that has been launched directly via. `-[SimDevice bootWithOptions:error]`.
-    if (![simulator.simDeviceWrapper shutdownWithError:&innerError]) {
+    if (![[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdownWithError:&innerError]) {
       return [[[[[FBSimulatorError
         describe:@"Could not shut down simulator after termination"]
         inSimulator:simulator]

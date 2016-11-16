@@ -21,6 +21,7 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorShutdownStrategy.h"
 #import "FBSimulatorInteraction.h"
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorSet.h"
@@ -232,7 +233,7 @@
         failBool:error];
     }
     [self.logger.debug logFormat:@"Shutting down Simulator after erase %@", simulator.udid];
-    if (![simulator.simDeviceWrapper shutdownWithError:&innerError]) {
+    if (![[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdownWithError:&innerError]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }

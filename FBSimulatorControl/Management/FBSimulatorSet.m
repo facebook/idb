@@ -24,6 +24,7 @@
 #import "FBSimulatorControl.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorEraseStrategy.h"
+#import "FBSimulatorShutdownStrategy.h"
 #import "FBSimulatorDeletionStrategy.h"
 #import "FBSimulatorTerminationStrategy.h"
 #import "FBSimulatorControlFrameworkLoader.h"
@@ -182,7 +183,7 @@
 
   // This step ensures that the Simulator is in a known-shutdown state after creation.
   // This prevents racing with any 'booting' interaction that occurs immediately after allocation.
-  if (![simulator.simDeviceWrapper shutdownWithError:&innerError]) {
+  if (![[FBSimulatorShutdownStrategy strategyWithSimulator:simulator] shutdownWithError:&innerError]) {
     return [[[[[FBSimulatorError
       describeFormat:@"Could not get newly-created simulator into a shutdown state"]
       inSimulator:simulator]
