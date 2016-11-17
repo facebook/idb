@@ -429,7 +429,6 @@
         @"com.apple.mobile.installd",
         @"com.apple.SimulatorBridge",
         @"com.apple.SpringBoard",
-        @"com.apple.cloudd",
       ];
     }
     return @[
