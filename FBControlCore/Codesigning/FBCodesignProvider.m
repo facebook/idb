@@ -47,10 +47,13 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 - (BOOL)signBundleAtPath:(NSString *)bundlePath error:(NSError **)error
 {
-  return [[[FBTaskBuilder
+  FBTask *task = [[FBTaskBuilder
     taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout]
-    wasSuccessful];
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  if (error) {
+    *error = task.error;
+  }
+  return [task wasSuccessful];
 }
 
 - (nullable NSString *)cdHashForBundleAtPath:(NSString *)bundlePath error:(NSError **)error
