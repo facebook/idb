@@ -9,6 +9,8 @@
 
 #import "FBXCTestBootstrapper.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBJSONTestReporter.h"
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestRunner.h"
@@ -45,8 +47,10 @@
     return [self printErrorMessage:error];
   }
 
+  NSArray<NSString *> *arguments = NSProcessInfo.processInfo.arguments;
+  [self.logger.debug logFormat:@"fbxctest arguments: %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]];
   FBXCTestConfiguration *configuration = [FBXCTestConfiguration
-    configurationFromArguments:NSProcessInfo.processInfo.arguments
+    configurationFromArguments:arguments
     processUnderTestEnvironment:@{}
     workingDirectory:workingDirectory
     reporter:nil
