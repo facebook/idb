@@ -49,7 +49,7 @@ static NSString *const CDHashPrefix = @"CDHash=";
 {
   return [[[FBTaskBuilder
     taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout]
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout]
     wasSuccessful];
 }
 
