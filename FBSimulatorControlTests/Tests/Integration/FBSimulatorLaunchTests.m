@@ -72,6 +72,13 @@
   [self testLaunchesSingleSimulator:FBSimulatorConfiguration.appleTV1080p];
 }
 
+- (void)testLaunchesPreviousiOSVersionAndAwaitsServices
+{
+  FBSimulatorBootOptions options = self.simulatorLaunchConfiguration.options | FBSimulatorBootOptionsAwaitServices;
+  self.simulatorLaunchConfiguration = [self.simulatorLaunchConfiguration withOptions:options];
+  [self testLaunchesSingleSimulator:FBSimulatorConfiguration.iPhone5.iOS_9_3];
+}
+
 - (void)testLaunchesMultipleSimulators
 {
   // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
