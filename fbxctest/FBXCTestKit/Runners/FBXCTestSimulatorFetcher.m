@@ -65,7 +65,7 @@
 - (nullable FBSimulator *)fetchSimulatorForLogicTestWithError:(NSError **)error
 {
   return [self.simulatorControl.pool
-    allocateSimulatorWithConfiguration:self.configuration.targetDeviceConfiguration
+    allocateSimulatorWithConfiguration:self.configuration.simulatorConfiguration
     options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree
     error:error];
 }

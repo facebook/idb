@@ -42,7 +42,7 @@
 
 - (BOOL)executeTestsWithError:(NSError **)error
 {
-  BOOL success = self.configuration.runWithoutSimulator ? [self runMacTestWithError:error] : [self runiOSTestWithError:error];
+  BOOL success = self.configuration.simulatorConfiguration ? [self runiOSTestWithError:error] : [self runMacTestWithError:error];
   if (!success) {
     return NO;
   }

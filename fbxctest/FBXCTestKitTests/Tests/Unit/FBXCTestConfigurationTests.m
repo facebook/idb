@@ -43,13 +43,11 @@
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
-  XCTAssertFalse(configuration.runWithoutSimulator);
   XCTAssertFalse(configuration.listTestsOnly);
   XCTAssertNil(configuration.testFilter);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertEqualObjects(configuration.simulatorName, @"iPhone 6");
-  XCTAssertNil(configuration.simulatorOS);
-  XCTAssertEqualObjects(configuration.targetDeviceConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
+  XCTAssertNotNil(configuration.simulatorConfiguration);
+  XCTAssertEqualObjects(configuration.simulatorConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
 }
 
 - (void)testiOSLogicTests
@@ -70,13 +68,11 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
-  XCTAssertFalse(configuration.runWithoutSimulator);
   XCTAssertFalse(configuration.listTestsOnly);
   XCTAssertNil(configuration.testFilter);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertEqualObjects(configuration.simulatorName, @"iPhone 6");
-  XCTAssertNil(configuration.simulatorOS);
-  XCTAssertEqualObjects(configuration.targetDeviceConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
+  XCTAssertNotNil(configuration.simulatorConfiguration);
+  XCTAssertEqualObjects(configuration.simulatorConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
 }
 
 - (void)testMacLogicTests
@@ -97,12 +93,34 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
-  XCTAssertTrue(configuration.runWithoutSimulator);
   XCTAssertFalse(configuration.listTestsOnly);
   XCTAssertNil(configuration.testFilter);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertNil(configuration.simulatorName);
-  XCTAssertNil(configuration.simulatorOS);
+  XCTAssertNil(configuration.simulatorConfiguration);
+}
+
+- (void)testMacLogicTestsDoesNotExposeSimulatorConfigurationEvenIfOneIsProvided
+{
+  NSError *error = nil;
+  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
+  NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
+  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(configuration.shims);
+  XCTAssertFalse(configuration.listTestsOnly);
+  XCTAssertNil(configuration.testFilter);
+  XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
+  XCTAssertNil(configuration.simulatorConfiguration);
 }
 
 - (void)testMacTestList
@@ -122,11 +140,9 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
-  XCTAssertTrue(configuration.runWithoutSimulator);
+  XCTAssertNil(configuration.simulatorConfiguration);
   XCTAssertTrue(configuration.listTestsOnly);
   XCTAssertNil(configuration.testFilter);
-  XCTAssertNil(configuration.simulatorName);
-  XCTAssertNil(configuration.simulatorOS);
 }
 
 @end

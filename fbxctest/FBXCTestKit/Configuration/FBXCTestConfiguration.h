@@ -39,17 +39,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly, nullable) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
-@property (nonatomic, strong, readonly) FBSimulatorConfiguration *targetDeviceConfiguration;
+@property (nonatomic, strong, nullable, readonly) FBSimulatorConfiguration *simulatorConfiguration;
 
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 @property (nonatomic, copy, readonly) NSString *runnerAppPath;
-@property (nonatomic, copy, readonly) NSString *simulatorName;
-@property (nonatomic, copy, readonly) NSString *simulatorOS;
 @property (nonatomic, copy, readonly) NSString *testFilter;
 
-@property (nonatomic, assign, readonly) BOOL runWithoutSimulator;
+@property (nonatomic, assign, readwrite) NSTimeInterval testTimeout;
 @property (nonatomic, assign, readonly) BOOL listTestsOnly;
 
 @property (nonatomic, copy, nullable, readonly) FBXCTestShimConfiguration *shims;
