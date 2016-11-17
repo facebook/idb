@@ -35,9 +35,18 @@
 
 + (instancetype)testRunnerWithConfiguration:(FBXCTestConfiguration *)configuration
 {
-  FBXCTestRunner *runner = [self new];
-  runner->_configuration = configuration;
-  return runner;
+  return [[self alloc] initWithConfiguration:configuration];
+}
+
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _configuration = configuration;
+  return self;
 }
 
 - (BOOL)executeTestsWithError:(NSError **)error
@@ -54,34 +63,20 @@
 
 - (BOOL)runMacTestWithError:(NSError **)error
 {
-  if (self.configuration.runnerAppPath != nil) {
+  if ([self.configuration isKindOfClass:FBApplicationTestConfiguration.class]) {
     return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
   }
-
-  if (self.configuration.listTestsOnly) {
-    if (![[FBListTestRunner runnerWithConfiguration:self.configuration] listTestsWithError:error]) {
-      return NO;
-    }
-
-    if (![self.configuration.reporter printReportWithError:error]) {
-      return NO;
-    }
-
-    return YES;
+  if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
+    return [[FBListTestRunner runnerWithConfiguration:self.configuration] listTestsWithError:error];
   }
-
-  if (![[FBLogicTestRunner withSimulator:nil configuration:self.configuration] runTestsWithError:error]) {
-    return NO;
-  }
-  return YES;
+  return [[FBLogicTestRunner withSimulator:nil configuration:(FBLogicTestConfiguration *)self.configuration] runTestsWithError:error];
 }
 
 - (BOOL)runiOSTestWithError:(NSError **)error
 {
-  if (self.configuration.listTestsOnly) {
+  if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[FBXCTestError describe:@"Listing tests is only supported for macosx tests."] failBool:error];
   }
-
   FBXCTestSimulatorFetcher *simulatorFetcher = [FBXCTestSimulatorFetcher withConfiguration:self.configuration error:error];
   if (!simulatorFetcher) {
     return NO;
@@ -102,11 +97,10 @@
 
 - (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  if (self.configuration.runnerAppPath == nil) {
-    return [[FBLogicTestRunner withSimulator:simulator configuration:self.configuration] runTestsWithError:error];
+  if ([self.configuration isKindOfClass:FBLogicTestConfiguration.class]) {
+    return [[FBLogicTestRunner withSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration] runTestsWithError:error];
   }
-
-  return [[FBApplicationTestRunner withSimulator:simulator configuration:self.configuration] runTestsWithError:error];
+  return [[FBApplicationTestRunner withSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration] runTestsWithError:error];
 }
 
 @end

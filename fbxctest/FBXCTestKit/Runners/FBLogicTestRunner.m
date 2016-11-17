@@ -26,18 +26,18 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 @interface FBLogicTestRunner ()
 
 @property (nonatomic, strong, nullable, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
 
 @end
 
 @implementation FBLogicTestRunner
 
-+ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
++ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
 {
   return [[self alloc] initWithSimulator:simulator configuration:configuration];
 }
 
-- (instancetype)initWithSimulator:(nullable FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
+- (instancetype)initWithSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
 {
   self = [super init];
   if (!self) {
@@ -57,7 +57,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
   [self.configuration.reporter didBeginExecutingTestPlan];
 
-  NSString *xctestPath = [self.configuration xctestPathForSimulator:simulator];
+  NSString *xctestPath = self.configuration.xctestPath;
   NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"usr/bin/simctl"];
   NSString *otestShimPath = simulator ? self.configuration.shims.iOSSimulatorOtestShimPath : self.configuration.shims.macOtestShimPath;
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
@@ -88,7 +88,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     task.launchPath = simctlPath;
     task.arguments = @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", testSpecifier, self.configuration.testBundlePath];
   }
-  task.environment = [FBXCTestConfiguration buildEnvironmentWithEntries:environment simulator:simulator];
+  task.environment = [self.configuration buildEnvironmentWithEntries:environment];
   task.standardOutput = testOutputPipe.fileHandleForWriting;
   task.standardError = testOutputPipe.fileHandleForWriting;
   [task launch];

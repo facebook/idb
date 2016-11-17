@@ -47,7 +47,7 @@
 {
   [self.configuration.reporter didBeginExecutingTestPlan];
 
-  NSString *xctestPath = [self.configuration xctestPathForSimulator:nil];
+  NSString *xctestPath = self.configuration.xctestPath;
   NSString *otestQueryPath = self.configuration.shims.macOtestQueryPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
 

@@ -22,18 +22,18 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 @interface FBApplicationTestRunner ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBApplicationTestConfiguration *configuration;
 
 @end
 
 @implementation FBApplicationTestRunner
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration
 {
   return [[self alloc] initWithSimulator:simulator configuration:configuration];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration
 {
   self = [super init];
   if (!self) {
@@ -48,10 +48,6 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 - (BOOL)runTestsWithError:(NSError **)error
 {
-  if (self.configuration.testFilter != nil) {
-    return [[FBXCTestError describe:@"Test filtering is only supported for logic tests."] failBool:error];
-  }
-
   FBApplicationDescriptor *testRunnerApp = [FBApplicationDescriptor applicationWithPath:self.configuration.runnerAppPath error:error];
   if (!testRunnerApp) {
     [self.configuration.logger logFormat:@"Failed to open test runner application: %@", *error];

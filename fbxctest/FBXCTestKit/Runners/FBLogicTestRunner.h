@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBLogicTestConfiguration;
 @class FBSimulator;
-@class FBXCTestConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the Configuration to use.
  @return a new Logic Test Runner.
  */
-+ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration;
++ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration;
 
 /**
  Run the Logic Tests.

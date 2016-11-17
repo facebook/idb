@@ -19,6 +19,7 @@
 #import "FBXCTestShimConfiguration.h"
 
 @interface FBXCTestConfiguration ()
+
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readwrite) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readwrite) id<FBControlCoreConfiguration_Device> iosDevice;
@@ -29,8 +30,6 @@
 @property (nonatomic, copy, readwrite) NSString *runnerAppPath;
 @property (nonatomic, copy, readwrite) NSString *testFilter;
 
-@property (nonatomic, assign, readwrite) BOOL listTestsOnly;
-
 @property (nonatomic, copy, nullable, readwrite) FBXCTestShimConfiguration *shims;
 
 @end
@@ -39,7 +38,12 @@
 
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger error:(NSError **)error
 {
-  FBXCTestConfiguration *configuration = [[self alloc] initWithReporter:reporter logger:logger processUnderTestEnvironment:environment];
+  Class configurationClass = [self testConfigurationClassForArguments:arguments error:error];
+  if (!configurationClass) {
+    return nil;
+  }
+
+  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithReporter:reporter logger:logger processUnderTestEnvironment:environment];
   if (![configuration loadWithArguments:arguments workingDirectory:workingDirectory error:error]) {
     return nil;
   }
@@ -60,6 +64,23 @@
   return self;
 }
 
++ (Class)testConfigurationClassForArguments:(NSArray<NSString *> *)arguments error:(NSError **)error
+{
+  NSSet<NSString *> *argumentSet = [NSSet setWithArray:arguments];
+  if ([argumentSet containsObject:@"-listTestsOnly"]) {
+    return [FBListTestConfiguration class];
+  }
+  if ([argumentSet containsObject:@"-logicTest"]) {
+    return [FBLogicTestConfiguration class];
+  }
+  if ([argumentSet containsObject:@"-appTest"]) {
+    return [FBApplicationTestConfiguration class];
+  }
+  return [[FBControlCoreError
+    describeFormat:@"Could not determine test runner type from %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
+    fail:error];
+}
+
 - (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error
 {
   arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
@@ -74,7 +95,7 @@
       // Ignore. This is the only action we support.
       continue;
     } else if ([argument isEqualToString:@"-listTestsOnly"]) {
-      self.listTestsOnly = YES;
+      // Ignore. This is handled by the configuration class.
       continue;
     }
     if (nextArgument >= arguments.count) {
@@ -235,33 +256,18 @@
   }
 }
 
-#pragma mark Helpers
-
-+ (NSString *)fbxctestInstallationRoot
+- (NSString *)xctestPath
 {
-  NSString *executablePath = NSProcessInfo.processInfo.arguments[0];
-  if (!executablePath.isAbsolutePath) {
-    executablePath = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingString:executablePath];
-  }
-  executablePath = [executablePath stringByStandardizingPath];
-  NSString *path = [[executablePath
-    stringByDeletingLastPathComponent]
-    stringByDeletingLastPathComponent];
-  return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
-}
-
-- (NSString *)xctestPathForSimulator:(nullable FBSimulator *)simulator
-{
-  if (simulator == nil) {
-    return [FBControlCoreGlobalConfiguration.developerDirectory
-      stringByAppendingPathComponent:@"usr/bin/xctest"];
-  } else {
+  if (self.simulatorConfiguration) {
     return [FBControlCoreGlobalConfiguration.developerDirectory
       stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
+  } else {
+    return [FBControlCoreGlobalConfiguration.developerDirectory
+      stringByAppendingPathComponent:@"usr/bin/xctest"];
   }
 }
 
-+ (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries simulator:(nullable FBSimulator *)simulator
+- (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries
 {
   NSMutableDictionary<NSString *, NSString *> *parentEnvironment = NSProcessInfo.processInfo.environment.mutableCopy;
   [parentEnvironment removeObjectsForKeys:@[
@@ -280,12 +286,43 @@
   NSMutableDictionary<NSString *, NSString *> *environment = parentEnvironment.mutableCopy;
   for (NSString *key in environmentOverrides) {
     NSString *childKey = key;
-    if (simulator) {
+    if (self.simulatorConfiguration) {
       childKey = [@"SIMCTL_CHILD_" stringByAppendingString:childKey];
     }
     environment[childKey] = environmentOverrides[key];
   }
   return environment.copy;
 }
+
+#pragma mark Helpers
+
++ (NSString *)fbxctestInstallationRoot
+{
+  NSString *executablePath = NSProcessInfo.processInfo.arguments[0];
+  if (!executablePath.isAbsolutePath) {
+    executablePath = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingString:executablePath];
+  }
+  executablePath = [executablePath stringByStandardizingPath];
+  NSString *path = [[executablePath
+    stringByDeletingLastPathComponent]
+    stringByDeletingLastPathComponent];
+  return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
+}
+
+@end
+
+@implementation FBListTestConfiguration
+
+@end
+
+@implementation FBApplicationTestConfiguration
+
+@dynamic runnerAppPath;
+
+@end
+
+@implementation FBLogicTestConfiguration
+
+@dynamic testFilter;
 
 @end

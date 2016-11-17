@@ -57,7 +57,7 @@
 
 - (nullable FBSimulator *)fetchSimulatorForWithError:(NSError **)error
 {
-  return self.configuration.runnerAppPath
+  return [self.configuration isKindOfClass:FBApplicationTestConfiguration.class]
     ? [self fetchSimulatorForApplicationTestsWithError:error]
     : [self fetchSimulatorForLogicTestWithError:error];
 }

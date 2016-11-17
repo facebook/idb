@@ -20,7 +20,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Configuration pased to FBXCTestRunner.
+ The Base Configuration for all tests.
  */
 @interface FBXCTestConfiguration : NSObject
 
@@ -44,11 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
-@property (nonatomic, copy, readonly) NSString *runnerAppPath;
-@property (nonatomic, copy, readonly) NSString *testFilter;
+@property (nonatomic, copy, readonly) NSString *xctestPath;
 
 @property (nonatomic, assign, readwrite) NSTimeInterval testTimeout;
-@property (nonatomic, assign, readonly) BOOL listTestsOnly;
 
 @property (nonatomic, copy, nullable, readonly) FBXCTestShimConfiguration *shims;
 
@@ -58,23 +56,45 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSString *)fbxctestInstallationRoot;
 
 /**
- Gets the path to the xctest executable for the given simulator (or for a mac test).
-
- @param simulator the Simulator to get the path for, if a simulator test.
- @return the path to the xctest exectuable
- */
-- (NSString *)xctestPathForSimulator:(nullable FBSimulator *)simulator;
-
-/**
  Gets the Environment for a Subprocess.
  Will extract the environment variables from the appropriately prefixed environment variables.
  Will strip out environment variables that will confuse subprocesses if this class is called inside an 'xctest' environment.
 
  @param entries the entries to add in
- @param simulator the Simulator, if applicable.
  @return the subprocess environment
  */
-+ (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries simulator:(nullable FBSimulator *)simulator;
+- (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries;
+
+@end
+
+/**
+ A Test Configuration, specialized to the listing of Test Bundles.
+ */
+@interface FBListTestConfiguration : FBXCTestConfiguration
+
+@end
+
+/**
+ A Test Configuration, specialized to running of Application Tests.
+ */
+@interface FBApplicationTestConfiguration : FBXCTestConfiguration
+
+/**
+ The Path to the Application Hosting the Test.
+ */
+@property (nonatomic, copy, readonly) NSString *runnerAppPath;
+
+@end
+
+/**
+ A Test Configuration, specialized to the running of Logic Tests.
+ */
+@interface FBLogicTestConfiguration : FBXCTestConfiguration
+
+/**
+ The Filter for Logic Tests.
+ */
+@property (nonatomic, copy, nullable, readonly) NSString *testFilter;
 
 @end
 

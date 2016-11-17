@@ -43,8 +43,7 @@
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
-  XCTAssertFalse(configuration.listTestsOnly);
-  XCTAssertNil(configuration.testFilter);
+  XCTAssertTrue([configuration isKindOfClass:FBApplicationTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertNotNil(configuration.simulatorConfiguration);
   XCTAssertEqualObjects(configuration.simulatorConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
@@ -68,8 +67,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
-  XCTAssertFalse(configuration.listTestsOnly);
-  XCTAssertNil(configuration.testFilter);
+  XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertNotNil(configuration.simulatorConfiguration);
   XCTAssertEqualObjects(configuration.simulatorConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
@@ -93,8 +91,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
-  XCTAssertFalse(configuration.listTestsOnly);
-  XCTAssertNil(configuration.testFilter);
+  XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertNil(configuration.simulatorConfiguration);
 }
@@ -117,8 +114,6 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
-  XCTAssertFalse(configuration.listTestsOnly);
-  XCTAssertNil(configuration.testFilter);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertNil(configuration.simulatorConfiguration);
 }
@@ -141,8 +136,7 @@
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
   XCTAssertNil(configuration.simulatorConfiguration);
-  XCTAssertTrue(configuration.listTestsOnly);
-  XCTAssertNil(configuration.testFilter);
+  XCTAssertTrue([configuration isKindOfClass:FBListTestConfiguration.class]);
 }
 
 @end
