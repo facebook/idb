@@ -50,7 +50,9 @@ static NSString *const CDHashPrefix = @"CDHash=";
   FBTask *task = [[FBTaskBuilder
     taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
     startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
-  *error = task.error;
+  if (error) {
+    *error = task.error;
+  }
   return [task wasSuccessful];
 }
 
