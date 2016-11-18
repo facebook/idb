@@ -26,6 +26,7 @@
 #import "FBLogicTestRunner.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBListTestRunner.h"
+#import "FBXCTestDestination.h"
 
 @interface FBXCTestRunner ()
 @property (nonatomic, strong) FBXCTestConfiguration *configuration;
@@ -51,7 +52,7 @@
 
 - (BOOL)executeTestsWithError:(NSError **)error
 {
-  BOOL success = self.configuration.simulatorConfiguration ? [self runiOSTestWithError:error] : [self runMacTestWithError:error];
+  BOOL success = [self.configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTestWithError:error] : [self runMacTestWithError:error];
   if (!success) {
     return NO;
   }

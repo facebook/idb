@@ -9,15 +9,15 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
-@class FBSimulatorConfiguration;
+@class FBXCTestDestination;
 @class FBXCTestLogger;
 @class FBXCTestShimConfiguration;
 
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Base Configuration for all tests.
@@ -39,12 +39,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly, nullable) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
-@property (nonatomic, strong, nullable, readonly) FBSimulatorConfiguration *simulatorConfiguration;
+@property (nonatomic, strong, readonly) FBXCTestDestination *destination;
 
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
-@property (nonatomic, copy, readonly) NSString *xctestPath;
 
 @property (nonatomic, assign, readwrite) NSTimeInterval testTimeout;
 

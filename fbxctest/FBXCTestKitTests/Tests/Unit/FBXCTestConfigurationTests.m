@@ -15,6 +15,7 @@
 #import <XCTest/XCTest.h>
 
 #import "FBXCTestReporterDouble.h"
+#import "FBXCTestDestination.h"
 
 @interface FBXCTestConfigurationTests : XCTestCase
 
@@ -29,14 +30,18 @@
   self.reporter = [FBXCTestReporterDouble new];
 }
 
-- (void)testiOSApplicationTests
+- (NSString *)appTestArgument
+{
+  NSString *testBundlePath = [self iOSUnitTestBundlePath];
+  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
+  return [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+}
+
+- (void)testiOSApplicationTestWithDestinationAndSDK
 {
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
-  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
-  NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", appTestArgument ];
+  NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-destination", @"name=iPhone 6", @"-appTest", self.appTestArgument ];
 
   NSError *error = nil;
   FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
@@ -45,8 +50,39 @@
   XCTAssertNotNil(configuration);
   XCTAssertTrue([configuration isKindOfClass:FBApplicationTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertNotNil(configuration.simulatorConfiguration);
-  XCTAssertEqualObjects(configuration.simulatorConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+}
+
+- (void)testiOSApplicationTestWithDestinationWithoutSDK
+{
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
+  NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", self.appTestArgument ];
+
+  NSError *error = nil;
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+  XCTAssertTrue([configuration isKindOfClass:FBApplicationTestConfiguration.class]);
+  XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+}
+
+- (void)testiOSApplicationTestsWithSDKWithoutDestination
+{
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
+  NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-appTest", self.appTestArgument ];
+
+  NSError *error = nil;
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+  XCTAssertTrue([configuration isKindOfClass:FBApplicationTestConfiguration.class]);
+  XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
 }
 
 - (void)testiOSApplicationTestsWithoutRunTestsAtStart
@@ -58,11 +94,8 @@
   }
 
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
-  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
-  NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
-  NSArray *arguments = @[ @"-reporter", @"json-stream", @"-sdk", @"iphonesimulator", @"run-tests", @"-appTest", appTestArgument];
+  NSArray *arguments = @[ @"-reporter", @"json-stream", @"-sdk", @"iphonesimulator", @"run-tests", @"-appTest", self.appTestArgument];
 
   FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
 
@@ -71,10 +104,33 @@
   XCTAssertFalse(configuration.listTestsOnly);
   XCTAssertNil(configuration.testFilter);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertNil(configuration.simulatorConfiguration);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
 }
 
-- (void)testiOSLogicTests
+- (void)testiOSLogicTestsWithDestinationAndSDK
+{
+  NSError *error = nil;
+  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [self iOSUnitTestBundlePath];
+  NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
+  NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(configuration.shims);
+  XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
+  XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+}
+
+- (void)testiOSLogicTestsWithDestinationWithoutSDK
 {
   NSError *error = nil;
   if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
@@ -94,8 +150,30 @@
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertNotNil(configuration.simulatorConfiguration);
-  XCTAssertEqualObjects(configuration.simulatorConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+}
+
+- (void)testiOSLogicTestsWithSDKWithoutDestination
+{
+  NSError *error = nil;
+  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [self iOSUnitTestBundlePath];
+  NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
+  NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-logicTest", testBundlePath ];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(configuration.shims);
+  XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
+  XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
 }
 
 - (void)testMacLogicTests
@@ -118,10 +196,10 @@
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertNil(configuration.simulatorConfiguration);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
 }
 
-- (void)testMacLogicTestsDoesNotExposeSimulatorConfigurationEvenIfOneIsProvided
+- (void)testMacLogicTestsIgnoresDestination
 {
   NSError *error = nil;
   if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
@@ -140,7 +218,7 @@
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
-  XCTAssertNil(configuration.simulatorConfiguration);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
 }
 
 - (void)testMacTestList
@@ -160,8 +238,27 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
-  XCTAssertNil(configuration.simulatorConfiguration);
-  XCTAssertTrue([configuration isKindOfClass:FBListTestConfiguration.class]);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+}
+
+- (void)testMacTestListIgnoresDestination
+{
+  NSError *error = nil;
+  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
+  NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+  XCTAssertNotNil(configuration.shims);
+  XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
 }
 
 @end

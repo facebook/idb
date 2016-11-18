@@ -14,10 +14,12 @@
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestLogger.h"
 #import "FBXCTestError.h"
+#import "FBXCTestDestination.h"
 
 @interface FBXCTestSimulatorFetcher ()
 
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBSimulatorConfiguration *simulatorConfiguration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
@@ -37,11 +39,17 @@
   if (!simulatorControl) {
     return [FBXCTestError failWithError:innerError errorOut:error];
   }
+  FBXCTestDestinationiPhoneSimulator *destination = (FBXCTestDestinationiPhoneSimulator *)configuration.destination;
+  if (![destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ is not a Simulator Destination", configuration.destination]
+      fail:error];
+  }
 
-  return [[self alloc] initWithConfiguration:configuration simulatorControl:simulatorControl logger:logger];
+  return [[self alloc] initWithConfiguration:configuration simulatorConfiguration:destination.simulatorConfiguration simulatorControl:simulatorControl logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration simulatorControl:(FBSimulatorControl *)simulatorControl logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration simulatorConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration simulatorControl:(FBSimulatorControl *)simulatorControl logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -49,6 +57,7 @@
   }
 
   _configuration = configuration;
+  _simulatorConfiguration = simulatorConfiguration;
   _simulatorControl = simulatorControl;
   _logger = logger;
 
@@ -65,7 +74,7 @@
 - (nullable FBSimulator *)fetchSimulatorForLogicTestWithError:(NSError **)error
 {
   return [self.simulatorControl.pool
-    allocateSimulatorWithConfiguration:self.configuration.simulatorConfiguration
+    allocateSimulatorWithConfiguration:self.simulatorConfiguration
     options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree
     error:error];
 }
@@ -86,7 +95,7 @@
     bootSimulator:bootConfiguration];
 
   if (![launchInteraction perform:error]) {
-    [self.configuration.logger logFormat:@"Failed to boot simulator: %@", *error];
+    [self.logger logFormat:@"Failed to boot simulator: %@", *error];
     return nil;
   }
   return simulator;

@@ -16,14 +16,13 @@
 #import "FBJSONTestReporter.h"
 #import "FBXCTestError.h"
 #import "FBXCTestLogger.h"
+#import "FBXCTestDestination.h"
 #import "FBXCTestShimConfiguration.h"
 
 @interface FBXCTestConfiguration ()
 
 @property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readwrite) id<FBXCTestReporter> reporter;
-@property (nonatomic, strong, readwrite) id<FBControlCoreConfiguration_Device> iosDevice;
-@property (nonatomic, strong, readwrite) id<FBControlCoreConfiguration_OS> iosVersion;
 
 @property (nonatomic, copy, readwrite) NSString *workingDirectory;
 @property (nonatomic, copy, readwrite) NSString *testBundlePath;
@@ -42,21 +41,26 @@
   if (!configurationClass) {
     return nil;
   }
+  FBXCTestDestination *destination = [self destinationWithArguments:arguments error:error];
+  if (!destination) {
+    return nil;
+  }
 
-  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithReporter:reporter logger:logger processUnderTestEnvironment:environment];
+  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithDestination:destination reporter:reporter logger:logger processUnderTestEnvironment:environment];
   if (![configuration loadWithArguments:arguments workingDirectory:workingDirectory error:error]) {
     return nil;
   }
   return configuration;
 }
 
-- (instancetype)initWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _destination = destination;
   _reporter = reporter;
   _processUnderTestEnvironment = environment ?: @{};
   _logger = logger;
@@ -86,7 +90,6 @@
   NSUInteger nextArgument = 0;
   NSString *testFilter = nil;
   BOOL shimsRequired = YES;
-  BOOL ignoreSimulatorDestination = NO;
 
   while (nextArgument < arguments.count) {
     NSString *argument = arguments[nextArgument++];
@@ -106,20 +109,9 @@
         return NO;
       }
     } else if ([argument isEqualToString:@"-sdk"]) {
-      if ([parameter isEqualToString:@"macosx"]) {
-        ignoreSimulatorDestination = YES;
-      }
+      // Ignore. This is handled when extracting the destination
     } else if ([argument isEqualToString:@"-destination"]) {
-      if (ignoreSimulatorDestination) {
-        continue;
-      }
-      id<FBControlCoreConfiguration_OS> os = nil;
-      id<FBControlCoreConfiguration_Device> device = nil;
-      if (![FBXCTestConfiguration parseSimulatorConfigurationFromDestination:parameter osOut:&os deviceOut:&device error:error]) {
-        return NO;
-      }
-      self.iosDevice = device;
-      self.iosVersion = os;
+      // Ignore. This is handled when extracting the destination
     } else if ([argument isEqualToString:@"-logicTest"]) {
       [self addTestBundle:parameter runnerAppPath:nil error:error];
     } else if ([argument isEqualToString:@"-appTest"]) {
@@ -174,6 +166,54 @@
     return [[FBXCTestError describeFormat:@"Unsupported reporter: %@", reporter] failBool:error];
   }
   return YES;
+}
+
++ (FBXCTestDestination *)destinationWithArguments:(NSArray<NSString *> *)arguments error:(NSError **)error
+{
+  NSOrderedSet<NSString *> *argumentSet = [NSOrderedSet orderedSetWithArray:arguments];
+  NSMutableOrderedSet<NSString *> *subset = [NSMutableOrderedSet orderedSetWithArray:arguments];
+  NSArray<NSString *> *macOSXSDKArguments = @[@"-sdk", @"macosx"];
+  NSArray<NSString *> *iPhoneSimulatorSDKArguments = @[@"-sdk", @"iphonesimulator"];
+
+  // Check for a macosx destination, return early and ignore -destination argument.
+  [subset intersectOrderedSet:[NSOrderedSet orderedSetWithArray:macOSXSDKArguments]];
+  if ([subset.array isEqualToArray:macOSXSDKArguments]) {
+    return [FBXCTestDestinationMacOSX new];
+  }
+
+  // Check for an iPhoneSimulator Destination.
+  subset = [NSMutableOrderedSet orderedSetWithArray:arguments];
+  [subset intersectOrderedSet:[NSOrderedSet orderedSetWithArray:iPhoneSimulatorSDKArguments]];
+  NSString *destination = [self destinationArgumentFromArguments:argumentSet];
+  if (![subset.array isEqualToArray:iPhoneSimulatorSDKArguments] && !destination) {
+    return [[FBXCTestError
+      describeFormat:@"No valid SDK or Destination provided in %@", [FBCollectionInformation oneLineDescriptionFromArray:arguments]]
+      fail:error];
+  }
+  // No Destination exists so return early.
+  if (!destination) {
+    return [[FBXCTestDestinationiPhoneSimulator alloc] initWithDevice:nil version:nil];
+  }
+  // Extract the destination.
+  id<FBControlCoreConfiguration_OS> os = nil;
+  id<FBControlCoreConfiguration_Device> device = nil;
+  if (![self parseSimulatorConfigurationFromDestination:destination osOut:&os deviceOut:&device error:error]) {
+    return nil;
+  }
+  return [[FBXCTestDestinationiPhoneSimulator alloc] initWithDevice:device version:os];
+}
+
++ (NSString *)destinationArgumentFromArguments:(NSOrderedSet<NSString *> *)arguments
+{
+  NSUInteger index = [arguments indexOfObject:@"-destination"];
+  if (index == NSNotFound) {
+    return nil;
+  }
+  index += 1;
+  if (index >= arguments.count) {
+    return nil;
+  }
+  return arguments[index];
 }
 
 + (BOOL)parseSimulatorConfigurationFromDestination:(NSString *)destination osOut:(id<FBControlCoreConfiguration_OS> *)osOut deviceOut:(id<FBControlCoreConfiguration_Device> *)deviceOut error:(NSError **)error
@@ -231,38 +271,12 @@
   return YES;
 }
 
-- (FBSimulatorConfiguration *)simulatorConfiguration
-{
-  if (!self.iosDevice && !self.iosVersion) {
-    return nil;
-  }
-  FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration defaultConfiguration];
-  if (self.iosDevice) {
-    configuration = [configuration withDevice:self.iosDevice];
-  }
-  if (self.iosVersion) {
-    configuration = [configuration withOS:self.iosVersion];
-  }
-  return configuration;
-}
-
 - (NSString *)testType
 {
   if (_runnerAppPath) {
     return @"application-test";
   } else {
     return @"logic-test";
-  }
-}
-
-- (NSString *)xctestPath
-{
-  if (self.simulatorConfiguration) {
-    return [FBControlCoreGlobalConfiguration.developerDirectory
-      stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
-  } else {
-    return [FBControlCoreGlobalConfiguration.developerDirectory
-      stringByAppendingPathComponent:@"usr/bin/xctest"];
   }
 }
 
@@ -285,7 +299,7 @@
   NSMutableDictionary<NSString *, NSString *> *environment = parentEnvironment.mutableCopy;
   for (NSString *key in environmentOverrides) {
     NSString *childKey = key;
-    if (self.simulatorConfiguration) {
+    if ([self.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]) {
       childKey = [@"SIMCTL_CHILD_" stringByAppendingString:childKey];
     }
     environment[childKey] = environmentOverrides[key];

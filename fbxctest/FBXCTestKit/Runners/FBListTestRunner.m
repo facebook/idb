@@ -18,6 +18,7 @@
 #import "FBXCTestReporter.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTestError.h"
+#import "FBXCTestDestination.h"
 
 @interface FBListTestRunner ()
 
@@ -47,7 +48,7 @@
 {
   [self.configuration.reporter didBeginExecutingTestPlan];
 
-  NSString *xctestPath = self.configuration.xctestPath;
+  NSString *xctestPath = self.configuration.destination.xctestPath;
   NSString *otestQueryPath = self.configuration.shims.macOtestQueryPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
 

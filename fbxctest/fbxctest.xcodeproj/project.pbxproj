@@ -38,6 +38,8 @@
 		AA9A9E4A1D62F235000B8180 /* FBXCTestRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9A9E481D62F235000B8180 /* FBXCTestRunner.m */; };
 		AA9A9E4D1D62F251000B8180 /* FBApplicationTestRunner.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9A9E4B1D62F251000B8180 /* FBApplicationTestRunner.h */; };
 		AA9A9E4E1D62F251000B8180 /* FBApplicationTestRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9A9E4C1D62F251000B8180 /* FBApplicationTestRunner.m */; };
+		AAA1F54C1DDE17CA003E0359 /* FBXCTestDestination.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA1F54A1DDE17CA003E0359 /* FBXCTestDestination.h */; };
+		AAA1F54D1DDE17CA003E0359 /* FBXCTestDestination.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA1F54B1DDE17CA003E0359 /* FBXCTestDestination.m */; };
 		AAA563DD1DB8ACAC008ACE8B /* FBListTestRunner.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA563DB1DB8ACAC008ACE8B /* FBListTestRunner.h */; };
 		AAA563DE1DB8ACAC008ACE8B /* FBListTestRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA563DC1DB8ACAC008ACE8B /* FBListTestRunner.m */; };
 		AAB44FF31D622B6C0059E922 /* iOSUnitTestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */; };
@@ -122,6 +124,8 @@
 		AA9A9E481D62F235000B8180 /* FBXCTestRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunner.m; sourceTree = "<group>"; };
 		AA9A9E4B1D62F251000B8180 /* FBApplicationTestRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBApplicationTestRunner.h; sourceTree = "<group>"; };
 		AA9A9E4C1D62F251000B8180 /* FBApplicationTestRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBApplicationTestRunner.m; sourceTree = "<group>"; };
+		AAA1F54A1DDE17CA003E0359 /* FBXCTestDestination.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestDestination.h; sourceTree = "<group>"; };
+		AAA1F54B1DDE17CA003E0359 /* FBXCTestDestination.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestDestination.m; sourceTree = "<group>"; };
 		AAA563DB1DB8ACAC008ACE8B /* FBListTestRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBListTestRunner.h; sourceTree = "<group>"; };
 		AAA563DC1DB8ACAC008ACE8B /* FBListTestRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBListTestRunner.m; sourceTree = "<group>"; };
 		AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = iOSUnitTestFixture.xctest; path = ../../../Fixtures/Binaries/iOSUnitTestFixture.xctest; sourceTree = "<group>"; };
@@ -343,6 +347,8 @@
 			children = (
 				AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */,
 				AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */,
+				AAA1F54A1DDE17CA003E0359 /* FBXCTestDestination.h */,
+				AAA1F54B1DDE17CA003E0359 /* FBXCTestDestination.m */,
 				AAFD567E1D95149F00522DE3 /* FBXCTestShimConfiguration.h */,
 				AAFD567F1D95149F00522DE3 /* FBXCTestShimConfiguration.m */,
 			);
@@ -363,6 +369,7 @@
 				AA2CEBB01D65C57F0051962D /* FBXCTestSimulatorFetcher.h in Headers */,
 				050D461B1D6072800038F72D /* FBXCTestReporter.h in Headers */,
 				AA9A9E4D1D62F251000B8180 /* FBApplicationTestRunner.h in Headers */,
+				AAA1F54C1DDE17CA003E0359 /* FBXCTestDestination.h in Headers */,
 				050D45EB1D6070690038F72D /* FBXCTestKit.h in Headers */,
 				AAB44FF81D62351A0059E922 /* FBXCTestLogger.h in Headers */,
 				050D46191D6072800038F72D /* FBJSONTestReporter.h in Headers */,
@@ -498,6 +505,7 @@
 			files = (
 				AA9A9E4E1D62F251000B8180 /* FBApplicationTestRunner.m in Sources */,
 				050D461F1D6072800038F72D /* FBXCTestError.m in Sources */,
+				AAA1F54D1DDE17CA003E0359 /* FBXCTestDestination.m in Sources */,
 				050D46311D6079C10038F72D /* FBXCTestBootstrapper.m in Sources */,
 				AA9A9E4A1D62F235000B8180 /* FBXCTestRunner.m in Sources */,
 				AAFD56811D95149F00522DE3 /* FBXCTestShimConfiguration.m in Sources */,

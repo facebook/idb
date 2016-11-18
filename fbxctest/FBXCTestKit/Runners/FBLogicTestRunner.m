@@ -20,6 +20,7 @@
 #import "FBXCTestError.h"
 #import "FBXCTestLogger.h"
 #import "FBXCTestShimConfiguration.h"
+#import "FBXCTestDestination.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
@@ -57,7 +58,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
   [self.configuration.reporter didBeginExecutingTestPlan];
 
-  NSString *xctestPath = self.configuration.xctestPath;
+  NSString *xctestPath = self.configuration.destination.xctestPath;
   NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"usr/bin/simctl"];
   NSString *otestShimPath = simulator ? self.configuration.shims.iOSSimulatorOtestShimPath : self.configuration.shims.macOtestShimPath;
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
