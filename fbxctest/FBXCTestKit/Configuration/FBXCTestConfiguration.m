@@ -83,7 +83,6 @@
 
 - (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error
 {
-  arguments = [arguments subarrayWithRange:NSMakeRange(1, [arguments count] - 1)];
   NSUInteger nextArgument = 0;
   NSString *testFilter = nil;
   BOOL shimsRequired = YES;

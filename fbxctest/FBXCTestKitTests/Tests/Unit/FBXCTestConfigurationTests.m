@@ -49,6 +49,31 @@
   XCTAssertEqualObjects(configuration.simulatorConfiguration.device, FBControlCoreConfiguration_Device_iPhone6.new);
 }
 
+- (void)testiOSApplicationTestsWithoutRunTestsAtStart
+{
+  NSError *error = nil;
+  if (![FBXCTestShimConfiguration findShimDirectoryWithError:&error]) {
+    NSLog(@"Could not locate a shim directory, skipping -[%@ %@]. %@", NSStringFromClass(self.class), NSStringFromSelector(_cmd), error);
+    return;
+  }
+
+  NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
+  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
+  NSString *testBundlePath = [self iOSUnitTestBundlePath];
+  NSString *appTestArgument = [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+  NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
+  NSArray *arguments = @[ @"-reporter", @"json-stream", @"-sdk", @"iphonesimulator", @"run-tests", @"-appTest", appTestArgument];
+
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+
+  XCTAssertNil(error);
+  XCTAssertNotNil(configuration);
+  XCTAssertFalse(configuration.listTestsOnly);
+  XCTAssertNil(configuration.testFilter);
+  XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
+  XCTAssertNil(configuration.simulatorConfiguration);
+}
+
 - (void)testiOSLogicTests
 {
   NSError *error = nil;
