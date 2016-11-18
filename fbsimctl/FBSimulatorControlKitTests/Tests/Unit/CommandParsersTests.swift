@@ -85,7 +85,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       ["--connect-bridge"],
       FBSimulatorBootConfiguration
         .default()
-        .withOptions(FBSimulatorBootOptions.connectBridge)
+        .withOptions([.connectBridge, .awaitServices])
     )
   }
 
@@ -95,7 +95,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       ["--use-nsworkspace"],
       FBSimulatorBootConfiguration
         .default()
-        .withOptions(FBSimulatorBootOptions.useNSWorkspace)
+        .withOptions([.useNSWorkspace, .awaitServices])
     )
   }
 
@@ -104,7 +104,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       FBSimulatorBootConfigurationParser.parser,
       ["--direct-launch"],
       FBSimulatorBootConfiguration.default()
-        .withOptions(FBSimulatorBootOptions.enableDirectLaunch)
+        .withOptions([.enableDirectLaunch, .awaitServices])
         .withFramebuffer(FBFramebufferConfiguration.default())
     )
   }
@@ -116,7 +116,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       FBSimulatorBootConfiguration.default()
         .withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "en_GB")))
         .scale75Percent()
-        .withOptions(FBSimulatorBootOptions.enableDirectLaunch.union(.connectBridge))
+        .withOptions([.enableDirectLaunch, .connectBridge, .awaitServices])
         .withFramebuffer(FBFramebufferConfiguration.default())
     )
   }
@@ -171,7 +171,7 @@ let validActions: [([String], Action)] = [
   (["boot", "--locale", "en_US", "--scale=75"], Action.boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_US") as Locale)).scale75Percent())),
   (["boot", "--locale", "fr_FR"], Action.boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR"))))),
   (["boot", "--scale=50"], Action.boot(FBSimulatorBootConfiguration.default().scale50Percent())),
-  (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], Action.boot(FBSimulatorBootConfiguration.default().scale25Percent().withOptions(FBSimulatorBootOptions.connectBridge.union(FBSimulatorBootOptions.useNSWorkspace)))),
+  (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], Action.boot(FBSimulatorBootConfiguration.default().scale25Percent().withOptions([.connectBridge, .useNSWorkspace, .awaitServices]))),
   (["boot"], Action.boot(nil)),
   (["clear_keychain", "com.foo.bar"], Action.clearKeychain("com.foo.bar")),
   (["clear_keychain"], Action.clearKeychain(nil)),
@@ -276,7 +276,7 @@ class CommandParserTests : XCTestCase {
       ["list"], ["create", "iPhone 6"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["shutdown"], ["diagnose"],
     ]
     let launchConfiguration = FBSimulatorBootConfiguration.default()
-      .withOptions(FBSimulatorBootOptions.enableDirectLaunch)
+      .withOptions([.enableDirectLaunch, .awaitServices])
       .withFramebuffer(FBFramebufferConfiguration.default())
     let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [Action.list, Action.create(CreationSpecification.iPhone6Configuration), Action.boot(launchConfiguration), Action.listen(Server.http(8090)), Action.shutdown, diagnoseAction]
