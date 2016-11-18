@@ -84,15 +84,7 @@ static BOOL hasLoadedXcodeFrameworks = NO;
     return YES;
   }
 
-  NSArray<FBWeakFramework *> *frameworks = @[
-    FBWeakFramework.DTXConnectionServices,
-    FBWeakFramework.DVTFoundation,
-    FBWeakFramework.IDEFoundation,
-    FBWeakFramework.IDEiOSSupportCore,
-    FBWeakFramework.IBAutolayoutFoundation,
-    FBWeakFramework.IDEKit,
-    FBWeakFramework.IDESourceEditor,
-  ];
+  NSArray<FBWeakFramework *> *frameworks = FBDeviceControlFrameworkLoader.privateFrameworks;
 
   if (![FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error]) {
     return NO;
@@ -162,6 +154,42 @@ static BOOL hasLoadedXcodeFrameworks = NO;
   [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"Operations"] setLogLevel:10];
   [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"Executable"] setLogLevel:10];
   [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"CommandInvocation"] setLogLevel:10];
+}
+
++ (BOOL)isAtLeastMacOSSierra
+{
+  NSOperatingSystemVersion sierra = {10, 12, 0};
+  return [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:sierra];
+}
+
++ (BOOL)isAtLeastXcode81
+{
+  NSDecimalNumber *xcodeVersion = FBControlCoreGlobalConfiguration.xcodeVersionNumber;
+  NSDecimalNumber *xcode81 = [NSDecimalNumber decimalNumberWithString:@"8.1"];
+  return [xcodeVersion compare:xcode81] != NSOrderedAscending;
+}
+
++ (NSArray<FBWeakFramework *> *)privateFrameworks
+{
+  NSArray<FBWeakFramework *> *frameworks =
+  @[
+    FBWeakFramework.DTXConnectionServices,
+    FBWeakFramework.DVTFoundation,
+    FBWeakFramework.IDEFoundation,
+    FBWeakFramework.IDEiOSSupportCore,
+    FBWeakFramework.IBAutolayoutFoundation,
+    FBWeakFramework.IDEKit,
+    FBWeakFramework.IDESourceEditor
+    ];
+
+  if (FBDeviceControlFrameworkLoader.isAtLeastMacOSSierra &&
+      FBDeviceControlFrameworkLoader.isAtLeastXcode81) {
+    NSMutableArray *mutable = [NSMutableArray arrayWithArray:frameworks];
+    [mutable addObject:FBWeakFramework.DFRSupportKit];
+    [mutable addObject:FBWeakFramework.DVTKit];
+    frameworks = [NSArray arrayWithArray:mutable];
+  }
+  return frameworks;
 }
 
 @end
