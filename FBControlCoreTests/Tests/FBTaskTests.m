@@ -122,6 +122,19 @@
   XCTAssertTrue(didUpdateTerminationState);
 }
 
+- (void)testAwaitingTerminationOfShortLivedProcess
+{
+  FBTask *task = [[[FBTaskBuilder
+    withLaunchPath:@"/bin/sleep" arguments:@[@"0"]]
+    build]
+    startAsynchronously];
+
+  XCTAssertTrue([task waitForCompletionWithTimeout:1 error:nil]);
+  XCTAssertTrue(task.hasTerminated);
+  XCTAssertTrue(task.wasSuccessful);
+  XCTAssertNil(task.error);
+}
+
 - (void)testCallsHandlerWithAsynchronousTermination
 {
   __block BOOL didCallTerminationHandler = NO;
