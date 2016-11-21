@@ -438,8 +438,6 @@
 		EEBD60951C908F8500298A07 /* FBCollectionInformation.m in Sources */ = {isa = PBXBuildFile; fileRef = EEBD60931C908F8500298A07 /* FBCollectionInformation.m */; };
 		EEBD60971C908FA200298A07 /* FBJSONConversion.h in Headers */ = {isa = PBXBuildFile; fileRef = EEBD60961C908FA200298A07 /* FBJSONConversion.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EEF4497E1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */; };
-		F5E030FF1DDF609B00FE0208 /* FBDeviceControlFrameworkLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F5E030FE1DDF609B00FE0208 /* FBDeviceControlFrameworkLoaderTests.m */; };
-		F5E031001DDF61BC00FE0208 /* OCMock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0DDE1C91BEA500608E89 /* OCMock.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1199,7 +1197,6 @@
 		EEBD60961C908FA200298A07 /* FBJSONConversion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONConversion.h; sourceTree = "<group>"; };
 		EEF4497B1CE0A22200300C9F /* FBXCTestBootstrapFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapFixtures.h; sourceTree = "<group>"; };
 		EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapFixtures.m; sourceTree = "<group>"; };
-		F5E030FE1DDF609B00FE0208 /* FBDeviceControlFrameworkLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceControlFrameworkLoaderTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1248,7 +1245,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAC8B2351CEC51120034A865 /* FBDeviceControl.framework in Frameworks */,
-				F5E031001DDF61BC00FE0208 /* OCMock.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2473,7 +2469,6 @@
 		F5E030FD1DDF606700FE0208 /* Unit */ = {
 			isa = PBXGroup;
 			children = (
-				F5E030FE1DDF609B00FE0208 /* FBDeviceControlFrameworkLoaderTests.m */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -2739,7 +2734,6 @@
 				AAC8B2311CEC51120034A865 /* Frameworks */,
 				AAC8B2321CEC51120034A865 /* Resources */,
 				AA3714841CEDF52200C29CCB /* CopyFiles */,
-				F5E031011DDF61F500FE0208 /* carthage copy-frameworks */,
 			);
 			buildRules = (
 			);
@@ -2996,21 +2990,6 @@
 			shellPath = /bin/sh;
 			shellScript = "/usr/local/bin/carthage copy-frameworks";
 		};
-		F5E031011DDF61F500FE0208 /* carthage copy-frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Carthage/Build/Mac/OCMock.framework",
-			);
-			name = "carthage copy-frameworks";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/usr/local/bin/carthage copy-frameworks";
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -3135,7 +3114,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F5E030FF1DDF609B00FE0208 /* FBDeviceControlFrameworkLoaderTests.m in Sources */,
 				8455DCEE1DC7ACDC00257062 /* FBDeviceTestRunStrategyTest.m in Sources */,
 				AAC8B2671CEC57F10034A865 /* FBDeviceControlLinkerTests.m in Sources */,
 			);
