@@ -182,6 +182,18 @@ static BOOL hasLoadedXcodeFrameworks = NO;
     FBWeakFramework.IDESourceEditor
     ];
 
+  /*
+   These frameworks are required by the DVTKitDFRSupport Xcode plug-in starting
+   with Xcode >= 8.1 on macOS Sierra.  This plug-in is related to Touch Bar
+   development.
+
+   The DVTKitDFRSupport plug-in does not exist in Xcode 8.0 and any version
+   of El Cap.
+
+   The DVTKit.framework exists in Xcode >= 8.1 on El Cap and Sierra.
+
+   The DFRSupportKit.framework only exists on Sierra in Xcode >= 8.1.
+  */
   if (FBDeviceControlFrameworkLoader.isAtLeastMacOSSierra &&
       FBDeviceControlFrameworkLoader.isAtLeastXcode81) {
     NSMutableArray *mutable = [NSMutableArray arrayWithArray:frameworks];
