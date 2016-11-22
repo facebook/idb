@@ -101,8 +101,7 @@
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
-  XCTAssertFalse(configuration.listTestsOnly);
-  XCTAssertNil(configuration.testFilter);
+  XCTAssertFalse([configuration isKindOfClass:FBListTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
 }
