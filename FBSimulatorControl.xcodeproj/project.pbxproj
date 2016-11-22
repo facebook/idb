@@ -3404,10 +3404,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				MTL_ENABLE_DEBUG_INFO = YES;
 			};
 			name = Debug;
@@ -3416,10 +3413,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				MTL_ENABLE_DEBUG_INFO = NO;
 			};
 			name = Profile;
@@ -3428,10 +3422,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/Mac",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				MTL_ENABLE_DEBUG_INFO = NO;
 			};
 			name = Release;
