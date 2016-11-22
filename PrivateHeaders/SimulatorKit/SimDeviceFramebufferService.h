@@ -4,7 +4,7 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#import <objc/NSObject.h>
+#import <Foundation/NSObject.h>
 
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDisplayDamageRectangleDelegate-Protocol.h>
@@ -17,7 +17,7 @@
 @interface SimDeviceFramebufferService : NSObject <SimDeviceIOPortConsumer, SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDisplayRotationAngleDelegate>
 {
     BOOL _consumerAttached;
-    int _displayClass;
+    unsigned short _displayClass;
     SimDevice *_device;
     NSString *_consumerIdentifier;
     NSUUID *_consumerUUID;
@@ -25,17 +25,16 @@
     NSMapTable *_clientsToCallbackQueue;
 }
 
-+ (id)framebufferServiceWithName:(id)arg1 device:(id)arg2 error:(id *)arg3;
 + (id)tvOutFramebufferServiceForDevice:(id)arg1 error:(id *)arg2;
 + (id)mainScreenFramebufferServiceForDevice:(id)arg1 error:(id *)arg2;
-+ (id)portForDisplayClass:(int)arg1 io:(id)arg2;
++ (id)portForDisplayClass:(unsigned short)arg1 io:(id)arg2;
 @property (retain, nonatomic) NSMapTable *clientsToCallbackQueue;
 @property (retain, nonatomic) NSObject<OS_dispatch_queue> *executionQueue;
-@property (nonatomic, assign) int displayClass; // @synthesize displayClass=_displayClass;
+@property (nonatomic, assign) unsigned short displayClass;
 @property (retain, nonatomic) NSUUID *consumerUUID;
-@property (copy, nonatomic) NSString *consumerIdentifier;
-@property (nonatomic, assign) BOOL consumerAttached; // @synthesize consumerAttached=_consumerAttached;
-@property (nonatomic, weak) SimDevice *device; // @synthesize device=_device;
+@property (nonatomic, copy) NSString *consumerIdentifier;
+@property (nonatomic, assign) BOOL consumerAttached;
+@property (nonatomic, weak) SimDevice *device;
 - (void)didReceiveDamageRect:(struct CGRect)arg1;
 - (void)didChangeIOSurface:(id)arg1;
 - (void)didChangeDisplayAngle:(double)arg1;
@@ -46,6 +45,13 @@
 - (void)registerClient:(id)arg1 onQueue:(id)arg2;
 - (void)invalidate;
 - (void)dealloc;
+- (id)initWithName:(id)arg1 displayClass:(unsigned short)arg2 device:(id)arg3;
+
+// Remaining properties
+@property (atomic, copy, readonly) NSString *debugDescription;
+@property (atomic, copy, readonly) NSString *description;
+@property (atomic, readonly) NSUInteger hash;
+@property (atomic, readonly) Class superclass;
 
 @end
 

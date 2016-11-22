@@ -4,6 +4,9 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#pragma mark Blocks
+#import <CoreImage/CIImage.h>
 
-typedef void (^CDUnknownBlockType)(void); // return type and parameters are unknown
+@interface CIImage (SimulatorKit)
+- (id)imageRepresentationWithType:(unsigned long long)arg1;
+- (id)bitmapRepresentation;
+@end

@@ -4,6 +4,8 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#pragma mark Blocks
+#import <Foundation/NSDate.h>
 
-typedef void (^CDUnknownBlockType)(void); // return type and parameters are unknown
+@interface NSDate (CoreMedia)
++ (CDStruct_1b6d18a9)cmTimeForMachAbsoluteTime;
+@end

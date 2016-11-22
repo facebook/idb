@@ -4,6 +4,8 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#pragma mark Blocks
+#import <Foundation/NSString.h>
 
-typedef void (^CDUnknownBlockType)(void); // return type and parameters are unknown
+@interface NSString (SimDisplayConsoleDebugger)
++ (id)consoleDebugger_stringForSquareAngle:(double)arg1;
+@end

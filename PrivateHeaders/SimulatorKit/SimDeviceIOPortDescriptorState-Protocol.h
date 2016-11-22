@@ -5,7 +5,8 @@
 //
 
 #import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
+#import <SimulatorKit/NSObject-Protocol.h>
 
-@protocol SimDisplayIOSurfaceRenderable <FoundationXPCProtocolProxyable>
-@property (readonly, nonatomic) id ioSurface;
+@protocol SimDeviceIOPortDescriptorState <FoundationXPCProtocolProxyable, NSObject>
+@property (nonatomic, readonly) int powerState;
 @end
