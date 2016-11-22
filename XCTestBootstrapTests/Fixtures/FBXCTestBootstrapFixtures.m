@@ -33,4 +33,9 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"junitResult1" ofType:@"xml"];
 }
 
++ (NSString *)tableSearchXCTestRunPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"tablesearch" ofType:@"xctestrun"];
+}
+
 @end

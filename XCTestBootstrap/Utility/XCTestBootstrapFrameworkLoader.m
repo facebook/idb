@@ -35,7 +35,8 @@ static BOOL hasLoadedFrameworks = NO;
 
   NSArray<FBWeakFramework *> *frameworks = @[
     FBWeakFramework.DTXConnectionServices,
-    FBWeakFramework.XCTest
+    FBWeakFramework.XCTest,
+    FBWeakFramework.IDEFoundation,
   ];
   BOOL success = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
   if (success) {

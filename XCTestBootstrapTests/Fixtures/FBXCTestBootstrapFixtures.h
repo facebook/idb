@@ -35,4 +35,9 @@
  */
 + (NSString *)JUnitXMLResult1Path;
 
+/**
+ A File Path to the TableSearch xctestrun file.
+ */
++ (NSString *)tableSearchXCTestRunPath;
+
 @end
