@@ -6,3 +6,5 @@ The `FBSimulatorControl` Framework exposes a lot of functionality over it's API 
 
 As Xcode can't test Executables directly a separate Framework target `FBSimulatorControlKit` is used to contain the core functionality of `fbsimctl`. These components are tested in the`FBSimulatorControlKitTests` target. The `fbsimctl` executable itself is very small, it just calls a bootstrap command inside `FBSimulatorControlKit` with the arguments and environment variables passed to the process on launch.
 
+A video from [SeleniumConf London 2016 is available](https://www.youtube.com/watch?v=lTxW4rbu6Bk), which gives a high-level overview of the problems that `fbsimctl` was created to solve.
+
