@@ -438,6 +438,7 @@
 		EEBD60951C908F8500298A07 /* FBCollectionInformation.m in Sources */ = {isa = PBXBuildFile; fileRef = EEBD60931C908F8500298A07 /* FBCollectionInformation.m */; };
 		EEBD60971C908FA200298A07 /* FBJSONConversion.h in Headers */ = {isa = PBXBuildFile; fileRef = EEBD60961C908FA200298A07 /* FBJSONConversion.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		EEF4497E1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */; };
+		F52B7E4E1DE465DF00E575A7 /* FBDeviceControlFrameworkLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F52B7E4D1DE465DF00E575A7 /* FBDeviceControlFrameworkLoaderTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1197,6 +1198,7 @@
 		EEBD60961C908FA200298A07 /* FBJSONConversion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONConversion.h; sourceTree = "<group>"; };
 		EEF4497B1CE0A22200300C9F /* FBXCTestBootstrapFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapFixtures.h; sourceTree = "<group>"; };
 		EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapFixtures.m; sourceTree = "<group>"; };
+		F52B7E4D1DE465DF00E575A7 /* FBDeviceControlFrameworkLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBDeviceControlFrameworkLoaderTests.m; path = FBSimulatorControlTests/Unit/FBDeviceControlFrameworkLoaderTests.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2469,6 +2471,7 @@
 		F5E030FD1DDF606700FE0208 /* Unit */ = {
 			isa = PBXGroup;
 			children = (
+				F52B7E4D1DE465DF00E575A7 /* FBDeviceControlFrameworkLoaderTests.m */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -3114,6 +3117,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F52B7E4E1DE465DF00E575A7 /* FBDeviceControlFrameworkLoaderTests.m in Sources */,
 				8455DCEE1DC7ACDC00257062 /* FBDeviceTestRunStrategyTest.m in Sources */,
 				AAC8B2671CEC57F10034A865 /* FBDeviceControlLinkerTests.m in Sources */,
 			);

@@ -156,52 +156,58 @@ static BOOL hasLoadedXcodeFrameworks = NO;
   [[objc_lookUpClass("DVTLogAspect") logAspectWithName:@"CommandInvocation"] setLogLevel:10];
 }
 
-+ (BOOL)isAtLeastMacOSSierra
++ (BOOL)macOSVersionIsAtLeastSierra:(NSOperatingSystemVersion)macOSVersion
 {
-  NSOperatingSystemVersion sierra = {10, 12, 0};
-  return [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:sierra];
+  return macOSVersion.minorVersion >= 12;
 }
 
-+ (BOOL)isAtLeastXcode81
++ (BOOL)xcodeVersionIsAtLeast81:(NSDecimalNumber *)xcodeVersion
 {
-  NSDecimalNumber *xcodeVersion = FBControlCoreGlobalConfiguration.xcodeVersionNumber;
   NSDecimalNumber *xcode81 = [NSDecimalNumber decimalNumberWithString:@"8.1"];
   return [xcodeVersion compare:xcode81] != NSOrderedAscending;
 }
 
-+ (NSArray<FBWeakFramework *> *)privateFrameworks
-{
++ (NSArray<FBWeakFramework *> *)privateFrameworkForMacOSVersion:(NSOperatingSystemVersion)macOSVersion
+                                                   xcodeVersion:(NSDecimalNumber *)xcodeVersion {
   NSArray<FBWeakFramework *> *frameworks =
-  @[
-    FBWeakFramework.DTXConnectionServices,
-    FBWeakFramework.DVTFoundation,
-    FBWeakFramework.IDEFoundation,
-    FBWeakFramework.IDEiOSSupportCore,
-    FBWeakFramework.IBAutolayoutFoundation,
-    FBWeakFramework.IDEKit,
-    FBWeakFramework.IDESourceEditor
-    ];
+          @[
+                  FBWeakFramework.DTXConnectionServices,
+                  FBWeakFramework.DVTFoundation,
+                  FBWeakFramework.IDEFoundation,
+                  FBWeakFramework.IDEiOSSupportCore,
+                  FBWeakFramework.IBAutolayoutFoundation,
+                  FBWeakFramework.IDEKit,
+                  FBWeakFramework.IDESourceEditor
+          ];
+  if ([FBDeviceControlFrameworkLoader macOSVersionIsAtLeastSierra:macOSVersion] &&
+      [FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast81:xcodeVersion]) {
+    /*
+     These frameworks are required by the DVTKitDFRSupport Xcode plug-in starting
+     with Xcode >= 8.1 on macOS Sierra.  This plug-in is related to Touch Bar
+     development.
 
-  /*
-   These frameworks are required by the DVTKitDFRSupport Xcode plug-in starting
-   with Xcode >= 8.1 on macOS Sierra.  This plug-in is related to Touch Bar
-   development.
+     The DVTKitDFRSupport plug-in does not exist in Xcode 8.0 and any version
+     of El Cap.
 
-   The DVTKitDFRSupport plug-in does not exist in Xcode 8.0 and any version
-   of El Cap.
+     The DVTKit.framework exists in Xcode >= 8.1 on El Cap and Sierra.
 
-   The DVTKit.framework exists in Xcode >= 8.1 on El Cap and Sierra.
-
-   The DFRSupportKit.framework only exists on Sierra in Xcode >= 8.1.
-  */
-  if (FBDeviceControlFrameworkLoader.isAtLeastMacOSSierra &&
-      FBDeviceControlFrameworkLoader.isAtLeastXcode81) {
+     The DFRSupportKit.framework only exists on Sierra in Xcode >= 8.1.
+     */
     NSMutableArray *mutable = [NSMutableArray arrayWithArray:frameworks];
     [mutable addObject:FBWeakFramework.DFRSupportKit];
     [mutable addObject:FBWeakFramework.DVTKit];
     frameworks = [NSArray arrayWithArray:mutable];
   }
   return frameworks;
+}
+
++ (NSArray<FBWeakFramework *> *)privateFrameworks
+{
+  NSDecimalNumber *xcodeVersion = FBControlCoreGlobalConfiguration.xcodeVersionNumber;
+  NSOperatingSystemVersion macOSVersion = NSProcessInfo.processInfo.operatingSystemVersion;
+
+  return [FBDeviceControlFrameworkLoader privateFrameworkForMacOSVersion:macOSVersion
+                                                                  xcodeVersion:xcodeVersion];
 }
 
 @end
