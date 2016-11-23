@@ -47,10 +47,11 @@
 - (void)testInvalidTestRunConfigurationPath
 {
   NSError *error;
-  [[FBXCTestRun
+  FBXCTestRun *testRun = [[FBXCTestRun
     withTestRunFileAtPath:@"/tmp/doesntexist.xctestrun"]
     buildWithError:&error];
   XCTAssertNotNil(error);
+  XCTAssertNil(testRun);
 }
 
 @end

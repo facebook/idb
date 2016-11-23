@@ -9,6 +9,8 @@
 
 #import "FBXCTestRun.h"
 
+#import "XCTestBootstrapError.h"
+
 #import <DVTFoundation/DVTFilePath.h>
 #import <IDEFoundation/IDETestRunSpecification.h>
 #import <IDEFoundation/IDERunnable.h>
@@ -51,12 +53,21 @@
 
 - (instancetype)buildWithError:(NSError **)error;
 {
+  NSError *innerError;
+
   // TODO: <plu> We need to make sure that the frameworks are loaded here already.
   DVTFilePath *path = [objc_lookUpClass("DVTFilePath") filePathForPathString:self.testRunFilePath];
+
   // TODO: <plu> Investigate why here this weird type of dictionary is coming back.
-  IDETestRunSpecification *testRunSpecification = [[[objc_lookUpClass("IDETestRunSpecification") testRunSpecificationsAtFilePath:path workspace:nil error:error] allValues] firstObject];
-  if (*error) {
-    return nil;
+  IDETestRunSpecification *testRunSpecification = [[[objc_lookUpClass("IDETestRunSpecification")
+    testRunSpecificationsAtFilePath:path
+    workspace:nil
+    error:&innerError] allValues] firstObject];
+
+  if (innerError) {
+    return [[[XCTestBootstrapError describe:@"Failed to load xctestrun file"]
+    causedBy:innerError]
+    fail:error];
   }
 
   // TODO: <plu> To avoid valueForKeyPath here we should probably also dump IDEPathRunnable and everything that gets pulled by it.
