@@ -27,12 +27,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The path to the test host application.
  */
-@property (nonatomic, copy, readonly, nullable) NSString *testHostPath;
+@property (nonatomic, copy, readonly) NSString *testHostPath;
 
 /*
  The path to the test bundle.
  */
-@property (nonatomic, copy, readonly, nullable) NSString *testBundlePath;
+@property (nonatomic, copy, readonly) NSString *testBundlePath;
 
 /**
  The application launch arguments.

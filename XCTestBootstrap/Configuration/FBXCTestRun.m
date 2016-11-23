@@ -78,6 +78,16 @@
   self.testsToSkip = testRunSpecification.testIdentifiersToSkip ?: [NSSet set];
   self.testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
 
+  // This is actually caught by an assertion in IDETestRunSpecification. Just a safety net
+  // here to catch it in case Apple changes something.
+  if (!self.testHostPath) {
+    return [[XCTestBootstrapError describe:@"Could not find TestHostPath in xctestrun file"] fail:error];
+  }
+
+  if (!self.testBundlePath) {
+    return [[XCTestBootstrapError describe:@"Could not find TestBundlePath in xctestrun file"] fail:error];
+  }
+
   return self;
 }
 
