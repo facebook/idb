@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestRunConfiguration.h"
+#import "FBXCTestRun.h"
 
 #import <DVTFoundation/DVTFilePath.h>
 #import <IDEFoundation/IDETestRunSpecification.h>
@@ -15,9 +15,9 @@
 
 #import <objc/runtime.h>
 
-@interface FBXCTestRunConfiguration ()
+@interface FBXCTestRun ()
 
-@property (nonatomic, copy) NSString *testRunConfigurationPath;
+@property (nonatomic, copy) NSString *testRunFilePath;
 
 @property (nonatomic, copy, readwrite, nullable) NSString *testHostPath;
 @property (nonatomic, copy, readwrite, nullable) NSString *testBundlePath;
@@ -28,23 +28,23 @@
 
 @end
 
-@implementation FBXCTestRunConfiguration
+@implementation FBXCTestRun
 
-+ (instancetype)withTestRunConfigurationAtPath:(NSString *)testRunConfigurationPath
++ (instancetype)withTestRunFileAtPath:(NSString *)testRunFilePath
 {
-  return [[self alloc] initWithTestRunConfigurationPath:testRunConfigurationPath];
+  return [[self alloc] initWithTestRunFilePath:testRunFilePath];
 }
 
-- (instancetype)initWithTestRunConfigurationPath:(NSString *)testRunConfigurationPath
+- (instancetype)initWithTestRunFilePath:(NSString *)testRunFilePath
 {
-  NSParameterAssert(testRunConfigurationPath);
+  NSParameterAssert(testRunFilePath);
 
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _testRunConfigurationPath = [testRunConfigurationPath copy];
+  _testRunFilePath = [testRunFilePath copy];
 
   return self;
 }
@@ -52,7 +52,7 @@
 - (instancetype)buildWithError:(NSError **)error;
 {
   // TODO: <plu> We need to make sure that the frameworks are loaded here already.
-  DVTFilePath *path = [objc_lookUpClass("DVTFilePath") filePathForPathString:self.testRunConfigurationPath];
+  DVTFilePath *path = [objc_lookUpClass("DVTFilePath") filePathForPathString:self.testRunFilePath];
   // TODO: <plu> Investigate why here this weird type of dictionary is coming back.
   IDETestRunSpecification *testRunSpecification = [[[objc_lookUpClass("IDETestRunSpecification") testRunSpecificationsAtFilePath:path workspace:nil error:error] allValues] firstObject];
   if (*error) {

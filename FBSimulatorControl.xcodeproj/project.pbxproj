@@ -13,9 +13,9 @@
 		05AC8AFB1D587A8B008B435E /* FBTestManagerTestReporterBase.h in Headers */ = {isa = PBXBuildFile; fileRef = 05AC8AF91D587A8B008B435E /* FBTestManagerTestReporterBase.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		05AC8AFC1D587A8B008B435E /* FBTestManagerTestReporterBase.m in Sources */ = {isa = PBXBuildFile; fileRef = 05AC8AFA1D587A8B008B435E /* FBTestManagerTestReporterBase.m */; };
 		05BABC561DE45C000012BC5B /* IDERunnable.h in Headers */ = {isa = PBXBuildFile; fileRef = 05BABC551DE45C000012BC5B /* IDERunnable.h */; };
-		05BABC591DE4627D0012BC5B /* FBXCTestRunConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 05BABC571DE4627D0012BC5B /* FBXCTestRunConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		05BABC5A1DE4627D0012BC5B /* FBXCTestRunConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 05BABC581DE4627D0012BC5B /* FBXCTestRunConfiguration.m */; };
-		05BABC6C1DE470560012BC5B /* FBXCTestRunConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 05BABC6B1DE470560012BC5B /* FBXCTestRunConfigurationTests.m */; };
+		05BABC591DE4627D0012BC5B /* FBXCTestRun.h in Headers */ = {isa = PBXBuildFile; fileRef = 05BABC571DE4627D0012BC5B /* FBXCTestRun.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		05BABC5A1DE4627D0012BC5B /* FBXCTestRun.m in Sources */ = {isa = PBXBuildFile; fileRef = 05BABC581DE4627D0012BC5B /* FBXCTestRun.m */; };
+		05BABC6C1DE470560012BC5B /* FBXCTestRunTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 05BABC6B1DE470560012BC5B /* FBXCTestRunTests.m */; };
 		05BABC6E1DE470DE0012BC5B /* tablesearch.xctestrun in Resources */ = {isa = PBXBuildFile; fileRef = 05BABC6D1DE470DE0012BC5B /* tablesearch.xctestrun */; };
 		05D3B5761D572EA100944680 /* junitResult0.xml in Resources */ = {isa = PBXBuildFile; fileRef = 05D3B5751D572EA100944680 /* junitResult0.xml */; };
 		05F1823F1D59B48600DBD35C /* junitResult1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 05F1823E1D59B48600DBD35C /* junitResult1.xml */; };
@@ -599,9 +599,9 @@
 		05BABC411DE429E60012BC5B /* DVTFilePath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVTFilePath.h; sourceTree = "<group>"; };
 		05BABC4D1DE448EF0012BC5B /* DVTFileSystemRepresentationProviding-Protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "DVTFileSystemRepresentationProviding-Protocol.h"; sourceTree = "<group>"; };
 		05BABC551DE45C000012BC5B /* IDERunnable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IDERunnable.h; sourceTree = "<group>"; };
-		05BABC571DE4627D0012BC5B /* FBXCTestRunConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunConfiguration.h; sourceTree = "<group>"; };
-		05BABC581DE4627D0012BC5B /* FBXCTestRunConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunConfiguration.m; sourceTree = "<group>"; };
-		05BABC6B1DE470560012BC5B /* FBXCTestRunConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunConfigurationTests.m; sourceTree = "<group>"; };
+		05BABC571DE4627D0012BC5B /* FBXCTestRun.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRun.h; sourceTree = "<group>"; };
+		05BABC581DE4627D0012BC5B /* FBXCTestRun.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRun.m; sourceTree = "<group>"; };
+		05BABC6B1DE470560012BC5B /* FBXCTestRunTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunTests.m; sourceTree = "<group>"; };
 		05BABC6D1DE470DE0012BC5B /* tablesearch.xctestrun */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = tablesearch.xctestrun; sourceTree = "<group>"; };
 		05D3B5751D572EA100944680 /* junitResult0.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult0.xml; sourceTree = "<group>"; };
 		05F1823E1D59B48600DBD35C /* junitResult1.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult1.xml; sourceTree = "<group>"; };
@@ -2152,8 +2152,8 @@
 				AAEC23C31D5E345D0083CAB7 /* FBTestManagerTestReporterCompositeTests.m */,
 				AAEC23C41D5E345D0083CAB7 /* FBTestManagerTestReporterJUnitTests.m */,
 				AAEC23C51D5E345D0083CAB7 /* FBTestRunnerConfigurationTests.m */,
-				05BABC6B1DE470560012BC5B /* FBXCTestRunConfigurationTests.m */,
 				AAEC23C61D5E345D0083CAB7 /* FBXCTestRunStrategyTests.m */,
+				05BABC6B1DE470560012BC5B /* FBXCTestRunTests.m */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -2432,8 +2432,8 @@
 			children = (
 				EE62DC5E1D6C82340031A457 /* FBTestLaunchConfiguration.h */,
 				EE62DC5F1D6C82340031A457 /* FBTestLaunchConfiguration.m */,
-				05BABC571DE4627D0012BC5B /* FBXCTestRunConfiguration.h */,
-				05BABC581DE4627D0012BC5B /* FBXCTestRunConfiguration.m */,
+				05BABC571DE4627D0012BC5B /* FBXCTestRun.h */,
+				05BABC581DE4627D0012BC5B /* FBXCTestRun.m */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
@@ -2713,7 +2713,7 @@
 				AA7FA7B21CE075DD00614A61 /* FBXCTestManagerLoggingForwarder.h in Headers */,
 				AA1F2C8A1CEA4176003E0BDE /* XCTestBootstrapFrameworkLoader.h in Headers */,
 				05AC8AFB1D587A8B008B435E /* FBTestManagerTestReporterBase.h in Headers */,
-				05BABC591DE4627D0012BC5B /* FBXCTestRunConfiguration.h in Headers */,
+				05BABC591DE4627D0012BC5B /* FBXCTestRun.h in Headers */,
 				AA7414F01CE3102F00C9641D /* FBTestBundleConnection.h in Headers */,
 				3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */,
 				AA46BF601D6DDC6A00C41DAF /* FBTestManagerContext.h in Headers */,
@@ -3265,7 +3265,7 @@
 				05AC8AFC1D587A8B008B435E /* FBTestManagerTestReporterBase.m in Sources */,
 				3E14994D1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m in Sources */,
 				EE4F0D781C91B82700608E89 /* FBProductBundle.m in Sources */,
-				05BABC5A1DE4627D0012BC5B /* FBXCTestRunConfiguration.m in Sources */,
+				05BABC5A1DE4627D0012BC5B /* FBXCTestRun.m in Sources */,
 				EE1277641C9338D700DE52A1 /* FBTestManagerAPIMediator.m in Sources */,
 				AA7FA7B31CE075DD00614A61 /* FBXCTestManagerLoggingForwarder.m in Sources */,
 				AA7FA7AF1CE0726900614A61 /* FBTestManagerProcessInteractionOperator.m in Sources */,
@@ -3298,7 +3298,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAEC23CD1D5E345D0083CAB7 /* FBTestManagerTestReporterCompositeTests.m in Sources */,
-				05BABC6C1DE470560012BC5B /* FBXCTestRunConfigurationTests.m in Sources */,
+				05BABC6C1DE470560012BC5B /* FBXCTestRunTests.m in Sources */,
 				EEF4497E1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m in Sources */,
 				AAEC23CF1D5E345D0083CAB7 /* FBTestRunnerConfigurationTests.m in Sources */,
 				AAEC23CB1D5E345D0083CAB7 /* FBTestBundleTests.m in Sources */,

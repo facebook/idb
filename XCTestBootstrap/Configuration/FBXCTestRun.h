@@ -9,23 +9,20 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBApplicationDescriptor;
-@class FBTestLaunchConfiguration;
-
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  Reads a .xctestrun file from a given path and provides access to its properties.
  */
-@interface FBXCTestRunConfiguration : NSObject
+@interface FBXCTestRun : NSObject
 
 /**
  The designated initializer
 
- @param testRunConfigurationPath path to .xctestrun file
- @return a new FBXCTestRunConfigurationReader Instance
+ @param testRunFilePath path to .xctestrun file
+ @return a new FBXCTestRun Instance
  */
-+ (instancetype)withTestRunConfigurationAtPath:(NSString *)testRunConfigurationPath;
++ (instancetype)withTestRunFileAtPath:(NSString *)testRunFilePath;
 
 /**
  The path to the test host application.
