@@ -24,6 +24,8 @@
 @interface FBTestBundleBuilder ()
 @property (nonatomic, strong) NSUUID *sessionIdentifier;
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
+@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
+@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
 @end
 
 @implementation FBTestBundleBuilder
@@ -37,6 +39,18 @@
 - (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
 {
   self.shouldInitializeForUITesting = shouldInitializeForUITesting;
+  return self;
+}
+
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
+{
+  self.testsToSkip = testsToSkip;
+  return self;
+}
+
+- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun
+{
+  self.testsToRun = testsToRun;
   return self;
 }
 
@@ -55,11 +69,13 @@
     NSError *innerError;
     NSString *testConfigurationFileName = [NSString stringWithFormat:@"%@-%@.xctestconfiguration", testBundle.name, self.sessionIdentifier.UUIDString];
     testBundle.configuration =
-    [[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
-          withModuleName:testBundle.name]
-         withSessionIdentifier:self.sessionIdentifier]
-        withTestBundlePath:testBundle.path]
-       withUITesting:self.shouldInitializeForUITesting]
+    [[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
+            withModuleName:testBundle.name]
+           withSessionIdentifier:self.sessionIdentifier]
+          withTestBundlePath:testBundle.path]
+         withUITesting:self.shouldInitializeForUITesting]
+        withTestsToSkip:self.testsToSkip]
+       withTestsToRun:self.testsToRun]
       saveAs:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]]
      buildWithError:&innerError];
     if (!testBundle.configuration) {

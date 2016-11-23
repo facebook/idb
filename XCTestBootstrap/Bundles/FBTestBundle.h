@@ -45,6 +45,22 @@
 - (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
 
 /**
+ Adds tests to skip.
+
+ @param testsToSkip tests to skip
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
+
+/**
+ Adds tests to run.
+
+ @param testsToRun tests to run
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
+
+/**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared test bundle if the operation succeeds, otherwise nil.
  */

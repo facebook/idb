@@ -86,6 +86,22 @@
 - (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
 
 /**
+ Adds tests to skip.
+
+ @param testsToSkip tests to skip
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
+
+/**
+ Adds tests to run.
+
+ @param testsToRun tests to run
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
+
+/**
  @param savePath is set, builder will save file at given path that can be loaded directly by XCTestConfiguration
  @return builder
  */
