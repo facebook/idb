@@ -33,13 +33,13 @@
 #import <FBControlCore/FBFileDataConsumer.h>
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBFileManager.h>
+#import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBInteraction.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBLineReader.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBMultiFileReader.h>

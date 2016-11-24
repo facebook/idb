@@ -12,8 +12,9 @@
 #import "FBRunLoopSpinner.h"
 #import "FBTaskConfiguration.h"
 #import "FBControlCoreError.h"
-#import "FBLineReader.h"
 #import "FBControlCoreLogger.h"
+#import "FBFileDataConsumer.h"
+#import "FBFileReader.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -28,13 +29,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
-@interface FBTaskOutput_Memory : FBTaskOutput
-
-@property (nonatomic, strong, readonly) NSMutableData *data;
-@property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
-
-@end
-
 @interface FBTaskOutput_File : FBTaskOutput
 
 @property (nonatomic, copy, nullable, readonly) NSString *filePath;
@@ -42,13 +36,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
-@interface FBTaskOutput_Consumer : FBTaskOutput_Memory
+@interface FBTaskOutput_Consumer : FBTaskOutput
 
-@property (nonatomic, strong, nullable, readwrite) FBLineReader *reader;
-
-@end
-
-@interface FBTaskOutput_Logger : FBTaskOutput_Consumer
+@property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
+@property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
+@property (nonatomic, strong, nullable, readwrite) FBAccumilatingFileDataConsumer *dataConsumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBFileDataConsumer> consumer;
 
 @end
 
@@ -79,49 +72,46 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @end
 
-@implementation FBTaskOutput_Memory
+@implementation FBTaskOutput_Consumer
 
-- (instancetype)initWithData:(NSMutableData *)data
+- (instancetype)initWithConsumer:(id<FBFileDataConsumer>)consumer dataConsumer:(FBAccumilatingFileDataConsumer *)dataConsumer
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _data = data;
+  _consumer = consumer;
+  _dataConsumer = dataConsumer;
+
   return self;
 }
 
 - (NSString *)contents
 {
-  @synchronized(self) {
-    return [[[NSString alloc]
-      initWithData:self.data encoding:NSUTF8StringEncoding]
-      stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-  }
+  return [[[NSString alloc]
+    initWithData:self.dataConsumer.data encoding:NSUTF8StringEncoding]
+    stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
 }
 
 - (id)attachWithError:(NSError **)error
 {
   NSAssert(self.pipe == nil, @"Cannot attach when already attached to pipe %@", self.pipe);
   self.pipe = [NSPipe pipe];
-  self.pipe.fileHandleForReading.readabilityHandler = ^(NSFileHandle *handle) {
-    [self dataAvailable:handle.availableData];
-  };
+  self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer];
+  if (![self.reader startReadingWithError:error]) {
+    self.reader = nil;
+    self.pipe = nil;
+    return nil;
+  }
   return self.pipe;
 }
 
 - (void)teardownResources
 {
-  self.pipe.fileHandleForReading.readabilityHandler = nil;
   self.pipe = nil;
-}
-
-- (void)dataAvailable:(NSData *)data
-{
-  @synchronized(self) {
-    [self.data appendData:data];
-  }
+  [self.reader stopReadingWithError:nil];
+  self.reader = nil;
 }
 
 @end
@@ -167,40 +157,6 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 {
   [self.fileHandle closeFile];
   self.fileHandle = nil;
-}
-
-@end
-
-@implementation FBTaskOutput_Consumer
-
-- (instancetype)initWithReader:(FBLineReader *)reader
-{
-  self = [super initWithData:NSMutableData.data];
-  if (!self) {
-    return nil;
-  }
-
-  _reader = reader;
-  return self;
-}
-
-- (void)dataAvailable:(NSData *)data
-{
-  [super dataAvailable:data];
-  [self.reader consumeData:data];
-}
-
-@end
-
-@implementation FBTaskOutput_Logger
-
-- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
-{
-  FBLineReader *reader = [FBLineReader lineReaderWithConsumer:^(NSString *line) {
-    [logger log:line];
-  }];
-
-  return [super initWithReader:reader];
 }
 
 @end
@@ -350,16 +306,27 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 + (FBTaskOutput *)createTaskOutput:(id)output
 {
-  if ([output isKindOfClass:NSMutableData.class]) {
-    return [[FBTaskOutput_Memory alloc] initWithData:output];
+  if ([output isKindOfClass:NSString.class]) {
+     return [[FBTaskOutput_File alloc] initWithPath:output];
   }
+  id<FBFileDataConsumer> consumer = nil;
+  NSMutableData *data = [NSMutableData data];
   if ([output conformsToProtocol:@protocol(FBFileDataConsumer)]) {
-    return [[FBTaskOutput_Consumer alloc] initWithReader:output];
+    consumer = output;
   }
-  if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
-    return [[FBTaskOutput_Logger alloc] initWithLogger:output];
+  else if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
+    id<FBControlCoreLogger> logger = output;
+    consumer = [FBLineFileDataConsumer lineReaderWithConsumer:^(NSString *line) {
+      [logger log:line];
+    }];
   }
-  return [[FBTaskOutput_File alloc] initWithPath:output];
+  else {
+    NSAssert([output isKindOfClass:NSMutableData.class], @"Unexpected output type %@", output);
+    data = output;
+  }
+  FBAccumilatingFileDataConsumer *dataConsumer = [[FBAccumilatingFileDataConsumer alloc] initWithMutableData:data];
+  consumer = consumer ? [FBCompositeFileDataConsumer consumerWithConsumers:@[consumer, dataConsumer]] : dataConsumer;
+  return [[FBTaskOutput_Consumer alloc] initWithConsumer:consumer dataConsumer:dataConsumer];
 }
 
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
@@ -410,8 +377,12 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (instancetype)startSynchronouslyWithTimeout:(NSTimeInterval)timeout
 {
   [self launchWithTerminationHandler:nil];
-  [self waitForCompletionWithTimeout:timeout error:nil];
-  return self;
+
+  NSError *error = nil;
+  if (![self waitForCompletionWithTimeout:timeout error:&error]) {
+    return [self terminateWithErrorMessage:error.description];
+  }
+  return [self terminateWithErrorMessage:nil];
 }
 
 #pragma mark Awaiting Completion
@@ -422,20 +393,13 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     return !self.process.isRunning;
   }];
 
-  NSString *errorMessage = nil;
   if (!completed) {
-    errorMessage = [NSString stringWithFormat:
-      @"Launched process '%@' took longer than %f seconds to terminate",
-      self.process,
-      timeout
-    ];
+    return [[FBControlCoreError
+      describeFormat:@"Launched process '%@' took longer than %f seconds to terminate", self, timeout]
+      failBool:error];
   }
-  [self terminateWithErrorMessage:errorMessage];
-
-  if (self.error && error) {
-    *error = self.error;
-  }
-  return completed;
+  [self terminateWithErrorMessage:nil];
+  return YES;
 }
 
 #pragma mark Accessors
