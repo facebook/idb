@@ -25,7 +25,6 @@
 		3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14994D1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */; };
 		84415A171DB00C9400E018F3 /* FBDeviceTestRunStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = 84415A161DB00C9400E018F3 /* FBDeviceTestRunStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		8455DCEE1DC7ACDC00257062 /* FBDeviceTestRunStrategyTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 8455DCED1DC7ACDC00257062 /* FBDeviceTestRunStrategyTest.m */; };
 		848E26661DB6685E00928BFA /* FBDeviceTestRunStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = 848E26651DB6685E00928BFA /* FBDeviceTestRunStrategy.m */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -244,6 +243,9 @@
 		AA98ECB01D055A0000916AED /* FBControlCore.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = EEBD600E1C90628F00298A07 /* FBControlCore.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AA9B24D81D07F9BB00CEE14F /* FBiOSTargetPredicates.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9B24D61D07F9BB00CEE14F /* FBiOSTargetPredicates.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9B24D91D07F9BB00CEE14F /* FBiOSTargetPredicates.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9B24D71D07F9BB00CEE14F /* FBiOSTargetPredicates.m */; };
+		AAAA30C11DE6F40B0028D5AB /* FBDeviceControlLinkerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA30BD1DE6F40B0028D5AB /* FBDeviceControlLinkerTests.m */; };
+		AAAA30C21DE6F40B0028D5AB /* FBDeviceControlFrameworkLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA30BF1DE6F40B0028D5AB /* FBDeviceControlFrameworkLoaderTests.m */; };
+		AAAA30C31DE6F40B0028D5AB /* FBDeviceTestRunStrategyTest.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA30C01DE6F40B0028D5AB /* FBDeviceTestRunStrategyTest.m */; };
 		AAAA67C61BC4FED200075197 /* FBSimulatorControlFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */; };
 		AAAA67C91BC501BB00075197 /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = AAAA67C71BC5018500075197 /* TableSearch.app */; };
 		AAAB13281C74EC0300F3B083 /* FBSimulatorSet.h in Headers */ = {isa = PBXBuildFile; fileRef = AAAB13261C74EC0300F3B083 /* FBSimulatorSet.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -292,7 +294,6 @@
 		AAC8B2611CEC552A0034A865 /* XCTestBootstrap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE4F0D301C91B7DA00608E89 /* XCTestBootstrap.framework */; };
 		AAC8B2631CEC55370034A865 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAC8B2621CEC55370034A865 /* Foundation.framework */; };
 		AAC8B2641CEC553C0034A865 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DD70E2976B173B900000000 /* Cocoa.framework */; };
-		AAC8B2671CEC57F10034A865 /* FBDeviceControlLinkerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAC8B2661CEC57F10034A865 /* FBDeviceControlLinkerTests.m */; };
 		AACA2C371C2976B100979C45 /* FBAddVideoPolyfill.h in Headers */ = {isa = PBXBuildFile; fileRef = AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AACA2C381C2976B100979C45 /* FBAddVideoPolyfill.m in Sources */ = {isa = PBXBuildFile; fileRef = AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */; };
 		AACA33581C96F8D100DC9704 /* FBFileFinder.h in Headers */ = {isa = PBXBuildFile; fileRef = AACA33561C96F8D100DC9704 /* FBFileFinder.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -596,7 +597,6 @@
 		3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerTestReporterTestCaseFailure.h; sourceTree = "<group>"; };
 		3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterTestCaseFailure.m; sourceTree = "<group>"; };
 		84415A161DB00C9400E018F3 /* FBDeviceTestRunStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FBDeviceTestRunStrategy.h; path = Strategies/FBDeviceTestRunStrategy.h; sourceTree = "<group>"; };
-		8455DCED1DC7ACDC00257062 /* FBDeviceTestRunStrategyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBDeviceTestRunStrategyTest.m; path = Strategies/FBDeviceTestRunStrategyTest.m; sourceTree = "<group>"; };
 		848E26651DB6685E00928BFA /* FBDeviceTestRunStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FBDeviceTestRunStrategy.m; path = Strategies/FBDeviceTestRunStrategy.m; sourceTree = "<group>"; };
 		877123F21BDA797800530B1E /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
 		AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessTerminationStrategy.h; sourceTree = "<group>"; };
@@ -965,6 +965,9 @@
 		AAA46E431C0CB92A009D6452 /* FBSimulatorControl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControl.xcconfig; sourceTree = "<group>"; };
 		AAA55F641D0088E800BC4824 /* FBControlCoreTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBControlCoreTests.xcconfig; sourceTree = "<group>"; };
 		AAA5DE491D2F8F71008A36ED /* Framework.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Framework.xcconfig; sourceTree = "<group>"; };
+		AAAA30BD1DE6F40B0028D5AB /* FBDeviceControlLinkerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceControlLinkerTests.m; sourceTree = "<group>"; };
+		AAAA30BF1DE6F40B0028D5AB /* FBDeviceControlFrameworkLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceControlFrameworkLoaderTests.m; sourceTree = "<group>"; };
+		AAAA30C01DE6F40B0028D5AB /* FBDeviceTestRunStrategyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceTestRunStrategyTest.m; sourceTree = "<group>"; };
 		AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFixtures.h; sourceTree = "<group>"; };
 		AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFixtures.m; sourceTree = "<group>"; };
 		AAAA67C71BC5018500075197 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; name = TableSearch.app; path = ../../Fixtures/Binaries/TableSearch.app; sourceTree = "<group>"; };
@@ -1015,7 +1018,6 @@
 		AAC8B2501CEC51520034A865 /* FBDeviceControlFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceControlFrameworkLoader.m; sourceTree = "<group>"; };
 		AAC8B25B1CEC52540034A865 /* FBDeviceControl.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBDeviceControl.xcconfig; sourceTree = "<group>"; };
 		AAC8B2621CEC55370034A865 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		AAC8B2661CEC57F10034A865 /* FBDeviceControlLinkerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceControlLinkerTests.m; sourceTree = "<group>"; };
 		AACA2C351C2976B100979C45 /* FBAddVideoPolyfill.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBAddVideoPolyfill.h; sourceTree = "<group>"; };
 		AACA2C361C2976B100979C45 /* FBAddVideoPolyfill.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBAddVideoPolyfill.m; sourceTree = "<group>"; };
 		AACA33561C96F8D100DC9704 /* FBFileFinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileFinder.h; sourceTree = "<group>"; };
@@ -1316,14 +1318,6 @@
 			children = (
 				84415A161DB00C9400E018F3 /* FBDeviceTestRunStrategy.h */,
 				848E26651DB6685E00928BFA /* FBDeviceTestRunStrategy.m */,
-			);
-			name = Strategies;
-			sourceTree = "<group>";
-		};
-		8455DCEC1DC7AC8300257062 /* Strategies */ = {
-			isa = PBXGroup;
-			children = (
-				8455DCED1DC7ACDC00257062 /* FBDeviceTestRunStrategyTest.m */,
 			);
 			name = Strategies;
 			sourceTree = "<group>";
@@ -1936,6 +1930,32 @@
 			path = Utility;
 			sourceTree = "<group>";
 		};
+		AAAA30BB1DE6F40B0028D5AB /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA30BC1DE6F40B0028D5AB /* Integration */,
+				AAAA30BE1DE6F40B0028D5AB /* Unit */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		AAAA30BC1DE6F40B0028D5AB /* Integration */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA30BD1DE6F40B0028D5AB /* FBDeviceControlLinkerTests.m */,
+			);
+			path = Integration;
+			sourceTree = "<group>";
+		};
+		AAAA30BE1DE6F40B0028D5AB /* Unit */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA30BF1DE6F40B0028D5AB /* FBDeviceControlFrameworkLoaderTests.m */,
+				AAAA30C01DE6F40B0028D5AB /* FBDeviceTestRunStrategyTest.m */,
+			);
+			path = Unit;
+			sourceTree = "<group>";
+		};
 		AAAA67C31BC4FEBA00075197 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
@@ -1989,8 +2009,7 @@
 			children = (
 				AAC8B23B1CEC51120034A865 /* FBDeviceControlTests-Info.plist */,
 				AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */,
-				AAC8B2651CEC57F10034A865 /* Integration */,
-				8455DCEC1DC7AC8300257062 /* Strategies */,
+				AAAA30BB1DE6F40B0028D5AB /* Tests */,
 			);
 			path = FBDeviceControlTests;
 			sourceTree = "<group>";
@@ -2022,14 +2041,6 @@
 				AAC8B2501CEC51520034A865 /* FBDeviceControlFrameworkLoader.m */,
 			);
 			path = Utility;
-			sourceTree = "<group>";
-		};
-		AAC8B2651CEC57F10034A865 /* Integration */ = {
-			isa = PBXGroup;
-			children = (
-				AAC8B2661CEC57F10034A865 /* FBDeviceControlLinkerTests.m */,
-			);
-			path = Integration;
 			sourceTree = "<group>";
 		};
 		AAEA3A8F1C90B5E4004F8409 /* Fixtures */ = {
@@ -3151,8 +3162,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8455DCEE1DC7ACDC00257062 /* FBDeviceTestRunStrategyTest.m in Sources */,
-				AAC8B2671CEC57F10034A865 /* FBDeviceControlLinkerTests.m in Sources */,
+				AAAA30C11DE6F40B0028D5AB /* FBDeviceControlLinkerTests.m in Sources */,
+				AAAA30C21DE6F40B0028D5AB /* FBDeviceControlFrameworkLoaderTests.m in Sources */,
+				AAAA30C31DE6F40B0028D5AB /* FBDeviceTestRunStrategyTest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

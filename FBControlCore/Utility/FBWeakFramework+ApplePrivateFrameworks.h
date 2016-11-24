@@ -28,6 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)IBAutolayoutFoundation;
 + (instancetype)IDEKit;
 + (instancetype)IDESourceEditor;
++ (instancetype)DFRSupportKit;
++ (instancetype)DVTKit;
 
 /**
  XCTest framework for MacOSX
