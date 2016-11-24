@@ -75,22 +75,31 @@
   if (otestQueryOutputHandle == nil) {
     return [[FBXCTestError describeFormat:@"Failed to open fifo for reading: %@", otestQueryOutputPath] failBool:error];
   }
-  NSMutableData *queryOutput = [NSMutableData data];
+  FBAccumilatingFileDataConsumer *reader = [FBAccumilatingFileDataConsumer new];
   otestQueryOutputHandle.readabilityHandler = ^(NSFileHandle *fileHandle) {
-    [queryOutput appendData:fileHandle.availableData];
+    [reader consumeData:fileHandle.availableData];
   };
 
-  [task waitForCompletionWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
+  // Wait for the subprocess to terminate
+  NSTimeInterval timeout = FBControlCoreGlobalConfiguration.slowTimeout;
+  NSError *innerError = nil;
+  BOOL waitSuccess = [task waitForCompletionWithTimeout:timeout error:&innerError];
   [otestQueryOutputHandle closeFile];
 
+  if (!waitSuccess) {
+    return [[[FBXCTestError
+      describeFormat:@"Waited %f seconds for list-test task to terminate", timeout]
+      causedBy:innerError]
+      failBool:error];
+  }
   if (!task.wasSuccessful) {
     return [[[FBXCTestError
-      describe:@"Listing of Tests Failed"]
+      describeFormat:@"The Listing of Tests Failed: %@", task.error.localizedDescription]
       causedBy:task.error]
       failBool:error];
   }
 
-  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:queryOutput options:0 error:error];
+  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:reader.data options:0 error:error];
   if (testNames == nil) {
     return NO;
   }
