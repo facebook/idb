@@ -34,6 +34,7 @@
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorBootConfiguration.h"
+#import "FBSimulatorError.h"
 
 /**
  Enumeration to keep track of internal state.
@@ -56,15 +57,21 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @end
 
-@interface FBFramebuffer_IOSurface : FBFramebuffer
+@interface FBFramebuffer_FrameGenerator : FBFramebuffer
 
-@property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *frameGenerator;
+@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 
 @end
 
-@interface FBFramebuffer_BackingStore : FBFramebuffer
+@interface FBFramebuffer_FrameGenerator_IOSurface : FBFramebuffer
 
-@property (nonatomic, strong, readonly) FBFramebufferBackingStoreFrameGenerator *frameGenerator;
+@property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *ioSurfaceGenerator;
+
+@end
+
+@interface FBFramebuffer_FrameGenerator_BackingStore : FBFramebuffer
+
+@property (nonatomic, strong, readonly) FBFramebufferBackingStoreFrameGenerator *backingStoreGenerator;
 
 @end
 
@@ -90,7 +97,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
 
-  Class framebufferClass = FBControlCoreGlobalConfiguration.isXcode8OrGreater ? FBFramebuffer_IOSurface.class : FBFramebuffer_BackingStore.class;
+  Class framebufferClass = FBControlCoreGlobalConfiguration.isXcode8OrGreater ? FBFramebuffer_FrameGenerator_IOSurface.class : FBFramebuffer_FrameGenerator_BackingStore.class;
   return [[framebufferClass alloc] initWithFramebufferService:framebufferService configuration:configuration onQueue:queue video:video delegate:delegate logger:logger];
 }
 
@@ -207,14 +214,14 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @end
 
-@implementation FBFramebuffer_IOSurface
+@implementation FBFramebuffer_FrameGenerator
 
 #pragma mark NSObject
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"IOSurface Framebuffer | %@ | %@",
+    @"Framebuffer | %@ | %@",
     [FBFramebuffer stringFromFramebufferState:self.state],
     self.frameGenerator
   ];
@@ -236,9 +243,15 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
     return nil;
   }
 
-  _frameGenerator = [FBFramebufferIOSurfaceFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one delegate:delegate queue:clientQueue logger:logger];
-
   return self;
+}
+
+#pragma mark Properties
+
+- (FBFramebufferFrameGenerator *)frameGenerator
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
 #pragma mark Client Callbacks from SimDeviceFramebufferService
@@ -251,20 +264,6 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 - (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
 {
 
-}
-
-- (void)setIOSurface:(IOSurfaceRef)surface
-{
-  // The client recieves a NULL surface, before recieving the first surface.
-  if (self.state == FBSimulatorFramebufferStateStarting && surface == NULL) {
-    return;
-  }
-  // This is the first surface that has been recieved.
-  else if (self.state == FBSimulatorFramebufferStateStarting && surface != NULL) {
-    self.state = FBSimulatorFramebufferStateRunning;
-    [self.frameGenerator currentSurfaceChanged:surface];
-  }
-  NSParameterAssert(surface);
 }
 
 #pragma mark Teardown
@@ -278,27 +277,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @end
 
-@implementation FBFramebuffer_BackingStore
-
-#pragma mark NSObject
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"SimDeviceFramebufferBackingStore Framebuffer | %@ | %@",
-    [FBFramebuffer stringFromFramebufferState:self.state],
-    self.frameGenerator
-  ];
-}
-
-#pragma mark FBJSONSerializable Implementation
-
-- (id)jsonSerializableRepresentation
-{
-  return self.frameGenerator.jsonSerializableRepresentation;
-}
-
-#pragma mark Initializers
+@implementation FBFramebuffer_FrameGenerator_BackingStore
 
 - (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
 {
@@ -307,43 +286,56 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
     return nil;
   }
 
-  _frameGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one delegate:delegate queue:clientQueue logger:logger];
-
+  _backingStoreGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one delegate:delegate queue:clientQueue logger:logger];
   return self;
 }
 
-#pragma mark Client Callbacks from SimDeviceFramebufferService
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
+- (FBFramebufferFrameGenerator *)frameGenerator
 {
-  [self framebufferDidBecomeInvalid:self error:error];
-}
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
-{
-
+  return self.backingStoreGenerator;
 }
 
 - (void)framebufferService:(SimDeviceFramebufferService *)service didUpdateRegion:(CGRect)region ofBackingStore:(SimDeviceFramebufferBackingStore *)backingStore
 {
+  // We recieve the backing store on the first surface.
   if (self.state == FBSimulatorFramebufferStateStarting) {
     self.state = FBSimulatorFramebufferStateRunning;
-    [(FBFramebufferBackingStoreFrameGenerator *)self.frameGenerator firstFrameWithBackingStore:backingStore];
-    return;
+    [self.backingStoreGenerator backingStoreDidUpdate:backingStore];
   }
-  if (self.state != FBSimulatorFramebufferStateRunning) {
-    return;
-  }
-  [self.frameGenerator backingStoreDidUpdate:backingStore];
 }
 
-#pragma mark Teardown
+@end
 
-- (void)performTeardownWork
+@implementation FBFramebuffer_FrameGenerator_IOSurface
+
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
 {
-  [super performTeardownWork];
+  self = [super initWithFramebufferService:framebufferService configuration:configuration onQueue:clientQueue video:video delegate:delegate logger:logger];
+  if (!self) {
+    return nil;
+  }
 
-  [self.frameGenerator frameSteamEnded];
+  _ioSurfaceGenerator = [FBFramebufferIOSurfaceFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one delegate:delegate queue:clientQueue logger:logger];
+  return self;
+}
+
+- (FBFramebufferFrameGenerator *)frameGenerator
+{
+  return self.ioSurfaceGenerator;
+}
+
+- (void)setIOSurface:(IOSurfaceRef)surface
+{
+  NSParameterAssert(surface);
+  // The client recieves a NULL surface, before recieving the first surface.
+  if (self.state == FBSimulatorFramebufferStateStarting && surface == NULL) {
+    return;
+  }
+  // This is the first surface that has been recieved.
+  else if (self.state == FBSimulatorFramebufferStateStarting && surface != NULL) {
+    self.state = FBSimulatorFramebufferStateRunning;
+    [self.ioSurfaceGenerator currentSurfaceChanged:surface];
+  }
 }
 
 @end
