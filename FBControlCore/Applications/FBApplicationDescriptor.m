@@ -17,7 +17,22 @@
 
 @implementation FBApplicationDescriptor
 
-+ (nullable instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
+#pragma mark Initializers
+
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType
+{
+  self = [super initWithName:name path:path bundleID:bundleID binary:binary];
+  if (!self) {
+    return nil;
+  }
+
+  _installType = installType;
+  return self;
+}
+
+#pragma mark Public Initializer
+
++ (nullable instancetype)applicationWithPath:(NSString *)path installType:(FBApplicationInstallType)installType error:(NSError **)error
 {
   NSMutableDictionary *applicationCache = self.applicationCache;
   FBApplicationDescriptor *application = applicationCache[path];
@@ -26,7 +41,7 @@
   }
 
   NSError *innerError = nil;
-  application = [FBApplicationDescriptor createApplicationWithPath:path error:&innerError];
+  application = [FBApplicationDescriptor createApplicationWithPath:path installType:installType error:&innerError];
   if (!application) {
     return [FBControlCoreError failWithError:innerError errorOut:error];
   }
@@ -34,17 +49,76 @@
   return application;
 }
 
++ (nullable instancetype)userApplicationWithPath:(NSString *)path error:(NSError **)error
+{
+  return [self applicationWithPath:path installType:FBApplicationInstallTypeUser error:error];
+}
+
++ (nullable instancetype)applicationWithPath:(NSString *)path installTypeString:(nullable NSString *)installTypeString error:(NSError **)error
+{
+  FBApplicationInstallType installType = [FBApplicationDescriptor installTypeFromString:installTypeString];
+  return [self applicationWithPath:path installType:installType error:error];
+}
+
 + (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
 {
-  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] error:error];
+  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] installType:FBApplicationInstallTypeSystem error:error];
 }
 
 + (instancetype)xcodeSimulator;
 {
   NSError *error = nil;
-  FBApplicationDescriptor *application = [self applicationWithPath:self.pathForSimulatorApplication error:&error];
+  FBApplicationDescriptor *application = [self applicationWithPath:self.pathForSimulatorApplication installType:FBApplicationInstallTypeMac error:&error];
   NSAssert(application, @"Expected to be able to build an Application, got an error %@", application);
   return application;
+}
+
+#pragma mark Install Type
+
+static NSString *const FBApplicationInstallTypeStringUser = @"user";
+static NSString *const FBApplicationInstallTypeStringSystem = @"system";
+static NSString *const FBApplicationInstallTypeStringMac = @"mac";
+static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
+
++ (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType
+{
+  switch (installType) {
+    case FBApplicationInstallTypeUser:
+      return FBApplicationInstallTypeStringUser;
+    case FBApplicationInstallTypeSystem:
+      return FBApplicationInstallTypeStringSystem;
+    case FBApplicationInstallTypeMac:
+      return FBApplicationInstallTypeStringMac;
+    default:
+      return FBApplicationInstallTypeStringUnknown;
+  }
+}
+
++ (FBApplicationInstallType)installTypeFromString:(nullable NSString *)installTypeString
+{
+  if (!installTypeString) {
+    return FBApplicationInstallTypeUnknown;
+  }
+  installTypeString = [installTypeString lowercaseString];
+  if ([installTypeString isEqualToString:FBApplicationInstallTypeStringSystem]) {
+    return FBApplicationInstallTypeSystem;
+  }
+  if ([installTypeString isEqualToString:FBApplicationInstallTypeStringUser]) {
+    return FBApplicationInstallTypeUser;
+  }
+  if ([installTypeString isEqualToString:FBApplicationInstallTypeStringMac]) {
+    return FBApplicationInstallTypeMac;
+  }
+  return FBApplicationInstallTypeUnknown;
+}
+
+#pragma mark JSON
+
+- (id)jsonSerializableRepresentation
+{
+  NSMutableDictionary<NSString *, id> *parent = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
+  parent[@"install_type"] = [FBApplicationDescriptor stringFromApplicationInstallType:self.installType];
+  return [parent copy];
 }
 
 #pragma mark Private
@@ -68,7 +142,7 @@
     stringByAppendingPathExtension:@"app"];
 }
 
-+ (instancetype)createApplicationWithPath:(NSString *)path error:(NSError **)error;
++ (instancetype)createApplicationWithPath:(NSString *)path installType:(FBApplicationInstallType)installType error:(NSError **)error;
 {
   if (!path) {
     return [[FBControlCoreError describe:@"Path is nil for Application"] fail:error];
@@ -87,7 +161,7 @@
     return [[[FBControlCoreError describeFormat:@"Could not obtain binary for app at path %@", path] causedBy:innerError] fail:error];
   }
 
-  return [[FBApplicationDescriptor alloc] initWithName:appName path:path bundleID:bundleID binary:binary];
+  return [[FBApplicationDescriptor alloc] initWithName:appName path:path bundleID:bundleID binary:binary installType:installType];
 }
 
 + (NSMutableDictionary *)applicationCache

@@ -48,7 +48,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 - (BOOL)runTestsWithError:(NSError **)error
 {
-  FBApplicationDescriptor *testRunnerApp = [FBApplicationDescriptor applicationWithPath:self.configuration.runnerAppPath error:error];
+  FBApplicationDescriptor *testRunnerApp = [FBApplicationDescriptor userApplicationWithPath:self.configuration.runnerAppPath error:error];
   if (!testRunnerApp) {
     [self.configuration.logger logFormat:@"Failed to open test runner application: %@", *error];
     return NO;

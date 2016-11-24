@@ -13,6 +13,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ The Installed Type of the Application.
+ */
+typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
+  FBApplicationInstallTypeUnknown = 0, /** The Application Type is Unknown */
+  FBApplicationInstallTypeSystem = 1, /** The Application Type is part of the Operating System */
+  FBApplicationInstallTypeUser = 2, /** The Application Type is installable by the User */
+  FBApplicationInstallTypeMac = 3, /** The Application Type is part of macOS */
+};
+
 @class FBBinaryDescriptor;
 
 /**
@@ -21,13 +31,33 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBApplicationDescriptor : FBBundleDescriptor
 
 /**
- Constructs a FBApplicationDescriptor for the Application at the given path.
+ Constructs a FBApplicationDescriptor for the a User Application at the given path
 
  @param path the path of the applocation to construct.
  @param error an error out.
  @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
  */
-+ (nullable instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
++ (nullable instancetype)userApplicationWithPath:(NSString *)path error:(NSError **)error;
+
+/**
+ Constructs a FBApplicationDescriptor for the Application at the given path.
+
+ @param path the path of the applocation to construct.
+ @param installType the InstallType of the application.
+ @param error an error out.
+ @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
+ */
++ (nullable instancetype)applicationWithPath:(NSString *)path installType:(FBApplicationInstallType)installType error:(NSError **)error;
+
+/**
+ Constructs a FBApplicationDescriptor for the Application at the given path.
+
+ @param path the path of the applocation to construct.
+ @param installTypeString a string representation of the InstallType of the application.
+ @param error an error out.
+ @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
+ */
++ (nullable instancetype)applicationWithPath:(NSString *)path installTypeString:(nullable NSString *)installTypeString error:(NSError **)error;
 
 /**
  Returns the FBApplicationDescriptor for the current version of Xcode's Simulator.app.
@@ -45,6 +75,16 @@ NS_ASSUME_NONNULL_BEGIN
  @returns FBApplicationDescriptor instance if one could for the given name could be found, nil otherwise.
  */
 + (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error;
+
+/**
+ The Install Type of the Application.
+ */
+@property (nonatomic, assign, readonly) FBApplicationInstallType installType;
+
+/**
+ Returns a String Represnting the Application Install Type.
+ */
++ (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType;
 
 @end
 

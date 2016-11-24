@@ -47,7 +47,7 @@
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   NSError *innerError = nil;
-  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:path error:&innerError];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:path error:&innerError];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]
