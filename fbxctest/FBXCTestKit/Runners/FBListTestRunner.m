@@ -71,20 +71,20 @@
     build]
     startAsynchronously];
 
-  NSFileHandle *otestQueryOutputHandle = [NSFileHandle fileHandleForReadingAtPath:otestQueryOutputPath];
-  if (otestQueryOutputHandle == nil) {
-    return [[FBXCTestError describeFormat:@"Failed to open fifo for reading: %@", otestQueryOutputPath] failBool:error];
+  FBAccumilatingFileDataConsumer *consumer = [FBAccumilatingFileDataConsumer new];
+  FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:error];
+  if (![reader startReadingWithError:error]) {
+    return NO;
   }
-  FBAccumilatingFileDataConsumer *reader = [FBAccumilatingFileDataConsumer new];
-  otestQueryOutputHandle.readabilityHandler = ^(NSFileHandle *fileHandle) {
-    [reader consumeData:fileHandle.availableData];
-  };
 
-  // Wait for the subprocess to terminate
+  // Wait for the subprocess to terminate.
+  // Then make sure that the file has finished being read.
   NSTimeInterval timeout = FBControlCoreGlobalConfiguration.slowTimeout;
   NSError *innerError = nil;
   BOOL waitSuccess = [task waitForCompletionWithTimeout:timeout error:&innerError];
-  [otestQueryOutputHandle closeFile];
+  if (![reader stopReadingWithError:error]) {
+    return NO;
+  }
 
   if (!waitSuccess) {
     return [[[FBXCTestError
@@ -99,7 +99,7 @@
       failBool:error];
   }
 
-  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:reader.data options:0 error:error];
+  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:consumer.data options:0 error:error];
   if (testNames == nil) {
     return NO;
   }
