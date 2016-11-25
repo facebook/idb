@@ -76,11 +76,13 @@
 
 - (BOOL)printErrorMessage:(NSError *)error
 {
-  fputs(error.description.UTF8String, stderr);
-
-  NSString *lastLines = [self.logger allLinesOfOutput];
-  if (lastLines) {
-    fputs(lastLines.UTF8String, stderr);
+  NSString *message = error.localizedDescription;
+  if (message) {
+    fputs(message.UTF8String, stderr);
+  }
+  message = [self.logger allLinesOfOutput];
+  if (message) {
+    fputs(message.UTF8String, stderr);
   }
 
   fflush(stderr);
