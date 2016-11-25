@@ -284,11 +284,8 @@
 
 - (NSString *)testType
 {
-  if (_runnerAppPath) {
-    return @"application-test";
-  } else {
-    return @"logic-test";
-  }
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
 - (NSDictionary<NSString *, NSString *> *)buildEnvironmentWithEntries:(NSDictionary<NSString *, NSString *> *)entries
@@ -342,16 +339,31 @@
   return 1000;
 }
 
+- (NSString *)testType
+{
+  return @"logic-test";
+}
+
 @end
 
 @implementation FBApplicationTestConfiguration
 
 @dynamic runnerAppPath;
 
+- (NSString *)testType
+{
+  return @"application-test";
+}
+
 @end
 
 @implementation FBLogicTestConfiguration
 
 @dynamic testFilter;
+
+- (NSString *)testType
+{
+  return @"logic-test";
+}
 
 @end
