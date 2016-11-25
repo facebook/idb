@@ -37,6 +37,11 @@
 
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger error:(NSError **)error
 {
+  return [self configurationFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory reporter:reporter logger:logger timeout:0 error:nil];
+}
+
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
   Class configurationClass = [self testConfigurationClassForArguments:arguments error:error];
   if (!configurationClass) {
     return nil;
@@ -46,14 +51,14 @@
     return nil;
   }
 
-  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithDestination:destination reporter:reporter logger:logger processUnderTestEnvironment:environment];
+  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithDestination:destination reporter:reporter logger:logger processUnderTestEnvironment:environment timeout:timeout];
   if (![configuration loadWithArguments:arguments workingDirectory:workingDirectory error:error]) {
     return nil;
   }
   return configuration;
 }
 
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment timeout:(NSTimeInterval)timeout
 {
   self = [super init];
   if (!self) {
@@ -64,6 +69,7 @@
   _reporter = reporter;
   _processUnderTestEnvironment = environment ?: @{};
   _logger = logger;
+  _testTimeout = timeout > 0 ? timeout : [self defaultTimeout];
 
   return self;
 }
@@ -271,6 +277,11 @@
   return YES;
 }
 
+- (NSTimeInterval)defaultTimeout
+{
+  return 3600;
+}
+
 - (NSString *)testType
 {
   if (_runnerAppPath) {
@@ -325,6 +336,11 @@
 @end
 
 @implementation FBListTestConfiguration
+
+- (NSTimeInterval)defaultTimeout
+{
+  return 1000;
+}
 
 @end
 

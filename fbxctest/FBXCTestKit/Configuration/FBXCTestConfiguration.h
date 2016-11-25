@@ -37,6 +37,20 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger error:(NSError **)error;
 
+/**
+ Creates and loads a configuration.
+
+ @param arguments the Arguments to the fbxctest process
+ @param environment environment additions for the process under test.
+ @param workingDirectory the Working Directory to use.
+ @param reporter a reporter to inject.
+ @param logger the logger to inject.
+ @Param timeout the timeout of the test.
+ @param error an error out for any error that occurs
+ @return a new test run configuration.
+ */
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger timeout:(NSTimeInterval)timeout error:(NSError **)error;
+
 @property (nonatomic, strong, readonly, nullable) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) FBXCTestDestination *destination;
@@ -45,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 
-@property (nonatomic, assign, readwrite) NSTimeInterval testTimeout;
+@property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
 
 @property (nonatomic, copy, nullable, readonly) FBXCTestShimConfiguration *shims;
 
