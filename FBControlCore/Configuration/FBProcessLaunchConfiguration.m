@@ -14,6 +14,11 @@
 
 static NSString *const OptionConnectStdout = @"connect_stdout";
 static NSString *const OptionConnectStderr = @"connect_stderr";
+static NSString *const KeyBundleID = @"bundle_id";
+static NSString *const KeyBundleName = @"bundle_name";
+static NSString *const KeyArguments = @"arguments";
+static NSString *const KeyEnvironment = @"environment";
+static NSString *const KeyOptions = @"options";
 
 @implementation FBProcessLaunchConfiguration
 
@@ -111,9 +116,9 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
 - (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
-    @"arguments" : self.arguments,
-    @"environment" : self.environment,
-    @"options" : [FBProcessLaunchConfiguration optionNamesFromOptions:self.options],
+    KeyArguments : self.arguments,
+    KeyEnvironment : self.environment,
+    KeyOptions : [FBProcessLaunchConfiguration optionNamesFromOptions:self.options],
   };
 }
 
@@ -167,23 +172,23 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
 {
-  NSString *bundleID = json[@"bundle_id"];
+  NSString *bundleID = json[KeyBundleID];
   if (![bundleID isKindOfClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a bundle_id", bundleID] fail:error];
   }
-  NSString *bundleName = json[@"bundle_name"];
+  NSString *bundleName = json[KeyBundleName];
   if (![bundleName isKindOfClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a bundle_name", bundleName] fail:error];
   }
-  NSArray *arguments = json[@"arguments"];
+  NSArray *arguments = json[KeyArguments];
   if (![FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
   }
-  NSDictionary *environment = json[@"environment"];
+  NSDictionary *environment = json[KeyEnvironment];
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
-  NSArray<NSString *> *optionNames = json[@"options"] ?: @[];
+  NSArray<NSString *> *optionNames = json[KeyOptions] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:optionNames withClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
   }
@@ -276,8 +281,8 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
 - (NSDictionary *)jsonSerializableRepresentation
 {
   NSMutableDictionary *representation = [[super jsonSerializableRepresentation] mutableCopy];
-  representation[@"bundle_id"] = self.bundleID;
-  representation[@"bundle_name"] = self.bundleName;
+  representation[KeyBundleID] = self.bundleID;
+  representation[KeyBundleName] = self.bundleName;
   return [representation mutableCopy];
 }
 
@@ -309,15 +314,15 @@ static NSString *const OptionConnectStderr = @"connect_stderr";
       causedBy:innerError]
       fail:error];
   }
-  NSArray *arguments = json[@"arguments"];
+  NSArray *arguments = json[KeyArguments];
   if (![FBCollectionInformation isArrayHeterogeneous:arguments withClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an array of strings for arguments", arguments] fail:error];
   }
-  NSDictionary *environment = json[@"environment"];
+  NSDictionary *environment = json[KeyEnvironment];
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
-  NSArray<NSString *> *optionNames = json[@"options"] ?: @[];
+  NSArray<NSString *> *optionNames = json[KeyOptions] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:optionNames withClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for options", optionNames] fail:error];
   }
