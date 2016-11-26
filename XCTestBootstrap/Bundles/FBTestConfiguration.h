@@ -102,6 +102,22 @@
 - (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
 
 /**
+ Adds path to the target application for UI tests.
+
+ @param targetApplicationPath path to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
+
+/**
+ Adds bundle ID of to the target application for UI tests.
+
+ @param targetApplicationBundleID bundle ID of to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
  @param savePath is set, builder will save file at given path that can be loaded directly by XCTestConfiguration
  @return builder
  */

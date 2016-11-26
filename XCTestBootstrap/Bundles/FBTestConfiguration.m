@@ -35,6 +35,8 @@
 @property (nonatomic, copy) NSString *savePath;
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, copy) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy) NSString *targetApplicationPath;
+@property (nonatomic, copy) NSString *targetApplicationBundleID;
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @end
 
@@ -94,6 +96,18 @@
   return self;
 }
 
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  self.targetApplicationPath = targetApplicationPath;
+  return self;
+}
+
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
 - (FBTestConfiguration *)buildWithError:(NSError **)error
 {
   if (self.savePath) {
@@ -109,6 +123,8 @@
     testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
     testConfiguration.testsToSkip = self.testsToSkip;
     testConfiguration.testsToRun = self.testsToRun;
+    testConfiguration.targetApplicationPath = self.targetApplicationPath;
+    testConfiguration.targetApplicationBundleID = self.targetApplicationBundleID;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
     if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:error]) {
       return nil;

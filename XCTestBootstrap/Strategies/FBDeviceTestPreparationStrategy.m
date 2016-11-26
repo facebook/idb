@@ -102,12 +102,14 @@
 
   // Load XCTest bundle
   NSUUID *sessionIdentifier = [NSUUID UUID];
-  FBTestBundle *testBundle = [[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
+  FBTestBundle *testBundle = [[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
     withSessionIdentifier:sessionIdentifier]
     withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
     withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
     withTestsToRun:self.testLaunchConfiguration.testsToRun]
+    withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
+    withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
     buildWithError:&innerError];
 
   if (!testBundle) {

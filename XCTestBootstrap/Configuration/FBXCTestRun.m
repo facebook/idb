@@ -103,12 +103,12 @@
     NSSet *testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
 
     FBTestLaunchConfiguration *testLaunchConfiguration = [[[[[[FBTestLaunchConfiguration
-          configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
-         withApplicationLaunchConfiguration:applicationLaunchConfiguration]
-        withTestsToSkip:testsToSkip]
-       withTestsToRun:testsToRun]
-     withUITesting:testRunSpecification.isUITestBundle]
-    withTestHostPath:testHostPath];
+            configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
+           withApplicationLaunchConfiguration:applicationLaunchConfiguration]
+          withTestsToSkip:testsToSkip]
+         withTestsToRun:testsToRun]
+        withUITesting:testRunSpecification.isUITestBundle]
+       withTestHostPath:testHostPath];
 
     if (testRunSpecification.isUITestBundle) {
       FBApplicationDescriptor *targetApplication = [FBApplicationDescriptor
@@ -120,6 +120,12 @@
            causedBy:innerError]
           fail:error];
       }
+
+      NSString *targetApplicationBundleID = testRunSpecification.UITestingTargetAppBundleId ?: targetApplication.bundleID;
+
+      testLaunchConfiguration = [[testLaunchConfiguration
+        withTargetApplicationPath:testRunSpecification.UITestingTargetAppPath]
+       withTargetApplicationBundleID:targetApplicationBundleID];
 
       [applications addObject:targetApplication];
     }

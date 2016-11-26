@@ -26,6 +26,8 @@
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, copy) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy) NSString *targetApplicationPath;
+@property (nonatomic, copy) NSString *targetApplicationBundleID;
 @end
 
 @implementation FBTestBundleBuilder
@@ -54,6 +56,18 @@
   return self;
 }
 
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  self.targetApplicationPath = targetApplicationPath;
+  return self;
+}
+
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
 - (Class)productClass
 {
   return FBTestBundle.class;
@@ -69,13 +83,15 @@
     NSError *innerError;
     NSString *testConfigurationFileName = [NSString stringWithFormat:@"%@-%@.xctestconfiguration", testBundle.name, self.sessionIdentifier.UUIDString];
     testBundle.configuration =
-    [[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
-            withModuleName:testBundle.name]
-           withSessionIdentifier:self.sessionIdentifier]
-          withTestBundlePath:testBundle.path]
-         withUITesting:self.shouldInitializeForUITesting]
-        withTestsToSkip:self.testsToSkip]
-       withTestsToRun:self.testsToRun]
+    [[[[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
+              withModuleName:testBundle.name]
+             withSessionIdentifier:self.sessionIdentifier]
+            withTestBundlePath:testBundle.path]
+           withUITesting:self.shouldInitializeForUITesting]
+          withTestsToSkip:self.testsToSkip]
+         withTestsToRun:self.testsToRun]
+        withTargetApplicationPath:self.targetApplicationPath]
+       withTargetApplicationBundleID:self.targetApplicationBundleID]
       saveAs:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]]
      buildWithError:&innerError];
     if (!testBundle.configuration) {

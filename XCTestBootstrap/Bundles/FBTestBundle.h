@@ -61,6 +61,22 @@
 - (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
 
 /**
+ Adds path to the target application for UI tests.
+
+ @param targetApplicationPath path to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
+
+/**
+ Adds bundle ID of to the target application for UI tests.
+
+ @param targetApplicationBundleID bundle ID of to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared test bundle if the operation succeeds, otherwise nil.
  */
