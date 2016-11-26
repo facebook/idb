@@ -2028,14 +2028,17 @@
 		AAAA67C31BC4FEBA00075197 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
-				AAAA67C71BC5018500075197 /* TableSearch.app */,
 				AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */,
 				AAAA67C51BC4FED200075197 /* FBSimulatorControlFixtures.m */,
-				877123F21BDA797800530B1E /* video0.mp4 */,
-				AA6F22471C916A44009F5CE4 /* photo0.png */,
-				AAD3051E1BD4D5B10047376E /* photo1.png */,
 				AA19D6FE1D61AFE300229B59 /* iOSUnitTestFixture.xctest */,
 				05471D681D5991AF00232CB2 /* junitResult0.xml */,
+				AA6F22471C916A44009F5CE4 /* photo0.png */,
+				AAD3051E1BD4D5B10047376E /* photo1.png */,
+				3EA584541DE953F6008E13B4 /* Sample.app */,
+				3EA584551DE953F6008E13B4 /* Sample.xctestrun */,
+				3EA584561DE953F6008E13B4 /* SampleUITests-Runner.app */,
+				AAAA67C71BC5018500075197 /* TableSearch.app */,
+				877123F21BDA797800530B1E /* video0.mp4 */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -3060,11 +3063,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3EA584581DE953F6008E13B4 /* Sample.xctestrun in Resources */,
+				3EA584591DE953F6008E13B4 /* SampleUITests-Runner.app in Resources */,
 				AA19D6FF1D61AFE300229B59 /* iOSUnitTestFixture.xctest in Resources */,
 				877123F31BDA797800530B1E /* video0.mp4 in Resources */,
 				05471D691D5991AF00232CB2 /* junitResult0.xml in Resources */,
 				AAD305201BD4D5B10047376E /* photo1.png in Resources */,
 				AAAA67C91BC501BB00075197 /* TableSearch.app in Resources */,
+				3EA584571DE953F6008E13B4 /* Sample.app in Resources */,
 				AA6F22481C916A44009F5CE4 /* photo0.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -58,6 +58,11 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];
 }
 
++ (NSString *)sampleXCTestRunPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"Sample" ofType:@"xctestrun"];
+}
+
 @end
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
