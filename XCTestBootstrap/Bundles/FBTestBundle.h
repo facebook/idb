@@ -77,6 +77,15 @@
 - (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
 
 /**
+ Adds test environment dictionary, mapping Strings to Strings of the Environment to
+ set when the tests are launched.
+
+ @param testEnvironment test environment dictionary
+ @return builder
+ */
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment;
+
+/**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return prepared test bundle if the operation succeeds, otherwise nil.
  */

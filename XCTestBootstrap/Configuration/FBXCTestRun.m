@@ -102,13 +102,14 @@
     NSSet *testsToSkip = testRunSpecification.testIdentifiersToSkip ?: [NSSet set];
     NSSet *testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
 
-    FBTestLaunchConfiguration *testLaunchConfiguration = [[[[[[FBTestLaunchConfiguration
+    FBTestLaunchConfiguration *testLaunchConfiguration = [[[[[[[FBTestLaunchConfiguration
       configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
       withApplicationLaunchConfiguration:applicationLaunchConfiguration]
       withTestsToSkip:testsToSkip]
       withTestsToRun:testsToRun]
       withUITesting:testRunSpecification.isUITestBundle]
-      withTestHostPath:testHostPath];
+      withTestHostPath:testHostPath]
+      withTestEnvironment:testRunSpecification.testingEnvironmentVariables];
 
     if (testRunSpecification.isUITestBundle) {
       FBApplicationDescriptor *targetApplication = [FBApplicationDescriptor

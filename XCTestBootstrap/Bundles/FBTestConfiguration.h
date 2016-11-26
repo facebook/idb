@@ -118,6 +118,15 @@
 - (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
 
 /**
+ Adds test environment dictionary, mapping Strings to Strings of the Environment to
+ set when the tests are launched.
+
+ @param testEnvironment test environment dictionary
+ @return builder
+ */
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment;
+
+/**
  @param savePath is set, builder will save file at given path that can be loaded directly by XCTestConfiguration
  @return builder
  */

@@ -26,6 +26,7 @@
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, copy) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy) NSDictionary<NSString *, NSString *> *testEnvironment;
 @property (nonatomic, copy) NSString *targetApplicationPath;
 @property (nonatomic, copy) NSString *targetApplicationBundleID;
 @end
@@ -65,6 +66,12 @@
 - (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID
 {
   self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment
+{
+  self.testEnvironment = testEnvironment;
   return self;
 }
 

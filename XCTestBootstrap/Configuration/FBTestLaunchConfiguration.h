@@ -55,6 +55,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *testHostPath;
 
 /**
+ A Dictionary, mapping Strings to Strings of the Environment to set when the tests are launched.
+ */
+@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, NSString *> *testEnvironment;
+
+/**
  Timeout for the Test Launch.
  */
 @property (nonatomic, assign, readonly) NSTimeInterval timeout;
@@ -121,6 +126,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ Adds test environment dictionary, mapping Strings to Strings of the Environment to
+ set when the tests are launched.
+
+ @param testEnvironment bundle ID of to the target application
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment;
 
 /**
  Adds tests to skip.
