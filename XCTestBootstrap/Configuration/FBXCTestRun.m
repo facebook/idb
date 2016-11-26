@@ -13,6 +13,8 @@
 #import "FBXCTestRunTarget.h"
 #import "XCTestBootstrapError.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <DVTFoundation/DVTFilePath.h>
 #import <IDEFoundation/IDETestRunSpecification.h>
 #import <IDEFoundation/IDERunnable.h>
