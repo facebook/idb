@@ -24,6 +24,7 @@
   [super setUp];
 
   NSError *error;
+  // TODO: <plu> Remove this once the framework loading is put in the correct place.
   [XCTestBootstrapFrameworkLoader loadPrivateFrameworks:nil error:&error];
   XCTAssertNil(error);
 }
