@@ -62,7 +62,7 @@
 
   if (innerError) {
     return [[[XCTestBootstrapError describe:@"Failed to load xctestrun file"]
-       causedBy:innerError]
+      causedBy:innerError]
       fail:error];
   }
 
@@ -103,12 +103,12 @@
     NSSet *testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
 
     FBTestLaunchConfiguration *testLaunchConfiguration = [[[[[[FBTestLaunchConfiguration
-            configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
-           withApplicationLaunchConfiguration:applicationLaunchConfiguration]
-          withTestsToSkip:testsToSkip]
-         withTestsToRun:testsToRun]
-        withUITesting:testRunSpecification.isUITestBundle]
-       withTestHostPath:testHostPath];
+      configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
+      withApplicationLaunchConfiguration:applicationLaunchConfiguration]
+      withTestsToSkip:testsToSkip]
+      withTestsToRun:testsToRun]
+      withUITesting:testRunSpecification.isUITestBundle]
+      withTestHostPath:testHostPath];
 
     if (testRunSpecification.isUITestBundle) {
       FBApplicationDescriptor *targetApplication = [FBApplicationDescriptor
@@ -117,7 +117,7 @@
 
       if (innerError) {
         return [[[XCTestBootstrapError describe:@"Failed to find test target application"]
-           causedBy:innerError]
+          causedBy:innerError]
           fail:error];
       }
 
@@ -125,7 +125,7 @@
 
       testLaunchConfiguration = [[testLaunchConfiguration
         withTargetApplicationPath:testRunSpecification.UITestingTargetAppPath]
-       withTargetApplicationBundleID:targetApplicationBundleID];
+        withTargetApplicationBundleID:targetApplicationBundleID];
 
       [applications addObject:targetApplication];
     }
