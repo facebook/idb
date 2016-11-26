@@ -48,7 +48,7 @@
  Adds tests to skip.
 
  @param testsToSkip tests to skip
- @return new test launch configuration with changes applied.
+ @return builder
  */
 - (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
 
@@ -56,7 +56,7 @@
  Adds tests to run.
 
  @param testsToRun tests to run
- @return new test launch configuration with changes applied.
+ @return builder
  */
 - (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
 
