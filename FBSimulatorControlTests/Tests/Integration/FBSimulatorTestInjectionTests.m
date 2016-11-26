@@ -116,8 +116,6 @@
   FBXCTestRun *testRun = [[FBXCTestRun withTestRunFileAtPath:testRunPath] buildWithError:&error];
   XCTAssertNil(error);
 
-  self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_9_3;
-  self.simulatorLaunchConfiguration = [self.simulatorLaunchConfiguration withOptions:FBSimulatorBootOptionsAwaitServices];
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
 
   for (FBXCTestRunTarget *target in testRun.targets) {
