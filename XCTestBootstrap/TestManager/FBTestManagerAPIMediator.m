@@ -322,6 +322,18 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   return nil;
 }
 
+// TODO: <plu> Empty implemenation OK here?
+- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 didFinishActivity:(XCActivityRecord *)arg3
+{
+  return nil;
+}
+
+// TODO: <plu> Empty implemenation OK here?
+- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 willStartActivity:(XCActivityRecord *)arg3
+{
+  return nil;
+}
+
 #pragma mark - Unimplemented
 
 - (id)_XCT_nativeFocusItemDidChangeAtTime:(NSNumber *)arg1 parameterSnapshot:(XCElementSnapshot *)arg2 applicationSnapshot:(XCElementSnapshot *)arg3
@@ -330,16 +342,6 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 }
 
 - (id)_XCT_recordedEventNames:(NSArray *)arg1 timestamp:(NSNumber *)arg2 duration:(NSNumber *)arg3 startLocation:(NSDictionary *)arg4 startElementSnapshot:(XCElementSnapshot *)arg5 startApplicationSnapshot:(XCElementSnapshot *)arg6 endLocation:(NSDictionary *)arg7 endElementSnapshot:(XCElementSnapshot *)arg8 endApplicationSnapshot:(XCElementSnapshot *)arg9
-{
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 didFinishActivity:(XCActivityRecord *)arg3
-{
-  return [self handleUnimplementedXCTRequest:_cmd];
-}
-
-- (id)_XCT_testCase:(NSString *)arg1 method:(NSString *)arg2 willStartActivity:(XCActivityRecord *)arg3
 {
   return [self handleUnimplementedXCTRequest:_cmd];
 }
