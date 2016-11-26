@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBXCTestRunTarget;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -25,34 +27,9 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)withTestRunFileAtPath:(NSString *)testRunFilePath;
 
 /**
- The path to the test host application.
+ Array of FBXCTestRunTarget that were loaded from the given .xctestrun file.
  */
-@property (nonatomic, copy, readonly) NSString *testHostPath;
-
-/*
- The path to the test bundle.
- */
-@property (nonatomic, copy, readonly) NSString *testBundlePath;
-
-/**
- The application launch arguments.
- */
-@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
-
-/*
- The application launch environment variables.
- */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
-
-/*
- Skip these tests. Format: "className/methodName"
- */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToSkip;
-
-/*
- Run only these tests. Format: "className/methodName"
- */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy, readonly) NSArray<FBXCTestRunTarget *> *targets;
 
 /**
  @param error If there is an error, upon return contains an NSError object that describes the problem.

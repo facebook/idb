@@ -9,6 +9,8 @@
 
 #import "FBXCTestRun.h"
 
+#import "FBTestLaunchConfiguration.h"
+#import "FBXCTestRunTarget.h"
 #import "XCTestBootstrapError.h"
 
 #import <DVTFoundation/DVTFilePath.h>
@@ -19,14 +21,8 @@
 
 @interface FBXCTestRun ()
 
+@property (nonatomic, copy) NSArray<FBXCTestRunTarget *> *targets;
 @property (nonatomic, copy) NSString *testRunFilePath;
-
-@property (nonatomic, copy, readwrite, nullable) NSString *testHostPath;
-@property (nonatomic, copy, readwrite, nullable) NSString *testBundlePath;
-@property (nonatomic, copy, readwrite) NSArray<NSString *> *arguments;
-@property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSString *> *environment;
-@property (nonatomic, copy, readwrite) NSSet<NSString *> *testsToSkip;
-@property (nonatomic, copy, readwrite) NSSet<NSString *> *testsToRun;
 
 @end
 
@@ -46,6 +42,7 @@
     return nil;
   }
 
+  _targets = @[];
   _testRunFilePath = [testRunFilePath copy];
 
   return self;
@@ -58,35 +55,84 @@
   // TODO: <plu> We need to make sure that the frameworks are loaded here already.
   DVTFilePath *path = [objc_lookUpClass("DVTFilePath") filePathForPathString:self.testRunFilePath];
 
-  // TODO: <plu> Investigate why here this weird type of dictionary is coming back.
-  IDETestRunSpecification *testRunSpecification = [[[objc_lookUpClass("IDETestRunSpecification")
+  NSDictionary<NSString *, IDETestRunSpecification *> *testRunSpecifications = [objc_lookUpClass("IDETestRunSpecification")
     testRunSpecificationsAtFilePath:path
     workspace:nil
-    error:&innerError] allValues] firstObject];
+    error:&innerError];
 
   if (innerError) {
     return [[[XCTestBootstrapError describe:@"Failed to load xctestrun file"]
-    causedBy:innerError]
-    fail:error];
+       causedBy:innerError]
+      fail:error];
   }
 
-  // TODO: <plu> To avoid valueForKeyPath here we should probably also dump IDEPathRunnable and everything that gets pulled by it.
-  self.testHostPath = [testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"];
-  self.testBundlePath = testRunSpecification.testBundleFilePath.pathString;
-  self.arguments = testRunSpecification.commandLineArguments ?: @[];
-  self.environment = testRunSpecification.environmentVariables ?: @{};
-  self.testsToSkip = testRunSpecification.testIdentifiersToSkip ?: [NSSet set];
-  self.testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
+  NSMutableArray<FBXCTestRunTarget *> *targets = [NSMutableArray array];
+  NSArray<NSString *> *testTargetNames = [testRunSpecifications.allKeys sortedArrayUsingSelector:@selector(compare:)];
 
-  // This is actually caught by an assertion in IDETestRunSpecification. Just a safety net
-  // here to catch it in case Apple changes something.
-  if (!self.testHostPath) {
-    return [[XCTestBootstrapError describe:@"Could not find TestHostPath in xctestrun file"] fail:error];
+  for (NSString *testTargetName in testTargetNames) {
+    IDETestRunSpecification *testRunSpecification = testRunSpecifications[testTargetName];
+
+    if (!testRunSpecification.testBundleFilePath.pathString) {
+      return [[XCTestBootstrapError describe:@"Could not find TestBundlePath in xctestrun file"] fail:error];
+    }
+
+    // TODO: <plu> To avoid valueForKeyPath here we should probably also dump IDEPathRunnable and everything that gets pulled by it.
+    NSString *testHostPath = [testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"];
+
+    FBApplicationDescriptor *application = [FBApplicationDescriptor
+      applicationWithPath:testHostPath
+      error:&innerError];
+    NSMutableArray *applications = [NSMutableArray arrayWithObject:application];
+
+    if (innerError) {
+      return [[[XCTestBootstrapError describe:@"Failed to find test host application"]
+         causedBy:innerError]
+        fail:error];
+    }
+
+    NSArray *commandLineArguments = testRunSpecification.commandLineArguments ?: @[];
+    NSDictionary *environment = testRunSpecification.environmentVariables ?: @{};
+
+    FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [FBApplicationLaunchConfiguration
+      configurationWithApplication:application
+      arguments:commandLineArguments
+      environment:environment
+      options:0];
+
+    NSSet *testsToSkip = testRunSpecification.testIdentifiersToSkip ?: [NSSet set];
+    NSSet *testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
+
+    FBTestLaunchConfiguration *testLaunchConfiguration = [[[[[[FBTestLaunchConfiguration
+          configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
+         withApplicationLaunchConfiguration:applicationLaunchConfiguration]
+        withTestsToSkip:testsToSkip]
+       withTestsToRun:testsToRun]
+     withUITesting:testRunSpecification.isUITestBundle]
+    withTestHostPath:testHostPath];
+
+    if (testRunSpecification.isUITestBundle) {
+      FBApplicationDescriptor *targetApplication = [FBApplicationDescriptor
+        applicationWithPath:testRunSpecification.UITestingTargetAppPath
+        error:&innerError];
+
+      if (innerError) {
+        return [[[XCTestBootstrapError describe:@"Failed to find test target application"]
+           causedBy:innerError]
+          fail:error];
+      }
+
+      [applications addObject:targetApplication];
+    }
+
+    FBXCTestRunTarget *target = [FBXCTestRunTarget
+      withName:testTargetName
+      testLaunchConfiguration:testLaunchConfiguration
+      applications:applications];
+
+    [targets addObject:target];
   }
 
-  if (!self.testBundlePath) {
-    return [[XCTestBootstrapError describe:@"Could not find TestBundlePath in xctestrun file"] fail:error];
-  }
+  self.targets = targets.copy;
 
   return self;
 }

@@ -32,16 +32,22 @@
 {
   NSError *error;
   FBXCTestRun *testRun = [[FBXCTestRun
-    withTestRunFileAtPath:[FBXCTestRunTests tableSearchXCTestRunPath]]
+    withTestRunFileAtPath:[FBXCTestRunTests sampleXCTestRunPath]]
     buildWithError:&error];
+
   XCTAssertNil(error);
-  XCTAssertNotNil(testRun.testHostPath);
-  XCTAssertNotNil(testRun.testBundlePath);
-  XCTAssertEqualObjects(testRun.arguments, (@[@"ARG1", @"ARG2", @"ARG3"]));
-  XCTAssertEqualObjects(testRun.environment[@"FOO"], @"BAR");
-  XCTAssertEqualObjects(testRun.environment[@"BLA"], @"FASEL");
-  XCTAssertEqualObjects(testRun.testsToSkip, [NSSet setWithObject:@"TableSearchTests/testSkipMe"]);
-  XCTAssertEqualObjects(testRun.testsToRun, [NSSet set]);
+  XCTAssertEqual(testRun.targets.count, 2u);
+
+  FBXCTestRunTarget *firstTarget = testRun.targets.firstObject;
+  XCTAssertEqualObjects(firstTarget.testLaunchConfiguration.testHostPath.lastPathComponent, @"Sample.app");
+  XCTAssertEqual(firstTarget.applications.count, 1u);
+  XCTAssertEqualObjects(firstTarget.applications.firstObject.bundleID, @"com.facebook.Sample");
+
+  FBXCTestRunTarget *lastTarget = testRun.targets.lastObject;
+  XCTAssertEqualObjects(lastTarget.testLaunchConfiguration.testHostPath.lastPathComponent, @"SampleUITests-Runner.app");
+  XCTAssertEqual(lastTarget.applications.count, 2u);
+  XCTAssertEqualObjects(lastTarget.applications.firstObject.bundleID, @"com.apple.test.SampleUITests-Runner");
+  XCTAssertEqualObjects(lastTarget.applications.lastObject.bundleID, @"com.facebook.Sample");
 }
 
 - (void)testInvalidTestRunConfigurationPath
