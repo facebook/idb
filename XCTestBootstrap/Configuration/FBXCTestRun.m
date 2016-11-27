@@ -12,6 +12,7 @@
 #import "FBTestLaunchConfiguration.h"
 #import "FBXCTestRunTarget.h"
 #import "XCTestBootstrapError.h"
+#import "XCTestBootstrapFrameworkLoader.h"
 
 #import <FBControlCore/FBControlCore.h>
 
@@ -30,6 +31,11 @@
 @end
 
 @implementation FBXCTestRun
+
++ (void)initialize
+{
+  [XCTestBootstrapFrameworkLoader loadPrivateFrameworksOrAbort];
+}
 
 + (instancetype)withTestRunFileAtPath:(NSString *)testRunFilePath
 {
@@ -59,7 +65,6 @@
 
   NSError *innerError;
 
-  // TODO: <plu> We need to make sure that the frameworks are loaded here already.
   DVTFilePath *path = [objc_lookUpClass("DVTFilePath") filePathForPathString:self.testRunFilePath];
 
   NSDictionary<NSString *, IDETestRunSpecification *> *testRunSpecifications = [objc_lookUpClass("IDETestRunSpecification")
