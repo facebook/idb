@@ -33,12 +33,12 @@
 @property (nonatomic, copy) NSString *moduleName;
 @property (nonatomic, copy) NSString *testBundlePath;
 @property (nonatomic, copy) NSString *savePath;
-@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
-@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
 @property (nonatomic, copy) NSDictionary<NSString *, NSString *> *testEnvironment;
-@property (nonatomic, copy) NSString *targetApplicationPath;
-@property (nonatomic, copy) NSString *targetApplicationBundleID;
+@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
+@property (nonatomic, copy) NSString *targetApplicationBundleID;
+@property (nonatomic, copy) NSString *targetApplicationPath;
 @end
 
 @implementation FBTestConfigurationBuilder
@@ -73,15 +73,9 @@
   return self;
 }
 
-- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment
 {
-  self.shouldInitializeForUITesting = shouldInitializeForUITesting;
-  return self;
-}
-
-- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
-{
-  self.testsToSkip = testsToSkip;
+  self.testEnvironment = testEnvironment;
   return self;
 }
 
@@ -91,15 +85,15 @@
   return self;
 }
 
-- (instancetype)saveAs:(NSString *)savePath
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
 {
-  self.savePath = savePath;
+  self.testsToSkip = testsToSkip;
   return self;
 }
 
-- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
 {
-  self.targetApplicationPath = targetApplicationPath;
+  self.shouldInitializeForUITesting = shouldInitializeForUITesting;
   return self;
 }
 
@@ -109,9 +103,15 @@
   return self;
 }
 
-- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
 {
-  self.testEnvironment = testEnvironment;
+  self.targetApplicationPath = targetApplicationPath;
+  return self;
+}
+
+- (instancetype)saveAs:(NSString *)savePath
+{
+  self.savePath = savePath;
   return self;
 }
 

@@ -34,16 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 
-/*
- Path to the target application for UI tests
- */
-@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
-
-/*
- Bundle ID of to the target application for UI tests
- */
-@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationBundleID;
-
 /**
  Configuration used to launch test runner application.
  */
@@ -55,14 +45,24 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *testHostPath;
 
 /**
+ Timeout for the Test Launch.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval timeout;
+
+/**
  A Dictionary, mapping Strings to Strings of the Environment to set when the tests are launched.
  */
 @property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, NSString *> *testEnvironment;
 
-/**
- Timeout for the Test Launch.
+/*
+ Run only these tests. Format: "className/methodName"
  */
-@property (nonatomic, assign, readonly) NSTimeInterval timeout;
+@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToRun;
+
+/*
+ Skip these tests. Format: "className/methodName"
+ */
+@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToSkip;
 
 /**
  Determines whether should initialize for UITesting
@@ -70,14 +70,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) BOOL shouldInitializeUITesting;
 
 /*
- Skip these tests. Format: "className/methodName"
+ Bundle ID of to the target application for UI tests
  */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToSkip;
+@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationBundleID;
 
 /*
- Run only these tests. Format: "className/methodName"
+ Path to the target application for UI tests
  */
-@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
 
 /**
  Adds application launch configuration

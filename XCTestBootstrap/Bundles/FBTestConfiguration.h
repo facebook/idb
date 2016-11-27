@@ -80,18 +80,13 @@
 - (instancetype)withTestBundlePath:(NSString *)testBundlePath;
 
 /**
- @param shouldInitializeForUITesting determines whether should initialize for UITesting
+ Adds test environment dictionary, mapping Strings to Strings of the Environment to
+ set when the tests are launched.
+
+ @param testEnvironment test environment dictionary
  @return builder
  */
-- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
-
-/**
- Adds tests to skip.
-
- @param testsToSkip tests to skip
- @return builder
- */
-- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment;
 
 /**
  Adds tests to run.
@@ -102,12 +97,18 @@
 - (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
 
 /**
- Adds path to the target application for UI tests.
+ Adds tests to skip.
 
- @param targetApplicationPath path to the target application
+ @param testsToSkip tests to skip
  @return builder
  */
-- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
+
+/**
+ @param shouldInitializeForUITesting determines whether should initialize for UITesting
+ @return builder
+ */
+- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
 
 /**
  Adds bundle ID of to the target application for UI tests.
@@ -118,13 +119,12 @@
 - (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
 
 /**
- Adds test environment dictionary, mapping Strings to Strings of the Environment to
- set when the tests are launched.
+ Adds path to the target application for UI tests.
 
- @param testEnvironment test environment dictionary
+ @param targetApplicationPath path to the target application
  @return builder
  */
-- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment;
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
 
 /**
  @param savePath is set, builder will save file at given path that can be loaded directly by XCTestConfiguration

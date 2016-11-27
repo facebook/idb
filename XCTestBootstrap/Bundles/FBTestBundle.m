@@ -23,12 +23,12 @@
 
 @interface FBTestBundleBuilder ()
 @property (nonatomic, strong) NSUUID *sessionIdentifier;
-@property (nonatomic, assign) BOOL shouldInitializeForUITesting;
-@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
-@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
 @property (nonatomic, copy) NSDictionary<NSString *, NSString *> *testEnvironment;
-@property (nonatomic, copy) NSString *targetApplicationPath;
+@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
+@property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @property (nonatomic, copy) NSString *targetApplicationBundleID;
+@property (nonatomic, copy) NSString *targetApplicationPath;
 @end
 
 @implementation FBTestBundleBuilder
@@ -39,15 +39,9 @@
   return self;
 }
 
-- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment
 {
-  self.shouldInitializeForUITesting = shouldInitializeForUITesting;
-  return self;
-}
-
-- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
-{
-  self.testsToSkip = testsToSkip;
+  self.testEnvironment = testEnvironment;
   return self;
 }
 
@@ -57,9 +51,15 @@
   return self;
 }
 
-- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
 {
-  self.targetApplicationPath = targetApplicationPath;
+  self.testsToSkip = testsToSkip;
+  return self;
+}
+
+- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
+{
+  self.shouldInitializeForUITesting = shouldInitializeForUITesting;
   return self;
 }
 
@@ -69,9 +69,9 @@
   return self;
 }
 
-- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
 {
-  self.testEnvironment = testEnvironment;
+  self.targetApplicationPath = targetApplicationPath;
   return self;
 }
 
@@ -90,17 +90,18 @@
     NSError *innerError;
     NSString *testConfigurationFileName = [NSString stringWithFormat:@"%@-%@.xctestconfiguration", testBundle.name, self.sessionIdentifier.UUIDString];
     testBundle.configuration =
-    [[[[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
-              withModuleName:testBundle.name]
-             withSessionIdentifier:self.sessionIdentifier]
-            withTestBundlePath:testBundle.path]
-           withUITesting:self.shouldInitializeForUITesting]
-          withTestsToSkip:self.testsToSkip]
-         withTestsToRun:self.testsToRun]
-        withTargetApplicationPath:self.targetApplicationPath]
-       withTargetApplicationBundleID:self.targetApplicationBundleID]
+    [[[[[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
+      withModuleName:testBundle.name]
+      withTestBundlePath:testBundle.path]
+      withSessionIdentifier:self.sessionIdentifier]
+      withTestEnvironment:self.testEnvironment]
+      withTestsToRun:self.testsToRun]
+      withTestsToSkip:self.testsToSkip]
+      withUITesting:self.shouldInitializeForUITesting]
+      withTargetApplicationPath:self.targetApplicationPath]
+      withTargetApplicationBundleID:self.targetApplicationBundleID]
       saveAs:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]]
-     buildWithError:&innerError];
+      buildWithError:&innerError];
     if (!testBundle.configuration) {
       return
       [[[XCTestBootstrapError describe:@"Failed to generate xtestconfiguration"]

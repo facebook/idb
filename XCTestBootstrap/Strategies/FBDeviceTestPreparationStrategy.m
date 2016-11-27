@@ -105,12 +105,12 @@
   FBTestBundle *testBundle = [[[[[[[[[[FBTestBundleBuilder builderWithFileManager:self.fileManager]
     withBundlePath:self.testLaunchConfiguration.testBundlePath]
     withSessionIdentifier:sessionIdentifier]
-    withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
-    withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
-    withTestsToRun:self.testLaunchConfiguration.testsToRun]
-    withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
-    withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
     withTestEnvironment:self.testLaunchConfiguration.testEnvironment]
+    withTestsToRun:self.testLaunchConfiguration.testsToRun]
+    withTestsToSkip:self.testLaunchConfiguration.testsToSkip]
+    withUITesting:self.testLaunchConfiguration.shouldInitializeUITesting]
+    withTargetApplicationBundleID:self.testLaunchConfiguration.targetApplicationBundleID]
+    withTargetApplicationPath:self.testLaunchConfiguration.targetApplicationPath]
     buildWithError:&innerError];
 
   if (!testBundle) {

@@ -13,6 +13,10 @@
 
 - (instancetype)initWithName:(NSString *)testTargetName testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration applications:(NSArray<FBApplicationDescriptor *> *)applications
 {
+  NSParameterAssert(testTargetName);
+  NSParameterAssert(testLaunchConfiguration);
+  NSParameterAssert(applications);
+
   self = [super init];
   if (!self) {
     return nil;
