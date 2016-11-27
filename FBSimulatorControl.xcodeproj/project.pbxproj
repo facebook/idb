@@ -612,6 +612,8 @@
 		05BABC6B1DE470560012BC5B /* FBXCTestRunTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunTests.m; sourceTree = "<group>"; };
 		05D3B5751D572EA100944680 /* junitResult0.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult0.xml; sourceTree = "<group>"; };
 		05E61B6C1DEA83F5003D5F51 /* Empty.xctestrun */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Empty.xctestrun; sourceTree = "<group>"; };
+		05E61B6E1DEA8E5C003D5F51 /* IDEPathRunnable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IDEPathRunnable.h; sourceTree = "<group>"; };
+		05E61B6F1DEA8E88003D5F51 /* DVTXMLUnarchiving-Protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "DVTXMLUnarchiving-Protocol.h"; sourceTree = "<group>"; };
 		05F1823E1D59B48600DBD35C /* junitResult1.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult1.xml; sourceTree = "<group>"; };
 		1DD70E291A4B50E500000000 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1371,7 +1373,9 @@
 			isa = PBXGroup;
 			children = (
 				05BABC3A1DE41A700012BC5B /* _IDETestManagerAPIMediator.h */,
+				05E61B6F1DEA8E88003D5F51 /* DVTXMLUnarchiving-Protocol.h */,
 				05BABC3B1DE41A700012BC5B /* IDEFoundationTestInitializer.h */,
+				05E61B6E1DEA8E5C003D5F51 /* IDEPathRunnable.h */,
 				05BABC551DE45C000012BC5B /* IDERunnable.h */,
 				05BABC3F1DE41A940012BC5B /* IDETestRunSpecification.h */,
 			);

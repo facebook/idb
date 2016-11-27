@@ -17,6 +17,7 @@
 
 #import <DVTFoundation/DVTFilePath.h>
 #import <IDEFoundation/IDETestRunSpecification.h>
+#import <IDEFoundation/IDEPathRunnable.h>
 #import <IDEFoundation/IDERunnable.h>
 
 #import <objc/runtime.h>
@@ -78,9 +79,8 @@
       return [[XCTestBootstrapError describe:@"Could not find TestBundlePath in xctestrun file"] fail:error];
     }
 
-    // TODO: <plu> To avoid valueForKeyPath here we should probably also dump IDEPathRunnable and everything that gets pulled by it.
     FBApplicationDescriptor *application = [FBApplicationDescriptor
-      userApplicationWithPath:[testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"]
+      userApplicationWithPath:[self testHostPathFromTestRunSpecification:testRunSpecification]
       error:&innerError];
 
     if (innerError) {
@@ -144,15 +144,21 @@
     environment:environment
     options:0];
 
-  // TODO: <plu> To avoid valueForKeyPath here we should probably also dump IDEPathRunnable and everything that gets pulled by it.
   return [[[[[[[FBTestLaunchConfiguration
     configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
     withApplicationLaunchConfiguration:applicationLaunchConfiguration]
     withTestsToSkip:testsToSkip]
     withTestsToRun:testsToRun]
     withUITesting:testRunSpecification.isUITestBundle]
-    withTestHostPath:[testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"]]
+    withTestHostPath:[self testHostPathFromTestRunSpecification:testRunSpecification]]
     withTestEnvironment:testRunSpecification.testingEnvironmentVariables];
+}
+
+- (NSString *)testHostPathFromTestRunSpecification:(IDETestRunSpecification *)testRunSpecification
+{
+  NSAssert([testRunSpecification.testHostRunnable isKindOfClass:objc_lookUpClass("IDEPathRunnable")],
+           @"Invalid class, expected testHostRunnable to be of type: IDEPathRunnable");
+  return ((IDEPathRunnable *)testRunSpecification.testHostRunnable).filePath.pathString;
 }
 
 @end
