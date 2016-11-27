@@ -79,39 +79,21 @@
     }
 
     // TODO: <plu> To avoid valueForKeyPath here we should probably also dump IDEPathRunnable and everything that gets pulled by it.
-    NSString *testHostPath = [testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"];
-
     FBApplicationDescriptor *application = [FBApplicationDescriptor
-      userApplicationWithPath:testHostPath
+      userApplicationWithPath:[testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"]
       error:&innerError];
-    NSMutableArray *applications = [NSMutableArray arrayWithObject:application];
 
     if (innerError) {
       return [[[XCTestBootstrapError describe:@"Failed to find test host application"]
-         causedBy:innerError]
+        causedBy:innerError]
         fail:error];
     }
 
-    NSArray *commandLineArguments = testRunSpecification.commandLineArguments ?: @[];
-    NSDictionary *environment = testRunSpecification.environmentVariables ?: @{};
+    NSMutableArray *applications = [NSMutableArray arrayWithObject:application];
 
-    FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [FBApplicationLaunchConfiguration
-      configurationWithApplication:application
-      arguments:commandLineArguments
-      environment:environment
-      options:0];
-
-    NSSet *testsToSkip = testRunSpecification.testIdentifiersToSkip ?: [NSSet set];
-    NSSet *testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
-
-    FBTestLaunchConfiguration *testLaunchConfiguration = [[[[[[[FBTestLaunchConfiguration
-      configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
-      withApplicationLaunchConfiguration:applicationLaunchConfiguration]
-      withTestsToSkip:testsToSkip]
-      withTestsToRun:testsToRun]
-      withUITesting:testRunSpecification.isUITestBundle]
-      withTestHostPath:testHostPath]
-      withTestEnvironment:testRunSpecification.testingEnvironmentVariables];
+    FBTestLaunchConfiguration *testLaunchConfiguration = [self
+      testLaunchConfigurationWithTestRunSpecification:testRunSpecification
+      application:application];
 
     if (testRunSpecification.isUITestBundle) {
       FBApplicationDescriptor *targetApplication = [FBApplicationDescriptor
@@ -124,13 +106,13 @@
           fail:error];
       }
 
+      [applications addObject:targetApplication];
+
       NSString *targetApplicationBundleID = testRunSpecification.UITestingTargetAppBundleId ?: targetApplication.bundleID;
 
       testLaunchConfiguration = [[testLaunchConfiguration
         withTargetApplicationPath:testRunSpecification.UITestingTargetAppPath]
         withTargetApplicationBundleID:targetApplicationBundleID];
-
-      [applications addObject:targetApplication];
     }
 
     FBXCTestRunTarget *target = [FBXCTestRunTarget
@@ -144,6 +126,33 @@
   self.targets = targets.copy;
 
   return self;
+}
+
+// MARK: - Private
+
+- (FBTestLaunchConfiguration *)testLaunchConfigurationWithTestRunSpecification:(IDETestRunSpecification *)testRunSpecification application:(FBApplicationDescriptor *)application
+{
+  NSSet *testsToSkip = testRunSpecification.testIdentifiersToSkip ?: [NSSet set];
+  NSSet *testsToRun = testRunSpecification.testIdentifiersToRun ?: [NSSet set];
+
+  NSArray *commandLineArguments = testRunSpecification.commandLineArguments ?: @[];
+  NSDictionary *environment = testRunSpecification.environmentVariables ?: @{};
+
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [FBApplicationLaunchConfiguration
+    configurationWithApplication:application
+    arguments:commandLineArguments
+    environment:environment
+    options:0];
+
+  // TODO: <plu> To avoid valueForKeyPath here we should probably also dump IDEPathRunnable and everything that gets pulled by it.
+  return [[[[[[[FBTestLaunchConfiguration
+    configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]
+    withApplicationLaunchConfiguration:applicationLaunchConfiguration]
+    withTestsToSkip:testsToSkip]
+    withTestsToRun:testsToRun]
+    withUITesting:testRunSpecification.isUITestBundle]
+    withTestHostPath:[testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"]]
+    withTestEnvironment:testRunSpecification.testingEnvironmentVariables];
 }
 
 @end
