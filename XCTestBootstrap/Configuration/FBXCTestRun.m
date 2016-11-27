@@ -53,6 +53,10 @@
 
 - (instancetype)buildWithError:(NSError **)error;
 {
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    return [[XCTestBootstrapError describe:@"Loading xctestrun files is only supported with Xcode 8 or later"] fail:error];
+  }
+
   NSError *innerError;
 
   // TODO: <plu> We need to make sure that the frameworks are loaded here already.
