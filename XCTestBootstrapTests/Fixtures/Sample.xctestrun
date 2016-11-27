@@ -117,6 +117,10 @@
 		<array/>
 		<key>UITargetAppPath</key>
 		<string>__TESTROOT__/Sample.app</string>
+		<key>SkipTestIdentifiers</key>
+		<array>
+			<string>testSkipped</string>
+		</array>
 	</dict>
 </dict>
 </plist>

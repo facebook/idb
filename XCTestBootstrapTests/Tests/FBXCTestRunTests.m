@@ -39,16 +39,46 @@
   XCTAssertNil(error);
   XCTAssertEqual(testRun.targets.count, 2u);
 
-  FBXCTestRunTarget *firstTarget = testRun.targets.firstObject;
-  XCTAssertEqualObjects(firstTarget.testLaunchConfiguration.testHostPath.lastPathComponent, @"Sample.app");
-  XCTAssertEqual(firstTarget.applications.count, 1u);
-  XCTAssertEqualObjects(firstTarget.applications.firstObject.bundleID, @"com.facebook.Sample");
+  // First Unit Testing target
+  {
+    FBXCTestRunTarget *target = testRun.targets.firstObject;
+    XCTAssertEqual(target.applications.count, 1u);
+    XCTAssertEqualObjects(target.applications.firstObject.bundleID, @"com.facebook.Sample");
 
-  FBXCTestRunTarget *lastTarget = testRun.targets.lastObject;
-  XCTAssertEqualObjects(lastTarget.testLaunchConfiguration.testHostPath.lastPathComponent, @"SampleUITests-Runner.app");
-  XCTAssertEqual(lastTarget.applications.count, 2u);
-  XCTAssertEqualObjects(lastTarget.applications.firstObject.bundleID, @"com.apple.test.SampleUITests-Runner");
-  XCTAssertEqualObjects(lastTarget.applications.lastObject.bundleID, @"com.facebook.Sample");
+    FBTestLaunchConfiguration *testLaunchConfiguration = target.testLaunchConfiguration;
+    XCTAssertEqualObjects(testLaunchConfiguration.testBundlePath.lastPathComponent, @"SampleTests.xctest");
+    XCTAssertEqualObjects(testLaunchConfiguration.testHostPath.lastPathComponent, @"Sample.app");
+    XCTAssertFalse(testLaunchConfiguration.shouldInitializeUITesting);
+    XCTAssertNil(testLaunchConfiguration.targetApplicationPath);
+    XCTAssertNil(testLaunchConfiguration.targetApplicationBundleID);
+    XCTAssertGreaterThan(testLaunchConfiguration.testEnvironment.count, 0u);
+    XCTAssertEqualObjects(testLaunchConfiguration.testsToSkip, [NSSet set]);
+
+    FBApplicationLaunchConfiguration *applicationLaunchConfiguration = testLaunchConfiguration.applicationLaunchConfiguration;
+    XCTAssertEqualObjects(applicationLaunchConfiguration.bundleID, @"com.facebook.Sample");
+    XCTAssertEqualObjects(applicationLaunchConfiguration.bundleName, @"Sample");
+  }
+
+  // Second UI Testing target
+  {
+    FBXCTestRunTarget *target = testRun.targets.lastObject;
+    XCTAssertEqual(target.applications.count, 2u);
+    XCTAssertEqualObjects(target.applications.firstObject.bundleID, @"com.apple.test.SampleUITests-Runner");
+    XCTAssertEqualObjects(target.applications.lastObject.bundleID, @"com.facebook.Sample");
+
+    FBTestLaunchConfiguration *testLaunchConfiguration = target.testLaunchConfiguration;
+    XCTAssertEqualObjects(testLaunchConfiguration.testBundlePath.lastPathComponent, @"SampleUITests.xctest");
+    XCTAssertEqualObjects(testLaunchConfiguration.testHostPath.lastPathComponent, @"SampleUITests-Runner.app");
+    XCTAssertTrue(testLaunchConfiguration.shouldInitializeUITesting);
+    XCTAssertEqualObjects(testLaunchConfiguration.targetApplicationPath.lastPathComponent, @"Sample.app");
+    XCTAssertEqualObjects(testLaunchConfiguration.targetApplicationBundleID, @"com.facebook.Sample");
+    XCTAssertGreaterThan(testLaunchConfiguration.testEnvironment.count, 0u);
+    XCTAssertEqualObjects(testLaunchConfiguration.testsToSkip, ([NSSet setWithArray:@[@"testSkipped"]]));
+
+    FBApplicationLaunchConfiguration *applicationLaunchConfiguration = testLaunchConfiguration.applicationLaunchConfiguration;
+    XCTAssertEqualObjects(applicationLaunchConfiguration.bundleID, @"com.apple.test.SampleUITests-Runner");
+    XCTAssertEqualObjects(applicationLaunchConfiguration.bundleName, @"SampleUITests-Runner");
+  }
 }
 
 - (void)testInvalidTestRunConfigurationPath
