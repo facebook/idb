@@ -31,6 +31,11 @@
 
 - (void)testValidTestRunConfiguration
 {
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    NSLog(@"Skipping running -[%@ %@] since Xcode 8 or greater is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+
   NSError *error;
   FBXCTestRun *testRun = [[FBXCTestRun
     withTestRunFileAtPath:[FBXCTestRunTests sampleXCTestRunPath]]
@@ -83,6 +88,11 @@
 
 - (void)testInvalidTestRunConfigurationPath
 {
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    NSLog(@"Skipping running -[%@ %@] since Xcode 8 or greater is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+
   NSError *error;
   FBXCTestRun *testRun = [[FBXCTestRun
     withTestRunFileAtPath:@"/tmp/doesntexist.xctestrun"]
@@ -93,6 +103,11 @@
 
 - (void)testEmptyTestRunConfigurationPath
 {
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    NSLog(@"Skipping running -[%@ %@] since Xcode 8 or greater is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+
   NSError *error;
   FBXCTestRun *testRun = [[FBXCTestRun
     withTestRunFileAtPath:[FBXCTestRunTests emptyXCTestRunPath]]
