@@ -91,4 +91,14 @@
   XCTAssertNil(testRun);
 }
 
+- (void)testEmptyTestRunConfigurationPath
+{
+  NSError *error;
+  FBXCTestRun *testRun = [[FBXCTestRun
+    withTestRunFileAtPath:[FBXCTestRunTests emptyXCTestRunPath]]
+    buildWithError:&error];
+  XCTAssertNotNil(error);
+  XCTAssertNil(testRun);
+}
+
 @end

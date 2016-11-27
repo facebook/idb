@@ -38,4 +38,9 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"Sample" ofType:@"xctestrun"];
 }
 
++ (NSString *)emptyXCTestRunPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"Empty" ofType:@"xctestrun"];
+}
+
 @end

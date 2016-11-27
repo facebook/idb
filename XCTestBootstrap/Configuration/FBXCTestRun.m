@@ -62,7 +62,7 @@
     workspace:nil
     error:&innerError];
 
-  if (innerError) {
+  if (innerError || testRunSpecifications.count == 0) {
     return [[[XCTestBootstrapError describe:@"Failed to load xctestrun file"]
       causedBy:innerError]
       fail:error];

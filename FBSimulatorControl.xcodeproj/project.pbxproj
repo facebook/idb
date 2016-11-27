@@ -17,6 +17,7 @@
 		05BABC5A1DE4627D0012BC5B /* FBXCTestRun.m in Sources */ = {isa = PBXBuildFile; fileRef = 05BABC581DE4627D0012BC5B /* FBXCTestRun.m */; };
 		05BABC6C1DE470560012BC5B /* FBXCTestRunTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 05BABC6B1DE470560012BC5B /* FBXCTestRunTests.m */; };
 		05D3B5761D572EA100944680 /* junitResult0.xml in Resources */ = {isa = PBXBuildFile; fileRef = 05D3B5751D572EA100944680 /* junitResult0.xml */; };
+		05E61B6D1DEA83F5003D5F51 /* Empty.xctestrun in Resources */ = {isa = PBXBuildFile; fileRef = 05E61B6C1DEA83F5003D5F51 /* Empty.xctestrun */; };
 		05F1823F1D59B48600DBD35C /* junitResult1.xml in Resources */ = {isa = PBXBuildFile; fileRef = 05F1823E1D59B48600DBD35C /* junitResult1.xml */; };
 		2ACC1E9C1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 2ACC1E9A1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.m */; };
 		2ACC1E9D1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h in Headers */ = {isa = PBXBuildFile; fileRef = 2ACC1E9B1CB7EE0000F9CE24 /* FBSimulatorInteraction+Keychain.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -610,6 +611,7 @@
 		05BABC581DE4627D0012BC5B /* FBXCTestRun.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRun.m; sourceTree = "<group>"; };
 		05BABC6B1DE470560012BC5B /* FBXCTestRunTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestRunTests.m; sourceTree = "<group>"; };
 		05D3B5751D572EA100944680 /* junitResult0.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult0.xml; sourceTree = "<group>"; };
+		05E61B6C1DEA83F5003D5F51 /* Empty.xctestrun */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Empty.xctestrun; sourceTree = "<group>"; };
 		05F1823E1D59B48600DBD35C /* junitResult1.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult1.xml; sourceTree = "<group>"; };
 		1DD70E291A4B50E500000000 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DD70E291A4B50E500000001 /* FBSimulatorControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = FBSimulatorControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2605,14 +2607,15 @@
 		EEF4497A1CE0A22200300C9F /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				05E61B6C1DEA83F5003D5F51 /* Empty.xctestrun */,
 				EEF4497B1CE0A22200300C9F /* FBXCTestBootstrapFixtures.h */,
 				EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */,
 				AA19D7001D61AFF200229B59 /* iOSUnitTestFixture.xctest */,
 				05D3B5751D572EA100944680 /* junitResult0.xml */,
 				05F1823E1D59B48600DBD35C /* junitResult1.xml */,
 				AA19D7011D61AFF200229B59 /* MacUnitTestFixture.xctest */,
-				3EA5844E1DE9531E008E13B4 /* Sample.xctestrun */,
 				3EA5844F1DE9531E008E13B4 /* Sample.app */,
+				3EA5844E1DE9531E008E13B4 /* Sample.xctestrun */,
 				3EA584501DE9531E008E13B4 /* SampleUITests-Runner.app */,
 			);
 			path = Fixtures;
@@ -3104,6 +3107,7 @@
 				05D3B5761D572EA100944680 /* junitResult0.xml in Resources */,
 				3EA584531DE9531E008E13B4 /* SampleUITests-Runner.app in Resources */,
 				AA19D7031D61AFF200229B59 /* MacUnitTestFixture.xctest in Resources */,
+				05E61B6D1DEA83F5003D5F51 /* Empty.xctestrun in Resources */,
 				05F1823F1D59B48600DBD35C /* junitResult1.xml in Resources */,
 				3EA584511DE9531E008E13B4 /* Sample.xctestrun in Resources */,
 				3EA584521DE9531E008E13B4 /* Sample.app in Resources */,
