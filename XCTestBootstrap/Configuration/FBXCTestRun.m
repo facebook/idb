@@ -82,7 +82,7 @@
     NSString *testHostPath = [testRunSpecification.testHostRunnable valueForKeyPath:@"filePath.pathString"];
 
     FBApplicationDescriptor *application = [FBApplicationDescriptor
-      applicationWithPath:testHostPath
+      userApplicationWithPath:testHostPath
       error:&innerError];
     NSMutableArray *applications = [NSMutableArray arrayWithObject:application];
 
@@ -115,7 +115,7 @@
 
     if (testRunSpecification.isUITestBundle) {
       FBApplicationDescriptor *targetApplication = [FBApplicationDescriptor
-        applicationWithPath:testRunSpecification.UITestingTargetAppPath
+        userApplicationWithPath:testRunSpecification.UITestingTargetAppPath
         error:&innerError];
 
       if (innerError) {
