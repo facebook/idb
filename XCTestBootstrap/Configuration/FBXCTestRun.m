@@ -132,7 +132,7 @@
   return self;
 }
 
-// MARK: - Private
+#pragma mark - Private
 
 - (FBTestLaunchConfiguration *)testLaunchConfigurationWithTestRunSpecification:(IDETestRunSpecification *)testRunSpecification application:(FBApplicationDescriptor *)application
 {
