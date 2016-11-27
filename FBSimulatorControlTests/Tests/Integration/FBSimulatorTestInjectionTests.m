@@ -107,6 +107,11 @@
 
 - (void)testLaunchTestsViaXCTestRunFile
 {
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    NSLog(@"Skipping running -[%@ %@] since Xcode 8 or greater is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+
   NSError *error;
   NSString *testRunPath = [FBSimulatorControlFixtures sampleXCTestRunPath];
   FBXCTestRun *testRun = [[FBXCTestRun withTestRunFileAtPath:testRunPath] buildWithError:&error];
