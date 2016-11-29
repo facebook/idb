@@ -55,6 +55,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withArguments:(NSArray<NSString *> *)arguments;
 
 /**
+ Replaces the Subprocess Environment with the provided Environment.
+
+ @param environment an Environment Dictionary. Must not be nil.
+ @return the reciever, for chaining.
+ */
+- (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
+
+/**
  Adds the provided dictionary to the environment of the built task.
 
  @param environment an Environment Dictionary. Must not be nil.

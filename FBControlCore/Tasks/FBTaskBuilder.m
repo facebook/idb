@@ -74,13 +74,19 @@
   return self;
 }
 
+- (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment
+{
+  NSParameterAssert(environment);
+  self.environment = environment;
+  return self;
+}
+
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environment
 {
   NSParameterAssert(environment);
   NSMutableDictionary<NSString *, NSString *> *dictionary = [self.environment mutableCopy];
   [dictionary addEntriesFromDictionary:environment];
-  self.environment = [dictionary copy];
-  return self;
+  return [self withEnvironment:[dictionary copy]];
 }
 
 - (instancetype)withStdOutInMemory
