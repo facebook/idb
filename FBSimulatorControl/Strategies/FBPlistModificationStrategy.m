@@ -106,3 +106,24 @@
 }
 
 @end
+
+@implementation FBWatchdogOverrideModificationStrategy
+
+- (BOOL)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  NSParameterAssert(bundleIDs);
+  NSParameterAssert(timeout);
+
+  return [self
+    amendRelativeToPath:@"Library/Preferences/com.apple.springboard.plist"
+    error:error
+    amendWithBlock:^(NSMutableDictionary *dictionary) {
+      NSMutableDictionary *exceptions = [NSMutableDictionary dictionary];
+      for (NSString *bundleID in bundleIDs) {
+        exceptions[bundleID] = @(timeout);
+      }
+      dictionary[@"FBLaunchWatchdogExceptions"] = exceptions;
+    }];
+}
+
+@end

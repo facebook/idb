@@ -58,20 +58,10 @@
 
 - (instancetype)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
 {
-  NSParameterAssert(bundleIDs);
-  NSParameterAssert(timeout);
-
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    return [[FBPlistModificationStrategy strategyWithSimulator:simulator]
-      amendRelativeToPath:@"Library/Preferences/com.apple.springboard.plist"
-      error:error
-      amendWithBlock:^(NSMutableDictionary *dictionary) {
-        NSMutableDictionary *exceptions = [NSMutableDictionary dictionary];
-        for (NSString *bundleID in bundleIDs) {
-          exceptions[bundleID] = @(timeout);
-        }
-        dictionary[@"FBLaunchWatchdogExceptions"] = exceptions;
-      }];
+    return [[FBWatchdogOverrideModificationStrategy
+      strategyWithSimulator:simulator]
+      overrideWatchDogTimerForApplications:bundleIDs timeout:timeout error:error];
   }];
 }
 
