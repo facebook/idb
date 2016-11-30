@@ -34,11 +34,10 @@ typedef void (^FBSimDeviceWrapperCallback)(void);
  Creates a SimDevice Wrapper.
 
  @param simulator the Simulator to wrap
- @param configuration the Simulator Control Configuration.
  @param processFetcher the Process Query to obtain process information.
  @return a new SimDevice wrapper.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher;
++ (instancetype)withSimulator:(FBSimulator *)simulator processFetcher:(FBSimulatorProcessFetcher *)processFetcher;
 
 /**
  Installs an Application on the Simulator.

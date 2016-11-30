@@ -182,7 +182,6 @@ extension FBSimulatorManagementOptions : Parsable {
       self.killSpuriousSimulatorsOnFirstStartParser,
       self.ignoreSpuriousKillFailParser,
       self.killSpuriousCoreSimulatorServicesParser,
-      self.useSimDeviceTimeoutResilianceParser
     ])
       .sectionize("management", "Simulator Management", "")
   }
@@ -210,11 +209,6 @@ extension FBSimulatorManagementOptions : Parsable {
   static var killSpuriousCoreSimulatorServicesParser: Parser<FBSimulatorManagementOptions> {
     return Parser<FBSimulatorManagementOptions>
       .ofFlag("kill-spurious-services", .killSpuriousCoreSimulatorServices, "")
-  }
-
-  static var useSimDeviceTimeoutResilianceParser: Parser<FBSimulatorManagementOptions> {
-    return Parser<FBSimulatorManagementOptions>
-      .ofFlag("timeout-resiliance", .useSimDeviceTimeoutResiliance, "")
   }
 }
 

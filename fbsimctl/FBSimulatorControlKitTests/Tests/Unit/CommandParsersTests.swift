@@ -34,15 +34,13 @@ class FBSimulatorManagementOptionsParserTests : XCTestCase {
       (["--kill-spurious"], FBSimulatorManagementOptions.killSpuriousSimulatorsOnFirstStart),
       (["--ignore-spurious-kill-fail"], FBSimulatorManagementOptions.ignoreSpuriousKillFail),
       (["--kill-spurious-services"], FBSimulatorManagementOptions.killSpuriousCoreSimulatorServices),
-      (["--timeout-resiliance"], FBSimulatorManagementOptions.useSimDeviceTimeoutResiliance)
     ])
   }
 
   func testParsesCompound() {
     self.assertParsesAll(FBSimulatorManagementOptions.parser, [
       (["--delete-all", "--kill-all"], FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killAllOnFirstStart)),
-      (["--kill-spurious-services"], FBSimulatorManagementOptions.killSpuriousCoreSimulatorServices),
-      (["--ignore-spurious-kill-fail", "--timeout-resiliance"], FBSimulatorManagementOptions.ignoreSpuriousKillFail.union(.useSimDeviceTimeoutResiliance)),
+      (["--ignore-spurious-kill-fail", "--kill-spurious-services"], FBSimulatorManagementOptions.ignoreSpuriousKillFail.union(.killSpuriousCoreSimulatorServices)),
       (["--kill-spurious", "--ignore-spurious-kill-fail"], FBSimulatorManagementOptions.killSpuriousSimulatorsOnFirstStart.union(.ignoreSpuriousKillFail))
     ])
   }

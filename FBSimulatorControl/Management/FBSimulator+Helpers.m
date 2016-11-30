@@ -38,7 +38,7 @@ static NSString *const ApplicationPathKey = @"Path";
 
 - (FBSimDeviceWrapper *)simDeviceWrapper
 {
-  return [FBSimDeviceWrapper withSimulator:self configuration:self.set.configuration processFetcher:self.processFetcher];
+  return [FBSimDeviceWrapper withSimulator:self processFetcher:self.processFetcher];
 }
 
 - (FBSimulatorLaunchCtl *)launchctl

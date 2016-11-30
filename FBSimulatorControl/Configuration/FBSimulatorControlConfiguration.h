@@ -22,7 +22,6 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorManagementOptions){
   FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart = 1 << 2, /** Kills all Simulators not managed by FBSimulatorControl when creating a Pool */
   FBSimulatorManagementOptionsIgnoreSpuriousKillFail = 1 << 3, /** Don't fail Pool creation when failing to kill spurious Simulators */
   FBSimulatorManagementOptionsKillSpuriousCoreSimulatorServices = 1 << 4, /** Kills CoreSimulatorService daemons from the non-current Xcode version when creating a Pool */
-  FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance = 1 << 5, /** Uses an alternative strategy for communicating with the Simulator that may be more robust with Xcode 7.1 */
 };
 
 NS_ASSUME_NONNULL_BEGIN

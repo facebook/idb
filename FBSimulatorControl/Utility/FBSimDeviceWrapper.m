@@ -30,93 +30,13 @@
 
 @end
 
-@interface FBSimDeviceWrapper_TimeoutResiliance : FBSimDeviceWrapper
-
-@end
-
-@implementation FBSimDeviceWrapper_TimeoutResiliance
-
-- (BOOL)runInvocationInBackgroundUntilTimeout:(NSInvocation *)invocation
-{
-  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
-  NSInvocation *newInvocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(runInvocation:withSemaphore:)]];
-  [newInvocation setTarget:self];
-  [newInvocation setSelector:@selector(runInvocation:withSemaphore:)];
-  [newInvocation setArgument:&invocation atIndex:2];
-  [newInvocation setArgument:&semaphore atIndex:3];
-  [NSThread detachNewThreadSelector:@selector(invoke) toTarget:newInvocation withObject:nil];
-
-  int64_t timeout = ((int64_t) FBControlCoreGlobalConfiguration.slowTimeout) * ((int64_t) NSEC_PER_SEC);
-  return dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, timeout)) == 0;
-}
-
-- (void)runInvocation:(NSInvocation *)invocation withSemaphore:(dispatch_semaphore_t)semaphore
-{
-  NSAssert(![NSThread isMainThread], @"Should be on a background thread");
-
-  [invocation invoke];
-  dispatch_semaphore_signal(semaphore);
-}
-
-- (FBProcessInfo *)launchApplicationWithID:(NSString *)appID options:(NSDictionary *)options error:(NSError **)error
-{
-  NSAssert([NSThread isMainThread], @"Must be called from the main thread.");
-
-  NSError *innerError = nil;
-  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(launchApplicationWithID:options:error:)]];
-  [invocation setTarget:self.simulator.device];
-  [invocation setSelector:@selector(launchApplicationWithID:options:error:)];
-  [invocation setArgument:&appID atIndex:2];
-  [invocation setArgument:&options atIndex:3];
-  [invocation setArgument:&innerError atIndex:4];
-  if (![self runInvocationInBackgroundUntilTimeout:invocation]) {
-    return [[FBSimulatorError describe:@"Timed out calling launchApplicationWithID"] fail:error];
-  }
-
-  pid_t pid;
-  [invocation getReturnValue:&pid];
-  if (pid <= 0) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
-  }
-  return [self processInfoForProcessIdentifier:pid error:error];
-}
-
-- (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error
-{
-  NSAssert([NSThread isMainThread], @"Must be called from the main thread.");
-
-  NSError *innerError = nil;
-  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[self methodSignatureForSelector:@selector(installApplication:withOptions:error:)]];
-  [invocation setTarget:self.simulator.device];
-  [invocation setSelector:@selector(installApplication:withOptions:error:)];
-  [invocation setArgument:&appURL atIndex:2];
-  [invocation setArgument:&options atIndex:3];
-  [invocation setArgument:&innerError atIndex:4];
-  if (![self runInvocationInBackgroundUntilTimeout:invocation]) {
-    return [[FBSimulatorError describe:@"Timed out calling installApplication"] failBool:error];
-  }
-
-  BOOL returnValue;
-  [invocation getReturnValue:&returnValue];
-  if (!returnValue) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-  }
-  return YES;
-}
-
-@end
-
 @implementation FBSimDeviceWrapper
 
 #pragma mark Initializers
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBSimulatorControlConfiguration *)configuration processFetcher:(FBSimulatorProcessFetcher *)processFetcher
++ (instancetype)withSimulator:(FBSimulator *)simulator processFetcher:(FBSimulatorProcessFetcher *)processFetcher
 {
-  BOOL timeoutResiliance = (configuration.options & FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance) == FBSimulatorManagementOptionsUseSimDeviceTimeoutResiliance;
-  return timeoutResiliance
-    ? [[FBSimDeviceWrapper_TimeoutResiliance alloc] initWithSimulator:simulator processFetcher:processFetcher]
-    : [[FBSimDeviceWrapper alloc] initWithSimulator:simulator processFetcher:processFetcher];
+  return [[FBSimDeviceWrapper alloc] initWithSimulator:simulator processFetcher:processFetcher];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator processFetcher:(FBSimulatorProcessFetcher *)processFetcher
