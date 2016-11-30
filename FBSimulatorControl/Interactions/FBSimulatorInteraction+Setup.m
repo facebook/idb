@@ -35,12 +35,9 @@
   }
 
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    return [[FBPlistModificationStrategy strategyWithSimulator:simulator]
-      amendRelativeToPath:@"Library/Preferences/.GlobalPreferences.plist"
-      error:error
-      amendWithBlock:^(NSMutableDictionary *dictionary) {
-        [dictionary addEntriesFromDictionary:localizationOverride.defaultsDictionary];
-      }];
+    return [[FBLocalizationDefaultsModificationStrategy
+      strategyWithSimulator:simulator]
+      overideLocalization:localizationOverride error:error];
   }];
 }
 

@@ -13,6 +13,7 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorLaunchCtl.h"
 
 @interface FBPlistModificationStrategy ()
 
@@ -62,6 +63,20 @@
       failBool:error];
   }
   return YES;
+}
+
+@end
+
+@implementation FBLocalizationDefaultsModificationStrategy
+
+- (BOOL)overideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error
+{
+  return [self
+    amendRelativeToPath:@"Library/Preferences/.GlobalPreferences.plist"
+    error:error
+    amendWithBlock:^(NSMutableDictionary *dictionary) {
+      [dictionary addEntriesFromDictionary:localizationOverride.defaultsDictionary];
+    }];
 }
 
 @end

@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBLocalizationOverride;
 @class FBSimulator;
 
 /**
@@ -35,6 +36,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if successful, NO otherwise.
  */
 - (BOOL)amendRelativeToPath:(NSString *)relativePath error:(NSError **)error amendWithBlock:( void(^)(NSMutableDictionary<NSString *, id> *) )block;
+
+@end
+
+/**
+ Modifies the Global Preferences for a Localization
+ */
+@interface FBLocalizationDefaultsModificationStrategy : FBPlistModificationStrategy
+
+/**
+ Adds a Localization Override.
+
+ @param localizationOverride the Localization Override to use.
+ @param error an error out for any error that occurs.
+ @return YES if succesful, NO otherwise.
+ */
+- (BOOL)overideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error;
 
 @end
 
