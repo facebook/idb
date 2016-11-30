@@ -68,8 +68,8 @@
 - (id)installedAppsWithError:(id *)arg1;
 - (id)propertiesOfApplication:(id)arg1 error:(id *)arg2;
 - (BOOL)applicationIsInstalled:(id)arg1 type:(id *)arg2 error:(id *)arg3;
-- (BOOL)uninstallApplication:(id)arg1 withOptions:(id)arg2 error:(id *)arg3;
-- (BOOL)installApplication:(id)arg1 withOptions:(id)arg2 error:(id *)arg3;
+- (BOOL)uninstallApplication:(NSString *)bundleID withOptions:(NSDictionary *)options error:(NSError **)error;
+- (BOOL)installApplication:(NSURL *)appURL withOptions:(NSDictionary *)options error:(NSError **)error;
 - (BOOL)setKeyboardLanguage:(id)arg1 error:(id *)arg2;
 - (BOOL)addVideo:(id)arg1 error:(id *)arg2;
 - (BOOL)addPhoto:(id)arg1 error:(id *)arg2;

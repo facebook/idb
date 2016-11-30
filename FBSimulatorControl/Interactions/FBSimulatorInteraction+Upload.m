@@ -15,7 +15,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"

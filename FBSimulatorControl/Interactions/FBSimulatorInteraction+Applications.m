@@ -9,10 +9,11 @@
 
 #import "FBSimulatorInteraction+Applications.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBApplicationLaunchStrategy.h"
-#import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -59,7 +60,7 @@
     // Kill the app if it's running
     [[simulator.interact terminateApplicationWithBundleID:bundleID] perform:nil];
     // Then uninstall for real.
-    if (![simulator.simDeviceWrapper uninstallApplication:bundleID withOptions:nil error:&innerError]) {
+    if (![simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
       return [[[[FBSimulatorError
         describeFormat:@"Failed to uninstall '%@'", bundleID]
         causedBy:innerError]

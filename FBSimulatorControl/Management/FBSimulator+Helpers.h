@@ -29,11 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) FBSimulatorInteraction *interact;
 
 /**
- Creates a FBSimDeviceWrapper for the Simulator.
- */
-@property (nonatomic, strong, readonly) FBSimDeviceWrapper *simDeviceWrapper;
-
-/**
  Creates a FBSimulatorLaunchCtl for the Simulator.
  */
 @property (nonatomic, strong, readonly) FBSimulatorLaunchCtl *launchctl;

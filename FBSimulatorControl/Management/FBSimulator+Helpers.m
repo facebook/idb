@@ -14,7 +14,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
@@ -34,11 +33,6 @@ static NSString *const ApplicationPathKey = @"Path";
 - (FBSimulatorInteraction *)interact
 {
   return [FBSimulatorInteraction withSimulator:self];
-}
-
-- (FBSimDeviceWrapper *)simDeviceWrapper
-{
-  return [FBSimDeviceWrapper withSimulator:self];
 }
 
 - (FBSimulatorLaunchCtl *)launchctl

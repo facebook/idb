@@ -19,7 +19,6 @@
 #import <XCTestBootstrap/FBTestManager.h>
 
 #import "FBCoreSimulatorNotifier.h"
-#import "FBSimDeviceWrapper.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Connection.h"
 #import "FBSimulator+Private.h"

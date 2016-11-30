@@ -9,12 +9,13 @@
 
 #import "FBSimulatorApplicationCommands.h"
 
+#import <CoreSimulator/SimDevice.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorError.h"
-#import "FBSimDeviceWrapper.h"
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
@@ -76,7 +77,7 @@
   };
   NSURL *appURL = [NSURL fileURLWithPath:application.path];
 
-  if (![self.simulator.simDeviceWrapper installApplication:appURL withOptions:options error:&innerError]) {
+  if (![self.simulator.device installApplication:appURL withOptions:options error:&innerError]) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to install Application %@ with options %@", application, options]
       causedBy:innerError]

@@ -15,7 +15,6 @@
 
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
-#import "FBSimDeviceWrapper.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorDiagnostics.h"
