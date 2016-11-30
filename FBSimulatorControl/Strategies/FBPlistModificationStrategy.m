@@ -127,3 +127,19 @@
 }
 
 @end
+
+@implementation FBKeyboardSettingsModificationStrategy
+
+- (BOOL)setupKeyboardWithError:(NSError **)error
+{
+  return [self
+    amendRelativeToPath:@"Library/Preferences/com.apple.Preferences.plist"
+    error:error
+    amendWithBlock:^(NSMutableDictionary *dictionary) {
+      dictionary[@"KeyboardCapsLock"] = @NO;
+      dictionary[@"KeyboardAutocapitalization"] = @NO;
+      dictionary[@"KeyboardAutocorrection"] = @NO;
+    }];
+}
+
+@end

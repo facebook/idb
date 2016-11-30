@@ -67,13 +67,11 @@
 
 - (instancetype)setupKeyboard
 {
-  return [self
-      editPropertyListFileRelativeFromRootPath:@"Library/Preferences/com.apple.Preferences.plist"
-      amendWithBlock:^(NSMutableDictionary *dictionary) {
-        dictionary[@"KeyboardCapsLock"] = @NO;
-        dictionary[@"KeyboardAutocapitalization"] = @NO;
-        dictionary[@"KeyboardAutocorrection"] = @NO;
-      }];
+  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+    return [[FBKeyboardSettingsModificationStrategy
+      strategyWithSimulator:simulator]
+      setupKeyboardWithError:error];
+  }];
 }
 
 - (instancetype)editPropertyListFileRelativeFromRootPath:(NSString *)relativePath amendWithBlock:( void(^)(NSMutableDictionary *) )block
