@@ -86,15 +86,6 @@ typedef void (^FBSimDeviceWrapperCallback)(void);
  */
 - (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options timeout:(NSTimeInterval)timeout error:(NSError **)error;
 
-/**
- Adds a Video to the Camera Roll.
- Will polyfill to the 'Camera App Upload' hack.
-
- @param paths an Array of paths of videos to upload.
- @return YES if the upload was successful, NO otherwise.
- */
-- (BOOL)addVideos:(NSArray<NSString *> *)paths error:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END

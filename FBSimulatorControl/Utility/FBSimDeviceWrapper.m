@@ -15,7 +15,6 @@
 
 #import <libkern/OSAtomic.h>
 
-#import "FBAddVideoPolyfill.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
@@ -173,24 +172,6 @@
   }
 
   return processIdentifier;
-}
-
-- (BOOL)addVideos:(NSArray *)paths error:(NSError **)error
-{
-  if ([self.simulator.device respondsToSelector:@selector(addVideo:error:)]) {
-    for (NSString *path in paths) {
-      NSURL *url = [NSURL fileURLWithPath:path];
-      NSError *innerError = nil;
-      if (![self.simulator.device addVideo:url error:&innerError]) {
-        return [[[FBSimulatorError
-          describeFormat:@"Failed to upload video at path %@", path]
-          causedBy:innerError]
-          failBool:error];
-      }
-    }
-    return YES;
-  }
-  return [[FBAddVideoPolyfill withSimulator:self.simulator] addVideos:paths error:error];
 }
 
 #pragma mark Private
