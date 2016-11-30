@@ -80,3 +80,29 @@
 }
 
 @end
+
+@implementation FBLocationServicesModificationStrategy
+
+- (BOOL)overideLocalizations:(NSArray<NSString *> *)bundleIDs error:(NSError **)error
+{
+  NSParameterAssert(bundleIDs);
+
+  return [self
+    amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
+    error:error
+    amendWithBlock:^(NSMutableDictionary *dictionary) {
+      for (NSString *bundleID in bundleIDs) {
+        dictionary[bundleID] = @{
+          @"Whitelisted": @NO,
+          @"BundleId": bundleID,
+          @"SupportedAuthorizationMask" : @3,
+          @"Authorization" : @2,
+          @"Authorized": @YES,
+          @"Executable": @"",
+          @"Registered": @"",
+        };
+      }
+    }];
+}
+
+@end

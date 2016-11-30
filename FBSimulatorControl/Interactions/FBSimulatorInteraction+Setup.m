@@ -43,25 +43,10 @@
 
 - (instancetype)authorizeLocationSettings:(NSArray<NSString *> *)bundleIDs
 {
-  NSParameterAssert(bundleIDs);
-
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    return [[FBPlistModificationStrategy strategyWithSimulator:simulator]
-      amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
-      error:error
-      amendWithBlock:^(NSMutableDictionary *dictionary) {
-        for (NSString *bundleID in bundleIDs) {
-          dictionary[bundleID] = @{
-            @"Whitelisted": @NO,
-            @"BundleId": bundleID,
-            @"SupportedAuthorizationMask" : @3,
-            @"Authorization" : @2,
-            @"Authorized": @YES,
-            @"Executable": @"",
-            @"Registered": @"",
-          };
-        }
-      }];
+    return [[FBLocationServicesModificationStrategy
+      strategyWithSimulator:simulator]
+      overideLocalizations:bundleIDs error:error];
   }];
 }
 

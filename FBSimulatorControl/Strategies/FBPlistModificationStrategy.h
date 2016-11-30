@@ -55,4 +55,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ Modifies the locationd plist.
+ */
+@interface FBLocationServicesModificationStrategy : FBPlistModificationStrategy
+
+/**
+ Adds a Localization Override.
+
+ @param bundleIDs an NSArray<NSString> of bundle IDs to to authorize location settings for.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)overideLocalizations:(NSArray<NSString *> *)bundleIDs error:(NSError **)error;
+
+@end
+
 NS_ASSUME_NONNULL_END
