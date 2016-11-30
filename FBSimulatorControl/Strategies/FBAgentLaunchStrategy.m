@@ -11,15 +11,20 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <CoreSimulator/SimDevice.h>
+
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator+Private.h"
 #import "FBSimDeviceWrapper.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorDiagnostics.h"
+#import "FBSimulatorProcessFetcher.h"
 
 @interface FBAgentLaunchStrategy ()
 
-@property (nonnull, nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 
 @end
 
@@ -38,6 +43,8 @@
   }
 
   _simulator = simulator;
+  _processFetcher = simulator.processFetcher;
+
   return self;
 }
 
@@ -95,7 +102,7 @@
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
-  FBProcessInfo *process = [simulator.simDeviceWrapper
+  FBProcessInfo *process = [self
     spawnLongRunningWithPath:agentLaunch.agentBinary.path
     options:options
     terminationHandler:NULL
@@ -111,6 +118,50 @@
 
   [simulator.eventSink agentDidLaunch:agentLaunch didStart:process stdOut:stdOutHandle stdErr:stdErrHandle];
   return process;
+}
+
+- (nullable FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options terminationHandler:(nullable FBAgentLaunchCallback)terminationHandler error:(NSError **)error
+{
+  return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
+}
+
+- (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  __block volatile uint32_t hasTerminated = 0;
+  FBAgentLaunchCallback terminationHandler = ^() {
+    OSAtomicOr32Barrier(1, &hasTerminated);
+  };
+
+  pid_t processIdentifier = [self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error];
+  if (processIdentifier <= 0) {
+    return processIdentifier;
+  }
+
+  BOOL successfulWait = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+    return hasTerminated == 1;
+  }];
+  if (!successfulWait) {
+    return [[FBSimulatorError
+      describeFormat:@"Short Live process of pid %d of launch %@ with options %@ did not terminate in '%f' seconds", processIdentifier, launchPath, options, timeout]
+      failBool:error];
+  }
+
+  return processIdentifier;
+}
+
+#pragma mark Private
+
+- (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error
+{
+  if (processIdentifier <= -1) {
+    return nil;
+  }
+
+  FBProcessInfo *processInfo = [self.processFetcher.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  if (!processInfo) {
+    return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
+  }
+  return processInfo;
 }
 
 @end

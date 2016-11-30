@@ -14,7 +14,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimDeviceWrapper.h"
+#import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
@@ -205,7 +205,7 @@
   NSDictionary *options = [launchConfiguration simDeviceLaunchOptionsWithStdOut:stdOutPipe.fileHandleForWriting stdErr:nil];
 
   NSError *innerError = nil;
-  pid_t processIdentifier = [self.simulator.simDeviceWrapper
+  pid_t processIdentifier = [[FBAgentLaunchStrategy withSimulator:self.simulator]
     spawnShortRunningWithPath:launchConfiguration.agentBinary.path
     options:options
     timeout:FBControlCoreGlobalConfiguration.fastTimeout

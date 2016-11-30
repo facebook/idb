@@ -24,9 +24,6 @@
 @interface FBSimDeviceWrapper ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
-
-- (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error;
 
 @end
 
@@ -34,19 +31,18 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator processFetcher:(FBSimulatorProcessFetcher *)processFetcher
++ (instancetype)withSimulator:(FBSimulator *)simulator
 {
-  return [[FBSimDeviceWrapper alloc] initWithSimulator:simulator processFetcher:processFetcher];
+  return [[FBSimDeviceWrapper alloc] initWithSimulator:simulator];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator processFetcher:(FBSimulatorProcessFetcher *)processFetcher
+- (instancetype)initWithSimulator:(FBSimulator *)simulator
 {
   if (!(self = [self init])) {
     return nil;
   }
 
   _simulator = simulator;
-  _processFetcher = processFetcher;
 
   return self;
 }
@@ -63,50 +59,6 @@
 {
   // The options don't appear to do much, simctl itself doesn't use them.
   return [self.simulator.device uninstallApplication:bundleID withOptions:nil error:error];
-}
-
-- (FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(NSDictionary *)options terminationHandler:(FBSimDeviceWrapperCallback)terminationHandler error:(NSError **)error
-{
-  return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
-}
-
-- (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(NSDictionary *)options timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  __block volatile uint32_t hasTerminated = 0;
-  FBSimDeviceWrapperCallback terminationHandler = ^() {
-    OSAtomicOr32Barrier(1, &hasTerminated);
-  };
-
-  pid_t processIdentifier = [self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error];
-  if (processIdentifier <= 0) {
-    return processIdentifier;
-  }
-
-  BOOL successfulWait = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return hasTerminated == 1;
-  }];
-  if (!successfulWait) {
-    return [[FBSimulatorError
-      describeFormat:@"Short Live process of pid %d of launch %@ with options %@ did not terminate in '%f' seconds", processIdentifier, launchPath, options, timeout]
-      failBool:error];
-  }
-
-  return processIdentifier;
-}
-
-#pragma mark Private
-
-- (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error
-{
-  if (processIdentifier <= -1) {
-    return nil;
-  }
-
-  FBProcessInfo *processInfo = [self.processFetcher.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
-  if (!processInfo) {
-    return [[FBSimulatorError describeFormat:@"Timed out waiting for process info for pid %d", processIdentifier] fail:error];
-  }
-  return processInfo;
 }
 
 @end
