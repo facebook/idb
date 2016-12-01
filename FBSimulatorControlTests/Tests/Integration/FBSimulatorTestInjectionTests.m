@@ -165,7 +165,8 @@
 
 - (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
-
+  XCTAssertNotNil(summary.finishTime);
+  XCTAssertNotNil(summary.testSuite);
 }
 
 - (void)testManagerMediatorDidFinishExecutingTestPlan:(FBTestManagerAPIMediator *)mediator
