@@ -15,9 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
- Modifies a Plist on the Simulator.
+ A class for modifying defaults that reside on a Simulator.
  */
-@interface FBPlistModificationStrategy : NSObject
+@interface FBDefaultsModificationStrategy : NSObject
 
 /**
  A Strategy for modifying a plist.
@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Modifies the Global Preferences for a Localization
  */
-@interface FBLocalizationDefaultsModificationStrategy : FBPlistModificationStrategy
+@interface FBLocalizationDefaultsModificationStrategy : FBDefaultsModificationStrategy
 
 /**
  Adds a Localization Override.
@@ -48,7 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Modifies the defaults for the locationd daemon.
  */
-@interface FBLocationServicesModificationStrategy : FBPlistModificationStrategy
+@interface FBLocationServicesModificationStrategy : FBDefaultsModificationStrategy
 
 /**
  Approves Location Services for Applications.
@@ -64,7 +64,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Modifies the Frontboard Watchdog Override.
  */
-@interface FBWatchdogOverrideModificationStrategy : FBPlistModificationStrategy
+@interface FBWatchdogOverrideModificationStrategy : FBDefaultsModificationStrategy
 
 /**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more
@@ -82,7 +82,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Modifies the Keyboard Settings.
  */
-@interface FBKeyboardSettingsModificationStrategy : FBPlistModificationStrategy
+@interface FBKeyboardSettingsModificationStrategy : FBDefaultsModificationStrategy
 
 /**
  Prepares the Simulator Keyboard, prior to launch.

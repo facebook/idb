@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBPlistModificationStrategy.h"
+#import "FBDefaultsModificationStrategy.h"
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
@@ -18,13 +18,13 @@
 #import "FBSimulatorLaunchCtl.h"
 #import "FBAgentLaunchStrategy.h"
 
-@interface FBPlistModificationStrategy ()
+@interface FBDefaultsModificationStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 
 @end
 
-@implementation FBPlistModificationStrategy
+@implementation FBDefaultsModificationStrategy
 
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {

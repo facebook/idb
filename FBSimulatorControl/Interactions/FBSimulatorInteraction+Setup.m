@@ -17,7 +17,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
 #import "FBSimulatorBootConfiguration.h"
-#import "FBPlistModificationStrategy.h"
+#import "FBDefaultsModificationStrategy.h"
 
 @implementation FBSimulatorInteraction (Setup)
 
