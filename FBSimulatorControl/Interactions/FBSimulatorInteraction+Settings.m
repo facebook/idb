@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorInteraction+Setup.h"
+#import "FBSimulatorInteraction+Settings.h"
 
 #import <CoreSimulator/SimDevice.h>
 
@@ -19,7 +19,7 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBDefaultsModificationStrategy.h"
 
-@implementation FBSimulatorInteraction (Setup)
+@implementation FBSimulatorInteraction (Settings)
 
 - (instancetype)prepareForBoot:(FBSimulatorBootConfiguration *)configuration
 {

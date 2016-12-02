@@ -14,9 +14,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Interactions for Simulators that should occur Prior to the Boot of the Simulator.
+ Interactions for modifying the Settings, Preferences & Defaults of a Simulator.
  */
-@interface FBSimulatorInteraction (Setup)
+@interface FBSimulatorInteraction (Settings)
 
 /**
  Prepares the Simulator for Launch:
