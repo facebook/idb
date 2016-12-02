@@ -42,7 +42,6 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogSearch.h>
-#import <FBControlCore/FBMultiFileReader.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>
 #import <FBControlCore/FBProcessFetcher.h>
 #import <FBControlCore/FBProcessInfo.h>
