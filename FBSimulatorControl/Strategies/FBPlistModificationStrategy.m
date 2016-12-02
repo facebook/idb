@@ -42,32 +42,6 @@
   return self;
 }
 
-- (BOOL)amendRelativeToPath:(NSString *)relativePath error:(NSError **)error amendWithBlock:( void(^)(NSMutableDictionary<NSString *, id> *) )block
-{
-  FBSimulator *simulator = self.simulator;
-  NSString *simulatorRoot = simulator.device.dataPath;
-  NSString *path = [simulatorRoot stringByAppendingPathComponent:relativePath];
-
-  NSError *innerError = nil;
-  if (![NSFileManager.defaultManager createDirectoryAtPath:[path stringByDeletingLastPathComponent] withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Could not create intermediate directories for plist modification at %@", path]
-      inSimulator:simulator]
-      causedBy:innerError]
-      failBool:error];
-  }
-  NSMutableDictionary *dictionary = [NSMutableDictionary dictionaryWithContentsOfFile:path] ?: [NSMutableDictionary dictionary];
-  block(dictionary);
-
-  if (![dictionary writeToFile:path atomically:YES]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to write plist at path %@", path]
-      inSimulator:simulator]
-      failBool:error];
-  }
-  return YES;
-}
-
 - (FBBinaryDescriptor *)defaultsBinary
 {
   NSString *path = [[[self.simulator.device.runtime.root
@@ -80,7 +54,7 @@
   return binary;
 }
 
-- (BOOL)modifyDefaultsInDomain:(NSString *)domain defaults:(NSDictionary<NSString *, id> *)defaults error:(NSError **)error
+- (BOOL)modifyDefaultsInDomainOrPath:(NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults error:(NSError **)error
 {
   NSError *innerError = nil;
   NSString *file = [self.simulator.auxillaryDirectory stringByAppendingPathComponent:@"temporary.plist"];
@@ -98,8 +72,8 @@
 
   // Build the arguments
   NSMutableArray<NSString *> *arguments = [NSMutableArray arrayWithObject:@"import"];
-  if (domain) {
-    [arguments addObject:domain];
+  if (domainOrPath) {
+    [arguments addObject:domainOrPath];
   }
   [arguments addObject:file];
 
@@ -114,14 +88,14 @@
   FBAgentLaunchStrategy *strategy = [FBAgentLaunchStrategy withSimulator:self.simulator];
   if (![strategy launchConsumingStdout:configuration error:&innerError]) {
     return [[[FBSimulatorError
-      describeFormat:@"Failed to write defaults for %@", domain ?: @"GLOBAL"]
+      describeFormat:@"Failed to write defaults for %@", domainOrPath ?: @"GLOBAL"]
       causedBy:innerError]
       failBool:error];
   }
   return YES;
 }
 
-- (BOOL)amendRelativeToPath:(NSString *)relativePath managingService:(NSString *)serviceName error:(NSError **)error amendWithBlock:( void(^)(NSMutableDictionary<NSString *, id> *) )block
+- (BOOL)amendRelativeToPath:(NSString *)relativePath defaults:(NSDictionary<NSString *, id> *)defaults managingService:(NSString *)serviceName error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
   FBSimulatorState state = simulator.state;
@@ -137,7 +111,8 @@
     }
   }
   // Perform the amend.
-  if (![self amendRelativeToPath:relativePath error:error amendWithBlock:block]) {
+  NSString *fullPath = [self.simulator.dataDirectory stringByAppendingPathComponent:relativePath];
+  if (![self modifyDefaultsInDomainOrPath:fullPath defaults:defaults error:error]) {
     return NO;
   }
   // Re-start the Service if booted.
@@ -155,7 +130,7 @@
 
 - (BOOL)overideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error
 {
-  return [self modifyDefaultsInDomain:nil defaults:localizationOverride.defaultsDictionary error:error];
+  return [self modifyDefaultsInDomainOrPath:nil defaults:localizationOverride.defaultsDictionary error:error];
 }
 
 @end
@@ -166,23 +141,24 @@
 {
   NSParameterAssert(bundleIDs);
 
+  NSMutableDictionary<NSString *, id> *defaults = [NSMutableDictionary dictionary];
+  for (NSString *bundleID in bundleIDs) {
+    defaults[bundleID] = @{
+      @"Whitelisted": @NO,
+      @"BundleId": bundleID,
+      @"SupportedAuthorizationMask" : @3,
+      @"Authorization" : @2,
+      @"Authorized": @YES,
+      @"Executable": @"",
+      @"Registered": @"",
+    };
+  }
+
   return [self
     amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
+    defaults:[defaults copy]
     managingService:@"locationd"
-    error:error
-    amendWithBlock:^(NSMutableDictionary *dictionary) {
-      for (NSString *bundleID in bundleIDs) {
-        dictionary[bundleID] = @{
-          @"Whitelisted": @NO,
-          @"BundleId": bundleID,
-          @"SupportedAuthorizationMask" : @3,
-          @"Authorization" : @2,
-          @"Authorized": @YES,
-          @"Executable": @"",
-          @"Registered": @"",
-        };
-      }
-    }];
+    error:error];
 }
 
 @end
@@ -199,7 +175,7 @@
     exceptions[bundleID] = @(timeout);
   }
   NSDictionary *defaults = @{@"FBLaunchWatchdogExceptions" : [exceptions copy]};
-  return [self modifyDefaultsInDomain:@"com.apple.springboard" defaults:defaults error:error];
+  return [self modifyDefaultsInDomainOrPath:@"com.apple.springboard" defaults:defaults error:error];
 }
 
 @end
@@ -213,7 +189,7 @@
     @"KeyboardAutocapitalization" : @"0",
     @"KeyboardAutocorrection" : @"0",
   };
-  return [self modifyDefaultsInDomain:@"com.apple.Preferences" defaults:defaults error:error];
+  return [self modifyDefaultsInDomainOrPath:@"com.apple.Preferences" defaults:defaults error:error];
 }
 
 @end
