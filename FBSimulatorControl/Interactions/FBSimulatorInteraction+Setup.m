@@ -58,7 +58,7 @@
 
 - (instancetype)overrideWatchDogTimerForApplications:(NSArray<NSString *> *)bundleIDs withTimeout:(NSTimeInterval)timeout
 {
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     return [[FBWatchdogOverrideModificationStrategy
       strategyWithSimulator:simulator]
       overrideWatchDogTimerForApplications:bundleIDs timeout:timeout error:error];

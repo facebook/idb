@@ -165,16 +165,12 @@
   NSParameterAssert(bundleIDs);
   NSParameterAssert(timeout);
 
-  return [self
-    amendRelativeToPath:@"Library/Preferences/com.apple.springboard.plist"
-    error:error
-    amendWithBlock:^(NSMutableDictionary *dictionary) {
-      NSMutableDictionary *exceptions = [NSMutableDictionary dictionary];
-      for (NSString *bundleID in bundleIDs) {
-        exceptions[bundleID] = @(timeout);
-      }
-      dictionary[@"FBLaunchWatchdogExceptions"] = exceptions;
-    }];
+  NSMutableDictionary<NSString *, NSNumber *> *exceptions = [NSMutableDictionary dictionary];
+  for (NSString *bundleID in bundleIDs) {
+    exceptions[bundleID] = @(timeout);
+  }
+  NSDictionary *defaults = @{@"FBLaunchWatchdogExceptions" : [exceptions copy]};
+  return [self modifyDefaultsInDomain:@"com.apple.springboard" defaults:defaults error:error];
 }
 
 @end
