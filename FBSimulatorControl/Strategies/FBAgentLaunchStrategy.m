@@ -119,6 +119,33 @@
   return process;
 }
 
+- (nullable NSString *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+{
+  // Construct a pipe to stdout and read asynchronously from it.
+  // Synchronize on the mutable string.
+  NSPipe *stdOutPipe = [NSPipe pipe];
+  NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:stdOutPipe.fileHandleForWriting stdErr:nil];
+
+  NSError *innerError = nil;
+  pid_t processIdentifier = [[FBAgentLaunchStrategy withSimulator:self.simulator]
+    spawnShortRunningWithPath:agentLaunch.agentBinary.path
+    options:options
+    timeout:FBControlCoreGlobalConfiguration.fastTimeout
+    error:&innerError];
+  if (processIdentifier <= 0) {
+    return [[[FBSimulatorError
+      describeFormat:@"Running %@ %@ failed", agentLaunch.agentBinary.name, [FBCollectionInformation oneLineDescriptionFromArray:agentLaunch.arguments]]
+      causedBy:innerError]
+      fail:error];
+  }
+  [stdOutPipe.fileHandleForWriting closeFile];
+  NSData *data = [stdOutPipe.fileHandleForReading readDataToEndOfFile];
+  NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+  return [output copy];
+}
+
+#pragma mark Private
+
 - (nullable FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options terminationHandler:(nullable FBAgentLaunchCallback)terminationHandler error:(NSError **)error
 {
   return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
@@ -147,8 +174,6 @@
 
   return processIdentifier;
 }
-
-#pragma mark Private
 
 - (FBProcessInfo *)processInfoForProcessIdentifier:(pid_t)processIdentifier error:(NSError **)error
 {
