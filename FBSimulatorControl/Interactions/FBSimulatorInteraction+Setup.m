@@ -74,14 +74,4 @@
   }];
 }
 
-- (instancetype)editPropertyListFileRelativeFromRootPath:(NSString *)relativePath amendWithBlock:( void(^)(NSMutableDictionary *) )block
-{
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    return [[FBPlistModificationStrategy strategyWithSimulator:simulator]
-      amendRelativeToPath:relativePath
-      error:error
-      amendWithBlock:block];
-  }];
-}
-
 @end

@@ -72,19 +72,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)setupKeyboard;
 
-/**
- Edit a property list file of the Simulator by manipulating the content of the dictionary in the block.
-
- The path must be relative to the Simulator's data directory, example: `Library/Preferences/com.apple.Preferences.plist`
- All changes made to the dictionary will be written back to the property list file.
-
- @param relativePath The relative path from the Simulator's data path to the property list file.
- @param block A block that receives the content of the property list file as a mutable dictionary.
-
- @return the reciever, for chaining.
- */
-- (instancetype)editPropertyListFileRelativeFromRootPath:(NSString *)relativePath amendWithBlock:( void(^)(NSMutableDictionary *) )block;
-
 @end
 
 NS_ASSUME_NONNULL_END

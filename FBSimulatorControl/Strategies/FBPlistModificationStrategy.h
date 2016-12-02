@@ -27,16 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
-/**
- Amends a Plist, relative to a root path.
-
- @param relativePath the relative path from the Simulator root.
- @param error an error out for any error that occurs.
- @param block the block to use for modifications.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)amendRelativeToPath:(NSString *)relativePath error:(NSError **)error amendWithBlock:( void(^)(NSMutableDictionary<NSString *, id> *) )block;
-
 @end
 
 /**
