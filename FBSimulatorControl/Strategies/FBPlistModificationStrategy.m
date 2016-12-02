@@ -121,6 +121,34 @@
   return YES;
 }
 
+- (BOOL)amendRelativeToPath:(NSString *)relativePath managingService:(NSString *)serviceName error:(NSError **)error amendWithBlock:( void(^)(NSMutableDictionary<NSString *, id> *) )block
+{
+  FBSimulator *simulator = self.simulator;
+  FBSimulatorState state = simulator.state;
+  if (state != FBSimulatorStateBooted && state != FBSimulatorStateShutdown) {
+    return [[FBSimulatorError
+      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", [FBSimulator stateStringFromSimulatorState:state], [FBSimulator stateStringFromSimulatorState:FBSimulatorStateShutdown], [FBSimulator stateStringFromSimulatorState:FBSimulatorStateBooted]]
+      failBool:error];
+  }
+  // Stop the service, if booted.
+  if (state == FBSimulatorStateBooted) {
+    if (![simulator.launchctl stopServiceWithName:serviceName error:error]) {
+      return NO;
+    }
+  }
+  // Perform the amend.
+  if (![self amendRelativeToPath:relativePath error:error amendWithBlock:block]) {
+    return NO;
+  }
+  // Re-start the Service if booted.
+  if (state == FBSimulatorStateBooted) {
+    if (![simulator.launchctl startServiceWithName:serviceName error:error]) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
 @end
 
 @implementation FBLocalizationDefaultsModificationStrategy
@@ -140,6 +168,7 @@
 
   return [self
     amendRelativeToPath:@"Library/Caches/locationd/clients.plist"
+    managingService:@"locationd"
     error:error
     amendWithBlock:^(NSMutableDictionary *dictionary) {
       for (NSString *bundleID in bundleIDs) {
