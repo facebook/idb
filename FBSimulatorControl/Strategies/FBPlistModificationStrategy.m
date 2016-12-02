@@ -137,7 +137,7 @@
 
 @implementation FBLocationServicesModificationStrategy
 
-- (BOOL)overideLocalizations:(NSArray<NSString *> *)bundleIDs error:(NSError **)error
+- (BOOL)approveLocationServicesForBundleIDs:(NSArray<NSString *> *)bundleIDs error:(NSError **)error
 {
   NSParameterAssert(bundleIDs);
 

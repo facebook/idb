@@ -46,7 +46,7 @@
   return [self interactWithSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     return [[FBLocationServicesModificationStrategy
       strategyWithSimulator:simulator]
-      overideLocalizations:bundleIDs error:error];
+      approveLocationServicesForBundleIDs:bundleIDs error:error];
   }];
 }
 
