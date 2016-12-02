@@ -67,7 +67,7 @@
 
 - (instancetype)setupKeyboard
 {
-  return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
+  return [self interactWithSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     return [[FBKeyboardSettingsModificationStrategy
       strategyWithSimulator:simulator]
       setupKeyboardWithError:error];
