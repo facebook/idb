@@ -127,12 +127,7 @@
 
 - (BOOL)overideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error
 {
-  return [self
-    amendRelativeToPath:@"Library/Preferences/.GlobalPreferences.plist"
-    error:error
-    amendWithBlock:^(NSMutableDictionary *dictionary) {
-      [dictionary addEntriesFromDictionary:localizationOverride.defaultsDictionary];
-    }];
+  return [self modifyDefaultsInDomain:nil defaults:localizationOverride.defaultsDictionary error:error];
 }
 
 @end
