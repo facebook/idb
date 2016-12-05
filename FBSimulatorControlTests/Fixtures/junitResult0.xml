@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <testsuites>
-    <testsuite tests="9" failures="5" errors="0" time="0.00" name="All tests">
-        <testsuite tests="9" failures="5" errors="0" time="0.00" name="iOSUnitTestFixture.xctest">
-            <testsuite tests="9" failures="5" errors="0" time="0.00" name="iOSUnitTestFixtureTests">
+    <testsuite tests="10" failures="5" errors="0" time="0.00" name="All tests">
+        <testsuite tests="10" failures="5" errors="0" time="0.00" name="iOSUnitTestFixture.xctest">
+            <testsuite tests="10" failures="5" errors="0" time="0.00" name="iOSUnitTestFixtureTests">
                 <testcase classname="iOSUnitTestFixtureTests" name="testHostProcessIsMobileSafari" time="0.00">
-                    <failure type="Failure" message="(([NSProcessInfo.processInfo.processName isEqualToString:@&quot;MobileSafari&quot;]) is true) failed">/buildroot/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:50</failure>
+                    <failure type="Failure" message="(([NSProcessInfo.processInfo.processName isEqualToString:@&quot;MobileSafari&quot;]) is true) failed">/Users/lawrencelomax/fbsource/fbobjc/EndToEndTests/FBSimulatorControl/src/Fixtures/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:50</failure>
                 </testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testHostProcessIsXctest" time="0.00">
-                    <failure type="Failure" message="(([NSProcessInfo.processInfo.processName isEqualToString:@&quot;xctest&quot;]) is true) failed">/buildroot/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:45</failure>
+                    <failure type="Failure" message="(([NSProcessInfo.processInfo.processName isEqualToString:@&quot;xctest&quot;]) is true) failed">/Users/lawrencelomax/fbsource/fbobjc/EndToEndTests/FBSimulatorControl/src/Fixtures/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:45</failure>
                 </testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testIsRunningInIOSApp" time="0.00"></testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testIsRunningInMacOSXApp" time="0.00">
-                    <failure type="Failure" message="(([NSClassFromString(@&quot;NSApplication&quot;) performSelector:@selector(sharedApplication)]) != nil) failed">/buildroot/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:40</failure>
+                    <failure type="Failure" message="(([NSClassFromString(@&quot;NSApplication&quot;) performSelector:@selector(sharedApplication)]) != nil) failed">/Users/lawrencelomax/fbsource/fbobjc/EndToEndTests/FBSimulatorControl/src/Fixtures/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:40</failure>
                 </testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testIsRunningOnIOS" time="0.00"></testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testIsRunningOnMacOSX" time="0.00">
-                    <failure type="Failure" message="((NSClassFromString(@&quot;NSView&quot;)) != nil) failed">/buildroot/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:35</failure>
+                    <failure type="Failure" message="((NSClassFromString(@&quot;NSView&quot;)) != nil) failed">/Users/lawrencelomax/fbsource/fbobjc/EndToEndTests/FBSimulatorControl/src/Fixtures/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:35</failure>
                 </testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testPossibleCrashingOfHostProcess" time="0.00"></testcase>
+                <testcase classname="iOSUnitTestFixtureTests" name="testPossibleStallingOfHostProcess" time="0.00"></testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testWillAlwaysFail" time="0.00">
-                    <failure type="Failure" message="failed - This always fails">/buildroot/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:68</failure>
+                    <failure type="Failure" message="failed - This always fails">/Users/lawrencelomax/fbsource/fbobjc/EndToEndTests/FBSimulatorControl/src/Fixtures/Source/iOSUnitTestFixture/iOSUnitTestFixtureTests.m:76</failure>
                 </testcase>
                 <testcase classname="iOSUnitTestFixtureTests" name="testWillAlwaysPass" time="0.00"></testcase>
             </testsuite>
