@@ -47,7 +47,7 @@
     startTestWithLaunchConfiguration:self.testLaunch reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
@@ -64,7 +64,7 @@
     startTestWithLaunchConfiguration:self.testLaunch reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
@@ -77,7 +77,7 @@
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
 
   [self assertInteractionSuccessful:interaction];
-  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testWillAlwaysPass"]
+  [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
