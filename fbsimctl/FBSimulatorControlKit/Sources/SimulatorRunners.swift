@@ -84,6 +84,10 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
+    case .keyboardOverride:
+      return SimulatorInteractionRunner(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) { interaction in
+        interaction.setupKeyboard()
+      }
     case .launchAgent(let launch):
       return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
         interaction.launchAgent(launch)

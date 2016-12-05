@@ -460,6 +460,7 @@ extension Action : Parsable {
         self.diagnoseParser,
         self.eraseParser,
         self.installParser,
+        self.keyboardOverrideParser,
         self.launchAgentParser,
         self.launchAppParser,
         self.launchXCTestParser,
@@ -628,6 +629,10 @@ extension Action : Parsable {
     return Parser<String>
       .ofCommandWithArg(EventName.Install.rawValue, Parser<String>.ofAny)
       .fmap { Action.install($0) }
+  }
+
+  static var keyboardOverrideParser: Parser<Action> {
+    return Parser.ofString(EventName.KeyboardOverride.rawValue, Action.keyboardOverride)
   }
 
   static var relaunchParser: Parser<Action> {

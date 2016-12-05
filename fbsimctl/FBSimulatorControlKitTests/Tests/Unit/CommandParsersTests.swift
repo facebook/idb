@@ -187,6 +187,7 @@ let validActions: [([String], Action)] = [
   (["diagnose"], Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["erase"], Action.erase),
   (["install", Fixtures.application.path], Action.install(Fixtures.application.path)),
+  (["keyboard_override"], Action.keyboardOverride),
   (["launch", "--stderr", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.launchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], options: .writeStderr))),
   (["launch", "com.foo.bar"], Action.launchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], options: FBProcessLaunchOptions()))),
   (["launch", "--stderr", Fixtures.application.path], Action.launchApp(FBApplicationLaunchConfiguration(bundleID: Fixtures.application.bundleID, bundleName: nil, arguments: [], environment: [:], options: .writeStderr))),
