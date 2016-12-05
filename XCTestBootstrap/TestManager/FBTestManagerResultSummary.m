@@ -13,13 +13,17 @@
 
 + (instancetype)fromTestSuite:(NSString *)testSuite finishingAt:(NSString *)finishTime runCount:(NSNumber *)runCount failures:(NSNumber *)failuresCount unexpected:(NSNumber *)unexpectedFailureCount testDuration:(NSNumber *)testDuration totalDuration:(NSNumber *)totalDuration
 {
-  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-  dateFormatter.dateFormat = @"YYYY-MM-DD";
-  dateFormatter.lenient = YES;
+  NSParameterAssert(testSuite);
+  NSParameterAssert(finishTime);
+  NSParameterAssert(runCount);
+  NSParameterAssert(failuresCount);
+  NSParameterAssert(unexpectedFailureCount);
+  NSParameterAssert(testDuration);
+  NSParameterAssert(totalDuration);
 
   return [[FBTestManagerResultSummary alloc]
     initWithTestSuite:testSuite
-    finishTime:[dateFormatter dateFromString:finishTime]
+    finishTime:[[self dateFormatter] dateFromString:finishTime]
     runCount:runCount.integerValue
     failureCount:failuresCount.integerValue
     unexpected:unexpectedFailureCount.integerValue
@@ -80,5 +84,14 @@
     return @"Failed";
   }
 }
+
++ (NSDateFormatter *)dateFormatter
+{
+  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+  dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss Z";
+  dateFormatter.lenient = YES;
+  return dateFormatter;
+}
+
 
 @end
