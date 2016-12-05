@@ -124,24 +124,43 @@
   // Construct a pipe to stdout and read asynchronously from it.
   // Synchronize on the mutable string.
   NSPipe *stdOutPipe = [NSPipe pipe];
+  FBAccumilatingFileDataConsumer *consumer = [FBAccumilatingFileDataConsumer new];
+  FBFileReader *reader = [FBFileReader readerWithFileHandle:stdOutPipe.fileHandleForReading consumer:consumer];
   NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:stdOutPipe.fileHandleForWriting stdErr:nil];
 
+  // Start reading the pipe
   NSError *innerError = nil;
+  if (![reader startReadingWithError:&innerError]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not start reading stdout of %@", agentLaunch]
+      causedBy:innerError]
+      fail:error];
+  }
+
+  // The Process launches and terminates synchronously
   pid_t processIdentifier = [[FBAgentLaunchStrategy withSimulator:self.simulator]
     spawnShortRunningWithPath:agentLaunch.agentBinary.path
     options:options
     timeout:FBControlCoreGlobalConfiguration.fastTimeout
     error:&innerError];
+
+  // Stop reading the pipe
+  if (![reader stopReadingWithError:&innerError]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not stop reading stdout of %@", agentLaunch]
+      causedBy:innerError]
+      fail:error];
+  }
+
+  // Fail on non-zero pid.
   if (processIdentifier <= 0) {
     return [[[FBSimulatorError
       describeFormat:@"Running %@ %@ failed", agentLaunch.agentBinary.name, [FBCollectionInformation oneLineDescriptionFromArray:agentLaunch.arguments]]
       causedBy:innerError]
       fail:error];
   }
-  [stdOutPipe.fileHandleForWriting closeFile];
-  NSData *data = [stdOutPipe.fileHandleForReading readDataToEndOfFile];
-  NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-  return [output copy];
+
+  return [[NSString alloc] initWithData:consumer.data encoding:NSUTF8StringEncoding];
 }
 
 #pragma mark Private

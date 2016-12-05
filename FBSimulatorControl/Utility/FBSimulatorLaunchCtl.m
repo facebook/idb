@@ -198,6 +198,8 @@
     arguments:arguments
     environment:@{}
     options:0];
+
+  // Spawn and get the output
   return [[FBAgentLaunchStrategy
     withSimulator:self.simulator]
     launchConsumingStdout:launchConfiguration error:error];
