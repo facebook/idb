@@ -35,7 +35,7 @@
 
 + (NSString *)sampleXCTestRunPath
 {
-  return [[NSBundle bundleForClass:self] pathForResource:@"Sample" ofType:@"xctestrun"];
+  return [[NSBundle bundleForClass:self] pathForResource:@"Sample_iphonesimulator10.1-i386" ofType:@"xctestrun"];
 }
 
 + (NSString *)emptyXCTestRunPath

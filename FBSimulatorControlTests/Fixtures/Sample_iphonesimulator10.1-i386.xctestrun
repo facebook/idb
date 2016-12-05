@@ -6,37 +6,41 @@
 	<dict>
 		<key>BundleIdentifiersForCrashReportEmphasis</key>
 		<array>
-			<string>com.facebook.SampleTests</string>
 			<string>com.facebook.Sample</string>
+			<string>com.facebook.SampleTests</string>
 			<string>com.facebook.SampleUITests</string>
 		</array>
 		<key>CommandLineArguments</key>
 		<array/>
 		<key>DependentProductPaths</key>
 		<array>
-			<string>__TESTROOT__/Debug-iphonesimulator/Sample.app/PlugIns/SampleTests.xctest</string>
-			<string>__TESTROOT__/Debug-iphonesimulator/Sample.app</string>
-			<string>__TESTROOT__/Debug-iphonesimulator/SampleUITests-Runner.app/PlugIns/SampleUITests.xctest</string>
+			<string>__TESTROOT__/Sample.app</string>
+			<string>__TESTROOT__/Sample.app/PlugIns/SampleTests.xctest</string>
+			<string>__TESTROOT__/SampleUITests-Runner.app/PlugIns/SampleUITests.xctest</string>
 		</array>
 		<key>EnvironmentVariables</key>
 		<dict>
 			<key>DYLD_FRAMEWORK_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>DYLD_LIBRARY_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>OS_ACTIVITY_DT_MODE</key>
 			<string>YES</string>
 			<key>__XCODE_BUILT_PRODUCTS_DIR_PATHS</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>__XPC_DYLD_FRAMEWORK_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>__XPC_DYLD_LIBRARY_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 		</dict>
 		<key>IsAppHostedTestBundle</key>
 		<true/>
 		<key>ProductModuleName</key>
 		<string>SampleTests</string>
+		<key>SkipTestIdentifiers</key>
+		<array>
+			<string>SampleTests/testSkipped</string>
+		</array>
 		<key>TestBundlePath</key>
 		<string>__TESTHOST__/PlugIns/SampleTests.xctest</string>
 		<key>TestHostBundleIdentifier</key>
@@ -48,11 +52,11 @@
 			<key>DTX_CONNECTION_SERVICES_PATH</key>
 			<string>__PLATFORMS__/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Developer/Library/PrivateFrameworks/DTXConnectionServices.framework</string>
 			<key>DYLD_FRAMEWORK_PATH</key>
-			<string>__TESTROOT__/Debug-iphonesimulator:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
+			<string>__TESTROOT__:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
 			<key>DYLD_INSERT_LIBRARIES</key>
 			<string>__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework/IDEBundleInjection</string>
 			<key>DYLD_LIBRARY_PATH</key>
-			<string>__TESTROOT__/Debug-iphonesimulator:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
+			<string>__TESTROOT__:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
 			<key>XCInjectBundleInto</key>
 			<string>__TESTHOST__/Sample</string>
 			<key>XCODE_DBG_XPC_EXCLUSIONS</key>
@@ -65,32 +69,32 @@
 	<dict>
 		<key>BundleIdentifiersForCrashReportEmphasis</key>
 		<array>
-			<string>com.facebook.SampleTests</string>
 			<string>com.facebook.Sample</string>
+			<string>com.facebook.SampleTests</string>
 			<string>com.facebook.SampleUITests</string>
 		</array>
 		<key>CommandLineArguments</key>
 		<array/>
 		<key>DependentProductPaths</key>
 		<array>
-			<string>__TESTROOT__/Debug-iphonesimulator/Sample.app/PlugIns/SampleTests.xctest</string>
-			<string>__TESTROOT__/Debug-iphonesimulator/Sample.app</string>
-			<string>__TESTROOT__/Debug-iphonesimulator/SampleUITests-Runner.app/PlugIns/SampleUITests.xctest</string>
+			<string>__TESTROOT__/Sample.app</string>
+			<string>__TESTROOT__/Sample.app/PlugIns/SampleTests.xctest</string>
+			<string>__TESTROOT__/SampleUITests-Runner.app/PlugIns/SampleUITests.xctest</string>
 		</array>
 		<key>EnvironmentVariables</key>
 		<dict>
 			<key>DYLD_FRAMEWORK_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>DYLD_LIBRARY_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>OS_ACTIVITY_DT_MODE</key>
 			<string>YES</string>
 			<key>__XCODE_BUILT_PRODUCTS_DIR_PATHS</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>__XPC_DYLD_FRAMEWORK_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 			<key>__XPC_DYLD_LIBRARY_PATH</key>
-			<string>/Users/plu/Desktop/Sample/Products/Debug-iphonesimulator</string>
+			<string>/Users/joplunien/Development/FBSimulatorControl/Fixtures/Source/Sample</string>
 		</dict>
 		<key>IsUITestBundle</key>
 		<true/>
@@ -107,9 +111,9 @@
 			<key>DTX_CONNECTION_SERVICES_PATH</key>
 			<string>__PLATFORMS__/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Developer/Library/PrivateFrameworks/DTXConnectionServices.framework</string>
 			<key>DYLD_FRAMEWORK_PATH</key>
-			<string>__TESTROOT__/Debug-iphonesimulator:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
+			<string>__TESTROOT__:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
 			<key>DYLD_LIBRARY_PATH</key>
-			<string>__TESTROOT__/Debug-iphonesimulator:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
+			<string>__TESTROOT__:__PLATFORMS__/iPhoneSimulator.platform/Developer/Library/Frameworks</string>
 			<key>XCODE_DBG_XPC_EXCLUSIONS</key>
 			<string>com.apple.dt.xctestSymbolicator</string>
 		</dict>
@@ -117,10 +121,6 @@
 		<array/>
 		<key>UITargetAppPath</key>
 		<string>__TESTROOT__/Sample.app</string>
-		<key>SkipTestIdentifiers</key>
-		<array>
-			<string>testSkipped</string>
-		</array>
 	</dict>
 </dict>
 </plist>

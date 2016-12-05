@@ -47,7 +47,7 @@
     XCTAssertNil(testLaunchConfiguration.targetApplicationPath);
     XCTAssertNil(testLaunchConfiguration.targetApplicationBundleID);
     XCTAssertGreaterThan(testLaunchConfiguration.testEnvironment.count, 0u);
-    XCTAssertEqualObjects(testLaunchConfiguration.testsToSkip, [NSSet set]);
+    XCTAssertEqualObjects(testLaunchConfiguration.testsToSkip, [NSSet setWithArray:@[@"SampleTests/testSkipped"]]);
 
     FBApplicationLaunchConfiguration *applicationLaunchConfiguration = testLaunchConfiguration.applicationLaunchConfiguration;
     XCTAssertEqualObjects(applicationLaunchConfiguration.bundleID, @"com.facebook.Sample");
@@ -68,7 +68,7 @@
     XCTAssertEqualObjects(testLaunchConfiguration.targetApplicationPath.lastPathComponent, @"Sample.app");
     XCTAssertEqualObjects(testLaunchConfiguration.targetApplicationBundleID, @"com.facebook.Sample");
     XCTAssertGreaterThan(testLaunchConfiguration.testEnvironment.count, 0u);
-    XCTAssertEqualObjects(testLaunchConfiguration.testsToSkip, ([NSSet setWithArray:@[@"testSkipped"]]));
+    XCTAssertEqualObjects(testLaunchConfiguration.testsToSkip, ([NSSet set]));
 
     FBApplicationLaunchConfiguration *applicationLaunchConfiguration = testLaunchConfiguration.applicationLaunchConfiguration;
     XCTAssertEqualObjects(applicationLaunchConfiguration.bundleID, @"com.apple.test.SampleUITests-Runner");
