@@ -37,7 +37,7 @@
   return [self interactWithShutdownSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     return [[FBLocalizationDefaultsModificationStrategy
       strategyWithSimulator:simulator]
-      overideLocalization:localizationOverride error:error];
+      overrideLocalization:localizationOverride error:error];
   }];
 }
 
