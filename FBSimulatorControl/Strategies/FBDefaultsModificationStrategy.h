@@ -27,6 +27,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
+/**
+ Modifies the defaults in a given domain or path.
+
+ @param domainOrPath the domain or path to modify.
+ @param defaults key value pair of defaults to set.
+ @param error an error out for any error that occurs.
+ @return YES if succesful, NO otherwise.
+ */
+- (BOOL)modifyDefaultsInDomainOrPath:(nullable NSString *)domainOrPath defaults:(NSDictionary<NSString *, id> *)defaults error:(NSError **)error;
+
 @end
 
 /**
