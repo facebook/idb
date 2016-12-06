@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if succesful, NO otherwise.
  */
-- (BOOL)overideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error;
+- (BOOL)overrideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error;
 
 @end
 

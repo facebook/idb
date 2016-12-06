@@ -128,7 +128,7 @@
 
 @implementation FBLocalizationDefaultsModificationStrategy
 
-- (BOOL)overideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error
+- (BOOL)overrideLocalization:(FBLocalizationOverride *)localizationOverride error:(NSError **)error
 {
   return [self modifyDefaultsInDomainOrPath:nil defaults:localizationOverride.defaultsDictionary error:error];
 }
