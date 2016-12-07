@@ -74,6 +74,16 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return self.amDevice.deviceName;
 }
 
+- (NSString *)auxillaryDirectory
+{
+  return [[[[[NSFileManager.defaultManager
+    URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask]
+    firstObject]
+    URLByAppendingPathComponent:@"FBDeviceControl"]
+    URLByAppendingPathComponent:self.udid]
+    absoluteString];
+}
+
 - (FBSimulatorState)state
 {
   return FBSimulatorStateUnknown;

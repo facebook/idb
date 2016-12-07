@@ -17,6 +17,8 @@
 
 @property (nonatomic, copy, readwrite) NSString *name;
 
+@property (nonatomic, copy, readwrite) NSString *auxillaryDirectory;
+
 @property (nonatomic, assign, readwrite) FBSimulatorState state;
 
 @property (nonatomic, assign, readwrite) FBiOSTargetType targetType;

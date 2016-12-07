@@ -42,6 +42,8 @@
 
 @implementation FBSimulator
 
+@synthesize auxillaryDirectory = _auxillaryDirectory;
+
 #pragma mark Lifecycle
 
 + (instancetype)fromSimDevice:(SimDevice *)device configuration:(nullable FBSimulatorConfiguration *)configuration launchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess set:(FBSimulatorSet *)set

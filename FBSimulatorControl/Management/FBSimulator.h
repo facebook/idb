@@ -93,11 +93,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly, nullable) NSString *dataDirectory;
 
 /**
- The Directory that FBSimulatorControl uses to store auxillary files.
- */
-@property (nonatomic, copy, readonly, nullable) NSString *auxillaryDirectory;
-
-/**
  The FBSimulatorConfiguration representing this Simulator.
  */
 @property (nonatomic, copy, readonly, nullable) FBSimulatorConfiguration *configuration;
