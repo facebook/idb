@@ -116,13 +116,14 @@ struct SimulatorActionRunner : Runner {
         interaction.open(url)
       }
     case .record(let start):
-      return SimulatorInteractionRunner(reporter, EventName.Record, start) { interaction in
-        if (start) {
-          interaction.startRecordingVideo()
-        } else {
-          interaction.stopRecordingVideo()
-        }
-      }
+      let command = FBSimulatorVideoRecordingCommands.withSimulator(simulator)
+      let interaction = start ? FBCommandInteractions.startRecording(withCommand: command) : FBCommandInteractions.stopRecording(withCommand: command)
+      return iOSTargetRunner(
+        reporter: reporter,
+        name: EventName.Record,
+        subject: start,
+        interaction: interaction
+      )
     case .relaunch(let appLaunch):
       return SimulatorInteractionRunner(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) { interaction in
         interaction.launchOrRelaunchApplication(appLaunch)

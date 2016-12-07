@@ -12,6 +12,7 @@
 #import <FBControlCore/FBInteraction.h>
 
 @protocol FBApplicationCommands;
+@protocol FBVideoRecordingCommands;
 @class FBApplicationLaunchConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -55,6 +56,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return an Interaction for further invocation.
  */
 + (id<FBInteraction>)killApplicationWithBundleID:(NSString *)bundleID command:(id<FBApplicationCommands>)command;
+
+/**
+ Starts the Recording of a video.
+
+ @Param command the command to use.
+ @return an Interaction for further invocation.
+ */
++ (id<FBInteraction>)startRecordingWithCommand:(id<FBVideoRecordingCommands>)command;
+
+/**
+ Stops the Recording of a video.
+
+ @Param command the command to use.
+ @return an Interaction for further invocation.
+ */
++ (id<FBInteraction>)stopRecordingWithCommand:(id<FBVideoRecordingCommands>)command;
 
 @end
 

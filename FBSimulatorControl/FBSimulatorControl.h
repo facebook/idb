@@ -75,3 +75,4 @@
 #import <FBSimulatorControl/FBSimulatorSubprocessTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorTestRunStrategy.h>
+#import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>

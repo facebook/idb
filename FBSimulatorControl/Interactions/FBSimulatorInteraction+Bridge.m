@@ -9,8 +9,9 @@
 
 #import "FBSimulatorInteraction+Bridge.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBFramebuffer.h"
-#import "FBFramebufferVideo.h"
 #import "FBSimulator.h"
 #import "FBSimulator+Connection.h"
 #import "FBSimulator+Framebuffer.h"
@@ -18,23 +19,20 @@
 #import "FBSimulatorBridge.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorInteraction+Private.h"
+#import "FBSimulatorVideoRecordingCommands.h"
 
 @implementation FBSimulatorInteraction (Bridge)
 
 - (instancetype)startRecordingVideo
 {
-  return [self interactWithVideo:^ BOOL (NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup) {
-    [video startRecording:waitGroup];
-    return YES;
-  }];
+  id<FBVideoRecordingCommands> commands = [FBSimulatorVideoRecordingCommands withSimulator:self.simulator];
+  return [self chainNext:[FBCommandInteractions startRecordingWithCommand:commands]];
 }
 
 - (instancetype)stopRecordingVideo
 {
-  return [self interactWithVideo:^ BOOL (NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup) {
-    [video stopRecording:waitGroup];
-    return YES;
-  }];
+  id<FBVideoRecordingCommands> commands = [FBSimulatorVideoRecordingCommands withSimulator:self.simulator];
+  return [self chainNext:[FBCommandInteractions stopRecordingWithCommand:commands]];
 }
 
 - (instancetype)tap:(double)x y:(double)y
@@ -67,36 +65,6 @@
         failBool:error];
     }
     return block(error, simulator, bridge);
-  }];
-}
-
-- (instancetype)interactWithVideo:(BOOL (^)(NSError **error, FBSimulator *simulator, FBFramebufferVideo *video, dispatch_group_t waitGroup))block
-{
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    NSError *innerError = nil;
-    FBFramebuffer *framebuffer = [simulator framebufferWithError:&innerError];
-    if (!framebuffer) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-    FBFramebufferVideo *video = framebuffer.video;
-    if (!video) {
-      return [[[FBSimulatorError
-        describe:@"Simulator Does not have a FBFramebufferVideo instance"]
-        inSimulator:simulator]
-        failBool:error];
-    }
-    dispatch_group_t waitGroup = dispatch_group_create();
-    if (!block(error, simulator, video, waitGroup)) {
-      return NO;
-    }
-    long fail = dispatch_group_wait(waitGroup, FBControlCoreGlobalConfiguration.regularDispatchTimeout);
-    if (fail) {
-      return [[[FBSimulatorError
-        describeFormat:@"Timeout waiting for video interaction to complete in %f seconds", FBControlCoreGlobalConfiguration.regularTimeout]
-        inSimulator:simulator]
-        failBool:error];
-    }
-    return YES;
   }];
 }
 

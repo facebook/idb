@@ -10,6 +10,7 @@
 #import "FBCommandInteractions.h"
 
 #import "FBApplicationCommands.h"
+#import "FBVideoRecordingCommands.h"
 
 @implementation FBCommandInteractions
 
@@ -38,6 +39,20 @@
 {
   return [FBInteraction interact:^ BOOL (NSError **error) {
     return [command killApplicationWithBundleID:bundleID error:error];
+  }];
+}
+
++ (id<FBInteraction>)startRecordingWithCommand:(id<FBVideoRecordingCommands>)command
+{
+  return [FBInteraction interact:^ BOOL (NSError **error) {
+    return [command startRecordingWithError:error];
+  }];
+}
+
++ (id<FBInteraction>)stopRecordingWithCommand:(id<FBVideoRecordingCommands>)command
+{
+  return [FBInteraction interact:^ BOOL (NSError **error) {
+    return [command stopRecordingWithError:error];
   }];
 }
 
