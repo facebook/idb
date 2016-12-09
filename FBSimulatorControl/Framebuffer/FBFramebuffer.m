@@ -89,11 +89,11 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
     [sinks addObject:[FBFramebufferDebugWindow withName:@"Simulator"]];
   }
 
-  FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.diagnostics.video];
+  FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.simulatorDiagnostics.video];
   FBFramebufferVideo *video = [FBFramebufferVideo withConfiguration:videoConfiguration logger:logger eventSink:simulator.eventSink];
   [sinks addObject:video];
 
-  [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.diagnostics.screenshot eventSink:simulator.eventSink]];
+  [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.simulatorDiagnostics.screenshot eventSink:simulator.eventSink]];
 
   id<FBFramebufferDelegate> delegate = [FBFramebufferCompositeDelegate withDelegates:[sinks copy]];
 

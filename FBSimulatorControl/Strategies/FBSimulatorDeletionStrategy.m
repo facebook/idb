@@ -69,7 +69,7 @@
 
   for (FBSimulator *simulator in simulators) {
     // Get the Log Directory ahead of time as the Simulator will dissapear on deletion.
-    NSString *coreSimulatorLogsDirectory = simulator.diagnostics.coreSimulatorLogsDirectory;
+    NSString *coreSimulatorLogsDirectory = simulator.simulatorDiagnostics.coreSimulatorLogsDirectory;
 
     // Kill the Simulators before deleting them.
     [self.logger logFormat:@"Killing Simulator, in preparation for deletion %@", simulator];

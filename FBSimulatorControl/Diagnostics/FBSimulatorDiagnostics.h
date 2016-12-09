@@ -51,7 +51,7 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  - This means that values do not have to be checked before storing in collections
  - Missing content can be inserted into the FBDiagnostic instances, whilst retaining the original metadata.
  */
-@interface FBSimulatorDiagnostics : NSObject <FBSimulatorEventSink>
+@interface FBSimulatorDiagnostics : FBiOSTargetDiagnostics <FBSimulatorEventSink>
 
 /**
  Creates and returns a `FBSimulatorDiagnostics` instance.
@@ -94,11 +94,6 @@ extern NSString *const FBSimulatorLogNameScreenshot;
 - (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunchWithProcessIdentifier:(pid_t)processIdentifier;
 
 #pragma mark Standard Diagnostics
-
-/**
- The FBDiagnostic Instance from which all other logs are derived.
- */
-- (FBDiagnostic *)base;
 
 /**
  The syslog of the Simulator.
@@ -157,22 +152,6 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  @return an Dictionary of all the successfully found diagnostics.
  */
 - (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback;
-
-/**
- All of the FBDiagnostic instances for the Simulator.
- Prunes empty logs.
-
- @return an NSArray<FBDiagnostic> of all the Diagnostics associated with the Simulator.
- */
-- (NSArray<FBDiagnostic *> *)allDiagnostics;
-
-/**
- All of the FBDiagnostic instances for the Simulator, bucketed by diagnostic name.
- Prunes empty and unnamed logs
-
- @return a dictionary mapping diagnostic names to diagnostics.
- */
-- (NSDictionary<NSString *, FBDiagnostic *> *)namedDiagnostics;
 
 @end
 

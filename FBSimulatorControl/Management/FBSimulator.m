@@ -91,7 +91,7 @@
   _historyGenerator = historyGenerator;
   _eventRelay = relay;
   _mutableSink = mutableSink;
-  _diagnostics = diagnosticsSink;
+  _simulatorDiagnostics = diagnosticsSink;
   _resourceSink = resourceSink;
 
   return self;
@@ -127,6 +127,11 @@
 - (id<FBControlCoreConfiguration_OS>)osConfiguration
 {
   return self.configuration.os;
+}
+
+- (FBiOSTargetDiagnostics *)diagnostics
+{
+  return self.simulatorDiagnostics;
 }
 
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target

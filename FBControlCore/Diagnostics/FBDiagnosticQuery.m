@@ -398,13 +398,6 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
   return [object isKindOfClass:self.class];
 }
 
-#pragma mark Public
-
-- (nonnull NSArray<FBDiagnostic *> *)perform:(nonnull FBSimulatorDiagnostics *)diagnostics
-{
-  return @[];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone

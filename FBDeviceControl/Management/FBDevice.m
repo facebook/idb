@@ -14,6 +14,8 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBiOSDeviceOperator.h"
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
@@ -112,6 +114,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 - (id<FBControlCoreConfiguration_OS>)osConfiguration
 {
   return self.amDevice.osConfiguration;
+}
+
+- (FBiOSTargetDiagnostics *)diagnostics
+{
+  return [[FBiOSTargetDiagnostics alloc] initWithStorageDirectory:self.auxillaryDirectory];
 }
 
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target

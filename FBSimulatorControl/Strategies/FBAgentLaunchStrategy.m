@@ -58,7 +58,7 @@
 
   BOOL connectStdout = (agentLaunch.options & FBProcessLaunchOptionsWriteStdout) == FBProcessLaunchOptionsWriteStdout;
   if (connectStdout) {
-    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.diagnostics stdOut:agentLaunch]];
+    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.simulatorDiagnostics stdOut:agentLaunch]];
     NSString *path = [builder createPath];
 
     if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
@@ -78,7 +78,7 @@
 
   BOOL connectStderr = (agentLaunch.options & FBProcessLaunchOptionsWriteStderr) == FBProcessLaunchOptionsWriteStderr;
   if (connectStderr) {
-    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.diagnostics stdErr:agentLaunch]];
+    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.simulatorDiagnostics stdErr:agentLaunch]];
     NSString *path = [builder createPath];
 
     if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {

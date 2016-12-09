@@ -92,7 +92,7 @@
   BOOL writeStdout = (appLaunch.options & FBProcessLaunchOptionsWriteStdout) == FBProcessLaunchOptionsWriteStdout;
   FBDiagnostic *stdOutDiagnostic = nil;
   if (writeStdout) {
-    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.diagnostics stdOut:appLaunch]];
+    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.simulatorDiagnostics stdOut:appLaunch]];
     NSString *path = [builder createPath];
     if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
       return [[FBSimulatorError
@@ -106,7 +106,7 @@
   BOOL writeStderr = (appLaunch.options & FBProcessLaunchOptionsWriteStderr) == FBProcessLaunchOptionsWriteStderr;
   FBDiagnostic *stdErrDiagnostic = nil;
   if (writeStderr) {
-    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.diagnostics stdErr:appLaunch]];
+    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.simulatorDiagnostics stdErr:appLaunch]];
     NSString *path = [builder createPath];
     if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
       return [[FBSimulatorError

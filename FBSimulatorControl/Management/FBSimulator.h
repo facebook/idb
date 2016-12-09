@@ -105,7 +105,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBSimulatorDiagnostics instance for fetching diagnostics for the Simulator.
  */
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *diagnostics;
+@property (nonatomic, strong, readonly, nonnull) FBSimulatorDiagnostics *simulatorDiagnostics;
 
 @end
 
