@@ -21,7 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)strategyWithDevice:(FBDevice *)device
                       testHostPath:(nullable NSString *)testHostPath
                     testBundlePath:(nullable NSString *)testBundlePath
-                       withTimeout:(NSTimeInterval)timeout;
+                       withTimeout:(NSTimeInterval)timeout
+                     withArguments:(NSArray<NSString *> *)arguments;
 
 - (BOOL)startWithError:(NSError **)error;
 

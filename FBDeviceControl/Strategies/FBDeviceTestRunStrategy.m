@@ -16,6 +16,7 @@
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 @property (nonatomic, copy, readonly) NSString *filePath;
 @property (nonatomic, assign, readonly) NSTimeInterval timeout;
+@property (nonatomic, copy, readonly) NSArray<NSString *> *arguments;
 
 @end
 
@@ -25,14 +26,16 @@
                       testHostPath:(nullable NSString *)testHostPath
                     testBundlePath:(nullable NSString *)testBundlePath
                        withTimeout:(NSTimeInterval)timeout
+                     withArguments:(NSArray<NSString *> *)arguments
 {
-  return [[self alloc] initWithDevice:device testHostPath:testHostPath testBundlePath:testBundlePath withTimeout:timeout];
+  return [[self alloc] initWithDevice:device testHostPath:testHostPath testBundlePath:testBundlePath withTimeout:timeout withArguments:arguments];
 }
 
 - (instancetype)initWithDevice:(FBDevice *)device
                   testHostPath:(nullable NSString *)testHostPath
                 testBundlePath:(nullable NSString *)testBundlePath
                    withTimeout:(NSTimeInterval)timeout
+                 withArguments:(NSArray<NSString *> *)arguments
 {
   if (timeout <= 0) {
     timeout = FBControlCoreGlobalConfiguration.slowTimeout;
@@ -42,6 +45,7 @@
   _testHostPath = testHostPath;
   _testBundlePath = testBundlePath;
   _timeout = timeout;
+  _arguments = arguments;
 
   return self;
 }
@@ -53,7 +57,8 @@
         @"TestHostPath" : self.testHostPath,
         @"TestBundlePath" : self.testBundlePath,
         @"UseUITargetAppProvidedByTests" : @YES,
-        @"IsUITestBundle" : @YES
+        @"IsUITestBundle" : @YES,
+        @"CommandLineArguments": self.arguments,
     }
   };
 }
