@@ -90,13 +90,13 @@
   [arguments addObject: @"-destination"];
   [arguments addObject: [NSString stringWithFormat:@"id=%@", self.device.udid]];
 
+  NSDictionary<NSString *, NSString *> *env = [[NSProcessInfo processInfo] environment];
 
-  FBTaskBuilder *taskBuilder = [FBTaskBuilder withLaunchPath:@"/usr/bin/xcrun" arguments: arguments];
-
-  taskBuilder = [taskBuilder withStdOutToLogger:self.device.logger];
-  taskBuilder = [taskBuilder withStdErrToLogger:self.device.logger];
-
-  FBTask *task = [taskBuilder build];
+  FBTask *task = [[[[[FBTaskBuilder withLaunchPath:@"/usr/bin/xcrun" arguments: arguments]
+                     withEnvironment:env]
+                    withStdOutToLogger:self.device.logger]
+                   withStdErrToLogger:self.device.logger]
+                  build];
 
   [task startSynchronouslyWithTimeout:self.timeout];
   return task;
