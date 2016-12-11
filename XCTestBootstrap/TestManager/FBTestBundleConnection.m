@@ -101,7 +101,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   _deviceOperator = deviceOperator;
   _interface = interface;
   _queue = queue;
-  _logger = logger;
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
 
   _state = FBTestBundleConnectionStateNotConnected;
   _lastCrashCheckDate = NSDate.distantPast;

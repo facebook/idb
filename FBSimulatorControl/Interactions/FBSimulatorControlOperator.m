@@ -37,6 +37,11 @@
   return operator;
 }
 
+- (NSString *)udid
+{
+  return self.simulator.udid;
+}
+
 #pragma mark - FBApplicationCommands
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error

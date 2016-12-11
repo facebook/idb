@@ -27,6 +27,7 @@
 #import "XCTestBootstrapError.h"
 #import "FBXCTestManagerLoggingForwarder.h"
 
+#import "FBDeviceOperator.h"
 #import "FBTestReporterForwarder.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
@@ -75,7 +76,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   _context = context;
   _deviceOperator = deviceOperator;
   _processDelegate = processDelegate;
-  _logger = logger;
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
 
   _tokenToBundleIDMap = [NSMutableDictionary new];
   _requestQueue = dispatch_queue_create("com.facebook.xctestboostrap.mediator", DISPATCH_QUEUE_PRIORITY_DEFAULT);
