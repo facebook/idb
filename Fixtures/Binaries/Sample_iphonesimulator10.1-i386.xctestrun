@@ -15,8 +15,8 @@
 		<key>DependentProductPaths</key>
 		<array>
 			<string>__TESTROOT__/Sample.app</string>
-			<string>__TESTROOT__/Sample.app/PlugIns/SampleTests.xctest</string>
 			<string>__TESTROOT__/SampleUITests-Runner.app/PlugIns/SampleUITests.xctest</string>
+			<string>__TESTROOT__/Sample.app/PlugIns/SampleTests.xctest</string>
 		</array>
 		<key>EnvironmentVariables</key>
 		<dict>
@@ -78,8 +78,8 @@
 		<key>DependentProductPaths</key>
 		<array>
 			<string>__TESTROOT__/Sample.app</string>
-			<string>__TESTROOT__/Sample.app/PlugIns/SampleTests.xctest</string>
 			<string>__TESTROOT__/SampleUITests-Runner.app/PlugIns/SampleUITests.xctest</string>
+			<string>__TESTROOT__/Sample.app/PlugIns/SampleTests.xctest</string>
 		</array>
 		<key>EnvironmentVariables</key>
 		<dict>

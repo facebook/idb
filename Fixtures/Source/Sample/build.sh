@@ -21,9 +21,7 @@ rm -r *.app/PlugIns/*.xctest/_CodeSignature
 sed -i.bak 's!/Debug-iphonesimulator!!g' *.xctestrun
 rm *.bak
 
-cp -r *.app ../../../XCTestBootstrapTests/Fixtures/
-cp -r *.app ../../../FBSimulatorControlTests/Fixtures/
-cp *.xctestrun ../../../XCTestBootstrapTests/Fixtures/
-cp *.xctestrun ../../../FBSimulatorControlTests/Fixtures/
+cp -r *.app ../../Binaries/
+cp *.xctestrun ../../Binaries/
 rm -r *.app
 rm *.xctestrun
