@@ -46,6 +46,13 @@ struct iOSActionProvider {
         subject: ControlCoreSubject(appLaunch),
         interaction: FBCommandInteractions.launchApplication(appLaunch, command: target)
       )
+    case .record(let start):
+      return iOSTargetRunner(
+        reporter: reporter,
+        name: EventName.Record,
+        subject: start,
+        interaction: start ? FBCommandInteractions.startRecording(withCommand: target) : FBCommandInteractions.stopRecording(withCommand: target)
+      )
     case .terminate(let bundleID):
       return iOSTargetRunner(
         reporter: reporter,

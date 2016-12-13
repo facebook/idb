@@ -9,14 +9,20 @@
 
 #import <FBDeviceControl/FBDevice.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class DVTiOSDevice;
 @class FBAMDevice;
+@class FBDeviceVideoRecordingCommands;
 @protocol FBDeviceOperator;
 
 @interface FBDevice ()
 
 @property (nonatomic, strong, readonly) FBAMDevice *amDevice;
+@property (nonatomic, strong, readonly) FBDeviceVideoRecordingCommands *recordingCommand;
 
 - (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;
 
 @end
+
+NS_ASSUME_NONNULL_END

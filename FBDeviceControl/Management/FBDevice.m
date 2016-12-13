@@ -17,6 +17,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBiOSDeviceOperator.h"
+#import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
 
@@ -41,6 +42,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
 @implementation FBDevice
 
 @synthesize deviceOperator = _deviceOperator;
+@synthesize recordingCommand = _recordingCommand;
 @synthesize dvtDevice = _dvtDevice;
 
 #pragma mark Initializers
@@ -78,9 +80,8 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (NSString *)auxillaryDirectory
 {
-  return [[[[NSHomeDirectory()
+  return [[[NSHomeDirectory()
     stringByAppendingPathComponent:@"Library"]
-    stringByAppendingPathComponent:@"Application Support"]
     stringByAppendingPathComponent:@"FBDeviceControl"]
     stringByAppendingPathComponent:self.udid];
 }
@@ -186,10 +187,22 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
+  // Try the Recording Command first, constructing a DeviceOperator is expensive.
+  if ([self.recordingCommand respondsToSelector:selector]) {
+    return self.recordingCommand;
+  }
   if ([self.deviceOperator respondsToSelector:selector]) {
     return self.deviceOperator;
   }
-  return nil;
+  return [super forwardingTargetForSelector:selector];
+}
+
+- (FBDeviceVideoRecordingCommands *)recordingCommand
+{
+  if (!_recordingCommand) {
+    _recordingCommand = [FBDeviceVideoRecordingCommands withDevice:self];
+  }
+  return _recordingCommand;
 }
 
 @end

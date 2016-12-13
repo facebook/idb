@@ -62,4 +62,14 @@
   return NO;
 }
 
+- (BOOL)startRecordingWithError:(NSError **)error
+{
+  return NO;
+}
+
+- (BOOL)stopRecordingWithError:(NSError **)error
+{
+  return NO;
+}
+
 @end

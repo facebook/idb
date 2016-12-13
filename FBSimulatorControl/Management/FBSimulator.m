@@ -35,6 +35,7 @@
 #import "FBSimulatorPool.h"
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorSet.h"
+#import "FBSimulatorVideoRecordingCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -266,6 +267,7 @@
 {
   return @[
     [FBSimulatorApplicationCommands withSimulator:simulator],
+    [FBSimulatorVideoRecordingCommands withSimulator:simulator],
   ];
 }
 
