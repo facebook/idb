@@ -26,7 +26,8 @@
     strategyWithDevice:device
     testHostPath:testHostPath
     testBundlePath:testBundlePath
-    withTimeout:0];
+    withTimeout:0
+    withArguments: @[]];
 
   NSDictionary *properties = [strategy buildXCTestRunProperties];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];
