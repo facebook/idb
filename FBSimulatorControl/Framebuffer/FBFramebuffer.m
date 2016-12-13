@@ -326,7 +326,6 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 - (void)setIOSurface:(IOSurfaceRef)surface
 {
-  NSParameterAssert(surface);
   // The client recieves a NULL surface, before recieving the first surface.
   if (self.state == FBSimulatorFramebufferStateStarting && surface == NULL) {
     return;
