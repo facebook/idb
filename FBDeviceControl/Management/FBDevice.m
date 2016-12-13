@@ -78,12 +78,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (NSString *)auxillaryDirectory
 {
-  return [[[[[NSFileManager.defaultManager
-    URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask]
-    firstObject]
-    URLByAppendingPathComponent:@"FBDeviceControl"]
-    URLByAppendingPathComponent:self.udid]
-    absoluteString];
+  return [[[[NSHomeDirectory()
+    stringByAppendingPathComponent:@"Library"]
+    stringByAppendingPathComponent:@"Application Support"]
+    stringByAppendingPathComponent:@"FBDeviceControl"]
+    stringByAppendingPathComponent:self.udid];
 }
 
 - (FBSimulatorState)state
