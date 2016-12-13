@@ -26,7 +26,8 @@
     strategyWithDevice:device
     testHostPath:testHostPath
     testBundlePath:testBundlePath
-    withTimeout:0];
+    withTimeout:0
+    withArguments:@[@"foo", @"bar"]];
 
   NSDictionary *properties = [strategy buildXCTestRunProperties];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];
@@ -37,6 +38,7 @@
   XCTAssertEqualObjects(stubBundleProperties[@"TestBundlePath"], testBundlePath);
   XCTAssertEqualObjects(stubBundleProperties[@"UseUITargetAppProvidedByTests"], @YES);
   XCTAssertEqualObjects(stubBundleProperties[@"IsUITestBundle"], @YES);
+  XCTAssertEqualObjects(stubBundleProperties[@"CommandLineArguments"], (@[@"foo", @"bar"]));
 }
 
 @end
