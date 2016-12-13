@@ -35,11 +35,6 @@ extern NSString *const FBSimulatorLogNameCoreSimulator;
 extern NSString *const FBSimulatorLogNameSimulatorBootstrap;
 
 /**
- The Name of the Video Log
- */
-extern NSString *const FBSimulatorLogNameVideo;
-
-/**
  The Name of the Screenshot Log.
  */
 extern NSString *const FBSimulatorLogNameScreenshot;
@@ -109,11 +104,6 @@ extern NSString *const FBSimulatorLogNameScreenshot;
  The Bootstrap of the Simulator's launchd_sim.
  */
 - (FBDiagnostic *)simulatorBootstrap;
-
-/**
- A Video of the Simulator
- */
-- (FBDiagnostic *)video;
 
 /**
  A Screenshot of the Simulator.

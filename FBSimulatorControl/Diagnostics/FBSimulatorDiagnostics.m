@@ -21,7 +21,6 @@
 NSString *const FBSimulatorLogNameSyslog = @"system_log";
 NSString *const FBSimulatorLogNameCoreSimulator = @"coresimulator";
 NSString *const FBSimulatorLogNameSimulatorBootstrap = @"launchd_bootstrap";
-NSString *const FBSimulatorLogNameVideo = @"video";
 NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 @interface FBDiagnosticQuery (Simulators)
@@ -128,11 +127,9 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
 - (FBDiagnostic *)video
 {
-  return [[[[[self.baseLogBuilder
-    updateShortName:FBSimulatorLogNameVideo]
-    updateFileType:@"mp4"]
-    updatePathFromDefaultLocation]
-    updateDiagnostic:self.eventLogs[FBSimulatorLogNameVideo]]
+  return [[[self.baseLogBuilder
+    updateDiagnostic:[super video]]
+    updateDiagnostic:self.eventLogs[FBiOSTargetLogNameVideo]]
     build];
 }
 
@@ -410,13 +407,6 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
     [array addObject:[[[FBDiagnosticBuilder builder] updatePath:path] build]];
   }
   return [array filteredArrayUsingPredicate:self.predicateForHasContent];
-}
-
-+ (NSPredicate *)predicateForHasContent
-{
-  return [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
-    return diagnostic.hasLogContent;
-  }];
 }
 
 @end

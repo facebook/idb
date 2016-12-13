@@ -16,6 +16,11 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBDiagnosticQuery;
 
 /**
+ The Name of the Video Log
+ */
+extern NSString *const FBiOSTargetLogNameVideo;
+
+/**
  A Base Class for Providing Diagnostics from a target.
  */
 @interface FBiOSTargetDiagnostics : NSObject
@@ -37,6 +42,11 @@ NS_ASSUME_NONNULL_BEGIN
  The FBDiagnostic Instance from which all other diagnostics are derived.
  */
 - (FBDiagnostic *)base;
+
+/**
+ A Video of the Simulator
+ */
+- (FBDiagnostic *)video;
 
 /**
  The FBDiagnostic Builder from which all other diagnostics are derived.
@@ -66,6 +76,11 @@ NS_ASSUME_NONNULL_BEGIN
  @return an Array of Diagnostics that match
  */
 - (NSArray<FBDiagnostic *> *)perform:(FBDiagnosticQuery *)query;
+
+/**
+ A Predicate for FBDiagnostics that have content.
+ */
++ (NSPredicate *)predicateForHasContent;
 
 @end
 

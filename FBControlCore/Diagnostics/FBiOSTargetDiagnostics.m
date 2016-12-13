@@ -12,6 +12,8 @@
 #import "FBDiagnostic.h"
 #import "FBDiagnosticQuery.h"
 
+NSString *const FBiOSTargetLogNameVideo = @"video";
+
 @interface FBDiagnosticQuery (FBiOSTargetDiagnostics)
 
 - (NSArray<FBDiagnostic *> *)perform:(FBiOSTargetDiagnostics *)diagnostics;
@@ -40,6 +42,15 @@
   return [self.baseLogBuilder build];
 }
 
+- (FBDiagnostic *)video
+{
+  return [[[[self.baseLogBuilder
+    updateShortName:FBiOSTargetLogNameVideo]
+    updateFileType:@"mp4"]
+    updatePathFromDefaultLocation]
+    build];
+}
+
 - (FBDiagnosticBuilder *)baseLogBuilder
 {
   return [FBDiagnosticBuilder.builder updateStorageDirectory:self.storageDirectory];
@@ -47,7 +58,10 @@
 
 - (NSArray<FBDiagnostic *> *)allDiagnostics
 {
-  return @[];
+  NSArray<FBDiagnostic *> *diagnostics = @[
+    self.video,
+  ];
+  return [diagnostics filteredArrayUsingPredicate:FBiOSTargetDiagnostics.predicateForHasContent];
 }
 
 - (NSDictionary<NSString *, FBDiagnostic *> *)namedDiagnostics
@@ -65,6 +79,13 @@
 - (NSArray<FBDiagnostic *> *)perform:(FBDiagnosticQuery *)query
 {
   return [query perform:self];
+}
+
++ (NSPredicate *)predicateForHasContent
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBDiagnostic *diagnostic, NSDictionary *_) {
+    return diagnostic.hasLogContent;
+  }];
 }
 
 @end
