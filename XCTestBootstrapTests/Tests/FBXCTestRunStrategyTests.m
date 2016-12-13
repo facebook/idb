@@ -40,7 +40,7 @@
 - (void)testTestRunWithRequiredAttributes
 {
   id prepareTestMock = [OCMockObject niceMockForProtocol:@protocol(FBXCTestPreparationStrategy)];
-  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithDeviceOperator:[OCMockObject mockForProtocol:@protocol(FBDeviceOperator)] testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
+  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
   XCTAssertNoThrow([strategy startTestManagerWithAttributes:@[] environment:@{} error:nil]);
 }
 
@@ -48,7 +48,7 @@
 {
   OCMockObject<FBXCTestPreparationStrategy> *prepareTestMock = [OCMockObject mockForProtocol:@protocol(FBXCTestPreparationStrategy)];
   [[prepareTestMock expect] prepareTestWithDeviceOperator:[OCMArg any] error:[OCMArg anyObjectRef]];
-  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithDeviceOperator:[OCMockObject mockForProtocol:@protocol(FBDeviceOperator)] testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
+  FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
   XCTAssertNoThrow([strategy startTestManagerWithAttributes:@[] environment:@{} error:nil]);
   [prepareTestMock verify];
 }
@@ -62,7 +62,7 @@
     environment:@{@"A" : @"B"}
     options:0];
 
-  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
+  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
   [[[deviceOperatorMock expect] andReturnValue:@13] processIDWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturnValue:@YES] launchApplication:launchConfiguration error:[OCMArg anyObjectRef]];
 
@@ -84,7 +84,7 @@
 
 - (void)testTestPreparationFailure
 {
-  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
+  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
   id prepareTestMock = [OCMockObject niceMockForProtocol:@protocol(FBXCTestPreparationStrategy)];
   FBXCTestRunStrategy *strategy = [FBXCTestRunStrategy strategyWithDeviceOperator:deviceOperatorMock testPrepareStrategy:prepareTestMock reporter:nil logger:nil];
   XCTAssertFalse([strategy startTestManagerWithAttributes:@[] environment:@{} error:nil]);

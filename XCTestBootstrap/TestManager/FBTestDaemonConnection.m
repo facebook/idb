@@ -82,7 +82,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
   _deviceOperator = deviceOperator;
   _interface = interface;
   _queue = queue;
-  _logger = logger;
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
 
   _state = FBTestDaemonConnectionStateNotConnected;
 

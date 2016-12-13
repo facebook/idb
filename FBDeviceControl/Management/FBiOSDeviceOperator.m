@@ -67,6 +67,11 @@
   return self;
 }
 
+- (NSString *)udid
+{
+  return self.device.udid;
+}
+
 #pragma mark - Device specific operations
 
 - (NSString *)containerPathForApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error

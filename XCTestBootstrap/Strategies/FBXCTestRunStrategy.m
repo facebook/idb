@@ -49,7 +49,7 @@
   _deviceOperator = deviceOperator;
   _prepareStrategy = prepareStrategy;
   _reporter = reporter;
-  _logger = logger;
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
 
   return self;
 }
