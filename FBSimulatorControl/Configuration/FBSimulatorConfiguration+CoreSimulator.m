@@ -151,7 +151,7 @@
   }
   NSArray *matchingRuntimes = [supportedRuntimes filteredArrayUsingPredicate:self.runtimePredicate];
   if (matchingRuntimes.count == 0) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain matching SimRuntime, no matches. Available Runtimes %@", matchingRuntimes] fail:error];
+    return [[FBSimulatorError describeFormat:@"Could not obtain matching SimRuntime, no matches. Available Runtimes %@", supportedRuntimes] fail:error];
   }
   if (matchingRuntimes.count > 1) {
     return [[FBSimulatorError describeFormat:@"Matching Runtimes is ambiguous: %@", matchingRuntimes] fail:error];
