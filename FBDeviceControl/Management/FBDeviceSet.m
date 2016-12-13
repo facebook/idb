@@ -30,10 +30,13 @@
 #import "FBDeviceControlFrameworkLoader.h"
 #import "FBDevice+Private.h"
 #import "FBAMDevice.h"
+#import "FBDeviceInflationStrategy.h"
 
 static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 
 @implementation FBDeviceSet
+
+@synthesize allDevices = _allDevices;
 
 #pragma mark Initializers
 
@@ -76,6 +79,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
   }
 
   _logger = logger;
+  _allDevices = @[];
 
   return self;
 }
@@ -100,14 +104,10 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 
 - (NSArray<FBDevice *> *)allDevices
 {
-  NSDictionary<NSString *, FBAMDevice *> *amDevices = [FBDeviceSet keyAMDevicesByUDID:[FBAMDevice allDevices]];
-
-  NSMutableArray<FBDevice *> *devices = [NSMutableArray array];
-  for (FBAMDevice *amDevice in amDevices.allValues) {
-    FBDevice *device = [[FBDevice alloc] initWithSet:self amDevice:amDevice logger:self.logger];
-    [devices addObject:device];
-  }
-  return [devices copy];
+  _allDevices = [[self.inflationStrategy
+    inflateFromDevices:FBAMDevice.allDevices existingDevices:_allDevices]
+    sortedArrayUsingSelector:@selector(compare:)];
+  return _allDevices;
 }
 
 #pragma mark Predicates
@@ -120,6 +120,11 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 }
 
 #pragma mark Private
+
+- (FBDeviceInflationStrategy *)inflationStrategy
+{
+  return [FBDeviceInflationStrategy forSet:self];
+}
 
 - (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
 {
