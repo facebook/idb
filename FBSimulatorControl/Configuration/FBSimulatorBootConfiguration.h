@@ -22,7 +22,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorBootOptions) {
   FBSimulatorBootOptionsEnableDirectLaunch = 1 << 1, /** Launches the Simulator via directly (via SimDevice) instead of with Simulator.app. Enables Framebuffer Connection. */
   FBSimulatorBootOptionsUseNSWorkspace = 1 << 2, /** Uses -[NSWorkspace launchApplicationAtURL:options:configuration::error:] to launch Simulator.app */
   FBSimulatorBootOptionsAwaitServices = 1 << 3, /** Waits for the Simulator to be in a 'Usable' state before returning on the boot command */
-  FBSimulatorBootOptionsEnablePersistentLaunch = 1 << 4, /** Like direct launch, but in the background. No running process is necessary to keep the Simulator alive.  */
+  FBSimulatorBootOptionsEnablePersistentLaunch = 1 << 4, /** Like direct launch, but persistent. No running process is necessary to keep the Simulator alive.  */
 };
 
 NS_ASSUME_NONNULL_BEGIN
