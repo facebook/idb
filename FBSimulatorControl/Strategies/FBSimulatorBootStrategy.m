@@ -141,6 +141,21 @@
 
 @end
 
+@interface FBSimulatorBootStrategy_Persistent_Xcode7 : FBSimulatorBootStrategy_Direct_Xcode7
+
+@end
+
+@implementation FBSimulatorBootStrategy_Persistent_Xcode7
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  NSMutableDictionary<NSString *, id> *bootOptions = [super bootOptions].mutableCopy;
+  [bootOptions addEntriesFromDictionary:@{@"persist": @1}];
+  return bootOptions.copy;
+}
+
+@end
+
 @interface FBSimulatorBootStrategy_Direct_Xcode8 : FBSimulatorBootStrategy_Direct
 
 @end
@@ -162,6 +177,21 @@
       @"SIMULATOR_IS_HEADLESS" : @1,
     },
   };
+}
+
+@end
+
+@interface FBSimulatorBootStrategy_Persistent_Xcode8 : FBSimulatorBootStrategy_Direct_Xcode8
+
+@end
+
+@implementation FBSimulatorBootStrategy_Persistent_Xcode8
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  NSMutableDictionary<NSString *, id> *bootOptions = [super bootOptions].mutableCopy;
+  [bootOptions addEntriesFromDictionary:@{@"persist": @1}];
+  return bootOptions.copy;
 }
 
 @end
@@ -295,6 +325,11 @@
 
 + (instancetype)withConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
+  if (configuration.shouldUsePersistentLaunch) {
+    return FBControlCoreGlobalConfiguration.isXcode8OrGreater
+    ? [[FBSimulatorBootStrategy_Persistent_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator]
+    : [[FBSimulatorBootStrategy_Persistent_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
+  }
   if (configuration.shouldUseDirectLaunch) {
     return FBControlCoreGlobalConfiguration.isXcode8OrGreater
       ? [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator]

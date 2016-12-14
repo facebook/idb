@@ -56,6 +56,11 @@
   return (self.options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch;
 }
 
+- (BOOL)shouldUsePersistentLaunch
+{
+  return (self.options & FBSimulatorBootOptionsEnablePersistentLaunch) == FBSimulatorBootOptionsEnablePersistentLaunch;
+}
+
 - (BOOL)shouldConnectFramebuffer
 {
   return self.framebuffer != nil;
@@ -68,7 +73,7 @@
 
 - (BOOL)shouldConnectBridge
 {
-  return ((self.options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) || self.shouldUseDirectLaunch;
+  return ((self.options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) || self.shouldUseDirectLaunch || self.shouldUsePersistentLaunch;
 }
 
 #pragma mark Scale

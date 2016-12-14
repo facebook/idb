@@ -32,6 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)shouldUseDirectLaunch;
 
 /**
+ Whether the reciever represents a configuration that should call SimDevice booting directly and persistent.
+ */
+- (BOOL)shouldUsePersistentLaunch;
+
+/**
  Whether the reciever represents a configuration that should connect an FBFramebuffer on boot.
  */
 - (BOOL)shouldConnectFramebuffer;
