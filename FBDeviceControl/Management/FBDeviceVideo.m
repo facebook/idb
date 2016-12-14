@@ -36,16 +36,16 @@
 
 + (nullable AVCaptureDevice *)findCaptureDeviceForDevice:(FBDevice *)device error:(NSError **)error
 {
-  NSArray<AVCaptureDevice *> *captureDevices = [AVCaptureDevice devices];
-  [device.logger logFormat:@"Available Devices %@", [FBCollectionInformation oneLineDescriptionFromArray:captureDevices]];
-  for (AVCaptureDevice *captureDevice in captureDevices) {
-    if ([captureDevice.uniqueID isEqualToString:device.udid]) {
-      return captureDevice;
-    }
+  // Sometimes, especially on first launch the AVCaptureDevice may take a while to come up, we should wait for it.
+  AVCaptureDevice *captureDevice = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^{
+    return [AVCaptureDevice deviceWithUniqueID:device.udid];
+  }];
+  if (!captureDevice) {
+    return [[FBDeviceControlError
+      describeFormat:@"Could not find Capture Device for %@ in %@", device, [FBCollectionInformation oneLineDescriptionFromArray:AVCaptureDevice.devices]]
+      fail:error];
   }
-  return [[FBDeviceControlError
-    describeFormat:@"Could not find Capture Device for %@ in %@", device, [FBCollectionInformation oneLineDescriptionFromArray:captureDevices]]
-    fail:error];
+  return captureDevice;
 }
 
 + (BOOL)allowAccessToScreenCaptureDevicesWithError:(NSError **)error
