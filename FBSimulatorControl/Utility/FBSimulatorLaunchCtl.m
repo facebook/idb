@@ -141,38 +141,7 @@
   return serviceName;
 }
 
-- (BOOL)restartServiceWithName:(NSString *)serviceName timeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  if (![self.simulator.launchctl stopServiceWithName:serviceName error:error]) {
-    return NO;
-  }
-
-  if (![self.simulator.launchctl startServiceWithName:serviceName error:error]) {
-    return NO;
-  }
-
-  return [self waitForServiceWithName:serviceName timeout:timeout error:error];
-}
-
 #pragma mark Private
-
-- (BOOL)waitForServiceWithName:(NSString *)serviceName timeout:(NSTimeInterval)timeout error:(NSError * _Nullable __autoreleasing *)error
-{
-  BOOL didFindService = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
-    NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];
-    if (!services) {
-      return NO;
-    }
-    return services[serviceName] != NSNull.null;
-  }];
-  if (!didFindService) {
-    return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for service '%@'", serviceName]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  return YES;
-}
 
 - (nullable NSString *)serviceNameForSubstring:(NSString *)substring processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
 {
