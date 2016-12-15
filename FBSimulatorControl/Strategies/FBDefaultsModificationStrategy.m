@@ -174,8 +174,20 @@
   for (NSString *bundleID in bundleIDs) {
     exceptions[bundleID] = @(timeout);
   }
+
   NSDictionary *defaults = @{@"FBLaunchWatchdogExceptions" : [exceptions copy]};
-  return [self modifyDefaultsInDomainOrPath:@"com.apple.springboard" defaults:defaults error:error];
+  if (![self modifyDefaultsInDomainOrPath:@"com.apple.springboard" defaults:defaults error:error]) {
+    return NO;
+  }
+
+  if (self.simulator.state != FBSimulatorStateBooted) {
+    return YES;
+  }
+
+  return [self.simulator.launchctl
+    restartServiceWithName:@"com.apple.SpringBoard"
+    timeout:FBControlCoreGlobalConfiguration.fastTimeout
+    error:error];
 }
 
 @end

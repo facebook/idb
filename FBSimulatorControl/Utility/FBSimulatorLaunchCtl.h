@@ -91,6 +91,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable NSString *)startServiceWithName:(NSString *)serviceName error:(NSError **)error;
 
+/**
+ Restarts the Provided Process, by Service Name.
+
+ @param serviceName the name of the Process to Restart.
+ @param timeout the timeout to wait in seconds for the service to restart.
+ @param error an error for any error that occurs.
+ @return boolean indicating if the service could be restarted.
+ */
+- (BOOL)restartServiceWithName:(NSString *)serviceName timeout:(NSTimeInterval)timeout error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
