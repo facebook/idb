@@ -29,7 +29,7 @@ typedef NS_ENUM(NSUInteger, FBFramebufferVideoState) {
 
 static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
-@interface FBFramebufferVideo ()
+@interface FBFramebufferVideo_BuiltIn ()
 
 @property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -49,7 +49,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 
 @end
 
-@implementation FBFramebufferVideo
+@implementation FBFramebufferVideo_BuiltIn
 
 #pragma mark Initializers
 
@@ -89,7 +89,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   dispatch_group_async(group, self.mediaQueue, ^{
     // Must be NotStarted to flick the First Frame wait switch.
     if (self.state != FBFramebufferVideoStateNotStarted) {
-      [self.logger.info logFormat:@"Cannot start recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
+      [self.logger.info logFormat:@"Cannot start recording with state '%@'", [FBFramebufferVideo_BuiltIn stateStringForState:self.state]];
       return;
     }
 
@@ -124,7 +124,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     }
     // If not running, this is an invalid state to call from.
     if (self.state != FBFramebufferVideoStateRunning) {
-      [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
+      [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBFramebufferVideo_BuiltIn stateStringForState:self.state]];
       return;
     }
     // Otherwise it is running and in need of stopping.
@@ -235,8 +235,8 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     // Create the pixel buffer from the buffer pool if the pool exists, otherwise create one.
     NSError *error = nil;
     CVPixelBufferRef pixelBuffer = self.adaptor.pixelBufferPool
-      ? [FBFramebufferVideo createPixelBufferFromAdaptor:self.adaptor ofImage:frame.image error:&error]
-      : [FBFramebufferVideo createPixelBufferFromAttributes:self.pixelBufferAttributes ofImage:frame.image error:&error];
+      ? [FBFramebufferVideo_BuiltIn createPixelBufferFromAdaptor:self.adaptor ofImage:frame.image error:&error]
+      : [FBFramebufferVideo_BuiltIn createPixelBufferFromAttributes:self.pixelBufferAttributes ofImage:frame.image error:&error];
     if (!pixelBuffer) {
       [self.logger.error logFormat:@"Could not construct a pixel buffer for frame (%@): %@", frame, error];
       continue;
@@ -257,7 +257,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   // Bail out if we're not waiting to record.
   if (self.state != FBFramebufferVideoStateWaitingForFirstFrame) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot start recording from state '%@'", [FBFramebufferVideo stateStringForState:self.state]]
+      describeFormat:@"Cannot start recording from state '%@'", [FBFramebufferVideo_BuiltIn stateStringForState:self.state]]
       failBool:error];
   }
 
@@ -365,7 +365,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
 {
   // Invalid to teardown when not running.
   if (self.state != FBFramebufferVideoStateRunning) {
-    [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBFramebufferVideo stateStringForState:self.state]];
+    [self.logger.info logFormat:@"Cannot stop recording with state '%@'", [FBFramebufferVideo_BuiltIn stateStringForState:self.state]];
     return;
   }
 

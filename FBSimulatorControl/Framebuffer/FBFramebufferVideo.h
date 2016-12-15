@@ -18,15 +18,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A Simulator Framebuffer Delegate that encodes video and writes to a file.
-
- All media activity is serialized on a queue, this queue is internal and should not be used by clients.
- The video will be created as soon as the first frame is available.
+ A component that encodes video and writes to a file.
  */
-@interface FBFramebufferVideo : NSObject <FBFramebufferDelegate>
+@protocol FBFramebufferVideo <NSObject>
 
 /**
- Creates a new FBFramebufferVideo instance.
+ The Designated Initializer.
 
  @param configuration the configuration to use for encoding.
  @param logger the logger object to log events to, may be nil.
@@ -48,6 +45,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
 - (void)stopRecording:(dispatch_group_t)group;
+
+@end
+
+/**
+ An built-in implementation of a video encoder.
+ All media activity is serialized on a queue, this queue is internal and should not be used by clients.
+ */
+@interface FBFramebufferVideo_BuiltIn : NSObject <FBFramebufferVideo, FBFramebufferDelegate>
 
 @end
 
