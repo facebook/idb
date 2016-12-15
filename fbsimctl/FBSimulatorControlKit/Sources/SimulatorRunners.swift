@@ -65,7 +65,7 @@ struct SimulatorActionRunner : Runner {
     case .boot(let maybeBootConfiguration):
       let bootConfiguration = maybeBootConfiguration ?? FBSimulatorBootConfiguration.default()
       return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(bootConfiguration)) { interaction in
-        interaction.prepare(forBoot: bootConfiguration).bootSimulator(bootConfiguration)
+        interaction.bootSimulator(bootConfiguration)
       }
     case .clearKeychain(let maybeBundleID):
       return SimulatorInteractionRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) { interaction in
