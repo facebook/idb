@@ -19,16 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorInteraction (Settings)
 
 /**
- Prepares the Simulator for Launch:
- - Sets the Locale (if set)
- - Sets up the keyboard.
-
- @param configuration the configuration to use.
- @return the reciever, for chaining.
- */
-- (instancetype)prepareForBoot:(FBSimulatorBootConfiguration *)configuration;
-
-/**
  Overrides the Global Localization of the Simulator.
 
  @param localizationOverride the Localization Override to set.

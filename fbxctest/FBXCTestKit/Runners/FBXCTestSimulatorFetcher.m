@@ -90,11 +90,7 @@
     defaultConfiguration]
     withOptions:FBSimulatorBootOptionsEnableDirectLaunch];
 
-  FBInteraction *launchInteraction = [[simulator.interact
-    prepareForBoot:bootConfiguration]
-    bootSimulator:bootConfiguration];
-
-  if (![launchInteraction perform:error]) {
+  if (![[FBSimulatorBootStrategy withConfiguration:bootConfiguration simulator:simulator] boot:error]) {
     [self.logger logFormat:@"Failed to boot simulator: %@", *error];
     return nil;
   }
