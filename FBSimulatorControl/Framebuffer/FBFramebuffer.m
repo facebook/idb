@@ -63,13 +63,13 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @end
 
-@interface FBFramebuffer_FrameGenerator_IOSurface : FBFramebuffer
+@interface FBFramebuffer_FrameGenerator_IOSurface : FBFramebuffer_FrameGenerator
 
 @property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *ioSurfaceGenerator;
 
 @end
 
-@interface FBFramebuffer_FrameGenerator_BackingStore : FBFramebuffer
+@interface FBFramebuffer_FrameGenerator_BackingStore : FBFramebuffer_FrameGenerator
 
 @property (nonatomic, strong, readonly) FBFramebufferBackingStoreFrameGenerator *backingStoreGenerator;
 
