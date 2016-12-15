@@ -60,7 +60,7 @@
     bundleName:@"com.bundle"
     arguments:@[@"4"]
     environment:@{@"A" : @"B"}
-    options:0];
+    output:FBProcessOutputConfiguration.outputToDevNull];
 
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
   [[[deviceOperatorMock expect] andReturnValue:@13] processIDWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];

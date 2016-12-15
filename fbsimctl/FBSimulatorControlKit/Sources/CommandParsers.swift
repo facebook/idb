@@ -328,17 +328,6 @@ extension FBSimulatorState : Parsable {
   }
 }
 
-extension FBProcessLaunchOptions : Parsable {
-  public static var parser: Parser<FBProcessLaunchOptions> {
-    return Parser<FBProcessLaunchOptions>.union([
-      Parser<FBProcessLaunchOptions>.ofFlag(
-        "stdout", FBProcessLaunchOptions.writeStdout, ""),
-      Parser<FBProcessLaunchOptions>.ofFlag(
-        "stderr", FBProcessLaunchOptions.writeStderr, ""),
-    ])
-  }
-}
-
 extension FBiOSTargetType : Parsable {
   public static var parser: Parser<FBiOSTargetType> {
     return Parser<FBiOSTargetType>.alternative([
@@ -953,14 +942,14 @@ struct FBProcessLaunchConfigurationParsers {
   static var appLaunchAndApplicationDescriptorParser: Parser<(FBApplicationLaunchConfiguration, FBApplicationDescriptor?)> {
     return Parser
       .ofThreeSequenced(
-        FBProcessLaunchOptions.parser,
+        FBProcessOutputConfigurationParser.parser,
         Parser<Any>.ofBundleIDOrApplicationDescriptor,
         self.argumentParser
       )
-      .fmap { (options, bundleIDOrApplicationDescriptor, arguments) in
+      .fmap { (output, bundleIDOrApplicationDescriptor, arguments) in
         let (bundleId, appDescriptor) = bundleIDOrApplicationDescriptor
         return (
-          FBApplicationLaunchConfiguration(bundleID: bundleId, bundleName: nil, arguments: arguments, environment : [:], options: options),
+          FBApplicationLaunchConfiguration(bundleID: bundleId, bundleName: nil, arguments: arguments, environment : [:], output: output),
           appDescriptor
         )
       }
@@ -973,12 +962,12 @@ struct FBProcessLaunchConfigurationParsers {
   static var agentLaunchParser: Parser<FBAgentLaunchConfiguration> {
     return Parser
       .ofThreeSequenced(
-        FBProcessLaunchOptions.parser,
+        FBProcessOutputConfigurationParser.parser,
         Parser<Any>.ofBinary,
         self.argumentParser
       )
-      .fmap { (options, binary, arguments) in
-        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:], options: options)
+      .fmap { (output, binary, arguments) in
+        return FBAgentLaunchConfiguration(binary: binary, arguments: arguments, environment : [:], output: output)
       }
   }
 
@@ -988,5 +977,26 @@ struct FBProcessLaunchConfigurationParsers {
         Parser<NSNull>.ofDashSeparator,
         Parser<String>.ofAny
       )
+  }
+}
+
+/**
+ A separate struct for FBProcessOutputConfiguration is needed as Parsable protcol conformance cannot be
+ applied to FBProcessOutputConfiguration as it is a non-final class.
+ */
+struct FBProcessOutputConfigurationParser {
+  public static var parser: Parser<FBProcessOutputConfiguration> {
+    return Parser<FBProcessOutputConfiguration>.accumulate(0, [
+      Parser<FBProcessOutputConfiguration>.ofFlag(
+        "stdout",
+        try! FBProcessOutputConfiguration(stdOut: FBProcessOutputToFileDefaultLocation, stdErr: NSNull()),
+        ""
+      ),
+      Parser<FBProcessOutputConfiguration>.ofFlag(
+        "stderr",
+        try! FBProcessOutputConfiguration(stdOut: NSNull(), stdErr: FBProcessOutputToFileDefaultLocation),
+        ""
+      ),
+    ])
   }
 }

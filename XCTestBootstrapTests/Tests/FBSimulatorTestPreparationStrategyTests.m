@@ -117,13 +117,12 @@
 
 - (FBApplicationLaunchConfiguration *)defaultAppLaunch
 {
-  return
-  [FBApplicationLaunchConfiguration configurationWithBundleID:@"bundleId"
-                                                   bundleName:@""
-                                                    arguments:@[]
-                                                  environment:@{}
-                                                      options:FBProcessLaunchOptionsWriteStderr
-   ];
+  return [FBApplicationLaunchConfiguration
+    configurationWithBundleID:@"bundleId"
+    bundleName:@""
+    arguments:@[]
+    environment:@{}
+    output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
 @end

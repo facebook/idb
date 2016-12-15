@@ -14,16 +14,9 @@
 
 @class FBApplicationDescriptor;
 @class FBBinaryDescriptor;
+@class FBProcessOutputConfiguration;
 
 NS_ASSUME_NONNULL_BEGIN
-
-/**
- Options for the Launch of Processes.
- */
-typedef NS_OPTIONS(NSUInteger, FBProcessLaunchOptions) {
-  FBProcessLaunchOptionsWriteStdout = 1 << 1, /** Writes the stdout of the launched process to a file. */
-  FBProcessLaunchOptionsWriteStderr = 1 << 2, /** Writes the stderr of the launched process to a file. */
-};
 
 /**
  An abstract value object for launching both agents and applications
@@ -41,9 +34,25 @@ typedef NS_OPTIONS(NSUInteger, FBProcessLaunchOptions) {
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *environment;
 
 /**
- The option set for launching Applications.
+ The Process Output Configuration.
  */
-@property (nonatomic, assign, readonly) FBProcessLaunchOptions options;
+@property (nonatomic, copy, readonly) FBProcessOutputConfiguration *output;
+
+/**
+ Creates a copy of the reciever, with the environment applied.
+
+ @param environment the environment to use.
+ @return a copy of the reciever, with the environment applied.
+ */
+- (instancetype)withEnvironment:(NSDictionary<NSString *, NSString *> *)environment;
+
+/**
+ Creates a copy of the reciever, with the arguments applied.
+
+ @param arguments the arguments to use.
+ @return a copy of the reciever, with the arguments applied.
+ */
+- (instancetype)withArguments:(NSArray<NSString *> *)arguments;
 
 @end
 
@@ -58,10 +67,10 @@ typedef NS_OPTIONS(NSUInteger, FBProcessLaunchOptions) {
  @param application the Application to Launch.
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param options the options of the launched process.
+ @param output the output configuration for the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options;
++ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
 
 /**
  Creates and returns a new Configuration with the provided parameters.
@@ -70,10 +79,10 @@ typedef NS_OPTIONS(NSUInteger, FBProcessLaunchOptions) {
  @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param options the options of the launched process.
+ @param output the output configuration for the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options;
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
 
 /**
  The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.
@@ -98,10 +107,10 @@ typedef NS_OPTIONS(NSUInteger, FBProcessLaunchOptions) {
  @param agentBinary the Binary Path of the agent to Launch. Must not be nil.
  @param arguments an array-of-strings of arguments to the process. Must not be nil.
  @param environment a Dictionary, mapping Strings to Strings of the Environment to set in the launched Application process. Must not be nil.
- @param options the options of the launched process.
+ @param output the output configuration for the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment options:(FBProcessLaunchOptions)options;
++ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
 
 /**
  The Binary Path of the agent to Launch.

@@ -11,8 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessLaunchConfiguration+Private.h"
-
 @implementation FBProcessLaunchConfiguration (Helpers)
 
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environmentAdditions
@@ -20,16 +18,12 @@
   NSMutableDictionary *environment = [[self environment] mutableCopy];
   [environment addEntriesFromDictionary:environmentAdditions];
 
-  FBProcessLaunchConfiguration *configuration = [self copy];
-  configuration.environment = [environment copy];
-  return configuration;
+  return [self withEnvironment:[environment copy]];
 }
 
 - (instancetype)withAdditionalArguments:(NSArray<NSString *> *)arguments
 {
-  FBProcessLaunchConfiguration *configuration = [self copy];
-  configuration.arguments = [self.arguments arrayByAddingObjectsFromArray:arguments];
-  return configuration;
+  return [self withAdditionalArguments:[self.arguments arrayByAddingObjectsFromArray:arguments]];
 }
 
 - (instancetype)withDiagnosticEnvironment

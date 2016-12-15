@@ -82,7 +82,7 @@
     configurationWithBinary:self.defaultsBinary
     arguments:arguments
     environment:@{}
-    options:0];
+    output:FBProcessOutputConfiguration.outputToDevNull];
 
   // Run the write, fail if the write fails.
   FBAgentLaunchStrategy *strategy = [FBAgentLaunchStrategy withSimulator:self.simulator];

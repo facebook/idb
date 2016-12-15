@@ -202,11 +202,11 @@
     return NO;
   }
 
-  FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration new];
-  configuration.bundleName = app.binary.name;
-  configuration.bundleID = bundleID;
-  configuration.arguments = arguments;
-  configuration.environment = environment;
+  FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
+    configurationWithApplication:app
+    arguments:arguments
+    environment:environment
+    output:FBProcessOutputConfiguration.outputToDevNull];
 
   if (![[self.simulator.interact launchOrRelaunchApplication:configuration] perform:error]) {
     return NO;

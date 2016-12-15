@@ -74,7 +74,7 @@
     bundleName:configuration.testRunner.bundleID
     arguments:[self argumentsFromConfiguration:configuration attributes:attributes]
     environment:[self environmentFromConfiguration:configuration environment:environment]
-    options:0];
+    output:FBProcessOutputConfiguration.outputToDevNull];
 
   if (![self.deviceOperator launchApplication:appLaunch error:&innerError]) {
     return [[[XCTestBootstrapError describe:@"Failed launch test runner"]
