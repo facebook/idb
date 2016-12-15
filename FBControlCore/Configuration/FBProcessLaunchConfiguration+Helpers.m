@@ -53,23 +53,6 @@
   return [self injectingLibrary:[[NSBundle bundleForClass:self.class] pathForResource:@"libShimulator" ofType:@"dylib"]];
 }
 
-- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
-{
-  NSMutableDictionary *options = [@{
-    @"arguments" : self.arguments,
-    // iOS 7 Launch fails if the environment is empty, put some nothing in the environment for it.
-    @"environment" : self.environment.count ? self.environment:  @{@"__SOME_MAGIC__" : @"__IS_ALIVE__"}
-  } mutableCopy];
-
-  if (stdOut){
-    options[@"stdout"] = @([stdOut fileDescriptor]);
-  }
-  if (stdErr) {
-    options[@"stderr"] = @([stdErr fileDescriptor]);
-  }
-  return [options copy];
-}
-
 - (NSString *)identifiableName
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
@@ -82,19 +65,17 @@
 
 - (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
-  // If arguments are passed to launched processes, then then the first argument needs to be the executable path.
-  // Providing no arguments will do this automatically, but when custom arguments are, the first argument must be manually set.
-  NSDictionary *options = [super simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
-  NSArray *arguments = options[@"arguments"];
-  if (arguments.count == 0 || [arguments.firstObject isEqualToString:self.agentBinary.path]) {
-    return options;
+  NSMutableDictionary<NSString *, id> *options = [NSMutableDictionary dictionary];
+  // Make sure the first arg is the launch path
+  options[@"arguments"] = [@[self.agentBinary.path] arrayByAddingObjectsFromArray:self.arguments];
+  options[@"environment"] = self.environment.count ? self.environment:  @{@"__SOME_MAGIC__" : @"__IS_ALIVE__"};
+  if (stdOut){
+    options[@"stdout"] = @([stdOut fileDescriptor]);
   }
-
-  NSMutableArray *modifiedArguments = [arguments mutableCopy];
-  [modifiedArguments insertObject:self.agentBinary.path atIndex:0];
-  NSMutableDictionary *modifiedOptions = [options mutableCopy];
-  modifiedOptions[@"arguments"] = [modifiedArguments copy];
-  return [modifiedOptions copy];
+  if (stdErr) {
+    options[@"stderr"] = @([stdErr fileDescriptor]);
+  }
+  return [options copy];
 }
 
 - (NSString *)identifiableName
