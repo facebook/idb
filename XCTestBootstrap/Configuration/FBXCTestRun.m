@@ -151,7 +151,7 @@
     configurationWithApplication:application
     arguments:commandLineArguments
     environment:environment
-    options:0];
+    output:FBProcessOutputConfiguration.defaultOutputToFile];
 
   return [[[[[[[FBTestLaunchConfiguration
     configurationWithTestBundlePath:testRunSpecification.testBundleFilePath.pathString]

@@ -43,7 +43,9 @@
   }
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
+  NSString *path = [[NSBundle bundleForClass: self.class] pathForResource:@"libShimulator" ofType:@"dylib"];
+  FBApplicationLaunchConfiguration *configuration = [self.tableSearchAppLaunch injectingLibrary:path];
+  FBApplicationLaunchConfiguration *appLaunch = [configuration withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
   [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
 

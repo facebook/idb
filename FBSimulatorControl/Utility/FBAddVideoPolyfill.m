@@ -90,7 +90,7 @@
     configurationWithApplication:photosApp
     arguments:@[]
     environment:@{@"SHIMULATOR_UPLOAD_VIDEO" : joinedPaths}
-    options:0]
+    output:FBProcessOutputConfiguration.outputToDevNull]
     injectingShimulator];
 
   if (![[simulator.interact launchApplication:appLaunch] perform:&innerError]) {

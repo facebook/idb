@@ -12,10 +12,10 @@
 #import <FBControlCore/FBControlCore.h>
 
 @class FBFramebufferConfiguration;
-@class FBFramebufferVideo;
 @class FBSimulator;
 @class SimDeviceFramebufferService;
 @protocol FBFramebufferDelegate;
+@protocol FBFramebufferVideo;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -61,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBFramebufferVideo instance owned by the receiver.
  */
-@property (nonatomic, strong, readonly) FBFramebufferVideo *video;
+@property (nonatomic, strong, readonly) id<FBFramebufferVideo> video;
 
 @end
 

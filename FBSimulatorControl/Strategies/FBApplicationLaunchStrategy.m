@@ -26,6 +26,7 @@
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorProcessFetcher.h"
+#import "FBProcessLaunchConfiguration+Simulator.h"
 
 @interface FBApplicationLaunchStrategy ()
 
@@ -89,31 +90,14 @@
   }
 
   // Make the stdout file.
-  BOOL writeStdout = (appLaunch.options & FBProcessLaunchOptionsWriteStdout) == FBProcessLaunchOptionsWriteStdout;
   FBDiagnostic *stdOutDiagnostic = nil;
-  if (writeStdout) {
-    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.simulatorDiagnostics stdOut:appLaunch]];
-    NSString *path = [builder createPath];
-    if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
-      return [[FBSimulatorError
-        describeFormat:@"Could not create stdout at path '%@' for config '%@'", path, appLaunch]
-        fail:error];
-    }
-    stdOutDiagnostic = [[builder updatePath:path] build];
+  if (![appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:error]) {
+    return nil;
   }
-
   // Make the stderr file.
-  BOOL writeStderr = (appLaunch.options & FBProcessLaunchOptionsWriteStderr) == FBProcessLaunchOptionsWriteStderr;
   FBDiagnostic *stdErrDiagnostic = nil;
-  if (writeStderr) {
-    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:[simulator.simulatorDiagnostics stdErr:appLaunch]];
-    NSString *path = [builder createPath];
-    if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
-      return [[FBSimulatorError
-        describeFormat:@"Could not create stdout at path '%@' for config '%@'", path, appLaunch]
-        fail:error];
-    }
-    stdErrDiagnostic = [[builder updatePath:path] build];
+  if (![appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:error]) {
+    return nil;
   }
 
   // Launch the Application.

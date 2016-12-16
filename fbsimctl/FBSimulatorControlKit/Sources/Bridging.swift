@@ -155,6 +155,19 @@ extension FBSimulatorBootConfiguration : Accumulator {
   }
 }
 
+extension FBProcessOutputConfiguration : Accumulator {
+  public func append(_ other: FBProcessOutputConfiguration) -> Self {
+    var configuration = self
+    if other.stdOut is String {
+      configuration = try! configuration.withStdOut(other.stdOut)
+    }
+    if other.stdErr is String {
+      configuration = try! configuration.withStdErr(other.stdErr)
+    }
+    return configuration
+  }
+}
+
 extension IndividualCreationConfiguration {
   public var simulatorConfiguration : FBSimulatorConfiguration { get {
     var configuration = FBSimulatorConfiguration.default()

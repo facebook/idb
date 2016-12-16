@@ -54,18 +54,25 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)injectingShimulator;
 
 /**
+ A Name used to distinguish between Launch Configurations.
+ */
+- (NSString *)identifiableName;
+
+@end
+
+/**
+ Helpers for Agent Launches.
+ */
+@interface FBAgentLaunchConfiguration (Helpers)
+
+/**
  Creates the Dictionary of launch options for launching an Agent.
 
  @param stdOut the stdout to use, may be nil.
  @param stdErr the stderr to use, may be nil.
  @return a Dictionary if successful, nil otherwise.
  */
-- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
-
-/**
- A Name used to distinguish between Launch Configurations.
- */
-- (NSString *)identifiableName;
+- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
 
 @end
 

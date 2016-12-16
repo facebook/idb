@@ -63,13 +63,13 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @end
 
-@interface FBFramebuffer_FrameGenerator_IOSurface : FBFramebuffer
+@interface FBFramebuffer_FrameGenerator_IOSurface : FBFramebuffer_FrameGenerator
 
 @property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *ioSurfaceGenerator;
 
 @end
 
-@interface FBFramebuffer_FrameGenerator_BackingStore : FBFramebuffer
+@interface FBFramebuffer_FrameGenerator_BackingStore : FBFramebuffer_FrameGenerator
 
 @property (nonatomic, strong, readonly) FBFramebufferBackingStoreFrameGenerator *backingStoreGenerator;
 
@@ -90,7 +90,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   }
 
   FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.simulatorDiagnostics.video];
-  FBFramebufferVideo *video = [FBFramebufferVideo withConfiguration:videoConfiguration logger:logger eventSink:simulator.eventSink];
+  FBFramebufferVideo_BuiltIn *video = [FBFramebufferVideo_BuiltIn withConfiguration:videoConfiguration logger:logger eventSink:simulator.eventSink];
   [sinks addObject:video];
 
   [sinks addObject:[FBFramebufferImage withDiagnostic:simulator.simulatorDiagnostics.screenshot eventSink:simulator.eventSink]];
@@ -101,7 +101,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return [[framebufferClass alloc] initWithFramebufferService:framebufferService configuration:configuration onQueue:queue video:video delegate:delegate logger:logger];
 }
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
 {
   NSParameterAssert(framebufferService);
 
@@ -236,7 +236,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 #pragma mark Initializers
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithFramebufferService:framebufferService configuration:configuration onQueue:clientQueue video:video delegate:delegate logger:logger];
   if (!self) {
@@ -279,7 +279,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @implementation FBFramebuffer_FrameGenerator_BackingStore
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithFramebufferService:framebufferService configuration:configuration onQueue:clientQueue video:video delegate:delegate logger:logger];
   if (!self) {
@@ -308,7 +308,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @implementation FBFramebuffer_FrameGenerator_IOSurface
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video delegate:(id<FBFramebufferDelegate>)delegate logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithFramebufferService:framebufferService configuration:configuration onQueue:clientQueue video:video delegate:delegate logger:logger];
   if (!self) {
