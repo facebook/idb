@@ -834,7 +834,6 @@
 		AA633F8B1CFD788F00A59C5F /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		AA63FD721D00A3D5000B3842 /* FBiOSTargetQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetQuery.h; sourceTree = "<group>"; };
 		AA63FD731D00A3D5000B3842 /* FBiOSTargetQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetQuery.m; sourceTree = "<group>"; };
-		AA6829E81DDDB5EF00632D2C /* __SimKitPlaceholderClass.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = __SimKitPlaceholderClass.h; sourceTree = "<group>"; };
 		AA6829E91DDDB5EF00632D2C /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
 		AA6829EA1DDDB5EF00632D2C /* CIImage-SimulatorKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CIImage-SimulatorKit.h"; sourceTree = "<group>"; };
 		AA6829EB1DDDB5EF00632D2C /* FoundationXPCProtocolProxyable-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FoundationXPCProtocolProxyable-Protocol.h"; sourceTree = "<group>"; };
@@ -907,6 +906,7 @@
 		AA791BA51C63668C00AE49EB /* SimulatorBridge-Protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "SimulatorBridge-Protocol.h"; sourceTree = "<group>"; };
 		AA791BA61C63668C00AE49EB /* SimulatorBridge.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimulatorBridge.h; sourceTree = "<group>"; };
 		AA79A1CD1C77666000D5C685 /* FBSimulatorSet+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBSimulatorSet+Private.h"; sourceTree = "<group>"; };
+		AA7B06A21E044F9E008F27DE /* SimDisplayRenderable-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDisplayRenderable-Protocol.h"; sourceTree = "<group>"; };
 		AA7E55C31CFEC5B6009209AE /* FBDeviceControlTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBDeviceControlTests.xcconfig; sourceTree = "<group>"; };
 		AA7F12761D70679200929CD9 /* FBTestManagerResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerResult.h; sourceTree = "<group>"; };
 		AA7F12771D70679200929CD9 /* FBTestManagerResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerResult.m; sourceTree = "<group>"; };
@@ -1408,7 +1408,6 @@
 		AA2DDC221C283F40000689C6 /* SimulatorKit */ = {
 			isa = PBXGroup;
 			children = (
-				AA6829E81DDDB5EF00632D2C /* __SimKitPlaceholderClass.h */,
 				AA6829E91DDDB5EF00632D2C /* CDStructures.h */,
 				AA6829EA1DDDB5EF00632D2C /* CIImage-SimulatorKit.h */,
 				AA6829EB1DDDB5EF00632D2C /* FoundationXPCProtocolProxyable-Protocol.h */,
@@ -1436,6 +1435,7 @@
 				AA682A021DDDB5EF00632D2C /* SimDisplayDescriptorState-Protocol.h */,
 				AA682A031DDDB5EF00632D2C /* SimDisplayIOSurfaceRenderable-Protocol.h */,
 				AA682A041DDDB5EF00632D2C /* SimDisplayIOSurfaceRenderableDelegate-Protocol.h */,
+				AA7B06A21E044F9E008F27DE /* SimDisplayRenderable-Protocol.h */,
 				AA682A051DDDB5EF00632D2C /* SimDisplayResizeableRenderable-Protocol.h */,
 				AA682A061DDDB5EF00632D2C /* SimDisplayRotationAngleDelegate-Protocol.h */,
 				AA682A071DDDB5EF00632D2C /* SimDisplayVideoWriter.h */,

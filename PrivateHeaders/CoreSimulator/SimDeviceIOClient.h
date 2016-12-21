@@ -16,7 +16,6 @@
 
 @property (retain, nonatomic) NSMutableDictionary *consumerProxies;
 @property (nonatomic, copy) NSArray *deviceIOPorts;
-- (void).cxx_destruct;
 - (void)updateIOPorts;
 - (void)detachConsumer:(id)arg1 fromPort:(id)arg2;
 - (void)attachConsumer:(id)arg1 toPort:(id)arg2;

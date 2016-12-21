@@ -16,8 +16,7 @@
 }
 
 + (id)ioForSimDevice:(id)arg1;
-@property (nonatomic, assign) __weak SimDevice *device;
-- (void).cxx_destruct;
+@property (nonatomic, weak) SimDevice *device;
 - (void)detachConsumer:(id)arg1 fromPort:(id)arg2;
 - (void)attachConsumer:(id)arg1 toPort:(id)arg2;
 - (BOOL)unregisterService:(id)arg1 error:(id *)arg2;
