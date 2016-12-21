@@ -363,7 +363,7 @@ extension CLI : Parsable {
       .withExpandedDesc
       .sectionize(
         "fbsimctl", "Help",
-        "fbsimclt is a Mac OS X library for managing and manipulating iOS Simulators")
+        "fbsimctl is a Mac OS X library for managing and manipulating iOS Simulators")
   }
 }
 
