@@ -11,6 +11,8 @@
 
 @implementation FBiOSTargetDouble
 
+@synthesize deviceOperator;
+
 #pragma mark FBDebugDescribeable
 
 - (NSString *)description

@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 @class FBTestRunnerConfiguration;
-@protocol FBDeviceOperator;
+@protocol FBiOSTarget;
 
 /**
  A Protocol for preparing iOS for running an XCTest.
@@ -20,10 +20,10 @@
 /**
  Prepares FBTestRunnerConfiguration
 
- @param deviceOperator deviceOperator used to prepare test
+ @param iosTarget iOS target used to prepare test
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return FBTestRunnerConfiguration configuration used to start test
  */
-- (FBTestRunnerConfiguration *)prepareTestWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator error:(NSError **)error;
+- (FBTestRunnerConfiguration *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget error:(NSError **)error;
 
 @end

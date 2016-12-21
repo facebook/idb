@@ -17,19 +17,19 @@
 
 #pragma mark - Initializers
 
-+ (instancetype)withDeviceOperator:(id<FBDeviceOperator>)deviceOperator
++ (instancetype)withIOSTarget:(id<FBiOSTarget>)iosTarget;
 {
-  return [[FBTestManagerProcessInteractionOperator alloc] initWithDeviceOperator:deviceOperator];
+  return [[FBTestManagerProcessInteractionOperator alloc] initWithIOSTarget:iosTarget];
 }
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator
+- (instancetype)initWithIOSTarget:(id<FBiOSTarget>)iosTarget
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _deviceOperator = deviceOperator;
+  _iosTarget = iosTarget;
 
   return self;
 }
@@ -38,12 +38,12 @@
 
 - (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error
 {
-  if (![self.deviceOperator isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
-    if (![self.deviceOperator installApplicationWithPath:path error:error]) {
+  if (![self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
+    if (![self.iosTarget installApplicationWithPath:path error:error]) {
       return NO;
     }
   }
-  if (![self.deviceOperator launchApplication:configuration error:error]) {
+  if (![self.iosTarget launchApplication:configuration error:error]) {
     return NO;
   }
   return YES;
@@ -51,7 +51,7 @@
 
 - (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  return [self.deviceOperator killApplicationWithBundleID:bundleID error:error];
+  return [self.iosTarget killApplicationWithBundleID:bundleID error:error];
 }
 
 @end

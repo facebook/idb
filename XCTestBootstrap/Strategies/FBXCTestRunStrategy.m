@@ -23,7 +23,7 @@
 
 @interface FBXCTestRunStrategy ()
 
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> iosTarget;
 @property (nonatomic, strong, readonly) id<FBXCTestPreparationStrategy> prepareStrategy;
 @property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -34,22 +34,22 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDeviceOperator:deviceOperator testPrepareStrategy:testPrepareStrategy reporter:reporter logger:logger];
+  return [[self alloc] initWithIOSTarget:iosTarget testPrepareStrategy:testPrepareStrategy reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _deviceOperator = deviceOperator;
+  _iosTarget = iosTarget;
   _prepareStrategy = prepareStrategy;
   _reporter = reporter;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", iosTarget.udid]];
 
   return self;
 }
@@ -58,10 +58,10 @@
 
 - (nullable FBTestManager *)startTestManagerWithAttributes:(NSArray<NSString *> *)attributes environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
 {
-  NSAssert(self.deviceOperator, @"Device operator is needed to perform meaningful test");
+  NSAssert(self.iosTarget, @"iOS Target is needed to perform meaningful test");
   NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
   NSError *innerError;
-  FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithDeviceOperator:self.deviceOperator error:&innerError];
+  FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithIOSTarget:self.iosTarget error:&innerError];
   if (!configuration) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner configuration"]
@@ -76,13 +76,13 @@
     environment:[self environmentFromConfiguration:configuration environment:environment]
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  if (![self.deviceOperator launchApplication:appLaunch error:&innerError]) {
+  if (![self.iosTarget launchApplication:appLaunch error:&innerError]) {
     return [[[XCTestBootstrapError describe:@"Failed launch test runner"]
       causedBy:innerError]
       fail:error];
   }
 
-  pid_t testRunnerProcessID = [self.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
+  pid_t testRunnerProcessID = [self.iosTarget.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
   if (testRunnerProcessID < 1) {
     return [[XCTestBootstrapError
       describe:@"Failed to determine test runner process PID"]
@@ -98,7 +98,7 @@
   // Attach to the XCTest Test Runner host Process.
   FBTestManager *testManager = [FBTestManager
     testManagerWithContext:context
-    operator:self.deviceOperator
+    iosTarget:self.iosTarget
     reporter:self.reporter
     logger:self.logger];
 

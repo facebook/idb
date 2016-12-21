@@ -36,6 +36,7 @@
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorVideoRecordingCommands.h"
+#import "FBSimulatorControlOperator.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -43,6 +44,7 @@
 
 @implementation FBSimulator
 
+@synthesize deviceOperator = _deviceOperator;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 
 #pragma mark Lifecycle
@@ -99,6 +101,14 @@
 }
 
 #pragma mark FBiOSTarget
+
+- (id<FBDeviceOperator>)deviceOperator
+{
+  if (_deviceOperator == nil) {
+    _deviceOperator = [FBSimulatorControlOperator operatorWithSimulator:self];
+  }
+  return _deviceOperator;
+}
 
 - (NSString *)udid
 {

@@ -68,9 +68,9 @@
 
 #pragma mark - FBTestPreparationStrategy protocol
 
-- (FBTestRunnerConfiguration *)prepareTestWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator error:(NSError **)error
+- (FBTestRunnerConfiguration *)prepareTestWithIOSTarget:(id<FBiOSTarget>)iosTarget error:(NSError **)error
 {
-  NSAssert(deviceOperator, @"deviceOperator is needed to load bundles");
+  NSAssert(iosTarget, @"iosTarget is needed to load bundles");
   NSAssert(self.workingDirectory, @"Working directory is needed to prepare bundles");
   NSAssert(self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID, @"Test runner bundle ID is needed to load bundles");
   NSAssert(self.testLaunchConfiguration.testBundlePath, @"Path to test bundle is needed to load bundles");
@@ -100,7 +100,7 @@
   }
 
   // Prepare test runner
-  FBProductBundle *application = [deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:error];
+  FBProductBundle *application = [iosTarget.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:error];
   if (!application) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner"]

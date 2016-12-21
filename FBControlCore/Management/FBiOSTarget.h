@@ -18,6 +18,7 @@
 @class FBiOSTargetDiagnostics;
 @protocol FBControlCoreConfiguration_Device;
 @protocol FBControlCoreConfiguration_OS;
+@protocol FBDeviceOperator;
 
 /**
  Uses the known values of SimDevice State, to construct an enumeration.
@@ -48,6 +49,11 @@ NS_ASSUME_NONNULL_BEGIN
  Common Properties of Devices & Simulators.
  */
 @protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBVideoRecordingCommands>
+
+/**
+ Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.
+ */
+@property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
 
 /**
  The Unique Device Identifier of the iOS Target.
