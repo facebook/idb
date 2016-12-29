@@ -152,6 +152,7 @@
   NSURL *file = [NSURL fileURLWithPath:self.filePath];
   [self.session startRunning];
   [self.output startRecordingToOutputFileURL:file recordingDelegate:self];
+  [self.logger logFormat:@"Started Video Session for Device Video at file %@", self.filePath];
   return YES;
 }
 

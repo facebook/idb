@@ -51,7 +51,7 @@
   }
 
   dispatch_group_t waitGroup = dispatch_group_create();
-  [video stopRecording:waitGroup];
+  [video startRecording:waitGroup];
   long fail = dispatch_group_wait(waitGroup, FBControlCoreGlobalConfiguration.regularDispatchTimeout);
   if (fail) {
     return [[FBSimulatorError
@@ -70,11 +70,11 @@
   }
 
   dispatch_group_t waitGroup = dispatch_group_create();
-  [video startRecording:waitGroup];
+  [video stopRecording:waitGroup];
   long fail = dispatch_group_wait(waitGroup, FBControlCoreGlobalConfiguration.regularDispatchTimeout);
   if (fail) {
     return [[FBSimulatorError
-      describeFormat:@"Timeout waiting for video to start recording in %f seconds", FBControlCoreGlobalConfiguration.regularTimeout]
+      describeFormat:@"Timeout waiting for video to stop recording in %f seconds", FBControlCoreGlobalConfiguration.regularTimeout]
       failBool:error];
   }
   return YES;

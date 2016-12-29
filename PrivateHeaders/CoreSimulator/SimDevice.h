@@ -62,7 +62,7 @@
 - (BOOL)darwinNotificationGetState:(unsigned long long *)arg1 name:(id)arg2 error:(id *)arg3;
 - (BOOL)postDarwinNotification:(id)arg1 error:(id *)arg2;
 - (BOOL)terminateApplicationWithID:(id)arg1 error:(id *)arg2;
-- (int)launchApplicationWithID:(id)arg1 options:(id)arg2 error:(id *)arg3;
+- (pid_t)launchApplicationWithID:(NSString *)bundleID options:(NSDictionary<NSString *, id> *)options error:(NSError **)error;
 - (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
 - (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
 - (id)installedAppsWithError:(id *)arg1;

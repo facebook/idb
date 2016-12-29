@@ -97,4 +97,18 @@
   return self.bundleID;
 }
 
+- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath
+{
+  NSMutableDictionary<NSString *, id> *options = [NSMutableDictionary dictionary];
+  options[@"arguments"] = self.arguments;
+  options[@"environment"] = self.environment.count ? self.environment:  @{@"__SOME_MAGIC__" : @"__IS_ALIVE__"};
+  if (stdOutPath){
+    options[@"stdout"] = stdOutPath;
+  }
+  if (stdErrPath) {
+    options[@"stderr"] = stdErrPath;
+  }
+  return [options copy];
+}
+
 @end

@@ -61,7 +61,7 @@
 - (void)startWriting;
 - (void)finishWriting;
 - (void)didReceiveDamageRect:(struct CGRect)arg1;
-- (void)didChangeIOSurface:(id)arg1;
+- (void)didChangeIOSurface:(IOSurfaceRef)arg1;
 - (void)dealloc;
 
 // Remaining properties

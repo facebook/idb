@@ -30,7 +30,7 @@
                                            applicationDataPath:@"/appData"
                                        testLaunchConfiguration:[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/testBundle"]
    ];
-  XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
+  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] error:nil]);
 }
 
 - (void)testStrategyWithMissingAppData
@@ -40,7 +40,7 @@
                                            applicationDataPath:nil
                                        testLaunchConfiguration:[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/testBundle"]
    ];
-  XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
+  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] error:nil]);
 }
 
 - (void)testStrategyWithMissingTestBundle
@@ -50,7 +50,7 @@
                                            applicationDataPath:@"/appData"
                                        testLaunchConfiguration:nil
    ];
-  XCTAssertThrows([strategy prepareTestWithDeviceOperator:[OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)] error:nil]);
+  XCTAssertThrows([strategy prepareTestWithIOSTarget:[OCMockObject niceMockForProtocol:@protocol(FBiOSTarget)] error:nil]);
 }
 
 - (void)testDevicePreparation
@@ -71,9 +71,11 @@
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] writeData:[OCMArg any] toFile:@"/appData.xcappdata/AppData/tmp/TestPlans/testBundle.xctest.xctestconfiguration" options:0 error:[OCMArg anyObjectRef]];//TODO
   [[[[fileManagerMock expect] andReturnValue:@YES] ignoringNonObjectArgs] createDirectoryAtPath:@"/appData.xcappdata/AppData/tmp/TestPlans" withIntermediateDirectories:NO attributes:[OCMArg any] error:[OCMArg anyObjectRef]];
 
-  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject mockForProtocol:@protocol(FBDeviceOperator)];
-  [[[deviceOperatorMock expect] andReturnValue:@NO] isApplicationInstalledWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
-  [[[deviceOperatorMock expect] andReturnValue:@YES] installApplicationWithPath:@"/app" error:[OCMArg anyObjectRef]];
+  OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];
+  OCMockObject<FBiOSTarget> *iosTargetMock = [OCMockObject mockForProtocol:@protocol(FBiOSTarget)];
+  [[[iosTargetMock stub] andReturn:deviceOperatorMock] deviceOperator];
+  [[[iosTargetMock expect] andReturnValue:@NO] isApplicationInstalledWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
+  [[[iosTargetMock expect] andReturnValue:@YES] installApplicationWithPath:@"/app" error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturn:@"/remote/app"] applicationPathForApplicationWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturn:@"/remote/data"] containerPathForApplicationWithBundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
   [[[deviceOperatorMock expect] andReturnValue:@YES] uploadApplicationDataAtPath:@"/appData.xcappdata" bundleID:[OCMArg any] error:[OCMArg anyObjectRef]];
@@ -84,7 +86,7 @@
                                        testLaunchConfiguration:[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/testBundle"]
                                                    fileManager:fileManagerMock
    ];
-  FBTestRunnerConfiguration *configuration = [strategy prepareTestWithDeviceOperator:deviceOperatorMock error:nil];
+  FBTestRunnerConfiguration *configuration = [strategy prepareTestWithIOSTarget:iosTargetMock error:nil];
 
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.testRunner);
@@ -100,7 +102,7 @@
   XCTAssertEqualObjects(configuration.launchEnvironment[@"XCInjectBundleInto"], @"/remote/app/exec");
   XCTAssertEqualObjects(configuration.launchEnvironment[@"XCTestConfigurationFilePath"], @"/remote/data/tmp/TestPlans/testBundle.xctest.xctestconfiguration");
 
-  [deviceOperatorMock verify];
+  [iosTargetMock verify];
 }
 
 @end

@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <CoreSimulator/SimDevice.h>
+
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulator+Connection.h"
 #import "FBSimulator+Helpers.h"
@@ -34,11 +36,25 @@
 
 @end
 
+@interface FBApplicationLaunchStrategy_Bridge : FBApplicationLaunchStrategy
+
+@end
+
+@interface FBApplicationLaunchStrategy_CoreSimulator : FBApplicationLaunchStrategy
+
+@end
+
 @implementation FBApplicationLaunchStrategy
+
++ (instancetype)withSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
+{
+  Class strategyClass = useBridge ? FBApplicationLaunchStrategy_CoreSimulator.class : FBApplicationLaunchStrategy_CoreSimulator.class;
+  return [[strategyClass alloc] initWithSimulator:simulator];
+}
 
 + (instancetype)withSimulator:(FBSimulator *)simulator
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [self withSimulator:simulator useBridge:NO];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -68,15 +84,6 @@
       fail:error];
   }
 
-  // The Bridge must be connected in order for the launch to work.
-  FBSimulatorBridge *bridge = [[simulator connectWithError:&innerError] connectToBridge:&innerError];
-  if (!bridge) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
-      causedBy:innerError]
-      fail:error];
-  }
-
   // This check confirms that if there's a currently running process for the given Bundle ID it doesn't match one that has been recently launched.
   // Since the Background Modes of a Simulator can cause an Application to be launched independently of our usage of CoreSimulator,
   // it's possible that application processes will come to life before `launchApplication` is called, if it has been previously killed.
@@ -100,11 +107,8 @@
     return nil;
   }
 
-  // Launch the Application.
-  pid_t processIdentifier = [bridge
-    launch:appLaunch stdOutPath:(stdOutDiagnostic ? stdOutDiagnostic.asPath : nil)
-    stdErrPath:(stdErrDiagnostic ? stdErrDiagnostic.asPath : nil)
-    error:&innerError];
+  // Actually launch the Application, getting the Process Info.
+  pid_t processIdentifier = [self launchApplication:appLaunch stdOutPath:stdOutDiagnostic.asPath stdErrPath:stdErrDiagnostic.asPath error:&innerError];
   if (!processIdentifier) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to launch application %@", appLaunch]
@@ -113,15 +117,6 @@
       fail:error];
   }
 
-  // Report the diagnostics to the event sink.
-  if (stdOutDiagnostic) {
-    [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
-  }
-  if (stdErrDiagnostic) {
-    [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
-  }
-
-  // Get the Process Info, report to the event sink
   process = [simulator.processFetcher.processFetcher processInfoFor:processIdentifier timeout:FBControlCoreGlobalConfiguration.regularTimeout];
   if (!process) {
     return [[[[FBSimulatorError
@@ -132,7 +127,58 @@
   }
   [simulator.eventSink applicationDidLaunch:appLaunch didStart:process];
 
+  // Report the diagnostics to the event sink.
+  if (stdOutDiagnostic) {
+    [simulator.eventSink diagnosticAvailable:stdOutDiagnostic];
+  }
+  if (stdErrDiagnostic) {
+    [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
+  }
+
   return process;
+}
+
+- (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return 0;
+}
+
+@end
+
+@implementation FBApplicationLaunchStrategy_Bridge
+
+- (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
+{
+  // The Bridge must be connected in order for the launch to work.
+  NSError *innerError = nil;
+  FBSimulator *simulator = self.simulator;
+  FBSimulatorBridge *bridge = [[simulator connectWithError:&innerError] connectToBridge:&innerError];
+  if (!bridge) {
+    [[[FBSimulatorError
+      describeFormat:@"Could not connect bridge to Simulator in order to launch application %@", appLaunch]
+      causedBy:innerError]
+      failUInt:error];
+    return -1;
+  }
+
+  // Launch the Application.
+  return [bridge
+    launch:appLaunch
+    stdOutPath:stdErrPath
+    stdErrPath:stdOutPath
+    error:&innerError];
+}
+
+@end
+
+@implementation FBApplicationLaunchStrategy_CoreSimulator
+
+- (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
+{
+  FBSimulator *simulator = self.simulator;
+  NSDictionary<NSString *, id> *options = [appLaunch simDeviceLaunchOptionsWithStdOutPath:stdOutPath stdErrPath:stdErrPath];
+  return [simulator.device launchApplicationWithID:appLaunch.bundleID options:options error:error];
 }
 
 @end

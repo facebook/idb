@@ -175,7 +175,11 @@
     exceptions[bundleID] = @(timeout);
   }
   NSDictionary *defaults = @{@"FBLaunchWatchdogExceptions" : [exceptions copy]};
-  return [self modifyDefaultsInDomainOrPath:@"com.apple.springboard" defaults:defaults error:error];
+  return [self
+    amendRelativeToPath:@"Library/Preferences/com.apple.springboard.plist"
+    defaults:defaults
+    managingService:@"com.apple.SpringBoard"
+    error:error];
 }
 
 @end

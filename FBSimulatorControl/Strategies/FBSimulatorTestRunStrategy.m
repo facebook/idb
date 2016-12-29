@@ -72,12 +72,11 @@
       fail:error];
   }
 
-  FBSimulatorControlOperator *operator = [FBSimulatorControlOperator operatorWithSimulator:simulator];
   FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:self.configuration
     workingDirectory:self.workingDirectory];
   FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
-    strategyWithDeviceOperator:operator
+    strategyWithIOSTarget:simulator
     testPrepareStrategy:testPrepareStrategy
     reporter:self.reporter
     logger:simulator.logger];
