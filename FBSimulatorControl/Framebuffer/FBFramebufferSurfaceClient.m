@@ -9,9 +9,16 @@
 
 #import "FBFramebufferSurfaceClient.h"
 
+#import <IOSurface/IOSurfaceAPI.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 #import <SimulatorKit/SimDeviceFramebufferService.h>
+#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
+#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
+#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
+
+#import <CoreSimulator/SimDeviceIOClient.h>
 
 @interface FBFramebufferSurfaceClient_FramebufferService : FBFramebufferSurfaceClient
 
@@ -23,11 +30,25 @@
 
 @end
 
+@interface FBFramebufferSurfaceClient_IOClient : FBFramebufferSurfaceClient
+
+@property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
+@property (nonatomic, strong, readwrite) SimDeviceIOClient *ioClient;
+
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient clientQueue:(dispatch_queue_t)clientQueue;
+
+@end
+
 @implementation FBFramebufferSurfaceClient
 
 + (instancetype)clientForFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue
 {
   return [[FBFramebufferSurfaceClient_FramebufferService alloc] initWithFramebufferService:framebufferService clientQueue:clientQueue];
+}
+
++ (instancetype)clientForIOClient:(SimDeviceIOClient *)ioClient clientQueue:(dispatch_queue_t)clientQueue
+{
+  return [[FBFramebufferSurfaceClient_IOClient alloc] initWithIOClient:ioClient clientQueue:clientQueue];
 }
 
 - (void)obtainSurface:(void (^)(IOSurfaceRef))callback
@@ -91,6 +112,60 @@
 {
   NSParameterAssert(self.callback);
   self.callback(surface);
+}
+
+@end
+
+@implementation FBFramebufferSurfaceClient_IOClient
+
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient clientQueue:(dispatch_queue_t)clientQueue
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _ioClient = ioClient;
+  _clientQueue = clientQueue;
+
+  return self;
+}
+
+- (void)obtainSurface:(void (^)(IOSurfaceRef))callback
+{
+  NSParameterAssert(callback != nil);
+  IOSurfaceRef surface = [self surfaceFromIOClient];
+  dispatch_async(self.clientQueue, ^{
+    callback(surface);
+  });
+}
+
+- (void)detach
+{
+}
+
+#pragma mark Private
+
+- (IOSurfaceRef)surfaceFromIOClient
+{
+  for (id<SimDeviceIOPortInterface> port in self.ioClient.ioPorts) {
+    if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
+      continue;
+    }
+    id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> renderable = (id) [port descriptor];
+    if (![renderable conformsToProtocol:@protocol(SimDisplayRenderable)]) {
+      continue;
+    }
+    if (![renderable conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
+      continue;
+    }
+    IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(renderable.ioSurface);
+    if (!surface) {
+      continue;
+    }
+    return surface;
+  }
+  return nil;
 }
 
 @end

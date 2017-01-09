@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class SimDeviceFramebufferService;
+@class SimDeviceIOClient;
 
 /**
  Obtains an IOSurface from SimulatorKit.
@@ -26,6 +27,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Service Client.
  */
 + (instancetype)clientForFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue;
+
+/**
+ Obtains an IOSurface from an IOClient.
+
+ @param ioClient the Framebuffer Service to obtain from.
+ @param clientQueue the queue to schedule work on.
+ @return a Service Client.
+ */
++ (instancetype)clientForIOClient:(SimDeviceIOClient *)ioClient clientQueue:(dispatch_queue_t)clientQueue;
 
 /**
  Obtains the Surface
