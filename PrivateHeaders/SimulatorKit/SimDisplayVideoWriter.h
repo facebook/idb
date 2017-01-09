@@ -4,7 +4,7 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 #import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
 #import <SimulatorKit/SimDisplayDamageRectangleDelegate-Protocol.h>
@@ -58,11 +58,25 @@
 @property (strong, nonatomic) NSUUID *consumerUUID;
 @property (nonatomic, assign) unsigned long long timeScale;
 @property (nonatomic, assign) double framesPerSecond;
+
+/**
+ startWriting must be called before a Damage Rect or IOSurface is sent.
+ */
 - (void)startWriting;
+
 - (void)finishWriting;
-- (void)didReceiveDamageRect:(struct CGRect)arg1;
-- (void)didChangeIOSurface:(IOSurfaceRef)arg1;
-- (void)dealloc;
+
+/**
+ A Damage Rect must be passed each time the Surface changes a subrect.
+ simctl does not send an didReceiveDamageRect: initially, but on the first frame change.
+ */
+- (void)didReceiveDamageRect:(CGRect)rect;
+
+/**
+ The Surface is an xpc_object_t and internally converted to an IOSurfaceRef.
+ This is then assigned to the ioSurface property.
+ */
+- (void)didChangeIOSurface:(xpc_object_t)surface;
 
 // Remaining properties
 @property (atomic, copy, readonly) NSString *debugDescription;

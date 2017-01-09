@@ -10,6 +10,9 @@
 @class NSUUID;
 @protocol SimDeviceIOPortDescriptorInterface;
 
+/**
+ * Implemented by IOPorts returned from -[SimDeviceIOClient ioPorts]
+ */
 @protocol SimDeviceIOPortInterface <FoundationXPCProtocolProxyable, NSObject>
 @property (nonatomic, readonly) id<SimDeviceIOPortDescriptorInterface> descriptor;
 @property (nonatomic, readonly) NSUUID *uuid;

@@ -9,6 +9,9 @@
 @class NSArray, NSUUID;
 @protocol SimDeviceIOPortConsumer, SimDeviceIOPortInterface;
 
+/**
+ Implemented by SimDeviceIO
+ */
 @protocol SimDeviceIOProtocol <NSObject>
 - (void)detachConsumer:(id<SimDeviceIOPortConsumer>)arg1 fromPort:(id<SimDeviceIOPortInterface>)arg2;
 - (void)attachConsumer:(id<SimDeviceIOPortConsumer>)arg1 toPort:(id<SimDeviceIOPortInterface>)arg2;

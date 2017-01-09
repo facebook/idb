@@ -4,8 +4,20 @@
 //     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2015 by Steve Nygard.
 //
 
+#import <Foundation/Foundation.h>
+#import <xpc/xpc.h>
+
 #import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
 
+/**
+ Protocol for recievers of IOSurfaces
+ */
 @protocol SimDisplayIOSurfaceRenderableDelegate <FoundationXPCProtocolProxyable>
-- (void)didChangeIOSurface:(id)arg1;
+
+/**
+ The Surface argument is not an IOSurfaceRef, but an xpc_object_t.
+ Can be converted to an IOSurface with IOSurfaceLookupFromXPCObject.
+ */
+- (void)didChangeIOSurface:(xpc_object_t)surface;
+
 @end
