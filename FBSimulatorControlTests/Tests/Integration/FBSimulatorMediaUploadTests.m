@@ -15,22 +15,28 @@
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlTestCase.h"
 
-@interface FBSimulatorInteractionTests : FBSimulatorControlTestCase
+@interface FBSimulatorMediaUploadTests : FBSimulatorControlTestCase
 
 @end
 
-@implementation FBSimulatorInteractionTests
+@implementation FBSimulatorMediaUploadTests
 
 - (void)testPhotoUpload
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  [self assertInteractionSuccessful:[simulator.interact uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path]]];
+  NSError *error = nil;
+  BOOL success = [[FBUploadMediaStrategy strategyWithSimulator:simulator] uploadPhotos:@[FBSimulatorControlFixtures.photo0Path, FBSimulatorControlFixtures.photo1Path] error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 }
 
 - (void)testVideoUploadSuccess
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  [self assertInteractionSuccessful:[simulator.interact uploadVideos:@[FBSimulatorControlFixtures.video0Path]]];
+  NSError *error = nil;
+  BOOL success = [[FBUploadMediaStrategy strategyWithSimulator:simulator] uploadVideos:@[FBSimulatorControlFixtures.video0Path] error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 }
 
 @end

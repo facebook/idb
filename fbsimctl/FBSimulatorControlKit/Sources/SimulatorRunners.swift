@@ -233,10 +233,10 @@ private struct UploadRunner : Runner {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let interaction = SimulatorInteractionRunner(self.reporter, EventName.Upload, StringsSubject(paths)) { interaction in
-        interaction.uploadMedia(paths)
+      let runner = iOSTargetRunner(reporter, EventName.Upload, StringsSubject(paths)) {
+        try FBUploadMediaStrategy(simulator: self.reporter.simulator).uploadMedia(paths)
       }
-      let result = interaction.run()
+      let result = runner.run()
       switch result {
       case .failure: return result
       default: break
