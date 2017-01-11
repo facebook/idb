@@ -28,6 +28,7 @@
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorProcessFetcher.h"
+#import "FBSimulatorSubprocessTerminationStrategy.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
 
 @interface FBApplicationLaunchStrategy ()
@@ -142,6 +143,110 @@
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return 0;
+}
+
+- (BOOL)uninstallApplication:(NSString *)bundleID error:(NSError **)error
+{
+  // Confirm the app is suitable to be uninstalled.
+  FBSimulator *simulator = self.simulator;
+  if ([simulator isSystemApplicationWithBundleID:bundleID error:nil]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
+      inSimulator:simulator]
+      failBool:error];
+  }
+  NSError *innerError = nil;
+  if (![simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
+      causedBy:innerError]
+      inSimulator:simulator]
+      failBool:error];
+  }
+  // Kill the app if it's running
+  [simulator killApplicationWithBundleID:bundleID error:nil];
+  // Then uninstall for real.
+  if (![simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to uninstall '%@'", bundleID]
+      causedBy:innerError]
+      inSimulator:simulator]
+      failBool:error];
+  }
+  return YES;
+}
+
+- (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
+{
+  NSParameterAssert(appLaunch);
+
+  // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
+  FBSimulator *simulator = self.simulator;
+  NSError *innerError = nil;
+  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  if (process) {
+    if (![[FBSimulatorSubprocessTerminationStrategy forSimulator:simulator] terminate:process error:error]) {
+      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    }
+  }
+
+  // Perform the launch usin the launch config
+  if (![self launchApplication:appLaunch error:&innerError]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to re-launch %@", appLaunch]
+      inSimulator:simulator]
+      causedBy:innerError]
+      failBool:error];
+  }
+  return YES;
+}
+
+- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error
+{
+  // Obtain Application Launch info for the last launch.
+  FBSimulator *simulator = self.simulator;
+  FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
+  if (!process) {
+    return [[[FBSimulatorError
+      describe:@"Cannot re-launch an find the last-launched process"]
+      inSimulator:simulator]
+      failBool:error];
+  }
+
+  // Obtain the Launch Config for the process.
+  FBApplicationLaunchConfiguration *launchConfig = (FBApplicationLaunchConfiguration *) simulator.history.processLaunchConfigurations[process];
+  if (!process) {
+    return [[[FBSimulatorError
+      describe:@"Cannot re-launch an Application until one has been launched; there's no prior process launch config"]
+      inSimulator:self.simulator]
+      failBool:error];
+  }
+
+  return [self launchOrRelaunchApplication:launchConfig error:error];
+}
+
+- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error
+{
+  // Obtain Application Launch info for the last launch.
+  FBSimulator *simulator = self.simulator;
+  FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
+  if (!process) {
+    return [[[FBSimulatorError
+      describe:@"Cannot re-launch an find the last-launched process"]
+      inSimulator:simulator]
+      failBool:error];
+  }
+
+  // Kill the Application Process
+  NSError *innerError = nil;
+  if (![[FBSimulatorSubprocessTerminationStrategy forSimulator:simulator] terminate:process error:error]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to terminate app %@", process.shortDescription]
+      causedBy:innerError]
+      inSimulator:simulator]
+      failBool:error];
+  }
+  return YES;
 }
 
 @end

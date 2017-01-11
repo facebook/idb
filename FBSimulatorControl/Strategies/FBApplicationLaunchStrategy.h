@@ -48,6 +48,47 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBProcessInfo *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
 
+/**
+ Uninstalls an Application.
+
+ @param bundleID the bundleID of the Application to uninstall.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)uninstallApplication:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Launches the Application with the given Configuration, or Re-Launches it.
+ A Relaunch is a kill of the currently launched application, followed by a launch.
+
+ @param appLaunch the Application to Re-Launch.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
+
+/**
+ Relaunches the last-known-launched Application:
+ - If the Application is running, it will be killed first then launched.
+ - If the Application has terminated, it will be launched.
+ - If no known Application has been launched yet, the interaction will fail.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error;
+
+/**
+ Terminates the last-launched Application:
+ - If the Application is running, it will be killed first then launched.
+ - If the Application has terminated, the call will fail.
+ - If no known Application has been launched yet, the call will fail.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
