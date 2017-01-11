@@ -54,6 +54,11 @@
   return [self applicationWithPath:path installType:FBApplicationInstallTypeUser error:error];
 }
 
++ (instancetype)remoteApplicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID
+{
+  return [[FBApplicationDescriptor alloc] initWithName:name path:path bundleID:bundleID binary:nil installType:FBApplicationInstallTypeRemote];
+}
+
 + (nullable instancetype)applicationWithPath:(NSString *)path installTypeString:(nullable NSString *)installTypeString error:(NSError **)error
 {
   FBApplicationInstallType installType = [FBApplicationDescriptor installTypeFromString:installTypeString];

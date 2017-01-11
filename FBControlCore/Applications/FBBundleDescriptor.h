@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param binary the Path to the binary inside the Application. Must not be nil.
  @returns a new FBBundleDescriptor instance.
  */
-- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary;
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary;
 
 /**
  An initializer for FBBundleDescriptor that checks the nullability of the arguments
@@ -78,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Executable Binary contained within the Application's Bundle.
  */
-@property (nonatomic, copy, readonly) FBBinaryDescriptor *binary;
+@property (nonatomic, copy, readonly, nullable) FBBinaryDescriptor *binary;
 
 @end
 

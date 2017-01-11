@@ -21,6 +21,7 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
   FBApplicationInstallTypeSystem = 1, /** The Application Type is part of the Operating System */
   FBApplicationInstallTypeUser = 2, /** The Application Type is installable by the User */
   FBApplicationInstallTypeMac = 3, /** The Application Type is part of macOS */
+  FBApplicationInstallTypeRemote = 4, /** The Application Type is remote */
 };
 
 @class FBBinaryDescriptor;
@@ -38,6 +39,16 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
  @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
  */
 + (nullable instancetype)userApplicationWithPath:(NSString *)path error:(NSError **)error;
+
+/**
+ Constructs a FBApplicationDescriptor for the a Remote Application.
+
+ @param name the name of the application
+ @param path the path of the application
+ @param bundleID the bundle id of the application
+ @returns a FBApplicationDescriptor instance.
+ */
++ (instancetype)remoteApplicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID;
 
 /**
  Constructs a FBApplicationDescriptor for the Application at the given path.
