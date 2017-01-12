@@ -23,9 +23,6 @@
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
-static NSString *const ApplicationTypeKey = @"ApplicationType";
-static NSString *const ApplicationPathKey = @"Path";
-
 @implementation FBSimulator (Helpers)
 
 #pragma mark Properties
@@ -52,19 +49,6 @@ static NSString *const ApplicationPathKey = @"Path";
     return @[];
   }
   return [self.processFetcher.processFetcher subprocessesOf:launchdSim.processIdentifier];
-}
-
-- (NSArray<FBApplicationDescriptor *> *)installedApplications
-{
-  NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
-  for (NSDictionary *appInfo in [[self.device installedAppsWithError:nil] allValues]) {
-    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[ApplicationPathKey] installTypeString:appInfo[ApplicationTypeKey] error:nil];
-    if (!application) {
-      continue;
-    }
-    [applications addObject:application];
-  }
-  return [applications copy];
 }
 
 #pragma mark Methods

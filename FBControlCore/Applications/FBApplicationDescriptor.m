@@ -83,6 +83,7 @@
 static NSString *const FBApplicationInstallTypeStringUser = @"user";
 static NSString *const FBApplicationInstallTypeStringSystem = @"system";
 static NSString *const FBApplicationInstallTypeStringMac = @"mac";
+static NSString *const FBApplicationInstallTypeStringRemote = @"remote";
 static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
 
 + (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType
@@ -94,6 +95,8 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
       return FBApplicationInstallTypeStringSystem;
     case FBApplicationInstallTypeMac:
       return FBApplicationInstallTypeStringMac;
+    case FBApplicationInstallTypeRemote:
+      return FBApplicationInstallTypeStringRemote;
     default:
       return FBApplicationInstallTypeStringUnknown;
   }
@@ -113,6 +116,9 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
   }
   if ([installTypeString isEqualToString:FBApplicationInstallTypeStringMac]) {
     return FBApplicationInstallTypeMac;
+  }
+  if ([installTypeString isEqualToString:FBApplicationInstallTypeStringRemote]) {
+    return FBApplicationInstallTypeRemote;
   }
   return FBApplicationInstallTypeUnknown;
 }

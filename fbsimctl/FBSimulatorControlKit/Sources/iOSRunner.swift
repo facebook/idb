@@ -46,6 +46,11 @@ struct iOSActionProvider {
         subject: ControlCoreSubject(appLaunch),
         interaction: FBCommandInteractions.launchApplication(appLaunch, command: target)
       )
+    case .listApps:
+      return iOSTargetRunner(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
+        let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
+        reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
+      }
     case .record(let start):
       return iOSTargetRunner(
         reporter: reporter,

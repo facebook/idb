@@ -115,4 +115,17 @@
   return YES;
 }
 
+- (NSArray<FBApplicationDescriptor *> *)installedApplications
+{
+  NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
+  for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
+    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[ApplicationPathKey] installTypeString:appInfo[ApplicationTypeKey] error:nil];
+    if (!application) {
+      continue;
+    }
+    [applications addObject:application];
+  }
+  return [applications copy];
+}
+
 @end

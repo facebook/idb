@@ -74,4 +74,9 @@
   return NO;
 }
 
+- (NSArray<FBApplicationDescriptor *> *)installedApplications
+{
+  return nil;
+}
+
 @end

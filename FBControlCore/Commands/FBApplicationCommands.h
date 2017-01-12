@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBApplicationDescriptor;
 @class FBApplicationLaunchConfiguration;
 
 /**
@@ -53,6 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the operation succeeds, otherwise NO.
  */
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Fetches a list of the installed applications in json serializable representation.
+ */
+- (NSArray<FBApplicationDescriptor *> *)installedApplications;
 
 @end
 

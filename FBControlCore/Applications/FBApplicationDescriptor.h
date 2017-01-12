@@ -97,6 +97,13 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
  */
 + (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType;
 
+/**
+ Returns the FBApplicationInstallType from the string representation.
+
+ @param installTypeString install type as a string
+ */
++ (FBApplicationInstallType)installTypeFromString:(nullable NSString *)installTypeString;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -104,11 +104,6 @@ struct SimulatorActionRunner : Runner {
             interaction.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: configuration.timeout)
         }
       }
-    case .listApps:
-      return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
-        let subject = ControlCoreSubject(simulator.installedApplications.map { $0.jsonSerializableRepresentation() } as NSArray)
-        reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
-      }
     case .open(let url):
       return SimulatorInteractionRunner(reporter, EventName.Open, url.bridgedAbsoluteString) { interaction in
         interaction.open(url)
