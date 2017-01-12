@@ -128,10 +128,6 @@ struct SimulatorActionRunner : Runner {
       return SimulatorInteractionRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) { interaction in
         interaction.setLocation(latitude, longitude: longitude)
       }
-    case .uninstall(let bundleID):
-      return SimulatorInteractionRunner(reporter, EventName.Uninstall, bundleID) { interaction in
-        interaction.uninstallApplication(withBundleID: bundleID)
-      }
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
     case .watchdogOverride(let bundleIDs, let timeout):

@@ -29,6 +29,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error;
 
 /**
+ Uninstalls application with given bundle id.
+
+ @param bundleID the bundle id of the application to uninstall.
+ @param error an error out for any error that occurs.
+ @returns YES if the command succeeds, NO otherwise.
+ */
+- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
  Queries to see if an Application is installed on iOS.
 
  @param bundleID The Bundle ID of the application.

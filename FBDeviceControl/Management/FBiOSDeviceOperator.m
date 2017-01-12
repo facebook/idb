@@ -274,6 +274,26 @@ static NSString *const ApplicationPathKey = @"Path";
   return YES;
 }
 
+- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  id device = self.device.dvtDevice;
+
+  [self fetchApplications];
+
+  id object = [FBRunLoopSpinner spinUntilBlockFinished:^id{
+    return [device uninstallApplicationWithBundleIdentifierSync:bundleID];
+  }];
+
+  if ([object isKindOfClass:NSError.class]) {
+    if (error) {
+      *error = object;
+    }
+    return NO;
+  };
+
+  return YES;
+}
+
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   return [self installedApplicationWithBundleIdentifier:bundleID] != nil;

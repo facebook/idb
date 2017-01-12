@@ -39,8 +39,6 @@
 
 - (instancetype)uninstallApplicationWithBundleID:(NSString *)bundleID
 {
-  NSParameterAssert(bundleID);
-
   return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
     return [[FBApplicationLaunchStrategy withSimulator:simulator] uninstallApplication:bundleID error:error];
   }];
