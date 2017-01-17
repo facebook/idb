@@ -28,11 +28,10 @@
 
 + (instancetype)withConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error
 {
-  NSString *setPath = [configuration.workingDirectory stringByAppendingPathComponent:@"sim"];
   id<FBControlCoreLogger> logger = configuration.logger;
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
-    configurationWithDeviceSetPath:setPath
-    options:FBSimulatorManagementOptionsDeleteAllOnFirstStart];
+    configurationWithDeviceSetPath:nil
+    options:FBSimulatorManagementOptionsKillAllOnFirstStart];
 
   NSError *innerError = nil;
   FBSimulatorControl *simulatorControl = [FBSimulatorControl withConfiguration:controlConfiguration logger:configuration.logger error:&innerError];
@@ -75,7 +74,7 @@
 {
   return [self.simulatorControl.pool
     allocateSimulatorWithConfiguration:self.simulatorConfiguration
-    options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree
+    options:FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsShutdownOnAllocate | FBSimulatorAllocationOptionsCreate
     error:error];
 }
 
