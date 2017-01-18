@@ -279,7 +279,7 @@
 
 - (NSTimeInterval)defaultTimeout
 {
-  return 3600;
+  return 1000;
 }
 
 - (NSString *)testType
@@ -333,11 +333,6 @@
 @end
 
 @implementation FBListTestConfiguration
-
-- (NSTimeInterval)defaultTimeout
-{
-  return 1000;
-}
 
 - (NSString *)testType
 {
