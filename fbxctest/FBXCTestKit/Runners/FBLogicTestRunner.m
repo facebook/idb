@@ -170,7 +170,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
         failBool:error];
     }
     return [[[FBXCTestError
-      describe:@"xctest process exited with non-normal status code"]
+      describeFormat:@"xctest process exited abnormally %@", task.error.localizedDescription]
       causedBy:task.error]
       failBool:error];
   }
