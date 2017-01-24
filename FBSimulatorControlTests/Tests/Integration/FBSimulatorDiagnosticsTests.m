@@ -84,4 +84,28 @@
   }];
 }
 
+- (void)testCreateStdErrDiagnosticForSimulator
+{
+  NSError *error;
+  FBDiagnostic *stdErrDiagnostic = nil;
+  FBDiagnostic *stdOutDiagnostic = nil;
+
+  FBSimulator *simulator = [self assertObtainsSimulator];
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration defaultOutputToFile];
+  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch withOutput:output];
+
+  [appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:&error];
+  XCTAssertNil(error);
+
+  [appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:&error];
+  XCTAssertNil(error);
+
+  XCTAssertNotNil(stdErrDiagnostic.asPath);
+  XCTAssertNotNil(stdOutDiagnostic.asPath);
+
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  XCTAssertTrue([fileManager fileExistsAtPath:stdErrDiagnostic.asPath]);
+  XCTAssertTrue([fileManager fileExistsAtPath:stdOutDiagnostic.asPath]);
+}
+
 @end
