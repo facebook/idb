@@ -58,7 +58,7 @@ class SynchronousRelay : Relay {
     self.started()
 
     // Start the event loop.
-    RunLoop.current.spinRunLoop(withTimeout: DBL_MAX) { signalled }
+    RunLoop.current.spinRunLoop(withTimeout: DBL_MAX, untilTrue: { signalled })
     handler.unregister()
   }
 

@@ -234,9 +234,7 @@ private struct UploadRunner : Runner {
       }
     }
 
-    guard let basePath: NSString = self.reporter.simulator.auxillaryDirectory as NSString? else {
-        return CommandResult.failure("Could not determine aux directory for simulator \(self.reporter.target) to path")
-    }
+    let basePath = self.reporter.simulator.auxillaryDirectory
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)
     let arbitrary = diagnosticLocations.filter{ arbitraryPredicate.evaluate(with: $0.1) }
     for (sourceDiagnostic, sourcePath) in arbitrary {
