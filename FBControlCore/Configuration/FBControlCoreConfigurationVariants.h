@@ -201,6 +201,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBControlCoreConfiguration_iOS_10_2 : FBControlCoreConfiguration_iOS_Base
 @end
 
+@interface FBControlCoreConfiguration_iOS_10_3 : FBControlCoreConfiguration_iOS_Base
+@end
+
 @interface FBControlCoreConfiguration_tvOS_Base : FBControlCoreConfiguration_OS_Base
 @end
 

@@ -928,6 +928,15 @@
 
 @end
 
+@implementation FBControlCoreConfiguration_iOS_10_3
+
+- (NSString *)name
+{
+  return @"iOS 10.3";
+}
+
+@end
+
 @implementation FBControlCoreConfiguration_tvOS_Base
 
 - (NSString *)name
@@ -1106,6 +1115,7 @@
       FBControlCoreConfiguration_iOS_10_0.new,
       FBControlCoreConfiguration_iOS_10_1.new,
       FBControlCoreConfiguration_iOS_10_2.new,
+      FBControlCoreConfiguration_iOS_10_3.new,
       FBControlCoreConfiguration_tvOS_9_0.new,
       FBControlCoreConfiguration_tvOS_9_1.new,
       FBControlCoreConfiguration_tvOS_9_2.new,
