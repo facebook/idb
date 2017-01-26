@@ -936,6 +936,13 @@
   return self;
 }
 
+- (instancetype)updateStorageDirectoryByAppendingPathComponent:(NSString *)pathComponent
+{
+  NSAssert(self.diagnostic.storageDirectory, @"storageDirectory may not be nil when appending path component");
+  self.diagnostic.storageDirectory = [self.diagnostic.storageDirectory stringByAppendingPathComponent:pathComponent];
+  return self;
+}
+
 - (instancetype)updateDestination:(NSString *)destination
 {
   self.diagnostic.destination = destination;
