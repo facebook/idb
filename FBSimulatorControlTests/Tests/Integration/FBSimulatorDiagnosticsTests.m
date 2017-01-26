@@ -84,6 +84,32 @@
   }];
 }
 
+- (void)testLaunchedApplicationLogsWithCustomLogFilePath
+{
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
+  NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
+  NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
+
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBApplicationLaunchConfiguration *appLaunch = [[self.tableSearchAppLaunch withOutput:output] injectingShimulator];
+  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  XCTAssertTrue([fileManager fileExistsAtPath:stdErrPath]);
+  XCTAssertTrue([fileManager fileExistsAtPath:stdOutPath]);
+
+  [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
+    NSString *stdErrContent = [NSString stringWithContentsOfFile:stdErrPath encoding:NSUTF8StringEncoding error:nil];
+    NSString *stdOutContent = [NSString stringWithContentsOfFile:stdErrPath encoding:NSUTF8StringEncoding error:nil];
+    return [stdErrContent stringByAppendingString:stdOutContent];
+  }];
+}
+
 - (void)testCreateStdErrDiagnosticForSimulator
 {
   NSError *error;
