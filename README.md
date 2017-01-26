@@ -31,7 +31,7 @@ As `FBSimulatorControl` nears a stable version, the API may change but can be co
 The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControlTests.xctest` bundles without any additional dependencies. The Project File is checked into the repo and the Framework can be build from this project.
 
 Once you build the `FBSimulatorControl.framework`, it can be linked like any other 3rd-party Framework for your project:
-- Add `FBSimulatorControl.framework` to the [Target's 'Link Binary With Libraries' build phase](Help/link_binary_with_libraries.png).
+- Add `FBSimulatorControl.framework` to the [Target's 'Link Binary With Libraries' build phase](Documentation/link_binary_with_libraries.png).
 - Ensure that `FBSimulatorControl` is copied into the Target's bundle (if your Target is an Application or Framework) or a path relative to the Executable if your project does not have a bundle.
 
 ## Usage
