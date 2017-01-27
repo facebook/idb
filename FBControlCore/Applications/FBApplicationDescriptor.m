@@ -34,18 +34,11 @@
 
 + (nullable instancetype)applicationWithPath:(NSString *)path installType:(FBApplicationInstallType)installType error:(NSError **)error
 {
-  NSMutableDictionary *applicationCache = self.applicationCache;
-  FBApplicationDescriptor *application = applicationCache[path];
-  if (application) {
-    return application;
-  }
-
   NSError *innerError = nil;
-  application = [FBApplicationDescriptor createApplicationWithPath:path installType:installType error:&innerError];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor createApplicationWithPath:path installType:installType error:&innerError];
   if (!application) {
     return [FBControlCoreError failWithError:innerError errorOut:error];
   }
-  applicationCache[path] = application;
   return application;
 }
 
@@ -173,16 +166,6 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
   }
 
   return [[FBApplicationDescriptor alloc] initWithName:appName path:path bundleID:bundleID binary:binary installType:installType];
-}
-
-+ (NSMutableDictionary *)applicationCache
-{
-  static dispatch_once_t onceToken;
-  static NSMutableDictionary *cache;
-  dispatch_once(&onceToken, ^{
-    cache = [NSMutableDictionary dictionary];
-  });
-  return cache;
 }
 
 + (FBBinaryDescriptor *)binaryForApplicationPath:(NSString *)applicationPath error:(NSError **)error
