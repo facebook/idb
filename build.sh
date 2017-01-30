@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -o pipefail
 
 if hash xcpretty 2>/dev/null; then
   HAS_XCPRETTY=true
