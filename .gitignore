@@ -44,6 +44,7 @@ Carthage/Build
 Carthage/Checkouts
 fbsimctl/Carthage/Build
 fbsimctl/Carthage/Checkouts
+fbsimctl/cli-tests/supports_metal
 
 output/
 .clang-format
