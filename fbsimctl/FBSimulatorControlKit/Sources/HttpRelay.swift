@@ -105,6 +105,7 @@ struct ActionRoute {
     case constant(HttpAction)
     case path(([String]) throws -> HttpAction)
     case parser((JSON) throws -> HttpAction)
+    case binary((Data) throws -> HttpAction)
   }
 
   let method: HttpMethod
@@ -113,6 +114,10 @@ struct ActionRoute {
 
   static func post(_ endpoint: EventName, handler: @escaping (JSON) throws -> HttpAction) -> ActionRoute {
     return ActionRoute(method: HttpMethod.POST, endpoint: endpoint, handler: Handler.parser(handler))
+  }
+
+  static func postRaw(_ endpoint: EventName, handler: @escaping (Data) throws -> HttpAction) -> ActionRoute {
+    return ActionRoute(method: HttpMethod.POST, endpoint: endpoint, handler: Handler.binary(handler))
   }
 
   static func getConstant(_ endpoint: EventName, action: HttpAction) -> ActionRoute {
@@ -150,6 +155,11 @@ struct ActionRoute {
         let action = try actionParser(json)
         let query = try? FBiOSTargetQuery.inflate(fromJSON: json.getValue("simulators").decode())
         return (action, query)
+      }
+    case .binary(let binaryHandler):
+      return { request in
+        let action = try binaryHandler(request.body)
+        return (action, nil)
       }
     }
   }}
@@ -245,6 +255,23 @@ class HttpRelay : Relay {
       }
       let query = FBDiagnosticQuery.named([name])
       return HttpAction(Action.diagnose(query, DiagnosticFormat.Content))
+    }
+  }}
+
+  fileprivate static var installRoute: ActionRoute { get {
+    return ActionRoute.postRaw(EventName.Install) { data in
+      let guid = UUID().uuidString
+      let ipaURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("fbsimctl-\(guid)")
+        .appendingPathExtension("ipa")
+
+      if (FileManager.default.fileExists(atPath: ipaURL.path)) {
+        throw ParseError.custom("Could not generate temporary filename, \(ipaURL.path) already exists.")
+      }
+      try data.write(to: ipaURL)
+      return HttpAction(Action.install(ipaURL.path)) {
+        try? FileManager.default.removeItem(at: ipaURL)
+      }
     }
   }}
 
@@ -346,6 +373,7 @@ class HttpRelay : Relay {
       self.configRoute,
       self.diagnosticQueryRoute,
       self.diagnosticRoute,
+      self.installRoute,
       self.launchRoute,
       self.listRoute,
       self.openRoute,
