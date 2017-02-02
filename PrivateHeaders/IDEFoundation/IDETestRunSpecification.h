@@ -78,7 +78,8 @@
 @property(copy) NSString *blueprintName; // @synthesize blueprintName=_blueprintName;
 @property(copy) NSString *blueprintProviderRelativePath; // @synthesize blueprintProviderRelativePath=_blueprintProviderRelativePath;
 @property(copy) DVTFilePath *baselinePlistFilePath; // @synthesize baselinePlistFilePath=_baselinePlistFilePath;
-@property(copy) NSString *UITestingTargetAppPath; // @synthesize UITestingTargetAppPath=_UITestingTargetAppPath;
+// Xcode >=8.3: DVTFilePath <8.3: NSString
+@property(copy) id UITestingTargetAppPath; // @synthesize UITestingTargetAppPath=_UITestingTargetAppPath;
 @property(copy) NSString *UITestingTargetAppBundleId; // @synthesize UITestingTargetAppBundleId=_UITestingTargetAppBundleId;
 @property BOOL useUITargetAppProvidedByTests; // @synthesize useUITargetAppProvidedByTests=_useUITargetAppProvidedByTests;
 @property BOOL isUITestBundle; // @synthesize isUITestBundle=_isUITestBundle;

@@ -106,7 +106,7 @@
 
     if (testRunSpecification.isUITestBundle) {
       FBApplicationDescriptor *targetApplication = [FBApplicationDescriptor
-        userApplicationWithPath:testRunSpecification.UITestingTargetAppPath
+        userApplicationWithPath:[self uiTestingTargetAppPathFromTestRunSpecification:testRunSpecification]
         error:&innerError];
 
       if (innerError) {
@@ -120,7 +120,7 @@
       NSString *targetApplicationBundleID = testRunSpecification.UITestingTargetAppBundleId ?: targetApplication.bundleID;
 
       testLaunchConfiguration = [[testLaunchConfiguration
-        withTargetApplicationPath:testRunSpecification.UITestingTargetAppPath]
+        withTargetApplicationPath:[self uiTestingTargetAppPathFromTestRunSpecification:testRunSpecification]]
         withTargetApplicationBundleID:targetApplicationBundleID];
     }
 
@@ -168,6 +168,19 @@
   NSAssert([testRunSpecification.testHostRunnable isKindOfClass:objc_lookUpClass("IDEPathRunnable")],
            @"Invalid class, expected testHostRunnable to be of type: IDEPathRunnable");
   return ((IDEPathRunnable *)testRunSpecification.testHostRunnable).filePath.pathString;
+}
+
+- (NSString *)uiTestingTargetAppPathFromTestRunSpecification:(IDETestRunSpecification *)testRunSpecification
+{
+  id targetAppPath = testRunSpecification.UITestingTargetAppPath;
+  if ([targetAppPath isKindOfClass:NSString.class]) {
+    return targetAppPath;
+  } else if ([targetAppPath isKindOfClass:objc_lookUpClass("DVTFilePath")]) {
+    return ((DVTFilePath *)targetAppPath).pathString;
+  }
+  NSAssert(NO, @"Invalid class: %@, expected UITestingTargetAppPath to be of type NSString or DVTFilePath",
+           targetAppPath);
+  return nil;
 }
 
 @end
