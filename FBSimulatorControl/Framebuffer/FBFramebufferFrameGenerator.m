@@ -17,7 +17,7 @@
 #import <SimulatorKit/SimDeviceFramebufferBackingStore+Removed.h>
 
 #import "FBFramebufferFrame.h"
-#import "FBFramebufferDelegate.h"
+#import "FBFramebufferFrameSink.h"
 
 static const NSInteger FBFramebufferLogFrameFrequency = 100;
 // Timescale is in nanoseconds
@@ -29,7 +29,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 @property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, copy, readonly) NSDecimalNumber *scale;
-@property (nonatomic, weak, readonly) id<FBFramebufferDelegate> delegate;
+@property (nonatomic, weak, readonly) id<FBFramebufferFrameSink> sink;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
@@ -43,12 +43,12 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 #pragma mark Initializers
 
-+ (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale delegate:(id<FBFramebufferDelegate>)delegate queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 {
-  return [[self alloc] initWithFramebuffer:framebuffer scale:scale delegate:delegate queue:queue logger:logger];
+  return [[self alloc] initWithFramebuffer:framebuffer scale:scale sink:sink queue:queue logger:logger];
 }
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale delegate:(id<FBFramebufferDelegate>)delegate queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -57,7 +57,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
   _framebuffer = framebuffer;
   _scale = scale;
-  _delegate = delegate;
+  _sink = sink;
   _queue = queue;
   _logger = logger;
 
@@ -121,9 +121,9 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   // If there's no timebase, we shouldn't be pushing any frames.
   NSParameterAssert(self.timebase);
 
-  // Create and delegate the frame creation
+  // Create the Frame and pass it to the sink
   FBFramebufferFrame *frame = [self frameFromCurrentTime:image size:size];
-  [self.delegate framebuffer:self.framebuffer didUpdate:frame];
+  [self.sink framebuffer:self.framebuffer didUpdate:frame];
 
   // Log and increment.
   if (self.frameCount == 0) {
@@ -183,9 +183,9 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 #pragma mark Lifecycle
 
-- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale delegate:(id<FBFramebufferDelegate>)delegate queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithFramebuffer:framebuffer scale:scale delegate:delegate queue:queue logger:logger];
+  self = [super initWithFramebuffer:framebuffer scale:scale sink:sink queue:queue logger:logger];
   if (!self) {
     return nil;
   }

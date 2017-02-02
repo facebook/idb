@@ -7,45 +7,45 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBFramebufferCompositeDelegate.h"
+#import "FBFramebufferFrameSink.h"
 
-@interface FBFramebufferCompositeDelegate ()
+@interface FBFramebufferCompositeFrameSink ()
 
-@property (nonatomic, copy, readwrite) NSArray<id<FBFramebufferDelegate>> *delegates;
+@property (nonatomic, copy, readwrite) NSArray<id<FBFramebufferFrameSink>> *sinks;
 
 @end
 
-@implementation FBFramebufferCompositeDelegate
+@implementation FBFramebufferCompositeFrameSink
 
-+ (instancetype)withDelegates:(NSArray<id<FBFramebufferDelegate>> *)delegates
++ (instancetype)withSinks:(NSArray<id<FBFramebufferFrameSink>> *)sinks
 {
-  return [[FBFramebufferCompositeDelegate alloc] initWithDelegates:delegates];
+  return [[FBFramebufferCompositeFrameSink alloc] initWithSinks:sinks];
 }
 
-- (instancetype)initWithDelegates:(NSArray<id<FBFramebufferDelegate>> *)delegates
+- (instancetype)initWithSinks:(NSArray<id<FBFramebufferFrameSink>> *)sinks
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _delegates = delegates;
+  _sinks = sinks;
 
   return self;
 }
 
-#pragma mark FBFramebufferDelegate Implementation
+#pragma mark FBFramebufferFrameSink Implementation
 
 - (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {
-  for (id<FBFramebufferDelegate> delegate in self.delegates) {
+  for (id<FBFramebufferFrameSink> delegate in self.sinks) {
     [delegate framebuffer:framebuffer didUpdate:frame];
   }
 }
 
 - (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
-  for (id<FBFramebufferDelegate> delegate in self.delegates) {
+  for (id<FBFramebufferFrameSink> delegate in self.sinks) {
     [delegate framebuffer:framebuffer didBecomeInvalidWithError:error teardownGroup:teardownGroup];
   }
 }

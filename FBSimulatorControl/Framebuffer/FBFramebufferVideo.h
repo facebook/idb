@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBFramebufferDelegate.h>
+#import <FBSimulatorControl/FBFramebufferFrameSink.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
  An built-in implementation of a video encoder.
  All media activity is serialized on a queue, this queue is internal and should not be used by clients.
  */
-@interface FBFramebufferVideo_BuiltIn : NSObject <FBFramebufferVideo, FBFramebufferDelegate>
+@interface FBFramebufferVideo_BuiltIn : NSObject <FBFramebufferVideo, FBFramebufferFrameSink>
 
 /**
  The Designated Initializer.

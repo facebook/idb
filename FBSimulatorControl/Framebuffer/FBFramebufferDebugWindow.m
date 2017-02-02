@@ -50,7 +50,7 @@
   [self teardownWindow];
 }
 
-#pragma mark FBFramebufferDelegate Implementation
+#pragma mark FBFramebufferFrameSink Implementation
 
 - (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
 {

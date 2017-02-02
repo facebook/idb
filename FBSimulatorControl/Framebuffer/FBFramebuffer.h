@@ -17,14 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 @class SimDeviceFramebufferService;
 @class SimDeviceIOClient;
-@protocol FBFramebufferDelegate;
+@protocol FBFramebufferFrameSink;
 @protocol FBFramebufferVideo;
 
 /**
  A container and client for a Simulator's Framebuffer that forwards important events to delegates.
 
  The class itself doesn't perform much behaviour other than to manage the lifecycle.
- Implementors of FBFramebufferDelegate perform individual behaviours such as recording videos and images.
+ Implementors of FBFramebufferFrameSink perform individual behaviours such as recording videos and images.
  */
 @interface FBFramebuffer : NSObject <FBJSONSerializable>
 
