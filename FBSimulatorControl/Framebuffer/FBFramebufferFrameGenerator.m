@@ -29,7 +29,6 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 @property (nonatomic, weak, readonly) FBFramebuffer *framebuffer;
 @property (nonatomic, copy, readonly) NSDecimalNumber *scale;
-@property (nonatomic, weak, readonly) id<FBFramebufferFrameSink> sink;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 

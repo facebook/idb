@@ -41,6 +41,13 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
+#pragma mark Public Properties
+
+/**
+ The sink owned by the Frame Generator.
+ */
+@property (nonatomic, strong, readonly) id<FBFramebufferFrameSink> sink;
+
 #pragma mark Public Methods.
 
 /**

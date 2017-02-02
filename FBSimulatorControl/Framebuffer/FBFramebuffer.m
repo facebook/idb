@@ -55,13 +55,12 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @interface FBFramebuffer ()
 
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) id<FBFramebufferFrameSink> frameSink;
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @property (atomic, assign, readwrite) FBSimulatorFramebufferState state;
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -78,7 +77,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 @property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *ioSurfaceGenerator;
 @property (nonatomic, strong, readonly) FBFramebufferSurfaceClient *surfaceClient;
 
-- (instancetype)initWithSurfaceClient:(FBFramebufferSurfaceClient *)surfaceClient configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink surfaceClient:(FBFramebufferSurfaceClient *)surfaceClient logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -87,7 +86,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 @property (nonatomic, strong, nullable, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, strong, readonly) FBFramebufferBackingStoreFrameGenerator *backingStoreGenerator;
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink framebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -96,7 +95,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 @property (nonatomic, strong, readonly) SimDeviceIOClient *ioClient;
 @property (nonatomic, strong, readonly) FBFramebufferVideo_SimulatorKit *simulatorKitVideo;
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_SimulatorKit *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_SimulatorKit *)video ioClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -141,9 +140,9 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
   if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
     FBFramebufferSurfaceClient *surfaceClient = [FBFramebufferSurfaceClient clientForFramebufferService:framebufferService clientQueue:self.createClientQueue];
-    return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithSurfaceClient:surfaceClient configuration:configuration onQueue:queue video:video frameSink:frameSink logger:logger];
+    return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:configuration onQueue:queue video:video frameSink:frameSink surfaceClient:surfaceClient logger:logger];
   }
-  return [[FBFramebuffer_FrameGenerator_BackingStore alloc] initWithFramebufferService:framebufferService configuration:configuration onQueue:queue video:video frameSink:frameSink logger:logger];
+  return [[FBFramebuffer_FrameGenerator_BackingStore alloc] initWithConfiguration:configuration onQueue:queue video:video frameSink:frameSink framebufferService:framebufferService logger:logger];
 }
 
 + (instancetype)withIOClient:(SimDeviceIOClient *)ioClient configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
@@ -155,17 +154,16 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   // If we support the Xcode 8.1 SimDisplayVideoWriter, we can construct and use it here.
   if (FBFramebufferVideo_SimulatorKit.isSupported) {
     FBFramebufferVideo_SimulatorKit *video = [FBFramebufferVideo_SimulatorKit withConfiguration:videoConfiguration ioClient:ioClient logger:logger eventSink:simulator.eventSink];
-    id<FBFramebufferFrameSink> frameSink = [FBFramebufferCompositeFrameSink withSinks:@[]];
-    return [[FBFramebuffer_SimulatorKit alloc] initWithIOClient:ioClient configuration:configuration onQueue:queue video:video frameSink:frameSink logger:logger];
+    return [[FBFramebuffer_SimulatorKit alloc] initWithConfiguration:configuration onQueue:queue video:video ioClient:ioClient logger:logger];
   }
   // Otherwise we have to use the built-in frame generation.
   FBFramebufferVideo_BuiltIn *video = nil;
   id<FBFramebufferFrameSink> frameSink = [self frameSinkForSimulator:simulator configuration:configuration logger:logger videoOut:&video];
   FBFramebufferSurfaceClient *surfaceClient = [FBFramebufferSurfaceClient clientForIOClient:ioClient clientQueue:queue];
-  return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithSurfaceClient:surfaceClient configuration:configuration onQueue:queue video:video frameSink:frameSink logger:logger];
+  return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:videoConfiguration onQueue:queue video:video frameSink:frameSink surfaceClient:surfaceClient logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -173,20 +171,13 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   }
 
   _logger = logger;
-  _frameSink = frameSink;
   _clientQueue = clientQueue;
   _state = FBSimulatorFramebufferStateNotStarted;
 
   return self;
 }
 
-#pragma mark FBJSONSerializable Implementation
-
-- (id)jsonSerializableRepresentation
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
+#pragma mark Public
 
 - (id<FBFramebufferVideo>)video
 {
@@ -194,7 +185,6 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return nil;
 }
 
-#pragma mark Public
 
 - (instancetype)startListeningInBackground
 {
@@ -220,12 +210,6 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return self;
 }
 
-- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error
-{
-  dispatch_group_t teardownGroup = dispatch_group_create();
-  [self framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
-}
-
 #pragma mark Teardown
 
 - (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
@@ -235,12 +219,25 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   }
 
   [self performTeardownWork];
-  [self.frameSink framebuffer:self didBecomeInvalidWithError:error teardownGroup:teardownGroup];
+}
+
+- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error
+{
+  dispatch_group_t teardownGroup = dispatch_group_create();
+  [self framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
 }
 
 - (void)performTeardownWork
 {
   self.state = FBSimulatorFramebufferStateTerminated;
+}
+
+#pragma mark FBJSONSerializable Implementation
+
+- (id)jsonSerializableRepresentation
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
 }
 
 #pragma mark Private
@@ -267,6 +264,54 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @synthesize video = _video;
 
+#pragma mark Initializers
+
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger
+{
+  self = [super initWithConfiguration:configuration onQueue:clientQueue logger:logger];
+  if (!self) {
+    return nil;
+  }
+
+  _video = video;
+
+  return self;
+}
+
+#pragma mark Client Callbacks from SimDeviceFramebufferService
+
+- (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
+{
+  [self framebufferDidBecomeInvalid:self error:error];
+}
+
+- (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
+{
+
+}
+
+#pragma mark Private
+
+- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+{
+  [super framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
+
+  [self.frameGenerator.sink framebuffer:self didBecomeInvalidWithError:error teardownGroup:teardownGroup];
+}
+
+- (void)performTeardownWork
+{
+  [super performTeardownWork];
+
+  [self.frameGenerator frameSteamEnded];
+}
+
+- (FBFramebufferFrameGenerator *)frameGenerator
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
 #pragma mark NSObject
 
 - (NSString *)description
@@ -285,54 +330,11 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return self.frameGenerator.jsonSerializableRepresentation;
 }
 
-#pragma mark Initializers
-
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super initWithConfiguration:configuration onQueue:clientQueue frameSink:frameSink logger:logger];
-  if (!self) {
-    return nil;
-  }
-
-  _video = video;
-
-  return self;
-}
-
-#pragma mark Properties
-
-- (FBFramebufferFrameGenerator *)frameGenerator
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-#pragma mark Client Callbacks from SimDeviceFramebufferService
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didFailWithError:(NSError *)error
-{
-  [self framebufferDidBecomeInvalid:self error:error];
-}
-
-- (void)framebufferService:(SimDeviceFramebufferService *)service didRotateToAngle:(double)angle
-{
-
-}
-
-#pragma mark Teardown
-
-- (void)performTeardownWork
-{
-  [super performTeardownWork];
-
-  [self.frameGenerator frameSteamEnded];
-}
-
 @end
 
 @implementation FBFramebuffer_FrameGenerator_BackingStore
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink framebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithConfiguration:configuration onQueue:clientQueue video:video frameSink:frameSink logger:logger];
   if (!self) {
@@ -378,7 +380,9 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @implementation FBFramebuffer_FrameGenerator_IOSurface
 
-- (instancetype)initWithSurfaceClient:(FBFramebufferSurfaceClient *)surfaceClient configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger
+#pragma mark Initializers
+
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video frameSink:(id<FBFramebufferFrameSink>)frameSink surfaceClient:(FBFramebufferSurfaceClient *)surfaceClient logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithConfiguration:configuration onQueue:clientQueue video:video frameSink:frameSink logger:logger];
   if (!self) {
@@ -391,12 +395,12 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return self;
 }
 
+#pragma mark Public
+
 - (FBFramebufferFrameGenerator *)frameGenerator
 {
   return self.ioSurfaceGenerator;
 }
-
-#pragma mark Private
 
 - (instancetype)startListeningInBackground
 {
@@ -416,6 +420,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return self;
 }
 
+#pragma mark Private
+
 - (void)ioSurfaceUpdated:(IOSurfaceRef)surface
 {
   // The client recieves a NULL surface, before recieving the first surface.
@@ -433,9 +439,11 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @implementation FBFramebuffer_SimulatorKit
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient configuration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_SimulatorKit *)video frameSink:(id<FBFramebufferFrameSink>)frameSink logger:(id<FBControlCoreLogger>)logger
+#pragma mark Initializers
+
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_SimulatorKit *)video ioClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super initWithConfiguration:configuration onQueue:clientQueue frameSink:frameSink logger:logger];
+  self = [super initWithConfiguration:configuration onQueue:clientQueue logger:logger];
   if (!self) {
     return nil;
   }
@@ -446,12 +454,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return self;
 }
 
-- (id)jsonSerializableRepresentation
-{
-  return @{
-    @"io_client" : self.ioClient.description,
-  };
-}
+#pragma mark Public
 
 - (id<FBFramebufferVideo>)video
 {
@@ -466,6 +469,15 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 - (instancetype)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup
 {
   return self;
+}
+
+#pragma mark FBJSONSerializable Implementation
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    @"io_client" : self.ioClient.description,
+  };
 }
 
 @end
