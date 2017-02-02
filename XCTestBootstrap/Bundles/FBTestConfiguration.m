@@ -128,8 +128,8 @@
     testConfiguration.pathToXcodeReportingSocket = nil;
     testConfiguration.testsMustRunOnMainThread = self.shouldInitializeForUITesting;
     testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
-    testConfiguration.testsToSkip = self.testsToSkip;
-    testConfiguration.testsToRun = self.testsToRun;
+    testConfiguration.testsToSkip = self.testsToSkip.count ? self.testsToSkip : nil;
+    testConfiguration.testsToRun = self.testsToRun.count ? self.testsToRun : nil;
     testConfiguration.targetApplicationPath = self.targetApplicationPath;
     testConfiguration.targetApplicationBundleID = self.targetApplicationBundleID;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
