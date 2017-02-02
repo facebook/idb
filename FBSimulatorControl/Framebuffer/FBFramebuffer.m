@@ -93,7 +93,6 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 @interface FBFramebuffer_SimulatorKit : FBFramebuffer
 
 @property (nonatomic, strong, readonly) SimDeviceIOClient *ioClient;
-@property (nonatomic, strong, readonly) FBFramebufferVideo_SimulatorKit *simulatorKitVideo;
 
 - (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_SimulatorKit *)video ioClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger;
 
@@ -439,6 +438,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @implementation FBFramebuffer_SimulatorKit
 
+@synthesize video = _video;
+
 #pragma mark Initializers
 
 - (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_SimulatorKit *)video ioClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger
@@ -449,17 +450,11 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   }
 
   _ioClient = ioClient;
-  _simulatorKitVideo = video;
 
   return self;
 }
 
 #pragma mark Public
-
-- (id<FBFramebufferVideo>)video
-{
-  return self.simulatorKitVideo;
-}
 
 - (instancetype)startListeningInBackground
 {
