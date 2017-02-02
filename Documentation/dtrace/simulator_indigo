@@ -1,0 +1,9 @@
+#!/bin/bash
+pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
+SCRIPT_PATH=$(pwd)
+SCRIPT_PATH+=/simulator_indigo.d
+pushd ../../PrivateHeaders > /dev/null
+HEADER_PATH=$(pwd) > /dev/null
+popd > /dev/null
+popd > /dev/null
+sudo /usr/sbin/dtrace -I "$HEADER_PATH" -s "$SCRIPT_PATH" -C "$@"
