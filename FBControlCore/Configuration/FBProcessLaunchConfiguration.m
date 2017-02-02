@@ -178,9 +178,14 @@ static NSString *const KeyOutput = @"output";
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
-  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration inflateFromJSON:json[KeyOutput] error:error];
-  if (!output) {
-    return nil;
+
+  FBProcessOutputConfiguration *output = [[FBProcessOutputConfiguration alloc] init];
+  NSDictionary *outputDictionary = json[KeyOutput];
+  if (outputDictionary) {
+    output = [FBProcessOutputConfiguration inflateFromJSON:outputDictionary error:error];
+    if (!output) {
+      return nil;
+    }
   }
   return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment output:output];
 }
