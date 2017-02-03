@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import subprocess
 import time
 import urllib.request
@@ -233,6 +234,15 @@ class WebServer:
         )
         return self._perform_request(request)
 
+    def post_binary(self, path, file, length):
+        request = urllib.request.Request(
+            self._make_url(path),
+            file,
+            method='POST',
+            headers={'content-length': length},
+        )
+        return self._perform_request(request)
+
     def _make_url(self, path):
         return 'http://localhost:{}/{}'.format(
             self.__port,
@@ -252,3 +262,25 @@ class Fixtures:
             '../../../FBSimulatorControlTests/Fixtures/video0.mp4',
         ),
     )
+
+    APP_PATH = os.path.realpath(
+        os.path.join(
+            __file__,
+            '../../../Fixtures/Binaries/TableSearch.app'
+        )
+    )
+
+    APP_BUNDLE_ID = 'com.example.apple-samplecode.TableSearch'
+
+
+def make_ipa(dest_dir, app):
+    payload = os.path.join(dest_dir, 'Payload')
+    os.mkdir(payload)
+    shutil.copytree(
+        app,
+        os.path.join(payload, os.path.basename(app))
+    )
+    zipfile = shutil.make_archive('app', 'zip', root_dir=payload)
+    ipafile = '{}.ipa'.format(zipfile)
+    shutil.move(zipfile, ipafile)
+    return ipafile
