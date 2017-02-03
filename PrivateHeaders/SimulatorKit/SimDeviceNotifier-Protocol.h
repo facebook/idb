@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreImage/CIImage.h>
+@class OS_dispatch_queue;
 
-@interface CIImage (SimulatorKit)
-- (id)imageRepresentationWithType:(unsigned long long)arg1;
-- (id)bitmapRepresentation;
+@protocol SimDeviceNotifier
+- (unsigned long long)registerNotificationHandlerOnQueue:(OS_dispatch_queue *)arg1 handler:(void (^)(NSDictionary *))arg2;
+- (BOOL)unregisterNotificationHandler:(unsigned long long)arg1 error:(id *)arg2;
 @end

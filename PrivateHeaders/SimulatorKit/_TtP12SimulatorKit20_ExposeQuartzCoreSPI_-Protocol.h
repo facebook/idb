@@ -7,9 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreImage/CIImage.h>
+#import <Foundation/Foundation.h>
 
-@interface CIImage (SimulatorKit)
-- (id)imageRepresentationWithType:(unsigned long long)arg1;
-- (id)bitmapRepresentation;
+@protocol _TtP12SimulatorKit20_ExposeQuartzCoreSPI_ <NSObject>
+- (void)setContentsChanged;
 @end

@@ -7,9 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreImage/CIImage.h>
+#import <SimulatorKit/_TtPs10_NSCopying_-Protocol.h>
+#import <SimulatorKit/_TtPs18_NSFastEnumeration_-Protocol.h>
 
-@interface CIImage (SimulatorKit)
-- (id)imageRepresentationWithType:(unsigned long long)arg1;
-- (id)bitmapRepresentation;
+@protocol _TtPs13_NSStringCore_ <_TtPs10_NSCopying_, _TtPs18_NSFastEnumeration_>
+- (unsigned short)characterAtIndex:(long long)arg1;
+- (long long)length;
 @end

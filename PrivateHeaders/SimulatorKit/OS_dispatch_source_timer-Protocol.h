@@ -7,9 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreImage/CIImage.h>
+#import <Foundation/Foundation.h>
+#import <SimulatorKit/OS_dispatch_source-Protocol.h>
 
-@interface CIImage (SimulatorKit)
-- (id)imageRepresentationWithType:(unsigned long long)arg1;
-- (id)bitmapRepresentation;
+@protocol OS_dispatch_source_timer <OS_dispatch_source, NSObject>
 @end

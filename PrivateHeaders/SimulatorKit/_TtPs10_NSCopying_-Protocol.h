@@ -7,9 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreImage/CIImage.h>
+#import <SimulatorKit/_TtPs15_ShadowProtocol_-Protocol.h>
 
-@interface CIImage (SimulatorKit)
-- (id)imageRepresentationWithType:(unsigned long long)arg1;
-- (id)bitmapRepresentation;
+@protocol _TtPs10_NSCopying_ <_TtPs15_ShadowProtocol_>
+- (id)copyWithZone:(void *)arg1;
 @end

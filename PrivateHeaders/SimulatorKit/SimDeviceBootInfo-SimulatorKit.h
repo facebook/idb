@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreImage/CIImage.h>
+#import <CoreSimulator/SimDeviceBootInfo.h>
 
-@interface CIImage (SimulatorKit)
-- (id)imageRepresentationWithType:(unsigned long long)arg1;
-- (id)bitmapRepresentation;
+@interface SimDeviceBootInfo (SimulatorKit)
+@property (nonatomic, readonly) BOOL isSuccess;
+@property (nonatomic, readonly) BOOL isWaitable;
 @end

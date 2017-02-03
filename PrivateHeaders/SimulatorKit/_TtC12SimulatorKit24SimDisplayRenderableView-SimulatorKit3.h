@@ -7,9 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreImage/CIImage.h>
+#import <SimulatorKit/_TtC12SimulatorKit24SimDisplayRenderableView.h>
 
-@interface CIImage (SimulatorKit)
-- (id)imageRepresentationWithType:(unsigned long long)arg1;
-- (id)bitmapRepresentation;
+@interface _TtC12SimulatorKit24SimDisplayRenderableView (SimulatorKit3)
+- (void)didReceiveDamageRect:(struct CGRect)arg1;
 @end
