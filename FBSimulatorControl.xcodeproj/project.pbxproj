@@ -637,9 +637,6 @@
 		AA0EE66F1D06AB5600422361 /* FBiOSTargetDescriptionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescriptionTests.m; sourceTree = "<group>"; };
 		AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFrameworkLoader.h; sourceTree = "<group>"; };
 		AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWeakFrameworkLoader.m; sourceTree = "<group>"; };
-		AA10FB471DD07B0000CE3CB2 /* SimDeviceSet+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceSet+Removed.h"; sourceTree = "<group>"; };
-		AA10FB481DD07B9C00CE3CB2 /* SimRuntime+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimRuntime+Removed.h"; sourceTree = "<group>"; };
-		AA10FB491DD07C0B00CE3CB2 /* SimDeviceType+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceType+Removed.h"; sourceTree = "<group>"; };
 		AA111CCC1BBE7C5A0054AFDD /* CoreSimulatorDoubles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreSimulatorDoubles.h; sourceTree = "<group>"; };
 		AA111CCD1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CoreSimulatorDoubles.m; sourceTree = "<group>"; };
 		AA1174B11CEA17DB00EB699E /* FBApplicationCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBApplicationCommands.h; sourceTree = "<group>"; };
@@ -683,6 +680,67 @@
 		AA3230CA1BDA387700C5BA01 /* FBSimulatorControlAssertions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlAssertions.m; sourceTree = "<group>"; };
 		AA36BE301E08653900FEAF88 /* FBFramebufferRenderable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFramebufferRenderable.h; sourceTree = "<group>"; };
 		AA36BE311E08653A00FEAF88 /* FBFramebufferRenderable.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFramebufferRenderable.m; sourceTree = "<group>"; };
+		AA386D131E44F04F005C6118 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
+		AA386D141E44F04F005C6118 /* DefaultDisplayDescriptorState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DefaultDisplayDescriptorState.h; sourceTree = "<group>"; };
+		AA386D151E44F04F005C6118 /* FoundationXPCProtocolProxyable-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FoundationXPCProtocolProxyable-Protocol.h"; sourceTree = "<group>"; };
+		AA386D161E44F04F005C6118 /* NSArray-SimArgv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSArray-SimArgv.h"; sourceTree = "<group>"; };
+		AA386D171E44F04F005C6118 /* NSCoding-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCoding-Protocol.h"; sourceTree = "<group>"; };
+		AA386D181E44F04F005C6118 /* NSDictionary-SimEnvp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDictionary-SimEnvp.h"; sourceTree = "<group>"; };
+		AA386D191E44F04F005C6118 /* NSDictionary-SimSaveWithError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDictionary-SimSaveWithError.h"; sourceTree = "<group>"; };
+		AA386D1A1E44F04F005C6118 /* NSError-SimError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSError-SimError.h"; sourceTree = "<group>"; };
+		AA386D1B1E44F04F005C6118 /* NSFileManager-CoreSimulator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSFileManager-CoreSimulator.h"; sourceTree = "<group>"; };
+		AA386D1C1E44F04F005C6118 /* NSKeyedArchiver-SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSKeyedArchiver-SimPasteboardItem.h"; sourceTree = "<group>"; };
+		AA386D1D1E44F04F005C6118 /* NSKeyedArchiver-SimSecurely.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSKeyedArchiver-SimSecurely.h"; sourceTree = "<group>"; };
+		AA386D1E1E44F04F005C6118 /* NSKeyedUnarchiver-SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSKeyedUnarchiver-SimPasteboardItem.h"; sourceTree = "<group>"; };
+		AA386D1F1E44F04F005C6118 /* NSKeyedUnarchiver-SimSecurely.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSKeyedUnarchiver-SimSecurely.h"; sourceTree = "<group>"; };
+		AA386D201E44F04F005C6118 /* NSPasteboardItem-SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSPasteboardItem-SimPasteboardItem.h"; sourceTree = "<group>"; };
+		AA386D211E44F04F005C6118 /* NSPasteboardItemDataProvider-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSPasteboardItemDataProvider-Protocol.h"; sourceTree = "<group>"; };
+		AA386D221E44F04F005C6118 /* NSSecureCoding-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSSecureCoding-Protocol.h"; sourceTree = "<group>"; };
+		AA386D231E44F04F005C6118 /* NSString-SIMCPUType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SIMCPUType.h"; sourceTree = "<group>"; };
+		AA386D241E44F04F005C6118 /* NSString-SIMPackedVersion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SIMPackedVersion.h"; sourceTree = "<group>"; };
+		AA386D251E44F04F005C6118 /* NSString-SimServiceContextExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SimServiceContextExtras.h"; sourceTree = "<group>"; };
+		AA386D261E44F04F005C6118 /* NSUserDefaults-SimDefaults.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSUserDefaults-SimDefaults.h"; sourceTree = "<group>"; };
+		AA386D271E44F04F005C6118 /* SimDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevice.h; sourceTree = "<group>"; };
+		AA386D281E44F04F005C6118 /* SimDevice+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDevice+Removed.h"; sourceTree = "<group>"; };
+		AA386D291E44F04F005C6118 /* SimDeviceBootInfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceBootInfo.h; sourceTree = "<group>"; };
+		AA386D2A1E44F04F005C6118 /* SimDeviceIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIO.h; sourceTree = "<group>"; };
+		AA386D2B1E44F04F005C6118 /* SimDeviceIOClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIOClient.h; sourceTree = "<group>"; };
+		AA386D2C1E44F04F005C6118 /* SimDeviceIOInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOInterface-Protocol.h"; sourceTree = "<group>"; };
+		AA386D2D1E44F04F005C6118 /* SimDeviceIOLoadedBundle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIOLoadedBundle.h; sourceTree = "<group>"; };
+		AA386D2E1E44F04F005C6118 /* SimDeviceIOPortConsumer-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortConsumer-Protocol.h"; sourceTree = "<group>"; };
+		AA386D2F1E44F04F005C6118 /* SimDeviceIOPortDescriptorState-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortDescriptorState-Protocol.h"; sourceTree = "<group>"; };
+		AA386D301E44F04F005C6118 /* SimDeviceIOProtocol-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOProtocol-Protocol.h"; sourceTree = "<group>"; };
+		AA386D311E44F04F005C6118 /* SimDeviceIOServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIOServer.h; sourceTree = "<group>"; };
+		AA386D321E44F04F005C6118 /* SimDeviceNotificationManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceNotificationManager.h; sourceTree = "<group>"; };
+		AA386D331E44F04F005C6118 /* SimDeviceNotifier-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceNotifier-Protocol.h"; sourceTree = "<group>"; };
+		AA386D341E44F04F005C6118 /* SimDevicePair.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePair.h; sourceTree = "<group>"; };
+		AA386D351E44F04F005C6118 /* SimDevicePasteboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePasteboard.h; sourceTree = "<group>"; };
+		AA386D361E44F04F005C6118 /* SimDevicePasteboardConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePasteboardConnection.h; sourceTree = "<group>"; };
+		AA386D371E44F04F005C6118 /* SimDevicePasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePasteboardItem.h; sourceTree = "<group>"; };
+		AA386D381E44F04F005C6118 /* SimDeviceSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceSet.h; sourceTree = "<group>"; };
+		AA386D391E44F04F005C6118 /* SimDeviceSet+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceSet+Removed.h"; sourceTree = "<group>"; };
+		AA386D3A1E44F04F005C6118 /* SimDeviceType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceType.h; sourceTree = "<group>"; };
+		AA386D3B1E44F04F005C6118 /* SimDeviceType+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceType+Removed.h"; sourceTree = "<group>"; };
+		AA386D3C1E44F04F005C6118 /* SimDisplayDefaultDescriptorState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDisplayDefaultDescriptorState.h; sourceTree = "<group>"; };
+		AA386D3D1E44F04F005C6118 /* SimDisplayDescriptorState-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDisplayDescriptorState-Protocol.h"; sourceTree = "<group>"; };
+		AA386D3E1E44F04F005C6118 /* SimLocalThrowable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimLocalThrowable.h; sourceTree = "<group>"; };
+		AA386D3F1E44F04F005C6118 /* SimMachPortServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimMachPortServer.h; sourceTree = "<group>"; };
+		AA386D401E44F04F005C6118 /* SimNSPasteboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimNSPasteboard.h; sourceTree = "<group>"; };
+		AA386D411E44F04F005C6118 /* SimNSPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimNSPasteboardItem.h; sourceTree = "<group>"; };
+		AA386D421E44F04F005C6118 /* SimPasteboard-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimPasteboard-Protocol.h"; sourceTree = "<group>"; };
+		AA386D431E44F04F005C6118 /* SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardItem.h; sourceTree = "<group>"; };
+		AA386D441E44F04F005C6118 /* SimPasteboardItemData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardItemData.h; sourceTree = "<group>"; };
+		AA386D451E44F04F005C6118 /* SimPasteboardItemDataProvider-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimPasteboardItemDataProvider-Protocol.h"; sourceTree = "<group>"; };
+		AA386D461E44F04F005C6118 /* SimPasteboardItemWrappedData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardItemWrappedData.h; sourceTree = "<group>"; };
+		AA386D471E44F04F005C6118 /* SimPasteboardPortMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardPortMap.h; sourceTree = "<group>"; };
+		AA386D481E44F04F005C6118 /* SimPasteboardSyncPool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardSyncPool.h; sourceTree = "<group>"; };
+		AA386D491E44F04F005C6118 /* SimPasteboardSyncPoolObject.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardSyncPoolObject.h; sourceTree = "<group>"; };
+		AA386D4A1E44F04F005C6118 /* SimPasteboardSyncPoolProtocol-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimPasteboardSyncPoolProtocol-Protocol.h"; sourceTree = "<group>"; };
+		AA386D4B1E44F04F005C6118 /* SimProfilesPathMonitor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimProfilesPathMonitor.h; sourceTree = "<group>"; };
+		AA386D4C1E44F04F005C6118 /* SimRuntime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimRuntime.h; sourceTree = "<group>"; };
+		AA386D4D1E44F04F005C6118 /* SimRuntime+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimRuntime+Removed.h"; sourceTree = "<group>"; };
+		AA386D4E1E44F04F005C6118 /* SimRuntimePairingReuirements.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimRuntimePairingReuirements.h; sourceTree = "<group>"; };
+		AA386D4F1E44F04F005C6118 /* SimServiceContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimServiceContext.h; sourceTree = "<group>"; };
 		AA38D7721CFEC8C30078A0DA /* FBSimulatorControlTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FBSimulatorControlTests.xcconfig; sourceTree = "<group>"; };
 		AA391AD01CEF4CBC00817691 /* FBLocalizationOverride.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBLocalizationOverride.h; sourceTree = "<group>"; };
 		AA391AD11CEF4CBC00817691 /* FBLocalizationOverride.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLocalizationOverride.m; sourceTree = "<group>"; };
@@ -732,55 +790,6 @@
 		AA4A7E2C1DD9F4EB001F9D8E /* FBFileReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFileReader.m; sourceTree = "<group>"; };
 		AA4A7E2F1DD9F525001F9D8E /* FBFileDataConsumer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileDataConsumer.h; sourceTree = "<group>"; };
 		AA4A7E301DD9F525001F9D8E /* FBFileDataConsumer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFileDataConsumer.m; sourceTree = "<group>"; };
-		AA50E2421D5B24D700A379E9 /* CDStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CDStructures.h; sourceTree = "<group>"; };
-		AA50E2431D5B24D700A379E9 /* DefaultDisplayDescriptorState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DefaultDisplayDescriptorState.h; sourceTree = "<group>"; };
-		AA50E2441D5B24D700A379E9 /* NSArray-SimArgv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSArray-SimArgv.h"; sourceTree = "<group>"; };
-		AA50E2451D5B24D700A379E9 /* NSCoding-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSCoding-Protocol.h"; sourceTree = "<group>"; };
-		AA50E2461D5B24D700A379E9 /* NSDictionary-SimEnvp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDictionary-SimEnvp.h"; sourceTree = "<group>"; };
-		AA50E2471D5B24D700A379E9 /* NSDictionary-SimSaveWithError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSDictionary-SimSaveWithError.h"; sourceTree = "<group>"; };
-		AA50E2481D5B24D700A379E9 /* NSError-SimError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSError-SimError.h"; sourceTree = "<group>"; };
-		AA50E2491D5B24D700A379E9 /* NSKeyedArchiver-SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSKeyedArchiver-SimPasteboardItem.h"; sourceTree = "<group>"; };
-		AA50E24A1D5B24D700A379E9 /* NSKeyedUnarchiver-SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSKeyedUnarchiver-SimPasteboardItem.h"; sourceTree = "<group>"; };
-		AA50E24B1D5B24D700A379E9 /* NSObject-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSObject-Protocol.h"; sourceTree = "<group>"; };
-		AA50E24C1D5B24D700A379E9 /* NSPasteboardItem-SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSPasteboardItem-SimPasteboardItem.h"; sourceTree = "<group>"; };
-		AA50E24D1D5B24D700A379E9 /* NSPasteboardItemDataProvider-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSPasteboardItemDataProvider-Protocol.h"; sourceTree = "<group>"; };
-		AA50E24E1D5B24D700A379E9 /* NSSecureCoding-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSSecureCoding-Protocol.h"; sourceTree = "<group>"; };
-		AA50E24F1D5B24D700A379E9 /* NSString-SIMCPUType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SIMCPUType.h"; sourceTree = "<group>"; };
-		AA50E2501D5B24D700A379E9 /* NSString-SIMPackedVersion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SIMPackedVersion.h"; sourceTree = "<group>"; };
-		AA50E2511D5B24D700A379E9 /* NSString-SimServiceContextExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString-SimServiceContextExtras.h"; sourceTree = "<group>"; };
-		AA50E2521D5B24D700A379E9 /* NSUserDefaults-SimDefaults.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSUserDefaults-SimDefaults.h"; sourceTree = "<group>"; };
-		AA50E2531D5B24D700A379E9 /* SimDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevice.h; sourceTree = "<group>"; };
-		AA50E2541D5B24D700A379E9 /* SimDevice+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDevice+Removed.h"; sourceTree = "<group>"; };
-		AA50E2551D5B24D700A379E9 /* SimDeviceIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIO.h; sourceTree = "<group>"; };
-		AA50E2561D5B24D700A379E9 /* SimDeviceIOClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIOClient.h; sourceTree = "<group>"; };
-		AA50E2571D5B24D700A379E9 /* SimDeviceIOInterface-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOInterface-Protocol.h"; sourceTree = "<group>"; };
-		AA50E2581D5B24D700A379E9 /* SimDeviceIOLoadedBundle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIOLoadedBundle.h; sourceTree = "<group>"; };
-		AA50E2591D5B24D700A379E9 /* SimDeviceIOPortConsumer-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortConsumer-Protocol.h"; sourceTree = "<group>"; };
-		AA50E25A1D5B24D700A379E9 /* SimDeviceIOPortDescriptorState-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIOPortDescriptorState-Protocol.h"; sourceTree = "<group>"; };
-		AA50E25B1D5B24D700A379E9 /* SimDeviceIOServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceIOServer.h; sourceTree = "<group>"; };
-		AA50E25C1D5B24D700A379E9 /* SimDeviceNotificationManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceNotificationManager.h; sourceTree = "<group>"; };
-		AA50E25D1D5B24D700A379E9 /* SimDeviceNotifier-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceNotifier-Protocol.h"; sourceTree = "<group>"; };
-		AA50E25E1D5B24D700A379E9 /* SimDevicePair.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePair.h; sourceTree = "<group>"; };
-		AA50E25F1D5B24D700A379E9 /* SimDevicePasteboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePasteboard.h; sourceTree = "<group>"; };
-		AA50E2601D5B24D700A379E9 /* SimDevicePasteboardConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePasteboardConnection.h; sourceTree = "<group>"; };
-		AA50E2611D5B24D700A379E9 /* SimDevicePasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDevicePasteboardItem.h; sourceTree = "<group>"; };
-		AA50E2621D5B24D700A379E9 /* SimDeviceSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceSet.h; sourceTree = "<group>"; };
-		AA50E2631D5B24D700A379E9 /* SimDeviceType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimDeviceType.h; sourceTree = "<group>"; };
-		AA50E2641D5B24D700A379E9 /* SimDisplayDescriptorState-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDisplayDescriptorState-Protocol.h"; sourceTree = "<group>"; };
-		AA50E2651D5B24D700A379E9 /* SimLocalThrowable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimLocalThrowable.h; sourceTree = "<group>"; };
-		AA50E2661D5B24D700A379E9 /* SimMachPortServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimMachPortServer.h; sourceTree = "<group>"; };
-		AA50E2671D5B24D700A379E9 /* SimNSPasteboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimNSPasteboard.h; sourceTree = "<group>"; };
-		AA50E2681D5B24D700A379E9 /* SimNSPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimNSPasteboardItem.h; sourceTree = "<group>"; };
-		AA50E2691D5B24D700A379E9 /* SimPasteboard-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimPasteboard-Protocol.h"; sourceTree = "<group>"; };
-		AA50E26A1D5B24D700A379E9 /* SimPasteboardItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardItem.h; sourceTree = "<group>"; };
-		AA50E26B1D5B24D700A379E9 /* SimPasteboardItemData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardItemData.h; sourceTree = "<group>"; };
-		AA50E26C1D5B24D700A379E9 /* SimPasteboardItemDataProvider-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimPasteboardItemDataProvider-Protocol.h"; sourceTree = "<group>"; };
-		AA50E26D1D5B24D700A379E9 /* SimPasteboardItemWrappedData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardItemWrappedData.h; sourceTree = "<group>"; };
-		AA50E26E1D5B24D700A379E9 /* SimPasteboardPortMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimPasteboardPortMap.h; sourceTree = "<group>"; };
-		AA50E26F1D5B24D700A379E9 /* SimProfilesPathMonitor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimProfilesPathMonitor.h; sourceTree = "<group>"; };
-		AA50E2701D5B24D700A379E9 /* SimRuntime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimRuntime.h; sourceTree = "<group>"; };
-		AA50E2711D5B24D700A379E9 /* SimRuntimePairingReuirements.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimRuntimePairingReuirements.h; sourceTree = "<group>"; };
-		AA50E2721D5B24D700A379E9 /* SimServiceContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimServiceContext.h; sourceTree = "<group>"; };
 		AA5449931CFF4A6700443C2F /* FBControlCoreConfigurationVariants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBControlCoreConfigurationVariants.h; sourceTree = "<group>"; };
 		AA5449941CFF4A6700443C2F /* FBControlCoreConfigurationVariants.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBControlCoreConfigurationVariants.m; sourceTree = "<group>"; };
 		AA5639541C05FFF5009BAFAA /* FBSimulatorControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControl.h; sourceTree = "<group>"; };
@@ -1456,58 +1465,67 @@
 		AA39D7EF1D5B0B2600A0840F /* CoreSimulator */ = {
 			isa = PBXGroup;
 			children = (
-				AA50E2421D5B24D700A379E9 /* CDStructures.h */,
-				AA50E2431D5B24D700A379E9 /* DefaultDisplayDescriptorState.h */,
-				AA50E2441D5B24D700A379E9 /* NSArray-SimArgv.h */,
-				AA50E2451D5B24D700A379E9 /* NSCoding-Protocol.h */,
-				AA50E2461D5B24D700A379E9 /* NSDictionary-SimEnvp.h */,
-				AA50E2471D5B24D700A379E9 /* NSDictionary-SimSaveWithError.h */,
-				AA50E2481D5B24D700A379E9 /* NSError-SimError.h */,
-				AA50E2491D5B24D700A379E9 /* NSKeyedArchiver-SimPasteboardItem.h */,
-				AA50E24A1D5B24D700A379E9 /* NSKeyedUnarchiver-SimPasteboardItem.h */,
-				AA50E24B1D5B24D700A379E9 /* NSObject-Protocol.h */,
-				AA50E24C1D5B24D700A379E9 /* NSPasteboardItem-SimPasteboardItem.h */,
-				AA50E24D1D5B24D700A379E9 /* NSPasteboardItemDataProvider-Protocol.h */,
-				AA50E24E1D5B24D700A379E9 /* NSSecureCoding-Protocol.h */,
-				AA50E24F1D5B24D700A379E9 /* NSString-SIMCPUType.h */,
-				AA50E2501D5B24D700A379E9 /* NSString-SIMPackedVersion.h */,
-				AA50E2511D5B24D700A379E9 /* NSString-SimServiceContextExtras.h */,
-				AA50E2521D5B24D700A379E9 /* NSUserDefaults-SimDefaults.h */,
-				AA50E2531D5B24D700A379E9 /* SimDevice.h */,
-				AA50E2541D5B24D700A379E9 /* SimDevice+Removed.h */,
-				AA50E2551D5B24D700A379E9 /* SimDeviceIO.h */,
-				AA50E2561D5B24D700A379E9 /* SimDeviceIOClient.h */,
-				AA50E2571D5B24D700A379E9 /* SimDeviceIOInterface-Protocol.h */,
-				AA50E2581D5B24D700A379E9 /* SimDeviceIOLoadedBundle.h */,
-				AA50E2591D5B24D700A379E9 /* SimDeviceIOPortConsumer-Protocol.h */,
-				AA50E25A1D5B24D700A379E9 /* SimDeviceIOPortDescriptorState-Protocol.h */,
-				AA50E25B1D5B24D700A379E9 /* SimDeviceIOServer.h */,
-				AA50E25C1D5B24D700A379E9 /* SimDeviceNotificationManager.h */,
-				AA50E25D1D5B24D700A379E9 /* SimDeviceNotifier-Protocol.h */,
-				AA50E25E1D5B24D700A379E9 /* SimDevicePair.h */,
-				AA50E25F1D5B24D700A379E9 /* SimDevicePasteboard.h */,
-				AA50E2601D5B24D700A379E9 /* SimDevicePasteboardConnection.h */,
-				AA50E2611D5B24D700A379E9 /* SimDevicePasteboardItem.h */,
-				AA50E2621D5B24D700A379E9 /* SimDeviceSet.h */,
-				AA10FB471DD07B0000CE3CB2 /* SimDeviceSet+Removed.h */,
-				AA50E2631D5B24D700A379E9 /* SimDeviceType.h */,
-				AA10FB491DD07C0B00CE3CB2 /* SimDeviceType+Removed.h */,
-				AA50E2641D5B24D700A379E9 /* SimDisplayDescriptorState-Protocol.h */,
-				AA50E2651D5B24D700A379E9 /* SimLocalThrowable.h */,
-				AA50E2661D5B24D700A379E9 /* SimMachPortServer.h */,
-				AA50E2671D5B24D700A379E9 /* SimNSPasteboard.h */,
-				AA50E2681D5B24D700A379E9 /* SimNSPasteboardItem.h */,
-				AA50E2691D5B24D700A379E9 /* SimPasteboard-Protocol.h */,
-				AA50E26A1D5B24D700A379E9 /* SimPasteboardItem.h */,
-				AA50E26B1D5B24D700A379E9 /* SimPasteboardItemData.h */,
-				AA50E26C1D5B24D700A379E9 /* SimPasteboardItemDataProvider-Protocol.h */,
-				AA50E26D1D5B24D700A379E9 /* SimPasteboardItemWrappedData.h */,
-				AA50E26E1D5B24D700A379E9 /* SimPasteboardPortMap.h */,
-				AA50E26F1D5B24D700A379E9 /* SimProfilesPathMonitor.h */,
-				AA50E2701D5B24D700A379E9 /* SimRuntime.h */,
-				AA10FB481DD07B9C00CE3CB2 /* SimRuntime+Removed.h */,
-				AA50E2711D5B24D700A379E9 /* SimRuntimePairingReuirements.h */,
-				AA50E2721D5B24D700A379E9 /* SimServiceContext.h */,
+				AA386D131E44F04F005C6118 /* CDStructures.h */,
+				AA386D141E44F04F005C6118 /* DefaultDisplayDescriptorState.h */,
+				AA386D151E44F04F005C6118 /* FoundationXPCProtocolProxyable-Protocol.h */,
+				AA386D161E44F04F005C6118 /* NSArray-SimArgv.h */,
+				AA386D171E44F04F005C6118 /* NSCoding-Protocol.h */,
+				AA386D181E44F04F005C6118 /* NSDictionary-SimEnvp.h */,
+				AA386D191E44F04F005C6118 /* NSDictionary-SimSaveWithError.h */,
+				AA386D1A1E44F04F005C6118 /* NSError-SimError.h */,
+				AA386D1B1E44F04F005C6118 /* NSFileManager-CoreSimulator.h */,
+				AA386D1C1E44F04F005C6118 /* NSKeyedArchiver-SimPasteboardItem.h */,
+				AA386D1D1E44F04F005C6118 /* NSKeyedArchiver-SimSecurely.h */,
+				AA386D1E1E44F04F005C6118 /* NSKeyedUnarchiver-SimPasteboardItem.h */,
+				AA386D1F1E44F04F005C6118 /* NSKeyedUnarchiver-SimSecurely.h */,
+				AA386D201E44F04F005C6118 /* NSPasteboardItem-SimPasteboardItem.h */,
+				AA386D211E44F04F005C6118 /* NSPasteboardItemDataProvider-Protocol.h */,
+				AA386D221E44F04F005C6118 /* NSSecureCoding-Protocol.h */,
+				AA386D231E44F04F005C6118 /* NSString-SIMCPUType.h */,
+				AA386D241E44F04F005C6118 /* NSString-SIMPackedVersion.h */,
+				AA386D251E44F04F005C6118 /* NSString-SimServiceContextExtras.h */,
+				AA386D261E44F04F005C6118 /* NSUserDefaults-SimDefaults.h */,
+				AA386D271E44F04F005C6118 /* SimDevice.h */,
+				AA386D281E44F04F005C6118 /* SimDevice+Removed.h */,
+				AA386D291E44F04F005C6118 /* SimDeviceBootInfo.h */,
+				AA386D2A1E44F04F005C6118 /* SimDeviceIO.h */,
+				AA386D2B1E44F04F005C6118 /* SimDeviceIOClient.h */,
+				AA386D2C1E44F04F005C6118 /* SimDeviceIOInterface-Protocol.h */,
+				AA386D2D1E44F04F005C6118 /* SimDeviceIOLoadedBundle.h */,
+				AA386D2E1E44F04F005C6118 /* SimDeviceIOPortConsumer-Protocol.h */,
+				AA386D2F1E44F04F005C6118 /* SimDeviceIOPortDescriptorState-Protocol.h */,
+				AA386D301E44F04F005C6118 /* SimDeviceIOProtocol-Protocol.h */,
+				AA386D311E44F04F005C6118 /* SimDeviceIOServer.h */,
+				AA386D321E44F04F005C6118 /* SimDeviceNotificationManager.h */,
+				AA386D331E44F04F005C6118 /* SimDeviceNotifier-Protocol.h */,
+				AA386D341E44F04F005C6118 /* SimDevicePair.h */,
+				AA386D351E44F04F005C6118 /* SimDevicePasteboard.h */,
+				AA386D361E44F04F005C6118 /* SimDevicePasteboardConnection.h */,
+				AA386D371E44F04F005C6118 /* SimDevicePasteboardItem.h */,
+				AA386D381E44F04F005C6118 /* SimDeviceSet.h */,
+				AA386D391E44F04F005C6118 /* SimDeviceSet+Removed.h */,
+				AA386D3A1E44F04F005C6118 /* SimDeviceType.h */,
+				AA386D3B1E44F04F005C6118 /* SimDeviceType+Removed.h */,
+				AA386D3C1E44F04F005C6118 /* SimDisplayDefaultDescriptorState.h */,
+				AA386D3D1E44F04F005C6118 /* SimDisplayDescriptorState-Protocol.h */,
+				AA386D3E1E44F04F005C6118 /* SimLocalThrowable.h */,
+				AA386D3F1E44F04F005C6118 /* SimMachPortServer.h */,
+				AA386D401E44F04F005C6118 /* SimNSPasteboard.h */,
+				AA386D411E44F04F005C6118 /* SimNSPasteboardItem.h */,
+				AA386D421E44F04F005C6118 /* SimPasteboard-Protocol.h */,
+				AA386D431E44F04F005C6118 /* SimPasteboardItem.h */,
+				AA386D441E44F04F005C6118 /* SimPasteboardItemData.h */,
+				AA386D451E44F04F005C6118 /* SimPasteboardItemDataProvider-Protocol.h */,
+				AA386D461E44F04F005C6118 /* SimPasteboardItemWrappedData.h */,
+				AA386D471E44F04F005C6118 /* SimPasteboardPortMap.h */,
+				AA386D481E44F04F005C6118 /* SimPasteboardSyncPool.h */,
+				AA386D491E44F04F005C6118 /* SimPasteboardSyncPoolObject.h */,
+				AA386D4A1E44F04F005C6118 /* SimPasteboardSyncPoolProtocol-Protocol.h */,
+				AA386D4B1E44F04F005C6118 /* SimProfilesPathMonitor.h */,
+				AA386D4C1E44F04F005C6118 /* SimRuntime.h */,
+				AA386D4D1E44F04F005C6118 /* SimRuntime+Removed.h */,
+				AA386D4E1E44F04F005C6118 /* SimRuntimePairingReuirements.h */,
+				AA386D4F1E44F04F005C6118 /* SimServiceContext.h */,
 			);
 			path = CoreSimulator;
 			sourceTree = "<group>";

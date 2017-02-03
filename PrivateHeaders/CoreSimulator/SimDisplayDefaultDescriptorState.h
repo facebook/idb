@@ -7,23 +7,32 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/Foundation.h>
+#import <objc/NSObject.h>
 
 #import <CoreSimulator/SimDisplayDescriptorState-Protocol.h>
 
-@interface DefaultDisplayDescriptorState : NSObject <SimDisplayDescriptorState>
+@class NSString;
+
+@interface SimDisplayDefaultDescriptorState : NSObject <SimDisplayDescriptorState>
 {
+    unsigned short _displayClass;
     int _powerState;
-    int _displayClass;
     unsigned int _defaultWidthForDisplay;
     unsigned int _defaultHeightForDisplay;
+    unsigned int _defaultPixelFormat;
 }
 
-+ (id)defaultDisplayDescriptorStateWithPowerState:(int)arg1 displayClass:(int)arg2 width:(unsigned int)arg3 height:(unsigned int)arg4;
++ (id)defaultDisplayDescriptorStateWithPowerState:(int)arg1 displayClass:(unsigned short)arg2 width:(unsigned int)arg3 height:(unsigned int)arg4 pixelFormat:(unsigned int)arg5;
+@property (nonatomic, assign) unsigned int defaultPixelFormat;
 @property (nonatomic, assign) unsigned int defaultHeightForDisplay;
 @property (nonatomic, assign) unsigned int defaultWidthForDisplay;
-@property (nonatomic, assign) int displayClass;
+@property (nonatomic, assign) unsigned short displayClass;
 @property (nonatomic, assign) int powerState;
 - (id)xpcObject;
+
+// Remaining properties
+@property (atomic, copy, readonly) NSString *debugDescription;
+@property (atomic, readonly) unsigned long long hash;
+@property (atomic, readonly) Class superclass;
 
 @end

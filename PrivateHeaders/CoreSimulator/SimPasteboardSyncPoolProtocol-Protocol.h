@@ -7,9 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/NSString.h>
+@class NSObject, NSUUID;
+@protocol SimPasteboard;
 
-@interface NSString (SIMPackedVersion)
-+ (id)sim_stringForPackedVersion:(unsigned int)arg1;
-- (unsigned int)sim_packedVersion;
+@protocol SimPasteboardSyncPoolProtocol
+@property (readonly, retain, nonatomic) NSUUID *poolIdentifier;
+- (BOOL)removePasteboard:(NSObject<SimPasteboard> *)arg1 withError:(id *)arg2;
+- (BOOL)addPasteboard:(NSObject<SimPasteboard> *)arg1 withError:(id *)arg2;
 @end

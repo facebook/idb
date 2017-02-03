@@ -7,16 +7,16 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/Foundation.h>
+#import <objc/NSObject.h>
 
-@interface SimLocalThrowable : NSObject
+@interface SimPasteboardSyncPoolObject : NSObject
 {
-    id _data;
+    unsigned long long _lastSeenChangeCount;
+    unsigned long long _regID;
 }
 
-+ (id)throwableWithData:(id)arg1;
-@property (retain, nonatomic) id data;
-
-- (id)initWithData:(id)arg1;
+@property (nonatomic, assign) unsigned long long regID;
+@property (nonatomic, assign) unsigned long long lastSeenChangeCount;
+- (id)initWithPasteboard:(id)arg1;
 
 @end

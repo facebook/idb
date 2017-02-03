@@ -7,9 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/NSString.h>
+#import <Foundation/NSKeyedArchiver.h>
 
-@interface NSString (SIMPackedVersion)
-+ (id)sim_stringForPackedVersion:(unsigned int)arg1;
-- (unsigned int)sim_packedVersion;
+@interface NSKeyedArchiver (SimSecurely)
++ (id)sim_securelyArchivedDataWithRootObject:(id)arg1;
 @end

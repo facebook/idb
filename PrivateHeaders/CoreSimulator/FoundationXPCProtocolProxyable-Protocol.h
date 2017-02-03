@@ -7,9 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/NSString.h>
+#import <CoreSimulator/NSObject-Protocol.h>
 
-@interface NSString (SIMPackedVersion)
-+ (id)sim_stringForPackedVersion:(unsigned int)arg1;
-- (unsigned int)sim_packedVersion;
+@protocol FoundationXPCProtocolProxyable <NSObject>
 @end
