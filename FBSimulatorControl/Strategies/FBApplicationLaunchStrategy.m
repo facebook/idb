@@ -282,8 +282,26 @@
 - (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  NSDictionary<NSString *, id> *options = [appLaunch simDeviceLaunchOptionsWithStdOutPath:stdOutPath stdErrPath:stdErrPath];
+  NSDictionary<NSString *, id> *options = [appLaunch
+    simDeviceLaunchOptionsWithStdOutPath:[self translateAbsolutePath:stdOutPath toPathRelativeTo:simulator.dataDirectory]
+    stdErrPath:[self translateAbsolutePath:stdErrPath toPathRelativeTo:simulator.dataDirectory]];
   return [simulator.device launchApplicationWithID:appLaunch.bundleID options:options error:error];
+}
+
+- (NSString *)translateAbsolutePath:(NSString *)absolutePath toPathRelativeTo:(NSString *)referencePath
+{
+  if (![absolutePath hasPrefix:@"/"]) {
+    return absolutePath;
+  }
+  // When launching an application with a custom stdout/stderr path, `SimDevice` uses the given path relative
+  // to the Simulator's data directory. From the Framework's consumer point of view this might not be the
+  // wanted behaviour. To work around it, we construct a path relative to the Simulator's data directory
+  // using `..` until we end up in the absolute path outside the Simulator's data directory.
+  NSString *translatedPath = @"";
+  for (NSUInteger index = 0; index < referencePath.pathComponents.count; index++) {
+    translatedPath = [translatedPath stringByAppendingPathComponent:@".."];
+  }
+  return [translatedPath stringByAppendingPathComponent:absolutePath];
 }
 
 @end
