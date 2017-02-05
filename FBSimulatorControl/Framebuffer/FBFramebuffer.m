@@ -338,6 +338,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
     return nil;
   }
 
+  _framebufferService = framebufferService;
   _backingStoreGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one sink:frameSink queue:clientQueue logger:logger];
 
   return self;
