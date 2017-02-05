@@ -37,10 +37,6 @@
                    withTimeout:(NSTimeInterval)timeout
                  withArguments:(NSArray<NSString *> *)arguments
 {
-  if (timeout <= 0) {
-    timeout = FBControlCoreGlobalConfiguration.slowTimeout;
-  }
-
   _device = device;
   _testHostPath = testHostPath;
   _testBundlePath = testBundlePath;
@@ -107,7 +103,6 @@
   NSParameterAssert(self.device);
   NSParameterAssert(self.testHostPath);
   NSParameterAssert(self.testBundlePath);
-  NSParameterAssert(self.timeout > 0);
 
   if (![self createXCTestRunFileWithError:error]) {
     if (error) {
