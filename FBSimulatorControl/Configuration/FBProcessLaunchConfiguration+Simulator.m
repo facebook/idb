@@ -47,8 +47,9 @@
         describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
         failBool:error];
     }
+    [builder updatePath:path];
     if (diagnosticOut) {
-      *diagnosticOut = diagnostic;
+      *diagnosticOut = [builder build];
     }
   }
   return YES;
