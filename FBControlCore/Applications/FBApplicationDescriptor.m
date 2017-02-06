@@ -9,11 +9,31 @@
 
 #import "FBApplicationDescriptor.h"
 
-#import "FBControlCoreError.h"
 #import "FBBinaryDescriptor.h"
-#import "FBControlCoreGlobalConfiguration.h"
-#import "FBCollectionInformation.h"
 #import "FBBinaryParser.h"
+#import "FBCollectionInformation.h"
+#import "FBControlCoreError.h"
+#import "FBControlCoreError.h"
+#import "FBControlCoreGlobalConfiguration.h"
+#import "FBTask.h"
+#import "FBTaskBuilder.h"
+
+static BOOL deleteDirectory(NSURL *path)
+{
+  if (path == nil) {
+    return YES;
+  }
+  return [[NSFileManager defaultManager] removeItemAtURL:path error:nil];
+}
+
+static BOOL isApplicationAtPath(NSString *path)
+{
+  BOOL isDirectory = NO;
+  return path != nil
+    && [path hasSuffix:@".app"]
+    && [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]
+    && isDirectory;
+}
 
 @implementation FBApplicationDescriptor
 
@@ -232,6 +252,58 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
     }
   }
   return nil;
+}
+
++ (nullable NSString *)findOrExtractApplicationAtPath:(NSString *)path extractPathOut:(NSURL **)extractPathOut error:(NSError **)error
+{
+  if (isApplicationAtPath(path)) {
+    return path;
+  }
+
+  NSString *tempDirPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
+  NSURL *tempDirURL = [NSURL fileURLWithPath:tempDirPath isDirectory:YES];
+  if (extractPathOut) {
+    *extractPathOut = tempDirURL;
+  }
+
+  NSError *innerError = nil;
+  if (![[NSFileManager defaultManager] createDirectoryAtURL:tempDirURL withIntermediateDirectories:YES attributes:nil error:&innerError]) {
+    return [[[FBControlCoreError
+      describe:@"Could not create temporary directory for IPA extraction"]
+      causedBy:innerError]
+      fail:error];
+  }
+  FBTask *task = [[[[[FBTaskBuilder withLaunchPath:@"/usr/bin/unzip"]
+    withArguments:@[path, @"-d", [tempDirURL path]]]
+    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
+    build]
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+
+  if (task.error) {
+    return [[[FBControlCoreError
+      describeFormat:@"Could not unzip IPA at %@.", path]
+      causedBy:task.error]
+      fail:error];
+  }
+
+  NSDirectoryEnumerator *directoryEnumerator = [NSFileManager.defaultManager
+    enumeratorAtURL:tempDirURL
+    includingPropertiesForKeys:@[NSURLIsDirectoryKey]
+    options:0
+    errorHandler:nil];
+  NSSet *applicationURLs = [NSSet set];
+  for (NSURL *fileURL in directoryEnumerator) {
+    if (isApplicationAtPath([fileURL path])) {
+      applicationURLs = [applicationURLs setByAddingObject:fileURL];
+    }
+  }
+  if ([applicationURLs count] != 1) {
+    deleteDirectory(tempDirURL);
+    return [[FBControlCoreError
+      describeFormat:@"Expected only one Application in IPA, found %lu", [applicationURLs count]]
+      fail:error];
+  }
+  return [[applicationURLs anyObject] path];
 }
 
 @end

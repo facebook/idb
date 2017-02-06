@@ -27,11 +27,6 @@
 
 @end
 
-BOOL deleteDirectory(NSURL *path);
-BOOL isApplicationAtPath(NSString *path);
-NSString *pathToApplicationAt(NSString *path, NSURL **tempDirURLPtr, NSError **error);
-
-
 @implementation FBSimulatorApplicationCommands
 
 + (instancetype)withSimulator:(FBSimulator *)simulator
@@ -57,14 +52,14 @@ NSString *pathToApplicationAt(NSString *path, NSURL **tempDirURLPtr, NSError **e
   NSError *innerError = nil;
   NSURL *tempDirURL = nil;
 
-  NSString *appPath = pathToApplicationAt(path, &tempDirURL, &innerError);
+  NSString *appPath = [FBApplicationDescriptor findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:&innerError];
   if (appPath == nil) {
     return [[FBSimulatorError causedBy:innerError] failBool:error];
   }
 
   BOOL installResult = [self installExtractedApplicationWithPath:appPath error:&innerError];
   if (tempDirURL != nil) {
-    deleteDirectory(tempDirURL);
+    [NSFileManager.defaultManager removeItemAtURL:tempDirURL error:nil];
   }
   return installResult;
 }
@@ -75,27 +70,27 @@ NSString *pathToApplicationAt(NSString *path, NSURL **tempDirURLPtr, NSError **e
   // Confirm the app is suitable to be uninstalled.
   if ([self.simulator isSystemApplicationWithBundleID:bundleID error:nil]) {
     return [[[FBSimulatorError
-              describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
-             inSimulator:self.simulator]
-            failBool:error];
+      describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
+      inSimulator:self.simulator]
+      failBool:error];
   }
   NSError *innerError = nil;
   if (![self.simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
     return [[[[FBSimulatorError
-               describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
-              causedBy:innerError]
-             inSimulator:self.simulator]
-            failBool:error];
+      describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
+      causedBy:innerError]
+      inSimulator:self.simulator]
+      failBool:error];
   }
   // Kill the app if it's running
   [[self.simulator.interact terminateApplicationWithBundleID:bundleID] perform:nil];
   // Then uninstall for real.
   if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
     return [[[[FBSimulatorError
-               describeFormat:@"Failed to uninstall '%@'", bundleID]
-              causedBy:innerError]
-             inSimulator:self.simulator]
-            failBool:error];
+      describeFormat:@"Failed to uninstall '%@'", bundleID]
+      causedBy:innerError]
+      inSimulator:self.simulator]
+      failBool:error];
   }
   return YES;
 }
@@ -185,78 +180,3 @@ NSString *pathToApplicationAt(NSString *path, NSURL **tempDirURLPtr, NSError **e
 }
 
 @end
-
-BOOL deleteDirectory(NSURL *path)
-{
-  if (path == nil) {
-    return YES;
-  }
-  return [[NSFileManager defaultManager] removeItemAtURL:path error:nil];
-}
-
-BOOL isApplicationAtPath(NSString *path)
-{
-  BOOL isDirectory = NO;
-  return
-    path != nil &&
-    [path hasSuffix:@".app"] &&
-    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory] &&
-    isDirectory;
-}
-
-NSString *pathToApplicationAt(NSString *path, NSURL **tempDirURLPtr, NSError **error)
-{
-  if (isApplicationAtPath(path)) {
-    return path;
-  }
-
-  NSError *innerError = nil;
-
-  NSURL *tempDirURL = [NSURL fileURLWithPath:
-    [NSTemporaryDirectory() stringByAppendingPathComponent:
-      [[NSProcessInfo processInfo] globallyUniqueString]]
-    isDirectory:YES];
-  *tempDirURLPtr = tempDirURL;
-
-  if (![[NSFileManager defaultManager]
-        createDirectoryAtURL:tempDirURL withIntermediateDirectories:YES attributes:nil error:&innerError]) {
-    [[[FBSimulatorError
-      describe:@"Could not create temporary directory for IPA extraction"]
-      causedBy:innerError]
-      fail:error];
-    return nil;
-  }
-  FBTask *task = [[[[[FBTaskBuilder withLaunchPath:@"/usr/bin/unzip"]
-    withArguments:@[path, @"-d", [tempDirURL path]]]
-    withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
-    build]
-    startSynchronouslyWithTimeout:[FBControlCoreGlobalConfiguration regularTimeout]];
-
-  if (task.error) {
-    [[[FBSimulatorError
-      describeFormat:@"Could not unzip IPA at %@.", path]
-      causedBy:task.error]
-      fail:error];
-    return nil;
-  }
-
-  NSDirectoryEnumerator *directoryEnumerator = [[NSFileManager defaultManager]
-    enumeratorAtURL:tempDirURL
-    includingPropertiesForKeys:@[NSURLIsDirectoryKey]
-    options:0
-    errorHandler:nil];
-  NSSet *applicationURLs = [NSSet set];
-  for (NSURL *fileURL in directoryEnumerator) {
-    if (isApplicationAtPath([fileURL path])) {
-      applicationURLs = [applicationURLs setByAddingObject:fileURL];
-    }
-  }
-  if ([applicationURLs count] != 1) {
-    [[FBSimulatorError
-      describeFormat:@"Expected only one Application in IPA, found %lu", [applicationURLs count]]
-     fail:error];
-    deleteDirectory(tempDirURL);
-    return nil;
-  }
-  return [[applicationURLs anyObject] path];
-}

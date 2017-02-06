@@ -104,6 +104,17 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
  */
 + (FBApplicationInstallType)installTypeFromString:(nullable NSString *)installTypeString;
 
+/**
+ Finds or Extracts an Application if it is determined to be an IPA.
+ If the Path is a .app, it will be returned unchanged.
+
+ @param path the path of the .app or .ipa
+ @param extractPathOut an outparam for the path where the Application is extracted.
+ @param error any error that occurred in fetching the application.
+ @return the path if successful, NO otherwise.
+ */
++ (nullable NSString *)findOrExtractApplicationAtPath:(NSString *)path extractPathOut:(NSURL *_Nullable* _Nullable)extractPathOut error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
