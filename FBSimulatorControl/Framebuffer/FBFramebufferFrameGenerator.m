@@ -18,6 +18,8 @@
 
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferFrameSink.h"
+#import "FBFramebufferSurfaceClient.h"
+#import "FBSurfaceImageGenerator.h"
 
 static const NSInteger FBFramebufferLogFrameFrequency = 100;
 // Timescale is in nanoseconds
@@ -170,11 +172,8 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 @interface FBFramebufferIOSurfaceFrameGenerator ()
 
-@property (nonatomic, strong, readonly) CIFilter *scaleFilter;
 @property (nonatomic, strong, readonly) dispatch_source_t timerSource;
-
-@property (nonatomic, assign, readwrite) IOSurfaceRef surface;
-@property (nonatomic, assign, readwrite) uint32_t lastSeedValue;
+@property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
 
 @end
 
@@ -190,16 +189,9 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   }
 
   // Only rescale if the original scale is different to 1.
-  if ([scale isNotEqualTo:NSDecimalNumber.one]) {
-    _scaleFilter = [CIFilter filterWithName:@"CILanczosScaleTransform"];
-    [_scaleFilter setValue:scale forKey:@"inputScale"];
-    [_scaleFilter setValue:NSDecimalNumber.one forKey:@"inputAspectRatio"];
-  }
-
   _timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.queue);
   dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, FBSimulatorFramebufferFrameTimeInterval);
   dispatch_source_set_timer(_timerSource, startTime, FBSimulatorFramebufferFrameTimeInterval, 0);
-  _lastSeedValue = 0;
 
   __weak typeof(self) weakSelf = self;
   dispatch_source_set_event_handler(_timerSource, ^{
@@ -210,6 +202,18 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 }
 
 #pragma mark Public
+
+- (void)currentSurfaceChanged:(nullable IOSurfaceRef)surface
+{
+  [self.imageGenerator currentSurfaceChanged:surface];
+  if (surface == NULL) {
+    dispatch_suspend(self.timerSource);
+  } else {
+    [self startTimebaseNow];
+    [self pushNewFrameFromCurrentTime];
+    dispatch_resume(self.timerSource);
+  }
+}
 
 - (void)frameSteamEnded
 {
@@ -222,49 +226,17 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   [super frameSteamEnded];
 }
 
-- (void)currentSurfaceChanged:(IOSurfaceRef)surface
-{
-  if (self.surface != NULL && self.surface == NULL) {
-    [self.logger.info logFormat:@"Removing old surface %@", surface];
-    IOSurfaceDecrementUseCount(self.surface);
-    self.surface = nil;
-    dispatch_suspend(self.timerSource);
-  }
-  if (surface != NULL) {
-    IOSurfaceIncrementUseCount(surface);
-    self.surface = surface;
-    [self.logger.info logFormat:@"Recieved IOSurface from Framebuffer Service %@", surface];
-    [self startTimebaseNow];
-    [self pushNewFrameFromCurrentTime];
-    dispatch_resume(self.timerSource);
-  }
-}
-
 #pragma mark Private
 
 - (void)pushNewFrameFromCurrentTime
 {
-  // A fast compare to avoid pushing unecessary frames.
-  uint32_t currentSeed = IOSurfaceGetSeed(self.surface);
-  if (currentSeed == self.lastSeedValue) {
+  CGImageRef image = [self.imageGenerator availableImage];
+  if (!image) {
     return;
   }
-  self.lastSeedValue = currentSeed;
-
-  CIContext *context = [CIContext contextWithOptions:nil];
-  CIImage *ciImage = [CIImage imageWithIOSurface:self.surface];
-  if (self.scaleFilter) {
-    [self.scaleFilter setValue:ciImage forKey:kCIInputImageKey];
-    ciImage = [self.scaleFilter outputImage];
-    [self.scaleFilter setValue:ciImage forKey:kCIInputImageKey];
-  }
-
-  CGRect frame = ciImage.extent;
-
-  CGImageRef cgImage = [context createCGImage:ciImage fromRect:ciImage.extent];
-  [self pushNewFrameFromCurrentTimeWithCGImage:cgImage size:frame.size];
-
-  CGImageRelease(cgImage);
+  CGSize size = CGSizeMake(CGImageGetWidth(image), CGImageGetWidth(image));
+  [self pushNewFrameFromCurrentTimeWithCGImage:image size:size];
+  CGImageRelease(image);
 }
 
 @end
