@@ -370,6 +370,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   // We recieve the backing store on the first surface.
   if (self.state == FBSimulatorFramebufferStateStarting) {
     self.state = FBSimulatorFramebufferStateRunning;
+    [self.backingStoreGenerator firstFrameWithBackingStore:backingStore];
+  } else if (self.state == FBSimulatorFramebufferStateRunning) {
     [self.backingStoreGenerator backingStoreDidUpdate:backingStore];
   }
 }
