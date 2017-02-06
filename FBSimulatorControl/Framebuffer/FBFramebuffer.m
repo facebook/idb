@@ -360,7 +360,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 - (instancetype)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup
 {
   [super stopListeningWithTeardownGroup:teardownGroup];
-  [FBFramebufferSurfaceClient detachFromFramebufferService:self.framebufferService];
+  [self.framebufferService unregisterClient:self];
   _framebufferService = nil;
   return self;
 }
