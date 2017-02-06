@@ -84,14 +84,12 @@ enum HttpMethod : String {
   case POST = "POST"
 }
 
-typealias PostActionHook = () -> ()
-
 enum ActionHandler {
   case constant(Action)
   case path(([String]) throws -> Action)
   case parser((JSON) throws -> Action)
   case binary((Data) throws -> Action)
-  case binaryHook((Data) throws -> (Action, PostActionHook))
+  case file(String, (HttpRequest, URL) throws -> Action)
 
   func produceAction(_ request: HttpRequest) throws -> (Action, FBiOSTargetQuery?) {
     switch self {
@@ -109,9 +107,16 @@ enum ActionHandler {
     case .binary(let binaryHandler):
       let action = try binaryHandler(request.body)
       return (action, nil)
-    case .binaryHook(let handler):
-      let (action, hook) = try handler(request.body)
-      hook()
+    case .file(let pathExtension, let handler):
+      let guid = UUID().uuidString
+      let destination = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("fbsimctl-\(guid)")
+        .appendingPathExtension(pathExtension)
+      if (FileManager.default.fileExists(atPath: destination.path)) {
+        throw ParseError.custom("Could not generate temporary filename, \(destination.path) already exists.")
+      }
+      try request.body.write(to: destination)
+      let action = try handler(request, destination)
       return (action, nil)
     }
   }
@@ -182,8 +187,8 @@ struct ActionRoute : Route {
     return ActionRoute(method: HttpMethod.POST, eventName: eventName, handler: ActionHandler.parser(handler))
   }
 
-  static func postRaw(_ eventName: EventName, handler: @escaping (Data) throws -> Action) -> Route {
-    return ActionRoute(method: HttpMethod.POST, eventName: eventName, handler: ActionHandler.binary(handler))
+  static func postFile(_ eventName: EventName, _ pathExtension: String, handler: @escaping (HttpRequest, URL) throws -> Action) -> Route {
+    return ActionRoute(method: HttpMethod.POST, eventName: eventName, handler: ActionHandler.file(pathExtension, handler))
   }
 
   static func getConstant(_ eventName: EventName, action: Action) -> Route {
@@ -267,23 +272,9 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var installRoute: Route { get {
-    let handler = ActionHandler.binaryHook { data in
-      let guid = UUID().uuidString
-      let ipaURL = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("fbsimctl-\(guid)")
-        .appendingPathExtension("ipa")
-
-      if (FileManager.default.fileExists(atPath: ipaURL.path)) {
-        throw ParseError.custom("Could not generate temporary filename, \(ipaURL.path) already exists.")
-      }
-      try data.write(to: ipaURL)
-      let action = Action.install(ipaURL.path)
-      let hook: PostActionHook = {
-        try? FileManager.default.removeItem(at: ipaURL)
-      }
-      return (action, hook)
+    return ActionRoute.postFile(EventName.Install, "ipa") { request, file in
+      return Action.install(file.path)
     }
-    return ActionRoute(method: HttpMethod.POST, eventName: EventName.Install, handler: handler)
   }}
 
   fileprivate static var launchRoute: Route { get {
