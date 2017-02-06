@@ -183,3 +183,30 @@ extension IndividualCreationConfiguration {
     return configuration
   }}
 }
+
+extension FBApplicationDescriptor {
+  static func findOrExtract(atPath: String) throws -> (String, URL?) {
+    var url: NSURL? = nil
+    let result = try FBApplicationDescriptor.findOrExtractApplication(atPath: atPath, extractPathOut: &url)
+    return (result, url! as URL)
+  }
+}
+
+extension Bool {
+  static func fallback(from: String?, to: Bool) -> Bool {
+    guard let from = from else {
+      return false
+    }
+    switch from.lowercased() {
+    case "1", "true": return true
+    case "0", "false": return false
+    default: return false
+    }
+  }
+}
+
+extension HttpRequest {
+  func getBoolQueryParam(_ key: String, _ fallback: Bool) -> Bool {
+    return Bool.fallback(from: self.query[key], to: fallback)
+  }
+}

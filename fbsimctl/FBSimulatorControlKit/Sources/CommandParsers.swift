@@ -617,7 +617,7 @@ extension Action : Parsable {
   static var installParser: Parser<Action> {
     return Parser<String>
       .ofCommandWithArg(EventName.Install.rawValue, Parser<String>.ofAny)
-      .fmap { Action.install($0) }
+      .fmap { Action.install($0, false) }
   }
 
   static var keyboardOverrideParser: Parser<Action> {

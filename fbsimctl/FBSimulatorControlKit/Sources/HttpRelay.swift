@@ -273,7 +273,8 @@ class HttpRelay : Relay {
 
   fileprivate static var installRoute: Route { get {
     return ActionRoute.postFile(EventName.Install, "ipa") { request, file in
-      return Action.install(file.path)
+      let shouldCodeSign = request.getBoolQueryParam("codesign", false)
+      return Action.install(file.path, shouldCodeSign)
     }
   }}
 
