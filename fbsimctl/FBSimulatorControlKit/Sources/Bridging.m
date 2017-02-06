@@ -178,22 +178,27 @@
 
 @implementation HttpResponse
 
++ (instancetype)responseWithStatusCode:(NSInteger)statusCode body:(NSData *)body contentType:(NSString *)contentType
+{
+  return [[self alloc] initWithStatusCode:statusCode body:body contentType:contentType];
+}
+
 + (instancetype)responseWithStatusCode:(NSInteger)statusCode body:(NSData *)body
 {
-  return [[self alloc] initWithStatusCode:statusCode body:body];
+  return [self responseWithStatusCode:statusCode body:body contentType:@"application/json"];
 }
 
 + (instancetype)internalServerError:(NSData *)body
 {
-  return [[self alloc] initWithStatusCode:500 body:body];
+  return [self responseWithStatusCode:500 body:body];
 }
 
 + (instancetype)ok:(NSData *)body
 {
-  return [[self alloc] initWithStatusCode:200 body:body];
+  return [self responseWithStatusCode:200 body:body];
 }
 
-- (instancetype)initWithStatusCode:(NSInteger)statusCode body:(NSData *)body
+- (instancetype)initWithStatusCode:(NSInteger)statusCode body:(NSData *)body contentType:(NSString *)contentType
 {
   self = [super init];
   if (!self) {
@@ -202,6 +207,7 @@
 
   _statusCode = statusCode;
   _body = body;
+  _contentType = contentType;
 
   return self;
 }
@@ -260,7 +266,7 @@
       HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data pathComponents:components];
       HttpResponse *response = [route.handler handleRequest:request];
 
-      GCDWebServerDataResponse *gcdResponse = [GCDWebServerDataResponse responseWithData:response.body contentType:@"application/json"];
+      GCDWebServerDataResponse *gcdResponse = [GCDWebServerDataResponse responseWithData:response.body contentType:response.contentType];
       gcdResponse.statusCode = response.statusCode;
       return gcdResponse;
     }];

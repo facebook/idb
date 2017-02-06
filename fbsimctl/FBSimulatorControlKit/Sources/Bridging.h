@@ -80,21 +80,53 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates a Response with the given status code.
+
+ @param statusCode the status code.
+ @param body the body to use.
+ @param contentType the Content Type to use.
+ @return a new Http Response Object.
+ */
++ (instancetype)responseWithStatusCode:(NSInteger)statusCode body:(NSData *)body contentType:(NSString *)contentType;
+
+/**
+ Creates a Response with the given status code.
+
+ @param statusCode the status code.
+ @param body the body to use.
+ @return a new Http Response Object.
  */
 + (instancetype)responseWithStatusCode:(NSInteger)statusCode body:(NSData *)body;
 
 /**
  Creates a 500 Response.
+
+ @param body the body to use.
+ @return a new Http Response Object.
  */
 + (instancetype)internalServerError:(NSData *)body;
 
 /**
  Creates a 200 Response.
+
+ @param body the body to use.
+ @return a new Http Response Object.
  */
 + (instancetype)ok:(NSData *)body;
 
+/**
+ The HTTP Status Code.
+ */
 @property (nonatomic, assign, readonly) NSInteger statusCode;
+
+/**
+ The Binary Data for the Body.
+ */
 @property (nonatomic, strong, readonly) NSData *body;
+
+/**
+ The content-type of the Response.
+ */
+@property (nonatomic, copy, readonly) NSString *contentType;
 
 @end
 
