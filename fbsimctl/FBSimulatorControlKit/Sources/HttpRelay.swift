@@ -99,15 +99,73 @@ class HttpAction {
   }
 }
 
+enum Handler {
+  case constant(HttpAction)
+  case path(([String]) throws -> HttpAction)
+  case parser((JSON) throws -> HttpAction)
+  case binary((Data) throws -> HttpAction)
 
-struct ActionRoute {
-  enum Handler {
-    case constant(HttpAction)
-    case path(([String]) throws -> HttpAction)
-    case parser((JSON) throws -> HttpAction)
-    case binary((Data) throws -> HttpAction)
+  func produceAction(_ request: HttpRequest) throws -> (HttpAction, FBiOSTargetQuery?) {
+    switch self {
+    case .constant(let action):
+      return (action, nil)
+    case .path(let pathHandler):
+      let components = Array(request.pathComponents.dropFirst())
+      let action = try pathHandler(components)
+      return (action, nil)
+    case .parser(let actionParser):
+      let json = try request.jsonBody()
+      let action = try actionParser(json)
+      let query = try? FBiOSTargetQuery.inflate(fromJSON: json.getValue("simulators").decode())
+      return (action, query)
+    case .binary(let binaryHandler):
+      let action = try binaryHandler(request.body)
+      return (action, nil)
+    }
+  }
+}
+
+class ActionHttpResponseHandler : NSObject, HttpResponseHandler {
+  let performer: ActionPerformer
+  let handler: Handler
+
+  init(performer: ActionPerformer, handler: Handler) {
+    self.performer = performer
+    self.handler = handler
+    super.init()
   }
 
+  func handle(_ request: HttpRequest) -> HttpResponse {
+    do {
+      let pathQuery = try pathQueryHandler(request)
+      let (httpAction, actionQuery) = try self.handler.produceAction(request)
+      let response = performer.dispatchAction(httpAction.action, queryOverride: pathQuery ?? actionQuery)
+      httpAction.postHook();
+      return response
+    } catch let error as JSONError {
+      return HttpEventReporter.errorResponse(error.description)
+    } catch let error as ParseError {
+      return HttpEventReporter.errorResponse(error.description)
+    } catch let error as NSError {
+      return HttpEventReporter.errorResponse(error.description)
+    } catch {
+      return HttpEventReporter.errorResponse(nil)
+    }
+  }
+
+  fileprivate var pathQueryHandler:(HttpRequest)throws -> FBiOSTargetQuery? { get {
+    return { request in
+      guard let queryPath = request.pathComponents.dropFirst().first, request.pathComponents.count >= 3 else {
+        return nil
+      }
+      return FBiOSTargetQuery.udids([
+        try FBiOSTargetQuery.parseUDIDToken(queryPath)
+      ])
+    }
+  }}
+}
+
+struct ActionRoute {
   let method: HttpMethod
   let endpoint: EventName
   let handler: Handler
@@ -128,69 +186,12 @@ struct ActionRoute {
     return ActionRoute(method: HttpMethod.GET, endpoint: endpoint, handler: Handler.path(handler))
   }
 
-  fileprivate var pathQueryHandler:(HttpRequest)throws -> FBiOSTargetQuery? { get {
-    return { request in
-      guard let queryPath = request.pathComponents.dropFirst().first, request.pathComponents.count >= 3 else {
-        return nil
-      }
-      return FBiOSTargetQuery.udids([
-        try FBiOSTargetQuery.parseUDIDToken(queryPath)
-      ])
-    }
-  }}
-
-  fileprivate var actionHandler:(HttpRequest)throws -> (HttpAction, FBiOSTargetQuery?) { get {
-    switch self.handler {
-    case .constant(let action):
-      return { _ in (action, nil) }
-    case .path(let pathHandler):
-      return { request in
-        let components = Array(request.pathComponents.dropFirst())
-        let action = try pathHandler(components)
-        return (action, nil)
-      }
-    case .parser(let actionParser):
-      return { request in
-        let json = try request.jsonBody()
-        let action = try actionParser(json)
-        let query = try? FBiOSTargetQuery.inflate(fromJSON: json.getValue("simulators").decode())
-        return (action, query)
-      }
-    case .binary(let binaryHandler):
-      return { request in
-        let action = try binaryHandler(request.body)
-        return (action, nil)
-      }
-    }
-  }}
-
-  fileprivate func requestHandler(_ performer: ActionPerformer) -> (HttpRequest) -> HttpResponse {
-    let actionHandler = self.actionHandler
-    let pathQueryHandler = self.pathQueryHandler
-
-    return { request in
-      do {
-        let pathQuery = try pathQueryHandler(request)
-        let (httpAction, actionQuery) = try actionHandler(request)
-        let response = performer.dispatchAction(httpAction.action, queryOverride: pathQuery ?? actionQuery)
-        httpAction.postHook();
-        return response
-      } catch let error as JSONError {
-        return HttpEventReporter.errorResponse(error.description)
-      } catch let error as ParseError {
-        return HttpEventReporter.errorResponse(error.description)
-      } catch let error as NSError {
-        return HttpEventReporter.errorResponse(error.description)
-      } catch {
-        return HttpEventReporter.errorResponse(nil)
-      }
-    }
-  }
-
   func httpRoutes(_ performer: ActionPerformer) -> [HttpRoute] {
+    let handler = ActionHttpResponseHandler(performer: performer, handler: self.handler)
+
     return [
-      HttpRoute(method: self.method.rawValue, path: "/.*/" + self.endpoint.rawValue, handler: self.requestHandler(performer)),
-      HttpRoute(method: self.method.rawValue, path: "/" + self.endpoint.rawValue, handler: self.requestHandler(performer)),
+      HttpRoute(method: self.method.rawValue, path: "/.*/" + self.endpoint.rawValue, handler: handler),
+      HttpRoute(method: self.method.rawValue, path: "/" + self.endpoint.rawValue, handler: handler),
     ]
   }
 }

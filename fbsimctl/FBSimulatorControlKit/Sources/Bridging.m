@@ -258,7 +258,7 @@
     [webServer addHandlerForMethod:route.method pathRegex:route.path requestClass:GCDWebServerDataRequest.class processBlock:^ GCDWebServerResponse *(GCDWebServerDataRequest *gcdRequest) {
       NSArray<NSString *> *components = [gcdRequest.path componentsSeparatedByString:@"/"];
       HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data pathComponents:components];
-      HttpResponse *response = route.handler(request);
+      HttpResponse *response = [route.handler handleRequest:request];
 
       GCDWebServerDataResponse *gcdResponse = [GCDWebServerDataResponse responseWithData:response.body contentType:@"application/json"];
       gcdResponse.statusCode = response.statusCode;
@@ -272,12 +272,12 @@
 
 @implementation HttpRoute
 
-+ (instancetype)routeWithMethod:(NSString *)method path:(NSString *)path handler:(HttpResponse *(^)(HttpRequest *))handler
++ (instancetype)routeWithMethod:(NSString *)method path:(NSString *)path handler:(id<HttpResponseHandler>)handler
 {
   return [[self alloc] initWithMethod:method path:path handler:handler];
 }
 
-- (instancetype)initWithMethod:(NSString *)method path:(NSString *)path handler:(HttpResponse *(^)(HttpRequest *))handler
+- (instancetype)initWithMethod:(NSString *)method path:(NSString *)path handler:(id<HttpResponseHandler>)handler
 {
   self = [super init];
   if (!self) {

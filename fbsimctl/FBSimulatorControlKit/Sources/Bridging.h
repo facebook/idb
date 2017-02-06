@@ -98,6 +98,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@protocol HttpResponseHandler;
+
 /**
  A representation of a HTTP Routing.
  */
@@ -111,7 +113,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param handler a handler for the request.
  @return a new HTTP Route.
  */
-+ (instancetype)routeWithMethod:(NSString *)method path:(NSString *)path handler:(HttpResponse *(^)(HttpRequest *))handler;
++ (instancetype)routeWithMethod:(NSString *)method path:(NSString *)path handler:(id<HttpResponseHandler>)handler;
 
 /**
  The HTTP Method.
@@ -126,7 +128,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Handler to use.
  */
-@property (nonatomic, copy, readonly) HttpResponse *(^handler)(HttpRequest *request);
+@property (nonatomic, copy, readonly) id<HttpResponseHandler> handler;
 
 @end
 
@@ -154,6 +156,21 @@ NS_ASSUME_NONNULL_BEGIN
  Stops the Webserver.
  */
 - (void)stop;
+
+@end
+
+/**
+ A Handler for HTTP Requests.
+ */
+@protocol HttpResponseHandler <NSObject>
+
+/**
+ Handle the HTTP Request, returning a response.
+
+ @param request the request to handle
+ @return a HTTP Response
+ */
+- (HttpResponse *)handleRequest:(HttpRequest *)request;
 
 @end
 
