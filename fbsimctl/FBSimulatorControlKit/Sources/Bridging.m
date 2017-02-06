@@ -161,7 +161,7 @@
 
 @implementation HttpRequest
 
-- (instancetype)initWithBody:(NSData *)body pathComponents:(NSArray<NSString *> *)pathComponents
+- (instancetype)initWithBody:(NSData *)body pathComponents:(NSArray<NSString *> *)pathComponents query:(NSDictionary<NSString *, NSString *> *)query
 {
   self = [super init];
   if (!self) {
@@ -170,6 +170,7 @@
 
   _body = body;
   _pathComponents = pathComponents;
+  _query = query;
 
   return self;
 }
@@ -263,7 +264,9 @@
   for (HttpRoute *route in routes) {
     [webServer addHandlerForMethod:route.method pathRegex:route.path requestClass:GCDWebServerDataRequest.class processBlock:^ GCDWebServerResponse *(GCDWebServerDataRequest *gcdRequest) {
       NSArray<NSString *> *components = [gcdRequest.path componentsSeparatedByString:@"/"];
-      HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data pathComponents:components];
+      NSDictionary<NSString *, NSString *> *query = [HttpServer queryForRequest:gcdRequest];
+
+      HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data pathComponents:components query:query];
       HttpResponse *response = [route.handler handleRequest:request];
 
       GCDWebServerDataResponse *gcdResponse = [GCDWebServerDataResponse responseWithData:response.body contentType:response.contentType];
@@ -272,6 +275,15 @@
     }];
   }
   return webServer;
+}
+
++ (NSDictionary<NSString *, NSString *> *)queryForRequest:(GCDWebServerRequest *)request
+{
+  NSMutableDictionary<NSString *, NSString *> *query = [NSMutableDictionary dictionary];
+  for (NSURLQueryItem *item in [NSURLComponents componentsWithURL:request.URL resolvingAgainstBaseURL:NO].queryItems) {
+    query[item.name] = item.value;
+  }
+  return [query copy];
 }
 
 @end

@@ -71,6 +71,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSArray<NSString *> *pathComponents;
 
+/**
+ The query dictionary of the request.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *query;
+
 @end
 
 /**
