@@ -65,19 +65,27 @@ typedef struct {
  The Indigo Payload for a Key event.
  */
 typedef struct {
-  unsigned int eventClass1; // 0x20 + 0x10 + 0x0 = 0x30
+  unsigned int eventSource; // 0x20 + 0x10 + 0x0 = 0x30
   unsigned int eventType; // 0x20 + 0x10 + 0x4 = 0x34.
-  unsigned int eventClass2; // 0x20 + 0x10 + 0x8 = 0x38
+  unsigned int eventClass; // 0x20 + 0x10 + 0x8 = 0x38
   unsigned int keyCode; // 0x20 + 0x10 + 0xc = 0x3c
   unsigned int field5; // 0x20 + 0x10 + 0x10 = 0x40
 } IndigoButtonPayload;
 
-#define ButtonEventClass1Hardware 0x0
-#define ButtonEventClass1Keyboard 0x2710
+#define ButtonEventSourceApplePay 0x1f4
+#define ButtonEventSourceHomeButton 0x0
+#define ButtonEventSourceLock 0x1
+#define ButtonEventSourceKeyboard 0x2710
+#define ButtonEventSourceSideButton 0xbb8
+#define ButtonEventSourceSiri 0x400002
 
-#define ButtonEventClass2Hardware 0x33
-#define ButtonEventClass2Keyboard 0x64
+#define ButtonEventClassHardware 0x33
+#define ButtonEventClassKeyboard 0x64
 
+/**
+ These are Derived from NSEventTypeKeyDown & NSEventTypeKeyUp.
+ Subtracted by 10/0xa
+ */
 #define ButtonEventTypeDown 0x1
 #define ButtonEventTypeUp 0x2
 

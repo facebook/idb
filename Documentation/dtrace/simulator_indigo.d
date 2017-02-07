@@ -54,9 +54,9 @@ dtrace:::BEGIN
   );
   printf(
     "\nKeypress Offsets %x %x %x %x %x",
-    offsetof(IndigoButtonPayload, eventClass1),
+    offsetof(IndigoButtonPayload, eventSource),
     offsetof(IndigoButtonPayload, eventType),
-    offsetof(IndigoButtonPayload, eventClass2),
+    offsetof(IndigoButtonPayload, eventClass),
     offsetof(IndigoButtonPayload, keyCode),
     offsetof(IndigoButtonPayload, field5)
   );
@@ -129,7 +129,7 @@ pid$target::mach_msg_send:entry
   self->header = (MachMessageHeader *) copyin(arg0, sizeof(MachMessageHeader));
   self->indigo = (IndigoMessage *) NULL;
   self->purple = (PurpleMessage *) NULL;
-  self->buttonEventClass = (unsigned int *) NULL;
+  self->buttonEventSource = (unsigned int *) NULL;
   self->buttonEventType = (unsigned int *) NULL;
   self->keyCode = (unsigned int *) NULL;
 }
@@ -154,24 +154,48 @@ pid$target::mach_msg_send:entry
 pid$target::mach_msg_send:entry
 / self->indigo != NULL && self->indigo->eventType == IndigoEventTypeButton /
 {
-  self->buttonEventClass = ((unsigned int *) (((uintptr_t) self->indigo) + ((uintptr_t) 0x30)));
+  self->buttonEventSource = ((unsigned int *) (((uintptr_t) self->indigo) + ((uintptr_t) 0x30)));
   self->buttonEventType = ((unsigned int *) (((uintptr_t) self->indigo) + ((uintptr_t) 0x34)));
 }
 
 pid$target::mach_msg_send:entry
-/ self->buttonEventClass != NULL && *(self->buttonEventClass) == ButtonEventClass1Hardware && *(self->buttonEventType) == ButtonEventTypeDown /
+/ self->buttonEventSource != NULL && *(self->buttonEventSource) == ButtonEventSourceHomeButton && *(self->buttonEventType) == ButtonEventTypeDown /
 {
-  printf("Hardware Button Down");
+  printf("Home Button Down");
 }
 
 pid$target::mach_msg_send:entry
-/ self->buttonEventClass != NULL && *(self->buttonEventClass) == ButtonEventClass1Hardware && *(self->buttonEventType) == ButtonEventTypeUp /
+/ self->buttonEventSource != NULL && *(self->buttonEventSource) == ButtonEventSourceHomeButton && *(self->buttonEventType) == ButtonEventTypeUp /
 {
-  printf("Hardware Button Up");
+  printf("Home Button Up");
 }
 
 pid$target::mach_msg_send:entry
-/ self->buttonEventClass != NULL && *(self->buttonEventClass) == ButtonEventClass1Keyboard /
+/ self->buttonEventSource != NULL && *(self->buttonEventSource) == ButtonEventSourceSideButton && *(self->buttonEventType) == ButtonEventTypeDown /
+{
+  printf("Lock Button Down");
+}
+
+pid$target::mach_msg_send:entry
+/ self->buttonEventSource != NULL && *(self->buttonEventSource) == ButtonEventSourceSideButton && *(self->buttonEventType) == ButtonEventTypeUp /
+{
+  printf("Lock Button Up");
+}
+
+pid$target::mach_msg_send:entry
+/ self->buttonEventSource != NULL && *(self->buttonEventSource) == ButtonEventSourceSiri && *(self->buttonEventType) == ButtonEventTypeDown /
+{
+  printf("Siri Button Down");
+}
+
+pid$target::mach_msg_send:entry
+/ self->buttonEventSource != NULL && *(self->buttonEventSource) == ButtonEventSourceSiri && *(self->buttonEventType) == ButtonEventTypeUp /
+{
+  printf("Siri Button Up");
+}
+
+pid$target::mach_msg_send:entry
+/ self->buttonEventSource != NULL && *(self->buttonEventSource) == ButtonEventSourceKeyboard /
 {
   self->keyCode = ((unsigned int *) (((uintptr_t) self->indigo) + ((uintptr_t) 0x3c)));
 }
