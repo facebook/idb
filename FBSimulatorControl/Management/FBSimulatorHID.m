@@ -75,6 +75,15 @@
 
 - (BOOL)connect:(NSError **)error
 {
+  if (self.registrationPort == 0) {
+    return [[FBSimulatorError
+      describe:@"Cannot connect when there is no registration port"]
+      failBool:error];
+  }
+  if (self.replyPort != 0) {
+    return YES;
+  }
+
   // Attempt to perform the handshake.
   mach_msg_size_t size = 0x400;
   mach_msg_timeout_t timeout = ((unsigned int) FBControlCoreGlobalConfiguration.regularTimeout) * 1000;
