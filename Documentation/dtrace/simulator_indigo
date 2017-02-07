@@ -6,4 +6,4 @@ pushd ../../PrivateHeaders > /dev/null
 HEADER_PATH=$(pwd) > /dev/null
 popd > /dev/null
 popd > /dev/null
-sudo /usr/sbin/dtrace -I "$HEADER_PATH" -s "$SCRIPT_PATH" -C "$@"
+sudo /usr/sbin/dtrace -I "$HEADER_PATH" -s "$SCRIPT_PATH" "$@"
