@@ -41,7 +41,7 @@ dtrace:::BEGIN
   printf(
     "\nIndigo Offsets %x %x %x %x",
     offsetof(IndigoMessage, header),
-    offsetof(IndigoMessage, field2),
+    offsetof(IndigoMessage, innerSize),
     offsetof(IndigoMessage, eventType),
     offsetof(IndigoMessage, inner)
   );

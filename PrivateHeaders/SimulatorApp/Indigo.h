@@ -141,7 +141,7 @@ typedef struct {
  */
 typedef struct {
     MachMessageHeader header; // 0x0
-    unsigned int field2; // 0x18
+    unsigned int innerSize; // 0x18
     unsigned char eventType; // 0x1c
     IndigoInner inner; // 0x20
 } IndigoMessage;
