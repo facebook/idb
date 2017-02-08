@@ -10,6 +10,26 @@
 import Foundation
 import FBSimulatorControl
 
+enum QueryError : Error, CustomStringConvertible {
+  case TooManyMatches([FBiOSTarget], Int)
+  case NoMatches
+  case WrongTarget(String, String)
+  case NoneProvided
+
+  var description: String { get {
+    switch self {
+    case .TooManyMatches(let matches, let expected):
+      return "Matched too many Targets. \(expected) targets matched but had \(matches.count)"
+    case .NoMatches:
+      return "No Matching Targets"
+    case .WrongTarget(let expected, let actual):
+      return "Wrong Target. Expected \(expected) but got \(actual)"
+    case .NoneProvided:
+      return "No Query Provided"
+    }
+  }}
+}
+
 extension HttpRequest {
   func jsonBody() throws -> JSON {
     return try JSON.fromData(self.body)
@@ -77,6 +97,34 @@ extension ActionPerformer {
 
     return reporter.interactionResultResponse(result!)
   }
+
+  func runWithSingleSimulator<A>(_ query: FBiOSTargetQuery, action: (FBSimulator) throws -> A) throws -> A {
+    let targets = self.commandPerformer.runnerContext(HttpEventReporter()).query(query)
+    if targets.count > 1 {
+      throw QueryError.TooManyMatches(targets, 1)
+    }
+    guard let target = targets.first else {
+      throw QueryError.NoMatches
+    }
+    guard let simulator = target as? FBSimulator else {
+      let expected = FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType.simulator).first!
+      let actual = FBiOSTargetTypeStringsFromTargetType(target.targetType).first!
+      throw QueryError.WrongTarget(expected, actual)
+    }
+    var result: A? = nil
+    var error: Error? = nil
+    DispatchQueue.main.sync {
+      do {
+        result = try action(simulator)
+      } catch let caughtError {
+        error = caughtError
+      }
+    }
+    if let error = error {
+      throw error
+    }
+    return result!
+  }
 }
 
 enum HttpMethod : String {
@@ -133,32 +181,48 @@ class ActionHttpResponseHandler : NSObject, HttpResponseHandler {
   }
 
   func handle(_ request: HttpRequest) -> HttpResponse {
-    do {
-      let pathQuery = try pathQueryHandler(request)
+    return SimpleResponseHandler.perform(request: request) { request in
+      let pathQuery = try SimpleResponseHandler.extractQueryFromPath(request)
       let (action, actionQuery) = try self.handler.produceAction(request)
       let response = performer.dispatchAction(action, queryOverride: pathQuery ?? actionQuery)
       return response
-    } catch let error as JSONError {
-      return HttpEventReporter.errorResponse(error.description)
-    } catch let error as ParseError {
+    }
+  }
+
+}
+
+class SimpleResponseHandler : NSObject, HttpResponseHandler {
+  let handler:(HttpRequest)throws -> HttpResponse
+
+  init(handler: @escaping (HttpRequest) throws -> HttpResponse) {
+    self.handler = handler
+    super.init()
+  }
+
+  func handle(_ request: HttpRequest) -> HttpResponse {
+    return SimpleResponseHandler.perform(request: request, self.handler)
+  }
+
+  static func perform(request: HttpRequest, _ handler:(HttpRequest)throws -> HttpResponse) -> HttpResponse {
+    do {
+      return try handler(request)
+    } catch let error as CustomStringConvertible {
       return HttpEventReporter.errorResponse(error.description)
     } catch let error as NSError {
-      return HttpEventReporter.errorResponse(error.description)
+      return HttpEventReporter.errorResponse(error.localizedDescription)
     } catch {
       return HttpEventReporter.errorResponse(nil)
     }
   }
 
-  fileprivate var pathQueryHandler:(HttpRequest)throws -> FBiOSTargetQuery? { get {
-    return { request in
-      guard let queryPath = request.pathComponents.dropFirst().first, request.pathComponents.count >= 3 else {
-        return nil
-      }
-      return FBiOSTargetQuery.udids([
-        try FBiOSTargetQuery.parseUDIDToken(queryPath)
-      ])
+  static func extractQueryFromPath(_ request: HttpRequest) throws -> FBiOSTargetQuery? {
+    guard let queryPath = request.pathComponents.dropFirst().first, request.pathComponents.count >= 3 else {
+      return nil
     }
-  }}
+    return FBiOSTargetQuery.udids([
+      try FBiOSTargetQuery.parseUDIDToken(queryPath)
+    ])
+  }
 }
 
 protocol Route {
@@ -205,6 +269,28 @@ struct ActionRoute : Route {
 
   func responseHandler(performer: ActionPerformer) -> HttpResponseHandler {
      return ActionHttpResponseHandler(performer: performer, handler: self.handler)
+  }
+}
+
+struct ScreenshotRoute : Route {
+  var method: HttpMethod { get {
+    return HttpMethod.GET
+  }}
+
+  var endpoint: String { get {
+    return "screenshot.png"
+  }}
+
+  func responseHandler(performer: ActionPerformer) -> HttpResponseHandler {
+    return SimpleResponseHandler { request in
+      guard let query = try SimpleResponseHandler.extractQueryFromPath(request) else {
+        throw QueryError.NoneProvided
+      }
+      let imageData: Data = try performer.runWithSingleSimulator(query) { simulator in
+        try simulator.connect().connectToFramebuffer().image.pngImageData()
+      }
+      return HttpResponse(statusCode: 200, body: imageData, contentType: "image/png")
+    }
   }
 }
 
@@ -387,6 +473,7 @@ class HttpRelay : Relay {
       self.tapRoute,
       self.terminateRoute,
       self.uploadRoute,
+      ScreenshotRoute(),
     ]
   }}
 }

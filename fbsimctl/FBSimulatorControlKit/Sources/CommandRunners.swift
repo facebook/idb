@@ -200,9 +200,9 @@ struct ServerRunner : Runner, CommandPerformer {
     }
   }}
 
-  func perform(_ command: Command, reporter: EventReporter) -> CommandResult {
-    let context = iOSRunnerContext(
-      value: command,
+  func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()> {
+    return iOSRunnerContext(
+      value: (),
       configuration: self.context.configuration,
       defaults: self.context.defaults,
       format: self.context.format,
@@ -210,6 +210,10 @@ struct ServerRunner : Runner, CommandPerformer {
       simulatorControl: self.context.simulatorControl,
       deviceControl: self.context.deviceControl
     )
+  }
+
+  func perform(_ command: Command, reporter: EventReporter) -> CommandResult {
+    let context = self.runnerContext(reporter).replace(command)
     return CommandRunner(context: context).run()
   }
 }
