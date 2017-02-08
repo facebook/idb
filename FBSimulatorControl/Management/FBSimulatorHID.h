@@ -47,6 +47,17 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)disconnect;
 
+#pragma mark HID Manipulation
+
+/**
+ Sends a Home Button Event.
+ Will Perform the Button Down, followed by the Button Up.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)sendHomeButtonWithError:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

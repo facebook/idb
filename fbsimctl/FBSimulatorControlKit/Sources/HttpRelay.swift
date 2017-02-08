@@ -364,6 +364,12 @@ class HttpRelay : Relay {
     }
   }}
 
+  fileprivate static var keysRoute: Route { get {
+    return ActionRoute.post(EventName.Keys) { _ in
+      return Action.keys
+    }
+  }}
+
   fileprivate static var launchRoute: Route { get {
     return ActionRoute.post(EventName.Launch) { json in
       if let agentLaunch = try? FBAgentLaunchConfiguration.inflate(fromJSON: json.decode()) {
@@ -463,6 +469,7 @@ class HttpRelay : Relay {
       self.diagnosticQueryRoute,
       self.diagnosticRoute,
       self.installRoute,
+      self.keysRoute,
       self.launchRoute,
       self.listRoute,
       self.openRoute,

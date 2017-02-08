@@ -82,6 +82,10 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
+    case .keys:
+      return iOSTargetRunner(reporter, EventName.Keys, ControlCoreSubject(simulator)) {
+        try simulator.connect().connectToHID().sendHomeButton()
+      }
     case .keyboardOverride:
       return SimulatorInteractionRunner(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) { interaction in
         interaction.setupKeyboard()

@@ -10,8 +10,10 @@
 #import "FBSimulatorHID.h"
 
 #import <CoreSimulator/SimDevice.h>
+#import <SimulatorApp/Indigo.h>
 
-#import <mach/mach_port.h>
+#import <mach/mach.h>
+#import <mach/mach_time.h>
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
@@ -117,6 +119,76 @@
 - (void)dealloc
 {
   [self disconnect];
+}
+
+#pragma mark HID Manipulation
+
+- (BOOL)sendHomeButtonWithError:(NSError **)error
+{
+  IndigoButtonPayload payload;
+  payload.eventSource = ButtonEventSourceHomeButton;
+  payload.eventType = ButtonEventTypeDown;
+  payload.eventClass = ButtonEventClassHardware;
+
+  // Send the button down
+  if (![self sendButtonEventWithPayload:&payload error:error]) {
+    return NO;
+  }
+  // Send the button up
+  payload.eventType = ButtonEventTypeUp;
+  if (![self sendButtonEventWithPayload:&payload error:error]) {
+    return NO;
+  }
+  return YES;
+}
+
+#pragma mark Private
+
+- (BOOL)sendButtonEventWithPayload:(IndigoButtonPayload *)payload error:(NSError **)error
+{
+  // The home button should have a size of 0x140/320
+  mach_msg_size_t messageSize = sizeof(IndigoMessage) + sizeof(IndigoInner);
+  IndigoMessage *message = calloc(0x1, messageSize);
+
+  // Set the down payload of the message.
+  message->innerSize = sizeof(IndigoInner);
+  message->eventType = IndigoEventTypeButton;
+  message->inner.field1 = 0x2;
+  message->inner.timestamp = mach_absolute_time();
+
+  // Copy the contents of the payload.
+  void *destination = &message->inner.unionPayload.buttonPayload;
+  void *source = (void *) payload;
+  memcpy(destination, source, sizeof(IndigoButtonPayload));
+
+  BOOL result = [self sendIndigoMessage:message size:messageSize error:error];
+  free(message);
+  return result;
+}
+
+- (BOOL)sendIndigoMessage:(IndigoMessage *)message size:(mach_msg_size_t)size error:(NSError **)error
+{
+  if (self.replyPort == 0) {
+    return [[FBSimulatorError
+      describe:@"The Reply Port has not been obtained yet. Call -connect: first"]
+      failBool:error];
+  }
+
+  // Set the header of the message
+  message->header.msgh_bits = 0x13;
+  message->header.msgh_size = size;
+  message->header.msgh_remote_port = self.replyPort;
+  message->header.msgh_local_port = 0;
+  message->header.msgh_voucher_port = 0;
+  message->header.msgh_id = 0;
+
+  mach_msg_return_t result = mach_msg_send((mach_msg_header_t *) message);
+  if (result != ERR_SUCCESS) {
+    return [[FBSimulatorError
+      describeFormat:@"The mach_msg_send failed with error %d", result]
+      failBool:error];
+  }
+  return YES;
 }
 
 #pragma mark FBDebugDescribeable
