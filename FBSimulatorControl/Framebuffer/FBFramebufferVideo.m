@@ -18,6 +18,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import <SimulatorKit/SimDisplayVideoWriter.h>
+#import <SimulatorKit/SimDisplayVideoWriter+Removed.h>
 
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferConfiguration.h"
@@ -560,7 +561,7 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   NSString *path = logBuilder.createPath;
   NSURL *url = [NSURL fileURLWithPath:path];
   _diagnostic = [[logBuilder updatePath:path] build];
-  _writer = [objc_getClass("SimDisplayVideoWriter") videoWriterForURL:url fileType:@"mp4"];
+  _writer = [self createVideoWriterForURL:url mediaQueue:queue];
 
   BOOL pendingStart = (configuration.videoOptions & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord;
   if (pendingStart) {
@@ -568,6 +569,18 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
   }
 
   return self;
+}
+
+- (SimDisplayVideoWriter *)createVideoWriterForURL:(NSURL *)url mediaQueue:(dispatch_queue_t)mediaQueue
+{
+  Class class = objc_getClass("SimDisplayVideoWriter");
+  if ([class respondsToSelector:@selector(videoWriterForURL:fileType:)]) {
+    return [class videoWriterForURL:url fileType:@"mp4"];
+  }
+  return [class videoWriterForURL:url fileType:@"mp4" completionQueue:mediaQueue completionHandler:^{
+    // This should be used as a semaphore for the stopRecording: dispatch_group.
+    // As it stands, the behaviour is currently the same as before.
+  }];
 }
 
 + (BOOL)isSupported

@@ -1069,6 +1069,7 @@
 		AABBF32A1DAC112900E2B6AF /* FBTaskConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTaskConfiguration.m; sourceTree = "<group>"; };
 		AABD8DF71C592DBA008527CD /* FBFramebufferImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFramebufferImage.h; sourceTree = "<group>"; };
 		AABD8DF81C592DBA008527CD /* FBFramebufferImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFramebufferImage.m; sourceTree = "<group>"; };
+		AABEF1ED1E4A2E4600043BFE /* SimDisplayVideoWriter+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDisplayVideoWriter+Removed.h"; sourceTree = "<group>"; };
 		AAC241231BB3113F0054570C /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		AAC241251BB311690054570C /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		AAC8B22B1CEC51120034A865 /* FBDeviceControl.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBDeviceControl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1499,6 +1500,7 @@
 				AA386D821E44F3EA005C6118 /* SimDisplayResizeableRenderable-Protocol.h */,
 				AA386D831E44F3EA005C6118 /* SimDisplayRotationAngleDelegate-Protocol.h */,
 				AA386D841E44F3EA005C6118 /* SimDisplayVideoWriter.h */,
+				AABEF1ED1E4A2E4600043BFE /* SimDisplayVideoWriter+Removed.h */,
 				AA386D851E44F3EA005C6118 /* SimVideoFile.h */,
 				AA386D861E44F3EA005C6118 /* SimVideoFragmentedMP4File.h */,
 				AA386D871E44F3EA005C6118 /* SimVideoH264File.h */,

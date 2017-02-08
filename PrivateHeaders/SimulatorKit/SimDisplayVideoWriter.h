@@ -40,8 +40,8 @@
     CDStruct_1b6d18a9 _lastEncodeTime;
 }
 
-+ (id)videoWriterForURL:(id)arg1 fileType:(id)arg2;
-+ (id)videoWriterForDispatchIO:(id)arg1 fileType:(id)arg2;
++ (id)videoWriterForURL:(id)arg1 fileType:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
++ (id)videoWriterForDispatchIO:(id)arg1 fileType:(id)arg2 completionQueue:(id)arg3 completionHandler:(CDUnknownBlockType)arg4;
 + (id)videoWriter;
 @property (nonatomic, assign) CDStruct_1b6d18a9 lastEncodeTime;
 @property (nonatomic, assign) CDStruct_1b6d18a9 startTime;
