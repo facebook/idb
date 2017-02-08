@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/NSObject.h>
+#import <SimulatorKit/CDStructures.h>
+#import <Foundation/Foundation.h>
+#import <IOSurface/IOSurface.h>
 
 @class NSString, NSUUID;
 
@@ -22,14 +24,13 @@
     // Error parsing type: , name: _ioSurface
 }
 
-- (CDUnknownBlockType).cxx_destruct;
 - (id)init;
 - (void)writeScreenshotAsyncWithDispatchIO:(id)arg1 completionQueue:(id)arg2 completion:(CDUnknownBlockType)arg3;
 - (BOOL)writeScreenshotWithDispatchIO:(id)arg1 error:(id *)arg2;
 - (void)dealloc;
-- (id)initWithIo:(id)arg1 displayClass:(unsigned short)arg2 error:(id *)arg3;
-- (id)initWithIo:(id)arg1 port:(id)arg2 fileType:(long long)arg3 error:(id *)arg4;
-@property (nonatomic, retain) struct __IOSurface *_ioSurface;
+- (id)initWithIo:(id)arg1 displayClass:(unsigned short)arg2 error:(NSError *)arg3;
+- (id)initWithIo:(id)arg1 port:(id)arg2 fileType:(long long)arg3 error:(NSError *)arg4;
+@property (nonatomic, assign) IOSurfaceRef _ioSurface;
 @property (nonatomic, copy, readonly) NSString *consumerIdentifier;
 @property (nonatomic, readonly) NSUUID *consumerUUID;
 @property (nonatomic, readonly) long long fileType;

@@ -236,7 +236,6 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   }
   CGSize size = CGSizeMake(CGImageGetWidth(image), CGImageGetWidth(image));
   [self pushNewFrameFromCurrentTimeWithCGImage:image size:size];
-  CGImageRelease(image);
 }
 
 @end

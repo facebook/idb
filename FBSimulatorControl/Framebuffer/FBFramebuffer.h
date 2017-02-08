@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class SimDeviceIOClient;
 @protocol FBFramebufferFrameSink;
 @protocol FBFramebufferVideo;
+@protocol FBFramebufferImage;
 
 /**
  A container and client for a Simulator's Framebuffer that forwards important events to delegates.
@@ -73,6 +74,11 @@ NS_ASSUME_NONNULL_BEGIN
  The FBFramebufferVideo instance owned by the receiver.
  */
 @property (nonatomic, strong, readonly) id<FBFramebufferVideo> video;
+
+/**
+ The FBFramebufferImage instance owned by the receiver.
+ */
+@property (nonatomic, strong, readonly) id<FBFramebufferImage> image;
 
 @end
 

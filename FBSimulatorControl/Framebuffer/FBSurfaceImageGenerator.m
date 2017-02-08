@@ -88,6 +88,7 @@
   }
 
   CGImageRef cgImage = [context createCGImage:ciImage fromRect:ciImage.extent];
+  CFAutorelease(cgImage);
   return cgImage;
 }
 

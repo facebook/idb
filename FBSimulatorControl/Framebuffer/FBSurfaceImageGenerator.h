@@ -28,7 +28,9 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)imageGeneratorWithScale:(NSDecimalNumber *)scale logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
- Return a CGImageRef if there is an image that has not been consumed yet.
+ Return a CGImageRef.
+ The Image returned is autoreleased, so the caller must retain it.
+
  If there is no new image since the last time this was called, NULL will be returned.
  When when this image is obtained, it will be considered 'consumed'
  */
@@ -36,6 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Return a CGImageRef.
+ The Image returned is autoreleased, so the caller must retain it.
+
  This will not 'consume' the Image and can be fetched regardless of the last image consumed.
  */
 - (nullable CGImageRef)image;
