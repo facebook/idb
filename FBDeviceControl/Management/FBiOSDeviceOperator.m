@@ -143,7 +143,9 @@ static NSString *const ApplicationPathKey = @"Path";
     return nil;
   }];
   if ([returnObject isKindOfClass:NSError.class]) {
-    *error = returnObject;
+    if (error != nil) {
+      *error = returnObject;
+    }
     return NO;
   }
   return YES;

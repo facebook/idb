@@ -202,7 +202,7 @@
 {
   IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(surfaceXPC);
   [self.imageGenerator currentSurfaceChanged:surface];
-
+  CFRelease(surface);
 }
 
 - (void)didReceiveDamageRect:(CGRect)rect

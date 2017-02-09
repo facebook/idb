@@ -87,7 +87,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param process the application process to obtain the NSRunningApplication instance for.
  @return a FBProcessInfo for the running application, nil if one could not be found.
  */
-- (NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process;
+- (nullable NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process;
 
 /**
  Constructs a Predicate that matches Processes for the launchPath.

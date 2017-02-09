@@ -33,7 +33,7 @@
 
 @implementation FBFramebufferRenderable
 
-+ (instancetype)mainScreenRenderableForClient:(SimDeviceIOClient *)ioClient
++ (nullable instancetype)mainScreenRenderableForClient:(SimDeviceIOClient *)ioClient
 {
   for (id<SimDeviceIOPortInterface> port in ioClient.ioPorts) {
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {

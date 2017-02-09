@@ -99,7 +99,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param interaction the underlying interaction.
  @return a subclassable FBInteraction Instance.
  */
-- (instancetype)initWithInteraction:(id<FBInteraction>)interaction;
+- (instancetype)initWithInteraction:(nullable id<FBInteraction>)interaction;
 
 #pragma mark Properties
 

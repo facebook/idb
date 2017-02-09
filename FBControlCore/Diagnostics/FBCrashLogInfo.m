@@ -59,7 +59,7 @@
 
   free(line);
   fclose(file);
-  if (executablePath == nil || processIdentifier == -1 || parentProcessIdentifier == -1) {
+  if (processName == nil || parentProcessName == nil || executablePath == nil || processIdentifier == -1 || parentProcessIdentifier == -1) {
     return nil;
   }
 

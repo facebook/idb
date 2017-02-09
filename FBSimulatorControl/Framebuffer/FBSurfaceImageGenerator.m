@@ -55,15 +55,17 @@
 - (void)currentSurfaceChanged:(IOSurfaceRef)surface
 {
   self.lastSeedValue = 0;
-  if (surface != NULL && self.surface == NULL) {
+  if (self.surface != NULL) {
     [self.logger.info logFormat:@"Removing old surface %@", surface];
     IOSurfaceDecrementUseCount(self.surface);
+    CFRelease(self.surface);
     self.surface = nil;
   }
   if (surface != NULL) {
     IOSurfaceIncrementUseCount(surface);
-    self.surface = surface;
+    CFRetain(surface);
     [self.logger.info logFormat:@"Recieved IOSurface from Framebuffer Service %@", surface];
+    self.surface = surface;
   }
 }
 
@@ -88,6 +90,9 @@
   }
 
   CGImageRef cgImage = [context createCGImage:ciImage fromRect:ciImage.extent];
+  if (!cgImage) {
+    return NULL;
+  }
   CFAutorelease(cgImage);
   return cgImage;
 }

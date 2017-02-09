@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @prarm delegate the delegate to attach.
  @return a Port Interface, should be retained by the reciever.
  */
-+ (instancetype)mainScreenRenderableForClient:(SimDeviceIOClient *)ioClient;
++ (nullable instancetype)mainScreenRenderableForClient:(SimDeviceIOClient *)ioClient;
 
 /**
  Attaches a Consumer with the Renderable

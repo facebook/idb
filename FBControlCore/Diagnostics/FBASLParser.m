@@ -55,7 +55,7 @@ static BOOL WriteOutputToFilePath(const char *filePath, asl_object_t aslFile, pi
 
 #pragma mark Initializers
 
-+ (instancetype)parserForPath:(NSString *)path
++ (nullable instancetype)parserForPath:(NSString *)path
 {
   NSParameterAssert(path);
   asl_object_t asl = asl_open_path(path.UTF8String, 0);

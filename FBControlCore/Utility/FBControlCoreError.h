@@ -38,8 +38,8 @@ extern NSString *const FBControlCoreErrorDomain;
 /*
  Adds the Cause of the Error.
  */
-+ (instancetype)causedBy:(NSError *)cause;
-- (instancetype)causedBy:(NSError *)cause;
++ (instancetype)causedBy:(nullable NSError *)cause;
+- (instancetype)causedBy:(nullable NSError *)cause;
 
 /**
  For returning early from failing conditions.

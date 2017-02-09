@@ -133,7 +133,6 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
 - (void)dealloc
 {
   CFRelease(_amDevice);
-  _amDevice = nil;
 }
 
 #pragma mark Private

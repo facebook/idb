@@ -89,8 +89,7 @@
   [NSApp setDelegate:self];
   [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
-  NSRect initialPosition = [[NSScreen mainScreen] frame];
-  initialPosition = (NSRect) { .size = size, .origin = CGPointZero };
+  NSRect initialPosition = (NSRect) { .size = size, .origin = CGPointZero };
   NSWindow *window = [[NSWindow alloc] initWithContentRect:initialPosition styleMask:NSTitledWindowMask | NSResizableWindowMask backing:NSBackingStoreBuffered defer:NO];
   window.backgroundColor = NSColor.whiteColor;
   window.contentView.wantsLayer = YES;

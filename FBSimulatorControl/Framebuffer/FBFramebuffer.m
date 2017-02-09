@@ -213,7 +213,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 #pragma mark Teardown
 
-- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(nullable NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   if (self.state != FBSimulatorFramebufferStateStarting && self.state != FBSimulatorFramebufferStateRunning) {
     return;
@@ -289,7 +289,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 #pragma mark Private
 
-- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)framebufferDidBecomeInvalid:(FBFramebuffer *)framebuffer error:(nullable NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   [super framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
 

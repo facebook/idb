@@ -97,12 +97,14 @@
 
   kern_return_t result = mach_msg(handshakeHeader, MACH_RCV_LARGE | MACH_RCV_MSG, 0x0, size, self.registrationPort, timeout, 0x0);
   if (result != KERN_SUCCESS) {
+    free(handshakeHeader);
     return [[FBSimulatorError
       describeFormat:@"Failed to get the Indigo Reply Port %d", result]
       failBool:error];
   }
   // We have the registration port, so we can now set it.
   self.replyPort = handshakeHeader->msgh_remote_port;
+  free(handshakeHeader);
   return YES;
 }
 

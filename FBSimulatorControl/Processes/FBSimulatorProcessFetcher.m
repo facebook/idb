@@ -48,13 +48,14 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FB
 - (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut
 {
   NSMutableDictionary<NSString *, FBProcessInfo *> *dictionary = [NSMutableDictionary dictionary];
-  NSMutableArray<FBProcessInfo *> *unclaimed = unclaimedOut ? [NSMutableArray array] : nil;
+  NSMutableArray<FBProcessInfo *> *unclaimed = [NSMutableArray array];
   NSSet<NSString *> *fetchSet = [NSSet setWithArray:udids];
 
   for (FBProcessInfo *process in self.simulatorApplicationProcesses) {
     NSString *udid = [FBSimulatorProcessFetcher udidForSimulatorApplicationProcess:process];
     if (!udid) {
       [unclaimed addObject:process];
+      continue;
     }
     if ([fetchSet containsObject:udid]) {
       dictionary[udid] = process;
