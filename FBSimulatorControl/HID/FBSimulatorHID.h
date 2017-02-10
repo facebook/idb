@@ -71,12 +71,12 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
 /**
  Sends a Keyboard Event.
 
+ @param type the event type.
  @param keycode the Key Code to send. The keycodes are 'Hardware Independent' as described in <HIToolbox/Events.h>.
- @param up YES if the is a key-up event. NO if is a key-down event.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)sendKeyboardEventWithKeyCode:(unsigned short)keycode up:(BOOL)up error:(NSError **)error;
+- (BOOL)sendKeyboardEventWithType:(FBSimulatorHIDEventType)type keyCode:(unsigned int)keycode error:(NSError **)error;
 
 /**
  Sends a Button Event.

@@ -38,6 +38,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)shortButtonPress:(FBSimulatorHIDButton)button;
 
 /**
+ A HID Event for the keyboard is a down followed by an immediate up.
+
+ @param keyCode the Key Code to send.
+ @return a new HID Event.
+ */
++ (instancetype)shortKeyPress:(unsigned int)keyCode;
+
+/**
  Materializes the event, performing it on the hid object.
 
  @param hid the hid to perform on.

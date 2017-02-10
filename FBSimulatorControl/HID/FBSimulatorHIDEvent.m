@@ -20,6 +20,7 @@ static NSString *const FBSimulatorHIDEventKeyType = @"type";
 static NSString *const FBSimulatorEventClassStringComposite = @"composite";
 static NSString *const FBSimulatorEventClassStringTouch = @"touch";
 static NSString *const FBSimulatorEventClassStringButton = @"button";
+static NSString *const FBSimulatorEventClassStringKeyboard = @"keyboard";
 
 @interface FBSimulatorHIDEvent ()
 
@@ -383,6 +384,100 @@ static NSString *const FBSimulatorHIDButtonStringSiri = @"siri";
 
 @end
 
+static NSString *const FBSimulatorHIDEventKeyKeycode = @"keycode";
+
+@interface FBSimulatorHIDEvent_Keyboard : FBSimulatorHIDEvent
+
+@property (nonatomic, assign, readonly) FBSimulatorHIDEventType type;
+@property (nonatomic, assign, readonly) unsigned int keyCode;
+
+@end
+
+@implementation FBSimulatorHIDEvent_Keyboard
+
+- (instancetype)initWithEventType:(FBSimulatorHIDEventType)type keyCode:(unsigned int)keyCode
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _type = type;
+  _keyCode = keyCode;
+  return self;
+}
+
++ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
+    return [[FBSimulatorError
+      describe:@"Expected an input of Dictionary<String, Object>"]
+      fail:error];
+  }
+  NSString *class = json[FBSimulatorEventKeyClass];
+  if (![class isEqualToString:FBSimulatorEventClassStringKeyboard]) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected %@ to be %@", class, FBSimulatorEventClassStringKeyboard]
+      fail:error];
+  }
+  NSNumber *keycode = json[FBSimulatorHIDEventKeyKeycode];
+  if (![keycode isKindOfClass:NSNumber.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected %@ for %@ to be a Number", keycode, FBSimulatorHIDEventKeyKeycode]
+      fail:error];
+  }
+  NSString *typeString = json[FBSimulatorHIDEventKeyType];
+  if (![typeString isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected %@ for %@ to be a String", typeString, FBSimulatorHIDEventKeyType]
+      fail:error];
+  }
+  FBSimulatorHIDEventType type = [FBSimulatorHIDEvent eventTypeForEventTypeString:typeString];
+  if (type < 1) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a valid event type", typeString]
+      fail:error];
+  }
+  return [[self alloc] initWithEventType:type keyCode:keycode.unsignedIntValue];
+}
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    FBSimulatorHIDEventKeyKeycode: @(self.keyCode),
+    FBSimulatorHIDEventKeyType: [FBSimulatorHIDEvent eventTypeStringFromEventType:self.type],
+    FBSimulatorEventKeyClass: FBSimulatorEventClassStringKeyboard,
+  };
+}
+- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error
+{
+  return [hid sendKeyboardEventWithType:self.type keyCode:self.keyCode error:error];
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Keyboard Code=%d %@",
+    self.keyCode,
+    [FBSimulatorHIDEvent eventTypeStringFromEventType:self.type]
+  ];
+}
+
+- (BOOL)isEqual:(FBSimulatorHIDEvent_Keyboard *)event
+{
+  if (![event isKindOfClass:self.class]) {
+    return NO;
+  }
+  return self.type == event.type && self.keyCode == event.keyCode;
+}
+
+- (NSUInteger)hash
+{
+  return self.type ^ self.keyCode;
+}
+
+@end
+
 @implementation FBSimulatorHIDEvent
 
 + (instancetype)eventWithEvents:(NSArray<FBSimulatorHIDEvent *> *)events
@@ -410,6 +505,16 @@ static NSString *const FBSimulatorHIDButtonStringSiri = @"siri";
   return [[FBSimulatorHIDEvent_Button alloc] initWithEventType:FBSimulatorHIDEventTypeUp button:button];
 }
 
++ (instancetype)keyDown:(unsigned int)keyCode
+{
+  return [[FBSimulatorHIDEvent_Keyboard alloc] initWithEventType:FBSimulatorHIDEventTypeDown keyCode:keyCode];
+}
+
++ (instancetype)keyUp:(unsigned int)keyCode
+{
+  return [[FBSimulatorHIDEvent_Keyboard alloc] initWithEventType:FBSimulatorHIDEventTypeUp keyCode:keyCode];
+}
+
 + (instancetype)tapAtX:(double)x y:(double)y
 {
   return [self eventWithEvents:@[
@@ -423,6 +528,14 @@ static NSString *const FBSimulatorHIDButtonStringSiri = @"siri";
   return [self eventWithEvents:@[
     [self buttonDown:button],
     [self buttonUp:button],
+  ]];
+}
+
++ (instancetype)shortKeyPress:(unsigned int)keyCode
+{
+  return [self eventWithEvents:@[
+    [self keyDown:keyCode],
+    [self keyUp:keyCode],
   ]];
 }
 
@@ -447,6 +560,9 @@ static NSString *const FBSimulatorHIDButtonStringSiri = @"siri";
   }
   if ([class isEqualToString:FBSimulatorEventClassStringButton]) {
     return [FBSimulatorHIDEvent_Button inflateFromJSON:json error:error];
+  }
+  if ([class isEqualToString:FBSimulatorEventClassStringKeyboard]) {
+    return [FBSimulatorHIDEvent_Keyboard inflateFromJSON:json error:error];
   }
   return [[FBSimulatorError
     describeFormat:@"%@ is not one of %@ %@", class, FBSimulatorEventClassStringComposite, FBSimulatorEventClassStringTouch]

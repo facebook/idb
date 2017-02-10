@@ -132,14 +132,23 @@
 
 #pragma mark HID Manipulation
 
-- (BOOL)sendKeyboardEventWithKeyCode:(unsigned short)keycode up:(BOOL)up error:(NSError **)error
+- (BOOL)sendKeyboardEventWithType:(FBSimulatorHIDEventType)type keyCode:(unsigned int)keycode error:(NSError **)error
 {
   IndigoButtonPayload payload;
   payload.eventSource = ButtonEventSourceKeyboard;
-  payload.eventType = up ? ButtonEventTypeUp : ButtonEventTypeDown;
   payload.eventClass = ButtonEventClassKeyboard;
   payload.keyCode = keycode;
   payload.field5 = 0x000000cc;
+
+  // Then Up/Down.
+  switch (type) {
+    case FBSimulatorHIDEventTypeDown:
+      payload.eventType = ButtonEventTypeDown;
+      break;
+    case FBSimulatorHIDEventTypeUp:
+      payload.eventType = ButtonEventTypeUp;
+      break;
+  }
   return [self sendButtonEventWithPayload:&payload error:error];
 }
 
