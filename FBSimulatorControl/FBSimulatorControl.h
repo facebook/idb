@@ -44,6 +44,7 @@
 #import <FBSimulatorControl/FBSimulatorEventRelay.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 #import <FBSimulatorControl/FBSimulatorHID.h>
+#import <FBSimulatorControl/FBSimulatorHIDEvent.h>
 #import <FBSimulatorControl/FBSimulatorHistory+Private.h>
 #import <FBSimulatorControl/FBSimulatorHistory+Queries.h>
 #import <FBSimulatorControl/FBSimulatorHistory.h>

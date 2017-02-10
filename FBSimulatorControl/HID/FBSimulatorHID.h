@@ -16,6 +16,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ An Enumeration for the Event Type. Only Up/Down.
+ */
+typedef NS_ENUM(NSUInteger, FBSimulatorHIDEventType) {
+  FBSimulatorHIDEventTypeDown = 1,
+  FBSimulatorHIDEventTypeUp = 2,
+};
+
+/**
  A Wrapper around the mach_port_t that is created in the booting of a Simulator.
  The IndigoHIDRegistrationPort is essential for backboard, otherwise UI events aren't synthesized properly.
  */
@@ -72,12 +80,13 @@ NS_ASSUME_NONNULL_BEGIN
  Sends a Tap Event
  Will Perform the Touch Down, followed by the Touch Up
 
+ @param type the event type.
  @param x the X-Coordinate
  @param y the Y-Coordinate
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)sendTapWithX:(double)x y:(double)y error:(NSError **)error;
+- (BOOL)sendTouchWithType:(FBSimulatorHIDEventType)type x:(double)x y:(double)y error:(NSError **)error;
 
 @end
 

@@ -138,4 +138,14 @@
   [self assertJSONDeserialization:values];
 }
 
+- (void)testHIDEvents
+{
+  NSArray<FBSimulatorHIDEvent *> *values = @[
+    [FBSimulatorHIDEvent tapAtX:10 y:20],
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
+}
+
 @end

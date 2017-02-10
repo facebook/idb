@@ -162,7 +162,7 @@
   return YES;
 }
 
-- (BOOL)sendTapWithX:(double)x y:(double)y error:(NSError **)error
+- (BOOL)sendTouchWithType:(FBSimulatorHIDEventType)type x:(double)x y:(double)y error:(NSError **)error
 {
   // Convert Screen Offset to Ratio for Indigo.
   CGPoint point = [self screenRatioFromPoint:CGPointMake(x, y)];
@@ -178,22 +178,29 @@
   payload.yRatio = point.y;
 
   // Setting the Values Signifying touch-down.
-  payload.field9 = 0x1;
-  payload.field10 = 0x1;
+  switch (type) {
+    case FBSimulatorHIDEventTypeDown:
+      payload.field9 = 0x1;
+      payload.field10 = 0x1;
+      break;
+    case FBSimulatorHIDEventTypeUp:
+      payload.field9 = 0x0;
+      payload.field10 = 0x0;
+      break;
+    default:
+      break;
+  }
+
+  // Setting some other fields
   payload.field11 = 0x32;
   payload.field12 = 0x1;
   payload.field13 = 0x2;
 
-  // Send the Touch Down.
-  if (![self sendDigitizerPayload:&payload error:error]) {
-    return NO;
-  }
-
-  // Setting the Values Signifying touch-up.
-  payload.field9 = 0x0;
-  payload.field10 = 0x0;
+  // Send the Value
   return [self sendDigitizerPayload:&payload error:error];
 }
+
+#pragma mark Private
 
 - (BOOL)sendDigitizerPayload:(IndigoDigitizerPayload *)payload error:(NSError **)error
 {
@@ -237,8 +244,6 @@
   free(message);
   return result;
 }
-
-#pragma mark Private
 
 - (BOOL)sendButtonEventWithPayload:(IndigoButtonPayload *)payload error:(NSError **)error
 {
