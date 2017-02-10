@@ -58,6 +58,17 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)sendHomeButtonWithError:(NSError **)error;
 
+/**
+ Sends a Tap Event
+ Will Perform the Touch Down, followed by the Touch Up
+
+ @param x the X-Coordinate
+ @param y the Y-Coordinate
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)sendTapWithX:(double)x y:(double)y error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

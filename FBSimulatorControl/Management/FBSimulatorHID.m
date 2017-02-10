@@ -10,6 +10,10 @@
 #import "FBSimulatorHID.h"
 
 #import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimDeviceType.h>
+
+#import <CoreGraphics/CoreGraphics.h>
+
 #import <SimulatorApp/Indigo.h>
 
 #import <mach/mach.h>
@@ -20,6 +24,7 @@
 
 @interface FBSimulatorHID ()
 
+@property (nonatomic, assign, readonly) CGSize mainScreenSize;
 @property (nonatomic, assign, readwrite) mach_port_t registrationPort;
 @property (nonatomic, assign, readwrite) mach_port_t replyPort;
 
@@ -59,10 +64,11 @@
       fail:error];
   }
 
-  return [[FBSimulatorHID alloc] initWithRegistrationPort:registrationPort];
+  CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
+  return [[FBSimulatorHID alloc] initWithRegistrationPort:registrationPort mainScreenSize:mainScreenSize];
 }
 
-- (instancetype)initWithRegistrationPort:(mach_port_t)registrationPort
+- (instancetype)initWithRegistrationPort:(mach_port_t)registrationPort mainScreenSize:(CGSize)mainScreenSize
 {
   self = [super init];
   if (!self) {
@@ -70,6 +76,7 @@
   }
 
   _registrationPort = registrationPort;
+  _mainScreenSize = mainScreenSize;
   _replyPort = 0;
 
   return self;
@@ -144,6 +151,82 @@
   return YES;
 }
 
+- (BOOL)sendTapWithX:(double)x y:(double)y error:(NSError **)error
+{
+  // Convert Screen Offset to Ratio for Indigo.
+  CGPoint point = [self screenRatioFromPoint:CGPointMake(x, y)];
+
+  // Set the Common Values between down-and-up.
+  IndigoDigitizerPayload payload;
+  payload.field1 = 0x00400002;
+  payload.field2 = 0x1;
+  payload.field3 = 0x3;
+
+  // Points are the ratio between the top-left and bottom right.
+  payload.xRatio = point.x;
+  payload.yRatio = point.y;
+
+  // Setting the Values Signifying touch-down.
+  payload.field9 = 0x1;
+  payload.field10 = 0x1;
+  payload.field11 = 0x32;
+  payload.field12 = 0x1;
+  payload.field13 = 0x2;
+
+  // Send the Touch Down.
+  if (![self sendDigitizerPayload:&payload error:error]) {
+    return NO;
+  }
+
+  // Setting the Values Signifying touch-up.
+  payload.field9 = 0x0;
+  payload.field10 = 0x0;
+  return [self sendDigitizerPayload:&payload error:error];
+}
+
+- (BOOL)sendDigitizerPayload:(IndigoDigitizerPayload *)payload error:(NSError **)error
+{
+  // Sizes for the payload.
+  // The size should be 0x140/320.
+  // The stride should be 0x90
+  mach_msg_size_t size = sizeof(IndigoMessage) + sizeof(IndigoInner);
+  size_t stride = sizeof(IndigoInner);
+
+  // Create and set the common values
+  IndigoMessage *message = calloc(0x1, size);
+  message->innerSize = sizeof(IndigoInner);
+  message->eventType = IndigoEventTypeTouch;
+  message->inner.field1 = 0x0000000b;
+  message->inner.timestamp = mach_absolute_time();
+
+  // Copy in the Digitizer Payload from the caller.
+  void *destination = &(message->inner.unionPayload.buttonPayload);
+  void *source = payload;
+  memcpy(destination, source, sizeof(IndigoDigitizerPayload));
+
+  // Duplicate the First IndigoInner Payload.
+  // Also need to set the bits at (0x30 + 0x90) to 0x1.
+  // On 32-Bit Archs this is equivalent this is done with a long to stomp over both fields:
+  // uintptr_t mem = (uintptr_t) message;
+  // mem += 0xc0;
+  // int64_t *val = (int64_t *)mem;
+  // *val = 0x200000001;
+  source = &(message->inner);
+  destination = source;
+  destination += stride;
+  IndigoInner *second = (IndigoInner *) destination;
+  memcpy(destination, source, stride);
+
+  // Adjust the second payload slightly.
+  second->unionPayload.digitizerPayload.field1 = 0x00000001;
+  second->unionPayload.digitizerPayload.field2 = 0x00000002;
+
+  // Send the message, the cleanup.
+  BOOL result = [self sendIndigoMessage:message size:size error:error];
+  free(message);
+  return result;
+}
+
 #pragma mark Private
 
 - (BOOL)sendButtonEventWithPayload:(IndigoButtonPayload *)payload error:(NSError **)error
@@ -191,6 +274,14 @@
       failBool:error];
   }
   return YES;
+}
+
+- (CGPoint)screenRatioFromPoint:(CGPoint)point
+{
+  return CGPointMake(
+    point.x / self.mainScreenSize.width,
+    point.y / self.mainScreenSize.height
+  );
 }
 
 #pragma mark FBDebugDescribeable

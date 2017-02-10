@@ -27,14 +27,23 @@ typedef struct {
 } IndigoQuad;
 
 /**
- An unknown Indigo Payload.
+ A Payload for Digitizer Events.
+
+ The 'Location' of the touch is in the xRatio and yRatio slots.
+ This is 0 > x > 1 and 0 > y > 1, representing the distance from the top left.
+ The top left corner is xRatio=0.0, yRatio=0.0
+ The bottom right corner is xRatio=1.1, yRatio=1.1
+ The center is xRatio=0.5, yRatio=0.5
+
+ The 9th and 10th Slot Represent a touch-up or touch-down.
+ The struct is then partially repeated in the 10th slot.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
   unsigned int field2; // 0x20 + 0x10 + 0x4 = 0x34
   unsigned int field3; // 0x20 + 0x10 + 0x8 = 0x38
-  double field4; // 0x20 + 0x10 + 0xc = 0x3c
-  double field5; // 0x20 + 0x10 + 0x14 = 0x44
+  double xRatio; // 0x20 + 0x10 + 0xc = 0x3c
+  double yRatio; // 0x20 + 0x10 + 0x14 = 0x44
   double field6; // 0x20 + 0x10 + 0x1c = 0x4c
   double field7; // 0x20 + 0x10 + 0x24 = 0x54
   double field8; // 0x20 + 0x10 + 0x2c = 0x5c

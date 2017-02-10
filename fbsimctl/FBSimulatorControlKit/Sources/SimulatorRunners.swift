@@ -125,8 +125,8 @@ struct SimulatorActionRunner : Runner {
         try simulator.set!.kill(simulator)
       }
     case .tap(let x, let y):
-      return SimulatorInteractionRunner(reporter, EventName.Tap, ControlCoreSubject(simulator)) { interaction in
-        interaction.tap(x, y: y)
+      return iOSTargetRunner(reporter, EventName.Tap, ControlCoreSubject(simulator)) {
+        try simulator.connect().connectToHID().sendTapWith(x: x, y: y)
       }
     case .setLocation(let latitude, let longitude):
       return SimulatorInteractionRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) { interaction in
