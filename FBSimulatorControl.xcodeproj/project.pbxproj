@@ -154,7 +154,7 @@
 		AA4243061C529644008ABD80 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA4243051C529644008ABD80 /* CoreVideo.framework */; };
 		AA44AF681E792F7500185844 /* FBSimulatorBitmapStream.h in Headers */ = {isa = PBXBuildFile; fileRef = AA44AF661E792F7500185844 /* FBSimulatorBitmapStream.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA44AF691E792F7500185844 /* FBSimulatorBitmapStream.m in Sources */ = {isa = PBXBuildFile; fileRef = AA44AF671E792F7500185844 /* FBSimulatorBitmapStream.m */; };
-		AA46BF601D6DDC6A00C41DAF /* FBTestManagerContext.h in Headers */ = {isa = PBXBuildFile; fileRef = AA46BF5E1D6DDC6A00C41DAF /* FBTestManagerContext.h */; };
+		AA46BF601D6DDC6A00C41DAF /* FBTestManagerContext.h in Headers */ = {isa = PBXBuildFile; fileRef = AA46BF5E1D6DDC6A00C41DAF /* FBTestManagerContext.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA46BF611D6DDC6A00C41DAF /* FBTestManagerContext.m in Sources */ = {isa = PBXBuildFile; fileRef = AA46BF5F1D6DDC6A00C41DAF /* FBTestManagerContext.m */; };
 		AA4A7E2D1DD9F4EB001F9D8E /* FBFileReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4A7E2B1DD9F4EB001F9D8E /* FBFileReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA4A7E2E1DD9F4EB001F9D8E /* FBFileReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4A7E2C1DD9F4EB001F9D8E /* FBFileReader.m */; };
@@ -3205,7 +3205,6 @@
 				AA7414F01CE3102F00C9641D /* FBTestBundleConnection.h in Headers */,
 				05E1E34E1E3DBA87004F67B8 /* FBTestManagerJUnitGenerator.h in Headers */,
 				3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */,
-				AA46BF601D6DDC6A00C41DAF /* FBTestManagerContext.h in Headers */,
 				EE4F0D771C91B82700608E89 /* FBProductBundle.h in Headers */,
 				AA0DC7561CE3A29F0037A8A7 /* FBTestDaemonConnection.h in Headers */,
 				AAE5A0851EDF90DB00A1A811 /* FBXCTestReporter.h in Headers */,
@@ -3233,6 +3232,7 @@
 				AA9738BA1EE11BED002802F1 /* FBXCTestConfiguration.h in Headers */,
 				AA9738C61EE11DA8002802F1 /* FBTestLaunchConfiguration.h in Headers */,
 				AABD06B31EE7B84F00135D27 /* FBXcodeBuildOperation.h in Headers */,
+				AA46BF601D6DDC6A00C41DAF /* FBTestManagerContext.h in Headers */,
 				EE4F0D791C91B82700608E89 /* FBTestBundle.h in Headers */,
 				AACC16A61EDF974C00B31582 /* FBXCTestShimConfiguration.h in Headers */,
 				EE1277621C9338D700DE52A1 /* FBTestManagerAPIMediator.h in Headers */,
