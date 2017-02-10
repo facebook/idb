@@ -357,16 +357,17 @@ class HttpRelay : Relay {
     }
   }}
 
+  fileprivate static var hidRoute: Route { get {
+    return ActionRoute.post(EventName.Hid) { json in
+      let event = try FBSimulatorHIDEvent.inflate(fromJSON: json.decode())
+      return Action.hid(event)
+    }
+  }}
+
   fileprivate static var installRoute: Route { get {
     return ActionRoute.postFile(EventName.Install, "ipa") { request, file in
       let shouldCodeSign = request.getBoolQueryParam("codesign", false)
       return Action.install(file.path, shouldCodeSign)
-    }
-  }}
-
-  fileprivate static var keysRoute: Route { get {
-    return ActionRoute.post(EventName.Keys) { _ in
-      return Action.keys
     }
   }}
 
@@ -468,8 +469,8 @@ class HttpRelay : Relay {
       self.configRoute,
       self.diagnosticQueryRoute,
       self.diagnosticRoute,
+      self.hidRoute,
       self.installRoute,
-      self.keysRoute,
       self.launchRoute,
       self.listRoute,
       self.openRoute,

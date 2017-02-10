@@ -67,8 +67,8 @@ public enum Action {
   case delete
   case diagnose(FBDiagnosticQuery, DiagnosticFormat)
   case erase
+  case hid(FBSimulatorHIDEvent)
   case install(String, Bool)
-  case keys
   case keyboardOverride
   case launchAgent(FBAgentLaunchConfiguration)
   case launchApp(FBApplicationLaunchConfiguration)
@@ -200,10 +200,10 @@ public func == (left: Action, right: Action) -> Bool {
     return leftQuery == rightQuery && leftFormat == rightFormat
   case (.erase, .erase):
     return true
+  case (.hid(let leftEvent), .hid(let rightEvent)):
+    return leftEvent == rightEvent
   case (.install(let leftApp, let leftSign), .install(let rightApp, let rightSign)):
     return leftApp == rightApp && leftSign == rightSign
-  case (.keys, .keys):
-    return true
   case (.keyboardOverride, .keyboardOverride):
     return true
   case (.launchAgent(let leftLaunch), .launchAgent(let rightLaunch)):
@@ -268,10 +268,10 @@ extension Action {
       return (EventName.Diagnose, ControlCoreSubject(query))
     case .erase:
       return (EventName.Erase, nil)
+    case .hid(let event):
+      return (EventName.Hid, ControlCoreSubject(event))
     case .install:
       return (EventName.Install, nil)
-    case .keys:
-      return (EventName.Keys, nil)
     case .keyboardOverride:
       return (EventName.KeyboardOverride, nil)
     case .launchAgent(let launch):

@@ -82,10 +82,9 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
-    case .keys:
-      return iOSTargetRunner(reporter, EventName.Keys, ControlCoreSubject(simulator)) {
-        let button = FBSimulatorHIDEvent.shortButtonPress(FBSimulatorHIDButton.homeButton)
-        try button.perform(on: simulator.connect().connectToHID())
+    case .hid(let event):
+      return iOSTargetRunner(reporter, EventName.Hid, ControlCoreSubject(simulator)) {
+        try event.perform(on: simulator.connect().connectToHID())
       }
     case .keyboardOverride:
       return SimulatorInteractionRunner(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) { interaction in
