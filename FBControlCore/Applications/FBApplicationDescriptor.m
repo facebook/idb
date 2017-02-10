@@ -254,10 +254,40 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
   return nil;
 }
 
+// The Magic Header for Zip Files is two chars 'PK'. As a short this is as below.
+static short const ZipFileMagicHeader = 0x4b50;
+
++ (BOOL)isIPAAtPath:(NSString *)path error:(NSError **)error
+{
+  // IPAs are Zip files. Zip Files always have a magic header in their first 4 bytes.
+  FILE *file = fopen(path.UTF8String, "r");
+  if (!file) {
+    return [[FBControlCoreError
+      describeFormat:@"Failed to open %@ for reading", path]
+      failBool:error];
+  }
+  short magic = 0;
+  if (!fread(&magic, sizeof(short), 1, file)) {
+    fclose(file);
+    return [[FBControlCoreError
+      describeFormat:@"Could not read file %@ for magic zip header", path]
+      failBool:error];
+  }
+  fclose(file);
+  return magic == ZipFileMagicHeader;
+}
+
 + (nullable NSString *)findOrExtractApplicationAtPath:(NSString *)path extractPathOut:(NSURL **)extractPathOut error:(NSError **)error
 {
+  // If it's an App, we don't need to do anything, just return early.
   if (isApplicationAtPath(path)) {
     return path;
+  }
+  // The other case is that this is an IPA, check it is before extacting.
+  if (![FBApplicationDescriptor isIPAAtPath:path error:error]) {
+    return [[FBControlCoreError
+      describeFormat:@"File at path %@ is neither an IPA not a .app", path]
+      fail:error];
   }
 
   NSString *tempDirPath = [NSTemporaryDirectory() stringByAppendingPathComponent:NSProcessInfo.processInfo.globallyUniqueString];
