@@ -132,6 +132,17 @@
 
 #pragma mark HID Manipulation
 
+- (BOOL)sendKeyboardEventWithKeyCode:(unsigned short)keycode up:(BOOL)up error:(NSError **)error
+{
+  IndigoButtonPayload payload;
+  payload.eventSource = ButtonEventSourceKeyboard;
+  payload.eventType = up ? ButtonEventTypeUp : ButtonEventTypeDown;
+  payload.eventClass = ButtonEventClassKeyboard;
+  payload.keyCode = keycode;
+  payload.field5 = 0x000000cc;
+  return [self sendButtonEventWithPayload:&payload error:error];
+}
+
 - (BOOL)sendHomeButtonWithError:(NSError **)error
 {
   IndigoButtonPayload payload;
