@@ -142,6 +142,12 @@
 {
   NSArray<FBSimulatorHIDEvent *> *values = @[
     [FBSimulatorHIDEvent tapAtX:10 y:20],
+    [FBSimulatorHIDEvent shortButtonPress:FBSimulatorHIDButtonApplePay],
+    [FBSimulatorHIDEvent shortButtonPress:FBSimulatorHIDButtonHomeButton],
+    [FBSimulatorHIDEvent shortButtonPress:FBSimulatorHIDButtonLock],
+    [FBSimulatorHIDEvent shortButtonPress:FBSimulatorHIDButtonSideButton],
+    [FBSimulatorHIDEvent shortButtonPress:FBSimulatorHIDButtonSiri],
+    [FBSimulatorHIDEvent shortButtonPress:FBSimulatorHIDButtonHomeButton],
   ];
   [self assertEqualityOfCopy:values];
   [self assertJSONSerialization:values];

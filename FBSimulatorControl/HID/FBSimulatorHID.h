@@ -24,6 +24,17 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDEventType) {
 };
 
 /**
+ An Enumeration Representing a button press.
+ */
+typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
+  FBSimulatorHIDButtonApplePay = 1,
+  FBSimulatorHIDButtonHomeButton = 2,
+  FBSimulatorHIDButtonLock = 3,
+  FBSimulatorHIDButtonSideButton = 4,
+  FBSimulatorHIDButtonSiri = 5,
+};
+
+/**
  A Wrapper around the mach_port_t that is created in the booting of a Simulator.
  The IndigoHIDRegistrationPort is essential for backboard, otherwise UI events aren't synthesized properly.
  */
@@ -68,13 +79,14 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDEventType) {
 - (BOOL)sendKeyboardEventWithKeyCode:(unsigned short)keycode up:(BOOL)up error:(NSError **)error;
 
 /**
- Sends a Home Button Event.
- Will Perform the Button Down, followed by the Button Up.
+ Sends a Button Event.
 
+ @param type the event type.
+ @param button the button.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)sendHomeButtonWithError:(NSError **)error;
+- (BOOL)sendButtonEventWithType:(FBSimulatorHIDEventType)type button:(FBSimulatorHIDButton)button error:(NSError **)error;
 
 /**
  Sends a Tap Event

@@ -143,23 +143,38 @@
   return [self sendButtonEventWithPayload:&payload error:error];
 }
 
-- (BOOL)sendHomeButtonWithError:(NSError **)error
+- (BOOL)sendButtonEventWithType:(FBSimulatorHIDEventType)type button:(FBSimulatorHIDButton)button error:(NSError **)error
 {
   IndigoButtonPayload payload;
-  payload.eventSource = ButtonEventSourceHomeButton;
-  payload.eventType = ButtonEventTypeDown;
   payload.eventClass = ButtonEventClassHardware;
 
-  // Send the button down
-  if (![self sendButtonEventWithPayload:&payload error:error]) {
-    return NO;
+  // Set the Event Source
+  switch (button) {
+    case  FBSimulatorHIDButtonApplePay:
+      payload.eventSource = ButtonEventSourceApplePay;
+      break;
+    case FBSimulatorHIDButtonHomeButton:
+      payload.eventSource = ButtonEventSourceHomeButton;
+      break;
+    case FBSimulatorHIDButtonLock:
+      payload.eventSource = ButtonEventSourceLock;
+      break;
+    case FBSimulatorHIDButtonSideButton:
+      payload.eventSource = ButtonEventSourceSideButton;
+      break;
+    case FBSimulatorHIDButtonSiri:
+      payload.eventSource = ButtonEventSourceSiri;
+      break;
   }
-  // Send the button up
-  payload.eventType = ButtonEventTypeUp;
-  if (![self sendButtonEventWithPayload:&payload error:error]) {
-    return NO;
+  // Then Up/Down.
+  switch (type) {
+    case FBSimulatorHIDEventTypeDown:
+      payload.eventType = ButtonEventTypeDown;
+      break;
+    case FBSimulatorHIDEventTypeUp:
+      payload.eventType = ButtonEventTypeUp;
   }
-  return YES;
+  return [self sendButtonEventWithPayload:&payload error:error];
 }
 
 - (BOOL)sendTouchWithType:(FBSimulatorHIDEventType)type x:(double)x y:(double)y error:(NSError **)error

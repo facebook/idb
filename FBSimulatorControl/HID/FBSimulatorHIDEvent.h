@@ -30,6 +30,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)tapAtX:(double)x y:(double)y;
 
 /**
+ A HID Event that is a down followed by an immediate up.
+
+ @param button the button to use.
+ @return a new HID Event.
+ */
++ (instancetype)shortButtonPress:(FBSimulatorHIDButton)button;
+
+/**
  Materializes the event, performing it on the hid object.
 
  @param hid the hid to perform on.

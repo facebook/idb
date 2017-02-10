@@ -15,9 +15,11 @@
 #import "FBSimulatorHID.h"
 
 static NSString *const FBSimulatorEventKeyClass = @"class";
+static NSString *const FBSimulatorHIDEventKeyType = @"type";
 
 static NSString *const FBSimulatorEventClassStringComposite = @"composite";
 static NSString *const FBSimulatorEventClassStringTouch = @"touch";
+static NSString *const FBSimulatorEventClassStringButton = @"button";
 
 @interface FBSimulatorHIDEvent ()
 
@@ -145,7 +147,6 @@ static NSString *const FBSimulatorEventKeyEvents = @"events";
 
 static NSString *const FBSimulatorHIDEventKeyX = @"x";
 static NSString *const FBSimulatorHIDEventKeyY = @"y";
-static NSString *const FBSimulatorHIDEventKeyType = @"type";
 
 - (instancetype)initWithEventType:(FBSimulatorHIDEventType)type x:(double)x y:(double)y
 {
@@ -239,6 +240,149 @@ static NSString *const FBSimulatorHIDEventKeyType = @"type";
 
 @end
 
+static NSString *const FBSimulatorHIDEventKeyButton = @"button";
+static NSString *const FBSimulatorHIDButtonStringApplePay = @"apple_pay";
+static NSString *const FBSimulatorHIDButtonStringHomeButton = @"home";
+static NSString *const FBSimulatorHIDButtonStringLock = @"lock";
+static NSString *const FBSimulatorHIDButtonStringSideButton = @"side";
+static NSString *const FBSimulatorHIDButtonStringSiri = @"siri";
+
+@interface FBSimulatorHIDEvent_Button : FBSimulatorHIDEvent
+
+@property (nonatomic, assign, readonly) FBSimulatorHIDEventType type;
+@property (nonatomic, assign, readonly) FBSimulatorHIDButton button;
+
+@end
+
+@implementation FBSimulatorHIDEvent_Button
+
+- (instancetype)initWithEventType:(FBSimulatorHIDEventType)type button:(FBSimulatorHIDButton)button
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _type = type;
+  _button = button;
+  return self;
+}
+
++ (instancetype)inflateFromJSON:(id)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSString.class]) {
+    return [[FBSimulatorError
+      describe:@"Expected an input of Dictionary<String, String>"]
+      fail:error];
+  }
+  NSString *class = json[FBSimulatorEventKeyClass];
+  if (![class isEqualToString:FBSimulatorEventClassStringButton]) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected %@ to be %@", class, FBSimulatorEventClassStringButton]
+      fail:error];
+  }
+  NSString *buttonString = json[FBSimulatorHIDEventKeyButton];
+  if (![buttonString isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected %@ for %@ to be a String", buttonString, FBSimulatorHIDEventKeyButton]
+      fail:error];
+  }
+  FBSimulatorHIDButton button = [self buttonFromButtonString:buttonString];
+  if (button < 1) {
+    return [[FBSimulatorError
+      describeFormat:@"Button %@ for %@ is not a valid button type", buttonString, FBSimulatorHIDEventKeyButton]
+      fail:error];
+  }
+  NSString *typeString = json[FBSimulatorHIDEventKeyType];
+  if (![typeString isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"Expected %@ for %@ to be a String", typeString, FBSimulatorHIDEventKeyType]
+      fail:error];
+  }
+  FBSimulatorHIDEventType type = [FBSimulatorHIDEvent eventTypeForEventTypeString:typeString];
+  if (type < 1) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a valid event type", typeString]
+      fail:error];
+  }
+  return [[self alloc] initWithEventType:type button:button];
+}
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    FBSimulatorHIDEventKeyButton: [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
+    FBSimulatorHIDEventKeyType: [FBSimulatorHIDEvent eventTypeStringFromEventType:self.type],
+    FBSimulatorEventKeyClass: FBSimulatorEventClassStringButton,
+  };
+}
+- (BOOL)performOnHID:(FBSimulatorHID *)hid error:(NSError **)error
+{
+  return [hid sendButtonEventWithType:self.type button:self.button error:error];
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Button %@ %@",
+    [FBSimulatorHIDEvent_Button buttonStringFromButton:self.button],
+    [FBSimulatorHIDEvent eventTypeStringFromEventType:self.type]
+  ];
+}
+
+- (BOOL)isEqual:(FBSimulatorHIDEvent_Button *)event
+{
+  if (![event isKindOfClass:self.class]) {
+    return NO;
+  }
+  return self.type == event.type && self.button == event.button;
+}
+
+- (NSUInteger)hash
+{
+  return self.type ^ self.button;
+}
+
++ (NSString *)buttonStringFromButton:(FBSimulatorHIDButton)button
+{
+  switch (button) {
+    case FBSimulatorHIDButtonApplePay:
+      return FBSimulatorHIDButtonStringApplePay;
+    case FBSimulatorHIDButtonHomeButton:
+      return FBSimulatorHIDButtonStringHomeButton;
+    case FBSimulatorHIDButtonLock:
+      return FBSimulatorHIDButtonStringLock;
+    case FBSimulatorHIDButtonSideButton:
+      return FBSimulatorHIDButtonStringSideButton;
+    case FBSimulatorHIDButtonSiri:
+      return FBSimulatorHIDButtonStringSiri;
+    default:
+      return nil;
+  }
+}
+
++ (FBSimulatorHIDButton)buttonFromButtonString:(NSString *)buttonString
+{
+  if ([buttonString isEqualToString:FBSimulatorHIDButtonStringApplePay]) {
+    return FBSimulatorHIDButtonApplePay;
+  }
+  if ([buttonString isEqualToString:FBSimulatorHIDButtonStringHomeButton]) {
+    return FBSimulatorHIDButtonHomeButton;
+  }
+  if ([buttonString isEqualToString:FBSimulatorHIDButtonStringSideButton]) {
+    return FBSimulatorHIDButtonSideButton;
+  }
+  if ([buttonString isEqualToString:FBSimulatorHIDButtonStringSiri]) {
+    return FBSimulatorHIDButtonSiri;
+  }
+  if ([buttonString isEqualToString:FBSimulatorHIDButtonStringLock]) {
+    return FBSimulatorHIDButtonLock;
+  }
+  return 0;
+}
+
+@end
+
 @implementation FBSimulatorHIDEvent
 
 + (instancetype)eventWithEvents:(NSArray<FBSimulatorHIDEvent *> *)events
@@ -256,11 +400,29 @@ static NSString *const FBSimulatorHIDEventKeyType = @"type";
   return [[FBSimulatorHIDEvent_Touch alloc] initWithEventType:FBSimulatorHIDEventTypeUp x:x y:y];
 }
 
++ (instancetype)buttonDown:(FBSimulatorHIDButton)button
+{
+  return [[FBSimulatorHIDEvent_Button alloc] initWithEventType:FBSimulatorHIDEventTypeDown button:button];
+}
+
++ (instancetype)buttonUp:(FBSimulatorHIDButton)button
+{
+  return [[FBSimulatorHIDEvent_Button alloc] initWithEventType:FBSimulatorHIDEventTypeUp button:button];
+}
+
 + (instancetype)tapAtX:(double)x y:(double)y
 {
   return [self eventWithEvents:@[
     [self touchDownAtX:x y:y],
     [self touchUpAtX:x y:y],
+  ]];
+}
+
++ (instancetype)shortButtonPress:(FBSimulatorHIDButton)button
+{
+  return [self eventWithEvents:@[
+    [self buttonDown:button],
+    [self buttonUp:button],
   ]];
 }
 
@@ -282,6 +444,9 @@ static NSString *const FBSimulatorHIDEventKeyType = @"type";
   }
   if ([class isEqualToString:FBSimulatorEventClassStringTouch]) {
     return [FBSimulatorHIDEvent_Touch inflateFromJSON:json error:error];
+  }
+  if ([class isEqualToString:FBSimulatorEventClassStringButton]) {
+    return [FBSimulatorHIDEvent_Button inflateFromJSON:json error:error];
   }
   return [[FBSimulatorError
     describeFormat:@"%@ is not one of %@ %@", class, FBSimulatorEventClassStringComposite, FBSimulatorEventClassStringTouch]
