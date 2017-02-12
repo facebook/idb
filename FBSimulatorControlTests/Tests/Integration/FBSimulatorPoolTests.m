@@ -128,12 +128,12 @@
     NSError *secondUnderlyingError = (NSError *)firstUnderlyingError.userInfo[NSUnderlyingErrorKey];
     NSString *path = secondUnderlyingError.userInfo[NSFilePathErrorKey];
     if (path) {
-      FBTask *lsTask = [[[[FBTaskBuilder
-        withLaunchPath:@"/bin/ls" arguments:@[@"-lad", path]]
+      FBTask *findTask = [[[[FBTaskBuilder
+        withLaunchPath:@"/usr/bin/find" arguments:@[path]]
         withStdOutInMemory]
         withStdErrInMemory]
         build];
-      [lsTask startSynchronouslyWithTimeout:10.0f];
+      [findTask startSynchronouslyWithTimeout:10.0f];
       FBTask *lsofTask = [[[[FBTaskBuilder
         withLaunchPath:@"/usr/sbin/lsof" arguments:@[@"+D", path]]
         withStdOutInMemory]
@@ -144,8 +144,8 @@
       userInfo[@"debug.path"] = path ?: @"";
       userInfo[@"debug.lsofTask.stdout"] = lsofTask.stdOut ?: @"";
       userInfo[@"debug.lsofTask.stderr"] = lsofTask.stdErr ?: @"";
-      userInfo[@"debug.lsTask.stdout"] = lsTask.stdOut ?: @"";
-      userInfo[@"debug.lsTask.stderr"] = lsTask.stdErr ?: @"";
+      userInfo[@"debug.findTask.stdout"] = findTask.stdOut ?: @"";
+      userInfo[@"debug.findTask.stderr"] = findTask.stdErr ?: @"";
       error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
     }
   }
