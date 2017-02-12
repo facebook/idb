@@ -192,21 +192,6 @@
       fail:error];
   }
 
-  BOOL devicePlistExists = [NSRunLoop.currentRunLoop
-    spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout
-    untilTrue:^ BOOL {
-      NSString *path = [simulator.device.devicePath stringByAppendingPathComponent:@"device.plist"];
-      return [[NSFileManager defaultManager] fileExistsAtPath:path];
-    }];
-
-  if (!devicePlistExists) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Could not find device.plist of newly-created simulator"]
-      inSimulator:simulator]
-      logger:self.logger]
-      fail:error];
-  }
-
   return simulator;
 }
 
