@@ -122,6 +122,33 @@
 {
   NSError *error = nil;
   BOOL success = [self.control.pool freeSimulator:simulator error:&error];
+  // Temporarily add some debug output to the error's userInfo.
+  if (error) {
+    NSError *firstUnderlyingError = (NSError *)error.userInfo[NSUnderlyingErrorKey];
+    NSError *secondUnderlyingError = (NSError *)firstUnderlyingError.userInfo[NSUnderlyingErrorKey];
+    NSString *path = secondUnderlyingError.userInfo[NSFilePathErrorKey];
+    if (path) {
+      FBTask *lsTask = [[[[FBTaskBuilder
+        withLaunchPath:@"/bin/ls" arguments:@[@"-lad", path]]
+        withStdOutInMemory]
+        withStdErrInMemory]
+        build];
+      [lsTask startSynchronouslyWithTimeout:10.0f];
+      FBTask *lsofTask = [[[[FBTaskBuilder
+        withLaunchPath:@"/usr/sbin/lsof" arguments:@[@"+D", path]]
+        withStdOutInMemory]
+        withStdErrInMemory]
+        build];
+      [lsofTask startSynchronouslyWithTimeout:10.0f];
+      NSMutableDictionary *userInfo = error.userInfo.mutableCopy;
+      userInfo[@"debug.path"] = path ?: @"";
+      userInfo[@"debug.lsofTask.stdout"] = lsofTask.stdOut ?: @"";
+      userInfo[@"debug.lsofTask.stderr"] = lsofTask.stdErr ?: @"";
+      userInfo[@"debug.lsTask.stdout"] = lsTask.stdOut ?: @"";
+      userInfo[@"debug.lsTask.stderr"] = lsTask.stdErr ?: @"";
+      error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
+    }
+  }
   XCTAssertNil(error);
   XCTAssertTrue(success);
   XCTAssertNil(simulator.pool);
