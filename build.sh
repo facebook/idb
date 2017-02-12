@@ -13,7 +13,7 @@ CLI_E2E_PATH=fbsimctl/cli-tests/executable-under-test
 function invoke_xcodebuild() {
   local arguments=$@
   if [[ -n $HAS_XCPRETTY ]]; then
-    NSUnbufferedIO=YES xcodebuild $arguments | xcpretty -c
+    xcodebuild $arguments
   else
     xcodebuild $arguments
   fi
