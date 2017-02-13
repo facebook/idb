@@ -105,6 +105,11 @@
   return self.os.name;
 }
 
+- (NSString *)architecture
+{
+  return self.device.simulatorArchitecture;
+}
+
 #pragma mark NSObject
 
 - (NSUInteger)hash
@@ -128,10 +133,11 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Device '%@' | OS Version '%@' | Aux Directory %@",
+    @"Device '%@' | OS Version '%@' | Aux Directory %@ | Architecture '%@'",
     self.deviceName,
     self.osVersionString,
-    self.auxillaryDirectory
+    self.auxillaryDirectory,
+    self.architecture
   ];
 }
 
@@ -152,7 +158,8 @@
   return @{
     @"device" : self.deviceName,
     @"os" : self.osVersionString,
-    @"aux_directory" : self.auxillaryDirectory ?: NSNull.null
+    @"aux_directory" : self.auxillaryDirectory ?: NSNull.null,
+    @"architecture" : self.architecture
   };
 }
 

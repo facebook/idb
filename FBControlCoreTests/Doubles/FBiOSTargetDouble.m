@@ -11,6 +11,7 @@
 
 @implementation FBiOSTargetDouble
 
+@synthesize architecture;
 @synthesize deviceOperator;
 
 #pragma mark FBDebugDescribeable

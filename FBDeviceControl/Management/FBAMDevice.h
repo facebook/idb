@@ -74,7 +74,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Architechture of the Device's CPU.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *architechture;
+@property (nonatomic, nullable, copy, readonly) NSString *architecture;
 
 /**
  Starts test manager daemon service

@@ -78,6 +78,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return self.amDevice.deviceName;
 }
 
+- (NSString *)architecture
+{
+  return self.amDevice.architecture;
+}
+
 - (NSString *)auxillaryDirectory
 {
   return [[[NSHomeDirectory()

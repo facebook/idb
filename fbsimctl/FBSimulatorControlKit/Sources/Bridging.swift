@@ -126,6 +126,7 @@ extension FBiOSTargetFormat {
       FBiOSTargetFormatDeviceName,
       FBiOSTargetFormatOSVersion,
       FBiOSTargetFormatState,
+      FBiOSTargetFormatArchitecture,
       FBiOSTargetFormatProcessIdentifier,
       FBiOSTargetFormatContainerApplicationProcessIdentifier,
     ]
