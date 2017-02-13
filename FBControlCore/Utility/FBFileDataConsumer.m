@@ -4,6 +4,7 @@
 
 #import "FBRunLoopSpinner.h"
 #import "FBControlCoreError.h"
+#import "FBLineBuffer.h"
 
 static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval timeout, NSError **error)
 {
@@ -20,9 +21,9 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
 
 @interface FBLineFileDataConsumer ()
 
-@property (nonatomic, strong, nullable, readwrite) NSMutableData *buffer;
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSString *);
+@property (nonatomic, strong, readwrite) FBLineBuffer *buffer;
 
 @end
 
@@ -48,7 +49,7 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
 
   _queue = queue;
   _consumer = consumer;
-  _buffer = [NSMutableData data];
+  _buffer = [FBLineBuffer new];
 
   return self;
 }
@@ -58,22 +59,7 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
   NSAssert(self.hasConsumedEOF == NO, @"Cannot consume data when EOF has been consumed");
   @synchronized (self) {
     [self.buffer appendData:data];
-    while (self.buffer.length != 0) {
-      NSRange newlineRange = [self.buffer
-        rangeOfData:[NSData dataWithBytes:"\n" length:1]
-        options:0
-        range:NSMakeRange(0, self.buffer.length)];
-      if (newlineRange.length == 0) {
-        break;
-      }
-      NSData *lineData = [self.buffer subdataWithRange:NSMakeRange(0, newlineRange.location)];
-      [self.buffer replaceBytesInRange:NSMakeRange(0, newlineRange.location + 1) withBytes:"" length:0];
-      NSString *line = [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
-      void (^consumer)(NSString *) = self.consumer;
-      dispatch_async(self.queue, ^{
-        consumer(line);
-      });
-    }
+    [self dispatchAvailableLines];
   }
 }
 
@@ -81,19 +67,24 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
 {
   NSAssert(self.hasConsumedEOF == NO, @"Cannot consume EOF when EOF has been consumed");
   @synchronized (self) {
-    void (^consumer)(NSString *) = self.consumer;
-    dispatch_queue_t queue = self.queue;
-    NSData *buffer = self.buffer;
+    [self dispatchAvailableLines];
+    dispatch_async(self.queue, ^{
+      self.consumer = nil;
+      self.queue = nil;
+      self.buffer = nil;
+    });
+  }
+}
 
-    if (buffer.length != 0) {
-      NSString *line = [[NSString alloc] initWithData:buffer encoding:NSUTF8StringEncoding];
-      dispatch_async(queue, ^{
-        consumer(line);
-        self.consumer = nil;
-        self.queue = nil;
-        self.buffer = nil;
-      });
-    }
+- (void)dispatchAvailableLines
+{
+  NSString *line = [self.buffer consumeLineString];
+  while (line != nil) {
+    void (^consumer)(NSString *) = self.consumer;
+    dispatch_async(self.queue, ^{
+      consumer(line);
+    });
+    line = [self.buffer consumeLineString];
   }
 }
 

@@ -41,6 +41,7 @@
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBLineBuffer.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>
