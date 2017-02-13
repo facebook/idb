@@ -53,6 +53,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSPredicate *)states:(NSIndexSet *)states;
 
 /**
+ Predicate for matching against one of multiple Architectures.
+
+ @param architectures the Architectures to match against. Must not be nil.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)architectures:(NSArray<NSString *> *)architectures;
+
+/**
  Predicate for matching against a single Simulator UDID.
 
  @param udid the UDID to match against. Must not be nil.

@@ -785,6 +785,7 @@ public struct FBiOSTargetQueryParsers {
       self.firstParser,
       self.uuidParser,
       self.simulatorStateParser,
+      self.architectureParser,
       self.targetTypeParser,
       self.osVersionsParser,
       self.deviceParser
@@ -802,6 +803,16 @@ public struct FBiOSTargetQueryParsers {
     return Parser<FBiOSTargetQuery>
       .ofUDID
       .fmap { FBiOSTargetQuery.udids([$0]) }
+  }
+
+  static var architectureParser: Parser<FBiOSTargetQuery> {
+    return Parser<String>
+      .alternative(FBArchitecture.allArchitectures().map(architectureSubparser))
+      .fmap { FBiOSTargetQuery.architectures([$0]) }
+  }
+
+  static func architectureSubparser(_ architecture: String) -> Parser<String> {
+    return Parser<String>.ofFlag("arch=\(architecture)", architecture, "")
   }
 
   static var simulatorStateParser: Parser<FBiOSTargetQuery> {
