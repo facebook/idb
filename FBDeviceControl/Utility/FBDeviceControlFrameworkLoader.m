@@ -181,6 +181,13 @@
   if (self.hasLoadedFrameworks) {
     return YES;
   }
+
+  for (FBDependentDylib *dylib in FBDependentDylib.SwiftDylibs) {
+    if (![dylib loadWithLogger:logger error:error]) {
+      return NO;
+    }
+  }
+
   BOOL result = [super loadPrivateFrameworks:logger error:error];
   if (result) {
     [FBAMDevice loadFBAMDeviceSymbols];

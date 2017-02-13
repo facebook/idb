@@ -231,6 +231,9 @@ Supported Commands:
     Build the xctest exectutable. Optionally copies the executable and it's dependencies to <output-directory>
   fbxctest test
     Builds the FBXCTestKit.framework and runs the tests.
+  fbdevicectl test
+    Builds the FBDeviceControl.framework and runs the tests.
+
 EOF
 }
 
@@ -302,6 +305,14 @@ case $TARGET in
       test)
         build_test_deps
         cli_framework_test fbxctest;;
+      *)
+        echo "Unknown Command $COMMAND"
+        exit 1;;
+    esac;;
+  fbdevicectl)
+    case $COMMAND in
+      test)
+        device_framework_test;;
       *)
         echo "Unknown Command $COMMAND"
         exit 1;;
