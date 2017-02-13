@@ -85,6 +85,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
 
 /**
+ Adds output configuration.
+
+ @param output output configuration
+ @return new application launch configuration with changes applied.
+ */
+- (instancetype)withOutput:(FBProcessOutputConfiguration *)output;
+
+/**
  The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.
  */
 @property (nonnull, nonatomic, copy, readonly) NSString *bundleID;

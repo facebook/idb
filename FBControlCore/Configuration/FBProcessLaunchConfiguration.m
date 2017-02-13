@@ -203,6 +203,16 @@ static NSString *const KeyOutput = @"output";
   return self;
 }
 
+- (instancetype)withOutput:(FBProcessOutputConfiguration *)output
+{
+    return [[FBApplicationLaunchConfiguration alloc]
+      initWithBundleID:self.bundleID
+      bundleName:self.bundleName
+      arguments:self.arguments
+      environment:self.environment
+      output:output];
+}
+
 #pragma mark Abstract Methods
 
 - (NSString *)debugDescription

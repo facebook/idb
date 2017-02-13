@@ -37,20 +37,26 @@
     return YES;
   }
 
-  if ([output isEqualToString:FBProcessOutputToFileDefaultLocation]) {
-    SEL diagnosticSelector = NSSelectorFromString([NSString stringWithFormat:@"%@:", NSStringFromSelector(selector)]);
-    FBDiagnostic *diagnostic = [simulator.diagnostics performSelector:diagnosticSelector withObject:self];
-    FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
-    NSString *path = [builder createPath];
-    if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
-      return [[FBSimulatorError
-        describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
-        failBool:error];
-    }
-    if (diagnosticOut) {
-      *diagnosticOut = diagnostic;
-    }
+  SEL diagnosticSelector = NSSelectorFromString([NSString stringWithFormat:@"%@:", NSStringFromSelector(selector)]);
+  FBDiagnostic *diagnostic = [simulator.diagnostics performSelector:diagnosticSelector withObject:self];
+  FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
+
+  NSString *path = [output isEqualToString:FBProcessOutputToFileDefaultLocation] ? [builder createPath] : output;
+
+  [builder updateStorageDirectory:[path stringByDeletingLastPathComponent]];
+
+  if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
+      failBool:error];
   }
+
+  [builder updatePath:path];
+
+  if (diagnosticOut) {
+    *diagnosticOut = [builder build];
+  }
+
   return YES;
 }
 
