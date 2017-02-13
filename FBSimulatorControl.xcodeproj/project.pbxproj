@@ -1358,6 +1358,8 @@
 		EEBD60961C908FA200298A07 /* FBJSONConversion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONConversion.h; sourceTree = "<group>"; };
 		EEF4497B1CE0A22200300C9F /* FBXCTestBootstrapFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapFixtures.h; sourceTree = "<group>"; };
 		EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapFixtures.m; sourceTree = "<group>"; };
+		F550B5901E51D14F006C8CC5 /* FBDependentDylib+ApplePrivateDylibs.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.h; path = "FBDependentDylib+ApplePrivateDylibs.h"; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
+		F550B5911E51D14F006C8CC5 /* FBDependentDylib+ApplePrivateDylibs.m */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.objc; path = "FBDependentDylib+ApplePrivateDylibs.m"; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
 		F5ACC7001E51ACD700975101 /* FBDependentDylib.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.h; path = FBDependentDylib.h; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
 		F5ACC7011E51ACD700975101 /* FBDependentDylib.m */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.objc; path = FBDependentDylib.m; sourceTree = "<group>"; tabWidth = 2; };
 /* End PBXFileReference section */
@@ -2737,6 +2739,8 @@
 				AABBF31E1DAC0F9400E2B6AF /* FBTerminationHandle.m */,
 				F5ACC7001E51ACD700975101 /* FBDependentDylib.h */,
 				F5ACC7011E51ACD700975101 /* FBDependentDylib.m */,
+				F550B5901E51D14F006C8CC5 /* FBDependentDylib+ApplePrivateDylibs.h */,
+				F550B5911E51D14F006C8CC5 /* FBDependentDylib+ApplePrivateDylibs.m */,
 				EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */,
 				EE2EC7AB1CAC3F97009A7BB1 /* FBWeakFramework.m */,
 				EE2EC7AE1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h */,
@@ -2983,8 +2987,8 @@
 				EE9E1E4B1D6CB2CC00860830 /* FBProcessLaunchConfiguration+Helpers.h in Headers */,
 				EEBD606A1C9062E900298A07 /* FBDebugDescribeable.h in Headers */,
 				AAF4C4DF1CDBA1A7004F4AF3 /* FBRunLoopSpinner.h in Headers */,
-				F5ACC7021E51ACD700975101 /* FBDependentDylib.h in Headers */,
 				F550B5921E51D14F006C8CC5 /* FBDependentDylib+ApplePrivateDylibs.h in Headers */,
+				F5ACC7021E51ACD700975101 /* FBDependentDylib.h in Headers */,
 				AAB123821DB4B16900F20555 /* FBDispatchSourceNotifier.h in Headers */,
 				AA7728AE1E5238A6008FCF7C /* FBFileWriter.h in Headers */,
 				AA58F8921D959593006F8D81 /* FBCodesignProvider.h in Headers */,
@@ -3560,6 +3564,7 @@
 				AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */,
 				AA4394E51E731998003532B2 /* FBXCTestCommands.m in Sources */,
 				AABD72A71E64A5DF004D6EBE /* FBTestLaunchConfiguration.m in Sources */,
+				F550B5931E51D14F006C8CC5 /* FBDependentDylib+ApplePrivateDylibs.m in Sources */,
 				EEBD60771C9062E900298A07 /* FBBinaryParser.m in Sources */,
 				AA0F6F2B1CA3DCF700926518 /* FBWeakFrameworkLoader.m in Sources */,
 			);
