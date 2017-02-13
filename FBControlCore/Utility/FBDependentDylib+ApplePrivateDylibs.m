@@ -34,18 +34,18 @@
 
   if (atLeastXcode83) {
     return @[
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCore.dylib"],
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftDarwin.dylib"],
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftObjectiveC.dylib"],
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftDispatch.dylib"],
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftIOKit.dylib"],
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCoreGraphics.dylib"],
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftFoundation.dylib"],
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftXPC.dylib"],
              [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCoreImage.dylib"],
              [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftQuartzCore.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftAppKit.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCore.dylib"],
              [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCoreData.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftCoreGraphics.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftDarwin.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftDispatch.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftFoundation.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftIOKit.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftObjectiveC.dylib"],
-             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftXPC.dylib"]
+             [FBDependentDylib dependentWithRelativePath:@"../Frameworks/libswiftAppKit.dylib"],
              ];
   } else {
     // No swift dylibs are required.
