@@ -46,11 +46,12 @@
 {
   NSURL *url = [NSURL fileURLWithPath:self.path];
   const char *cFileSystemRep = [url fileSystemRepresentation];
-  void *handle = dlopen(cFileSystemRep, RTLD_LOCAL|RTLD_LAZY);
+  void *handle = dlopen(cFileSystemRep, RTLD_NOW|RTLD_GLOBAL);
   [logger.debug logFormat:@"Attempting to load: %s", cFileSystemRep];
   if (!handle) {
     NSString *message = [NSString stringWithFormat:@"Could not load dylib %@ with dlopen: %s",
                          self.path, dlerror()];
+    [logger.debug logFormat:@"%@", message];
     return [FBControlCoreError failBoolWithErrorMessage:message
                                                errorOut:error];
   } else {
