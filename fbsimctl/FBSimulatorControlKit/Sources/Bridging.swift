@@ -188,7 +188,7 @@ extension FBApplicationDescriptor {
   static func findOrExtract(atPath: String) throws -> (String, URL?) {
     var url: NSURL? = nil
     let result = try FBApplicationDescriptor.findOrExtractApplication(atPath: atPath, extractPathOut: &url)
-    return (result, url! as URL)
+    return (result, url as URL?)
   }
 }
 
