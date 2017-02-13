@@ -138,8 +138,9 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
   }];
 
   if (!waitSuccess) {
-    XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"Timed out %f seconds waiting for daemon connection", timeout];
+    XCTestBootstrapError *error = [[XCTestBootstrapError
+      describeFormat:@"Timed out %f seconds waiting for daemon connection", timeout]
+      code:XCTestBootstrapErrorCodeStartupTimeout];
     return [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
   }
   if (self.state != FBTestDaemonConnectionStateReadyToExecuteTestPlan) {

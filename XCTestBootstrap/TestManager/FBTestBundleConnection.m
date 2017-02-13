@@ -157,7 +157,9 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   }];
 
   if (!waitSuccess) {
-    XCTestBootstrapError *error = [XCTestBootstrapError describe:@"Timeout establishing connection"];
+    XCTestBootstrapError *error = [[XCTestBootstrapError
+      describe:@"Timeout establishing connection"]
+      code:XCTestBootstrapErrorCodeStartupTimeout];
     return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
   }
   if (self.state == FBTestBundleConnectionStateResultAvailable) {
