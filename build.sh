@@ -1,9 +1,23 @@
 #!/bin/bash
 
 set -e
+set -o pipefail
+
+if hash xcpretty 2>/dev/null; then
+  HAS_XCPRETTY=true
+fi
 
 BUILD_DIRECTORY=build
 CLI_E2E_PATH=fbsimctl/cli-tests/executable-under-test
+
+function invoke_xcodebuild() {
+  local arguments=$@
+  if [[ -n $HAS_XCPRETTY ]]; then
+    NSUnbufferedIO=YES xcodebuild $arguments | xcpretty -c
+  else
+    xcodebuild $arguments
+  fi
+}
 
 function assert_xcode_version() {
   local version=$1
@@ -38,7 +52,7 @@ function framework_build() {
   local name=$1
   local output_directory=$2
 
-  xcodebuild \
+  invoke_xcodebuild \
     -project FBSimulatorControl.xcodeproj \
     -scheme $name \
     -sdk macosx \
@@ -63,7 +77,7 @@ function framework_install() {
 
 function framework_test() {
   local name=$1
-  xcodebuild \
+  invoke_xcodebuild \
     -project FBSimulatorControl.xcodeproj \
     -scheme $name \
     -sdk macosx \
@@ -131,7 +145,7 @@ function cli_build() {
   local output_directory=$2
   local script_directory=$1/Scripts
 
-  xcodebuild \
+  invoke_xcodebuild \
     -workspace $name/$name.xcworkspace \
     -scheme $name \
     -sdk macosx \
@@ -180,7 +194,7 @@ function cli_install() {
 
 function cli_framework_test() {
   NAME=$1
-  xcodebuild \
+  invoke_xcodebuild \
     -workspace $NAME/$NAME.xcworkspace \
     -scheme $NAME \
     -sdk macosx \

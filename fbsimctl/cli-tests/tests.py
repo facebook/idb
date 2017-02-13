@@ -250,7 +250,7 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             ]
             self.assertEqual(expected.sort(), actual.sort())
             actual = self.extractSimulatorSubjects(
-                webserver.get(iphone6.get_udid() + 'list'),
+                webserver.get(iphone6.get_udid() + '/list'),
             )
             expected = [iphone6.get_udid()]
 
