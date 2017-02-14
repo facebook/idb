@@ -406,32 +406,33 @@ extension Command : Parsable {
   }
 }
 
-extension Server : Parsable {
-  public static var parser: Parser<Server> {
-    return Parser
-      .alternative([
+extension ListenInterface : Parsable {
+  public static var parser: Parser<ListenInterface> {
+    return Parser<ListenInterface>
+      .accumulate(0, [
         self.httpParser,
         self.stdinParser,
       ])
-      .fallback(Server.empty)
   }
 
-  static var stdinParser: Parser<Server> {
-    return Parser<Server>
-      .ofFlag("stdin", Server.stdin, "Listen for commands on stdin")
+  static var stdinParser: Parser<ListenInterface> {
+    return Parser<ListenInterface>
+      .ofFlag("stdin", ListenInterface(stdin: true, http: nil), "Listen for commands on stdin")
   }
 
-  static var httpParser:  Parser<Server> {
-    return Parser<Server>
-      .ofFlagWithArg("http", portParser, "")
-      .fmap(Server.http)
+  static var httpParser:  Parser<ListenInterface> {
+    return Parser<ListenInterface>
+      .ofFlagWithArg("http", portParser, "The HTTP Port to listen on")
+      .fmap { ListenInterface(stdin: false, http: $0) }
   }
 
   private static var portParser: Parser<UInt16> {
     return Parser<Int>.ofInt
       .fmap { UInt16($0) }
-      .describe(PrimitiveDesc(name: "port",
-                              desc: "Port number (16-bit unsigned integer)."))
+      .describe(PrimitiveDesc(
+        name: "port",
+        desc: "Port number (16-bit unsigned integer).")
+    )
   }
 }
 
@@ -587,8 +588,8 @@ extension Action : Parsable {
   }
 
   static var listenParser: Parser<Action> {
-    return Parser<Server>
-      .ofCommandWithArg(EventName.Listen.rawValue, Server.parser)
+    return Parser<ListenInterface>
+      .ofCommandWithArg(EventName.Listen.rawValue, ListenInterface.parser)
       .fmap { Action.listen($0) }
       .sectionize("listen", "Action: Listen", "")
   }

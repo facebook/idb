@@ -167,7 +167,7 @@ struct ActionRunner : Runner {
       return ListDeviceSetsRunner(context: context).run()
     case .listen(let server):
       let context = self.context.replace((server, query))
-      return ServerRunner(context: context).run()
+      return ListenRunner(context: context).run()
     case .create(let configuration):
       let context = self.context.replace(configuration)
       return SimulatorCreationRunner(context: context).run()
@@ -190,11 +190,11 @@ struct ActionRunner : Runner {
   }
 }
 
-struct ServerRunner : Runner, CommandPerformer {
-  let context: iOSRunnerContext<(Server, FBiOSTargetQuery)>
+struct ListenRunner : Runner, CommandPerformer {
+  let context: iOSRunnerContext<(ListenInterface, FBiOSTargetQuery)>
 
   func run() -> CommandResult {
-    let relay = SynchronousRelay(relay: self.baseRelay, reporter: self.context.reporter) {
+    let relay = SynchronousRelay(relay: self.relay, reporter: self.context.reporter) {
       self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
     }
     let result = RelayRunner(relay: relay).run()
@@ -202,18 +202,18 @@ struct ServerRunner : Runner, CommandPerformer {
     return result
   }
 
-  var baseRelay: Relay { get {
-    switch self.context.value.0 {
-    case .empty:
-      return EmptyRelay()
-    case .stdin:
-      let commandBuffer = LineBuffer(performer: self, reporter: self.context.reporter)
-      return FileHandleRelay(commandBuffer: commandBuffer)
-    case .http(let portNumber):
-      let query = self.context.value.1
+  var relay: Relay { get {
+    let (interface, query) = self.context.value
+    var relays: [Relay] = []
+    if let httpPort = interface.http {
       let performer = ActionPerformer(commandPerformer: self, configuration: self.context.configuration, query: query, format: self.context.format)
-      return HttpRelay(portNumber: portNumber, performer: performer)
+      relays.append(HttpRelay(portNumber: httpPort, performer: performer))
     }
+    if interface.stdin {
+      let commandBuffer = LineBuffer(performer: self, reporter: self.context.reporter)
+      relays.append(FileHandleRelay(commandBuffer: commandBuffer))
+    }
+    return CompositeRelay(relays: relays)
   }}
 
   func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()> {

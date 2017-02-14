@@ -18,15 +18,26 @@ protocol Relay {
 }
 
 /**
- A Relay that does nothing
+ A Relay that composes multiple relays.
  */
-class EmptyRelay : Relay {
-  func start() {
+class CompositeRelay : Relay {
+  let relays: [Relay]
 
+  init(relays: [Relay]) {
+    self.relays = relays
   }
 
-  func stop() {
+  func start() throws {
+    for relay in self.relays {
+      try relay.start()
+    }
+  }
 
+  func stop() throws {
+    for relay in self.relays {
+      // We want to stop all relays, so ignoring error propogation will ensure we clean up all of them.
+      try? relay.stop()
+    }
   }
 }
 
