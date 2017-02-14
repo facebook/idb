@@ -99,18 +99,7 @@ extension ActionPerformer {
   }
 
   func runWithSingleSimulator<A>(_ query: FBiOSTargetQuery, action: (FBSimulator) throws -> A) throws -> A {
-    let targets = self.commandPerformer.runnerContext(HttpEventReporter()).query(query)
-    if targets.count > 1 {
-      throw QueryError.TooManyMatches(targets, 1)
-    }
-    guard let target = targets.first else {
-      throw QueryError.NoMatches
-    }
-    guard let simulator = target as? FBSimulator else {
-      let expected = FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType.simulator).first!
-      let actual = FBiOSTargetTypeStringsFromTargetType(target.targetType).first!
-      throw QueryError.WrongTarget(expected, actual)
-    }
+    let simulator = try self.commandPerformer.runnerContext(HttpEventReporter()).querySingleSimulator(query)
     var result: A? = nil
     var error: Error? = nil
     DispatchQueue.main.sync {

@@ -70,6 +70,22 @@ struct iOSRunnerContext<A> {
       return FBiOSTargetComparison(left, right) == ComparisonResult.orderedDescending
     }
   }
+
+  func querySingleSimulator(_ query: FBiOSTargetQuery) throws -> FBSimulator {
+    let targets = self.query(query)
+    if targets.count > 1 {
+      throw QueryError.TooManyMatches(targets, 1)
+    }
+    guard let target = targets.first else {
+      throw QueryError.NoMatches
+    }
+    guard let simulator = target as? FBSimulator else {
+      let expected = FBiOSTargetTypeStringsFromTargetType(FBiOSTargetType.simulator).first!
+      let actual = FBiOSTargetTypeStringsFromTargetType(target.targetType).first!
+      throw QueryError.WrongTarget(expected, actual)
+    }
+    return simulator
+  }
 }
 
 struct BaseCommandRunner : Runner {
