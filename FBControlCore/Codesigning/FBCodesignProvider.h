@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBCodesignProvider <NSObject>
 
 /**
- Requests that the reciver codesigns a bundle.
+ Requests that the receiver codesigns a bundle. This only signs the main bundle, not any bundles nested within.
  Implementors can provide an error if one occurs.
 
  @param bundlePath path to bundle that should be signed.
@@ -25,6 +25,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if operation was successful
  */
 - (BOOL)signBundleAtPath:(NSString *)bundlePath error:(NSError **)error;
+
+/**
+ Requests that the receiver codesigns a bundle and all bundles within its Frameworks directory.
+ Implementors can provide an error if one occurs.
+
+ @param bundlePath path to bundle that should be signed.
+ @param error an error out for any error that occurs.
+ @return YES if operation was successful
+ */
+- (BOOL)recursivelySignBundleAtPath:(NSString *)bundlePath error:(NSError **)error;
 
 /**
  Attempts to fetch the CDHash of a bundle.

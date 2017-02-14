@@ -36,7 +36,7 @@ struct iOSActionProvider {
       return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
         let (extractedAppPath, cleanupDirectory) = try FBApplicationDescriptor.findOrExtract(atPath: appPath)
         if codeSign {
-          try FBCodesignProvider.codeSignCommandWithAdHocIdentity().signBundle(atPath: extractedAppPath)
+          try FBCodesignProvider.codeSignCommandWithAdHocIdentity().recursivelySignBundle(atPath: extractedAppPath)
         }
         try target.installApplication(withPath: extractedAppPath)
         if let cleanupDirectory = cleanupDirectory {
