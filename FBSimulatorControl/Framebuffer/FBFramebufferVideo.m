@@ -630,11 +630,13 @@ static const OSType FBFramebufferPixelFormat = kCVPixelFormatType_32ARGB;
     return YES;
   }
 
-  // Finish writing then detach
-  [self.logger log:@"Finishing Writing in Video Writer"];
-  [self.writer finishWriting];
+  // Detach the Consumer first, we don't want to send any more Damage Rects.
+  // If a Damage Rect send races with finishWriting, a crash can occur.
   [self.logger log:@"Detaching Consumer in Video Writer"];
   [self.renderable detachConsumer:self.writer];
+  // Now there are no more incoming rects, tear down the video encoding.
+  [self.logger log:@"Finishing Writing in Video Writer"];
+  [self.writer finishWriting];
 
   return YES;
 }
