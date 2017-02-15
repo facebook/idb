@@ -117,12 +117,12 @@ public indirect enum JSON {
     }
   }
 
-  func serializeToString(_ pretty: Bool) throws -> NSString {
+  func serializeToString(_ pretty: Bool) throws -> String {
     do {
       let writingOptions = pretty ? JSONSerialization.WritingOptions.prettyPrinted : JSONSerialization.WritingOptions()
       let jsonObject = try self.decodeContainer()
       let data = try JSONSerialization.data(withJSONObject: jsonObject, options: writingOptions)
-      guard let string = NSString(data: data, encoding: String.Encoding.utf8.rawValue) else {
+      guard let string = String(data: data, encoding: String.Encoding.utf8) else {
         throw JSONError.stringifying(data)
       }
       return string

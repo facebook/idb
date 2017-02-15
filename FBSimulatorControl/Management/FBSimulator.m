@@ -130,6 +130,11 @@
   return FBiOSTargetTypeSimulator;
 }
 
+- (NSString *)architecture
+{
+  return self.configuration.architecture;
+}
+
 - (id<FBControlCoreConfiguration_Device>)deviceConfiguration
 {
   return self.configuration.device;

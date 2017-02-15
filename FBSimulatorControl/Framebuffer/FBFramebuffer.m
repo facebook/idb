@@ -338,6 +338,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
     return nil;
   }
 
+  _framebufferService = framebufferService;
   _backingStoreGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one sink:frameSink queue:clientQueue logger:logger];
 
   return self;
@@ -359,7 +360,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 - (instancetype)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup
 {
   [super stopListeningWithTeardownGroup:teardownGroup];
-  [FBFramebufferSurfaceClient detachFromFramebufferService:self.framebufferService];
+  [self.framebufferService unregisterClient:self];
   _framebufferService = nil;
   return self;
 }
@@ -369,6 +370,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   // We recieve the backing store on the first surface.
   if (self.state == FBSimulatorFramebufferStateStarting) {
     self.state = FBSimulatorFramebufferStateRunning;
+    [self.backingStoreGenerator firstFrameWithBackingStore:backingStore];
+  } else if (self.state == FBSimulatorFramebufferStateRunning) {
     [self.backingStoreGenerator backingStoreDidUpdate:backingStore];
   }
 }

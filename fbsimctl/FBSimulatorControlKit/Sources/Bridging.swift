@@ -111,6 +111,7 @@ extension FBiOSTargetQuery : Accumulator {
     return self
       .udids(Array(other.udids))
       .states(other.states)
+      .architectures(Array(other.architectures))
       .targetType(targetType)
       .devices(deviceArray)
       .osVersions(osVersionsArray)
@@ -126,6 +127,7 @@ extension FBiOSTargetFormat {
       FBiOSTargetFormatDeviceName,
       FBiOSTargetFormatOSVersion,
       FBiOSTargetFormatState,
+      FBiOSTargetFormatArchitecture,
       FBiOSTargetFormatProcessIdentifier,
       FBiOSTargetFormatContainerApplicationProcessIdentifier,
     ]

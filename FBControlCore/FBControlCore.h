@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationDescriptor.h>
+#import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBASLParser.h>
 #import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
@@ -41,6 +42,7 @@
 #import <FBControlCore/FBiOSTargetPredicates.h>
 #import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBLineBuffer.h>
 #import <FBControlCore/FBLocalizationOverride.h>
 #import <FBControlCore/FBLogSearch.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>

@@ -21,12 +21,11 @@ public struct Configuration {
 }
 
 /**
- Options for Creating a Server for listening to commands on.
+ Options for Listening on an Interface.
  */
-public enum Server {
-  case empty
-  case stdin
-  case http(in_port_t)
+public struct ListenInterface {
+  let stdin: Bool
+  let http: in_port_t?
 }
 
 /**
@@ -76,7 +75,7 @@ public enum Action {
   case list
   case listApps
   case listDeviceSets
-  case listen(Server)
+  case listen(ListenInterface)
   case open(URL)
   case record(Bool)
   case relaunch(FBApplicationLaunchConfiguration)
@@ -145,6 +144,55 @@ extension Configuration : Accumulator {
     return Configuration(outputOptions: query.outputOptions, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: deviceSetPath)
   }
 }
+
+extension ListenInterface : Equatable {}
+public func == (left: ListenInterface, right: ListenInterface) -> Bool {
+  return left.stdin == right.stdin && left.http == right.http
+}
+
+extension ListenInterface : Accumulator {
+  public init() {
+    self.stdin = false
+    self.http = nil
+  }
+
+  public static var identity: ListenInterface { get {
+    return ListenInterface()
+  }}
+
+  public func append(_ other: ListenInterface) -> ListenInterface {
+    return ListenInterface(
+      stdin: other.stdin ? other.stdin : self.stdin,
+      http: other.http ?? self.http
+    )
+  }
+}
+
+extension ListenInterface : EventReporterSubject {
+  public var jsonDescription: JSON { get {
+    var httpValue = JSON.jNull
+    if let portNumber = self.http {
+      httpValue = JSON.jNumber(NSNumber(integerLiteral: Int(portNumber)))
+    }
+
+    return JSON.jDictionary([
+      "stdin" : JSON.jNumber(NSNumber(booleanLiteral: self.stdin)),
+      "http" : httpValue
+    ])
+  }}
+
+  public var description: String { get {
+    var description = "Http: "
+    if let httpPort = self.http {
+      description += httpPort.description
+    } else {
+      description += "No"
+    }
+    description += " stdin: \(self.stdin)"
+    return description
+  }}
+}
+
 
 extension IndividualCreationConfiguration : Equatable {}
 public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
@@ -312,48 +360,6 @@ extension Action {
       return (EventName.Diagnose, nil)
     case .watchdogOverride(let bundleIDs, _):
       return (EventName.WatchdogOverride, StringsSubject(bundleIDs))
-    }
-  }}
-}
-
-extension Server : Equatable { }
-public func == (left: Server, right: Server) -> Bool {
-  switch (left, right) {
-  case (.empty, .empty):
-    return true
-  case (.stdin, .stdin):
-    return true
-  case (.http(let leftPort), .http(let rightPort)):
-    return leftPort == rightPort
-  default:
-    return false
-  }
-}
-
-extension Server : EventReporterSubject {
-  public var jsonDescription: JSON { get {
-    switch self {
-    case .empty:
-      return JSON.jDictionary([
-        "type" : JSON.jString("empty")
-      ])
-    case .stdin:
-      return JSON.jDictionary([
-        "type" : JSON.jString("stdin")
-      ])
-    case .http(let port):
-      return JSON.jDictionary([
-        "type" : JSON.jString("http"),
-        "port" : JSON.jNumber(NSNumber(value: Int32(port) as Int32))
-      ])
-    }
-  }}
-
-  public var description: String { get {
-    switch self {
-    case .empty: return "empty"
-    case .stdin: return "stdin"
-    case .http(let port): return "HTTP: Port \(port)"
     }
   }}
 }

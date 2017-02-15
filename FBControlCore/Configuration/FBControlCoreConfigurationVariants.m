@@ -9,6 +9,8 @@
 
 #import "FBControlCoreConfigurationVariants.h"
 
+#import "FBArchitecture.h"
+
 @implementation FBControlCoreConfigurationVariant_Base
 
 #pragma mark NSCoding
@@ -142,12 +144,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7";
+  return FBArchitectureArmv7;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -166,12 +168,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7s";
+  return FBArchitectureArmv7s;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -190,12 +192,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -214,12 +216,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -238,12 +240,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -262,12 +264,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -286,12 +288,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -310,12 +312,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -334,12 +336,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -353,7 +355,7 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -363,7 +365,7 @@
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -415,12 +417,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7";
+  return FBArchitectureArmv7;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -440,12 +442,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7";
+  return FBArchitectureArmv7;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -464,12 +466,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -488,12 +490,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -513,12 +515,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -537,12 +539,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -561,12 +563,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -618,12 +620,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"arm64";
+  return FBArchitectureArm64;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"x86_64";
+  return FBArchitectureX86_64;
 }
 
 @end
@@ -675,12 +677,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7";
+  return FBArchitectureArmv7;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -699,12 +701,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7";
+  return FBArchitectureArmv7;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -723,12 +725,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7";
+  return FBArchitectureArmv7;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -747,12 +749,12 @@
 
 - (NSString *)deviceArchitecture
 {
-  return @"armv7";
+  return FBArchitectureArmv7;
 }
 
 - (NSString *)simulatorArchitecture
 {
-  return @"i386";
+  return FBArchitectureI386;
 }
 
 @end
@@ -1201,11 +1203,11 @@
 + (NSDictionary<NSString *, NSSet<NSString *> *> *)baseArchToCompatibleArch
 {
   return @{
-    @"arm64" : [NSSet setWithArray:@[@"arm64", @"armv7s", @"armv7"]],
-    @"armv7s" : [NSSet setWithArray:@[@"armv7s", @"armv7"]],
-    @"armv7" : [NSSet setWithArray:@[@"armv7"]],
-    @"i386" : [NSSet setWithObject:@"i386"],
-    @"x86_64" : [NSSet setWithArray:@[@"x86_64", @"i386"]],
+    FBArchitectureArm64 : [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
+    FBArchitectureArmv7s : [NSSet setWithArray:@[FBArchitectureArmv7s, FBArchitectureArmv7]],
+    FBArchitectureArmv7 : [NSSet setWithArray:@[FBArchitectureArmv7]],
+    FBArchitectureI386 : [NSSet setWithObject:FBArchitectureI386],
+    FBArchitectureX86_64 : [NSSet setWithArray:@[FBArchitectureX86_64, FBArchitectureI386]],
   };
 }
 

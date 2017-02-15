@@ -10,8 +10,6 @@
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
 
-#import <FBControlCore/FBControlCore.h>
-
 #include <dlfcn.h>
 
 #import "FBDeviceControlError.h"
@@ -154,7 +152,7 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
     self->_modelName = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));
     self->_systemVersion = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("ProductVersion")));
     self->_productType = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("ProductType")));
-    self->_architechture = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("CPUArchitecture")));
+    self->_architecture = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("CPUArchitecture")));
 
     NSString *osVersion = [FBAMDevice osVersionForDevice:device];
     self->_deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[self->_productType];

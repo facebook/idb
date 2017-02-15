@@ -39,6 +39,11 @@ extern NSString *const FBiOSTargetFormatOSVersion;
 extern NSString *const FBiOSTargetFormatState;
 
 /**
+ The Architecture of the Target.
+ */
+extern NSString *const FBiOSTargetFormatArchitecture;
+
+/**
  The Process Identifier of the Target where applicable.
  */
 extern NSString *const FBiOSTargetFormatProcessIdentifier;

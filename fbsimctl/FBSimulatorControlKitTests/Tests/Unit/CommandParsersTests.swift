@@ -20,6 +20,7 @@ class FBiOSTargetFormatParserTests : XCTestCase {
       (["--device-name"], FBiOSTargetFormat(fields: [FBiOSTargetFormatDeviceName])),
       (["--os"], FBiOSTargetFormat(fields: [FBiOSTargetFormatOSVersion])),
       (["--state"], FBiOSTargetFormat(fields: [FBiOSTargetFormatState])),
+      (["--arch"], FBiOSTargetFormat(fields: [FBiOSTargetFormatArchitecture])),
       (["--pid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatProcessIdentifier])),
       (["--container_pid"], FBiOSTargetFormat(fields: [FBiOSTargetFormatContainerApplicationProcessIdentifier]))
     ])
@@ -140,6 +141,11 @@ let validQueries: [([String], FBiOSTargetQuery)] = [
   (["--state=booted"], FBiOSTargetQuery.simulatorStates([.booted])),
   (["--state=booting"], FBiOSTargetQuery.simulatorStates([.booting])),
   (["--state=shutting-down"], FBiOSTargetQuery.simulatorStates([.shuttingDown])),
+  (["--arch=i386"], FBiOSTargetQuery.architectures([FBArchitectureI386])),
+  (["--arch=x86_64"], FBiOSTargetQuery.architectures([FBArchitectureX86_64])),
+  (["--arch=armv7"], FBiOSTargetQuery.architectures([FBArchitectureArmv7])),
+  (["--arch=armv7s"], FBiOSTargetQuery.architectures([FBArchitectureArmv7s])),
+  (["--arch=arm64"], FBiOSTargetQuery.architectures([FBArchitectureArm64])),
   (["--simulators"], FBiOSTargetQuery.targetType(FBiOSTargetType.simulator)),
   (["--devices"], FBiOSTargetQuery.targetType(FBiOSTargetType.device)),
   (["--simulators", "--devices", "iPhone 6s"], FBiOSTargetQuery.targetType(FBiOSTargetType.simulator.union(FBiOSTargetType.device)).devices([FBControlCoreConfiguration_Device_iPhone6S()])),
@@ -148,6 +154,7 @@ let validQueries: [([String], FBiOSTargetQuery)] = [
   (["0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"], FBiOSTargetQuery.udids(["0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"])),
   (["iPhone 5", "iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5(), FBControlCoreConfiguration_Device_iPad2()])),
   (["--state=creating", "--state=booting", "--state=shutdown"], FBiOSTargetQuery.simulatorStates([.creating, .booting, .shutdown])),
+  (["--arch=i386", "--arch=armv7s"], FBiOSTargetQuery.architectures([FBArchitectureI386, FBArchitectureArmv7s])),
   (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8", "0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8", "0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"])),
   (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone6()]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
 ]
@@ -186,7 +193,7 @@ let validActions: [([String], Action)] = [
   (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.application, since: Date(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
   (["diagnose"], Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["erase"], Action.erase),
-  (["install", Fixtures.application.path], Action.install(Fixtures.application.path)),
+  (["install", Fixtures.application.path], Action.install(Fixtures.application.path, false)),
   (["keyboard_override"], Action.keyboardOverride),
   (["launch", "--stderr", "com.foo.bar", "--foo", "-b", "-a", "-r"], Action.launchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: ["--foo", "-b", "-a", "-r"], environment: [:], output: try! FBProcessOutputConfiguration(stdOut: NSNull(), stdErr: FBProcessOutputToFileDefaultLocation)))),
   (["launch", "com.foo.bar"], Action.launchApp(FBApplicationLaunchConfiguration(bundleID: "com.foo.bar", bundleName: nil, arguments: [], environment: [:], output: FBProcessOutputConfiguration.outputToDevNull()))),
@@ -201,9 +208,11 @@ let validActions: [([String], Action)] = [
   (["list"], Action.list),
   (["list_apps"], Action.listApps),
   (["list_device_sets"], Action.listDeviceSets),
-  (["listen", "--stdin"], Action.listen(Server.stdin)),
-  (["listen", "--http", "43"], Action.listen(Server.http(43))),
-  (["listen"], Action.listen(Server.empty)),
+  (["listen", "--stdin"], Action.listen(ListenInterface(stdin: true, http: nil))),
+  (["listen", "--http", "43"], Action.listen(ListenInterface(stdin: false, http: 43))),
+  (["listen", "--http", "43", "--stdin"], Action.listen(ListenInterface(stdin: true, http: 43))),
+  (["listen", "--stdin", "--http", "43"], Action.listen(ListenInterface(stdin: true, http: 43))),
+  (["listen"], Action.listen(ListenInterface(stdin: false, http: nil))),
   (["open", "aoo://bar/baz"], Action.open(URL(string: "aoo://bar/baz")!)),
   (["open", "http://facebook.com"], Action.open(URL(string: "http://facebook.com")!)),
   (["record", "start"], Action.record(true)),
@@ -266,7 +275,7 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["boot"], ["listen", "--http", "1000"], ["shutdown"],
     ]
-    let actions: [Action] = [Action.list, Action.boot(nil), Action.listen(Server.http(1000)), Action.shutdown]
+    let actions: [Action] = [Action.list, Action.boot(nil), Action.listen(ListenInterface(stdin: false, http: 1000)), Action.shutdown]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
@@ -278,7 +287,7 @@ class CommandParserTests : XCTestCase {
       .withOptions([.enableDirectLaunch, .awaitServices])
       .withFramebuffer(FBFramebufferConfiguration.default())
     let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
-    let actions: [Action] = [Action.list, Action.create(CreationSpecification.iPhone6Configuration), Action.boot(launchConfiguration), Action.listen(Server.http(8090)), Action.shutdown, diagnoseAction]
+    let actions: [Action] = [Action.list, Action.create(CreationSpecification.iPhone6Configuration), Action.boot(launchConfiguration), Action.listen(ListenInterface(stdin: false, http: 8090)), Action.shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 

@@ -49,6 +49,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *osVersionString;
 
 /**
+ A String Representation of the Instruction Set Architecture of the Simulator. Must not be nil.
+ */
+@property (nonatomic, copy, readonly) NSString *architecture;
+
+/**
  The Location to store auxillary files in.
  Auxillary files are stored per-simulator, so will be nested inside directories for each Simulator.
  If no path is provided, a default Auxillary directory inside the Simulator's data directory will be used.

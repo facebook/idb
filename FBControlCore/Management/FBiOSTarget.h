@@ -86,6 +86,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) FBiOSTargetType targetType;
 
 /**
+ The Architecture of the iOS Target
+ */
+@property (nonatomic, copy, readonly) NSString *architecture;
+
+/**
  Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
  */
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;

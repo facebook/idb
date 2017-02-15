@@ -28,6 +28,15 @@
   }];
 }
 
++ (NSPredicate *)architectures:(NSArray<NSString *> *)architectures
+{
+  NSSet<NSString *> *architecturesSet = [NSSet setWithArray:architectures];
+
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
+    return [architecturesSet containsObject:candidate.architecture];
+  }];
+}
+
 + (NSPredicate *)targetType:(FBiOSTargetType)targetType
 {
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {

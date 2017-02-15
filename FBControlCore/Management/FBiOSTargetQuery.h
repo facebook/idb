@@ -41,11 +41,20 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Query that matches the given States.
 
- @param states the UDIDs to match against.
+ @param states the States to match against.
  @return a new Target Query.
  */
 + (instancetype)states:(NSIndexSet *)states;
 - (instancetype)states:(NSIndexSet *)states;
+
+/**
+ A Query that matches the given Architectures.
+
+ @param architectures the Architectures to match against.
+ @return a new Target Query.
+ */
++ (instancetype)architectures:(NSArray<NSString *> *)architectures;
+- (instancetype)architectures:(NSArray<NSString *> *)architectures;
 
 /**
  A Query that matches the given Target Tyep.
@@ -110,6 +119,12 @@ NS_ASSUME_NONNULL_BEGIN
  An Empty Set means that no State filtering will occur.
  */
 @property (nonatomic, readonly, copy) NSIndexSet *states;
+
+/**
+ The Architectures to Match against.
+ An Empty Set means that no Architecture filtering will occur.
+ */
+@property (nonatomic, readonly, copy) NSSet<NSString *> *architectures;
 
 /**
  The Target Types to match against.
