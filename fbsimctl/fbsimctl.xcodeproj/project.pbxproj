@@ -148,6 +148,8 @@
 		AAA6EC581C96A5DD0083A62C /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Subjects.swift; sourceTree = "<group>"; };
 		AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandRunners.swift; sourceTree = "<group>"; };
+		AAC179691E52F33E00BAE9F2 /* FBSimulatorControlKit-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "FBSimulatorControlKit-Debug.xcconfig"; sourceTree = "<group>"; };
+		AAC1796A1E52F33E00BAE9F2 /* FBSimulatorControlKit-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "FBSimulatorControlKit-Release.xcconfig"; sourceTree = "<group>"; };
 		AACF9F521C46E5C100B17E82 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBSimulatorControlKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlKit.h; sourceTree = "<group>"; };
@@ -305,8 +307,10 @@
 			isa = PBXGroup;
 			children = (
 				AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */,
-				AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */,
 				AAE35AC61C2865C10073CC70 /* Info.plist */,
+				AAC179691E52F33E00BAE9F2 /* FBSimulatorControlKit-Debug.xcconfig */,
+				AAC1796A1E52F33E00BAE9F2 /* FBSimulatorControlKit-Release.xcconfig */,
+				AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */,
 				AA1B7F5A1C2867EE0038C6A5 /* Sources */,
 			);
 			path = FBSimulatorControlKit;
@@ -583,7 +587,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
@@ -637,14 +640,14 @@
 		};
 		AAE35AD41C2865C10073CC70 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */;
+			baseConfigurationReference = AAC179691E52F33E00BAE9F2 /* FBSimulatorControlKit-Debug.xcconfig */;
 			buildSettings = {
 			};
 			name = Debug;
 		};
 		AAE35AD51C2865C10073CC70 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA7D2F5E1D33807F00C7C6CF /* FBSimulatorControlKit.xcconfig */;
+			baseConfigurationReference = AAC1796A1E52F33E00BAE9F2 /* FBSimulatorControlKit-Release.xcconfig */;
 			buildSettings = {
 			};
 			name = Release;

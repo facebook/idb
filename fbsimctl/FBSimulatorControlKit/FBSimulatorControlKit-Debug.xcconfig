@@ -1,0 +1,4 @@
+// Import Shared FBSimulatorControlKit Config
+#include "FBSimulatorControlKit.xcconfig"
+
+SWIFT_OPTIMIZATION_LEVEL = -Onone
