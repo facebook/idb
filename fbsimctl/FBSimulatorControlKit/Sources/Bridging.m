@@ -224,9 +224,9 @@
 
 @implementation HttpServer
 
-+ (instancetype)serverWithPort:(in_port_t)port routes:(NSArray<HttpRoute *> *)routes;
++ (instancetype)serverWithPort:(in_port_t)port routes:(NSArray<HttpRoute *> *)routes logger:(nullable id<FBControlCoreLogger>)logger
 {
-  GCDWebServer *server = [HttpServer webServerWithRoutes:routes];
+  GCDWebServer *server = [HttpServer webServerWithRoutes:routes logger:logger];
   return [[self alloc] initWithPort:port server:server];
 }
 
@@ -257,7 +257,7 @@
   [self.server stop];
 }
 
-+ (GCDWebServer *)webServerWithRoutes:(NSArray<HttpRoute *> *)routes
++ (GCDWebServer *)webServerWithRoutes:(NSArray<HttpRoute *> *)routes logger:(nullable id<FBControlCoreLogger>)logger
 {
   [GCDWebServer setLogLevel:5];
   GCDWebServer *webServer = [[GCDWebServer alloc] init];
@@ -265,6 +265,9 @@
     [webServer addHandlerForMethod:route.method pathRegex:route.path requestClass:GCDWebServerDataRequest.class processBlock:^ GCDWebServerResponse *(GCDWebServerDataRequest *gcdRequest) {
       NSArray<NSString *> *components = [gcdRequest.path componentsSeparatedByString:@"/"];
       NSDictionary<NSString *, NSString *> *query = [HttpServer queryForRequest:gcdRequest];
+      if (logger) {
+        [logger logFormat:@"%@: %@", route.method, gcdRequest.path];
+      }
 
       HttpRequest *request = [[HttpRequest alloc] initWithBody:gcdRequest.data pathComponents:components query:query];
       HttpResponse *response = [route.handler handleRequest:request];

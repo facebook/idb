@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class ControlCoreLoggerBridge;
+@protocol FBControlCoreLogger;
 
 /**
  Bridging Preprocessor Macros to values, so that they can be read in Swift.
@@ -178,8 +179,11 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a Webserver.
 
  @param port the port to bind on.
+ @param routes the routes to mount in the WebServer.
+ @param logger an optional logger to use for logging requests.
+ @return a new HttpServer instance.
  */
-+ (instancetype)serverWithPort:(in_port_t)port routes:(NSArray<HttpRoute *> *)routes;
++ (instancetype)serverWithPort:(in_port_t)port routes:(NSArray<HttpRoute *> *)routes logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Starts the Webserver.

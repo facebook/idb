@@ -299,10 +299,10 @@ class HttpRelay : Relay {
   init(portNumber: in_port_t, performer: ActionPerformer) {
     self.portNumber = portNumber
     self.performer = performer
-
     self.httpServer = HttpServer(
       port: portNumber,
-      routes: HttpRelay.actionRoutes.flatMap { $0.httpRoutes(performer) }
+      routes: HttpRelay.actionRoutes.flatMap { $0.httpRoutes(performer) },
+      logger: FBControlCoreGlobalConfiguration.defaultLogger()
     )
   }
 
