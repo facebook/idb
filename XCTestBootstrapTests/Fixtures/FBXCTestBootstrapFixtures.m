@@ -33,4 +33,14 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"junitResult1" ofType:@"xml"];
 }
 
++ (NSString *)sampleXCTestRunPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"Sample_iphonesimulator10.1-i386" ofType:@"xctestrun"];
+}
+
++ (NSString *)emptyXCTestRunPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"Empty" ofType:@"xctestrun"];
+}
+
 @end

@@ -50,9 +50,34 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) NSTimeInterval timeout;
 
 /**
+ A Dictionary, mapping Strings to Strings of the Environment to set when the tests are launched.
+ */
+@property (nonatomic, copy, readonly, nullable) NSDictionary<NSString *, NSString *> *testEnvironment;
+
+/*
+ Run only these tests. Format: "className/methodName"
+ */
+@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToRun;
+
+/*
+ Skip these tests. Format: "className/methodName"
+ */
+@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToSkip;
+
+/**
  Determines whether should initialize for UITesting
  */
 @property (nonatomic, assign, readonly) BOOL shouldInitializeUITesting;
+
+/*
+ Bundle ID of to the target application for UI tests
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationBundleID;
+
+/*
+ Path to the target application for UI tests
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
 
 /**
  Adds application launch configuration
@@ -85,6 +110,47 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withUITesting:(BOOL)shouldInitializeUITesting;
+
+/**
+ Adds path to the target application for UI tests.
+
+ @param targetApplicationPath path to the target application
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
+
+/**
+ Adds path to the target application for UI tests.
+
+ @param targetApplicationBundleID bundle ID of to the target application
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ Adds test environment dictionary, mapping Strings to Strings of the Environment to
+ set when the tests are launched.
+
+ @param testEnvironment bundle ID of to the target application
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment;
+
+/**
+ Adds tests to skip.
+
+ @param testsToSkip tests to skip
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
+
+/**
+ Adds tests to run.
+
+ @param testsToRun tests to run
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
 
 @end
 

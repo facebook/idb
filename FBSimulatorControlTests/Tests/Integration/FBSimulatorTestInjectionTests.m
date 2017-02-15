@@ -105,6 +105,35 @@
   XCTAssertEqualObjects(expected, actual);
 }
 
+- (void)testLaunchTestsViaXCTestRunFile
+{
+  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    NSLog(@"Skipping running -[%@ %@] since Xcode 8 or greater is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+    return;
+  }
+
+  NSError *error;
+  NSString *testRunPath = [FBSimulatorControlFixtures sampleXCTestRunPath];
+  FBXCTestRun *testRun = [[FBXCTestRun withTestRunFileAtPath:testRunPath] buildWithError:&error];
+  XCTAssertNil(error);
+
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+
+  for (FBXCTestRunTarget *target in testRun.targets) {
+    for (FBApplicationDescriptor *application in target.applications) {
+      id<FBInteraction> interaction = [simulator.interact installApplication:application];
+      [self assertInteractionSuccessful:interaction];
+    }
+    id<FBInteraction> interaction = [[simulator.interact
+      startTestWithLaunchConfiguration:target.testLaunchConfiguration reporter:self]
+      waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+    [self assertInteractionSuccessful:interaction];
+  }
+
+  XCTAssertEqualObjects(self.passedMethods, [NSSet setWithArray:(@[@"testInSampleTestsThatSucceeds", @"testInSampleUITestsThatSucceeds"])]);
+  XCTAssertEqualObjects(self.failedMethods, [NSSet setWithArray:(@[@"testInSampleTestsThatFails", @"testInSampleUITestsThatFails"])]);
+}
+
 #pragma mark -
 
 - (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path

@@ -33,7 +33,12 @@
 @property (nonatomic, copy) NSString *moduleName;
 @property (nonatomic, copy) NSString *testBundlePath;
 @property (nonatomic, copy) NSString *savePath;
+@property (nonatomic, copy) NSDictionary<NSString *, NSString *> *testEnvironment;
+@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
+@property (nonatomic, copy) NSString *targetApplicationBundleID;
+@property (nonatomic, copy) NSString *targetApplicationPath;
 @end
 
 @implementation FBTestConfigurationBuilder
@@ -68,9 +73,39 @@
   return self;
 }
 
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment
+{
+  self.testEnvironment = testEnvironment;
+  return self;
+}
+
+- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun
+{
+  self.testsToRun = testsToRun;
+  return self;
+}
+
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
+{
+  self.testsToSkip = testsToSkip;
+  return self;
+}
+
 - (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
 {
   self.shouldInitializeForUITesting = shouldInitializeForUITesting;
+  return self;
+}
+
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  self.targetApplicationPath = targetApplicationPath;
   return self;
 }
 
@@ -93,6 +128,10 @@
     testConfiguration.pathToXcodeReportingSocket = nil;
     testConfiguration.testsMustRunOnMainThread = self.shouldInitializeForUITesting;
     testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
+    testConfiguration.testsToSkip = self.testsToSkip.count ? self.testsToSkip : nil;
+    testConfiguration.testsToRun = self.testsToRun.count ? self.testsToRun : nil;
+    testConfiguration.targetApplicationPath = self.targetApplicationPath;
+    testConfiguration.targetApplicationBundleID = self.targetApplicationBundleID;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
     if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:error]) {
       return nil;

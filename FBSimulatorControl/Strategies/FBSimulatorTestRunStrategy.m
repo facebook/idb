@@ -81,9 +81,12 @@
     reporter:self.reporter
     logger:simulator.logger];
 
+  NSMutableDictionary<NSString *, NSString *> *environment = self.configuration.applicationLaunchConfiguration.environment.mutableCopy ?: [NSMutableDictionary dictionary];
+  [environment addEntriesFromDictionary:self.configuration.testEnvironment];
+
   FBTestManager *testManager = [testRunStrategy
     startTestManagerWithAttributes:self.configuration.applicationLaunchConfiguration.arguments
-    environment:self.configuration.applicationLaunchConfiguration.environment
+    environment:environment
     error:&innerError];
 
   if (!testManager) {

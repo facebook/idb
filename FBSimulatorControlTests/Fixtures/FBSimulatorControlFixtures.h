@@ -44,6 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSString *)JUnitXMLResult0Path;
 
+/**
+ A File Path to an xctestrun file.
+ */
++ (NSString *)sampleXCTestRunPath;
+
 @end
 
 /**

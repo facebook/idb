@@ -35,4 +35,14 @@
  */
 + (NSString *)JUnitXMLResult1Path;
 
+/**
+ A File Path to a sample xctestrun file.
+ */
++ (NSString *)sampleXCTestRunPath;
+
+/**
+ A File Path to an empty xctestrun file.
+ */
++ (NSString *)emptyXCTestRunPath;
+
 @end

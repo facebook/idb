@@ -39,10 +39,51 @@
 - (instancetype)withSessionIdentifier:(NSUUID *)sessionIdentifier;
 
 /**
+ Adds test environment dictionary, mapping Strings to Strings of the Environment to
+ set when the tests are launched.
+
+ @param testEnvironment test environment dictionary
+ @return builder
+ */
+- (instancetype)withTestEnvironment:(NSDictionary<NSString *, NSString *> *)testEnvironment;
+
+/**
+ Adds tests to run.
+
+ @param testsToRun tests to run
+ @return builder
+ */
+- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
+
+/**
+ Adds tests to skip.
+
+ @param testsToSkip tests to skip
+ @return builder
+ */
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
+
+/**
  @param shouldInitializeForUITesting determines whether should initialize for UITesting
  @return builder
  */
 - (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
+
+/**
+ Adds bundle ID of to the target application for UI tests.
+
+ @param targetApplicationBundleID bundle ID of to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ Adds path to the target application for UI tests.
+
+ @param targetApplicationPath path to the target application
+ @return builder
+ */
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath;
 
 /**
  @param error If there is an error, upon return contains an NSError object that describes the problem.
