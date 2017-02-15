@@ -28,6 +28,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)consumeEndOfFile;
 
+@end
+
+/**
+ Wraps FBFileDataConsumer Implementations with the ability to await EOF events.
+ */
+@interface FBAwaitableFileDataConsumer : NSObject<FBFileDataConsumer>
+
+/**
+ Creates an Awaitable File Data Consumer.
+
+ @param consumer the underlying consumer
+ @return a new Data Consumer.
+ */
++ (instancetype)consumerWithConsumer:(id<FBFileDataConsumer>)consumer;
+
 /**
  Await for the Consumer to finish consuming the input.
 

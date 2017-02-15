@@ -6,10 +6,49 @@
 #import "FBControlCoreError.h"
 #import "FBLineBuffer.h"
 
-static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval timeout, NSError **error)
+@interface FBAwaitableFileDataConsumer ()
+
+@property (nonatomic, strong, readonly) id<FBFileDataConsumer> consumer;
+@property (atomic, assign, readwrite) BOOL hasConsumedEOF;
+
+@end
+
+@implementation FBAwaitableFileDataConsumer
+
++ (instancetype)consumerWithConsumer:(id<FBFileDataConsumer>)consumer
+{
+  return [[self alloc] initWithConsumer:consumer];
+}
+
+- (instancetype)initWithConsumer:(id<FBFileDataConsumer>)consumer
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _consumer = consumer;
+  _hasConsumedEOF = NO;
+
+  return self;
+}
+
+- (void)consumeData:(NSData *)data
+{
+  NSAssert(self.hasConsumedEOF == NO, @"Has already consumed End-of-File");
+  [self.consumer consumeData:data];
+}
+
+- (void)consumeEndOfFile
+{
+  NSAssert(self.hasConsumedEOF == NO, @"Has already consumed End-of-File");
+  self.hasConsumedEOF = YES;
+}
+
+- (BOOL)awaitEndOfFileWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   BOOL success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return consumer.hasConsumedEOF;
+    return self.hasConsumedEOF;
   }];
   if (!success) {
     return [[FBControlCoreError
@@ -18,6 +57,8 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
   }
   return YES;
 }
+
+@end
 
 @interface FBLineFileDataConsumer ()
 
@@ -56,7 +97,6 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
 
 - (void)consumeData:(NSData *)data
 {
-  NSAssert(self.hasConsumedEOF == NO, @"Cannot consume data when EOF has been consumed");
   @synchronized (self) {
     [self.buffer appendData:data];
     [self dispatchAvailableLines];
@@ -65,7 +105,6 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
 
 - (void)consumeEndOfFile
 {
-  NSAssert(self.hasConsumedEOF == NO, @"Cannot consume EOF when EOF has been consumed");
   @synchronized (self) {
     [self dispatchAvailableLines];
     dispatch_async(self.queue, ^{
@@ -86,18 +125,6 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
     });
     line = [self.buffer consumeLineString];
   }
-}
-
-- (BOOL)hasConsumedEOF
-{
-  @synchronized (self) {
-    return self.consumer == nil;
-  }
-}
-
-- (BOOL)awaitEndOfFileWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  return awaitHasConsumedEOF(self, timeout, error);
 }
 
 @end
@@ -129,7 +156,7 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
 
 - (void)consumeData:(NSData *)data
 {
-  NSAssert(self.hasConsumedEOF == NO, @"Cannot consume data when EOF has been consumed");
+  NSAssert(self.finalData == nil, @"Cannot consume data when EOF has been consumed");
   @synchronized (self) {
     [self.mutableData appendData:data];
   }
@@ -137,7 +164,7 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
 
 - (void)consumeEndOfFile
 {
-  NSAssert(self.hasConsumedEOF == NO, @"Cannot consume EOF when EOF has been consumed");
+  NSAssert(self.finalData == nil, @"Cannot consume EOF when EOF has been consumed");
   @synchronized (self) {
     _finalData = [self.mutableData copy];
     _mutableData = nil;
@@ -149,18 +176,6 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
   @synchronized (self) {
     return self.finalData ?: [self.mutableData copy];
   }
-}
-
-- (BOOL)hasConsumedEOF
-{
-  @synchronized (self) {
-    return self.finalData != nil;
-  }
-}
-
-- (BOOL)awaitEndOfFileWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  return awaitHasConsumedEOF(self, timeout, error);
 }
 
 @end
@@ -201,21 +216,6 @@ static BOOL awaitHasConsumedEOF(id<FBFileDataConsumer> consumer, NSTimeInterval 
   for (id<FBFileDataConsumer> consumer in self.consumers) {
     [consumer consumeEndOfFile];
   }
-}
-
-- (BOOL)hasConsumedEOF
-{
-  for (id<FBFileDataConsumer> consumer in self.consumers) {
-    if (!consumer.hasConsumedEOF) {
-      return NO;
-    }
-  }
-  return YES;
-}
-
-- (BOOL)awaitEndOfFileWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  return awaitHasConsumedEOF(self, timeout, error);
 }
 
 @end
