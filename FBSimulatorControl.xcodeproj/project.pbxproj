@@ -331,6 +331,8 @@
 		AAD305201BD4D5B10047376E /* photo1.png in Resources */ = {isa = PBXBuildFile; fileRef = AAD3051E1BD4D5B10047376E /* photo1.png */; };
 		AAD414A61E4E204700815112 /* FBLineBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD414A41E4E204700815112 /* FBLineBuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAD414A71E4E204700815112 /* FBLineBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = AAD414A51E4E204700815112 /* FBLineBuffer.m */; };
+		AAD414AA1E4E2F3100815112 /* FBSocketReader.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD414A81E4E2F3100815112 /* FBSocketReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAD414AB1E4E2F3100815112 /* FBSocketReader.m in Sources */ = {isa = PBXBuildFile; fileRef = AAD414A91E4E2F3100815112 /* FBSocketReader.m */; };
 		AAD4978A1C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD497881C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAD4978B1C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.m in Sources */ = {isa = PBXBuildFile; fileRef = AAD497891C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.m */; };
 		AAD51E9F1C3ADECA00A763D0 /* FBSimulatorBootConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AAD51E9D1C3ADECA00A763D0 /* FBSimulatorBootConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1115,6 +1117,8 @@
 		AAD3051E1BD4D5B10047376E /* photo1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = photo1.png; sourceTree = "<group>"; };
 		AAD414A41E4E204700815112 /* FBLineBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBLineBuffer.h; sourceTree = "<group>"; };
 		AAD414A51E4E204700815112 /* FBLineBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLineBuffer.m; sourceTree = "<group>"; };
+		AAD414A81E4E2F3100815112 /* FBSocketReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSocketReader.h; sourceTree = "<group>"; };
+		AAD414A91E4E2F3100815112 /* FBSocketReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSocketReader.m; sourceTree = "<group>"; };
 		AAD497881C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBMutableSimulatorEventSink.h; sourceTree = "<group>"; };
 		AAD497891C50F14B00ABC1A7 /* FBMutableSimulatorEventSink.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBMutableSimulatorEventSink.m; sourceTree = "<group>"; };
 		AAD51E9D1C3ADECA00A763D0 /* FBSimulatorBootConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorBootConfiguration.h; sourceTree = "<group>"; };
@@ -2673,6 +2677,8 @@
 				AA391AD11CEF4CBC00817691 /* FBLocalizationOverride.m */,
 				AAF4C4DD1CDBA1A7004F4AF3 /* FBRunLoopSpinner.h */,
 				AAF4C4DE1CDBA1A7004F4AF3 /* FBRunLoopSpinner.m */,
+				AAD414A81E4E2F3100815112 /* FBSocketReader.h */,
+				AAD414A91E4E2F3100815112 /* FBSocketReader.m */,
 				AAD0DE011CEB064200C28B58 /* FBSubstringUtilities.h */,
 				AAD0DE021CEB064200C28B58 /* FBSubstringUtilities.m */,
 				AABBF31D1DAC0F9400E2B6AF /* FBTerminationHandle.h */,
@@ -2883,6 +2889,7 @@
 				EEBD60681C9062E900298A07 /* FBProcessFetcher.h in Headers */,
 				EEBD605F1C9062E900298A07 /* FBDiagnostic.h in Headers */,
 				EEBD607E1C9062E900298A07 /* FBControlCoreError.h in Headers */,
+				AAD414AA1E4E2F3100815112 /* FBSocketReader.h in Headers */,
 				AABBF31F1DAC0F9400E2B6AF /* FBTerminationHandle.h in Headers */,
 				AAAD5F7B1D5475DE008D3870 /* FBBatchLogSearch.h in Headers */,
 				AABBF3231DAC110000E2B6AF /* FBTaskBuilder.h in Headers */,
@@ -3474,6 +3481,7 @@
 				EEBD605E1C9062E900298A07 /* FBCrashLogInfo.m in Sources */,
 				EEBD605C1C9062E900298A07 /* FBASLParser.m in Sources */,
 				AAD0DE041CEB064200C28B58 /* FBSubstringUtilities.m in Sources */,
+				AAD414AB1E4E2F3100815112 /* FBSocketReader.m in Sources */,
 				AA4A7E2E1DD9F4EB001F9D8E /* FBFileReader.m in Sources */,
 				AA2942811D00AB0800880984 /* FBiOSTarget.m in Sources */,
 				AA84EFFF1C9FE162000CDA41 /* NSPredicate+FBControlCore.m in Sources */,
