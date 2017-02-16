@@ -6,6 +6,7 @@ from util import (
     WebServer,
     Defaults,
     Fixtures,
+    Metal,
     log,
     make_ipa,
 )
@@ -30,6 +31,7 @@ class FBSimctlTestCase(unittest.TestCase):
         self.methodName = methodName
         self.use_custom_set = use_custom_set
         self.fbsimctl = FBSimctl(fbsimctl_path, set_path)
+        self.metal = Metal()
 
     def tearDown(self):
         action = 'delete' if self.use_custom_set else 'shutdown'
@@ -300,6 +302,9 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
 
     def testBootsDirectly(self):
+        if self.metal.is_supported() is False:
+            log.info('Metal not supported, skipping testBootsDirectly')
+            return
         simulator = self.assertCreatesSimulator([self.device_type])
         self.assertEventSuccesful([simulator.get_udid(), 'boot', '--direct-launch'], 'boot')
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
@@ -360,6 +365,9 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
             shutil.rmtree(tmpdir, ignore_errors=True)
 
     def testRecordsVideo(self):
+        if self.metal.is_supported() is False:
+            log.info('Metal not supported, skipping testRecordsVideo')
+            return
         (simulator, _) = self.testLaunchesSystemApplication()
         arguments = [
             simulator.get_udid(), 'record', 'start',
