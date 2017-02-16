@@ -170,4 +170,25 @@
   XCTAssertTrue([fileManager fileExistsAtPath:stdOutDiagnostic.asPath]);
 }
 
+- (void)testCreateStdErrDiagnosticForSimulatorMultipleTimesCreatesUniqueLogFiles
+{
+  FBSimulator *simulator = [self assertObtainsSimulator];
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration defaultOutputToFile];
+  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch withOutput:output];
+
+  NSMutableSet *stdErrDiagnostics = [NSMutableSet set];
+  NSMutableSet *stdOutDiagnostics = [NSMutableSet set];
+
+  for (int i = 0; i < 3; i++) {
+    FBDiagnostic *diagnostic = nil;
+    [appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&diagnostic error:nil];
+    [stdErrDiagnostics addObject:diagnostic];
+    [appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&diagnostic error:nil];
+    [stdOutDiagnostics addObject:diagnostic];
+  }
+
+  XCTAssertEqual(stdErrDiagnostics.count, 3u);
+  XCTAssertEqual(stdOutDiagnostics.count, 3u);
+}
+
 @end
