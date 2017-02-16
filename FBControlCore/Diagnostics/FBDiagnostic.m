@@ -633,7 +633,7 @@
 - (BOOL)hasLogContent
 {
   NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:self.backingFilePath error:nil];
-  return attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
+  return attributes[NSFileType] == NSFileTypeRegular && attributes[NSFileSize] && [attributes[NSFileSize] unsignedLongLongValue] > 0;
 }
 
 - (BOOL)writeOutToFilePath:(NSString *)path error:(NSError **)error
