@@ -208,11 +208,12 @@ let validActions: [([String], Action)] = [
   (["list"], Action.list),
   (["list_apps"], Action.listApps),
   (["list_device_sets"], Action.listDeviceSets),
-  (["listen", "--stdin"], Action.listen(ListenInterface(stdin: true, http: nil))),
-  (["listen", "--http", "43"], Action.listen(ListenInterface(stdin: false, http: 43))),
-  (["listen", "--http", "43", "--stdin"], Action.listen(ListenInterface(stdin: true, http: 43))),
-  (["listen", "--stdin", "--http", "43"], Action.listen(ListenInterface(stdin: true, http: 43))),
-  (["listen"], Action.listen(ListenInterface(stdin: false, http: nil))),
+  (["listen", "--stdin"], Action.listen(ListenInterface(stdin: true, http: nil, hid: nil))),
+  (["listen", "--http", "43"], Action.listen(ListenInterface(stdin: false, http: 43, hid: nil))),
+  (["listen", "--hid", "44"], Action.listen(ListenInterface(stdin: false, http: nil, hid: 44))),
+  (["listen", "--http", "43", "--stdin"], Action.listen(ListenInterface(stdin: true, http: 43, hid: nil))),
+  (["listen", "--http", "43", "--hid", "44"], Action.listen(ListenInterface(stdin: false, http: 43, hid: 44))),
+  (["listen"], Action.listen(ListenInterface(stdin: false, http: nil, hid: nil))),
   (["open", "aoo://bar/baz"], Action.open(URL(string: "aoo://bar/baz")!)),
   (["open", "http://facebook.com"], Action.open(URL(string: "http://facebook.com")!)),
   (["record", "start"], Action.record(true)),
@@ -275,7 +276,7 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["boot"], ["listen", "--http", "1000"], ["shutdown"],
     ]
-    let actions: [Action] = [Action.list, Action.boot(nil), Action.listen(ListenInterface(stdin: false, http: 1000)), Action.shutdown]
+    let actions: [Action] = [Action.list, Action.boot(nil), Action.listen(ListenInterface(stdin: false, http: 1000, hid: nil)), Action.shutdown]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
@@ -287,7 +288,7 @@ class CommandParserTests : XCTestCase {
       .withOptions([.enableDirectLaunch, .awaitServices])
       .withFramebuffer(FBFramebufferConfiguration.default())
     let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
-    let actions: [Action] = [Action.list, Action.create(CreationSpecification.iPhone6Configuration), Action.boot(launchConfiguration), Action.listen(ListenInterface(stdin: false, http: 8090)), Action.shutdown, diagnoseAction]
+    let actions: [Action] = [Action.list, Action.create(CreationSpecification.iPhone6Configuration), Action.boot(launchConfiguration), Action.listen(ListenInterface(stdin: false, http: 8090, hid: nil)), Action.shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 

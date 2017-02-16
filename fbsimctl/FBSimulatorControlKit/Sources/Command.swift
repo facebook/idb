@@ -26,6 +26,7 @@ public struct Configuration {
 public struct ListenInterface {
   let stdin: Bool
   let http: in_port_t?
+  let hid: in_port_t?
 }
 
 /**
@@ -147,13 +148,14 @@ extension Configuration : Accumulator {
 
 extension ListenInterface : Equatable {}
 public func == (left: ListenInterface, right: ListenInterface) -> Bool {
-  return left.stdin == right.stdin && left.http == right.http
+  return left.stdin == right.stdin && left.http == right.http && left.hid == right.hid
 }
 
 extension ListenInterface : Accumulator {
   public init() {
     self.stdin = false
     self.http = nil
+    self.hid = nil
   }
 
   public static var identity: ListenInterface { get {
@@ -163,7 +165,8 @@ extension ListenInterface : Accumulator {
   public func append(_ other: ListenInterface) -> ListenInterface {
     return ListenInterface(
       stdin: other.stdin ? other.stdin : self.stdin,
-      http: other.http ?? self.http
+      http: other.http ?? self.http,
+      hid: other.hid ?? self.hid
     )
   }
 }
@@ -174,10 +177,15 @@ extension ListenInterface : EventReporterSubject {
     if let portNumber = self.http {
       httpValue = JSON.jNumber(NSNumber(integerLiteral: Int(portNumber)))
     }
+    var hidValue = JSON.jNull
+    if let portNumber = self.hid {
+      hidValue = JSON.jNumber(NSNumber(integerLiteral: Int(portNumber)))
+    }
 
     return JSON.jDictionary([
       "stdin" : JSON.jNumber(NSNumber(booleanLiteral: self.stdin)),
-      "http" : httpValue
+      "http" : httpValue,
+      "hid" : hidValue
     ])
   }}
 
@@ -185,6 +193,12 @@ extension ListenInterface : EventReporterSubject {
     var description = "Http: "
     if let httpPort = self.http {
       description += httpPort.description
+    } else {
+      description += "No"
+    }
+    description += " Hid: "
+    if let hidPort = self.hid {
+      description += hidPort.description
     } else {
       description += "No"
     }

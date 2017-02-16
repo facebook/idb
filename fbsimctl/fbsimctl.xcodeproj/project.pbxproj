@@ -51,6 +51,7 @@
 		AAAD4A2F1CB3AF6C00B2068C /* Subjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */; };
 		AAB97CAB1CCE8EAD0056A3C2 /* CommandRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */; };
 		AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACF9F521C46E5C100B17E82 /* Environment.swift */; };
+		AAD414AD1E4E300500815112 /* HidRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD414AC1E4E300500815112 /* HidRelay.swift */; };
 		AAE35AC51C2865C10073CC70 /* FBSimulatorControlKit.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE35ACC1C2865C10073CC70 /* FBSimulatorControlKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */; };
 		AAE9E9551D23B4140033EF28 /* DeviceRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE9E9541D23B4140033EF28 /* DeviceRunners.swift */; };
@@ -151,6 +152,7 @@
 		AAC179691E52F33E00BAE9F2 /* FBSimulatorControlKit-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "FBSimulatorControlKit-Debug.xcconfig"; sourceTree = "<group>"; };
 		AAC1796A1E52F33E00BAE9F2 /* FBSimulatorControlKit-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "FBSimulatorControlKit-Release.xcconfig"; sourceTree = "<group>"; };
 		AACF9F521C46E5C100B17E82 /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		AAD414AC1E4E300500815112 /* HidRelay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HidRelay.swift; sourceTree = "<group>"; };
 		AAE35AC21C2865C10073CC70 /* FBSimulatorControlKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FBSimulatorControlKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAE35AC41C2865C10073CC70 /* FBSimulatorControlKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlKit.h; sourceTree = "<group>"; };
 		AAE35AC61C2865C10073CC70 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -218,11 +220,13 @@
 				AA78DCD51C4E9A09006FAB41 /* EventReporter.swift */,
 				AA83D5EA1C58E368003B253E /* Events.swift */,
 				AA1B7F611C2867EE0038C6A5 /* Help.swift */,
+				AAD414AC1E4E300500815112 /* HidRelay.swift */,
 				AA0DE44C1C68894000B4D2AF /* HttpRelay.swift */,
 				AAA6C3AA1D08899600720BF6 /* iOSReporter.swift */,
 				AAA6C3AE1D0953F400720BF6 /* iOSRunner.swift */,
 				AA54EF741C48275B006D5118 /* JSON.swift */,
 				AA1B7F641C2867EE0038C6A5 /* Parser.swift */,
+				274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */,
 				AA1B7F651C2867EE0038C6A5 /* Relay.swift */,
 				AA1B7F661C2867EE0038C6A5 /* Runners.swift */,
 				AA1B7F671C2867EE0038C6A5 /* SignalHandler.swift */,
@@ -230,7 +234,6 @@
 				AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */,
 				AAAD4A2E1CB3AF6C00B2068C /* Subjects.swift */,
 				AAF2D34D1C32EA4D00434516 /* Writer.swift */,
-				274F22E01D9BCFCD00A7C072 /* ParserDescription.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -503,6 +506,7 @@
 				AA3DB6401CB3A971000BE7A1 /* SimulatorReporter.swift in Sources */,
 				AA83D5EC1C58E368003B253E /* Events.swift in Sources */,
 				AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */,
+				AAD414AD1E4E300500815112 /* HidRelay.swift in Sources */,
 				AAE9E9551D23B4140033EF28 /* DeviceRunners.swift in Sources */,
 				AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */,
 				AA1B7F6B1C2867EE0038C6A5 /* Bridging.swift in Sources */,

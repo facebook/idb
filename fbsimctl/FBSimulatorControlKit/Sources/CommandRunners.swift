@@ -194,15 +194,21 @@ struct ListenRunner : Runner, CommandPerformer {
   let context: iOSRunnerContext<(ListenInterface, FBiOSTargetQuery)>
 
   func run() -> CommandResult {
-    let relay = SynchronousRelay(relay: self.relay, reporter: self.context.reporter) {
-      self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
+    do {
+      let relay = SynchronousRelay(relay: try self.makeBaseRelay(), reporter: self.context.reporter) {
+        self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
+      }
+      let result = RelayRunner(relay: relay).run()
+      self.context.reporter.reportSimple(EventName.Listen, EventType.Ended, self.context.value.0)
+      return result
+    } catch let error as CustomStringConvertible {
+      return CommandResult.failure(error.description)
+    } catch {
+      return CommandResult.failure("Unknown Error")
     }
-    let result = RelayRunner(relay: relay).run()
-    self.context.reporter.reportSimple(EventName.Listen, EventType.Ended, self.context.value.0)
-    return result
   }
 
-  var relay: Relay { get {
+  func makeBaseRelay() throws -> Relay {
     let (interface, query) = self.context.value
     var relays: [Relay] = []
     if let httpPort = interface.http {
@@ -213,8 +219,12 @@ struct ListenRunner : Runner, CommandPerformer {
       let commandBuffer = LineBuffer(performer: self, reporter: self.context.reporter)
       relays.append(FileHandleRelay(commandBuffer: commandBuffer))
     }
+    if let hidPort = interface.hid {
+      let hid = try self.context.querySingleSimulator(self.context.value.1).connect().connectToHID()
+      relays.append(HIDSocketRelay(portNumber: hidPort, hid: hid))
+    }
     return CompositeRelay(relays: relays)
-  }}
+  }
 
   func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()> {
     return iOSRunnerContext(

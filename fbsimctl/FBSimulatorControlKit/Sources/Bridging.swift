@@ -212,3 +212,17 @@ extension HttpRequest {
     return Bool.fallback(from: self.query[key], to: fallback)
   }
 }
+
+struct LineBufferDataIterator : IteratorProtocol {
+  let lineBuffer: FBLineBuffer
+
+  mutating func next() -> Data? {
+    return self.lineBuffer.consumeLineData()
+  }
+}
+
+extension FBLineBuffer {
+  func dataIterator() -> LineBufferDataIterator {
+    return LineBufferDataIterator(lineBuffer: self)
+  }
+}
