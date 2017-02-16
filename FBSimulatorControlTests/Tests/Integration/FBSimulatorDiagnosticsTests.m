@@ -91,6 +91,30 @@
   }];
 }
 
+- (void)testLaunchedApplicationLogsWithDefaultOutputToFile
+{
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration defaultOutputToFile];
+  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withOutput:output];
+  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+
+  [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
+    return [[simulator.simulatorDiagnostics.launchedProcessLogs.allValues firstObject] asString];
+  }];
+
+  [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
+    NSString *haystack = @"";
+    for (FBDiagnostic *diagnostic in simulator.simulatorDiagnostics.stdOutErrDiagnostics) {
+        haystack = [haystack stringByAppendingString:[diagnostic asString]];
+    }
+    return haystack.length ? haystack : nil;
+  }];
+}
+
 - (void)testLaunchedApplicationLogsWithCustomLogFilePath
 {
   if (FBSimulatorControlTestCase.isRunningOnTravis) {
