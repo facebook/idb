@@ -14,7 +14,7 @@
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBFileDataConsumer.h"
-#import "FBFileReader.h"
+#import "FBPipeReader.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -38,8 +38,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @interface FBTaskOutput_Consumer : FBTaskOutput
 
-@property (nonatomic, strong, nullable, readwrite) NSPipe *pipe;
-@property (nonatomic, strong, nullable, readwrite) FBFileReader *reader;
+@property (nonatomic, strong, nullable, readwrite) FBPipeReader *reader;
 @property (nonatomic, strong, nullable, readwrite) FBAccumilatingFileDataConsumer *dataConsumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBFileDataConsumer> consumer;
 
@@ -96,20 +95,17 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 - (id)attachWithError:(NSError **)error
 {
-  NSAssert(self.pipe == nil, @"Cannot attach when already attached to pipe %@", self.pipe);
-  self.pipe = [NSPipe pipe];
-  self.reader = [FBFileReader readerWithFileHandle:self.pipe.fileHandleForReading consumer:self.consumer];
+  NSAssert(self.reader == nil, @"Cannot attach when already attached to a reader");
+  self.reader = [FBPipeReader pipeReaderWithConsumer:self.consumer];
   if (![self.reader startReadingWithError:error]) {
     self.reader = nil;
-    self.pipe = nil;
     return nil;
   }
-  return self.pipe;
+  return self.reader.pipe;
 }
 
 - (void)teardownResources
 {
-  self.pipe = nil;
   [self.reader stopReadingWithError:nil];
   self.reader = nil;
 }
