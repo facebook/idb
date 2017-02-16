@@ -212,6 +212,13 @@ class FBSimctl:
             timeout=timeout,
         )
 
+class Metal:
+    def __init__(self):
+        subprocess.call(['xcrun', 'swiftc', 'supports_metal.swift'])
+        self.__supports_metal_exit_code = subprocess.call(['./supports_metal'], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def is_supported(self):
+        return self.__supports_metal_exit_code == 0
 
 class WebServer:
     def __init__(self, port):
