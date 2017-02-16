@@ -9,7 +9,7 @@
 
 #import <XCTest/XCTest.h>
 
-#import "FBControlCoreLogger.h"
+#import <FBControlCore/FBControlCore.h>
 
 @interface FBControlCoreLoggerTests : XCTestCase
 
