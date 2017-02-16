@@ -117,11 +117,8 @@
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
     NSString *stdErrContent = [NSString stringWithContentsOfFile:stdErrPath encoding:NSUTF8StringEncoding error:nil] ?: @"";
     NSString *stdOutContent = [NSString stringWithContentsOfFile:stdOutPath encoding:NSUTF8StringEncoding error:nil] ?: @"";
-    NSString *combinedContent = [stdErrContent stringByAppendingString:stdOutContent];
-    if (!combinedContent.length) {
-      return nil;
-    }
-    return combinedContent;
+    NSString *haystack = [stdErrContent stringByAppendingString:stdOutContent];
+    return haystack.length ? haystack : nil;
   }];
 }
 
