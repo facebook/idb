@@ -146,8 +146,9 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
 - (FBDiagnostic *)stdOut:(FBProcessLaunchConfiguration *)configuration
 {
   NSString *name = [NSString stringWithFormat:@"%@_out", configuration.identifiableName];
-  return [[[[[self.baseLogBuilder
+  return [[[[[[self.baseLogBuilder
     updateStorageDirectory:[self stdOutErrContainersPath]]
+    updateStorageDirectoryByAppendingPathComponent:NSUUID.UUID.UUIDString]
     updateShortName:name]
     updateFileType:@"txt"]
     updatePathFromDefaultLocation]
@@ -157,8 +158,9 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
 - (FBDiagnostic *)stdErr:(FBProcessLaunchConfiguration *)configuration
 {
   NSString *name = [NSString stringWithFormat:@"%@_err", configuration.identifiableName];
-  return [[[[[self.baseLogBuilder
+  return [[[[[[self.baseLogBuilder
     updateStorageDirectory:[self stdOutErrContainersPath]]
+    updateStorageDirectoryByAppendingPathComponent:NSUUID.UUID.UUIDString]
     updateShortName:name]
     updateFileType:@"txt"]
     updatePathFromDefaultLocation]
