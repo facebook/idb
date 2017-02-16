@@ -182,13 +182,23 @@
   for (int i = 0; i < 3; i++) {
     FBDiagnostic *diagnostic = nil;
     [appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&diagnostic error:nil];
+    [@"stderr content" writeToFile:diagnostic.asPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
     [stdErrDiagnostics addObject:diagnostic];
     [appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&diagnostic error:nil];
+    [@"stdout content" writeToFile:diagnostic.asPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
     [stdOutDiagnostics addObject:diagnostic];
   }
 
   XCTAssertEqual(stdErrDiagnostics.count, 3u);
   XCTAssertEqual(stdOutDiagnostics.count, 3u);
+  XCTAssertEqual(simulator.simulatorDiagnostics.stdOutErrDiagnostics.count, 6u);
+
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  for (FBDiagnostic *diagnostic in simulator.simulatorDiagnostics.stdOutErrDiagnostics) {
+    BOOL isDirectory;
+    XCTAssertTrue([fileManager fileExistsAtPath:diagnostic.asPath isDirectory:&isDirectory]);
+    XCTAssertFalse(isDirectory);
+  }
 }
 
 @end
