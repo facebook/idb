@@ -35,6 +35,7 @@
 #import <FBControlCore/FBFileFinder.h>
 #import <FBControlCore/FBFileManager.h>
 #import <FBControlCore/FBFileReader.h>
+#import <FBControlCore/FBFileWriter.h>
 #import <FBControlCore/FBInteraction.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetDiagnostics.h>
