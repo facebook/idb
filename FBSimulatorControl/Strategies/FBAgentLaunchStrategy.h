@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Typedef for a Callback.
  */
-typedef void (^FBAgentLaunchCallback)(void);
+typedef void (^FBAgentLaunchHandler)(void);
 
 /**
  A Strategy for Launching Agents on a Simulator.
@@ -45,6 +45,16 @@ typedef void (^FBAgentLaunchCallback)(void);
  @return the Process Info of the launched agent, nil if there was a failure.
  */
 - (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
+
+/**
+ Launches an agent with the given configuration.
+
+ @param agentLaunch the agent to launch.
+ @param terminationHandler the Termnation Handler to call when the process has terminated.
+ @param error an error out for any error that occurs.
+ @return the Process Info of the launched agent, nil if there was a failure.
+ */
+- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error;
 
 /**
  Launches an agent, consuming it's output.

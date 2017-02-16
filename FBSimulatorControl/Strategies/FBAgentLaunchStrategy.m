@@ -48,7 +48,12 @@
   return self;
 }
 
-- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
+- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+{
+  return [self launchAgent:agentLaunch terminationHandler:NULL error:error];
+}
+
+- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
   NSError *innerError = nil;
@@ -90,7 +95,7 @@
   FBProcessInfo *process = [self
     spawnLongRunningWithPath:agentLaunch.agentBinary.path
     options:options
-    terminationHandler:NULL
+    terminationHandler:terminationHandler
     error:&innerError];
 
   if (!process) {
@@ -151,7 +156,7 @@
 
 #pragma mark Private
 
-- (nullable FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options terminationHandler:(nullable FBAgentLaunchCallback)terminationHandler error:(NSError **)error
+- (nullable FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
 {
   return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
 }
@@ -159,7 +164,7 @@
 - (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   __block volatile uint32_t hasTerminated = 0;
-  FBAgentLaunchCallback terminationHandler = ^() {
+  FBAgentLaunchHandler terminationHandler = ^() {
     OSAtomicOr32Barrier(1, &hasTerminated);
   };
 
