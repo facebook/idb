@@ -169,7 +169,11 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
 
 - (NSArray<FBDiagnostic *> *)stdOutErrDiagnostics
 {
-  return [FBSimulatorDiagnostics diagnosticsForSubpathsOf:self.stdOutErrContainersPath];
+  NSMutableArray *stdOutErrDiagnostics = [NSMutableArray array];
+  for (NSString *path in [FBFileFinder contentsOfDirectoryWithBasePath:self.stdOutErrContainersPath]) {
+    [stdOutErrDiagnostics addObjectsFromArray:[FBSimulatorDiagnostics diagnosticsForSubpathsOf:path]];
+  }
+  return [stdOutErrDiagnostics copy];
 }
 
 - (NSDictionary<FBProcessInfo *, FBDiagnostic *> *)launchedProcessLogs
