@@ -33,6 +33,7 @@ class HIDSocketConsumer : NSObject, FBSocketConsumer {
     var response = ""
     for lineData in IteratorSequence(self.buffer.dataIterator()) {
       response += self.runLine(input: lineData)
+      response += "\n"
     }
     return response
   }
