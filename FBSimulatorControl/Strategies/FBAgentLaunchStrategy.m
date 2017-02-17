@@ -110,22 +110,18 @@
   return process;
 }
 
-- (nullable NSString *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+- (BOOL)launchAndWait:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileDataConsumer>)consumer error:(NSError **)error
 {
-  // Construct a pipe to stdout and read asynchronously from it.
-  // Synchronize on the mutable string.
-  NSPipe *stdOutPipe = [NSPipe pipe];
-  FBAccumilatingFileDataConsumer *consumer = [FBAccumilatingFileDataConsumer new];
-  FBFileReader *reader = [FBFileReader readerWithFileHandle:stdOutPipe.fileHandleForReading consumer:consumer];
-  NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:stdOutPipe.fileHandleForWriting stdErr:nil];
+  FBPipeReader *pipe = [FBPipeReader pipeReaderWithConsumer:consumer];
+  NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:pipe.pipe.fileHandleForWriting stdErr:nil];
 
   // Start reading the pipe
   NSError *innerError = nil;
-  if (![reader startReadingWithError:&innerError]) {
+  if (![pipe startReadingWithError:&innerError]) {
     return [[[FBSimulatorError
       describeFormat:@"Could not start reading stdout of %@", agentLaunch]
       causedBy:innerError]
-      fail:error];
+      failBool:error];
   }
 
   // The Process launches and terminates synchronously
@@ -136,11 +132,11 @@
     error:&innerError];
 
   // Stop reading the pipe
-  if (![reader stopReadingWithError:&innerError]) {
+  if (![pipe stopReadingWithError:&innerError]) {
     return [[[FBSimulatorError
       describeFormat:@"Could not stop reading stdout of %@", agentLaunch]
       causedBy:innerError]
-      fail:error];
+      failBool:error];
   }
 
   // Fail on non-zero pid.
@@ -148,9 +144,17 @@
     return [[[FBSimulatorError
       describeFormat:@"Running %@ %@ failed", agentLaunch.agentBinary.name, [FBCollectionInformation oneLineDescriptionFromArray:agentLaunch.arguments]]
       causedBy:innerError]
-      fail:error];
+      failBool:error];
   }
+  return YES;
+}
 
+- (nullable NSString *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+{
+  FBAccumilatingFileDataConsumer *consumer = [FBAccumilatingFileDataConsumer new];
+  if (![self launchAndWait:agentLaunch consumer:consumer error:error]) {
+    return nil;
+  }
   return [[NSString alloc] initWithData:consumer.data encoding:NSUTF8StringEncoding];
 }
 

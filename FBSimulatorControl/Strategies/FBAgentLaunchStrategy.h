@@ -12,6 +12,7 @@
 @class FBAgentLaunchConfiguration;
 @class FBProcessInfo;
 @class FBSimulator;
+@protocol FBFileDataConsumer;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -57,7 +58,17 @@ typedef void (^FBAgentLaunchHandler)(void);
 - (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error;
 
 /**
- Launches an agent, consuming it's output.
+ Launches an agent, consuming it's output with the consumer.
+
+ @param agentLaunch the configuration for launching the process. The 'output' of the configuration will be ignored.
+ @param consumer the consumer to consume with.
+ @param error an error out for any error that occurs.
+ @return the stdout of the launched process, nil on error.
+ */
+- (BOOL)launchAndWait:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileDataConsumer>)consumer error:(NSError **)error;
+
+/**
+ Launches an agent, consuming it's output and returning it as a String.
 
  @param agentLaunch the configuration for launching the process. The 'output' of the configuration will be ignored.
  @param error an error out for any error that occurs.
