@@ -56,12 +56,12 @@
 - (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  NSError *innerError = nil;
   FBDiagnostic *stdOutDiagnostic = nil;
   FBDiagnostic *stdErrDiagnostic = nil;
   NSFileHandle *stdOutHandle = nil;
   NSFileHandle *stdErrHandle = nil;
 
+  // Create the File Handles, based on the configuration for the AgentLaunch.
   if (![agentLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:error]) {
     return nil;
   }
@@ -87,26 +87,46 @@
     }
   }
 
-  NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:stdOutHandle stdErr:stdErrHandle];
-  if (!options) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+  // Actually launch the process with the appropriate API.
+  FBProcessInfo *process = [self
+    launchAgentWithLaunchPath:agentLaunch.agentBinary.path
+    arguments:agentLaunch.arguments
+    environment:agentLaunch.environment
+    stdOut:stdOutHandle
+    stdErr:stdErrHandle
+    terminationHandler:terminationHandler
+    error:error];
+  if (!process) {
+    return nil;
   }
 
+  [simulator.eventSink agentDidLaunch:agentLaunch didStart:process stdOut:stdOutHandle stdErr:stdErrHandle];
+  return process;
+}
+
+- (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
+{
+  NSDictionary<NSString *, id> *options = [FBAgentLaunchConfiguration
+    simDeviceLaunchOptionsWithLaunchPath:launchPath
+    arguments:arguments
+    environment:environment
+    stdOut:stdOut
+    stdErr:stdErr];
+
+  NSError *innerError = nil;
   FBProcessInfo *process = [self
-    spawnLongRunningWithPath:agentLaunch.agentBinary.path
+    spawnLongRunningWithPath:launchPath
     options:options
     terminationHandler:terminationHandler
     error:&innerError];
 
   if (!process) {
     return [[[[FBSimulatorError
-      describeFormat:@"Failed to start Agent %@", agentLaunch]
+      describeFormat:@"Failed to launch %@", launchPath]
       causedBy:innerError]
-      inSimulator:simulator]
+      inSimulator:self.simulator]
       fail:error];
   }
-
-  [simulator.eventSink agentDidLaunch:agentLaunch didStart:process stdOut:stdOutHandle stdErr:stdErrHandle];
   return process;
 }
 

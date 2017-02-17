@@ -66,13 +66,26 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBAgentLaunchConfiguration (Helpers)
 
 /**
- Creates the Dictionary of launch options for launching an Agent.
+ Creates the Dictionary of launch options for spawning an Agent.
 
  @param stdOut the stdout to use, may be nil.
  @param stdErr the stderr to use, may be nil.
  @return a Dictionary if successful, nil otherwise.
  */
 - (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
+
+/**
+ Creates the Dictionary of launch options for spawning an Agent.
+ This static method allows the options dictionary to be constructed, without an FBAgentLaunchConfiguration.
+
+ @prarm launchPath the Launch Path.
+ @param arguments the arguments.
+ @param environment the environment
+ @param stdOut the stdout to use, may be nil.
+ @param stdErr the stderr to use, may be nil.
+ @return a Dictionary if successful, nil otherwise.
+ */
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
 
 @end
 

@@ -58,6 +58,19 @@ typedef void (^FBAgentLaunchHandler)(void);
 - (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error;
 
 /**
+ Launches an agent with the provided parameters.
+
+ @param launchPath to the executable to launch.
+ @param arguments the arguments.
+ @param environment the environment
+ @param stdOut the stdout to use, may be nil.
+ @param stdErr the stderr to use, may be nil.
+ @param error an error out for any error that occurs.
+ @return the Process Info of the launched agent, nil if there was a failure.
+ */
+- (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error;
+
+/**
  Launches an agent, consuming it's output with the consumer.
 
  @param agentLaunch the configuration for launching the process. The 'output' of the configuration will be ignored.
