@@ -56,33 +56,26 @@
 
 #pragma mark Public
 
-- (nullable FBTestManager *)startTestManagerWithAttributes:(NSArray<NSString *> *)attributes environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
+- (nullable FBTestManager *)startTestManagerWithApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration error:(NSError **)error
 {
   NSAssert(self.iosTarget, @"iOS Target is needed to perform meaningful test");
   NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
   NSError *innerError;
-  FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithIOSTarget:self.iosTarget error:&innerError];
-  if (!configuration) {
+  FBTestRunnerConfiguration *testRunnerConfiguration = [self.prepareStrategy prepareTestWithIOSTarget:self.iosTarget error:&innerError];
+  if (!testRunnerConfiguration) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner configuration"]
       causedBy:innerError]
       fail:error];
   }
 
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:configuration.testRunner.bundleID
-    bundleName:configuration.testRunner.bundleID
-    arguments:[self argumentsFromConfiguration:configuration attributes:attributes]
-    environment:[self environmentFromConfiguration:configuration environment:environment]
-    output:FBProcessOutputConfiguration.outputToDevNull];
-
-  if (![self.iosTarget launchApplication:appLaunch error:&innerError]) {
+  if (![self.iosTarget launchApplication:[self prepareApplicationLaunchConfiguration:applicationLaunchConfiguration withTestRunnerConfiguration:testRunnerConfiguration] error:&innerError]) {
     return [[[XCTestBootstrapError describe:@"Failed launch test runner"]
       causedBy:innerError]
       fail:error];
   }
 
-  pid_t testRunnerProcessID = [self.iosTarget.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
+  pid_t testRunnerProcessID = [self.iosTarget.deviceOperator processIDWithBundleID:testRunnerConfiguration.testRunner.bundleID error:error];
   if (testRunnerProcessID < 1) {
     return [[XCTestBootstrapError
       describe:@"Failed to determine test runner process PID"]
@@ -92,8 +85,8 @@
   // Make the Context for the Test Manager.
   FBTestManagerContext *context = [FBTestManagerContext
     contextWithTestRunnerPID:testRunnerProcessID
-    testRunnerBundleID:configuration.testRunner.bundleID
-    sessionIdentifier:configuration.sessionIdentifier];
+    testRunnerBundleID:testRunnerConfiguration.testRunner.bundleID
+    sessionIdentifier:testRunnerConfiguration.sessionIdentifier];
 
   // Attach to the XCTest Test Runner host Process.
   FBTestManager *testManager = [FBTestManager
@@ -113,6 +106,17 @@
 }
 
 #pragma mark Private
+
+- (FBApplicationLaunchConfiguration *)prepareApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration withTestRunnerConfiguration:(FBTestRunnerConfiguration *)testRunnerConfiguration
+{
+  return [FBApplicationLaunchConfiguration
+    configurationWithBundleID:testRunnerConfiguration.testRunner.bundleID
+    bundleName:testRunnerConfiguration.testRunner.bundleID
+    arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
+    environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
+    output:applicationLaunchConfiguration.output
+  ];
+}
 
 - (NSArray<NSString *> *)argumentsFromConfiguration:(FBTestRunnerConfiguration *)configuration attributes:(NSArray<NSString *> *)attributes
 {

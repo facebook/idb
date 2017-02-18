@@ -82,8 +82,7 @@
     logger:simulator.logger];
 
   FBTestManager *testManager = [testRunStrategy
-    startTestManagerWithAttributes:self.configuration.applicationLaunchConfiguration.arguments
-    environment:self.configuration.applicationLaunchConfiguration.environment
+    startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration
     error:&innerError];
 
   if (!testManager) {
