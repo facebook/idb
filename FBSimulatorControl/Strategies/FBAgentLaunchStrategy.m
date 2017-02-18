@@ -188,7 +188,7 @@
 - (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   __block volatile uint32_t hasTerminated = 0;
-  FBAgentLaunchHandler terminationHandler = ^() {
+  FBAgentLaunchHandler terminationHandler = ^(int stat_loc) {
     OSAtomicOr32Barrier(1, &hasTerminated);
   };
 

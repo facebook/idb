@@ -11,6 +11,7 @@
 
 #import <CoreSimulator/CDStructures.h>
 #import <CoreSimulator/SimDeviceNotifier-Protocol.h>
+#import <CoreSimulator/CoreSimulator+BlockDefines.h>
 
 @class NSArray, NSDate, NSDictionary, NSMachPort, NSMutableArray, NSMutableDictionary, NSString, NSUUID, SimDeviceBootInfo, SimDeviceNotificationManager, SimDevicePasteboard, SimDeviceSet, SimDeviceType, SimRuntime;
 @protocol OS_dispatch_queue, OS_dispatch_source, SimDeviceIOProtocol;
@@ -179,8 +180,8 @@
 - (id)initDevice:(id)arg1 UDID:(id)arg2 deviceTypeIdentifier:(id)arg3 runtimeIdentifier:(id)arg4 state:(unsigned long long)arg5 initialDataPath:(id)arg6 deviceSet:(id)arg7;
 - (void)triggerCloudSyncWithCompletionHandler:(CDUnknownBlockType)arg1;
 - (void)launchApplicationAsyncWithID:(id)arg1 options:(id)arg2 completionHandler:(CDUnknownBlockType)arg3;
-- (int)spawnWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CDUnknownBlockType)arg3 error:(id *)arg4;
-- (void)spawnAsyncWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CDUnknownBlockType)arg3 completionHandler:(CDUnknownBlockType)arg4;
+- (int)spawnWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CoreSimulatorAgentTerminationHandler)arg3 error:(id *)arg4;
+- (void)spawnAsyncWithPath:(id)arg1 options:(id)arg2 terminationHandler:(CoreSimulatorAgentTerminationHandler)arg3 completionHandler:(CDUnknownBlockType)arg4;
 - (void)restoreContentsAndSettingsAsyncFromDevice:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;
 - (void)eraseContentsAndSettingsAsyncWithCompletionHandler:(CDUnknownBlockType)arg1;
 - (void)renameAsync:(id)arg1 completionHandler:(CDUnknownBlockType)arg2;

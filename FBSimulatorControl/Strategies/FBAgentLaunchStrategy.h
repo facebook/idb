@@ -17,9 +17,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A Typedef for a Callback.
+ The Defined Callback for an Agent.
+ 
+ The parameter to the block is an integer from waitpid(2).
+ This is a bitmasked integer, so information about the exit of the process
+ can be obtained using the macros defined in <sys/wait.h> 
+ The details of these macros are documented in the manpage for waitpid.
  */
-typedef void (^FBAgentLaunchHandler)(void);
+typedef void (^FBAgentLaunchHandler)(int stat_loc);
 
 /**
  A Strategy for Launching Agents on a Simulator.
