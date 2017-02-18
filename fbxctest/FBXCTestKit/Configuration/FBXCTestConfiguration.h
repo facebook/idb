@@ -58,6 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
+@property (nonatomic, assign, readonly) BOOL waitForDebugger;
 
 @property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
 

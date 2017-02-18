@@ -28,6 +28,7 @@
 @property (nonatomic, copy, readwrite) NSString *testBundlePath;
 @property (nonatomic, copy, readwrite) NSString *runnerAppPath;
 @property (nonatomic, copy, readwrite) NSString *testFilter;
+@property (nonatomic, assign, readwrite) BOOL waitForDebugger;
 
 @property (nonatomic, copy, nullable, readwrite) FBXCTestShimConfiguration *shims;
 
@@ -104,6 +105,9 @@
       continue;
     } else if ([argument isEqualToString:@"-listTestsOnly"]) {
       // Ignore. This is handled by the configuration class.
+      continue;
+    } else if ([argument isEqualToString:@"--wait-for-debugger"]) {
+      self.waitForDebugger = YES;
       continue;
     }
     if (nextArgument >= arguments.count) {
