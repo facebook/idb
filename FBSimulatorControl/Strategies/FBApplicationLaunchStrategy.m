@@ -302,7 +302,7 @@
   for (NSUInteger index = 0; index < referencePath.pathComponents.count; index++) {
     translatedPath = [translatedPath stringByAppendingPathComponent:@".."];
   }
-  return [translatedPath stringByAppendingPathComponent:absolutePath];
+  return [translatedPath stringByAppendingPathComponent:[absolutePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
 }
 
 @end

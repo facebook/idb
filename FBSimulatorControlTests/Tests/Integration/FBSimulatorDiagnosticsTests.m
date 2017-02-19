@@ -122,8 +122,8 @@
   }
 
   NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
-  NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
-  NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
+  NSString *stdErrPath = [[path stringByAppendingPathComponent:@"Some Thing With Space"] stringByAppendingPathComponent:@"stderr.log"];
+  NSString *stdOutPath = [[path stringByAppendingPathComponent:@"Some Thing With Space"] stringByAppendingPathComponent:@"stdout.log"];
 
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
