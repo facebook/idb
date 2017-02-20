@@ -16,7 +16,7 @@
 
 #import "FBXCTestReporterDouble.h"
 #import "FBXCTestDestination.h"
-#import "FBXCTestLogger+Test.h"
+#import "XCTestCase+FBXCTestKitTests.h"
 
 @interface FBXCTestConfigurationTests : XCTestCase
 

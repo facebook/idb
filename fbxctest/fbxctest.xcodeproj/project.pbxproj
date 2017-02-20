@@ -51,7 +51,7 @@
 		AAE4D06D1D9BAB940098A71E /* FBXCTestConfigurationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE4D06C1D9BAB940098A71E /* FBXCTestConfigurationTests.m */; };
 		AAED07A61E547804005060ED /* FBLogicTestProcess.h in Headers */ = {isa = PBXBuildFile; fileRef = AAED07A41E547804005060ED /* FBLogicTestProcess.h */; };
 		AAED07A71E547804005060ED /* FBLogicTestProcess.m in Sources */ = {isa = PBXBuildFile; fileRef = AAED07A51E547804005060ED /* FBLogicTestProcess.m */; };
-		AAED07AE1E560655005060ED /* FBXCTestLogger+Test.m in Sources */ = {isa = PBXBuildFile; fileRef = AAED07AD1E560655005060ED /* FBXCTestLogger+Test.m */; };
+		AAED07AE1E560655005060ED /* XCTestCase+FBXCTestKitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAED07AD1E560655005060ED /* XCTestCase+FBXCTestKitTests.m */; };
 		AAFD567C1D95131600522DE3 /* FBXCTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAFD567D1D95131600522DE3 /* FBXCTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */; };
 		AAFD56801D95149F00522DE3 /* FBXCTestShimConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFD567E1D95149F00522DE3 /* FBXCTestShimConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -141,8 +141,8 @@
 		AAE4D06C1D9BAB940098A71E /* FBXCTestConfigurationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestConfigurationTests.m; sourceTree = "<group>"; };
 		AAED07A41E547804005060ED /* FBLogicTestProcess.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBLogicTestProcess.h; sourceTree = "<group>"; };
 		AAED07A51E547804005060ED /* FBLogicTestProcess.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBLogicTestProcess.m; sourceTree = "<group>"; };
-		AAED07AC1E560655005060ED /* FBXCTestLogger+Test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBXCTestLogger+Test.h"; sourceTree = "<group>"; };
-		AAED07AD1E560655005060ED /* FBXCTestLogger+Test.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBXCTestLogger+Test.m"; sourceTree = "<group>"; };
+		AAED07AC1E560655005060ED /* XCTestCase+FBXCTestKitTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "XCTestCase+FBXCTestKitTests.h"; sourceTree = "<group>"; };
+		AAED07AD1E560655005060ED /* XCTestCase+FBXCTestKitTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "XCTestCase+FBXCTestKitTests.m"; sourceTree = "<group>"; };
 		AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestConfiguration.h; sourceTree = "<group>"; };
 		AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestConfiguration.m; sourceTree = "<group>"; };
 		AAFD567E1D95149F00522DE3 /* FBXCTestShimConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestShimConfiguration.h; sourceTree = "<group>"; };
@@ -345,8 +345,8 @@
 		AAB44FFA1D6236970059E922 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				AAED07AC1E560655005060ED /* FBXCTestLogger+Test.h */,
-				AAED07AD1E560655005060ED /* FBXCTestLogger+Test.m */,
+				AAED07AC1E560655005060ED /* XCTestCase+FBXCTestKitTests.h */,
+				AAED07AD1E560655005060ED /* XCTestCase+FBXCTestKitTests.m */,
 				AAB44FFB1D6236970059E922 /* FBXCTestReporterDouble.h */,
 				AAB44FFC1D6236970059E922 /* FBXCTestReporterDouble.m */,
 			);
@@ -538,7 +538,7 @@
 			files = (
 				AA0639461D999081004B3D12 /* FBControlCoreValueTestCase.m in Sources */,
 				050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */,
-				AAED07AE1E560655005060ED /* FBXCTestLogger+Test.m in Sources */,
+				AAED07AE1E560655005060ED /* XCTestCase+FBXCTestKitTests.m in Sources */,
 				AA0639421D998FA7004B3D12 /* FBXCTestKitValueTests.m in Sources */,
 				AAE4D06D1D9BAB940098A71E /* FBXCTestConfigurationTests.m in Sources */,
 				AAB44FFD1D6236970059E922 /* FBXCTestReporterDouble.m in Sources */,

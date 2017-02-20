@@ -13,7 +13,7 @@
 #import <XCTest/XCTest.h>
 
 #import "FBXCTestReporterDouble.h"
-#import "FBXCTestLogger+Test.h"
+#import "XCTestCase+FBXCTestKitTests.h"
 
 @interface FBXCTestKitIntegrationTests : XCTestCase
 
@@ -94,6 +94,10 @@
 
 - (void)testApplicationTestEndsOnCrashingTest
 {
+  if (XCTestCase.isRunningOnTravis) {
+    return;
+  }
+
   NSError *error;
   NSString *workingDirectory = [FBXCTestKitFixtures createTemporaryDirectory];
   NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];

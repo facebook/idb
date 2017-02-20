@@ -21,4 +21,9 @@
  */
 - (FBXCTestLogger *)logger;
 
+/**
+ Some tests are flakier on travis, this is a temporary way of disabling them until they are improved.
+ */
++ (BOOL)isRunningOnTravis;
+
 @end

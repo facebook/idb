@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestLogger+Test.h"
+#import "XCTestCase+FBXCTestKitTests.h"
 
 @implementation XCTestCase (Test)
 
@@ -17,6 +17,15 @@
   BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:nil];
   XCTAssertTrue(success);
   return [FBXCTestLogger defaultLoggerInDirectory:directory];
+}
+
++ (BOOL)isRunningOnTravis
+{
+  if (NSProcessInfo.processInfo.environment[@"TRAVIS"]) {
+    NSLog(@"Running in Travis environment, skipping test");
+    return YES;
+  }
+  return NO;
 }
 
 @end
