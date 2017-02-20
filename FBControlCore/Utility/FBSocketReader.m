@@ -16,7 +16,7 @@
 
 #import "FBControlCoreError.h"
 
-@interface FBSocketReader_Connection : NSObject <FBFileDataConsumer>
+@interface FBSocketReader_Connection : NSObject <FBFileConsumer>
 
 @property (nonatomic, strong, readonly) FBFileReader *reader;
 @property (nonatomic, strong, readonly) FBFileWriter *writer;

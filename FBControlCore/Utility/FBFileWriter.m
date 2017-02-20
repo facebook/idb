@@ -38,7 +38,7 @@
   return self;
 }
 
-#pragma mark FBFileDataConsumer Implementation
+#pragma mark FBFileConsumer Implementation
 
 - (void)consumeData:(NSData *)data
 {

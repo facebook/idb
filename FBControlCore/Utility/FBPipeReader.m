@@ -10,7 +10,7 @@
 #import "FBPipeReader.h"
 
 #import "FBFileReader.h"
-#import "FBFileDataConsumer.h"
+#import "FBFileConsumer.h"
 
 @interface FBPipeReader ()
 
@@ -20,7 +20,7 @@
 
 @implementation FBPipeReader
 
-+ (instancetype)pipeReaderWithConsumer:(id<FBFileDataConsumer>)consumer
++ (instancetype)pipeReaderWithConsumer:(id<FBFileConsumer>)consumer
 {
   NSPipe *pipe = [NSPipe pipe];
   FBFileReader *reader = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer];

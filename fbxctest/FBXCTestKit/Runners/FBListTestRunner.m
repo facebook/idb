@@ -71,7 +71,7 @@
     build]
     startAsynchronously];
 
-  FBAccumilatingFileDataConsumer *consumer = [FBAccumilatingFileDataConsumer new];
+  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
   FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:error];
   if (![reader startReadingWithError:error]) {
     return NO;

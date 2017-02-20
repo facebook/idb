@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileDataConsumer;
+@protocol FBFileConsumer;
 
 /**
  A class that provided a writable file handle attached to a consumer.
@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the Consumer to Write to.
  @return a Pipe Reader.
  */
-+ (instancetype)pipeReaderWithConsumer:(id<FBFileDataConsumer>)consumer;
++ (instancetype)pipeReaderWithConsumer:(id<FBFileConsumer>)consumer;
 
 /**
  Starts the Consumption of the Pipe

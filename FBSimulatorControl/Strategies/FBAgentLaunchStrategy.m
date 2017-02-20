@@ -132,7 +132,7 @@
   return process;
 }
 
-- (BOOL)launchAndWait:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileDataConsumer>)consumer error:(NSError **)error
+- (BOOL)launchAndWait:(FBAgentLaunchConfiguration *)agentLaunch consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
 {
   FBPipeReader *pipe = [FBPipeReader pipeReaderWithConsumer:consumer];
   NSDictionary *options = [agentLaunch simDeviceLaunchOptionsWithStdOut:pipe.pipe.fileHandleForWriting stdErr:nil];
@@ -173,7 +173,7 @@
 
 - (nullable NSString *)launchConsumingStdout:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
-  FBAccumilatingFileDataConsumer *consumer = [FBAccumilatingFileDataConsumer new];
+  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
   if (![self launchAndWait:agentLaunch consumer:consumer error:error]) {
     return nil;
   }

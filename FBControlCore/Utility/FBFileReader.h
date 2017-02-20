@@ -2,7 +2,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBFileDataConsumer.h>
+#import <FBControlCore/FBFileConsumer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param consumer the consumer to forward to.
  @return a File Reader.
  */
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileDataConsumer>)consumer;
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer;
 
 /**
  Creates a File Reader for a File at Path.
@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a File Reader.
  */
-+ (nullable instancetype)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileDataConsumer>)consumer error:(NSError **)error;
++ (nullable instancetype)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
 
 /**
  Starts the Consumption of the File.

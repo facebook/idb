@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileDataConsumer;
+@protocol FBFileConsumer;
 @class FBSimulator;
 
 /**
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdErrReader the Reader of the Stderr.
  @return a new Logic Test Process
  */
-+ (instancetype)taskProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileDataConsumer>)stdOutReader stdErrReader:(id<FBFileDataConsumer>)stdErrReader;
++ (instancetype)taskProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader;
 
 /**
  A Logic Test Process using a Simulator's "Agent Spawning"
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdErrReader the Reader of the Stderr.
  @return a new Logic Test Process
  */
-+ (instancetype)simulatorSpawnProcess:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileDataConsumer>)stdOutReader stdErrReader:(id<FBFileDataConsumer>)stdErrReader;
++ (instancetype)simulatorSpawnProcess:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader;
 
 /**
  Starts the Process.

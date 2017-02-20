@@ -13,7 +13,7 @@
 #import "FBTaskConfiguration.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
-#import "FBFileDataConsumer.h"
+#import "FBFileConsumer.h"
 #import "FBPipeReader.h"
 
 #pragma clang diagnostic push
@@ -39,8 +39,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 @interface FBTaskOutput_Consumer : FBTaskOutput
 
 @property (nonatomic, strong, nullable, readwrite) FBPipeReader *reader;
-@property (nonatomic, strong, nullable, readwrite) FBAccumilatingFileDataConsumer *dataConsumer;
-@property (nonatomic, strong, nullable, readwrite) id<FBFileDataConsumer> consumer;
+@property (nonatomic, strong, nullable, readwrite) FBAccumilatingFileConsumer *dataConsumer;
+@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 
 @end
 
@@ -73,7 +73,7 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 
 @implementation FBTaskOutput_Consumer
 
-- (instancetype)initWithConsumer:(id<FBFileDataConsumer>)consumer dataConsumer:(FBAccumilatingFileDataConsumer *)dataConsumer
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer dataConsumer:(FBAccumilatingFileConsumer *)dataConsumer
 {
   self = [super init];
   if (!self) {
@@ -305,14 +305,14 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
   if ([output isKindOfClass:NSString.class]) {
      return [[FBTaskOutput_File alloc] initWithPath:output];
   }
-  id<FBFileDataConsumer> consumer = nil;
+  id<FBFileConsumer> consumer = nil;
   NSMutableData *data = [NSMutableData data];
-  if ([output conformsToProtocol:@protocol(FBFileDataConsumer)]) {
+  if ([output conformsToProtocol:@protocol(FBFileConsumer)]) {
     consumer = output;
   }
   else if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
     id<FBControlCoreLogger> logger = output;
-    consumer = [FBLineFileDataConsumer lineReaderWithConsumer:^(NSString *line) {
+    consumer = [FBLineFileConsumer lineReaderWithConsumer:^(NSString *line) {
       [logger log:line];
     }];
   }
@@ -320,8 +320,8 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
     NSAssert([output isKindOfClass:NSMutableData.class], @"Unexpected output type %@", output);
     data = output;
   }
-  FBAccumilatingFileDataConsumer *dataConsumer = [[FBAccumilatingFileDataConsumer alloc] initWithMutableData:data];
-  consumer = consumer ? [FBCompositeFileDataConsumer consumerWithConsumers:@[consumer, dataConsumer]] : dataConsumer;
+  FBAccumilatingFileConsumer *dataConsumer = [[FBAccumilatingFileConsumer alloc] initWithMutableData:data];
+  consumer = consumer ? [FBCompositeFileConsumer consumerWithConsumers:@[consumer, dataConsumer]] : dataConsumer;
   return [[FBTaskOutput_Consumer alloc] initWithConsumer:consumer dataConsumer:dataConsumer];
 }
 

@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-#import "FBFileDataConsumer.h"
+#import "FBFileConsumer.h"
 
 #import "FBRunLoopSpinner.h"
 #import "FBControlCoreError.h"
@@ -8,19 +8,19 @@
 
 @interface FBAwaitableFileDataConsumer ()
 
-@property (nonatomic, strong, readonly) id<FBFileDataConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
 @property (atomic, assign, readwrite) BOOL hasConsumedEOF;
 
 @end
 
 @implementation FBAwaitableFileDataConsumer
 
-+ (instancetype)consumerWithConsumer:(id<FBFileDataConsumer>)consumer
++ (instancetype)consumerWithConsumer:(id<FBFileConsumer>)consumer
 {
   return [[self alloc] initWithConsumer:consumer];
 }
 
-- (instancetype)initWithConsumer:(id<FBFileDataConsumer>)consumer
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer
 {
   self = [super init];
   if (!self) {
@@ -60,7 +60,7 @@
 
 @end
 
-@interface FBLineFileDataConsumer ()
+@interface FBLineFileConsumer ()
 
 @property (nonatomic, strong, nullable, readwrite) dispatch_queue_t queue;
 @property (nonatomic, copy, nullable, readwrite) void (^consumer)(NSString *);
@@ -68,7 +68,7 @@
 
 @end
 
-@implementation FBLineFileDataConsumer
+@implementation FBLineFileConsumer
 
 + (instancetype)lineReaderWithConsumer:(void (^)(NSString *))consumer
 {
@@ -129,14 +129,14 @@
 
 @end
 
-@interface FBAccumilatingFileDataConsumer ()
+@interface FBAccumilatingFileConsumer ()
 
 @property (nonatomic, strong, nullable, readonly) NSMutableData *mutableData;
 @property (nonatomic, copy, nullable, readonly) NSData *finalData;
 
 @end
 
-@implementation FBAccumilatingFileDataConsumer
+@implementation FBAccumilatingFileConsumer
 
 - (instancetype)init
 {
@@ -180,20 +180,20 @@
 
 @end
 
-@interface FBCompositeFileDataConsumer ()
+@interface FBCompositeFileConsumer ()
 
-@property (nonatomic, copy, readonly) NSArray<id<FBFileDataConsumer>> *consumers;
+@property (nonatomic, copy, readonly) NSArray<id<FBFileConsumer>> *consumers;
 
 @end
 
-@implementation FBCompositeFileDataConsumer
+@implementation FBCompositeFileConsumer
 
-+ (instancetype)consumerWithConsumers:(NSArray<id<FBFileDataConsumer>> *)consumers
++ (instancetype)consumerWithConsumers:(NSArray<id<FBFileConsumer>> *)consumers
 {
   return [[self alloc] initWithConsumers:consumers];
 }
 
-- (instancetype)initWithConsumers:(NSArray<id<FBFileDataConsumer>> *)consumers
+- (instancetype)initWithConsumers:(NSArray<id<FBFileConsumer>> *)consumers
 {
   self = [super init];
   if (!self) {
@@ -206,14 +206,14 @@
 
 - (void)consumeData:(NSData *)data
 {
-  for (id<FBFileDataConsumer> consumer in self.consumers) {
+  for (id<FBFileConsumer> consumer in self.consumers) {
     [consumer consumeData:data];
   }
 }
 
 - (void)consumeEndOfFile
 {
-  for (id<FBFileDataConsumer> consumer in self.consumers) {
+  for (id<FBFileConsumer> consumer in self.consumers) {
     [consumer consumeEndOfFile];
   }
 }
