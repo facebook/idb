@@ -36,7 +36,7 @@
 + (instancetype)configurationWithTestBundlePath:(NSString *)testBundlePath
 {
   NSParameterAssert(testBundlePath);
-  return [[FBTestLaunchConfiguration alloc] initWithTestBundlePath:testBundlePath applicationLaunchConfiguration:nil testHostPath:nil timeout:0 initializeUITesting:NO testsToRun:nil testsToSkip:nil];
+  return [[FBTestLaunchConfiguration alloc] initWithTestBundlePath:testBundlePath applicationLaunchConfiguration:nil testHostPath:nil timeout:0 initializeUITesting:NO testsToRun:nil testsToSkip:[NSSet set]];
 }
 
 - (instancetype)withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration

@@ -62,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 /*
  Skip these tests. Format: "className/methodName"
  */
-@property (nonatomic, copy, readonly, nullable) NSSet<NSString *> *testsToSkip;
+@property (nonatomic, copy, readonly) NSSet<NSString *> *testsToSkip;
 
 /**
  Adds application launch configuration
