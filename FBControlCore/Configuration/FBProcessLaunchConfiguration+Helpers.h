@@ -81,11 +81,12 @@ NS_ASSUME_NONNULL_BEGIN
  @prarm launchPath the Launch Path.
  @param arguments the arguments.
  @param environment the environment
+ @param waitForDebugger YES if the process should be launched waiting for a debugger to attach. NO otherwise.
  @param stdOut the stdout to use, may be nil.
  @param stdErr the stderr to use, may be nil.
  @return a Dictionary if successful, nil otherwise.
  */
-+ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
 
 @end
 

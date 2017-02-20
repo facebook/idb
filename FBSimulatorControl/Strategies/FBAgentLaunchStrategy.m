@@ -92,6 +92,7 @@
     launchAgentWithLaunchPath:agentLaunch.agentBinary.path
     arguments:agentLaunch.arguments
     environment:agentLaunch.environment
+    waitForDebugger:NO
     stdOut:stdOutHandle
     stdErr:stdErrHandle
     terminationHandler:terminationHandler
@@ -104,12 +105,13 @@
   return process;
 }
 
-- (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
+- (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
 {
   NSDictionary<NSString *, id> *options = [FBAgentLaunchConfiguration
     simDeviceLaunchOptionsWithLaunchPath:launchPath
     arguments:arguments
     environment:environment
+    waitForDebugger:waitForDebugger
     stdOut:stdOut
     stdErr:stdErr];
 

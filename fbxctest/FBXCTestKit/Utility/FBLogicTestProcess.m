@@ -166,6 +166,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     launchAgentWithLaunchPath:self.launchPath
     arguments:self.arguments
     environment:self.environment
+    waitForDebugger:NO
     stdOut:self.stdOutPipe.pipe.fileHandleForWriting
     stdErr:self.stdErrPipe.pipe.fileHandleForWriting
     terminationHandler:handler
