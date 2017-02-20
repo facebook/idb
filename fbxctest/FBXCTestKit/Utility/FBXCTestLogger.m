@@ -9,7 +9,8 @@
 
 #import "FBXCTestLogger.h"
 
-static NSString *const OutputLogDirectoryEnv = @"FBXCTEST_LOG_DIRECTORY";
+static NSString *const fbxctestOutputLogDirectoryEnv = @"FBXCTEST_LOG_DIRECTORY";
+static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DIRECTORY";
 
 @interface FBXCTestLogger ()
 
@@ -23,7 +24,11 @@ static NSString *const OutputLogDirectoryEnv = @"FBXCTEST_LOG_DIRECTORY";
 
 + (NSString *)logDirectory
 {
-  NSString *directory = NSProcessInfo.processInfo.environment[OutputLogDirectoryEnv];
+  NSString *directory = NSProcessInfo.processInfo.environment[fbxctestOutputLogDirectoryEnv];
+  if (directory) {
+    return directory;
+  }
+  directory = NSProcessInfo.processInfo.environment[xctoolOutputLogDirectoryEnv];
   if (directory) {
     return directory;
   }
@@ -42,9 +47,15 @@ static NSString *const OutputLogDirectoryEnv = @"FBXCTEST_LOG_DIRECTORY";
 
 + (instancetype)loggerInDefaultDirectory:(NSString *)name
 {
-  NSString *path = [self.logDirectory stringByAppendingPathComponent:name];
+  // First, ensure that the container directory exists. Some directories may not exist yet.
+  NSString *directory = self.logDirectory;
+  NSError *error = nil;
+  BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:&error];
+  NSAssert(success, @"Expected to create directory at path %@, but could not %@", directory, error);
 
-  BOOL success = [NSFileManager.defaultManager createFileAtPath:path contents:nil attributes:nil];
+  // Create an empty file so that it can be appeneded to.
+  NSString *path = [directory stringByAppendingPathComponent:name];
+  success = [NSFileManager.defaultManager createFileAtPath:path contents:nil attributes:nil];
   NSAssert(success, @"Expected to create file at path %@, but could not", path);
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
   NSAssert(fileHandle, @"Could not create a writable file handle for file at path %@", fileHandle);
