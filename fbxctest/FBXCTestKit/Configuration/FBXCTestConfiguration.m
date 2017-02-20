@@ -311,9 +311,6 @@
   NSMutableDictionary<NSString *, NSString *> *environment = parentEnvironment.mutableCopy;
   for (NSString *key in environmentOverrides) {
     NSString *childKey = key;
-    if ([self.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]) {
-      childKey = [@"SIMCTL_CHILD_" stringByAppendingString:childKey];
-    }
     environment[childKey] = environmentOverrides[key];
   }
   return environment.copy;

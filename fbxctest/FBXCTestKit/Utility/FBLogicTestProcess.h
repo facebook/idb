@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileDataConsumer;
+@class FBSimulator;
 
 /**
  A Process wrapper for running Logic Tests.
@@ -19,17 +20,29 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBLogicTestProcess : NSObject
 
 /**
- The Designated Initializer.
+ A Logic Test Process using a Subprocess Task.
 
  @param launchPath the Launch Path of the executable
  @param arguments the Arguments to the executable.
  @param environment the Environment Variables to set.
  @param stdOutReader the Reader of the Stdout.
  @param stdErrReader the Reader of the Stderr.
- @param xctestProcessIsSubprocess YES if the xctest process is a subprocess of the launched process, NO if the process launched is xctest
  @return a new Logic Test Process
  */
-+ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileDataConsumer>)stdOutReader stdErrReader:(id<FBFileDataConsumer>)stdErrReader xctestProcessIsSubprocess:(BOOL)xctestProcessIsSubprocess;
++ (instancetype)taskProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileDataConsumer>)stdOutReader stdErrReader:(id<FBFileDataConsumer>)stdErrReader;
+
+/**
+ A Logic Test Process using a Simulator's "Agent Spawning"
+
+ @param simulator the Simulator to spawn for.
+ @param launchPath the Launch Path of the executable
+ @param arguments the Arguments to the executable.
+ @param environment the Environment Variables to set.
+ @param stdOutReader the Reader of the Stdout.
+ @param stdErrReader the Reader of the Stderr.
+ @return a new Logic Test Process
+ */
++ (instancetype)simulatorSpawnProcess:(FBSimulator *)simulator launchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileDataConsumer>)stdOutReader stdErrReader:(id<FBFileDataConsumer>)stdErrReader;
 
 /**
  Starts the Process.

@@ -57,7 +57,6 @@
   [self.configuration.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
-  NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"usr/bin/simctl"];
   NSString *otestShimPath = simulator ? self.configuration.shims.iOSSimulatorOtestShimPath : self.configuration.shims.macOtestShimPath;
 
   // The fifo is used by the shim to report events from within the xctest framework.
@@ -76,10 +75,8 @@
 
   // Get the Launch Path and Arguments for the xctest process.
   NSString *testSpecifier = self.configuration.testFilter ?: @"All";
-  NSString *launchPath = simulator ? simctlPath : xctestPath;
-  NSArray<NSString *> *arguments = simulator
-    ? @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", testSpecifier, self.configuration.testBundlePath]
-    : @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
+  NSString *launchPath = xctestPath;
+  NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
 
   // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
   dispatch_queue_t queue = dispatch_get_main_queue();
@@ -101,13 +98,20 @@
     [self.configuration.reporter handleExternalEvent:event];
   }];
 
-  FBLogicTestProcess *process = [FBLogicTestProcess
-    processWithLaunchPath:launchPath
-    arguments:arguments
-    environment:[self.configuration buildEnvironmentWithEntries:environment]
-    stdOutReader:stdOutReader
-    stdErrReader:stdErrReader
-    xctestProcessIsSubprocess:(self.simulator != nil)];
+  FBLogicTestProcess *process = simulator
+    ? [FBLogicTestProcess
+        simulatorSpawnProcess:simulator
+        launchPath:launchPath
+        arguments:arguments
+        environment:[self.configuration buildEnvironmentWithEntries:environment]
+        stdOutReader:stdOutReader
+        stdErrReader:stdErrReader]
+    : [FBLogicTestProcess
+        taskProcessWithLaunchPath:launchPath
+        arguments:arguments
+        environment:[self.configuration buildEnvironmentWithEntries:environment]
+        stdOutReader:stdOutReader
+        stdErrReader:stdErrReader];
 
   // Start the process
   if (![process startWithError:error]) {
