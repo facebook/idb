@@ -14,6 +14,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 
 @interface FBXCTestLogger ()
 
+@property (nonatomic, copy, readonly) NSString *logDirectory;
 @property (nonatomic, copy, readonly) NSString *filePath;
 @property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> baseLogger;
@@ -39,16 +40,29 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   return NSTemporaryDirectory();
 }
 
++ (NSString *)defaultLogName
+{
+  return [NSString stringWithFormat:@"%@_test.log", NSProcessInfo.processInfo.globallyUniqueString];
+}
+
 + (instancetype)defaultLoggerInDefaultDirectory
 {
-  NSString *name = [NSString stringWithFormat:@"%@_test.log", NSProcessInfo.processInfo.globallyUniqueString];
-  return [self loggerInDefaultDirectory:name];
+  return [self loggerInDefaultDirectory:self.defaultLogName];
 }
 
 + (instancetype)loggerInDefaultDirectory:(NSString *)name
 {
+  return [self loggerInDirectory:self.logDirectory name:name];
+}
+
++ (instancetype)defaultLoggerInDirectory:(NSString *)directory
+{
+  return [self loggerInDirectory:directory name:self.defaultLogName];
+}
+
++ (instancetype)loggerInDirectory:(NSString *)directory name:(NSString *)name
+{
   // First, ensure that the container directory exists. Some directories may not exist yet.
-  NSString *directory = self.logDirectory;
   NSError *error = nil;
   BOOL success = [NSFileManager.defaultManager createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:&error];
   NSAssert(success, @"Expected to create directory at path %@, but could not %@", directory, error);
@@ -62,19 +76,20 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 
   id<FBControlCoreLogger> baseLogger = [FBControlCoreLogger aslLoggerWritingToFileDescriptor:fileHandle.fileDescriptor withDebugLogging:YES];
 
-  return [[self alloc] initWithBaseLogger:baseLogger filePath:path fileHandle:fileHandle];
+  return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory filePath:path fileHandle:fileHandle];
 }
 
-- (instancetype)initWithBaseLogger:(id<FBControlCoreLogger>)baseLogger filePath:(NSString *)filePath fileHandle:(NSFileHandle *)fileHandle
+- (instancetype)initWithBaseLogger:(id<FBControlCoreLogger>)baseLogger logDirectory:(NSString *)logDirectory filePath:(NSString *)filePath fileHandle:(NSFileHandle *)fileHandle
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _baseLogger = baseLogger;
+  _logDirectory = logDirectory;
   _filePath = filePath;
   _fileHandle = fileHandle;
-  _baseLogger = baseLogger;
 
   return self;
 }
@@ -122,6 +137,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger info]
+    logDirectory:self.logDirectory
     filePath:self.filePath
     fileHandle:self.fileHandle];
 }
@@ -130,6 +146,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger debug]
+    logDirectory:self.logDirectory
     filePath:self.filePath
     fileHandle:self.fileHandle];
 }
@@ -137,15 +154,17 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 - (id<FBControlCoreLogger>)error
 {
   return [[self.class alloc]
-  initWithBaseLogger:[self.baseLogger error]
-  filePath:self.filePath
-  fileHandle:self.fileHandle];
+    initWithBaseLogger:[self.baseLogger error]
+    logDirectory:self.logDirectory
+    filePath:self.filePath
+    fileHandle:self.fileHandle];
 }
 
 - (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger onQueue:queue]
+    logDirectory:self.logDirectory
     filePath:self.filePath
     fileHandle:self.fileHandle];
 }
@@ -154,8 +173,23 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger withPrefix:prefix]
+    logDirectory:self.logDirectory
     filePath:self.filePath
     fileHandle:self.fileHandle];
+}
+
+- (id<FBFileConsumer>)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid
+{
+  NSString *fileName = [NSString stringWithFormat:@"%@.%@", uuid.UUIDString, outputKind];
+  NSString *filePath = [self.logDirectory stringByAppendingPathComponent:fileName];
+  NSError *error = nil;
+  FBFileWriter *writer = [FBFileWriter writerForFilePath:filePath error:&error];
+  NSAssert(writer, @"Could not make side-channel writer %@", error);
+
+  return [FBCompositeFileConsumer consumerWithConsumers:@[
+    consumer,
+    writer,
+  ]];
 }
 
 @end
