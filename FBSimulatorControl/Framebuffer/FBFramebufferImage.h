@@ -29,7 +29,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable CGImageRef)image;
 
 /**
- Get PNG Data of the Image.
+ Get a JPEG encoded representation of the Image.
+
+ @param error an error out for any error that occurs.
+ @return the data if successful, nil otherwise.
+ */
+- (nullable NSData *)jpegImageDataWithError:(NSError **)error;
+
+/**
+ Get a PNG encoded representation of the Image.
 
  @param error an error out for any error that occurs.
  @return the data if successful, nil otherwise.

@@ -76,6 +76,11 @@
   return image;
 }
 
+- (nullable NSData *)jpegImageDataWithError:(NSError **)error
+{
+  return [FBFramebufferImage_FrameSink jpegImageDataFromImage:self.image error:error];
+}
+
 - (nullable NSData *)pngImageDataWithError:(NSError **)error
 {
   return [FBFramebufferImage_FrameSink pngImageDataFromImage:self.image error:error];
@@ -108,7 +113,17 @@
   return [[builder updatePath:filePath] build];
 }
 
++ (nullable NSData *)jpegImageDataFromImage:(nullable CGImageRef)image error:(NSError **)error
+{
+  return [self imageDataFromImage:image type:kUTTypeJPEG error:error];
+}
+
 + (nullable NSData *)pngImageDataFromImage:(nullable CGImageRef)image error:(NSError **)error
+{
+  return [self imageDataFromImage:image type:kUTTypePNG error:error];
+}
+
++ (nullable NSData *)imageDataFromImage:(nullable CGImageRef)image type:(CFStringRef)type error:(NSError **)error
 {
   if (!image) {
     return [[FBSimulatorError
@@ -119,7 +134,7 @@
   NSMutableData *data = [NSMutableData data];
   CGImageDestinationRef destination = CGImageDestinationCreateWithData(
     (CFMutableDataRef) data,
-    kUTTypePNG,
+    type,
     1,
     NULL
   );
@@ -220,6 +235,11 @@
   }
   [self.renderable attachConsumer:self];
   return self.imageGenerator.image;
+}
+
+- (nullable NSData *)jpegImageDataWithError:(NSError **)error
+{
+  return [FBFramebufferImage_FrameSink jpegImageDataFromImage:self.image error:error];
 }
 
 - (nullable NSData *)pngImageDataWithError:(NSError **)error
