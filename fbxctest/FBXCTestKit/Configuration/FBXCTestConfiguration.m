@@ -106,7 +106,7 @@
     } else if ([argument isEqualToString:@"-listTestsOnly"]) {
       // Ignore. This is handled by the configuration class.
       continue;
-    } else if ([argument isEqualToString:@"--wait-for-debugger"]) {
+    } else if ([argument isEqualToString:@"-waitForDebugger"]) {
       self.waitForDebugger = YES;
       continue;
     }
