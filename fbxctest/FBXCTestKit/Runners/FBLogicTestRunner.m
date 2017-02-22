@@ -108,18 +108,28 @@
         launchPath:launchPath
         arguments:arguments
         environment:[self.configuration buildEnvironmentWithEntries:environment]
+        waitForDebugger:self.configuration.waitForDebugger
         stdOutReader:stdOutReader
         stdErrReader:stdErrReader]
     : [FBLogicTestProcess
         taskProcessWithLaunchPath:launchPath
         arguments:arguments
         environment:[self.configuration buildEnvironmentWithEntries:environment]
+        waitForDebugger:self.configuration.waitForDebugger
         stdOutReader:stdOutReader
         stdErrReader:stdErrReader];
 
   // Start the process
-  if (![process startWithError:error]) {
+  pid_t pid = [process startWithError:error];
+  if (!pid) {
     return NO;
+  }
+
+  if (self.configuration.waitForDebugger) {
+    [self.configuration.reporter processWaitingForDebuggerWithProcessIdentifier:pid];
+    // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
+    // We wait until it receives SIGCONT from an attached debugger.
+    waitid(P_PID, (id_t)pid, NULL, WCONTINUED);
   }
 
   // Create a reader of the otest-shim path and start reading it.
