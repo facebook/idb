@@ -82,4 +82,4 @@ brew tap facebook/fb
 brew install fbsimctl --HEAD
 ```
 
-When building `fbsimctl`, you must be using Xcode 7.1 or greater. Building with Xcode 8 is currently not supported. There are also more [detailed instructions for a custom installation.](Documentation/Installation.md)
+When building `fbsimctl`, you must be using Xcode 8.0 or greater. More [detailed instructions for a custom installation is also available.](Documentation/Installation.md)

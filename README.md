@@ -6,9 +6,7 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 ## Features
 - Enables 'Multisim' for iOS: Booting of multiple Simulators on the same host OS.
 - Runs independently of Xcode and `xcodebuild`. Uses the toolchain defined by `xcode-select`. 
-- Boots iPhone & iPad Simulators for iOS 7, 8 & 9.
-- Boots watchOS Simulators since watchOS 2.0.
-- Boots tvOS Simulators since tvOS 9.0.
+- Boots iPhone & iPad Simulators for iOS 8, 9 & 10.
 - Launches both 'Agent' and 'Application' processes, with Arguments and Environment.
 - Can boot Simulators via Xcode's `Simulator.app` or by launching 'Directly' in `CoreSimulator`.
 - 'Direct Launch' supports video recording, screenshot fetching & interfacing with the `SimulatorBridge`.
@@ -94,7 +92,7 @@ To launch Safari on an iPhone 5, you can use the following:
 ```
 
 
-`FBSimulatorControl` currently has two ways of launching Simulators that have tradeoffs for different use cases. Since Xcode 7.2, both these methods can be used:
+`FBSimulatorControl` currently has two ways of launching Simulators that have tradeoffs for different use cases:
 
 ## Multisim
 The `CoreSimulator` Framework that is used by the `Simulator.app` as well as Playgrounds & Interface Builder has long had the concept of custom 'Device Sets' which contain created Simulators. Multiple Device Sets can be used on the same host and are an effective way of ensuring that multiple processes using `CoreSimulator` don't collide into each other. 'Device Sets' are also beneficial for an automation use-case, as using a different set other than the 'Default' will ensure that these Simulators aren't polluted.
