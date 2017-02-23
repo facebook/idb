@@ -119,17 +119,17 @@ extension FBiOSTargetQuery : Accumulator {
   }
 }
 
-extension FBiOSTargetFormat {
-  public static var allFields: [String] { get {
+extension FBiOSTargetFormatKey {
+  public static var allFields: [FBiOSTargetFormatKey] { get {
     return [
-      FBiOSTargetFormatUDID,
-      FBiOSTargetFormatName,
-      FBiOSTargetFormatDeviceName,
-      FBiOSTargetFormatOSVersion,
-      FBiOSTargetFormatState,
-      FBiOSTargetFormatArchitecture,
-      FBiOSTargetFormatProcessIdentifier,
-      FBiOSTargetFormatContainerApplicationProcessIdentifier,
+      FBiOSTargetFormatKey.UDID,
+      FBiOSTargetFormatKey.name,
+      FBiOSTargetFormatKey.deviceName,
+      FBiOSTargetFormatKey.osVersion,
+      FBiOSTargetFormatKey.state,
+      FBiOSTargetFormatKey.architecture,
+      FBiOSTargetFormatKey.processIdentifier,
+      FBiOSTargetFormatKey.containerApplicationProcessIdentifier,
     ]
   }}
 }

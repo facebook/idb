@@ -755,8 +755,8 @@ extension DiagnosticFormat : Parsable {
 
 public struct FBiOSTargetFormatParsers {
   public static var parser: Parser<FBiOSTargetFormat> {
-    let parsers = FBiOSTargetFormat.allFields.map { field in
-      return Parser.ofString("--" + field, field)
+    let parsers = FBiOSTargetFormatKey.allFields.map { field in
+      return Parser.ofString("--" + field.rawValue, field)
     }
 
     let altParser = Parser
