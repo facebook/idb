@@ -95,7 +95,7 @@
 
 #pragma mark Accessors
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
   return self.device.deviceName;
 }

@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBArchitecture.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  Uses the known values of SimDeviceType ProductFamilyID, to construct an enumeration.
  These mirror the values from -[SimDeviceState productFamilyID].
@@ -23,7 +25,33 @@ typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
   FBControlCoreProductFamilyAppleWatch = 4,
 };
 
-NS_ASSUME_NONNULL_BEGIN
+/**
+ Device Names Enumeration.
+ */
+typedef NSString *FBDeviceName NS_STRING_ENUM;
+
+extern FBDeviceName const FBDeviceNameiPhone4s;
+extern FBDeviceName const FBDeviceNameiPhone5;
+extern FBDeviceName const FBDeviceNameiPhone5s;
+extern FBDeviceName const FBDeviceNameiPhone6;
+extern FBDeviceName const FBDeviceNameiPhone6Plus;
+extern FBDeviceName const FBDeviceNameiPhone6S;
+extern FBDeviceName const FBDeviceNameiPhone6SPlus;
+extern FBDeviceName const FBDeviceNameiPhoneSE;
+extern FBDeviceName const FBDeviceNameiPhone7;
+extern FBDeviceName const FBDeviceNameiPhone7Plus;
+extern FBDeviceName const FBDeviceNameiPad2;
+extern FBDeviceName const FBDeviceNameiPadRetina;
+extern FBDeviceName const FBDeviceNameiPadAir;
+extern FBDeviceName const FBDeviceNameiPadAir2;
+extern FBDeviceName const FBDeviceNameiPadPro;
+extern FBDeviceName const FBDeviceNameiPadPro_9_7_Inch;
+extern FBDeviceName const FBDeviceNameiPadPro_12_9_Inch;
+extern FBDeviceName const FBDeviceNameAppleTV1080p;
+extern FBDeviceName const FBDeviceNameAppleWatch38mm;
+extern FBDeviceName const FBDeviceNameAppleWatch42mm;
+extern FBDeviceName const FBDeviceNameAppleWatchSeries2_38mm;
+extern FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm;
 
 @interface FBControlCoreConfigurationVariant_Base : NSObject <NSCoding, NSCopying>
 @end
@@ -56,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreConfiguration_Device <NSObject>
 
-@property (nonatomic, copy, readonly) NSString *deviceName;
+@property (nonatomic, copy, readonly) FBDeviceName deviceName;
 @property (nonatomic, copy, readonly) NSSet<NSString *> *productTypes;
 @property (nonatomic, copy, readonly) FBArchitecture deviceArchitecture;
 @property (nonatomic, copy, readonly) FBArchitecture simulatorArchitecture;
@@ -256,7 +284,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Maps Device Names to Devices.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *nameToDevice;
+@property (class, nonatomic, copy, readonly) NSDictionary<FBDeviceName, id<FBControlCoreConfiguration_Device>> *nameToDevice;
 
 /**
  Maps Device 'ProductType' to Device Variants.

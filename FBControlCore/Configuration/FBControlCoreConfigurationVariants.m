@@ -11,6 +11,29 @@
 
 #import "FBArchitecture.h"
 
+FBDeviceName const FBDeviceNameiPhone4s = @"iPhone 4s";
+FBDeviceName const FBDeviceNameiPhone5 = @"iPhone 5";
+FBDeviceName const FBDeviceNameiPhone5s = @"iPhone 5s";
+FBDeviceName const FBDeviceNameiPhone6 = @"iPhone 6";
+FBDeviceName const FBDeviceNameiPhone6Plus = @"iPhone 6 Plus";
+FBDeviceName const FBDeviceNameiPhone6S = @"iPhone 6s";
+FBDeviceName const FBDeviceNameiPhone6SPlus = @"iPhone 6s Plus";
+FBDeviceName const FBDeviceNameiPhoneSE = @"iPhone SE";
+FBDeviceName const FBDeviceNameiPhone7 = @"iPhone 7";
+FBDeviceName const FBDeviceNameiPhone7Plus = @"iPhone 7 Plus";
+FBDeviceName const FBDeviceNameiPad2 = @"iPad 2";
+FBDeviceName const FBDeviceNameiPadRetina = @"iPad Retina";
+FBDeviceName const FBDeviceNameiPadAir = @"iPad Air";
+FBDeviceName const FBDeviceNameiPadAir2 = @"iPad Air 2";
+FBDeviceName const FBDeviceNameiPadPro = @"iPad Pro";
+FBDeviceName const FBDeviceNameiPadPro_9_7_Inch = @"iPad Pro (9.7-inch)";
+FBDeviceName const FBDeviceNameiPadPro_12_9_Inch = @"iPad Pro (12.9-inch)";
+FBDeviceName const FBDeviceNameAppleTV1080p = @"Apple TV 1080p";
+FBDeviceName const FBDeviceNameAppleWatch38mm = @"Apple Watch - 38mm";
+FBDeviceName const FBDeviceNameAppleWatch42mm = @"Apple Watch - 42mm";
+FBDeviceName const FBDeviceNameAppleWatchSeries2_38mm = @"Apple Watch Series 2 - 38mm";
+FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm = @"Apple Watch Series 2 - 42mm";
+
 @implementation FBControlCoreConfigurationVariant_Base
 
 #pragma mark NSCoding
@@ -97,7 +120,7 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone_Base
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -132,9 +155,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone4s
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 4s";
+  return FBDeviceNameiPhone4s;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -156,9 +179,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone5
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 5";
+  return FBDeviceNameiPhone5;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -180,9 +203,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone5s
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 5s";
+  return FBDeviceNameiPhone5s;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -204,9 +227,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone6
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 6";
+  return FBDeviceNameiPhone6;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -228,9 +251,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone6Plus
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 6 Plus";
+  return FBDeviceNameiPhone6Plus;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -252,9 +275,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone6S
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 6s";
+  return FBDeviceNameiPhone6S;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -276,9 +299,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone6SPlus
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 6s Plus";
+  return FBDeviceNameiPhone6SPlus;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -300,9 +323,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhoneSE
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone SE";
+  return FBDeviceNameiPhoneSE;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -324,9 +347,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone7
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 7";
+  return FBDeviceNameiPhone7;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -348,9 +371,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPhone7Plus
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPhone 7 Plus";
+  return FBDeviceNameiPhone7Plus;
 }
 
 - (FBArchitecture)deviceArchitecture
@@ -372,7 +395,7 @@
 
 @implementation FBControlCoreConfiguration_Device_iPad_Base
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -405,9 +428,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPad2
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPad 2";
+  return FBDeviceNameiPad2;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -429,9 +452,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPadRetina
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPad Retina";
+  return FBDeviceNameiPadRetina;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -454,9 +477,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPadAir
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPad Air";
+  return FBDeviceNameiPadAir;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -478,9 +501,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPadAir2
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPad Air 2";
+  return FBDeviceNameiPadAir2;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -502,9 +525,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPadPro
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPad Pro";
+  return FBDeviceNameiPadPro;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -527,9 +550,9 @@
 
 @implementation FBControlCoreConfiguration_Device_iPadPro_9_7_Inch
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPad Pro (9.7-inch)";
+  return FBDeviceNameiPadPro_9_7_Inch;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -551,9 +574,9 @@
 
 @implementation  FBControlCoreConfiguration_Device_iPadPro_12_9_Inch
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"iPad Pro (12.9-inch)";
+  return FBDeviceNameiPadPro_12_9_Inch;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -575,7 +598,7 @@
 
 @implementation FBControlCoreConfiguration_Device_tvOS_Base
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -608,9 +631,9 @@
 
 @implementation FBControlCoreConfiguration_Device_AppleTV1080p
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"Apple TV 1080p";
+  return FBDeviceNameAppleTV1080p;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -632,7 +655,7 @@
 
 @implementation FBControlCoreConfiguration_Device_watchOS_Base
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -665,9 +688,9 @@
 
 @implementation FBControlCoreConfiguration_Device_AppleWatch38mm
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"Apple Watch - 38mm";
+  return FBDeviceNameAppleWatch38mm;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -689,9 +712,9 @@
 
 @implementation FBControlCoreConfiguration_Device_AppleWatch42mm
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"Apple Watch - 42mm";
+  return FBDeviceNameAppleWatch42mm;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -713,9 +736,9 @@
 
 @implementation FBControlCoreConfiguration_Device_AppleWatchSeries2_38mm
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"Apple Watch Series 2 - 38mm";
+  return FBDeviceNameAppleWatchSeries2_38mm;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -737,9 +760,9 @@
 
 @implementation FBControlCoreConfiguration_Device_AppleWatchSeries2_42mm
 
-- (NSString *)deviceName
+- (FBDeviceName)deviceName
 {
-  return @"Apple Watch Series 2 - 42mm";
+  return FBDeviceNameAppleWatchSeries2_42mm;
 }
 
 - (NSSet<NSString *> *)productTypes
@@ -1153,13 +1176,13 @@
   return OSConfigurations;
 }
 
-+ (NSDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *)nameToDevice
++ (NSDictionary<FBDeviceName, id<FBControlCoreConfiguration_Device>> *)nameToDevice
 {
   static dispatch_once_t onceToken;
-  static NSDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *mapping;
+  static NSDictionary<FBDeviceName, id<FBControlCoreConfiguration_Device>> *mapping;
   dispatch_once(&onceToken, ^{
     NSArray *instances = self.deviceConfigurations;
-    NSMutableDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *dictionary = [NSMutableDictionary dictionary];
+    NSMutableDictionary<FBDeviceName, id<FBControlCoreConfiguration_Device>> *dictionary = [NSMutableDictionary dictionary];
     for (id<FBControlCoreConfiguration_Device> device in instances) {
       dictionary[device.deviceName] = device;
     }
