@@ -105,7 +105,7 @@
   return self.os.name;
 }
 
-- (NSString *)architecture
+- (FBArchitecture)architecture
 {
   return self.device.simulatorArchitecture;
 }

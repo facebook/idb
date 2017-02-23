@@ -78,7 +78,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return self.amDevice.deviceName;
 }
 
-- (NSString *)architecture
+- (FBArchitecture)architecture
 {
   return self.amDevice.architecture;
 }

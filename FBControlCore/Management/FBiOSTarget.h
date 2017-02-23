@@ -13,6 +13,7 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBArchitecture.h>
 
 @class FBProcessInfo;
 @class FBiOSTargetDiagnostics;
@@ -88,7 +89,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Architecture of the iOS Target
  */
-@property (nonatomic, copy, readonly) NSString *architecture;
+@property (nonatomic, copy, readonly) FBArchitecture architecture;
 
 /**
  Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.

@@ -130,7 +130,7 @@
   return FBiOSTargetTypeSimulator;
 }
 
-- (NSString *)architecture
+- (FBArchitecture)architecture
 {
   return self.configuration.architecture;
 }
