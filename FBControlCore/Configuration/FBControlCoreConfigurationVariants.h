@@ -254,22 +254,22 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Maps Device Names to Devices.
  */
-+ (NSDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *)nameToDevice;
+@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *nameToDevice;
 
 /**
  Maps Device 'ProductType' to Device Variants.
  */
-+ (NSDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *)productTypeToDevice;
+@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, id<FBControlCoreConfiguration_Device>> *productTypeToDevice;
 
 /**
  OS Version names to OS Versions.
  */
-+ (NSDictionary<NSString *, id<FBControlCoreConfiguration_OS>> *)nameToOSVersion;
+@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, id<FBControlCoreConfiguration_OS>> *nameToOSVersion;
 
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.
  */
-+ (NSDictionary<NSString *, NSSet<NSString *> *> *)baseArchToCompatibleArch;
+@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, NSSet<NSString *> *> *baseArchToCompatibleArch;
 
 @end
 
