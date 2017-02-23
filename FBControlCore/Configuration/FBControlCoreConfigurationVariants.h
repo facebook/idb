@@ -30,25 +30,25 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Families
 
-@protocol FBSimulatorConfiguration_Family <NSObject>
+@protocol FBControlCoreConfiguration_Family <NSObject>
 
 @property (nonatomic, assign, readonly) FBControlCoreProductFamily productFamilyID;
 
 @end
 
-@interface FBSimulatorConfiguration_Family_iPhone : FBControlCoreConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+@interface FBControlCoreConfiguration_Family_iPhone : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
 
 @end
 
-@interface FBSimulatorConfiguration_Family_iPad : FBControlCoreConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+@interface FBControlCoreConfiguration_Family_iPad : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
 
 @end
 
-@interface FBSimulatorConfiguration_Family_Watch : FBControlCoreConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+@interface FBControlCoreConfiguration_Family_Watch : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
 
 @end
 
-@interface FBSimulatorConfiguration_Family_TV : FBControlCoreConfigurationVariant_Base <FBSimulatorConfiguration_Family>
+@interface FBControlCoreConfiguration_Family_TV : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
 
 @end
 
@@ -60,7 +60,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSSet<NSString *> *productTypes;
 @property (nonatomic, copy, readonly) FBArchitecture deviceArchitecture;
 @property (nonatomic, copy, readonly) FBArchitecture simulatorArchitecture;
-@property (nonatomic, strong, readonly) id<FBSimulatorConfiguration_Family> family;
+@property (nonatomic, strong, readonly) id<FBControlCoreConfiguration_Family> family;
 
 @end
 

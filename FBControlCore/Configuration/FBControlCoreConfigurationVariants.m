@@ -59,7 +59,7 @@
 
 #pragma mark Families
 
-@implementation FBSimulatorConfiguration_Family_iPhone
+@implementation FBControlCoreConfiguration_Family_iPhone
 
 - (FBControlCoreProductFamily)productFamilyID
 {
@@ -68,7 +68,7 @@
 
 @end
 
-@implementation FBSimulatorConfiguration_Family_iPad
+@implementation FBControlCoreConfiguration_Family_iPad
 
 - (FBControlCoreProductFamily)productFamilyID
 {
@@ -77,7 +77,7 @@
 
 @end
 
-@implementation FBSimulatorConfiguration_Family_TV
+@implementation FBControlCoreConfiguration_Family_TV
 
 - (FBControlCoreProductFamily)productFamilyID
 {
@@ -86,7 +86,7 @@
 
 @end
 
-@implementation FBSimulatorConfiguration_Family_Watch
+@implementation FBControlCoreConfiguration_Family_Watch
 
 - (FBControlCoreProductFamily)productFamilyID
 {
@@ -121,9 +121,9 @@
   return nil;
 }
 
-- (id<FBSimulatorConfiguration_Family>)family
+- (id<FBControlCoreConfiguration_Family>)family
 {
-  return FBSimulatorConfiguration_Family_iPhone.new;
+  return FBControlCoreConfiguration_Family_iPhone.new;
 }
 
 @end
@@ -396,9 +396,9 @@
   return nil;
 }
 
-- (id<FBSimulatorConfiguration_Family>)family
+- (id<FBControlCoreConfiguration_Family>)family
 {
-  return FBSimulatorConfiguration_Family_iPad.new;
+  return FBControlCoreConfiguration_Family_iPad.new;
 }
 
 @end
@@ -599,9 +599,9 @@
   return nil;
 }
 
-- (id<FBSimulatorConfiguration_Family>)family
+- (id<FBControlCoreConfiguration_Family>)family
 {
-  return FBSimulatorConfiguration_Family_TV.new;
+  return FBControlCoreConfiguration_Family_TV.new;
 }
 
 @end
@@ -656,9 +656,9 @@
   return nil;
 }
 
-- (id<FBSimulatorConfiguration_Family>)family
+- (id<FBControlCoreConfiguration_Family>)family
 {
-  return FBSimulatorConfiguration_Family_Watch.new;
+  return FBControlCoreConfiguration_Family_Watch.new;
 }
 
 @end
@@ -788,8 +788,8 @@
 - (NSSet *)families
 {
   return [NSSet setWithArray:@[
-    FBSimulatorConfiguration_Family_iPhone.new,
-    FBSimulatorConfiguration_Family_iPad.new,
+    FBControlCoreConfiguration_Family_iPhone.new,
+    FBControlCoreConfiguration_Family_iPad.new,
   ]];
 }
 
@@ -949,7 +949,7 @@
 
 - (NSSet *)families
 {
-  return [NSSet setWithObject:FBSimulatorConfiguration_Family_TV.new];
+  return [NSSet setWithObject:FBControlCoreConfiguration_Family_TV.new];
 }
 
 @end
@@ -1018,7 +1018,7 @@
 
 - (NSSet *)families
 {
-  return [NSSet setWithObject:FBSimulatorConfiguration_Family_Watch.new];
+  return [NSSet setWithObject:FBControlCoreConfiguration_Family_Watch.new];
 }
 
 @end
