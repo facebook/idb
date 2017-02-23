@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBArchitecture.h>
+
 /**
  Uses the known values of SimDeviceType ProductFamilyID, to construct an enumeration.
  These mirror the values from -[SimDeviceState productFamilyID].
@@ -56,8 +58,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy, readonly) NSString *deviceName;
 @property (nonatomic, copy, readonly) NSSet<NSString *> *productTypes;
-@property (nonatomic, copy, readonly) NSString *deviceArchitecture;
-@property (nonatomic, copy, readonly) NSString *simulatorArchitecture;
+@property (nonatomic, copy, readonly) FBArchitecture deviceArchitecture;
+@property (nonatomic, copy, readonly) FBArchitecture simulatorArchitecture;
 @property (nonatomic, strong, readonly) id<FBSimulatorConfiguration_Family> family;
 
 @end
@@ -269,7 +271,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, NSSet<NSString *> *> *baseArchToCompatibleArch;
+@property (class, nonatomic, copy, readonly) NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *baseArchToCompatibleArch;
 
 @end
 

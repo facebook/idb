@@ -109,13 +109,13 @@
   return nil;
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -142,12 +142,12 @@
   return [NSSet setWithArray:@[@"iPhone4,1"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -166,12 +166,12 @@
   return [NSSet setWithArray:@[@"iPhone5,1", @"iPhone5,2"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7s;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -190,12 +190,12 @@
   return [NSSet setWithArray:@[@"iPhone6,1", @"iPhone6,2"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -214,12 +214,12 @@
   return [NSSet setWithArray:@[@"iPhone7,2"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -238,12 +238,12 @@
   return [NSSet setWithArray:@[@"iPhone7,1"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -262,12 +262,12 @@
   return [NSSet setWithArray:@[@"iPhone8,1"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -286,12 +286,12 @@
   return [NSSet setWithArray:@[@"iPhone8,2"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -310,12 +310,12 @@
   return [NSSet setWithArray:@[@"iPhone8,4"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -334,12 +334,12 @@
   return [NSSet setWithArray:@[@"iPhone9,1", @"iPhone9,3"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -353,7 +353,7 @@
   return @"iPhone 7 Plus";
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
@@ -363,7 +363,7 @@
   return [NSSet setWithArray:@[@"iPhone9,2", @"iPhone9,4"]];
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -384,13 +384,13 @@
   return nil;
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -415,12 +415,12 @@
   return [NSSet setWithArray:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -440,12 +440,12 @@
   return [NSSet setWithArray:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -464,12 +464,12 @@
   return [NSSet setWithArray:@[@"iPad4,1", @"iPad4,2", @"iPad4,3"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -488,12 +488,12 @@
   return [NSSet setWithArray:@[@"iPad5,3", @"iPad5,4"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -513,12 +513,12 @@
   return [NSSet setWithArray:@[@"iPad6,7", @"iPad6,8", @"iPad6,3", @"iPad6,4"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -537,12 +537,12 @@
   return [NSSet setWithArray:@[@"iPad6,3", @"iPad6,4"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -561,12 +561,12 @@
   return [NSSet setWithArray:@[@"iPad6,7", @"iPad6,8"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -587,13 +587,13 @@
   return nil;
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -618,12 +618,12 @@
   return [NSSet setWithArray:@[@"AppleTV5,3"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArm64;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureX86_64;
 }
@@ -644,13 +644,13 @@
   return nil;
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -675,12 +675,12 @@
   return [NSSet setWithArray:@[@"Watch1,1"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -699,12 +699,12 @@
   return [NSSet setWithArray:@[@"Watch1,2"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -723,12 +723,12 @@
   return [NSSet setWithArray:@[@"Watch2,1"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -747,12 +747,12 @@
   return [NSSet setWithArray:@[@"Watch2,2"]];
 }
 
-- (NSString *)deviceArchitecture
+- (FBArchitecture)deviceArchitecture
 {
   return FBArchitectureArmv7;
 }
 
-- (NSString *)simulatorArchitecture
+- (FBArchitecture)simulatorArchitecture
 {
   return FBArchitectureI386;
 }
@@ -1200,7 +1200,7 @@
   return mapping;
 }
 
-+ (NSDictionary<NSString *, NSSet<NSString *> *> *)baseArchToCompatibleArch
++ (NSDictionary<FBArchitecture, NSSet<FBArchitecture> *> *)baseArchToCompatibleArch
 {
   return @{
     FBArchitectureArm64 : [NSSet setWithArray:@[FBArchitectureArm64, FBArchitectureArmv7s, FBArchitectureArmv7]],
