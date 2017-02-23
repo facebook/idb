@@ -34,6 +34,35 @@ FBDeviceName const FBDeviceNameAppleWatch42mm = @"Apple Watch - 42mm";
 FBDeviceName const FBDeviceNameAppleWatchSeries2_38mm = @"Apple Watch Series 2 - 38mm";
 FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm = @"Apple Watch Series 2 - 42mm";
 
+FBOSVersionName const FBOSVersionNameiOS_7_1 = @"iOS 7.1";
+FBOSVersionName const FBOSVersionNameiOS_8_0 = @"iOS 8.0";
+FBOSVersionName const FBOSVersionNameiOS_8_1 = @"iOS 8.1";
+FBOSVersionName const FBOSVersionNameiOS_8_2 = @"iOS 8.2";
+FBOSVersionName const FBOSVersionNameiOS_8_3 = @"iOS 8.3";
+FBOSVersionName const FBOSVersionNameiOS_8_4 = @"iOS 8.4";
+FBOSVersionName const FBOSVersionNameiOS_9_0 = @"iOS 9.0";
+FBOSVersionName const FBOSVersionNameiOS_9_1 = @"iOS 9.1";
+FBOSVersionName const FBOSVersionNameiOS_9_2 = @"iOS 9.2";
+FBOSVersionName const FBOSVersionNameiOS_9_3 = @"iOS 9.3";
+FBOSVersionName const FBOSVersionNameiOS_9_3_1 = @"iOS 9.3.1";
+FBOSVersionName const FBOSVersionNameiOS_9_3_2 = @"iOS 9.3.2";
+FBOSVersionName const FBOSVersionNameiOS_10_0 = @"iOS 10.0";
+FBOSVersionName const FBOSVersionNameiOS_10_1 = @"iOS 10.1";
+FBOSVersionName const FBOSVersionNameiOS_10_2 = @"iOS 10.2";
+FBOSVersionName const FBOSVersionNameiOS_10_3 = @"iOS 10.3";
+FBOSVersionName const FBOSVersionNametvOS_9_0 = @"tvOS 9.0";
+FBOSVersionName const FBOSVersionNametvOS_9_1 = @"tvOS 9.1";
+FBOSVersionName const FBOSVersionNametvOS_9_2 = @"tvOS 9.2";
+FBOSVersionName const FBOSVersionNametvOS_10_0 = @"tvOS 10.0";
+FBOSVersionName const FBOSVersionNametvOS_10_1 = @"tvOS 10.1";
+FBOSVersionName const FBOSVersionNametvOS_10_2 = @"tvOS 10.2";
+FBOSVersionName const FBOSVersionNamewatchOS_2_0 = @"watchOS 2.0";
+FBOSVersionName const FBOSVersionNamewatchOS_2_1 = @"watchOS 2.1";
+FBOSVersionName const FBOSVersionNamewatchOS_2_2 = @"watchOS 2.2";
+FBOSVersionName const FBOSVersionNamewatchOS_3_0 = @"watchOS 3.0";
+FBOSVersionName const FBOSVersionNamewatchOS_3_1 = @"watchOS 3.1";
+FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
+
 @implementation FBControlCoreConfigurationVariant_Base
 
 #pragma mark NSCoding
@@ -786,7 +815,7 @@ FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm = @"Apple Watch Series 2 -
 
 @implementation FBControlCoreConfiguration_OS_Base
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -820,151 +849,151 @@ FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm = @"Apple Watch Series 2 -
 
 @implementation FBControlCoreConfiguration_iOS_7_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 7.1";
+  return FBOSVersionNameiOS_7_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_8_0
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 8.0";
+  return FBOSVersionNameiOS_8_0;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_8_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 8.1";
+  return FBOSVersionNameiOS_8_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_8_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 8.2";
+  return FBOSVersionNameiOS_8_2;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_8_3
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 8.3";
+  return FBOSVersionNameiOS_8_3;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_8_4
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 8.4";
+  return FBOSVersionNameiOS_8_4;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_9_0
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 9.0";
+  return FBOSVersionNameiOS_9_0;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_9_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 9.1";
+  return FBOSVersionNameiOS_9_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_9_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 9.2";
+  return FBOSVersionNameiOS_9_2;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_9_3
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 9.3";
+  return FBOSVersionNameiOS_9_3;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_9_3_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 9.3.1";
+  return FBOSVersionNameiOS_9_3_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_9_3_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 9.3.2";
+  return FBOSVersionNameiOS_9_3_2;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_10_0
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 10.0";
+  return FBOSVersionNameiOS_10_0;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_10_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 10.1";
+  return FBOSVersionNameiOS_10_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_10_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 10.2";
+  return FBOSVersionNameiOS_10_2;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_iOS_10_3
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"iOS 10.3";
+  return FBOSVersionNameiOS_10_3;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_tvOS_Base
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -979,61 +1008,61 @@ FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm = @"Apple Watch Series 2 -
 
 @implementation FBControlCoreConfiguration_tvOS_9_0
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"tvOS 9.0";
+  return FBOSVersionNametvOS_9_0;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_tvOS_9_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"tvOS 9.1";
+  return FBOSVersionNametvOS_9_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_tvOS_9_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"tvOS 9.2";
+  return FBOSVersionNametvOS_9_2;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_tvOS_10_0
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"tvOS 10.0";
+  return FBOSVersionNametvOS_10_0;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_tvOS_10_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"tvOS 10.1";
+  return FBOSVersionNametvOS_10_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_tvOS_10_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"tvOS 10.2";
+  return FBOSVersionNametvOS_10_2;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_watchOS_Base
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -1048,54 +1077,54 @@ FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm = @"Apple Watch Series 2 -
 
 @implementation FBControlCoreConfiguration_watchOS_2_0
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"watchOS 2.0";
+  return FBOSVersionNamewatchOS_2_0;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_watchOS_2_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"watchOS 2.1";
+  return FBOSVersionNamewatchOS_2_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_watchOS_2_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"watchOS 2.2";
+  return FBOSVersionNamewatchOS_2_2;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_watchOS_3_0
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"watchOS 3.0";
+  return FBOSVersionNamewatchOS_3_0;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_watchOS_3_1
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"watchOS 3.1";
+  return FBOSVersionNamewatchOS_3_1;
 }
 
 @end
 
 @implementation FBControlCoreConfiguration_watchOS_3_2
 
-- (NSString *)name
+- (FBOSVersionName)name
 {
-  return @"watchOS 3.2";
+  return FBOSVersionNamewatchOS_3_2;
 }
 
 @end
@@ -1208,13 +1237,13 @@ FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm = @"Apple Watch Series 2 -
   return mapping;
 }
 
-+ (NSDictionary<NSString *, id<FBControlCoreConfiguration_OS>> *)nameToOSVersion
++ (NSDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *)nameToOSVersion
 {
   static dispatch_once_t onceToken;
-  static NSDictionary<NSString *, id<FBControlCoreConfiguration_OS>> *mapping;
+  static NSDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *mapping;
   dispatch_once(&onceToken, ^{
     NSArray *instances = self.OSConfigurations;
-    NSMutableDictionary<NSString *, id<FBControlCoreConfiguration_OS>> *dictionary = [NSMutableDictionary dictionary];
+    NSMutableDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *dictionary = [NSMutableDictionary dictionary];
     for (id<FBControlCoreConfiguration_OS> os in instances) {
       dictionary[os.name] = os;
     }

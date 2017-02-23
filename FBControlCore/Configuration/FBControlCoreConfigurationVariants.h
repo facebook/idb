@@ -53,6 +53,40 @@ extern FBDeviceName const FBDeviceNameAppleWatch42mm;
 extern FBDeviceName const FBDeviceNameAppleWatchSeries2_38mm;
 extern FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm;
 
+/**
+ OS Versions Name Enumeration.
+ */
+typedef NSString *FBOSVersionName NS_STRING_ENUM;
+
+extern FBOSVersionName const FBOSVersionNameiOS_7_1;
+extern FBOSVersionName const FBOSVersionNameiOS_8_0;
+extern FBOSVersionName const FBOSVersionNameiOS_8_1;
+extern FBOSVersionName const FBOSVersionNameiOS_8_2;
+extern FBOSVersionName const FBOSVersionNameiOS_8_3;
+extern FBOSVersionName const FBOSVersionNameiOS_8_4;
+extern FBOSVersionName const FBOSVersionNameiOS_9_0;
+extern FBOSVersionName const FBOSVersionNameiOS_9_1;
+extern FBOSVersionName const FBOSVersionNameiOS_9_2;
+extern FBOSVersionName const FBOSVersionNameiOS_9_3;
+extern FBOSVersionName const FBOSVersionNameiOS_9_3_1;
+extern FBOSVersionName const FBOSVersionNameiOS_9_3_2;
+extern FBOSVersionName const FBOSVersionNameiOS_10_0;
+extern FBOSVersionName const FBOSVersionNameiOS_10_1;
+extern FBOSVersionName const FBOSVersionNameiOS_10_2;
+extern FBOSVersionName const FBOSVersionNameiOS_10_3;
+extern FBOSVersionName const FBOSVersionNametvOS_9_0;
+extern FBOSVersionName const FBOSVersionNametvOS_9_1;
+extern FBOSVersionName const FBOSVersionNametvOS_9_2;
+extern FBOSVersionName const FBOSVersionNametvOS_10_0;
+extern FBOSVersionName const FBOSVersionNametvOS_10_1;
+extern FBOSVersionName const FBOSVersionNametvOS_10_2;
+extern FBOSVersionName const FBOSVersionNamewatchOS_2_0;
+extern FBOSVersionName const FBOSVersionNamewatchOS_2_1;
+extern FBOSVersionName const FBOSVersionNamewatchOS_2_2;
+extern FBOSVersionName const FBOSVersionNamewatchOS_3_0;
+extern FBOSVersionName const FBOSVersionNamewatchOS_3_1;
+extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
+
 @interface FBControlCoreConfigurationVariant_Base : NSObject <NSCoding, NSCopying>
 @end
 
@@ -174,7 +208,7 @@ extern FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm;
 
 @protocol FBControlCoreConfiguration_OS <NSObject>
 
-@property (nonatomic, copy, readonly) NSString *name;
+@property (nonatomic, copy, readonly) FBOSVersionName name;
 @property (nonatomic, copy, readonly) NSDecimalNumber *versionNumber;
 @property (nonatomic, copy, readonly) NSSet *families;
 
@@ -294,7 +328,7 @@ extern FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm;
 /**
  OS Version names to OS Versions.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<NSString *, id<FBControlCoreConfiguration_OS>> *nameToOSVersion;
+@property (class, nonatomic, copy, readonly) NSDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *nameToOSVersion;
 
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.
