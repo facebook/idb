@@ -33,6 +33,8 @@
 @property (nonatomic, copy) NSString *moduleName;
 @property (nonatomic, copy) NSString *testBundlePath;
 @property (nonatomic, copy) NSString *savePath;
+@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
+@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @end
 
@@ -74,6 +76,18 @@
   return self;
 }
 
+- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun
+{
+  self.testsToRun = testsToRun;
+  return self;
+}
+
+- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
+{
+  self.testsToSkip = testsToSkip;
+  return self;
+}
+
 - (instancetype)saveAs:(NSString *)savePath
 {
   self.savePath = savePath;
@@ -93,6 +107,8 @@
     testConfiguration.pathToXcodeReportingSocket = nil;
     testConfiguration.testsMustRunOnMainThread = self.shouldInitializeForUITesting;
     testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
+    testConfiguration.testsToRun = self.testsToRun;
+    testConfiguration.testsToSkip = self.testsToSkip;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
     if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:error]) {
       return nil;
