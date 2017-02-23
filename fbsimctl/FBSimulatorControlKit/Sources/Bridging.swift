@@ -134,6 +134,18 @@ extension FBiOSTargetFormatKey {
   }}
 }
 
+extension FBArchitecture {
+  public static var allFields: [FBArchitecture] { get {
+    return [
+      .I386,
+      .X86_64,
+      .armv7,
+      .armv7s,
+      .arm64,
+    ]
+  }}
+}
+
 extension FBiOSTargetFormat : Accumulator {
   public func append(_ other: FBiOSTargetFormat) -> Self {
     return self.appendFields(other.fields)

@@ -814,13 +814,14 @@ public struct FBiOSTargetQueryParsers {
   }
 
   static var architectureParser: Parser<FBiOSTargetQuery> {
-    return Parser<String>
-      .alternative(FBArchitecture.allArchitectures().map(architectureSubparser))
+    return Parser<FBArchitecture>
+      .alternative(FBArchitecture.allFields.map(architectureSubparser))
       .fmap { FBiOSTargetQuery.architectures([$0]) }
   }
 
-  static func architectureSubparser(_ architecture: String) -> Parser<String> {
-    return Parser<String>.ofFlag("arch=\(architecture)", architecture, "")
+  static func architectureSubparser(_ architecture: FBArchitecture) -> Parser<FBArchitecture> {
+    return Parser<FBArchitecture>
+      .ofFlag("arch=\(architecture.rawValue)", architecture, "")
   }
 
   static var simulatorStateParser: Parser<FBiOSTargetQuery> {

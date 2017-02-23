@@ -24,7 +24,7 @@
   return [self initWithUDIDs:NSSet.new states:NSIndexSet.new architectures:NSSet.new targetType:FBiOSTargetTypeAll osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
 }
 
-- (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSIndexSet *)states architectures:(NSSet<NSString *> *)architectures targetType:(FBiOSTargetType)targetType osVersions:(NSSet<id<FBControlCoreConfiguration_OS>> *)osVersions devices:(NSSet<id<FBControlCoreConfiguration_Device>> *)devices range:(NSRange)range
+- (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSIndexSet *)states architectures:(NSSet<FBArchitecture> *)architectures targetType:(FBiOSTargetType)targetType osVersions:(NSSet<id<FBControlCoreConfiguration_OS>> *)osVersions devices:(NSSet<id<FBControlCoreConfiguration_Device>> *)devices range:(NSRange)range
 {
   self = [super init];
   if (!self) {
@@ -79,11 +79,11 @@
   return [[self.class alloc] initWithUDIDs:self.udids states:[indexSet copy] architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
-+ (instancetype)architectures:(NSArray<NSString *> *)architectures {
++ (instancetype)architectures:(NSArray<FBArchitecture> *)architectures {
   return [self.allTargets architectures:architectures];
 }
 
-- (instancetype)architectures:(NSArray<NSString *> *)architectures {
+- (instancetype)architectures:(NSArray<FBArchitecture> *)architectures {
   if (architectures.count == 0) {
     return self;
   }

@@ -12,6 +12,7 @@
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBControlCoreConfigurationVariants.h>
+#import <FBControlCore/FBArchitecture.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -53,8 +54,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param architectures the Architectures to match against.
  @return a new Target Query.
  */
-+ (instancetype)architectures:(NSArray<NSString *> *)architectures;
-- (instancetype)architectures:(NSArray<NSString *> *)architectures;
++ (instancetype)architectures:(NSArray<FBArchitecture> *)architectures;
+- (instancetype)architectures:(NSArray<FBArchitecture> *)architectures;
 
 /**
  A Query that matches the given Target Tyep.
@@ -124,7 +125,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Architectures to Match against.
  An Empty Set means that no Architecture filtering will occur.
  */
-@property (nonatomic, readonly, copy) NSSet<NSString *> *architectures;
+@property (nonatomic, readonly, copy) NSSet<FBArchitecture> *architectures;
 
 /**
  The Target Types to match against.

@@ -9,22 +9,8 @@
 
 #import "FBArchitecture.h"
 
-NSString *const FBArchitectureI386 = @"i386";
-NSString *const FBArchitectureX86_64 = @"x86_64";
-NSString *const FBArchitectureArmv7 = @"armv7";
-NSString *const FBArchitectureArmv7s = @"armv7s";
-NSString *const FBArchitectureArm64 = @"arm64";
-
-@implementation FBArchitecture
-
-+ (NSSet<NSString *> *)allArchitectures {
-  return [NSSet setWithArray:@[
-                               FBArchitectureI386,
-                               FBArchitectureX86_64,
-                               FBArchitectureArmv7,
-                               FBArchitectureArmv7s,
-                               FBArchitectureArm64,
-                               ]];
-}
-
-@end
+FBArchitecture const FBArchitectureI386 = @"i386";
+FBArchitecture const FBArchitectureX86_64 = @"x86_64";
+FBArchitecture const FBArchitectureArmv7 = @"armv7";
+FBArchitecture const FBArchitectureArmv7s = @"armv7s";
+FBArchitecture const FBArchitectureArm64 = @"arm64";

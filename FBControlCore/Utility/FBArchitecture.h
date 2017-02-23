@@ -11,22 +11,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString *const FBArchitectureI386;
-extern NSString *const FBArchitectureX86_64;
-extern NSString *const FBArchitectureArmv7;
-extern NSString *const FBArchitectureArmv7s;
-extern NSString *const FBArchitectureArm64;
-
 /**
  Provides known Instruction Set Architectures.
  */
-@interface FBArchitecture : NSObject
+typedef NSString *FBArchitecture NS_STRING_ENUM;
 
-/**
- Provides string representation of all known Architectures.
- */
-+ (NSSet<NSString *> *)allArchitectures;
-
-@end
+extern FBArchitecture const FBArchitectureI386;
+extern FBArchitecture const FBArchitectureX86_64;
+extern FBArchitecture const FBArchitectureArmv7;
+extern FBArchitecture const FBArchitectureArmv7s;
+extern FBArchitecture const FBArchitectureArm64;
 
 NS_ASSUME_NONNULL_END
