@@ -12,7 +12,7 @@
 #import "FBDiagnostic.h"
 #import "FBDiagnosticQuery.h"
 
-NSString *const FBiOSTargetLogNameVideo = @"video";
+FBDiagnosticName const FBDiagnosticNameVideo = @"video";
 
 @interface FBDiagnosticQuery (FBiOSTargetDiagnostics)
 
@@ -45,7 +45,7 @@ NSString *const FBiOSTargetLogNameVideo = @"video";
 - (FBDiagnostic *)video
 {
   return [[[[self.baseLogBuilder
-    updateShortName:FBiOSTargetLogNameVideo]
+    updateShortName:FBDiagnosticNameVideo]
     updateFileType:@"mp4"]
     updatePathFromDefaultLocation]
     build];

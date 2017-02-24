@@ -129,7 +129,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 {
   return [[[self.baseLogBuilder
     updateDiagnostic:[super video]]
-    updateDiagnostic:self.eventLogs[FBiOSTargetLogNameVideo]]
+    updateDiagnostic:self.eventLogs[FBDiagnosticNameVideo]]
     build];
 }
 
