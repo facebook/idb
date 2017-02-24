@@ -86,7 +86,7 @@
   XCTAssertEqual(kill((pid_t)process.processIdentifier, SIGKILL), 0);
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate timeout:20];
-  XCTAssertFalse([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
+  XCTAssertFalse([actual.userInfo[FBSimulatorNotificationUserInfoKeyExpectedTermination] boolValue]);
   XCTAssertNil([simulator.history runningProcessForApplication:self.safariApplication]);
 }
 
@@ -111,7 +111,7 @@
   [self assertInteractionSuccessful:[simulator.interact terminateSubprocess:process]];
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate timeout:20];
-  XCTAssertTrue([actual.userInfo[FBSimulatorExpectedTerminationKey] boolValue]);
+  XCTAssertTrue([actual.userInfo[FBSimulatorNotificationUserInfoKeyExpectedTermination] boolValue]);
   XCTAssertNil([simulator.history runningProcessForApplication:self.safariApplication]);
 }
 

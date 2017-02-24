@@ -89,34 +89,39 @@ extern FBSimulatorNotificationName const FBSimulatorNotificationNameGainedDiagno
 extern FBSimulatorNotificationName const FBSimulatorNotificationNameStateDidChange;
 
 /**
+ Notification UserInfo Enumeration.
+ */
+typedef NSString *FBSimulatorNotificationUserInfoKey NS_STRING_ENUM;
+
+/**
  Notification UserInfo for whether the termination was expected or not.
  */
-extern NSString *const FBSimulatorExpectedTerminationKey;
+extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyExpectedTermination;
 
 /**
  Notification UserInfo for the process in question.
  */
-extern NSString *const FBSimulatorProcessKey;
+extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyProcess;
 
 /**
  Notification UserInfo for the Simulator Bridge.
  */
-extern NSString *const FBSimulatorConnectionKey;
+extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyConnection;
 
 /**
  Notification UserInfo for the name of a diagnostic.
  */
-extern NSString *const FBSimulatorDiagnosticLog;
+extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyDiagnostic;
 
 /**
  Notification UserInfo for Simulator State.
  */
-extern NSString *const FBSimulatorStateKey;
+extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyState;
 
 /**
  Notification UserInfo for Test Manager.
  */
-extern NSString *const FBSimulatorTestManagerKey;
+extern FBSimulatorNotificationUserInfoKey const FBSimulatorNotificationUserInfoKeyTestManager;
 
 /**
  An Event Sink that will fire NSNotifications.

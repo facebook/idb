@@ -24,12 +24,12 @@ FBSimulatorNotificationName const FBSimulatorNotificationNameTestManagerDidDisco
 FBSimulatorNotificationName const FBSimulatorNotificationNameGainedDiagnosticInformation = @"FBSimulatorNotificationNameGainedDiagnosticInformation";
 FBSimulatorNotificationName const FBSimulatorNotificationNameStateDidChange = @"FBSimulatorNotificationNameStateDidChange";
 
-NSString *const FBSimulatorExpectedTerminationKey = @"expected";
-NSString *const FBSimulatorProcessKey = @"process";
-NSString *const FBSimulatorDiagnosticLog = @"diagnostic_log";
-NSString *const FBSimulatorConnectionKey = @"connection";
-NSString *const FBSimulatorStateKey = @"simulator_state";
-NSString *const FBSimulatorTestManagerKey = @"testManager";
+NSString *const FBSimulatorNotificationUserInfoKeyExpectedTermination = @"expected";
+NSString *const FBSimulatorNotificationUserInfoKeyProcess = @"process";
+NSString *const FBSimulatorNotificationUserInfoKeyDiagnostic = @"diagnostic_log";
+NSString *const FBSimulatorNotificationUserInfoKeyConnection = @"connection";
+NSString *const FBSimulatorNotificationUserInfoKeyState = @"simulator_state";
+NSString *const FBSimulatorNotificationUserInfoKeyTestManager = @"testManager";
 
 @interface FBSimulatorNotificationNameEventSink ()
 
@@ -51,103 +51,103 @@ NSString *const FBSimulatorTestManagerKey = @"testManager";
 - (void)containerApplicationDidLaunch:(FBProcessInfo *)applicationProcess
 {
   [self materializeNotification:FBSimulatorNotificationNameSimulatorApplicationDidLaunch userInfo:@{
-    FBSimulatorProcessKey : applicationProcess
+    FBSimulatorNotificationUserInfoKeyProcess : applicationProcess
   }];
 }
 
 - (void)containerApplicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
   [self materializeNotification:FBSimulatorNotificationNameSimulatorApplicationDidTerminate userInfo:@{
-    FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorProcessKey : applicationProcess
+    FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
+    FBSimulatorNotificationUserInfoKeyProcess : applicationProcess
   }];
 }
 
 - (void)connectionDidConnect:(FBSimulatorConnection *)connection
 {
   [self materializeNotification:FBSimulatorNotificationNameConnectionDidConnect userInfo:@{
-    FBSimulatorConnectionKey : connection,
+    FBSimulatorNotificationUserInfoKeyConnection : connection,
   }];
 }
 
 - (void)connectionDidDisconnect:(FBSimulatorConnection *)connection expected:(BOOL)expected
 {
   [self materializeNotification:FBSimulatorNotificationNameConnectionDidDisconnect userInfo:@{
-    FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorConnectionKey : connection,
+    FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
+    FBSimulatorNotificationUserInfoKeyConnection : connection,
   }];
 }
 
 - (void)simulatorDidLaunch:(FBProcessInfo *)launchdProcess
 {
   [self materializeNotification:FBSimulatorNotificationNameDidLaunch userInfo:@{
-    FBSimulatorProcessKey : launchdProcess
+    FBSimulatorNotificationUserInfoKeyProcess : launchdProcess
   }];
 }
 
 - (void)simulatorDidTerminate:(FBProcessInfo *)launchdProcess expected:(BOOL)expected
 {
   [self materializeNotification:FBSimulatorNotificationNameDidTerminate userInfo:@{
-    FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorProcessKey : launchdProcess
+    FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
+    FBSimulatorNotificationUserInfoKeyProcess : launchdProcess
   }];
 }
 
 - (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
 {
   [self materializeNotification:FBSimulatorNotificationNameAgentProcessDidLaunch userInfo:@{
-    FBSimulatorProcessKey : agentProcess
+    FBSimulatorNotificationUserInfoKeyProcess : agentProcess
   }];
 }
 
 - (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
 {
   [self materializeNotification:FBSimulatorNotificationNameAgentProcessDidTerminate userInfo:@{
-    FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorProcessKey : agentProcess
+    FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
+    FBSimulatorNotificationUserInfoKeyProcess : agentProcess
   }];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
 {
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch userInfo:@{
-    FBSimulatorProcessKey : applicationProcess,
+    FBSimulatorNotificationUserInfoKeyProcess : applicationProcess,
   }];
 }
 
 - (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
 {
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate userInfo:@{
-    FBSimulatorExpectedTerminationKey : @(expected),
-    FBSimulatorProcessKey : applicationProcess
+    FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
+    FBSimulatorNotificationUserInfoKeyProcess : applicationProcess
   }];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager
 {
   [self materializeNotification:FBSimulatorNotificationNameTestManagerDidConnect userInfo:@{
-    FBSimulatorTestManagerKey : testManager
+    FBSimulatorNotificationUserInfoKeyTestManager : testManager
   }];
 }
 
 - (void)testmanagerDidDisconnect:(FBTestManager *)testManager
 {
   [self materializeNotification:FBSimulatorNotificationNameTestManagerDidDisconnect userInfo:@{
-    FBSimulatorTestManagerKey : testManager
+    FBSimulatorNotificationUserInfoKeyTestManager : testManager
   }];
 }
 
 - (void)diagnosticAvailable:(FBDiagnostic *)diagnostic
 {
   [self materializeNotification:FBSimulatorNotificationNameGainedDiagnosticInformation userInfo:@{
-    FBSimulatorDiagnosticLog : diagnostic
+    FBSimulatorNotificationUserInfoKeyDiagnostic : diagnostic
   }];
 }
 
 - (void)didChangeState:(FBSimulatorState)state
 {
   [self materializeNotification:FBSimulatorNotificationNameStateDidChange userInfo:@{
-    FBSimulatorStateKey : @(state)
+    FBSimulatorNotificationUserInfoKeyState : @(state)
   }];
 }
 
