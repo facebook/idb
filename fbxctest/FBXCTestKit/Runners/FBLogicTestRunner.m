@@ -130,6 +130,7 @@
     // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
     // We wait until it receives SIGCONT from an attached debugger.
     waitid(P_PID, (id_t)pid, NULL, WCONTINUED);
+    [self.configuration.reporter debuggerAttached];
   }
 
   // Create a reader of the otest-shim path and start reading it.
