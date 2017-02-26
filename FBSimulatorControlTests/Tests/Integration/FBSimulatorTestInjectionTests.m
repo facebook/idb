@@ -158,6 +158,20 @@
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
 }
 
+- (void)testRunningUITests
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  id<FBInteraction> interaction = [[[[simulator.interact
+    installApplication:self.iOSUITestTargetApplication]
+    installApplication:self.iOSUITestRunnerApplication]
+    startTestWithLaunchConfiguration:self.uiTestLaunch reporter:self]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+
+  [self assertInteractionSuccessful:interaction];
+  [self assertPassed:@[@"testSuccess"]
+              failed:@[@"testFailure"]];
+}
+
 #pragma mark -
 
 - (NSString *)stringWithContentsOfJUnitResult:(NSURL *)path

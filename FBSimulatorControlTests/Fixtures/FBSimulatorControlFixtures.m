@@ -58,6 +58,24 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];
 }
 
++ (NSString *)iOSUITestRunnerApplicationPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixture-Runner" ofType:@"app"];
+}
+
++ (NSString *)iOSUITestRunnerTestBundlePath
+{
+  return [[[[self iOSUITestRunnerApplicationPath]
+    stringByAppendingPathComponent:@"Plugins"]
+    stringByAppendingPathComponent:@"iOSUITestFixture"]
+    stringByAppendingPathExtension:@"xctest"];
+}
+
++ (NSString *)iOSUITestTargetApplicationPath
+{
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixture" ofType:@"app"];
+}
+
 @end
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
@@ -68,6 +86,25 @@
     configurationWithTestBundlePath:self.iOSUnitTestBundlePath]
     withApplicationLaunchConfiguration:self.tableSearchAppLaunch]
     withUITesting:NO];
+}
+
+- (FBTestLaunchConfiguration *)uiTestLaunch
+{
+  // Xcode embeds the XCTest.framework into the UI Test Runner application. To avoid committing big binaries to the repository
+  // the XCTest.framework has been removed from the fixture. It will be loaded instead from Xcode's Platform path.
+  NSString *frameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"];
+  NSDictionary *environment = @{@"DYLD_FRAMEWORK_PATH": frameworkPath};
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [FBApplicationLaunchConfiguration
+    configurationWithApplication:self.iOSUITestRunnerApplication
+    arguments:@[]
+    environment:environment
+    output:FBProcessOutputConfiguration.outputToDevNull];
+  return [[[[[FBTestLaunchConfiguration
+    configurationWithTestBundlePath:FBSimulatorControlFixtures.iOSUITestRunnerTestBundlePath]
+    withApplicationLaunchConfiguration:applicationLaunchConfiguration]
+    withUITestingTargetApplicationPath:self.iOSUITestTargetApplication.path]
+    withUITestingTargetApplicationBundleID:self.iOSUITestTargetApplication.bundleID]
+    withUITesting:YES];
 }
 
 - (FBApplicationDescriptor *)tableSearchApplication
@@ -160,9 +197,8 @@
     environment:self.appLaunch2.environment];
 }
 
-- (nullable NSString *)iOSUnitTestBundlePath
+- (nullable NSString *)signBundleAtPath:(NSString *)bundlePath
 {
-  NSString *bundlePath = FBSimulatorControlFixtures.iOSUnitTestBundlePath;
   if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
     return bundlePath;
   }
@@ -176,6 +212,37 @@
   }
   XCTFail(@"Bundle at path %@ could not be codesigned: %@", bundlePath, error);
   return nil;
+}
+
+- (FBApplicationDescriptor *)applicationWithPath:(NSString *)applicationPath
+{
+  NSError *error = nil;
+  FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:applicationPath error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(application);
+  return application;
+}
+
+- (nullable NSString *)iOSUnitTestBundlePath
+{
+  return [self signBundleAtPath:FBSimulatorControlFixtures.iOSUnitTestBundlePath];
+}
+
+- (nullable NSString *)iOSUITestRunnerTestBundlePath
+{
+  return [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestRunnerTestBundlePath];
+}
+
+- (FBApplicationDescriptor *)iOSUITestRunnerApplication
+{
+  NSString *applicationPath = [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestRunnerApplicationPath];
+  return [self applicationWithPath:applicationPath];
+}
+
+- (FBApplicationDescriptor *)iOSUITestTargetApplication
+{
+  NSString *applicationPath = [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestTargetApplicationPath];
+  return [self applicationWithPath:applicationPath];
 }
 
 @end
