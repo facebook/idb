@@ -45,6 +45,18 @@
 - (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
 
 /**
+ @param targetApplicationBundleID bundle ID of the target application used for UITesting
+ @return builder
+ */
+- (instancetype)withUITestingTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ @param targetApplicationPath parth to the target application used for UITesting
+ @return builder
+ */
+- (instancetype)withUITestingTargetApplicationPath:(NSString *)targetApplicationPath;
+
+/**
  Adds tests to run.
 
  @param testsToRun tests to run

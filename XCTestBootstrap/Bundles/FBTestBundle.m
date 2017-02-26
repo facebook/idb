@@ -24,6 +24,8 @@
 @interface FBTestBundleBuilder ()
 @property (nonatomic, strong) NSUUID *sessionIdentifier;
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
+@property (nonatomic, strong) NSString *targetApplicationBundleID;
+@property (nonatomic, strong) NSString *targetApplicationPath;
 @property (nonatomic, copy) NSSet<NSString *> *testsToRun;
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @end
@@ -39,6 +41,18 @@
 - (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
 {
   self.shouldInitializeForUITesting = shouldInitializeForUITesting;
+  return self;
+}
+
+- (instancetype)withUITestingTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
+- (instancetype)withUITestingTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  self.targetApplicationPath = targetApplicationPath;
   return self;
 }
 
@@ -69,11 +83,13 @@
     NSError *innerError;
     NSString *testConfigurationFileName = [NSString stringWithFormat:@"%@-%@.xctestconfiguration", testBundle.name, self.sessionIdentifier.UUIDString];
     testBundle.configuration =
-    [[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
+    [[[[[[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
       withModuleName:testBundle.name]
       withSessionIdentifier:self.sessionIdentifier]
       withTestBundlePath:testBundle.path]
       withUITesting:self.shouldInitializeForUITesting]
+      withUITestingTargetApplicationBundleID:self.targetApplicationBundleID]
+      withUITestingTargetApplicationPath:self.targetApplicationPath]
       withTestsToRun:self.testsToRun]
       withTestsToSkip:self.testsToSkip]
       saveAs:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]]

@@ -36,6 +36,8 @@
 @property (nonatomic, copy) NSSet<NSString *> *testsToRun;
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
+@property (nonatomic, copy) NSString *targetApplicationBundleID;
+@property (nonatomic, copy) NSString *targetApplicationPath;
 @end
 
 @implementation FBTestConfigurationBuilder
@@ -76,6 +78,18 @@
   return self;
 }
 
+- (instancetype)withUITestingTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
+- (instancetype)withUITestingTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  self.targetApplicationPath = targetApplicationPath;
+  return self;
+}
+
 - (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun
 {
   self.testsToRun = testsToRun;
@@ -107,6 +121,8 @@
     testConfiguration.pathToXcodeReportingSocket = nil;
     testConfiguration.testsMustRunOnMainThread = self.shouldInitializeForUITesting;
     testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
+    testConfiguration.targetApplicationPath = self.targetApplicationPath;
+    testConfiguration.targetApplicationBundleID = self.targetApplicationBundleID;
     testConfiguration.testsToRun = self.testsToRun;
     testConfiguration.testsToSkip = self.testsToSkip;
     NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];

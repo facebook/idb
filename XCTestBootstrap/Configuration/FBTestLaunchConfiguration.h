@@ -54,6 +54,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, assign, readonly) BOOL shouldInitializeUITesting;
 
+/**
+ Bundle ID of the target application used for UITesting
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationBundleID;
+
+/**
+ Path to the target application used for UITesting
+ */
+@property (nonatomic, copy, readonly, nullable) NSString *targetApplicationPath;
+
 /*
  Run only these tests. Format: "className/methodName"
  */
@@ -95,6 +105,22 @@ NS_ASSUME_NONNULL_BEGIN
  @return new test launch configuration with changes applied.
  */
 - (instancetype)withUITesting:(BOOL)shouldInitializeUITesting;
+
+/**
+ Adds Bundle ID of the target application used for UITesting.
+
+ @param targetApplicationBundleID bundle ID of the target application used for UITesting
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withUITestingTargetApplicationBundleID:(NSString *)targetApplicationBundleID;
+
+/**
+ Adds Path to the target application used for UITesting.
+
+ @param targetApplicationPath path to the target application used for UITesting.
+ @return new test launch configuration with changes applied.
+ */
+- (instancetype)withUITestingTargetApplicationPath:(NSString *)targetApplicationPath;
 
 /**
  Adds tests to skip.
