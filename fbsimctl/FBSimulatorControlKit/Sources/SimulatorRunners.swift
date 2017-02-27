@@ -72,7 +72,7 @@ struct SimulatorActionRunner : Runner {
         if let bundleID = maybeBundleID {
           try simulator.killApplication(withBundleID: bundleID)
         }
-        try simulator.interact.clearKeychain().perform()
+        try simulator.clearKeychain()
       }
     case .delete:
       return iOSTargetRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {

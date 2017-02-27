@@ -282,6 +282,7 @@
 {
   return @[
     [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
+    [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
     [FBSimulatorVideoRecordingCommands withSimulator:simulator],
   ];
 }
