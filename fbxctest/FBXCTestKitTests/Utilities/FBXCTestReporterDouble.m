@@ -109,6 +109,11 @@
 
 }
 
+- (void)debuggerAttached
+{
+
+}
+
 #pragma mark Accessors
 
 - (NSArray<NSArray<NSString *> *> *)startedTests
