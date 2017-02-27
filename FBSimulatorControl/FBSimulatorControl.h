@@ -51,8 +51,6 @@
 #import <FBSimulatorControl/FBSimulatorHistory+Queries.h>
 #import <FBSimulatorControl/FBSimulatorHistory.h>
 #import <FBSimulatorControl/FBSimulatorHistoryGenerator.h>
-#import <FBSimulatorControl/FBSimulatorInteraction+Private.h>
-#import <FBSimulatorControl/FBSimulatorInteraction.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtl.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>

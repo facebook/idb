@@ -10,8 +10,6 @@
 #import <FBSimulatorControl/FBSimulator.h>
 
 @class FBApplicationDescriptor;
-@class FBSimDeviceWrapper;
-@class FBSimulatorInteraction;
 @class FBSimulatorLaunchCtl;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -25,11 +23,6 @@ static NSString *const ApplicationPathKey = @"Path";
 @interface FBSimulator (Helpers)
 
 #pragma mark Properties
-
-/**
- Creates an FBSimulatorInteraction for the reciever.
- */
-@property (nonatomic, strong, readonly) FBSimulatorInteraction *interact;
 
 /**
  Creates a FBSimulatorLaunchCtl for the Simulator.

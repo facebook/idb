@@ -15,24 +15,6 @@
 
 @implementation XCTestCase (FBSimulatorControlAssertions)
 
-#pragma mark Interactions
-
-- (void)assertInteractionSuccessful:(id<FBInteraction>)interaction
-{
-  NSError *error = nil;
-  BOOL success = [interaction perform:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-}
-
-- (void)assertInteractionFailed:(id<FBInteraction>)interaction
-{
-  NSError *error = nil;
-  BOOL success = [interaction perform:&error];
-  XCTAssertNotNil(error);
-  XCTAssertFalse(success);
-}
-
 #pragma mark Sessions
 
 - (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator

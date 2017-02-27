@@ -22,7 +22,6 @@
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorShutdownStrategy.h"
-#import "FBSimulatorInteraction.h"
 #import "FBSimulatorPredicates.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorTerminationStrategy.h"

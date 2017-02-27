@@ -14,7 +14,6 @@
 @class FBSimulator;
 @class FBSimulatorControl;
 @class FBSimulatorPool;
-@protocol FBInteraction;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -22,18 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  FBSimulatorControl Assertion Helpers.
  */
 @interface XCTestCase (FBSimulatorControlAssertions)
-
-#pragma mark Interactions
-
-/**
- Assertion Failure if the Interaction Fails.
- */
-- (void)assertInteractionSuccessful:(id<FBInteraction>)interaction;
-
-/**
- Assertion Failure if the Interaction Succeeds.
- */
-- (void)assertInteractionFailed:(id<FBInteraction>)interaction;
 
 #pragma mark Sessions
 
