@@ -164,7 +164,7 @@
   id<FBInteraction> interaction = [[[simulator.interact
     installApplication:self.tableSearchApplication]
     startTestWithLaunchConfiguration:self.uiTestLaunch reporter:self]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:60];
 
   [self assertInteractionSuccessful:interaction];
   [self assertPassed:@[@"testSuccess"]
