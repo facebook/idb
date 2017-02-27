@@ -53,7 +53,6 @@
 #import <FBSimulatorControl/FBSimulatorInteraction+Bridge.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Lifecycle.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Private.h>
-#import <FBSimulatorControl/FBSimulatorInteraction+XCTest.h>
 #import <FBSimulatorControl/FBSimulatorInteraction.h>
 #import <FBSimulatorControl/FBSimulatorLaunchCtl.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
@@ -73,5 +72,6 @@
 #import <FBSimulatorControl/FBSimulatorTerminationStrategy.h>
 #import <FBSimulatorControl/FBSimulatorTestRunStrategy.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
+#import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
 #import <FBSimulatorControl/FBSurfaceImageGenerator.h>
 #import <FBSimulatorControl/FBUploadMediaStrategy.h>

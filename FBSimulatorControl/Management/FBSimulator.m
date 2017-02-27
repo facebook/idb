@@ -22,6 +22,7 @@
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorAgentCommands.h"
+#import "FBSimulatorXCTestCommands.h"
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
@@ -288,6 +289,7 @@
     [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
     [FBSimulatorSettingsCommands commandWithSimulator:simulator],
     [FBSimulatorVideoRecordingCommands withSimulator:simulator],
+    [FBSimulatorXCTestCommands commandsWithSimulator:simulator],
   ];
 }
 

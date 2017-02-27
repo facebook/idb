@@ -52,10 +52,12 @@
 - (void)testInjectsApplicationTestIntoSampleApp
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
-  id<FBInteraction> interaction = [[simulator.interact
-    startTestWithLaunchConfiguration:self.testLaunch reporter:self]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
-  [self assertInteractionSuccessful:interaction];
+  NSError *error = nil;
+  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]
+              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
@@ -68,23 +70,25 @@
   }
   self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_8_1;
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
-  id<FBInteraction> interaction = [[simulator.interact
-    startTestWithLaunchConfiguration:self.testLaunch reporter:self]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
-  [self assertInteractionSuccessful:interaction];
+  NSError *error = nil;
+  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]
+              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsMobileSafari", @"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
 - (void)testInjectsApplicationTestIntoSafari
 {
-
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  id<FBInteraction> interaction = [[simulator.interact
-    startTestWithLaunchConfiguration:[self.testLaunch withApplicationLaunchConfiguration:self.safariAppLaunch] reporter:self]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+  NSError *error = nil;
+  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]
+              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
-  [self assertInteractionSuccessful:interaction];
   [self assertPassed:@[@"testIsRunningOnIOS", @"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
@@ -96,13 +100,14 @@
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [self.safariAppLaunch withOutput:output];
+  FBTestLaunchConfiguration *testLaunch = [self.testLaunch withApplicationLaunchConfiguration:applicationLaunchConfiguration];
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  id<FBInteraction> interaction = [[simulator.interact
-    startTestWithLaunchConfiguration:[self.testLaunch withApplicationLaunchConfiguration:applicationLaunchConfiguration] reporter:self]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
-
-  [self assertInteractionSuccessful:interaction];
+  NSError *error = nil;
+  BOOL success = [simulator startTestWithLaunchConfiguration:testLaunch reporter:self error:&error]
+              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   NSFileManager *fileManager = [NSFileManager defaultManager];
   XCTAssertTrue([fileManager fileExistsAtPath:stdErrPath]);
@@ -123,16 +128,13 @@
   NSURL *outputFileURL =
       [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
   FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
+
   NSError *error = nil;
-  BOOL success = [simulator installApplication:self.tableSearchApplication error:&error];
+  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:reporter error:&error]
+              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-
-  id<FBInteraction> interaction = [[simulator.interact
-      startTestWithLaunchConfiguration:self.testLaunch reporter:reporter]
-      waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
-  [self assertInteractionSuccessful:interaction];
 
   NSURL *fixtureFileURL = [NSURL fileURLWithPath:[FBSimulatorControlFixtures JUnitXMLResult0Path]];
   NSString *expected = [self stringWithContentsOfJUnitResult:fixtureFileURL];
@@ -147,11 +149,13 @@
   FBTestLaunchConfiguration *configuration = [[self.testLaunch
     withTestsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
     withApplicationLaunchConfiguration:self.safariAppLaunch];
-  id<FBInteraction> interaction = [[simulator.interact
-    startTestWithLaunchConfiguration:configuration reporter:self]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
 
-  [self assertInteractionSuccessful:interaction];
+  NSError *error = nil;
+  BOOL success = [simulator startTestWithLaunchConfiguration:configuration reporter:self error:&error]
+              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
   [self assertPassed:@[@"testIsRunningOnIOS"]
               failed:@[@"testWillAlwaysFail"]];
 }
@@ -162,11 +166,13 @@
   FBTestLaunchConfiguration *configuration = [[self.testLaunch
     withTestsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
     withApplicationLaunchConfiguration:self.safariAppLaunch];
-  id<FBInteraction> interaction = [[simulator.interact
-    startTestWithLaunchConfiguration:configuration reporter:self]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
 
-  [self assertInteractionSuccessful:interaction];
+  NSError *error = nil;
+  BOOL success = [simulator startTestWithLaunchConfiguration:configuration reporter:self error:&error]
+              && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
   [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
 }
