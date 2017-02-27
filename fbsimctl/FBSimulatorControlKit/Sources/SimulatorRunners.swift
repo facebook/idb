@@ -91,8 +91,8 @@ struct SimulatorActionRunner : Runner {
         try simulator.setupKeyboard()
       }
     case .launchAgent(let launch):
-      return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
-        interaction.launchAgent(launch)
+      return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) {
+        try simulator.launchAgent(launch)
       }
     case .launchApp(let launch):
       return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) {

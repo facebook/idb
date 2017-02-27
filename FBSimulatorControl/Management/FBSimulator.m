@@ -21,6 +21,7 @@
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorApplicationCommands.h"
+#import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
@@ -282,6 +283,7 @@
 + (NSArray *)commandRespondersForSimulator:(FBSimulator *)simulator
 {
   return @[
+    [FBSimulatorAgentCommands commandsWithSimulator:simulator],
     [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
     [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
     [FBSimulatorSettingsCommands commandWithSimulator:simulator],

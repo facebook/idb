@@ -26,6 +26,7 @@
 #import <FBSimulatorControl/FBSimulator+Helpers.h>
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
+#import <FBSimulatorControl/FBSimulatorAgentCommands.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration+Helpers.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration.h>
@@ -49,7 +50,6 @@
 #import <FBSimulatorControl/FBSimulatorHistory+Queries.h>
 #import <FBSimulatorControl/FBSimulatorHistory.h>
 #import <FBSimulatorControl/FBSimulatorHistoryGenerator.h>
-#import <FBSimulatorControl/FBSimulatorInteraction+Agents.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Bridge.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Lifecycle.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Private.h>

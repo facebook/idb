@@ -104,22 +104,4 @@
   }];
 }
 
-- (instancetype)binary:(FBBinaryDescriptor *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block
-{
-  NSParameterAssert(binary);
-  NSParameterAssert(block);
-
-  return [self interactWithBootedSimulator:^ BOOL (NSError **error, FBSimulator *simulator) {
-    FBProcessInfo *processInfo = [[[simulator
-      launchdSimSubprocesses]
-      filteredArrayUsingPredicate:[FBProcessFetcher processesForBinary:binary]]
-      firstObject];
-
-    if (!processInfo) {
-      return [[[FBSimulatorError describeFormat:@"Could not find an active process for %@", binary] inSimulator:simulator] failBool:error];
-    }
-    return block(error, simulator, processInfo);
-  }];
-}
-
 @end

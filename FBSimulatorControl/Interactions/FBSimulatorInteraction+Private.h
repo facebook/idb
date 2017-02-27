@@ -29,15 +29,6 @@
 - (instancetype)process:(FBProcessInfo *)process interact:(BOOL (^)(NSError **error, FBSimulator *simulator))block;
 
 /**
- Chains an interaction on an process, for the given binary.
-
- @param binary the binary to interact with.
- @param block the block to execute with the process.
- @return the reciever, for chaining.
- */
-- (instancetype)binary:(FBBinaryDescriptor *)binary interact:(BOOL (^)(NSError **error, FBSimulator *simulator, FBProcessInfo *process))block;
-
-/**
  Interact with the Simulator.
 
  @param block the block to execute with the Simulator.
