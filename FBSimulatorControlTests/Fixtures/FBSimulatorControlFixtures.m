@@ -77,13 +77,14 @@
 
 - (FBTestLaunchConfiguration *)uiTestLaunch
 {
-  // Xcode embeds the XCTest.framework into the UI Test Runner application. To avoid committing big binaries to the repository
-  // the XCTest.framework has been removed from the fixture. It will be loaded instead from Xcode's Platform path.
+  // Xcode embeds the XCTest.framework into the UI Test Runner application that is automatically being created when
+  // building a UI Test target. To avoid committing big binaries to the repository there's no such Test Runner
+  // Application included, instead Safari.app is being abused as the Test Runner. Safari.app does not contain the
+  // embedded XCTest.framework. It will be loaded from Xcode's Platforms path to work around this.
   NSString *frameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"];
   NSDictionary *environment = @{@"DYLD_FRAMEWORK_PATH": frameworkPath};
   return [[[[[FBTestLaunchConfiguration
     configurationWithTestBundlePath:FBSimulatorControlFixtures.iOSUITestBundlePath]
-    // Abuse Safari as the Test Runner Application
     withApplicationLaunchConfiguration:[self.safariAppLaunch withEnvironment:environment]]
     withUITestingTargetApplicationPath:self.tableSearchApplication.path]
     withUITestingTargetApplicationBundleID:self.tableSearchApplication.bundleID]
