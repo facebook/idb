@@ -130,8 +130,8 @@ struct SimulatorActionRunner : Runner {
         try event.perform(on: simulator.connect().connectToHID())
       }
     case .setLocation(let latitude, let longitude):
-      return SimulatorInteractionRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) { interaction in
-        interaction.setLocation(latitude, longitude: longitude)
+      return iOSTargetRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) {
+        try simulator.setLocation(latitude, longitude: longitude)
       }
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)

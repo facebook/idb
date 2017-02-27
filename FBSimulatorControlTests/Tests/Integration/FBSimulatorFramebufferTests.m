@@ -40,7 +40,10 @@
 
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:launchConfiguration];
   [self assertSimulator:simulator launchesApplication:self.safariApplication withApplicationLaunchConfiguration:self.safariAppLaunch];
-  [self assertInteractionSuccessful:[simulator.interact startRecordingVideo]];
+  NSError *error = nil;
+  BOOL success = [simulator startRecordingWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
   [self assertSimulator:simulator launchesApplication:self.tableSearchApplication withApplicationLaunchConfiguration:self.tableSearchAppLaunch];
 }
 

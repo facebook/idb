@@ -22,6 +22,7 @@
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorAgentCommands.h"
+#import "FBSimulatorBridgeCommands.h"
 #import "FBSimulatorXCTestCommands.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorSettingsCommands.h"
@@ -287,6 +288,7 @@
   return @[
     [FBSimulatorAgentCommands commandsWithSimulator:simulator],
     [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
+    [FBSimulatorBridgeCommands commandsWithSimulator:simulator],
     [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
     [FBSimulatorLifecycleCommands commandsWithSimulator:simulator],
     [FBSimulatorSettingsCommands commandWithSimulator:simulator],
