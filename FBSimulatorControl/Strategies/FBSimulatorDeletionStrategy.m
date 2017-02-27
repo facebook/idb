@@ -85,14 +85,25 @@
 
     // Then follow through with the actual deletion of the Simulator, which will remove it from the set.
     [self.logger logFormat:@"Deleting Simulator %@", simulator];
-    if (![self.set.deviceSet deleteDevice:simulator.device error:&innerError]) {
-      return [[[[[FBSimulatorError
-        describe:@"Failed to delete simulator."]
-        inSimulator:simulator]
-        causedBy:innerError]
-        logger:self.logger]
-        fail:error];
-    }
+    NSUInteger retryDelete = 3;
+    do {
+      if ([self.set.deviceSet deleteDevice:simulator.device error:&innerError]) {
+        break;
+      }
+      // On Travis the deleteDevice operation sometimes fails:
+      //   Domain=NSCocoaErrorDomain Code=513 "“B4D-C0-F-F-E” couldn’t be removed because you don’t have permission to access it.
+      // Inside the devicePath there's a device.plist which sometimes cannot be deleted. Probably some process still has an open
+      // file handle to that file.
+      BOOL shouldRetry = [innerError.domain isEqualToString:NSCocoaErrorDomain] && innerError.code == NSFileWriteNoPermissionError;
+      if (!shouldRetry) {
+        return [[[[[FBSimulatorError
+          describe:@"Failed to delete simulator."]
+          inSimulator:simulator]
+          causedBy:innerError]
+          logger:self.logger]
+          fail:error];
+      }
+    } while (--retryDelete > 0);
     [self.logger logFormat:@"Simulator Deleted Successfully %@", simulator];
 
     // The Logfiles now need disposing of. 'erasing' a Simulator will cull the logfiles,
