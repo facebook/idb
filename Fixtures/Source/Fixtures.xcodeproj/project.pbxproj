@@ -82,7 +82,7 @@
 				0592E2BC1E63CE7400789B09 /* main.m */,
 			);
 			name = iOSUITestFixtureHost;
-			path = iOSUITestFixture;
+			path = iOSUITestFixtureHost;
 			sourceTree = "<group>";
 		};
 		05BDFB391E62CE8100CB577E /* iOSUITestFixture */ = {
@@ -93,7 +93,7 @@
 				0592E2C51E63CE9A00789B09 /* iOSUITestFixture.xcconfig */,
 			);
 			name = iOSUITestFixture;
-			path = iOSUITestFixtureTests;
+			path = iOSUITestFixture;
 			sourceTree = "<group>";
 		};
 		AA19D6C51D61ACF700229B59 = {
@@ -172,7 +172,7 @@
 				05BDFB381E62CE8100CB577E /* PBXTargetDependency */,
 			);
 			name = iOSUITestFixture;
-			productName = iOSUITestFixtureTests;
+			productName = iOSUITestFixture;
 			productReference = 05BDFB361E62CE8100CB577E /* .xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
