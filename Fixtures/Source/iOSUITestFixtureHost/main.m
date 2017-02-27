@@ -8,7 +8,14 @@
  */
 
 #import <UIKit/UIKit.h>
-#import "AppDelegate.h"
+
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
+
+@end
+
+@implementation AppDelegate
+
+@end
 
 int main(int argc, char * argv[])
 {

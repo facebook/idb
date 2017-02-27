@@ -9,6 +9,11 @@
 
 #import <XCTest/XCTest.h>
 
+// This test targets expects to be launched with Apple's TableSearch example application.
+// Unfortunately it does not seem to be possible to build a UI Test target without some
+// host application.
+// This is the reason why there is this empty iOSUITestFixtureHost application target.
+
 @interface iOSUITestFixtureTests : XCTestCase
 
 @end
@@ -25,14 +30,14 @@
 
 - (void)testSuccess
 {
-  [XCUIApplication.new.buttons[@"PING"] tap];
-  [XCUIApplication.new.buttons[@"PONG"] tap];
+  // This does exist and should succeed.
+  [XCUIApplication.new.tables.staticTexts[@"MacBook Pro"] tap];
 }
 
 - (void)testFailure
 {
-  [XCUIApplication.new.buttons[@"PONG"] tap];
-  [XCUIApplication.new.buttons[@"PING"] tap];
+  // This does not exist and will fail.
+  [XCUIApplication.new.tables.staticTexts[@"PowerBook"] tap];
 }
 
 @end

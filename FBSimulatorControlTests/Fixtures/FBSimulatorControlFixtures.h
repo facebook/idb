@@ -129,14 +129,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable NSString *)iOSUITestBundlePath;
 
-/**
- An iOS UI Test Target Application.
- Will check that the application is codesigned, and sign it if is not.
-
- @return UI Test Target Application instance.
- */
-- (FBApplicationDescriptor *)iOSUITestTargetApplication;
-
 @end
 
 NS_ASSUME_NONNULL_END

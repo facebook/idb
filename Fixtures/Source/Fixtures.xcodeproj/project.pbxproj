@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0592E2C11E63CE7800789B09 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0592E2B91E63CE7400789B09 /* AppDelegate.m */; };
 		0592E2C21E63CE8000789B09 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0592E2BC1E63CE7400789B09 /* main.m */; };
 		0592E2CA1E63CEA400789B09 /* iOSUITestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0592E2C41E63CE9A00789B09 /* iOSUITestFixtureTests.m */; };
 		AA19D6F91D61ADC700229B59 /* MacUnitTestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA19D6F71D61ADC700229B59 /* MacUnitTestFixtureTests.m */; };
@@ -25,16 +24,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0592E2B81E63CE7400789B09 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = iOSUITestFixtureHost/AppDelegate.h; sourceTree = SOURCE_ROOT; };
-		0592E2B91E63CE7400789B09 /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = iOSUITestFixtureHost/AppDelegate.m; sourceTree = SOURCE_ROOT; };
 		0592E2BA1E63CE7400789B09 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = iOSUITestFixtureHost/Info.plist; sourceTree = SOURCE_ROOT; };
 		0592E2BB1E63CE7400789B09 /* iOSUITestFixtureHost.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = iOSUITestFixtureHost.xcconfig; path = iOSUITestFixtureHost/iOSUITestFixtureHost.xcconfig; sourceTree = SOURCE_ROOT; };
 		0592E2BC1E63CE7400789B09 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = iOSUITestFixtureHost/main.m; sourceTree = SOURCE_ROOT; };
 		0592E2C31E63CE9A00789B09 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = iOSUITestFixture/Info.plist; sourceTree = SOURCE_ROOT; };
 		0592E2C41E63CE9A00789B09 /* iOSUITestFixtureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = iOSUITestFixtureTests.m; path = iOSUITestFixture/iOSUITestFixtureTests.m; sourceTree = SOURCE_ROOT; };
 		0592E2C51E63CE9A00789B09 /* iOSUITestFixture.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = iOSUITestFixture.xcconfig; path = iOSUITestFixture/iOSUITestFixture.xcconfig; sourceTree = SOURCE_ROOT; };
-		05BDFB1E1E62CE8100CB577E /* .app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = .app; sourceTree = BUILT_PRODUCTS_DIR; };
-		05BDFB361E62CE8100CB577E /* .xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = .xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		05BDFB1E1E62CE8100CB577E /* .app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = .app; path = iOSUITestFixtureHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		05BDFB361E62CE8100CB577E /* .xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = .xctest; path = iOSUITestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA19D6DE1D61AD2100229B59 /* MacUnitTestFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacUnitTestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA19D6E21D61AD2100229B59 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA19D6EA1D61AD3200229B59 /* iOSUnitTestFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSUnitTestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -80,8 +77,6 @@
 		05BDFB1F1E62CE8100CB577E /* iOSUITestFixtureHost */ = {
 			isa = PBXGroup;
 			children = (
-				0592E2B81E63CE7400789B09 /* AppDelegate.h */,
-				0592E2B91E63CE7400789B09 /* AppDelegate.m */,
 				0592E2BA1E63CE7400789B09 /* Info.plist */,
 				0592E2BB1E63CE7400789B09 /* iOSUITestFixtureHost.xcconfig */,
 				0592E2BC1E63CE7400789B09 /* main.m */,
@@ -299,7 +294,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0592E2C21E63CE8000789B09 /* main.m in Sources */,
-				0592E2C11E63CE7800789B09 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

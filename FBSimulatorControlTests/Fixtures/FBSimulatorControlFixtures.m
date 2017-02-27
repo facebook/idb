@@ -63,11 +63,6 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixture" ofType:@"xctest"];
 }
 
-+ (NSString *)iOSUITestTargetApplicationPath
-{
-  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixture" ofType:@"app"];
-}
-
 @end
 
 @implementation XCTestCase (FBSimulatorControlFixtures)
@@ -86,16 +81,12 @@
   // the XCTest.framework has been removed from the fixture. It will be loaded instead from Xcode's Platform path.
   NSString *frameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"];
   NSDictionary *environment = @{@"DYLD_FRAMEWORK_PATH": frameworkPath};
-  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.safariApplication
-    arguments:@[]
-    environment:environment
-    output:FBProcessOutputConfiguration.outputToDevNull];
   return [[[[[FBTestLaunchConfiguration
     configurationWithTestBundlePath:FBSimulatorControlFixtures.iOSUITestBundlePath]
-    withApplicationLaunchConfiguration:applicationLaunchConfiguration]
-    withUITestingTargetApplicationPath:self.iOSUITestTargetApplication.path]
-    withUITestingTargetApplicationBundleID:self.iOSUITestTargetApplication.bundleID]
+    // Abuse Safari as the Test Runner Application
+    withApplicationLaunchConfiguration:[self.safariAppLaunch withEnvironment:environment]]
+    withUITestingTargetApplicationPath:self.tableSearchApplication.path]
+    withUITestingTargetApplicationBundleID:self.tableSearchApplication.bundleID]
     withUITesting:YES];
 }
 
@@ -206,15 +197,6 @@
   return nil;
 }
 
-- (FBApplicationDescriptor *)applicationWithPath:(NSString *)applicationPath
-{
-  NSError *error = nil;
-  FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:applicationPath error:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(application);
-  return application;
-}
-
 - (nullable NSString *)iOSUnitTestBundlePath
 {
   return [self signBundleAtPath:FBSimulatorControlFixtures.iOSUnitTestBundlePath];
@@ -223,12 +205,6 @@
 - (nullable NSString *)iOSUITestBundlePath
 {
   return [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestBundlePath];
-}
-
-- (FBApplicationDescriptor *)iOSUITestTargetApplication
-{
-  NSString *applicationPath = [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestTargetApplicationPath];
-  return [self applicationWithPath:applicationPath];
 }
 
 @end
