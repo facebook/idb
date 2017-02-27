@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "05BDFB1D1E62CE8100CB577E"
-               BuildableName = "iOSUITestFixture.app"
-               BlueprintName = "iOSUITestFixture"
+               BuildableName = "iOSUITestFixtureHost.app"
+               BlueprintName = "iOSUITestFixtureHost"
                ReferencedContainer = "container:Fixtures.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -33,8 +33,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "05BDFB351E62CE8100CB577E"
-               BuildableName = "iOSUITestFixtureTests.xctest"
-               BlueprintName = "iOSUITestFixtureTests"
+               BuildableName = "iOSUITestFixture.xctest"
+               BlueprintName = "iOSUITestFixture"
                ReferencedContainer = "container:Fixtures.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -43,8 +43,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "05BDFB1D1E62CE8100CB577E"
-            BuildableName = "iOSUITestFixture.app"
-            BlueprintName = "iOSUITestFixture"
+            BuildableName = "iOSUITestFixtureHost.app"
+            BlueprintName = "iOSUITestFixtureHost"
             ReferencedContainer = "container:Fixtures.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -66,8 +66,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "05BDFB1D1E62CE8100CB577E"
-            BuildableName = "iOSUITestFixture.app"
-            BlueprintName = "iOSUITestFixture"
+            BuildableName = "iOSUITestFixtureHost.app"
+            BlueprintName = "iOSUITestFixtureHost"
             ReferencedContainer = "container:Fixtures.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -85,8 +85,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "05BDFB1D1E62CE8100CB577E"
-            BuildableName = "iOSUITestFixture.app"
-            BlueprintName = "iOSUITestFixture"
+            BuildableName = "iOSUITestFixtureHost.app"
+            BlueprintName = "iOSUITestFixtureHost"
             ReferencedContainer = "container:Fixtures.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

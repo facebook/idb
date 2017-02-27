@@ -7,10 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0553AD2A1E62DB2C00AC01E2 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0553AD291E62DB2C00AC01E2 /* AppDelegate.m */; };
-		0553AD301E62DB5000AC01E2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0553AD2F1E62DB5000AC01E2 /* main.m */; };
-		05E444F81E62D969008D7E5A /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 05E444F71E62D969008D7E5A /* Info.plist */; };
-		05E444FD1E62D9A7008D7E5A /* iOSUITestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 05E444FA1E62D9A1008D7E5A /* iOSUITestFixtureTests.m */; };
+		0592E2C11E63CE7800789B09 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0592E2B91E63CE7400789B09 /* AppDelegate.m */; };
+		0592E2C21E63CE8000789B09 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0592E2BC1E63CE7400789B09 /* main.m */; };
+		0592E2CA1E63CEA400789B09 /* iOSUITestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0592E2C41E63CE9A00789B09 /* iOSUITestFixtureTests.m */; };
 		AA19D6F91D61ADC700229B59 /* MacUnitTestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA19D6F71D61ADC700229B59 /* MacUnitTestFixtureTests.m */; };
 		AA19D6FD1D61ADD400229B59 /* iOSUnitTestFixtureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA19D6FB1D61ADD400229B59 /* iOSUnitTestFixtureTests.m */; };
 /* End PBXBuildFile section */
@@ -26,16 +25,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0553AD281E62DB2C00AC01E2 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		0553AD291E62DB2C00AC01E2 /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		0553AD2B1E62DB3800AC01E2 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		0553AD2F1E62DB5000AC01E2 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		05BDFB1E1E62CE8100CB577E /* .app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = .app; path = iOSUITestFixture.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		05BDFB361E62CE8100CB577E /* iOSUITestFixtureTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSUITestFixtureTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		05E444F71E62D969008D7E5A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = iOSUITestFixtureTests/Info.plist; sourceTree = SOURCE_ROOT; };
-		05E444F91E62D9A1008D7E5A /* iOSUITestFixtureTests.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = iOSUITestFixtureTests.xcconfig; path = iOSUITestFixtureTests/iOSUITestFixtureTests.xcconfig; sourceTree = SOURCE_ROOT; };
-		05E444FA1E62D9A1008D7E5A /* iOSUITestFixtureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = iOSUITestFixtureTests.m; path = iOSUITestFixtureTests/iOSUITestFixtureTests.m; sourceTree = SOURCE_ROOT; };
-		05E444FE1E62D9FD008D7E5A /* iOSUITestFixture.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = iOSUITestFixture.xcconfig; path = iOSUITestFixture/iOSUITestFixture.xcconfig; sourceTree = SOURCE_ROOT; };
+		0592E2B81E63CE7400789B09 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = iOSUITestFixtureHost/AppDelegate.h; sourceTree = SOURCE_ROOT; };
+		0592E2B91E63CE7400789B09 /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = iOSUITestFixtureHost/AppDelegate.m; sourceTree = SOURCE_ROOT; };
+		0592E2BA1E63CE7400789B09 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = iOSUITestFixtureHost/Info.plist; sourceTree = SOURCE_ROOT; };
+		0592E2BB1E63CE7400789B09 /* iOSUITestFixtureHost.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = iOSUITestFixtureHost.xcconfig; path = iOSUITestFixtureHost/iOSUITestFixtureHost.xcconfig; sourceTree = SOURCE_ROOT; };
+		0592E2BC1E63CE7400789B09 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = iOSUITestFixtureHost/main.m; sourceTree = SOURCE_ROOT; };
+		0592E2C31E63CE9A00789B09 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = iOSUITestFixture/Info.plist; sourceTree = SOURCE_ROOT; };
+		0592E2C41E63CE9A00789B09 /* iOSUITestFixtureTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = iOSUITestFixtureTests.m; path = iOSUITestFixture/iOSUITestFixtureTests.m; sourceTree = SOURCE_ROOT; };
+		0592E2C51E63CE9A00789B09 /* iOSUITestFixture.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = iOSUITestFixture.xcconfig; path = iOSUITestFixture/iOSUITestFixture.xcconfig; sourceTree = SOURCE_ROOT; };
+		05BDFB1E1E62CE8100CB577E /* .app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = .app; sourceTree = BUILT_PRODUCTS_DIR; };
+		05BDFB361E62CE8100CB577E /* .xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = .xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA19D6DE1D61AD2100229B59 /* MacUnitTestFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacUnitTestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA19D6E21D61AD2100229B59 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA19D6EA1D61AD3200229B59 /* iOSUnitTestFixture.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSUnitTestFixture.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -78,25 +77,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		05BDFB1F1E62CE8100CB577E /* iOSUITestFixture */ = {
+		05BDFB1F1E62CE8100CB577E /* iOSUITestFixtureHost */ = {
 			isa = PBXGroup;
 			children = (
-				0553AD281E62DB2C00AC01E2 /* AppDelegate.h */,
-				0553AD291E62DB2C00AC01E2 /* AppDelegate.m */,
-				0553AD2B1E62DB3800AC01E2 /* Info.plist */,
-				05E444FE1E62D9FD008D7E5A /* iOSUITestFixture.xcconfig */,
-				0553AD2F1E62DB5000AC01E2 /* main.m */,
+				0592E2B81E63CE7400789B09 /* AppDelegate.h */,
+				0592E2B91E63CE7400789B09 /* AppDelegate.m */,
+				0592E2BA1E63CE7400789B09 /* Info.plist */,
+				0592E2BB1E63CE7400789B09 /* iOSUITestFixtureHost.xcconfig */,
+				0592E2BC1E63CE7400789B09 /* main.m */,
 			);
+			name = iOSUITestFixtureHost;
 			path = iOSUITestFixture;
 			sourceTree = "<group>";
 		};
-		05BDFB391E62CE8100CB577E /* iOSUITestFixtureTests */ = {
+		05BDFB391E62CE8100CB577E /* iOSUITestFixture */ = {
 			isa = PBXGroup;
 			children = (
-				05E444F71E62D969008D7E5A /* Info.plist */,
-				05E444F91E62D9A1008D7E5A /* iOSUITestFixtureTests.xcconfig */,
-				05E444FA1E62D9A1008D7E5A /* iOSUITestFixtureTests.m */,
+				0592E2C31E63CE9A00789B09 /* Info.plist */,
+				0592E2C41E63CE9A00789B09 /* iOSUITestFixtureTests.m */,
+				0592E2C51E63CE9A00789B09 /* iOSUITestFixture.xcconfig */,
 			);
+			name = iOSUITestFixture;
 			path = iOSUITestFixtureTests;
 			sourceTree = "<group>";
 		};
@@ -105,8 +106,8 @@
 			children = (
 				AA19D6DF1D61AD2100229B59 /* MacUnitTestFixture */,
 				AA19D6EB1D61AD3200229B59 /* iOSUnitTestFixture */,
-				05BDFB1F1E62CE8100CB577E /* iOSUITestFixture */,
-				05BDFB391E62CE8100CB577E /* iOSUITestFixtureTests */,
+				05BDFB1F1E62CE8100CB577E /* iOSUITestFixtureHost */,
+				05BDFB391E62CE8100CB577E /* iOSUITestFixture */,
 				AA19D6CF1D61ACF700229B59 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -117,7 +118,7 @@
 				AA19D6DE1D61AD2100229B59 /* MacUnitTestFixture.xctest */,
 				AA19D6EA1D61AD3200229B59 /* iOSUnitTestFixture.xctest */,
 				05BDFB1E1E62CE8100CB577E /* .app */,
-				05BDFB361E62CE8100CB577E /* iOSUITestFixtureTests.xctest */,
+				05BDFB361E62CE8100CB577E /* .xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -145,9 +146,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		05BDFB1D1E62CE8100CB577E /* iOSUITestFixture */ = {
+		05BDFB1D1E62CE8100CB577E /* iOSUITestFixtureHost */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 05BDFB411E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixture" */;
+			buildConfigurationList = 05BDFB411E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixtureHost" */;
 			buildPhases = (
 				05BDFB1A1E62CE8100CB577E /* Sources */,
 				05BDFB1B1E62CE8100CB577E /* Frameworks */,
@@ -157,14 +158,14 @@
 			);
 			dependencies = (
 			);
-			name = iOSUITestFixture;
+			name = iOSUITestFixtureHost;
 			productName = iOSUITestFixture;
 			productReference = 05BDFB1E1E62CE8100CB577E /* .app */;
 			productType = "com.apple.product-type.application";
 		};
-		05BDFB351E62CE8100CB577E /* iOSUITestFixtureTests */ = {
+		05BDFB351E62CE8100CB577E /* iOSUITestFixture */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 05BDFB421E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixtureTests" */;
+			buildConfigurationList = 05BDFB421E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixture" */;
 			buildPhases = (
 				05BDFB321E62CE8100CB577E /* Sources */,
 				05BDFB331E62CE8100CB577E /* Frameworks */,
@@ -175,9 +176,9 @@
 			dependencies = (
 				05BDFB381E62CE8100CB577E /* PBXTargetDependency */,
 			);
-			name = iOSUITestFixtureTests;
+			name = iOSUITestFixture;
 			productName = iOSUITestFixtureTests;
-			productReference = 05BDFB361E62CE8100CB577E /* iOSUITestFixtureTests.xctest */;
+			productReference = 05BDFB361E62CE8100CB577E /* .xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		AA19D6DD1D61AD2100229B59 /* MacUnitTestFixture */ = {
@@ -255,8 +256,8 @@
 			targets = (
 				AA19D6DD1D61AD2100229B59 /* MacUnitTestFixture */,
 				AA19D6E91D61AD3200229B59 /* iOSUnitTestFixture */,
-				05BDFB1D1E62CE8100CB577E /* iOSUITestFixture */,
-				05BDFB351E62CE8100CB577E /* iOSUITestFixtureTests */,
+				05BDFB1D1E62CE8100CB577E /* iOSUITestFixtureHost */,
+				05BDFB351E62CE8100CB577E /* iOSUITestFixture */,
 			);
 		};
 /* End PBXProject section */
@@ -280,7 +281,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				05E444F81E62D969008D7E5A /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,8 +298,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0553AD301E62DB5000AC01E2 /* main.m in Sources */,
-				0553AD2A1E62DB2C00AC01E2 /* AppDelegate.m in Sources */,
+				0592E2C21E63CE8000789B09 /* main.m in Sources */,
+				0592E2C11E63CE7800789B09 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -307,7 +307,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				05E444FD1E62D9A7008D7E5A /* iOSUITestFixtureTests.m in Sources */,
+				0592E2CA1E63CEA400789B09 /* iOSUITestFixtureTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,7 +332,7 @@
 /* Begin PBXTargetDependency section */
 		05BDFB381E62CE8100CB577E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 05BDFB1D1E62CE8100CB577E /* iOSUITestFixture */;
+			target = 05BDFB1D1E62CE8100CB577E /* iOSUITestFixtureHost */;
 			targetProxy = 05BDFB371E62CE8100CB577E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -340,7 +340,7 @@
 /* Begin XCBuildConfiguration section */
 		05BDFB3D1E62CE8100CB577E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 05E444FE1E62D9FD008D7E5A /* iOSUITestFixture.xcconfig */;
+			baseConfigurationReference = 0592E2BB1E63CE7400789B09 /* iOSUITestFixtureHost.xcconfig */;
 			buildSettings = {
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 			};
@@ -348,7 +348,7 @@
 		};
 		05BDFB3E1E62CE8100CB577E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 05E444FE1E62D9FD008D7E5A /* iOSUITestFixture.xcconfig */;
+			baseConfigurationReference = 0592E2BB1E63CE7400789B09 /* iOSUITestFixtureHost.xcconfig */;
 			buildSettings = {
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 			};
@@ -356,7 +356,7 @@
 		};
 		05BDFB3F1E62CE8100CB577E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 05E444F91E62D9A1008D7E5A /* iOSUITestFixtureTests.xcconfig */;
+			baseConfigurationReference = 0592E2C51E63CE9A00789B09 /* iOSUITestFixture.xcconfig */;
 			buildSettings = {
 				PROVISIONING_PROFILE = "";
 				TEST_TARGET_NAME = iOSUITestFixture;
@@ -365,7 +365,7 @@
 		};
 		05BDFB401E62CE8100CB577E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 05E444F91E62D9A1008D7E5A /* iOSUITestFixtureTests.xcconfig */;
+			baseConfigurationReference = 0592E2C51E63CE9A00789B09 /* iOSUITestFixture.xcconfig */;
 			buildSettings = {
 				PROVISIONING_PROFILE = "";
 				TEST_TARGET_NAME = iOSUITestFixture;
@@ -459,7 +459,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		05BDFB411E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixture" */ = {
+		05BDFB411E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixtureHost" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				05BDFB3D1E62CE8100CB577E /* Debug */,
@@ -468,7 +468,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		05BDFB421E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixtureTests" */ = {
+		05BDFB421E62CE8100CB577E /* Build configuration list for PBXNativeTarget "iOSUITestFixture" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				05BDFB3F1E62CE8100CB577E /* Debug */,

@@ -60,7 +60,7 @@
 
 + (NSString *)iOSUITestBundlePath
 {
-  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixtureTests" ofType:@"xctest"];
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixture" ofType:@"xctest"];
 }
 
 + (NSString *)iOSUITestTargetApplicationPath

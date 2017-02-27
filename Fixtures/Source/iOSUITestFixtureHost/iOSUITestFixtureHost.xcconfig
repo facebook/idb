@@ -3,9 +3,9 @@
 
 // Target-Specific Settings
 SDKROOT = iphoneos
-INFOPLIST_FILE = $(SRCROOT)/iOSUITestFixtureTests/Info.plist
-PRODUCT_BUNDLE_IDENTIFIER = com.facebook.iOSUITestFixtureTests
-PRODUCT_NAME = iOSUITestFixtureTests
+INFOPLIST_FILE = $(SRCROOT)/iOSUITestFixtureHost/Info.plist
+PRODUCT_BUNDLE_IDENTIFIER = com.facebook.iOSUITestFixtureHost
+PRODUCT_NAME = iOSUITestFixtureHost
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/../Frameworks
 ONLY_ACTIVE_ARCH = NO
 DEFINES_MODULE = YES
