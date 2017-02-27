@@ -39,11 +39,20 @@
 
 #pragma mark Tests
 
-- (void)testInjectsApplicationTestIntoSampleApp
+- (FBSimulator *)assertObtainsBootedSimulatorWithTableSearch
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  id<FBInteraction> interaction = [[[simulator.interact
-    installApplication:self.tableSearchApplication]
+  NSError *error = nil;
+  BOOL success = [simulator installApplication:self.tableSearchApplication error:&error];
+  XCTAssertNotNil(error);
+  XCTAssertTrue(success);
+  return simulator;
+}
+
+- (void)testInjectsApplicationTestIntoSampleApp
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
+  id<FBInteraction> interaction = [[simulator.interact
     startTestWithLaunchConfiguration:self.testLaunch reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
@@ -58,9 +67,8 @@
     return;
   }
   self.simulatorConfiguration = FBSimulatorConfiguration.iPhone5.iOS_8_1;
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  id<FBInteraction> interaction = [[[simulator.interact
-    installApplication:self.tableSearchApplication]
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
+  id<FBInteraction> interaction = [[simulator.interact
     startTestWithLaunchConfiguration:self.testLaunch reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];
@@ -116,7 +124,12 @@
       [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString]];
   FBTestManagerTestReporterJUnit *reporter = [FBTestManagerTestReporterJUnit withOutputFileURL:outputFileURL];
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  id<FBInteraction> interaction = [[[simulator.interact installApplication:self.tableSearchApplication]
+  NSError *error = nil;
+  BOOL success = [simulator installApplication:self.tableSearchApplication error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  id<FBInteraction> interaction = [[simulator.interact
       startTestWithLaunchConfiguration:self.testLaunch reporter:reporter]
       waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
   [self assertInteractionSuccessful:interaction];

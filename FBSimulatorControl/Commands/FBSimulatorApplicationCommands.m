@@ -18,8 +18,6 @@
 #import "FBSimulatorError.h"
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
-#import "FBSimulatorInteraction.h"
-#import "FBSimulatorInteraction+Applications.h"
 
 @interface FBSimulatorApplicationCommands ()
 
@@ -29,7 +27,7 @@
 
 @implementation FBSimulatorApplicationCommands
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
 }
@@ -83,7 +81,7 @@
       failBool:error];
   }
   // Kill the app if it's running
-  [[self.simulator.interact terminateApplicationWithBundleID:bundleID] perform:nil];
+  [self killApplicationWithBundleID:bundleID error:nil];
   // Then uninstall for real.
   if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
     return [[[[FBSimulatorError
@@ -177,6 +175,41 @@
   }
 
   return YES;
+}
+
+#pragma mark FBSimulatorApplicationCommands
+
+- (BOOL)installApplication:(FBApplicationDescriptor *)application error:(NSError **)error
+{
+  return [self installApplicationWithPath:application.path error:error];
+}
+
+- (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
+{
+  NSParameterAssert(appLaunch);
+  return [[FBApplicationLaunchStrategy
+    withSimulator:self.simulator]
+    launchOrRelaunchApplication:appLaunch error:error];
+}
+
+- (BOOL)terminateApplication:(FBApplicationDescriptor *)application error:(NSError **)error
+{
+  NSParameterAssert(application);
+  return [self killApplicationWithBundleID:application.bundleID error:error];
+}
+
+- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error
+{
+  return [[FBApplicationLaunchStrategy
+    withSimulator:self.simulator]
+    relaunchLastLaunchedApplicationWithError:error];
+}
+
+- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error
+{
+  return [[FBApplicationLaunchStrategy
+    withSimulator:self.simulator]
+    terminateLastLaunchedApplicationWithError:error];
 }
 
 @end

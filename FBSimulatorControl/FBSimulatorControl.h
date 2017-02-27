@@ -50,7 +50,6 @@
 #import <FBSimulatorControl/FBSimulatorHistory.h>
 #import <FBSimulatorControl/FBSimulatorHistoryGenerator.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Agents.h>
-#import <FBSimulatorControl/FBSimulatorInteraction+Applications.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Bridge.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Keychain.h>
 #import <FBSimulatorControl/FBSimulatorInteraction+Lifecycle.h>

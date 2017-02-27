@@ -281,7 +281,7 @@
 + (NSArray *)commandRespondersForSimulator:(FBSimulator *)simulator
 {
   return @[
-    [FBSimulatorApplicationCommands withSimulator:simulator],
+    [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
     [FBSimulatorVideoRecordingCommands withSimulator:simulator],
   ];
 }

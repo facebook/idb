@@ -68,11 +68,11 @@ struct SimulatorActionRunner : Runner {
         interaction.bootSimulator(bootConfiguration)
       }
     case .clearKeychain(let maybeBundleID):
-      return SimulatorInteractionRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) { interaction in
+      return iOSTargetRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) {
         if let bundleID = maybeBundleID {
-          interaction.terminateApplication(withBundleID: bundleID)
+          try simulator.killApplication(withBundleID: bundleID)
         }
-        interaction.clearKeychain()
+        try simulator.interact.clearKeychain().perform()
       }
     case .delete:
       return iOSTargetRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
@@ -95,8 +95,8 @@ struct SimulatorActionRunner : Runner {
         interaction.launchAgent(launch)
       }
     case .launchApp(let launch):
-      return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
-        interaction.launchApplication(launch)
+      return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) {
+        try simulator.launchApplication(launch)
       }
     case .launchXCTest(var configuration):
       // Always initialize for UI Testing until we make this optional
@@ -113,8 +113,8 @@ struct SimulatorActionRunner : Runner {
         interaction.open(url)
       }
     case .relaunch(let appLaunch):
-      return SimulatorInteractionRunner(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) { interaction in
-        interaction.launchOrRelaunchApplication(appLaunch)
+      return iOSTargetRunner(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) {
+        try simulator.launchOrRelaunchApplication(appLaunch)
       }
     case .search(let search):
       return SearchRunner(reporter, search)

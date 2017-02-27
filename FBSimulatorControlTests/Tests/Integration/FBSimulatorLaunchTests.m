@@ -132,14 +132,20 @@
 
 - (void)testCanUninstallApplication
 {
-  FBSimulator *simulator = [self assertObtainsSimulator];
   FBApplicationDescriptor *application = self.tableSearchApplication;
   FBApplicationLaunchConfiguration *launch = self.tableSearchAppLaunch;
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:application];
 
-  [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[[[simulator.interact bootSimulator:self.simulatorLaunchConfiguration] installApplication:application] launchApplication:launch]];
+  NSError *error = nil;
+  BOOL success = [simulator launchApplication:launch error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
   [self assertLastLaunchedApplicationIsRunning:simulator];
-  [self assertInteractionSuccessful:[simulator.interact uninstallApplicationWithBundleID:application.bundleID]];
+
+  success = [simulator uninstallApplicationWithBundleID:application.bundleID error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 }
 
 @end

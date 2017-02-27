@@ -47,7 +47,7 @@
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:path error:error];
-  if (![[self.simulator.interact installApplication:application] perform:error]) {
+  if (![self.simulator installApplication:application error:error]) {
     return NO;
   }
   return YES;
@@ -208,7 +208,7 @@
     environment:environment
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  if (![[self.simulator.interact launchOrRelaunchApplication:configuration] perform:error]) {
+  if (![self.simulator launchOrRelaunchApplication:configuration error:error]) {
     return NO;
   }
   return YES;
@@ -216,7 +216,7 @@
 
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  return [[self.simulator.interact terminateApplicationWithBundleID:bundleID] perform:error];
+  return [self.simulator killApplicationWithBundleID:bundleID error:error];
 }
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error

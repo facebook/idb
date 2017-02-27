@@ -11,7 +11,6 @@
 
 #import "FBSimulatorError.h"
 #import "FBSimulator+Helpers.h"
-#import "FBSimulatorInteraction+Applications.h"
 #import "FBSimulatorInteraction+Private.h"
 #import "FBKeychainClearStrategy.h"
 

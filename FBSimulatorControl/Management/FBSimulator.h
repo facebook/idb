@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
+
 @protocol FBSimulatorEventSink;
 @protocol FBControlCoreLogger;
 @class FBControlCoreLogger;
@@ -28,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBiOSTarget>
+@interface FBSimulator : NSObject <FBiOSTarget, FBSimulatorApplicationCommands>
 
 /**
  The Underlying SimDevice.

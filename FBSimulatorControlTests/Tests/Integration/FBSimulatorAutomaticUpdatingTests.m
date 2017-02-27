@@ -73,7 +73,10 @@
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
-  [self assertInteractionSuccessful:[simulator.interact launchApplication:appLaunch]];
+  NSError *error = nil;
+  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   FBProcessInfo *process = [simulator.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);
@@ -98,7 +101,10 @@
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   FBApplicationLaunchConfiguration *appLaunch = self.safariAppLaunch;
-  [self assertInteractionSuccessful:[simulator.interact launchApplication:appLaunch]];
+  NSError *error = nil;
+  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   FBProcessInfo *process = [simulator.history runningProcessForApplication:self.safariApplication];
   XCTAssertNotNil(process);

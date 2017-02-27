@@ -15,7 +15,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBSimulatorInteraction+Applications.h"
 #import "FBSimulatorInteraction+Lifecycle.h"
 
 @interface FBAddVideoPolyfill ()
@@ -93,7 +92,7 @@
     output:FBProcessOutputConfiguration.outputToDevNull]
     injectingShimulator];
 
-  if (![[simulator.interact launchApplication:appLaunch] perform:&innerError]) {
+  if (![simulator launchApplication:appLaunch error:&innerError]) {
     return [[[FBSimulatorError describe:@"Couldn't launch MobileSlideShow to upload videos"]
       causedBy:innerError]
       failBool:error];
