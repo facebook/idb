@@ -58,17 +58,9 @@
   return [[NSBundle bundleForClass:self] pathForResource:@"iOSUnitTestFixture" ofType:@"xctest"];
 }
 
-+ (NSString *)iOSUITestRunnerApplicationPath
++ (NSString *)iOSUITestBundlePath
 {
-  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixture-Runner" ofType:@"app"];
-}
-
-+ (NSString *)iOSUITestRunnerTestBundlePath
-{
-  return [[[[self iOSUITestRunnerApplicationPath]
-    stringByAppendingPathComponent:@"Plugins"]
-    stringByAppendingPathComponent:@"iOSUITestFixture"]
-    stringByAppendingPathExtension:@"xctest"];
+  return [[NSBundle bundleForClass:self] pathForResource:@"iOSUITestFixtureTests" ofType:@"xctest"];
 }
 
 + (NSString *)iOSUITestTargetApplicationPath
@@ -95,12 +87,12 @@
   NSString *frameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"];
   NSDictionary *environment = @{@"DYLD_FRAMEWORK_PATH": frameworkPath};
   FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.iOSUITestRunnerApplication
+    configurationWithApplication:self.safariApplication
     arguments:@[]
     environment:environment
     output:FBProcessOutputConfiguration.outputToDevNull];
   return [[[[[FBTestLaunchConfiguration
-    configurationWithTestBundlePath:FBSimulatorControlFixtures.iOSUITestRunnerTestBundlePath]
+    configurationWithTestBundlePath:FBSimulatorControlFixtures.iOSUITestBundlePath]
     withApplicationLaunchConfiguration:applicationLaunchConfiguration]
     withUITestingTargetApplicationPath:self.iOSUITestTargetApplication.path]
     withUITestingTargetApplicationBundleID:self.iOSUITestTargetApplication.bundleID]
@@ -228,15 +220,9 @@
   return [self signBundleAtPath:FBSimulatorControlFixtures.iOSUnitTestBundlePath];
 }
 
-- (nullable NSString *)iOSUITestRunnerTestBundlePath
+- (nullable NSString *)iOSUITestBundlePath
 {
-  return [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestRunnerTestBundlePath];
-}
-
-- (FBApplicationDescriptor *)iOSUITestRunnerApplication
-{
-  NSString *applicationPath = [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestRunnerApplicationPath];
-  return [self applicationWithPath:applicationPath];
+  return [self signBundleAtPath:FBSimulatorControlFixtures.iOSUITestBundlePath];
 }
 
 - (FBApplicationDescriptor *)iOSUITestTargetApplication

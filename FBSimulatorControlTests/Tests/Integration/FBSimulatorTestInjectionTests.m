@@ -163,7 +163,7 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   id<FBInteraction> interaction = [[[[simulator.interact
     installApplication:self.iOSUITestTargetApplication]
-    installApplication:self.iOSUITestRunnerApplication]
+    installApplication:self.tableSearchApplication]
     startTestWithLaunchConfiguration:self.uiTestLaunch reporter:self]
     waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
 

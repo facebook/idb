@@ -10,8 +10,8 @@
 		05046C011D48B8BA00295EE1 /* FBTestManagerTestReporterComposite.h in Headers */ = {isa = PBXBuildFile; fileRef = 05046BFF1D48B8BA00295EE1 /* FBTestManagerTestReporterComposite.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		05046C021D48B8BA00295EE1 /* FBTestManagerTestReporterComposite.m in Sources */ = {isa = PBXBuildFile; fileRef = 05046C001D48B8BA00295EE1 /* FBTestManagerTestReporterComposite.m */; };
 		05471D691D5991AF00232CB2 /* junitResult0.xml in Resources */ = {isa = PBXBuildFile; fileRef = 05471D681D5991AF00232CB2 /* junitResult0.xml */; };
-		0592E2B41E62DC2300789B09 /* iOSUITestFixture-Runner.app in Resources */ = {isa = PBXBuildFile; fileRef = 0592E2B21E62DC2300789B09 /* iOSUITestFixture-Runner.app */; };
 		0592E2B51E62DC2300789B09 /* iOSUITestFixture.app in Resources */ = {isa = PBXBuildFile; fileRef = 0592E2B31E62DC2300789B09 /* iOSUITestFixture.app */; };
+		0592E2B71E63CDA100789B09 /* iOSUITestFixtureTests.xctest in Resources */ = {isa = PBXBuildFile; fileRef = 0592E2B61E63CDA100789B09 /* iOSUITestFixtureTests.xctest */; };
 		0593EA101E371E5800EBD7CB /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
 		05AC8AFB1D587A8B008B435E /* FBTestManagerTestReporterBase.h in Headers */ = {isa = PBXBuildFile; fileRef = 05AC8AF91D587A8B008B435E /* FBTestManagerTestReporterBase.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		05AC8AFC1D587A8B008B435E /* FBTestManagerTestReporterBase.m in Sources */ = {isa = PBXBuildFile; fileRef = 05AC8AFA1D587A8B008B435E /* FBTestManagerTestReporterBase.m */; };
@@ -612,8 +612,8 @@
 		05046BFF1D48B8BA00295EE1 /* FBTestManagerTestReporterComposite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerTestReporterComposite.h; sourceTree = "<group>"; };
 		05046C001D48B8BA00295EE1 /* FBTestManagerTestReporterComposite.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterComposite.m; sourceTree = "<group>"; };
 		05471D681D5991AF00232CB2 /* junitResult0.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult0.xml; sourceTree = "<group>"; };
-		0592E2B21E62DC2300789B09 /* iOSUITestFixture-Runner.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; name = "iOSUITestFixture-Runner.app"; path = "Fixtures/Binaries/iOSUITestFixture-Runner.app"; sourceTree = SOURCE_ROOT; };
 		0592E2B31E62DC2300789B09 /* iOSUITestFixture.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; name = iOSUITestFixture.app; path = Fixtures/Binaries/iOSUITestFixture.app; sourceTree = SOURCE_ROOT; };
+		0592E2B61E63CDA100789B09 /* iOSUITestFixtureTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = iOSUITestFixtureTests.xctest; path = Fixtures/Binaries/iOSUITestFixtureTests.xctest; sourceTree = SOURCE_ROOT; };
 		05AC8AF91D587A8B008B435E /* FBTestManagerTestReporterBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerTestReporterBase.h; sourceTree = "<group>"; };
 		05AC8AFA1D587A8B008B435E /* FBTestManagerTestReporterBase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterBase.m; sourceTree = "<group>"; };
 		05D3B5751D572EA100944680 /* junitResult0.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = junitResult0.xml; sourceTree = "<group>"; };
@@ -2121,7 +2121,6 @@
 		AAAA67C31BC4FEBA00075197 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
-				0592E2B21E62DC2300789B09 /* iOSUITestFixture-Runner.app */,
 				0592E2B31E62DC2300789B09 /* iOSUITestFixture.app */,
 				AAAA67C71BC5018500075197 /* TableSearch.app */,
 				AAAA67C41BC4FED200075197 /* FBSimulatorControlFixtures.h */,
@@ -2129,6 +2128,7 @@
 				877123F21BDA797800530B1E /* video0.mp4 */,
 				AA6F22471C916A44009F5CE4 /* photo0.png */,
 				AAD3051E1BD4D5B10047376E /* photo1.png */,
+				0592E2B61E63CDA100789B09 /* iOSUITestFixtureTests.xctest */,
 				AA19D6FE1D61AFE300229B59 /* iOSUnitTestFixture.xctest */,
 				05471D681D5991AF00232CB2 /* junitResult0.xml */,
 			);
@@ -3175,9 +3175,9 @@
 			files = (
 				1F7596B31DFF6B40006B9053 /* libShimulator.dylib in Resources */,
 				0592E2B51E62DC2300789B09 /* iOSUITestFixture.app in Resources */,
-				0592E2B41E62DC2300789B09 /* iOSUITestFixture-Runner.app in Resources */,
 				AA19D6FF1D61AFE300229B59 /* iOSUnitTestFixture.xctest in Resources */,
 				877123F31BDA797800530B1E /* video0.mp4 in Resources */,
+				0592E2B71E63CDA100789B09 /* iOSUITestFixtureTests.xctest in Resources */,
 				05471D691D5991AF00232CB2 /* junitResult0.xml in Resources */,
 				AAD305201BD4D5B10047376E /* photo1.png in Resources */,
 				AAAA67C91BC501BB00075197 /* TableSearch.app in Resources */,
