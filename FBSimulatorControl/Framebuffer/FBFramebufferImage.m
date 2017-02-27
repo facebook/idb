@@ -13,10 +13,27 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <objc/runtime.h>
+
+#import <SimulatorKit/SimDeviceFramebufferService.h>
+#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
+#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
+#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
+#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
+#import <SimulatorKit/SimDisplayDescriptorState-Protocol.h>
+#import <SimulatorKit/SimDeviceIOPortConsumer-Protocol.h>
+#import <SimulatorKit/SimDeviceIOPortDescriptorState-Protocol.h>
+#import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
+#import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
+#import <SimulatorKit/SimDisplayRenderable-Protocol.h>
+
 #import "FBFramebufferFrame.h"
 #import "FBSimulatorEventSink.h"
+#import "FBFramebufferRenderable.h"
+#import "FBSimulatorError.h"
+#import "FBSurfaceImageGenerator.h"
 
-@interface FBFramebufferImage ()
+@interface FBFramebufferImage_FrameSink ()
 
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
@@ -26,7 +43,7 @@
 
 @end
 
-@implementation FBFramebufferImage
+@implementation FBFramebufferImage_FrameSink
 
 + (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink
 {
@@ -50,6 +67,27 @@
 
 #pragma mark Public
 
+- (nullable CGImageRef)image
+{
+  CGImageRef image = self.lastFrame.image;
+  if (!image) {
+    return NULL;
+  }
+  return image;
+}
+
+- (nullable NSData *)jpegImageDataWithError:(NSError **)error
+{
+  return [FBFramebufferImage_FrameSink jpegImageDataFromImage:self.image error:error];
+}
+
+- (nullable NSData *)pngImageDataWithError:(NSError **)error
+{
+  return [FBFramebufferImage_FrameSink pngImageDataFromImage:self.image error:error];
+}
+
+#pragma mark Private
+
 + (FBDiagnostic *)appendImage:(CGImageRef)image toDiagnostic:(FBDiagnostic *)diagnostic
 {
   FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
@@ -62,15 +100,53 @@
     NULL
   );
   if (!url) {
+    CFRelease(destination);
     return diagnostic;
   }
   CGImageDestinationAddImage(destination, image, NULL);
   if (!CGImageDestinationFinalize(destination)) {
+    CFRelease(destination);
     return diagnostic;
   }
   CFRelease(destination);
 
   return [[builder updatePath:filePath] build];
+}
+
++ (nullable NSData *)jpegImageDataFromImage:(nullable CGImageRef)image error:(NSError **)error
+{
+  return [self imageDataFromImage:image type:kUTTypeJPEG error:error];
+}
+
++ (nullable NSData *)pngImageDataFromImage:(nullable CGImageRef)image error:(NSError **)error
+{
+  return [self imageDataFromImage:image type:kUTTypePNG error:error];
+}
+
++ (nullable NSData *)imageDataFromImage:(nullable CGImageRef)image type:(CFStringRef)type error:(NSError **)error
+{
+  if (!image) {
+    return [[FBSimulatorError
+      describe:@"No Image available to encode"]
+      fail:error];
+  }
+
+  NSMutableData *data = [NSMutableData data];
+  CGImageDestinationRef destination = CGImageDestinationCreateWithData(
+    (CFMutableDataRef) data,
+    type,
+    1,
+    NULL
+  );
+  CGImageDestinationAddImage(destination, image, NULL);
+  if (!CGImageDestinationFinalize(destination)) {
+    CFRelease(destination);
+    return [[FBSimulatorError
+      describe:@"Could not finalize the creation of the Image"]
+      fail:error];
+  }
+  CFRelease(destination);
+  return data;
 }
 
 #pragma mark FBFramebufferCounterDelegate Implementation
@@ -82,19 +158,93 @@
   });
 }
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didGetIOSurface:(IOSurfaceRef)surface
-{
-}
-
 - (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   dispatch_group_async(teardownGroup, self.writeQueue, ^{
-    FBDiagnostic *diagnostic = [FBFramebufferImage appendImage:self.lastFrame.image toDiagnostic:self.diagnostic];
+    FBDiagnostic *diagnostic = [FBFramebufferImage_FrameSink appendImage:self.lastFrame.image toDiagnostic:self.diagnostic];
     id<FBSimulatorEventSink> eventSink = self.eventSink;
     dispatch_async(dispatch_get_main_queue(), ^{
       [eventSink diagnosticAvailable:diagnostic];
     });
   });
+}
+
+@end
+
+@interface FBFramebufferImage_Surface () <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
+
+@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
+@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+@property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
+@property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
+
+@property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
+
+@end
+
+@implementation FBFramebufferImage_Surface
+
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink ioClient:(SimDeviceIOClient *)ioClient
+{
+  FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:ioClient];
+  return [[self alloc] initWithDiagnostic:diagnostic eventSink:eventSink renderable:renderable];
+}
+
+- (instancetype)initWithDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink renderable:(FBFramebufferRenderable *)renderable
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _diagnostic = diagnostic;
+  _eventSink = eventSink;
+  _renderable = renderable;
+  _consumerUUID = [NSUUID UUID];
+  _imageGenerator = [FBSurfaceImageGenerator imageGeneratorWithScale:NSDecimalNumber.one logger:nil];
+
+  return self;
+}
+
+#pragma mark SimDisplay Protocols
+
+- (NSString *)consumerIdentifier
+{
+  return NSStringFromClass(self.class);
+}
+
+- (void)didChangeIOSurface:(xpc_object_t)surfaceXPC
+{
+  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(surfaceXPC);
+  [self.imageGenerator currentSurfaceChanged:surface];
+  CFRelease(surface);
+}
+
+- (void)didReceiveDamageRect:(CGRect)rect
+{
+
+}
+
+#pragma mark FBFramebufferImage Implementation
+
+- (nullable CGImageRef)image
+{
+  CGImageRef image = self.imageGenerator.image;
+  if (image) {
+    return image;
+  }
+  [self.renderable attachConsumer:self];
+  return self.imageGenerator.image;
+}
+
+- (nullable NSData *)jpegImageDataWithError:(NSError **)error
+{
+  return [FBFramebufferImage_FrameSink jpegImageDataFromImage:self.image error:error];
+}
+
+- (nullable NSData *)pngImageDataWithError:(NSError **)error
+{
+  return [FBFramebufferImage_FrameSink pngImageDataFromImage:self.image error:error];
 }
 
 @end

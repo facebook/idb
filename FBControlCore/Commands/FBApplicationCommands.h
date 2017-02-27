@@ -11,6 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBApplicationDescriptor;
 @class FBApplicationLaunchConfiguration;
 
 /**
@@ -26,6 +27,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the command succeeds, NO otherwise,
  */
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error;
+
+/**
+ Uninstalls application with given bundle id.
+
+ @param bundleID the bundle id of the application to uninstall.
+ @param error an error out for any error that occurs.
+ @returns YES if the command succeeds, NO otherwise.
+ */
+- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Queries to see if an Application is installed on iOS.
@@ -53,6 +63,11 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the operation succeeds, otherwise NO.
  */
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+
+/**
+ Fetches a list of the installed applications in json serializable representation.
+ */
+- (NSArray<FBApplicationDescriptor *> *)installedApplications;
 
 @end
 

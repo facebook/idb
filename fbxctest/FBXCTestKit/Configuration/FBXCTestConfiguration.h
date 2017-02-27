@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a new test run configuration.
  */
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger error:(NSError **)error;
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger error:(NSError **)error;
 
 /**
  Creates and loads a configuration.
@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return a new test run configuration.
  */
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger timeout:(NSTimeInterval)timeout error:(NSError **)error;
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger timeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 @property (nonatomic, strong, readonly, nullable) FBXCTestLogger *logger;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
@@ -58,6 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
+@property (nonatomic, assign, readonly) BOOL waitForDebugger;
 
 @property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
 

@@ -11,6 +11,9 @@
 
 @protocol FBXCTestReporter <NSObject>
 
+- (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid;
+- (void)debuggerAttached;
+
 - (void)didBeginExecutingTestPlan;
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime;
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration;

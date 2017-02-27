@@ -144,7 +144,8 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
 
 + (NSString *)describeDifferenceFrom:(FBSimulatorHistory *)from to:(FBSimulatorHistory *)to
 {
-  if (to && !from) {
+  NSParameterAssert(to);
+  if (!from) {
     return @"Inital State";
   }
   NSMutableString *string = [NSMutableString stringWithFormat:@"%@ -> ", to.timestamp];

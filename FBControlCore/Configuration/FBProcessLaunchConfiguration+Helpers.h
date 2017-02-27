@@ -54,18 +54,39 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)injectingShimulator;
 
 /**
- Creates the Dictionary of launch options for launching an Agent.
+ A Name used to distinguish between Launch Configurations.
+ */
+- (NSString *)identifiableName;
+
+@end
+
+/**
+ Helpers for Agent Launches.
+ */
+@interface FBAgentLaunchConfiguration (Helpers)
+
+/**
+ Creates the Dictionary of launch options for spawning an Agent.
 
  @param stdOut the stdout to use, may be nil.
  @param stdErr the stderr to use, may be nil.
  @return a Dictionary if successful, nil otherwise.
  */
-- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
+- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
 
 /**
- A Name used to distinguish between Launch Configurations.
+ Creates the Dictionary of launch options for spawning an Agent.
+ This static method allows the options dictionary to be constructed, without an FBAgentLaunchConfiguration.
+
+ @prarm launchPath the Launch Path.
+ @param arguments the arguments.
+ @param environment the environment
+ @param waitForDebugger YES if the process should be launched waiting for a debugger to attach. NO otherwise.
+ @param stdOut the stdout to use, may be nil.
+ @param stdErr the stderr to use, may be nil.
+ @return a Dictionary if successful, nil otherwise.
  */
-- (NSString *)identifiableName;
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr;
 
 @end
 
@@ -80,6 +101,15 @@ NS_ASSUME_NONNULL_BEGIN
  @param localizationOverride the Localization Override to Apply.s
  */
 - (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
+
+/**
+ Creates the Dictionary of launch options for launching an Agent.
+
+ @param stdOutPath the path to launch stdout to, may be nil.
+ @param stdErrPath the path to launch stderr to, may be nil.
+ @return a Dictionary if successful, nil otherwise.
+ */
+- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath;
 
 @end
 

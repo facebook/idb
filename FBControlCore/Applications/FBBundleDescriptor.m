@@ -15,12 +15,11 @@
 
 @implementation FBBundleDescriptor
 
-- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary
 {
   NSParameterAssert(name);
   NSParameterAssert(path);
   NSParameterAssert(bundleID);
-  NSParameterAssert(binary);
 
   self = [super init];
   if (!self) {
@@ -37,7 +36,7 @@
 
 + (nullable instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary
 {
-  if (!name || !path || !bundleID || !binary) {
+  if (!name || !path || !bundleID) {
     return nil;
   }
   return [[self alloc] initWithName:name path:path bundleID:bundleID binary:binary];
@@ -126,12 +125,16 @@
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
-  return @{
-    @"name" : self.name,
-    @"bundle_id" : self.bundleID,
-    @"path" : self.path,
-    @"binary" : self.binary.jsonSerializableRepresentation,
-  };
+  NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
+
+  result[@"name"] = self.name;
+  result[@"bundle_id"] = self.bundleID;
+  result[@"path"] = self.path;
+  if (self.binary) {
+    result[@"binary"] = self.binary.jsonSerializableRepresentation;
+  }
+
+  return result;
 }
 
 #pragma mark Public Methods

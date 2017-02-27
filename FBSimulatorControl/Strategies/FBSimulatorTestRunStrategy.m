@@ -72,19 +72,17 @@
       fail:error];
   }
 
-  FBSimulatorControlOperator *operator = [FBSimulatorControlOperator operatorWithSimulator:simulator];
   FBSimulatorTestPreparationStrategy *testPrepareStrategy = [FBSimulatorTestPreparationStrategy
     strategyWithTestLaunchConfiguration:self.configuration
     workingDirectory:self.workingDirectory];
   FBXCTestRunStrategy *testRunStrategy = [FBXCTestRunStrategy
-    strategyWithDeviceOperator:operator
+    strategyWithIOSTarget:simulator
     testPrepareStrategy:testPrepareStrategy
     reporter:self.reporter
     logger:simulator.logger];
 
   FBTestManager *testManager = [testRunStrategy
-    startTestManagerWithAttributes:self.configuration.applicationLaunchConfiguration.arguments
-    environment:self.configuration.applicationLaunchConfiguration.environment
+    startTestManagerWithApplicationLaunchConfiguration:self.configuration.applicationLaunchConfiguration
     error:&innerError];
 
   if (!testManager) {

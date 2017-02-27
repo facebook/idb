@@ -43,7 +43,9 @@
   }
 
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
-  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
+  NSString *path = [[NSBundle bundleForClass: self.class] pathForResource:@"libShimulator" ofType:@"dylib"];
+  FBApplicationLaunchConfiguration *configuration = [self.tableSearchAppLaunch injectingLibrary:path];
+  FBApplicationLaunchConfiguration *appLaunch = [configuration withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
   [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
 
@@ -80,6 +82,60 @@
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
     return [[simulator.simulatorDiagnostics.launchedProcessLogs.allValues firstObject] asString];
   }];
+}
+
+- (void)testLaunchedApplicationLogsWithCustomLogFilePath
+{
+  if (FBSimulatorControlTestCase.isRunningOnTravis) {
+    return;
+  }
+
+  NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
+  NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
+
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBApplicationLaunchConfiguration *appLaunch = [[self.tableSearchAppLaunch withOutput:output] injectingShimulator];
+  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  XCTAssertTrue([fileManager fileExistsAtPath:stdErrPath]);
+  XCTAssertTrue([fileManager fileExistsAtPath:stdOutPath]);
+
+  [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
+    NSString *stdErrContent = [NSString stringWithContentsOfFile:stdErrPath encoding:NSUTF8StringEncoding error:nil] ?: @"";
+    NSString *stdOutContent = [NSString stringWithContentsOfFile:stdOutPath encoding:NSUTF8StringEncoding error:nil] ?: @"";
+    NSString *combinedContent = [stdErrContent stringByAppendingString:stdOutContent];
+    if (!combinedContent.length) {
+      return nil;
+    }
+    return combinedContent;
+  }];
+}
+
+- (void)testCreateStdErrDiagnosticForSimulator
+{
+  NSError *error;
+  FBDiagnostic *stdErrDiagnostic = nil;
+  FBDiagnostic *stdOutDiagnostic = nil;
+
+  FBSimulator *simulator = [self assertObtainsSimulator];
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration defaultOutputToFile];
+  FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch withOutput:output];
+
+  [appLaunch createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:&error];
+  XCTAssertNil(error);
+
+  [appLaunch createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:&error];
+  XCTAssertNil(error);
+
+  XCTAssertNotNil(stdErrDiagnostic.asPath);
+  XCTAssertNotNil(stdOutDiagnostic.asPath);
+
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  XCTAssertTrue([fileManager fileExistsAtPath:stdErrDiagnostic.asPath]);
+  XCTAssertTrue([fileManager fileExistsAtPath:stdOutDiagnostic.asPath]);
 }
 
 @end

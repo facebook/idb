@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import subprocess
 import time
 import urllib.request
@@ -211,6 +212,13 @@ class FBSimctl:
             timeout=timeout,
         )
 
+class Metal:
+    def __init__(self):
+        subprocess.call(['xcrun', 'swiftc', 'supports_metal.swift'])
+        self.__supports_metal_exit_code = subprocess.call(['./supports_metal'], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def is_supported(self):
+        return self.__supports_metal_exit_code == 0
 
 class WebServer:
     def __init__(self, port):
@@ -223,6 +231,13 @@ class WebServer:
         )
         return self._perform_request(request)
 
+    def get_binary(self, path):
+        request = urllib.request.Request(
+            url=self._make_url(path),
+            method='GET',
+        )
+        return self._perform_request_binary(request)
+
     def post(self, path, payload):
         data = json.dumps(payload).encode('utf-8')
         request = urllib.request.Request(
@@ -230,6 +245,15 @@ class WebServer:
             data=data,
             method='POST',
             headers={'content-type': 'application/json'},
+        )
+        return self._perform_request(request)
+
+    def post_binary(self, path, file, length):
+        request = urllib.request.Request(
+            self._make_url(path),
+            file,
+            method='POST',
+            headers={'content-length': length},
         )
         return self._perform_request(request)
 
@@ -244,6 +268,10 @@ class WebServer:
             response = f.read().decode('utf-8')
             return json.loads(response)
 
+    def _perform_request_binary(self, request):
+        with urllib.request.urlopen(request) as f:
+            return f.read()
+
 
 class Fixtures:
     VIDEO = os.path.realpath(
@@ -252,3 +280,25 @@ class Fixtures:
             '../../../FBSimulatorControlTests/Fixtures/video0.mp4',
         ),
     )
+
+    APP_PATH = os.path.realpath(
+        os.path.join(
+            __file__,
+            '../../../Fixtures/Binaries/TableSearch.app'
+        )
+    )
+
+    APP_BUNDLE_ID = 'com.example.apple-samplecode.TableSearch'
+
+
+def make_ipa(dest_dir, app):
+    payload = os.path.join(dest_dir, 'Payload')
+    os.mkdir(payload)
+    shutil.copytree(
+        app,
+        os.path.join(payload, os.path.basename(app))
+    )
+    zipfile = shutil.make_archive('app', 'zip', root_dir=payload)
+    ipafile = '{}.ipa'.format(zipfile)
+    shutil.move(zipfile, ipafile)
+    return ipafile

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+if [[ -n $1 ]]; then
+  echo "A script that will record videos of all connected Devices"
+  echo "When you have finished recording, send a SIGTERM with Ctrl-C"
+  echo "The locations of the video files will be written to stderr, before the script terminates"
+  echo "This command should be provided with no arguments"
+  exit 1
+fi
+
+echo "Starting Recording: When you have finished recording press Ctrl-C" 1>&2
+fbsimctl --debug-logging --devices record start -- listen -- record stop 1>&2
+fbsimctl --devices diagnose | grep video | awk '{print $NF}'

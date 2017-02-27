@@ -1,12 +1,23 @@
 #!/usr/bin/env python3
 
-from util import (FBSimctl, Simulator, WebServer, Defaults, Fixtures, log)
+from util import (
+    FBSimctl,
+    Simulator,
+    WebServer,
+    Defaults,
+    Fixtures,
+    Metal,
+    log,
+    make_ipa,
+)
 import argparse
 import base64
 import contextlib
 import os
+import shutil
 import tempfile
 import unittest
+
 
 class FBSimctlTestCase(unittest.TestCase):
     def __init__(
@@ -20,6 +31,7 @@ class FBSimctlTestCase(unittest.TestCase):
         self.methodName = methodName
         self.use_custom_set = use_custom_set
         self.fbsimctl = FBSimctl(fbsimctl_path, set_path)
+        self.metal = Metal()
 
     def tearDown(self):
         action = 'delete' if self.use_custom_set else 'shutdown'
@@ -171,7 +183,6 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
         self.port = port
 
     def extractSimulatorSubjects(self, response):
-        print(response['subject'])
         self.assertEqual(response['status'], 'success')
         return [
             Simulator(event['subject']).get_udid()
@@ -187,6 +198,26 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
         with self.fbsimctl.launch(arguments) as process:
             process.wait_for_event('listen', 'started')
             yield WebServer(self.port)
+
+    def testInstallsUserApplication(self):
+        simulator = self.assertCreatesSimulator(['iPhone 6'])
+        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
+        tmpdir = tempfile.mkdtemp()
+        try:
+            ipafile = make_ipa(tmpdir, Fixtures.APP_PATH)
+            with self.launchWebserver() as webserver, open(ipafile, 'rb') as ipa:
+                response = webserver.post_binary(
+                    '{}/install'.format(simulator.get_udid()),
+                    ipa,
+                    os.path.getsize(ipafile),
+                )
+                self.assertEqual(response.get('status'), 'success')
+            events = self.fbsimctl.run([simulator.get_udid(), 'list_apps'])
+            event = events.matching('list_apps', 'discrete')[0]
+            bundle_ids = [entry.get('bundle_id') for entry in event.get('subject')]
+            return self.assertIn(Fixtures.APP_BUNDLE_ID, bundle_ids)
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     def testDiagnosticSearch(self):
         with self.launchWebserver() as webserver:
@@ -220,7 +251,7 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             ]
             self.assertEqual(expected.sort(), actual.sort())
             actual = self.extractSimulatorSubjects(
-                webserver.get(iphone6.get_udid() + 'list'),
+                webserver.get(iphone6.get_udid() + '/list'),
             )
             expected = [iphone6.get_udid()]
 
@@ -235,6 +266,17 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
                 'data': data,
             })
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+
+    def testScreenshot(self):
+        if self.metal.is_supported() is False:
+            log.info('Metal not supported, skipping testScreenshot')
+            return
+        simulator = self.assertCreatesSimulator(['iPhone 6'])
+        self.assertEventSuccesful([simulator.get_udid(), 'boot'], 'boot')
+        with self.launchWebserver() as webserver:
+            webserver.get_binary(simulator.get_udid() + '/screenshot.png')
+            webserver.get_binary(simulator.get_udid() + '/screenshot.jpeg')
+
 
 class SingleSimulatorTestCase(FBSimctlTestCase):
     def __init__(
@@ -269,6 +311,9 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
 
     def testBootsDirectly(self):
+        if self.metal.is_supported() is False:
+            log.info('Metal not supported, skipping testBootsDirectly')
+            return
         simulator = self.assertCreatesSimulator([self.device_type])
         self.assertEventSuccesful([simulator.get_udid(), 'boot', '--direct-launch'], 'boot')
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
@@ -297,7 +342,41 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
         self.assertEventSuccesful([simulator.get_udid(), 'upload', Fixtures.VIDEO], 'upload')
         self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
 
+    def assertInstallsUserApplication(self, udid, path, bundle_id):
+        self.assertEventSuccesful([udid, 'boot'], 'boot')
+        self.assertEventSuccesful([udid, 'install', path], 'install')
+        events = self.fbsimctl.run([udid, 'list_apps'])
+        event = events.matching('list_apps', 'discrete')[0]
+        bundle_ids = [entry.get('bundle_id') for entry in event.get('subject')]
+        return self.assertIn(bundle_id, bundle_ids)
+
+    def testInstallsUserApplication(self):
+        simulator = self.assertCreatesSimulator([self.device_type])
+        self.assertInstallsUserApplication(
+            simulator.get_udid(),
+            Fixtures.APP_PATH,
+            Fixtures.APP_BUNDLE_ID,
+        )
+        self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+
+    def testInstallsIPA(self):
+        tmpdir = tempfile.mkdtemp()
+        try:
+            ipafile = make_ipa(tmpdir, Fixtures.APP_PATH)
+            simulator = self.assertCreatesSimulator([self.device_type])
+            self.assertInstallsUserApplication(
+                simulator.get_udid(),
+                ipafile,
+                Fixtures.APP_BUNDLE_ID,
+            )
+            self.assertEventSuccesful([simulator.get_udid(), 'shutdown'], 'shutdown')
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
     def testRecordsVideo(self):
+        if self.metal.is_supported() is False:
+            log.info('Metal not supported, skipping testRecordsVideo')
+            return
         (simulator, _) = self.testLaunchesSystemApplication()
         arguments = [
             simulator.get_udid(), 'record', 'start',

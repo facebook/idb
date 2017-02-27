@@ -23,7 +23,7 @@
 
 @interface FBXCTestRunStrategy ()
 
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> iosTarget;
 @property (nonatomic, strong, readonly) id<FBXCTestPreparationStrategy> prepareStrategy;
 @property (nonatomic, strong, readonly) id<FBTestManagerTestReporter> reporter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -34,55 +34,48 @@
 
 #pragma mark Initializers
 
-+ (instancetype)strategyWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)testPrepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithDeviceOperator:deviceOperator testPrepareStrategy:testPrepareStrategy reporter:reporter logger:logger];
+  return [[self alloc] initWithIOSTarget:iosTarget testPrepareStrategy:testPrepareStrategy reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithDeviceOperator:(id<FBDeviceOperator>)deviceOperator testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithIOSTarget:(id<FBiOSTarget>)iosTarget testPrepareStrategy:(id<FBXCTestPreparationStrategy>)prepareStrategy reporter:(nullable id<FBTestManagerTestReporter>)reporter logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _deviceOperator = deviceOperator;
+  _iosTarget = iosTarget;
   _prepareStrategy = prepareStrategy;
   _reporter = reporter;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", iosTarget.udid]];
 
   return self;
 }
 
 #pragma mark Public
 
-- (nullable FBTestManager *)startTestManagerWithAttributes:(NSArray<NSString *> *)attributes environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
+- (nullable FBTestManager *)startTestManagerWithApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration error:(NSError **)error
 {
-  NSAssert(self.deviceOperator, @"Device operator is needed to perform meaningful test");
+  NSAssert(self.iosTarget, @"iOS Target is needed to perform meaningful test");
   NSAssert(self.prepareStrategy, @"Test preparation strategy is needed to perform meaningful test");
   NSError *innerError;
-  FBTestRunnerConfiguration *configuration = [self.prepareStrategy prepareTestWithDeviceOperator:self.deviceOperator error:&innerError];
-  if (!configuration) {
+  FBTestRunnerConfiguration *testRunnerConfiguration = [self.prepareStrategy prepareTestWithIOSTarget:self.iosTarget error:&innerError];
+  if (!testRunnerConfiguration) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner configuration"]
       causedBy:innerError]
       fail:error];
   }
 
-  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-    configurationWithBundleID:configuration.testRunner.bundleID
-    bundleName:configuration.testRunner.bundleID
-    arguments:[self argumentsFromConfiguration:configuration attributes:attributes]
-    environment:[self environmentFromConfiguration:configuration environment:environment]
-    options:0];
-
-  if (![self.deviceOperator launchApplication:appLaunch error:&innerError]) {
+  if (![self.iosTarget launchApplication:[self prepareApplicationLaunchConfiguration:applicationLaunchConfiguration withTestRunnerConfiguration:testRunnerConfiguration] error:&innerError]) {
     return [[[XCTestBootstrapError describe:@"Failed launch test runner"]
       causedBy:innerError]
       fail:error];
   }
 
-  pid_t testRunnerProcessID = [self.deviceOperator processIDWithBundleID:configuration.testRunner.bundleID error:error];
+  pid_t testRunnerProcessID = [self.iosTarget.deviceOperator processIDWithBundleID:testRunnerConfiguration.testRunner.bundleID error:error];
   if (testRunnerProcessID < 1) {
     return [[XCTestBootstrapError
       describe:@"Failed to determine test runner process PID"]
@@ -92,13 +85,13 @@
   // Make the Context for the Test Manager.
   FBTestManagerContext *context = [FBTestManagerContext
     contextWithTestRunnerPID:testRunnerProcessID
-    testRunnerBundleID:configuration.testRunner.bundleID
-    sessionIdentifier:configuration.sessionIdentifier];
+    testRunnerBundleID:testRunnerConfiguration.testRunner.bundleID
+    sessionIdentifier:testRunnerConfiguration.sessionIdentifier];
 
   // Attach to the XCTest Test Runner host Process.
   FBTestManager *testManager = [FBTestManager
     testManagerWithContext:context
-    operator:self.deviceOperator
+    iosTarget:self.iosTarget
     reporter:self.reporter
     logger:self.logger];
 
@@ -113,6 +106,17 @@
 }
 
 #pragma mark Private
+
+- (FBApplicationLaunchConfiguration *)prepareApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration withTestRunnerConfiguration:(FBTestRunnerConfiguration *)testRunnerConfiguration
+{
+  return [FBApplicationLaunchConfiguration
+    configurationWithBundleID:testRunnerConfiguration.testRunner.bundleID
+    bundleName:testRunnerConfiguration.testRunner.bundleID
+    arguments:[self argumentsFromConfiguration:testRunnerConfiguration attributes:applicationLaunchConfiguration.arguments]
+    environment:[self environmentFromConfiguration:testRunnerConfiguration environment:applicationLaunchConfiguration.environment]
+    output:applicationLaunchConfiguration.output
+  ];
+}
 
 - (NSArray<NSString *> *)argumentsFromConfiguration:(FBTestRunnerConfiguration *)configuration attributes:(NSArray<NSString *> *)attributes
 {

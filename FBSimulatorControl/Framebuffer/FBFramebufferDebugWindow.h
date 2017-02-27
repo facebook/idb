@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBFramebufferDelegate.h>
+#import <FBSimulatorControl/FBFramebufferFrameSink.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
  This will create an NSApplication in the current process so buyer beware.
  It is intended to be used for debugging purposes only.
  */
-@interface FBFramebufferDebugWindow : NSObject <FBFramebufferDelegate>
+@interface FBFramebufferDebugWindow : NSObject <FBFramebufferFrameSink>
 
 /**
  Creates and returns an object that will display the framebuffer in a window.

@@ -12,6 +12,7 @@
 #import <XCTestBootstrap/FBTestManagerProcessInteractionDelegate.h>
 
 @protocol FBDeviceOperator;
+@protocol FBiOSTarget;
 
 /**
  Makes a FBTestManagerProcessInteractionDelegate from a Device Operator.
@@ -21,14 +22,14 @@
 /**
  Constructs a FBTestManagerProcessInteractionOperator
 
- @param deviceOperator the device operator.
+ @param iosTarget the iOS Target.
  @return a new FBTestManagerProcessInteractionOperator instance.
  */
-+ (instancetype)withDeviceOperator:(id<FBDeviceOperator>)deviceOperator;
++ (instancetype)withIOSTarget:(id<FBiOSTarget>)iosTarget;
 
 /**
  The Device Operator.
  */
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> iosTarget;
 
 @end

@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A logger for FBXCTest that accumilates messages, but can be used for logging in the event a failure occurs.
  */
-@interface FBXCTestLogger : NSObject<FBControlCoreLogger>
+@interface FBXCTestLogger : NSObject <FBControlCoreLogger>
 
 /**
  A Test Logger that will write to a default directory.
@@ -34,6 +34,23 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)loggerInDefaultDirectory:(NSString *)name;
 
 /**
+ A Test Logger that will write to a specified directory.
+
+ @param directory the directory to log into.
+ @return a new FBXCTestLogger Instance
+ */
++ (instancetype)defaultLoggerInDirectory:(NSString *)directory;
+
+/**
+ A Test Logger with the specified name and directory.
+
+ @param directory the directory to log into.
+ @param name a unique name for the logger.
+ @return a new FBXCTestLogger Instance
+ */
++ (instancetype)loggerInDirectory:(NSString *)directory name:(NSString *)name;
+
+/**
  Returns the last n lines of logger output, for debugging purposes.
 
  @param lineCount the number of lines to output.
@@ -47,6 +64,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return the output, if it could be fetched.
  */
 - (nullable NSString *)allLinesOfOutput;
+
+/**
+ Logs the Consumption of the consumer to a file
+
+ @param consumer the consumer to wrap.
+ @param outputKind kind of output that is written.
+ @param uuid a UUID to identify the current invocation.
+ @return a new consumer, which also logs to the log directory.
+ */
+- (id<FBFileConsumer>)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid;
 
 @end
 

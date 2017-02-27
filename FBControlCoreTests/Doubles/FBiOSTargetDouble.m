@@ -11,6 +11,9 @@
 
 @implementation FBiOSTargetDouble
 
+@synthesize architecture;
+@synthesize deviceOperator;
+
 #pragma mark FBDebugDescribeable
 
 - (NSString *)description
@@ -47,6 +50,11 @@
   return NO;
 }
 
+- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleId error:(NSError **)error
+{
+  return NO;
+}
+
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   return NO;
@@ -70,6 +78,11 @@
 - (BOOL)stopRecordingWithError:(NSError **)error
 {
   return NO;
+}
+
+- (NSArray<FBApplicationDescriptor *> *)installedApplications
+{
+  return nil;
 }
 
 @end

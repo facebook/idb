@@ -13,6 +13,7 @@ import Foundation
  A Protocol for performing an Command producing an CommandResult.
  */
 protocol CommandPerformer {
+  func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()>
   func perform(_ command: Command, reporter: EventReporter) -> CommandResult
 }
 

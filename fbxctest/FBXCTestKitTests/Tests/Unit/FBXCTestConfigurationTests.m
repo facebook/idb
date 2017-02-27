@@ -16,6 +16,7 @@
 
 #import "FBXCTestReporterDouble.h"
 #import "FBXCTestDestination.h"
+#import "XCTestCase+FBXCTestKitTests.h"
 
 @interface FBXCTestConfigurationTests : XCTestCase
 
@@ -44,7 +45,7 @@
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-destination", @"name=iPhone 6", @"-appTest", self.appTestArgument ];
 
   NSError *error = nil;
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -60,7 +61,7 @@
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-appTest", self.appTestArgument ];
 
   NSError *error = nil;
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -76,7 +77,7 @@
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-appTest", self.appTestArgument ];
 
   NSError *error = nil;
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -97,7 +98,7 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray *arguments = @[ @"-reporter", @"json-stream", @"-sdk", @"iphonesimulator", @"run-tests", @"-appTest", self.appTestArgument];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -119,7 +120,7 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -142,7 +143,7 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath ];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -165,7 +166,7 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray<NSString *> *arguments = @[ @"run-tests", @"-sdk", @"iphonesimulator", @"-logicTest", testBundlePath ];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -188,7 +189,7 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -211,7 +212,7 @@
   NSDictionary<NSString *, NSString *> *processEnvironment = @{@"FOO" : @"BAR"};
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:processEnvironment workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -232,7 +233,7 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
@@ -252,7 +253,7 @@
   NSString *testBundlePath = [FBXCTestKitFixtures macUnitTestBundlePath];
   NSArray *arguments = @[ @"run-tests", @"-sdk", @"macosx", @"-destination", @"name=iPhone 6", @"-logicTest", testBundlePath, @"-listTestsOnly" ];
 
-  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:nil error:&error];
+  FBXCTestConfiguration *configuration = [FBXCTestConfiguration configurationFromArguments:arguments processUnderTestEnvironment:@{} workingDirectory:workingDirectory reporter:self.reporter logger:self.logger error:&error];
 
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);

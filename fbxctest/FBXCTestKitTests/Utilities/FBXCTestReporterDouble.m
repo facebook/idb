@@ -104,6 +104,16 @@
 
 }
 
+- (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
+{
+
+}
+
+- (void)debuggerAttached
+{
+
+}
+
 #pragma mark Accessors
 
 - (NSArray<NSArray<NSString *> *> *)startedTests

@@ -11,5 +11,5 @@ if [[ -n $1 ]]; then
 fi
 
 echo "Starting Recording: When you have finished recording press Ctrl-C" 1>&2
-fbsimctl --debug-logging record start -- listen -- record stop 1>&2
-fbsimctl --state=booted diagnose | grep video | awk '{print $NF}'
+fbsimctl --debug-logging --simulators --state=booted record start -- listen -- record stop 1>&2
+fbsimctl --simulators --state=booted diagnose | grep video | awk '{print $NF}'

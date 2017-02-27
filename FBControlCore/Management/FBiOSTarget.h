@@ -13,11 +13,13 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBArchitecture.h>
 
 @class FBProcessInfo;
 @class FBiOSTargetDiagnostics;
 @protocol FBControlCoreConfiguration_Device;
 @protocol FBControlCoreConfiguration_OS;
+@protocol FBDeviceOperator;
 
 /**
  Uses the known values of SimDevice State, to construct an enumeration.
@@ -50,6 +52,11 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBVideoRecordingCommands>
 
 /**
+ Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.
+ */
+@property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
+
+/**
  The Unique Device Identifier of the iOS Target.
  */
 @property (nonatomic, copy, readonly) NSString *udid;
@@ -78,6 +85,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Type of the iOS Target
  */
 @property (nonatomic, assign, readonly) FBiOSTargetType targetType;
+
+/**
+ The Architecture of the iOS Target
+ */
+@property (nonatomic, copy, readonly) FBArchitecture architecture;
 
 /**
  Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.

@@ -32,13 +32,21 @@ struct iOSActionProvider {
     switch action {
     case .diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
-    case .install(let appPath):
-      return iOSTargetRunner(
-        reporter: reporter,
-        name: EventName.Install,
-        subject: ControlCoreSubject(appPath as NSString),
-        interaction: FBCommandInteractions.installApplication(withPath: appPath, command: target)
-      )
+    case .install(let appPath, let codeSign):
+      return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
+        let (extractedAppPath, cleanupDirectory) = try FBApplicationDescriptor.findOrExtract(atPath: appPath)
+        if codeSign {
+          try FBCodesignProvider.codeSignCommandWithAdHocIdentity().recursivelySignBundle(atPath: extractedAppPath)
+        }
+        try target.installApplication(withPath: extractedAppPath)
+        if let cleanupDirectory = cleanupDirectory {
+          try? FileManager.default.removeItem(at: cleanupDirectory)
+        }
+      }
+    case .uninstall(let appBundleID):
+      return iOSTargetRunner(reporter, EventName.Uninstall,ControlCoreSubject(appBundleID as NSString)) {
+        try target.uninstallApplication(withBundleID: appBundleID)
+      }
     case .launchApp(let appLaunch):
       return iOSTargetRunner(
         reporter: reporter,
@@ -46,6 +54,11 @@ struct iOSActionProvider {
         subject: ControlCoreSubject(appLaunch),
         interaction: FBCommandInteractions.launchApplication(appLaunch, command: target)
       )
+    case .listApps:
+      return iOSTargetRunner(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
+        let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
+        reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
+      }
     case .record(let start):
       return iOSTargetRunner(
         reporter: reporter,

@@ -16,9 +16,14 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBDiagnosticQuery;
 
 /**
+ Extensible Diagnostic Name Enumeration.
+ */
+typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
+
+/**
  The Name of the Video Log
  */
-extern NSString *const FBiOSTargetLogNameVideo;
+extern FBDiagnosticName const FBDiagnosticNameVideo;
 
 /**
  A Base Class for Providing Diagnostics from a target.

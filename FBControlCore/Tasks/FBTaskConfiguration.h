@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  - If nil, then stdout will be written to /dev/null
  - If is a NSMutableData, stdout will be written to the NSMutableData.
  - If is a NSString representing a file path, then stdout will be written to the file path
- - If is a FBFileDataConsumer then output data will be forwarded to it.
+ - If is a FBFileConsumer then output data will be forwarded to it.
  */
 @property (nonatomic, strong, nullable, readonly) id stdOut;
 
@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
  - If nil, then stderr will be written to /dev/null
  - If is a NSMutableData, stderr will be written to the NSMutableData.
  - If is a NSString representing a file path, then stderrr will be written to the file path
- - If is a FBFileDataConsumer then output data will be forwarded to it.
+ - If is a FBFileConsumer then output data will be forwarded to it.
  */
 @property (nonatomic, strong, nullable, readonly) id stdErr;
 

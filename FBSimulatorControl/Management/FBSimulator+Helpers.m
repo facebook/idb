@@ -23,9 +23,6 @@
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
-static NSString *const ApplicationTypeKey = @"ApplicationType";
-static NSString *const ApplicationPathKey = @"Path";
-
 @implementation FBSimulator (Helpers)
 
 #pragma mark Properties
@@ -52,19 +49,6 @@ static NSString *const ApplicationPathKey = @"Path";
     return @[];
   }
   return [self.processFetcher.processFetcher subprocessesOf:launchdSim.processIdentifier];
-}
-
-- (NSArray<FBApplicationDescriptor *> *)installedApplications
-{
-  NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
-  for (NSDictionary *appInfo in [[self.device installedAppsWithError:nil] allValues]) {
-    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[ApplicationPathKey] installTypeString:appInfo[ApplicationTypeKey] error:nil];
-    if (!application) {
-      continue;
-    }
-    [applications addObject:application];
-  }
-  return [applications copy];
 }
 
 #pragma mark Methods
@@ -157,6 +141,13 @@ static NSString *const ApplicationPathKey = @"Path";
 {
   NSParameterAssert(bundleID);
 
+  // It appears that the release notes for Xcode 8.3 Beta 2 aren't correct in referencing rdar://30224453
+  // "The simctl get_app_container command can now return the path of an app's data container or App Group containers"
+  // It doesn't appear that simctl currently supports this, it will only show the Installed path of an Application.
+  // This means it won't show it's "Container" Jail.
+  // It appears that the API for getting this location is only provided on the Simulator side in MobileCoreServices.framework
+  // There is a call to a function called container_create_or_lookup_path_for_current_user, which allows the HOME environment variable
+  // to be set for any Application. This is likely the true path to the Application Container, not where the .app is installed.
   NSError *innerError = nil;
   FBProcessInfo *runningApplication = [self runningApplicationWithBundleID:bundleID error:&innerError];
   if (!runningApplication) {

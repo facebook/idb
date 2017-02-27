@@ -63,7 +63,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     configurationWithApplication:testRunnerApp
     arguments:@[]
     environment:self.configuration.processUnderTestEnvironment
-    options:0];
+    output:FBProcessOutputConfiguration.outputToDevNull];
 
   FBTestLaunchConfiguration *testLaunchConfiguration = [[FBTestLaunchConfiguration
     configurationWithTestBundlePath:self.configuration.testBundlePath]

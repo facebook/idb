@@ -21,8 +21,7 @@
 #import "FBXCTestLogger.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTestDestination.h"
-
-static NSTimeInterval const CrashLogStartDateFuzz = -10;
+#import "FBLogicTestProcess.h"
 
 @interface FBLogicTestRunner ()
 
@@ -54,12 +53,10 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 - (BOOL)runTestsWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  NSDate *startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
 
   [self.configuration.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
-  NSString *simctlPath = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"usr/bin/simctl"];
   NSString *otestShimPath = simulator ? self.configuration.shims.iOSSimulatorOtestShimPath : self.configuration.shims.macOtestShimPath;
 
   // The fifo is used by the shim to report events from within the xctest framework.
@@ -78,21 +75,22 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
   // Get the Launch Path and Arguments for the xctest process.
   NSString *testSpecifier = self.configuration.testFilter ?: @"All";
-  NSString *launchPath = simulator ? simctlPath : xctestPath;
-  NSArray<NSString *> *arguments = simulator
-    ? @[@"--set", simulator.deviceSetPath, @"spawn", simulator.udid, xctestPath, @"-XCTest", testSpecifier, self.configuration.testBundlePath]
-    : @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
+  NSString *launchPath = xctestPath;
+  NSArray<NSString *> *arguments = @[@"-XCTest", testSpecifier, self.configuration.testBundlePath];
 
   // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
+  NSUUID *uuid = [NSUUID UUID];
   dispatch_queue_t queue = dispatch_get_main_queue();
-  id<FBFileDataConsumer> stdOutReader = [FBLineFileDataConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> stdOutReader = [FBLineFileConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
     [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
-  id<FBFileDataConsumer> stdErrReader = [FBLineFileDataConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
+  stdOutReader = [self.configuration.logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid];
+  id<FBFileConsumer> stdErrReader = [FBLineFileConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
     [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
+  stdErrReader = [self.configuration.logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid];
   // Consumes the shim output.
-  id<FBFileDataConsumer> otestShimLineReader = [FBLineFileDataConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
     if ([line length] == 0) {
       return;
     }
@@ -102,118 +100,73 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     }
     [self.configuration.reporter handleExternalEvent:event];
   }];
+  otestShimLineReader = [self.configuration.logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
 
-  // Construct and launch the task.
-  FBTask *task = [[[[[[[[FBTaskBuilder
-    withLaunchPath:launchPath]
-    withArguments:arguments]
-    withEnvironment:[self.configuration buildEnvironmentWithEntries:environment]]
-    withStdOutConsumer:stdOutReader]
-    withStdErrConsumer:stdErrReader]
-    withAcceptableTerminationStatusCodes:[NSSet setWithArray:@[@0, @1]]]
-    build]
-    startAsynchronously];
+  FBLogicTestProcess *process = simulator
+    ? [FBLogicTestProcess
+        simulatorSpawnProcess:simulator
+        launchPath:launchPath
+        arguments:arguments
+        environment:[self.configuration buildEnvironmentWithEntries:environment]
+        waitForDebugger:self.configuration.waitForDebugger
+        stdOutReader:stdOutReader
+        stdErrReader:stdErrReader]
+    : [FBLogicTestProcess
+        taskProcessWithLaunchPath:launchPath
+        arguments:arguments
+        environment:[self.configuration buildEnvironmentWithEntries:environment]
+        waitForDebugger:self.configuration.waitForDebugger
+        stdOutReader:stdOutReader
+        stdErrReader:stdErrReader];
+
+  // Start the process
+  pid_t pid = [process startWithError:error];
+  if (!pid) {
+    return NO;
+  }
+
+  if (self.configuration.waitForDebugger) {
+    [self.configuration.reporter processWaitingForDebuggerWithProcessIdentifier:pid];
+    // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
+    // We wait until it receives SIGCONT from an attached debugger.
+    waitid(P_PID, (id_t)pid, NULL, WCONTINUED);
+    [self.configuration.reporter debuggerAttached];
+  }
 
   // Create a reader of the otest-shim path and start reading it.
   NSError *innerError = nil;
   FBFileReader *otestShimReader = [FBFileReader readerWithFilePath:otestShimOutputPath consumer:otestShimLineReader error:&innerError];
   if (!otestShimReader) {
-    [task terminate];
+    [process terminate];
     return [[[FBXCTestError
       describeFormat:@"Failed to open fifo for reading: %@", otestShimOutputPath]
       causedBy:innerError]
       failBool:error];
   }
   if (![otestShimReader startReadingWithError:&innerError]) {
-    [task terminate];
+    [process terminate];
     return [[[FBXCTestError
       describeFormat:@"Failed to start reading fifo: %@", otestShimOutputPath]
       causedBy:innerError]
       failBool:error];
   }
 
-  // Wait for the xctest process to finish.
-  NSError *timeoutError = nil;
-  BOOL waitSuccessful = [task waitForCompletionWithTimeout:self.configuration.testTimeout error:&timeoutError];
+  // Wait for the test process to finish.
+  if (![process waitForCompletionWithTimeout:self.configuration.testTimeout error:error]) {
+    return NO;
+  }
 
   // Fail if we can't close.
   if (![otestShimReader stopReadingWithError:&innerError]) {
-    [task terminate];
     return [[[FBXCTestError
       describeFormat:@"Failed to stop reading fifo: %@", otestShimOutputPath]
       causedBy:innerError]
       failBool:error];
   }
 
-  // If the xctest process has stalled, we should sample it (if possible), then terminate it.
-  if (!waitSuccessful) {
-    pid_t xctestProcessIdentifier = simulator
-      ? [FBLogicTestRunner xctestProcessIdentiferForSimctlParent:task.processIdentifier fetcher:simulator.processFetcher.processFetcher]
-      : task.processIdentifier;
-
-    NSString *sample = [FBLogicTestRunner sampleStalledProcess:xctestProcessIdentifier];
-    [task terminate];
-    return [[[FBXCTestError
-      describeFormat:@"The xctest process stalled: %@", sample]
-      causedBy:timeoutError]
-      failBool:error];
-  }
-
-  // Fail on error event.
-  if (task.error) {
-    FBCrashLogInfo *crashLogInfo = [FBLogicTestRunner crashLogsForChildProcessOf:task.processIdentifier since:startDate];
-    if (crashLogInfo) {
-      FBDiagnostic *diagnosticCrash = [crashLogInfo toDiagnostic:FBDiagnosticBuilder.builder];
-      return [[[FBXCTestError
-        describeFormat:@"xctest process crashed\n %@", diagnosticCrash.asString]
-        causedBy:task.error]
-        failBool:error];
-    }
-    return [[[FBXCTestError
-      describe:@"xctest process exited with non-normal status code"]
-      causedBy:task.error]
-      failBool:error];
-  }
-
   [self.configuration.reporter didFinishExecutingTestPlan];
 
   return YES;
-}
-
-+ (pid_t)xctestProcessIdentiferForSimctlParent:(pid_t)simctlProcessIdentifier fetcher:(FBProcessFetcher *)fetcher
-{
-  pid_t xctestProcessIdentifier = [fetcher subprocessOf:simctlProcessIdentifier withName:@"xctest"];
-  if (xctestProcessIdentifier < 1) {
-    return simctlProcessIdentifier;
-  }
-  return xctestProcessIdentifier;
-}
-
-+ (nullable FBCrashLogInfo *)crashLogsForChildProcessOf:(pid_t)processIdentifier since:(NSDate *)sinceDate
-{
-  NSSet<NSNumber *> *possiblePPIDs = [NSSet setWithArray:@[
-    @(processIdentifier),
-    @(NSProcessInfo.processInfo.processIdentifier),
-  ]];
-
-  NSPredicate *crashLogInfoPredicate = [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLogInfo, id _) {
-    return [possiblePPIDs containsObject:@(crashLogInfo.parentProcessIdentifier)];
-  }];
-  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^ FBCrashLogInfo * {
-    return [[[FBCrashLogInfo
-      crashInfoAfterDate:sinceDate]
-      filteredArrayUsingPredicate:crashLogInfoPredicate]
-      firstObject];
-  }];
-}
-
-+ (nullable NSString *)sampleStalledProcess:(pid_t)processIdentifier
-{
-  return [[[[FBTaskBuilder
-    withLaunchPath:@"/usr/bin/sample" arguments:@[@(processIdentifier).stringValue, @"1"]]
-    build]
-    startSynchronouslyWithTimeout:5]
-    stdOut];
 }
 
 @end

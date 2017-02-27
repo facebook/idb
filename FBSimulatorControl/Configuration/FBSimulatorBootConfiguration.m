@@ -208,7 +208,7 @@
 - (instancetype)withScale:(id<FBSimulatorScale>)scale
 {
   if (!scale) {
-    return nil;
+    return self;
   }
   FBFramebufferConfiguration *framebuffer = [self.framebuffer withScale:scale];
   return [[self.class alloc] initWithOptions:self.options scale:scale localizationOverride:self.localizationOverride framebuffer:framebuffer];

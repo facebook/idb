@@ -56,7 +56,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
   _set = set;
   _amDevice = amDevice;
-  _logger = logger;
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@: ", amDevice.udid]];
 
   return self;
 }
@@ -76,6 +76,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 - (NSString *)name
 {
   return self.amDevice.deviceName;
+}
+
+- (FBArchitecture)architecture
+{
+  return self.amDevice.architecture;
 }
 
 - (NSString *)auxillaryDirectory

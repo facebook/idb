@@ -21,6 +21,7 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
   FBApplicationInstallTypeSystem = 1, /** The Application Type is part of the Operating System */
   FBApplicationInstallTypeUser = 2, /** The Application Type is installable by the User */
   FBApplicationInstallTypeMac = 3, /** The Application Type is part of macOS */
+  FBApplicationInstallTypeRemote = 4, /** The Application Type is remote */
 };
 
 @class FBBinaryDescriptor;
@@ -38,6 +39,16 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
  @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
  */
 + (nullable instancetype)userApplicationWithPath:(NSString *)path error:(NSError **)error;
+
+/**
+ Constructs a FBApplicationDescriptor for the a Remote Application.
+
+ @param name the name of the application
+ @param path the path of the application
+ @param bundleID the bundle id of the application
+ @returns a FBApplicationDescriptor instance.
+ */
++ (instancetype)remoteApplicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID;
 
 /**
  Constructs a FBApplicationDescriptor for the Application at the given path.
@@ -85,6 +96,24 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
  Returns a String Represnting the Application Install Type.
  */
 + (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType;
+
+/**
+ Returns the FBApplicationInstallType from the string representation.
+
+ @param installTypeString install type as a string
+ */
++ (FBApplicationInstallType)installTypeFromString:(nullable NSString *)installTypeString;
+
+/**
+ Finds or Extracts an Application if it is determined to be an IPA.
+ If the Path is a .app, it will be returned unchanged.
+
+ @param path the path of the .app or .ipa
+ @param extractPathOut an outparam for the path where the Application is extracted.
+ @param error any error that occurred in fetching the application.
+ @return the path if successful, NO otherwise.
+ */
++ (nullable NSString *)findOrExtractApplicationAtPath:(NSString *)path extractPathOut:(NSURL *_Nullable* _Nullable)extractPathOut error:(NSError **)error;
 
 @end
 

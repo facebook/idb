@@ -12,7 +12,6 @@
 
 static NSString *const ShimulatorCrashAfter = @"SHIMULATOR_CRASH_AFTER";
 static NSString *const ShimulatorUploadVideo = @"SHIMULATOR_UPLOAD_VIDEO";
-static NSString *const ShimulatorCleanKeychain = @"SHIMULATOR_CLEAN_KEYCHAIN";
 
 @interface VideoSaveDelegate : NSObject
 
@@ -89,77 +88,12 @@ static void PerformAddVideo(void)
   [delegate performSelector:@selector(performAddVideo) withObject:nil afterDelay:5];
 }
 
-static BOOL VerifyNoAppKeychainItems(void);
-static NSArray *SecItemClasses(void);
-
-static void KillAppAndCleanKeychain(void)
-{
-    if (!NSProcessInfo.processInfo.environment[ShimulatorCleanKeychain]) {
-      NSLog(@"Not clearing keychain");
-      return;
-    }
-
-    NSLog(@"Attempting to clean keychain");
-    for (NSString *secItemClass in SecItemClasses()) {
-      NSDictionary *spec = @{(__bridge NSString *)kSecClass: secItemClass};
-      NSLog(@"Removing all keychain items for keychain class %@", secItemClass);
-      OSStatus ret = SecItemDelete((__bridge CFDictionaryRef)spec);
-      if (ret == errSecSuccess || ret == errSecItemNotFound) {
-        NSLog(@"Successfully removed all keychain items for keychain class %@", secItemClass);
-      } else {
-        NSLog(@"Failed to remove all keychain items for keychain class %@", secItemClass);
-      }
-    }
-
-    if (!VerifyNoAppKeychainItems()) {
-      NSLog(@"Failed to remove all keychain items. Killing app");
-      // Kill app.
-      exit(0);
-    } else {
-      NSLog(@"Succeeded in removing all keychain items");
-    }
-}
-
-static BOOL VerifyNoAppKeychainItems(void)
-{
-    NSDictionary *baseQuery = @{
-      (__bridge id)kSecReturnAttributes:(__bridge id)kCFBooleanTrue,
-      (__bridge id)kSecMatchLimit:(__bridge id)kSecMatchLimitAll,
-    };
-    for (NSString *secItemClass in SecItemClasses()) {
-      NSMutableDictionary *query = [baseQuery mutableCopy];
-      query[(__bridge NSString *)kSecClass]] = secItemClass;
-      CFTypeRef result = NULL;
-      OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
-      if (result != NULL) {
-        CFRelease(result);
-      }
-      if (status == errSecSuccess) {
-        NSLog(@"Loaded keychain item of type %@", secItemClass);
-        return NO;
-      }
-    }
-    return YES;
-}
-
-static NSArray<NSString *> *SecItemClasses(void)
-{
-  return @[
-    (__bridge NSString *)kSecClassGenericPassword,
-    (__bridge NSString *)kSecClassInternetPassword,
-    (__bridge NSString *)kSecClassCertificate,
-    (__bridge NSString *)kSecClassKey,
-    (__bridge NSString *)kSecClassIdentity,
-  ];
-}
-
 __attribute__((constructor)) static void EntryPoint()
 {
   NSLog(@"Start of Shimulator");
 
   PerformCrashAfter();
   PerformAddVideo();
-  KillAppAndCleanKeychain();
 
   NSLog(@"End of Shimulator");
 }

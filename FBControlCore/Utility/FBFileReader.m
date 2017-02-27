@@ -6,7 +6,7 @@
 
 @interface FBFileReader ()
 
-@property (nonatomic, strong, readonly) id<FBFileDataConsumer> consumer;
+@property (nonatomic, strong, readonly) id<FBFileConsumer> consumer;
 @property (nonatomic, strong, readonly) dispatch_queue_t readQueue;
 
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
@@ -17,12 +17,12 @@
 
 @implementation FBFileReader
 
-+ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileDataConsumer>)consumer
++ (instancetype)readerWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
 {
   return [[self alloc] initWithFileHandle:fileHandle consumer:consumer];
 }
 
-+ (nullable instancetype)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileDataConsumer>)consumer error:(NSError **)error
++ (nullable instancetype)readerWithFilePath:(NSString *)filePath consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
 {
   NSFileHandle *handle = [NSFileHandle fileHandleForReadingAtPath:filePath];
   if (!handle) {
@@ -31,7 +31,7 @@
   return [self readerWithFileHandle:handle consumer:consumer];
 }
 
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileDataConsumer>)consumer
+- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle consumer:(id<FBFileConsumer>)consumer
 {
   self = [super init];
   if (!self) {
@@ -51,7 +51,7 @@
   NSParameterAssert(self.io == NULL);
 
   NSFileHandle *fileHandle = self.fileHandle;
-  id<FBFileDataConsumer> consumer = self.consumer;
+  id<FBFileConsumer> consumer = self.consumer;
 
   // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
   self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.readQueue, ^(int errorCode) {

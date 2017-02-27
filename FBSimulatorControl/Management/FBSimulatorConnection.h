@@ -63,6 +63,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable FBFramebuffer *)connectToFramebuffer:(NSError **)error;
 
+/**
+ Connects to the FBSimulatorHID.
+
+ @param error an error out for any error that occurs.
+ @return a The HID if successful, nil otherwise.
+ */
+- (nullable FBSimulatorHID *)connectToHID:(NSError **)error;
+
 #pragma mark Properties
 
 /**

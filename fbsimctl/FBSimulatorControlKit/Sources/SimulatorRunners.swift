@@ -65,7 +65,7 @@ struct SimulatorActionRunner : Runner {
     case .boot(let maybeBootConfiguration):
       let bootConfiguration = maybeBootConfiguration ?? FBSimulatorBootConfiguration.default()
       return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(bootConfiguration)) { interaction in
-        interaction.prepare(forBoot: bootConfiguration).bootSimulator(bootConfiguration)
+        interaction.bootSimulator(bootConfiguration)
       }
     case .clearKeychain(let maybeBundleID):
       return SimulatorInteractionRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) { interaction in
@@ -81,6 +81,10 @@ struct SimulatorActionRunner : Runner {
     case .erase:
       return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
+      }
+    case .hid(let event):
+      return iOSTargetRunner(reporter, EventName.Hid, ControlCoreSubject(simulator)) {
+        try event.perform(on: simulator.connect().connectToHID())
       }
     case .keyboardOverride:
       return SimulatorInteractionRunner(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) { interaction in
@@ -104,11 +108,6 @@ struct SimulatorActionRunner : Runner {
             interaction.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: configuration.timeout)
         }
       }
-    case .listApps:
-      return iOSTargetRunner(reporter, nil, ControlCoreSubject(simulator)) {
-        let subject = ControlCoreSubject(simulator.installedApplications.map { $0.jsonSerializableRepresentation() } as NSArray)
-        reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
-      }
     case .open(let url):
       return SimulatorInteractionRunner(reporter, EventName.Open, url.bridgedAbsoluteString) { interaction in
         interaction.open(url)
@@ -126,16 +125,13 @@ struct SimulatorActionRunner : Runner {
         try simulator.set!.kill(simulator)
       }
     case .tap(let x, let y):
-      return SimulatorInteractionRunner(reporter, EventName.Tap, ControlCoreSubject(simulator)) { interaction in
-        interaction.tap(x, y: y)
+      return iOSTargetRunner(reporter, EventName.Tap, ControlCoreSubject(simulator)) {
+        let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
+        try event.perform(on: simulator.connect().connectToHID())
       }
     case .setLocation(let latitude, let longitude):
       return SimulatorInteractionRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) { interaction in
         interaction.setLocation(latitude, longitude: longitude)
-      }
-    case .uninstall(let bundleID):
-      return SimulatorInteractionRunner(reporter, EventName.Uninstall, bundleID) { interaction in
-        interaction.uninstallApplication(withBundleID: bundleID)
       }
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
@@ -233,19 +229,17 @@ private struct UploadRunner : Runner {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let interaction = SimulatorInteractionRunner(self.reporter, EventName.Upload, StringsSubject(paths)) { interaction in
-        interaction.uploadMedia(paths)
+      let runner = iOSTargetRunner(reporter, EventName.Upload, StringsSubject(paths)) {
+        try FBUploadMediaStrategy(simulator: self.reporter.simulator).uploadMedia(paths)
       }
-      let result = interaction.run()
+      let result = runner.run()
       switch result {
       case .failure: return result
       default: break
       }
     }
 
-    guard let basePath: NSString = self.reporter.simulator.auxillaryDirectory as NSString? else {
-        return CommandResult.failure("Could not determine aux directory for simulator \(self.reporter.target) to path")
-    }
+    let basePath = self.reporter.simulator.auxillaryDirectory
     let arbitraryPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: mediaPredicate)
     let arbitrary = diagnosticLocations.filter{ arbitraryPredicate.evaluate(with: $0.1) }
     for (sourceDiagnostic, sourcePath) in arbitrary {

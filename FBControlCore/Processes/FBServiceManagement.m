@@ -36,6 +36,7 @@
     }
     jobInformation[labelString] = dictionary;
   }
+  CFRelease(jobs);
   return [jobInformation copy];
 }
 
@@ -52,6 +53,7 @@
     }
     [matchingJobs addObject:job];
   }
+  CFRelease(jobs);
   return [matchingJobs copy];
 }
 

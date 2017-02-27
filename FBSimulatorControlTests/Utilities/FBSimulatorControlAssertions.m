@@ -141,7 +141,7 @@
   [self assertInteractionSuccessful:[[simulator.interact installApplication:application] launchApplication:applicationLaunchConfiguration]];
   [self assertLastLaunchedApplicationIsRunning:simulator];
 
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:simulator];
   [self assertInteractionFailed:[simulator.interact launchApplication:applicationLaunchConfiguration]];
@@ -161,8 +161,8 @@
   FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
 
   [self assertInteractionSuccessful:simulator.interact.relaunchLastLaunchedApplication];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidTerminateNotification];
-  [self.assert consumeNotification:FBSimulatorApplicationProcessDidLaunchNotification];
+  [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate];
+  [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
   FBProcessInfo *secondLaunch = simulator.history.lastLaunchedApplicationProcess;
 
@@ -206,16 +206,16 @@
 - (void)registerNotificationObservers
 {
   NSArray *notificationNames = @[
-    FBSimulatorDidLaunchNotification,
-    FBSimulatorDidTerminateNotification,
-    FBSimulatorConnectionDidConnectNotification,
-    FBSimulatorConnectionDidDisconnectNotification,
-    FBSimulatorApplicationDidLaunchNotification,
-    FBSimulatorApplicationDidTerminateNotification,
-    FBSimulatorApplicationProcessDidLaunchNotification,
-    FBSimulatorApplicationProcessDidTerminateNotification,
-    FBSimulatorAgentProcessDidLaunchNotification,
-    FBSimulatorAgentProcessDidTerminateNotification,
+    FBSimulatorNotificationNameDidLaunch,
+    FBSimulatorNotificationNameDidTerminate,
+    FBSimulatorNotificationNameConnectionDidConnect,
+    FBSimulatorNotificationNameConnectionDidDisconnect,
+    FBSimulatorNotificationNameSimulatorApplicationDidLaunch,
+    FBSimulatorNotificationNameSimulatorApplicationDidTerminate,
+    FBSimulatorNotificationNameApplicationProcessDidLaunch,
+    FBSimulatorNotificationNameApplicationProcessDidTerminate,
+    FBSimulatorNotificationNameAgentProcessDidLaunch,
+    FBSimulatorNotificationNameAgentProcessDidTerminate,
   ];
   for (NSString *notificationName in notificationNames) {
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(simulatorNotificationRecieved:) name:notificationName object:nil];
@@ -353,11 +353,11 @@
 {
   NSMutableArray<NSString *> *notificationNames = [NSMutableArray array];
   if (configuration.shouldConnectBridge) {
-    [notificationNames addObject:FBSimulatorConnectionDidConnectNotification];
+    [notificationNames addObject:FBSimulatorNotificationNameConnectionDidConnect];
   }
-  [notificationNames addObject:FBSimulatorDidLaunchNotification];
+  [notificationNames addObject:FBSimulatorNotificationNameDidLaunch];
   if (!configuration.shouldUseDirectLaunch) {
-    [notificationNames addObject:FBSimulatorApplicationDidLaunchNotification];
+    [notificationNames addObject:FBSimulatorNotificationNameSimulatorApplicationDidLaunch];
   }
   return [notificationNames copy];
 }
@@ -365,9 +365,9 @@
 + (NSArray<NSString *> *)expectedShutdownNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   if (configuration.shouldUseDirectLaunch) {
-    return @[FBSimulatorDidTerminateNotification, FBSimulatorConnectionDidDisconnectNotification];
+    return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect];
   }
-  return @[FBSimulatorDidTerminateNotification, FBSimulatorConnectionDidDisconnectNotification, FBSimulatorApplicationDidTerminateNotification];
+  return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect, FBSimulatorNotificationNameSimulatorApplicationDidTerminate];
 }
 
 @end

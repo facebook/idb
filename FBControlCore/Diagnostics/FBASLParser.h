@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a new ASL Parser.
  */
-+ (instancetype)parserForPath:(NSString *)path;
++ (nullable instancetype)parserForPath:(NSString *)path;
 
 /**
  Returns a FBDiagnostic for the log messages relevant to the provided process info.

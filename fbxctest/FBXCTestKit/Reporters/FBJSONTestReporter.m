@@ -100,6 +100,25 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 #pragma mark FBXCTestReporter
 
+- (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
+{
+  [self printEvent:@{
+                     @"event": @"begin-status",
+                     @"pid": @(pid),
+                     @"level": @"Info",
+                     @"message": [NSString stringWithFormat:@"Tests waiting for debugger. To debug run: lldb -p %@", @(pid)],
+                     }];
+}
+
+- (void)debuggerAttached
+{
+  [self printEvent:@{
+                     @"event": @"end-status",
+                     @"level": @"Info",
+                     @"message": @"Debugger attached",
+                     }];
+}
+
 - (void)didBeginExecutingTestPlan
 {
   [self storeEvent:[self createOCUnitBeginEvent]];

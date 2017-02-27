@@ -95,7 +95,7 @@
   return [self.processIdentifiersToApplications objectsForKeys:[processes valueForKey:@"processIdentifier"] notFoundMarker:NSNull.null];
 }
 
-- (NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process
+- (nullable NSRunningApplication *)runningApplicationForProcess:(FBProcessInfo *)process
 {
   NSRunningApplication *application = [[self
     runningApplicationsForProcesses:@[process]]

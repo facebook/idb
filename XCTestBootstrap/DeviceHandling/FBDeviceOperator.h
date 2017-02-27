@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Operators are used to control devices
  */
-@protocol FBDeviceOperator <NSObject, FBApplicationCommands>
+@protocol FBDeviceOperator <NSObject>
 
 /**
  Determines whether device supports testing with test manager daemon

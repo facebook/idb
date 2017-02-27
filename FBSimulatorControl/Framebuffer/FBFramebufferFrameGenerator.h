@@ -13,15 +13,16 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@protocol FBFramebufferDelegate;
+@protocol FBFramebufferFrameSink;
 @class FBFramebuffer;
 @class SimDeviceFramebufferBackingStore;
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Generates FBFramebufferFrame Objects and forwards them to the delegate.
+ Generates Image Frames Objects and forwards them to the a sink.
  This class is abstract, use FBFramebufferBackingStoreFrameGenerator or FBFramebufferIOSurfaceFrameGenerator as appropriate.
+ This is provided for compatability with older versions of Xcode. Using IOSurface directly is far more efficient.
  */
 @interface FBFramebufferFrameGenerator : NSObject <FBJSONSerializable>
 
@@ -33,12 +34,19 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param framebuffer the Framebuffer to generate frames for.
  @param scale the Scale Factor.
- @param delegate the Delegate to forward to.
+ @param sink the reciever of Frames.
  @param queue the Queue the Delegate will be called on.
  @param logger the logger to log to.
  @return a new Framebuffer Frame Generator;
  */
-+ (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale delegate:(id<FBFramebufferDelegate>)delegate queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
+#pragma mark Public Properties
+
+/**
+ The sink owned by the Frame Generator.
+ */
+@property (nonatomic, strong, readonly) id<FBFramebufferFrameSink> sink;
 
 #pragma mark Public Methods.
 

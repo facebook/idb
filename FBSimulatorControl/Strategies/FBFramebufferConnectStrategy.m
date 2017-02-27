@@ -33,23 +33,34 @@
 
 @property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
 
+@end
+
+@interface FBFramebufferConnectStrategy_IOPortClient : FBFramebufferConnectStrategy
+@end
+
+@interface FBFramebufferConnectStrategy_FramebufferService : FBFramebufferConnectStrategy
+
 - (nullable SimDeviceFramebufferService *)createMainScreenService:(FBSimulator *)simulator error:(NSError **)error;
 
 @end
 
-@interface FBFramebufferConnectStrategy_Xcode7 : FBFramebufferConnectStrategy
+@interface FBFramebufferConnectStrategy_Xcode7 : FBFramebufferConnectStrategy_FramebufferService
 @end
 
-@interface FBFramebufferConnectStrategy_Xcode8 : FBFramebufferConnectStrategy
+@interface FBFramebufferConnectStrategy_Xcode8 : FBFramebufferConnectStrategy_FramebufferService
 @end
 
 @implementation FBFramebufferConnectStrategy
 
 + (instancetype)strategyWithConfiguration:(FBFramebufferConfiguration *)configuration
 {
-  return FBControlCoreGlobalConfiguration.isXcode8OrGreater
-    ? [[FBFramebufferConnectStrategy_Xcode8 alloc] initWithConfiguration:configuration]
-    : [[FBFramebufferConnectStrategy_Xcode7 alloc] initWithConfiguration:configuration];
+  if (objc_getClass("SimDeviceIOClient")) {
+    return [[FBFramebufferConnectStrategy_IOPortClient alloc] initWithConfiguration:configuration];
+  }
+  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    return [[FBFramebufferConnectStrategy_Xcode8 alloc] initWithConfiguration:configuration];
+  }
+  return [[FBFramebufferConnectStrategy_Xcode7 alloc] initWithConfiguration:configuration];
 }
 
 - (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration
@@ -63,6 +74,27 @@
 
   return self;
 }
+
+- (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+@end
+
+@implementation FBFramebufferConnectStrategy_IOPortClient
+
+- (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
+{
+  return [[FBFramebuffer
+    withIOClient:(SimDeviceIOClient *)simulator.device.io configuration:self.configuration simulator:simulator]
+    startListeningInBackground];
+}
+
+@end
+
+@implementation FBFramebufferConnectStrategy_FramebufferService
 
 - (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
 {

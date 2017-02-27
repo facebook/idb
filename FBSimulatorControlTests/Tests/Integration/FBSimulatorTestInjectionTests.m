@@ -81,6 +81,29 @@
               failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX", @"testWillAlwaysFail"]];
 }
 
+- (void)testInjectsApplicationTestWithCustomOutputConfiguration
+{
+  NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+  NSString *stdErrPath = [path stringByAppendingPathComponent:@"stderr.log"];
+  NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
+  FBApplicationLaunchConfiguration *applicationLaunchConfiguration = [self.safariAppLaunch withOutput:output];
+
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  id<FBInteraction> interaction = [[simulator.interact
+    startTestWithLaunchConfiguration:[self.testLaunch withApplicationLaunchConfiguration:applicationLaunchConfiguration] reporter:self]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+
+  [self assertInteractionSuccessful:interaction];
+
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  XCTAssertTrue([fileManager fileExistsAtPath:stdErrPath]);
+  XCTAssertTrue([fileManager fileExistsAtPath:stdOutPath]);
+
+  NSString *stdErrContent = [[NSString alloc] initWithContentsOfFile:stdErrPath encoding:NSUTF8StringEncoding error:nil];
+  XCTAssertTrue([stdErrContent containsString:@"Started running iOSUnitTestFixtureTests"]);
+}
+
 - (void)assertPassed:(NSArray<NSString *> *)passed failed:(NSArray<NSString *> *)failed
 {
   XCTAssertEqualObjects(self.passedMethods, [NSSet setWithArray:passed]);
@@ -103,6 +126,36 @@
   NSString *actual = [self stringWithContentsOfJUnitResult:outputFileURL];
 
   XCTAssertEqualObjects(expected, actual);
+}
+
+- (void)testInjectsApplicationTestWithTestsToRun
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBTestLaunchConfiguration *configuration = [[self.testLaunch
+    withTestsToRun:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
+    withApplicationLaunchConfiguration:self.safariAppLaunch];
+  id<FBInteraction> interaction = [[simulator.interact
+    startTestWithLaunchConfiguration:configuration reporter:self]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+
+  [self assertInteractionSuccessful:interaction];
+  [self assertPassed:@[@"testIsRunningOnIOS"]
+              failed:@[@"testWillAlwaysFail"]];
+}
+
+- (void)testInjectsApplicationTestWithTestsToSkip
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBTestLaunchConfiguration *configuration = [[self.testLaunch
+    withTestsToSkip:[NSSet setWithArray:@[@"iOSUnitTestFixtureTests/testIsRunningOnIOS", @"iOSUnitTestFixtureTests/testWillAlwaysFail"]]]
+    withApplicationLaunchConfiguration:self.safariAppLaunch];
+  id<FBInteraction> interaction = [[simulator.interact
+    startTestWithLaunchConfiguration:configuration reporter:self]
+    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20];
+
+  [self assertInteractionSuccessful:interaction];
+  [self assertPassed:@[@"testIsRunningInIOSApp", @"testHostProcessIsMobileSafari", @"testPossibleCrashingOfHostProcess", @"testPossibleStallingOfHostProcess", @"testWillAlwaysPass"]
+              failed:@[@"testHostProcessIsXctest", @"testIsRunningInMacOSXApp", @"testIsRunningOnMacOSX"]];
 }
 
 #pragma mark -

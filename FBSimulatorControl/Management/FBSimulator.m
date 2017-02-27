@@ -36,6 +36,7 @@
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorVideoRecordingCommands.h"
+#import "FBSimulatorControlOperator.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -43,6 +44,7 @@
 
 @implementation FBSimulator
 
+@synthesize deviceOperator = _deviceOperator;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
 
 #pragma mark Lifecycle
@@ -80,7 +82,7 @@
 - (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
 {
   FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator forSimulator:self];
-  FBSimulatorNotificationEventSink *notificationSink = [FBSimulatorNotificationEventSink withSimulator:self];
+  FBSimulatorNotificationNameEventSink *notificationSink = [FBSimulatorNotificationNameEventSink withSimulator:self];
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
   FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
@@ -100,6 +102,14 @@
 
 #pragma mark FBiOSTarget
 
+- (id<FBDeviceOperator>)deviceOperator
+{
+  if (_deviceOperator == nil) {
+    _deviceOperator = [FBSimulatorControlOperator operatorWithSimulator:self];
+  }
+  return _deviceOperator;
+}
+
 - (NSString *)udid
 {
   return self.device.UDID.UUIDString;
@@ -118,6 +128,11 @@
 - (FBiOSTargetType)targetType
 {
   return FBiOSTargetTypeSimulator;
+}
+
+- (FBArchitecture)architecture
+{
+  return self.configuration.architecture;
 }
 
 - (id<FBControlCoreConfiguration_Device>)deviceConfiguration

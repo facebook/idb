@@ -42,6 +42,11 @@
 - (NSString *)executableName;
 @end
 
+static NSString *const ApplicationNameKey = @"CFBundleName";
+static NSString *const ApplicationIdentifierKey = @"CFBundleIdentifier";
+static NSString *const ApplicationTypeKey = @"ApplicationType";
+static NSString *const ApplicationPathKey = @"Path";
+
 @interface FBiOSDeviceOperator ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
@@ -86,7 +91,7 @@
   return [app installedPath];
 }
 
-- (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
+- (void)fetchApplications
 {
   if (!self.device.dvtDevice.applications) {
     [FBRunLoopSpinner spinUntilBlockFinished:^id{
@@ -95,6 +100,11 @@
       return nil;
     }];
   }
+}
+
+- (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
+{
+  [self fetchApplications];
   return [self.device.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
 }
 
@@ -133,7 +143,9 @@
     return nil;
   }];
   if ([returnObject isKindOfClass:NSError.class]) {
-    *error = returnObject;
+    if (error != nil) {
+      *error = returnObject;
+    }
     return NO;
   }
   return YES;
@@ -264,6 +276,26 @@
   return YES;
 }
 
+- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  id device = self.device.dvtDevice;
+
+  [self fetchApplications];
+
+  id object = [FBRunLoopSpinner spinUntilBlockFinished:^id{
+    return [device uninstallApplicationWithBundleIdentifierSync:bundleID];
+  }];
+
+  if ([object isKindOfClass:NSError.class]) {
+    if (error) {
+      *error = object;
+    }
+    return NO;
+  };
+
+  return YES;
+}
+
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   return [self installedApplicationWithBundleIdentifier:bundleID] != nil;
@@ -286,6 +318,42 @@
     [self observeProcessWithID:PID.integerValue error:error];
   });
   return YES;
+}
+
+- (NSArray<NSDictionary<NSString *, id> *> *)installedApplicationsData {
+  [self fetchApplications];
+
+  NSMutableArray *applications = [[NSMutableArray alloc] init];
+
+  for(NSObject *app in self.device.dvtDevice.applications) {
+    NSDictionary *dict = [app valueForKey:@"plist"];
+    if (!dict) {
+      continue;
+    }
+    [applications addObject:dict];
+  }
+  return applications;
+}
+
+- (NSArray<FBApplicationDescriptor *> *)installedApplications
+{
+  NSMutableArray<FBApplicationDescriptor *> *installedApplications = [[NSMutableArray alloc] init];
+
+  for(NSDictionary *app in [self installedApplicationsData]) {
+    if (app == nil) {
+      continue;
+    }
+    FBApplicationDescriptor *appData =
+      [FBApplicationDescriptor
+       remoteApplicationWithName:app[ApplicationNameKey]
+       path:app[ApplicationPathKey]
+       bundleID:app[ApplicationIdentifierKey]
+       ];
+
+    [installedApplications addObject:appData];
+  }
+
+  return [installedApplications copy];
 }
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error

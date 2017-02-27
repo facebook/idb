@@ -11,8 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBProcessLaunchConfiguration+Private.h"
-
 @implementation FBProcessLaunchConfiguration (Helpers)
 
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environmentAdditions
@@ -20,16 +18,12 @@
   NSMutableDictionary *environment = [[self environment] mutableCopy];
   [environment addEntriesFromDictionary:environmentAdditions];
 
-  FBProcessLaunchConfiguration *configuration = [self copy];
-  configuration.environment = [environment copy];
-  return configuration;
+  return [self withEnvironment:[environment copy]];
 }
 
 - (instancetype)withAdditionalArguments:(NSArray<NSString *> *)arguments
 {
-  FBProcessLaunchConfiguration *configuration = [self copy];
-  configuration.arguments = [self.arguments arrayByAddingObjectsFromArray:arguments];
-  return configuration;
+  return [self withAdditionalArguments:[self.arguments arrayByAddingObjectsFromArray:arguments]];
 }
 
 - (instancetype)withDiagnosticEnvironment
@@ -59,14 +53,43 @@
   return [self injectingLibrary:[[NSBundle bundleForClass:self.class] pathForResource:@"libShimulator" ofType:@"dylib"]];
 }
 
-- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (NSString *)identifiableName
 {
-  NSMutableDictionary *options = [@{
-    @"arguments" : self.arguments,
-    // iOS 7 Launch fails if the environment is empty, put some nothing in the environment for it.
-    @"environment" : self.environment.count ? self.environment:  @{@"__SOME_MAGIC__" : @"__IS_ALIVE__"}
-  } mutableCopy];
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
 
++ (NSMutableDictionary<NSString *, id> *)launchOptionsWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger
+{
+  NSMutableDictionary<NSString *, id> *options = [NSMutableDictionary dictionary];
+  options[@"arguments"] = arguments;
+  options[@"environment"] = environment ? environment: @{@"__SOME_MAGIC__" : @"__IS_ALIVE__"};
+  if (waitForDebugger) {
+    options[@"wait_for_debugger"] = @1;
+  }
+  return options;
+}
+
+@end
+
+@implementation FBAgentLaunchConfiguration (Helpers)
+
+- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+{
+  return [FBAgentLaunchConfiguration
+    simDeviceLaunchOptionsWithLaunchPath:self.agentBinary.path
+    arguments:self.arguments
+    environment:self.environment
+    waitForDebugger:NO
+    stdOut:stdOut
+    stdErr:stdErr];
+}
+
++ (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr
+{
+  // argv[0] should be launch path of the process. SimDevice does not do this automatically, so we need to add it.
+  arguments = [@[launchPath] arrayByAddingObjectsFromArray:arguments];
+  NSMutableDictionary<NSString *, id> *options = [FBProcessLaunchConfiguration launchOptionsWithArguments:arguments environment:environment waitForDebugger:waitForDebugger];
   if (stdOut){
     options[@"stdout"] = @([stdOut fileDescriptor]);
   }
@@ -74,33 +97,6 @@
     options[@"stderr"] = @([stdErr fileDescriptor]);
   }
   return [options copy];
-}
-
-- (NSString *)identifiableName
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-@end
-
-@implementation FBAgentLaunchConfiguration (Helpers)
-
-- (NSDictionary *)simDeviceLaunchOptionsWithStdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
-{
-  // If arguments are passed to launched processes, then then the first argument needs to be the executable path.
-  // Providing no arguments will do this automatically, but when custom arguments are, the first argument must be manually set.
-  NSDictionary *options = [super simDeviceLaunchOptionsWithStdOut:stdOut stdErr:stdErr];
-  NSArray *arguments = options[@"arguments"];
-  if (arguments.count == 0 || [arguments.firstObject isEqualToString:self.agentBinary.path]) {
-    return options;
-  }
-
-  NSMutableArray *modifiedArguments = [arguments mutableCopy];
-  [modifiedArguments insertObject:self.agentBinary.path atIndex:0];
-  NSMutableDictionary *modifiedOptions = [options mutableCopy];
-  modifiedOptions[@"arguments"] = [modifiedArguments copy];
-  return [modifiedOptions copy];
 }
 
 - (NSString *)identifiableName
@@ -120,6 +116,18 @@
 - (NSString *)identifiableName
 {
   return self.bundleID;
+}
+
+- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath
+{
+  NSMutableDictionary<NSString *, id> *options = [FBProcessLaunchConfiguration launchOptionsWithArguments:self.arguments environment:self.environment waitForDebugger:NO];
+  if (stdOutPath){
+    options[@"stdout"] = stdOutPath;
+  }
+  if (stdErrPath) {
+    options[@"stderr"] = stdErrPath;
+  }
+  return [options copy];
 }
 
 @end

@@ -127,13 +127,13 @@
   return self;
 }
 
-- (instancetype)withStdOutConsumer:(id<FBFileDataConsumer>)consumer
+- (instancetype)withStdOutConsumer:(id<FBFileConsumer>)consumer
 {
   self.stdOut = consumer;
   return self;
 }
 
-- (instancetype)withStdErrConsumer:(id<FBFileDataConsumer>)consumer
+- (instancetype)withStdErrConsumer:(id<FBFileConsumer>)consumer
 {
   self.stdErr = consumer;
   return self;
@@ -141,12 +141,12 @@
 
 - (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdOutConsumer:[FBLineFileDataConsumer lineReaderWithConsumer:reader]];
+  return [self withStdOutConsumer:[FBLineFileConsumer lineReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdErrConsumer:[FBLineFileDataConsumer lineReaderWithConsumer:reader]];
+  return [self withStdErrConsumer:[FBLineFileConsumer lineReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger

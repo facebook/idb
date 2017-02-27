@@ -11,19 +11,21 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBFramebufferConfiguration;
-@class FBFramebufferVideo;
 @class FBSimulator;
 @class SimDeviceFramebufferService;
-@protocol FBFramebufferDelegate;
-
-NS_ASSUME_NONNULL_BEGIN
+@class SimDeviceIOClient;
+@protocol FBFramebufferFrameSink;
+@protocol FBFramebufferVideo;
+@protocol FBFramebufferImage;
 
 /**
  A container and client for a Simulator's Framebuffer that forwards important events to delegates.
 
  The class itself doesn't perform much behaviour other than to manage the lifecycle.
- Implementors of FBFramebufferDelegate perform individual behaviours such as recording videos and images.
+ Implementors of FBFramebufferFrameSink perform individual behaviours such as recording videos and images.
  */
 @interface FBFramebuffer : NSObject <FBJSONSerializable>
 
@@ -36,6 +38,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBSimulatorDirectLaunch instance. Must not be nil.
  */
 + (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
+
+/**
+ Creates and returns a new FBSimulatorDirectLaunch object for the provided ioClient.
+
+ @param ioClient the SimDeviceFramebufferService to connect to.
+ @param configuration the configuration of the Framebuffer.
+ @param simulator the Simulator to which the Framebuffer belongs.
+ @return a new FBSimulatorDirectLaunch instance. Must not be nil.
+ */
++ (instancetype)withIOClient:(SimDeviceIOClient *)ioClient configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
 /**
  Starts listening for Framebuffer events from the SimDeviceFramebufferService on an internal background queue.
@@ -61,7 +73,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBFramebufferVideo instance owned by the receiver.
  */
-@property (nonatomic, strong, readonly) FBFramebufferVideo *video;
+@property (nonatomic, strong, readonly) id<FBFramebufferVideo> video;
+
+/**
+ The FBFramebufferImage instance owned by the receiver.
+ */
+@property (nonatomic, strong, readonly) id<FBFramebufferImage> image;
 
 @end
 

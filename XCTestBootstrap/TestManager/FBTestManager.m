@@ -28,12 +28,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)testManagerWithContext:(FBTestManagerContext *)context operator:(id<FBDeviceOperator>)deviceOperator reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)testManagerWithContext:(FBTestManagerContext *)context iosTarget:(id<FBiOSTarget>)iosTarget reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withDeviceOperator:deviceOperator];
+  FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withIOSTarget:iosTarget];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
     mediatorWithContext:context
-    deviceOperator:deviceOperator
+    deviceOperator:iosTarget.deviceOperator
     processDelegate:processOperator
     reporter:reporter
     logger:logger];

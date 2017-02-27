@@ -47,13 +47,40 @@ static NSString *const CDHashPrefix = @"CDHash=";
 
 - (BOOL)signBundleAtPath:(NSString *)bundlePath error:(NSError **)error
 {
-  FBTask *task = [[FBTaskBuilder
-    taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
-  if (error) {
+  FBTask *task = [[FBTaskBuilder taskWithLaunchPath:@"/usr/bin/codesign" arguments:@[@"-s", self.identityName, @"-f", bundlePath]]
+                      startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+  if (task.error && error) {
     *error = task.error;
   }
-  return [task wasSuccessful];}
+  return [task wasSuccessful];
+}
+
+- (BOOL)recursivelySignBundleAtPath:(NSString *)bundlePath error:(NSError **)error {
+  NSMutableArray<NSString *> *pathsToSign = [NSMutableArray arrayWithObject:bundlePath];
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSString *frameworksPath = [bundlePath stringByAppendingString:@"/Frameworks/"];
+  if ([fileManager fileExistsAtPath:frameworksPath]) {
+    NSError *fileSystemError;
+    for (NSString *frameworkPath in [fileManager contentsOfDirectoryAtPath:frameworksPath error:&fileSystemError]) {
+      [pathsToSign addObject:[frameworksPath stringByAppendingString:frameworkPath]];
+    }
+
+    if (fileSystemError) {
+      if (error) {
+        *error = fileSystemError;
+      }
+      return NO;
+    }
+  }
+
+  for (NSString *pathToSign in pathsToSign) {
+    if (![self signBundleAtPath:pathToSign error:error]) {
+      return NO;
+    }
+  }
+  return YES;
+}
+
 
 - (nullable NSString *)cdHashForBundleAtPath:(NSString *)bundlePath error:(NSError **)error
 {
