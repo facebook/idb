@@ -59,8 +59,8 @@ struct SimulatorActionRunner : Runner {
 
     switch action {
     case .approve(let bundleIDs):
-      return SimulatorInteractionRunner(reporter, EventName.Approve, StringsSubject(bundleIDs)) { interaction in
-        interaction.authorizeLocationSettings(bundleIDs)
+      return iOSTargetRunner(reporter, EventName.Approve, StringsSubject(bundleIDs)) {
+        try simulator.authorizeLocationSettings(bundleIDs)
       }
     case .boot(let maybeBootConfiguration):
       let bootConfiguration = maybeBootConfiguration ?? FBSimulatorBootConfiguration.default()
@@ -87,8 +87,8 @@ struct SimulatorActionRunner : Runner {
         try event.perform(on: simulator.connect().connectToHID())
       }
     case .keyboardOverride:
-      return SimulatorInteractionRunner(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) { interaction in
-        interaction.setupKeyboard()
+      return iOSTargetRunner(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) {
+        try simulator.setupKeyboard()
       }
     case .launchAgent(let launch):
       return SimulatorInteractionRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) { interaction in
@@ -136,8 +136,8 @@ struct SimulatorActionRunner : Runner {
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
     case .watchdogOverride(let bundleIDs, let timeout):
-      return SimulatorInteractionRunner(reporter, EventName.WatchdogOverride, StringsSubject(bundleIDs)) { interaction in
-        interaction.overrideWatchDogTimer(forApplications: bundleIDs, withTimeout: timeout)
+      return iOSTargetRunner(reporter, EventName.WatchdogOverride, StringsSubject(bundleIDs)) {
+        try simulator.overrideWatchDogTimer(forApplications: bundleIDs, withTimeout: timeout)
       }
     default:
       return CommandResultRunner.unimplementedActionRunner(action, target: simulator, format: context.format)

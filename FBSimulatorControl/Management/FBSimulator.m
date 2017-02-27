@@ -21,6 +21,7 @@
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulatorApplicationCommands.h"
+#import "FBSimulatorSettingsCommands.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
@@ -283,6 +284,7 @@
   return @[
     [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
     [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
+    [FBSimulatorSettingsCommands commandWithSimulator:simulator],
     [FBSimulatorVideoRecordingCommands withSimulator:simulator],
   ];
 }
