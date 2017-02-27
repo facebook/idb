@@ -17,6 +17,8 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 - Stateless by Default: Knowledge the current state of Simulators can be re-built when `FBSimulatorControl` is launched.
 - BFFs with [`WebDriverAgent`](https://github.com/facebook/webdriveragent).
 - No external dependencies.
+- A Pure Objective-C Framework, so as not to force a Swift-Version dependency.
+- An API designed with Swift in mind.
 
 ## About
 The original use-case for `FBSimulatorControl` was to boot Simulators to run End-to-End tests with `WebDriverAgent`. As `FBSimulatorControl` is a Mac OS X framework, it can be linked to from inside any Mac OS Library, Application, or `xctest` target. There may be additional use-cases that you may find beyond UI Test Automation.
@@ -26,6 +28,10 @@ The original use-case for `FBSimulatorControl` was to boot Simulators to run End
 As `FBSimulatorControl` nears a stable version, the API may change but can be considered mostly stable.
 
 ## Installation
+The fastest way to get a usable installation of the Framework is [to install `fbsimctl` with `homebrew`](fbsimctl/README.md). This will build the `FBSimulatorFramework` at the same time and install it to `/usr/local/Cellar/fbsimctl/Frameworks` by default.
+
+The homebrew installation is derived from [the `build.sh`](build.sh) script in this directory. You can build `FBSimulatorControl` with the following: `build.sh framework build`
+
 The `FBSimulatorControl.xcodeproj` will build the `FBSimulatorControl.framework` and the `FBSimulatorControlTests.xctest` bundles without any additional dependencies. The Project File is checked into the repo and the Framework can be build from this project.
 
 Once you build the `FBSimulatorControl.framework`, it can be linked like any other 3rd-party Framework for your project:
@@ -37,58 +43,59 @@ In order to support different Xcode versions and system environments, `FBSimulat
 
 Since the Frameworks upon which `FBSimulatorControl` depends are loaded laziliy, they must be loaded before using the Framework. Any of the `FBSimulatorControl` classes that have this runtime dependency will load these Private Frameworks when they are used for the first time.
 
-[The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API. `FBSimulatorControl` has an umbrella that can be imported to give access to the entire API.
+[The tests](FBSimulatorControlTests/Tests) should provide you with some basic guidance for using the API. `FBSimulatorControl` has an umbrella header that can be imported to give access to the entire API.
 
 For a high level overview:
 - `FBSimulatorControl` is the Principal Class. It is the first object that you should create with `+[FBSimulatorControl withConfiguration:error:]`. It creates a `FBSimulatorPool` upon creation.
 - `FBSimulatorSet` wraps `SimDeviceSet` and provides a resiliant CRUD API for Deleting, Creating and Erasing Simulators.
 - `FBSimulatorPool` builds on `FBSimulatorSet` by providing an 'Allocation' API that allows Simulators to be reserved and re-used within the Framework.
-- `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator.
-- `FBSimulatorInteraction` and it's categories forms the API of possible ways of interacting with a Simulator. These range from booting Simulators, installing & running Applications, uploading photos & videos and more.
-- `FBSimulatorHistory` is a record of all the events that happen to a Simulator. It can be queried in a variety of ways and serialized to file.
+- `FBSimulator` is a reference type that represents an individual Simulator. It has a number of convenience methods for accessing information about a Simulator. Many of the possible actions you can perform on a Simulator are present on instances of this class.
 - `FBSimulatorDiagnostics` is a facade around available diagnostics for a Simulator. It fetches static logs such as the System Log on-demand and receives new logs from components such as `FBFramebufferVideo`.
 - Configuration objects: `FBApplicationLaunchConfiguration`, `FBAgentLaunchConfiguration`, `FBSimulatorApplication`, `FBSimulatorControlConfiguration`, `FBSimulatorConfiguration` & `FBSimulatorBootConfiguration`.
 
-To launch Safari on an iPhone 5, you can use the following:
+Since `FBSimulatorControl` is built as a Framework Module, it's easy to make Swift Scripts that use the Framework:
 
-```objc
+To launch Safari on an iPhone 6, you can run the following:
 
-    // Create a suitable configuration for FBSimulatorControl.
-    // This Configuration will ensure that no other Simulators are running.
-    FBSimulatorManagementOptions managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart;    
-    FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
-      configurationWithDeviceSetPath:nil
-      options:managementOptions];
-    
-    // The principal class, must be retained as long as the Framework is used.
-    // If there is something wrong with the environment and error will be returned.
-    NSError *error = nil;
-    FBSimulatorControl *control = [FBSimulatorControl withConfiguration:controlConfiguration error:&error];
-    
-    // Create the Configuration for the Allocation & Creation of a Simulator.
-    // When a Simulator is Allocated, a Simulator matching the given configuration is reused if one is available
-    // Otherwise a Simulator with the provided configuration will be created.
-    // The Simulator returned as a result will be shutdown and erased.
-    FBSimulatorConfiguration *simulatorConfiguration = FBSimulatorConfiguration.iPhone5;
-    FBSimulatorAllocationOptions allocationOptions = FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsEraseOnAllocate;
-    
-    // Obtain a Simulator from the Principal Class. If anything goes wrong, nil will be returned along with a descriptive error.
-    FBSimulator *simulator = [control.pool allocateSimulatorWithConfiguration:simulatorConfiguration options:allocationOptions error:&error];
+```swift
+#!/usr/bin/env xcrun swift -F /usr/local/Frameworks
+// The -F Argument should be the directory in which the FBSimulatorControl.framework is located.
 
-    
-    // Build a Launch Configuration.
-    FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
-      configurationWithApplication:[FBSimulatorApplication systemApplicationNamed:@"MobileSafari" error:&error]
-      arguments:@[]
-      environment:@{}
-      options:0];
-    
-    // System Applications can be launched directly since they are already 'installed' in the Simulator.
-    // Applications provided by the user must be installed after Booting with `installApplication:`.
-    BOOL success = [[[simulator.interact
-      bootSimulator]
-      launchApplication:appLaunch]
-      perform:&error];
+// Import the FBSimulatorControl Framework
+import FBSimulatorControl
+
+// Create the FBSimulatorControl Instance.
+let options = FBSimulatorManagementOptions()
+let config = FBSimulatorControlConfiguration(deviceSetPath: nil, options: options)
+let logger = FBControlCoreGlobalConfiguration.defaultLogger()
+let control = try FBSimulatorControl.withConfiguration(config, logger: logger)
+
+// Get an existing iPhone 6 from the Simulator Pool.
+let simulator = try control.pool.allocateSimulator(
+  with: FBSimulatorConfiguration.iPhone6(),
+  options: FBSimulatorAllocationOptions.reuse
+)
+print("Using \(simulator)")
+
+// If it is booted, keep it booted, otherwise boot it.
+if (simulator.state != .booted) {
+  print("Booting Simulator \(simulator)")
+  try simulator.bootSimulator()
+}
+
+// List the Installed Apps and get the first installed app
+let applications = simulator.installedApplications()
+let application = applications.first!
+
+// Launch the first installed Application
+let appLaunch = FBApplicationLaunchConfiguration(
+  application: application,
+  arguments: [],
+  environment: [:],
+  output: FBProcessOutputConfiguration.outputToDevNull()
+)
+print("Launching \(application)")
+try simulator.launchApplication(appLaunch)
 ```
 
 
