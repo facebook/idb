@@ -145,31 +145,6 @@ struct SimulatorActionRunner : Runner {
   }
 }
 
-private struct SimulatorInteractionRunner : Runner {
-  let reporter: SimulatorReporter
-  let name: EventName
-  let subject: EventReporterSubject
-  let interaction:(FBSimulatorInteraction)throws -> Void
-
-  init(_ reporter: SimulatorReporter, _ name: EventName, _ subject: EventReporterSubject, _ interaction: @escaping (FBSimulatorInteraction) throws -> Void) {
-    self.reporter = reporter
-    self.name = name
-    self.subject = subject
-    self.interaction = interaction
-  }
-
-  func run() -> CommandResult {
-    let simulator = self.reporter.simulator
-    let interaction = self.interaction
-    let action = iOSTargetRunner(self.reporter, self.name, self.subject) {
-      let interact = simulator.interact
-      try interaction(interact)
-      try interact.perform()
-    }
-    return action.run()
-  }
-}
-
 private struct SearchRunner : Runner {
   let reporter: SimulatorReporter
   let search: FBBatchLogSearch
