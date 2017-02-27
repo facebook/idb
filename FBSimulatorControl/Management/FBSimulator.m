@@ -23,6 +23,7 @@
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorXCTestCommands.h"
+#import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
@@ -287,6 +288,7 @@
     [FBSimulatorAgentCommands commandsWithSimulator:simulator],
     [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
     [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
+    [FBSimulatorLifecycleCommands commandsWithSimulator:simulator],
     [FBSimulatorSettingsCommands commandWithSimulator:simulator],
     [FBSimulatorVideoRecordingCommands withSimulator:simulator],
     [FBSimulatorXCTestCommands commandsWithSimulator:simulator],

@@ -15,7 +15,6 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBSimulatorInteraction+Lifecycle.h"
 
 @interface FBAddVideoPolyfill ()
 
@@ -112,7 +111,7 @@
       failBool:error];
   }
 
-  if (![[simulator.interact terminateSubprocess:photosAppProcess] perform:nil]) {
+  if (![simulator terminateSubprocess:photosAppProcess error:nil]) {
     return [[[FBSimulatorError
       describe:@"Couldn't kill MobileSlideShow after uploading videos"]
       causedBy:innerError]

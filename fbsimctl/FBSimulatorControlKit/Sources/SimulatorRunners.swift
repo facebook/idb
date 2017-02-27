@@ -64,8 +64,8 @@ struct SimulatorActionRunner : Runner {
       }
     case .boot(let maybeBootConfiguration):
       let bootConfiguration = maybeBootConfiguration ?? FBSimulatorBootConfiguration.default()
-      return SimulatorInteractionRunner(reporter, EventName.Boot, ControlCoreSubject(bootConfiguration)) { interaction in
-        interaction.bootSimulator(bootConfiguration)
+      return iOSTargetRunner(reporter, EventName.Boot, ControlCoreSubject(bootConfiguration)) {
+        try simulator.bootSimulator(bootConfiguration)
       }
     case .clearKeychain(let maybeBundleID):
       return iOSTargetRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) {
@@ -109,8 +109,8 @@ struct SimulatorActionRunner : Runner {
         }
       }
     case .open(let url):
-      return SimulatorInteractionRunner(reporter, EventName.Open, url.bridgedAbsoluteString) { interaction in
-        interaction.open(url)
+      return iOSTargetRunner(reporter, EventName.Open, url.bridgedAbsoluteString) {
+        try simulator.open(url)
       }
     case .relaunch(let appLaunch):
       return iOSTargetRunner(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) {

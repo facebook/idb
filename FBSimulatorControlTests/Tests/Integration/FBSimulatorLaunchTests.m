@@ -90,9 +90,16 @@
   XCTAssertEqual(self.control.pool.allocatedSimulators.count, 3u);
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
 
-  [self assertInteractionSuccessful:[simulator1.interact bootSimulator:self.simulatorLaunchConfiguration]];
-  [self assertInteractionSuccessful:[simulator2.interact bootSimulator:self.simulatorLaunchConfiguration]];
-  [self assertInteractionSuccessful:[simulator3.interact bootSimulator:self.simulatorLaunchConfiguration]];
+  NSError *error = nil;
+  BOOL success = [simulator1 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  success = [simulator2 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  success = [simulator3 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   NSArray *simulators = @[simulator1, simulator2, simulator3];
   for (FBSimulator *simulator in simulators) {

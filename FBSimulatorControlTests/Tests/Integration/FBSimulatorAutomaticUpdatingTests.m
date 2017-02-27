@@ -114,7 +114,9 @@
   }
 
   [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[simulator.interact terminateSubprocess:process]];
+  success = [simulator terminateSubprocess:process error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   NSNotification *actual = [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate timeout:20];
   XCTAssertTrue([actual.userInfo[FBSimulatorNotificationUserInfoKeyExpectedTermination] boolValue]);

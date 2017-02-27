@@ -37,10 +37,12 @@
 
 - (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator
 {
-  [self assertInteractionSuccessful:simulator.interact.shutdownSimulator];
-
   NSError *error = nil;
-  BOOL success = [simulator.pool freeSimulator:simulator error:&error];
+  BOOL success = [simulator shutdownSimulatorWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  [simulator.pool freeSimulator:simulator error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   [self assertSimulatorShutdown:simulator];
@@ -140,7 +142,10 @@
 
   FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
   [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[simulator.interact bootSimulator:launchConfiguration]];
+
+  BOOL success = [simulator bootSimulator:launchConfiguration error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
   [self.assert bootingNotificationsFired:launchConfiguration];
   [self.assert consumeAllNotifications];
   return simulator;
