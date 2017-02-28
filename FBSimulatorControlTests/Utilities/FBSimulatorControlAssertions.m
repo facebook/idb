@@ -109,7 +109,7 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   NSError *error = nil;
   BOOL success = [simulator installApplication:application error:&error];
-  XCTAssertNotNil(error);
+  XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;
 }
