@@ -44,7 +44,7 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   NSError *error = nil;
   BOOL success = [simulator installApplication:self.tableSearchApplication error:&error];
-  XCTAssertNotNil(error);
+  XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;
 }
@@ -84,7 +84,7 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   NSError *error = nil;
-  BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]
+  BOOL success = [simulator startTestWithLaunchConfiguration:[self.testLaunch withApplicationLaunchConfiguration:self.safariAppLaunch] reporter:self error:&error]
               && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
