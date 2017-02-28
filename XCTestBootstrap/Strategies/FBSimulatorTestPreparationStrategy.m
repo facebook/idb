@@ -16,9 +16,7 @@
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 #import "FBTestRunnerConfiguration.h"
-#import "FBTestLaunchConfiguration.h"
 #import "XCTestBootstrapError.h"
-
 
 @interface FBSimulatorTestPreparationStrategy ()
 

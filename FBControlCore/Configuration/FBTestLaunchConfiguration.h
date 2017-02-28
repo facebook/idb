@@ -11,10 +11,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBApplicationLaunchConfiguration;
-@protocol FBTestManagerTestReporter;
-
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBApplicationLaunchConfiguration;
 
 /**
  A Value object with the information required to launch a XCTest.
