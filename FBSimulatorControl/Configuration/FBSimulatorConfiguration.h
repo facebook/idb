@@ -41,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Name of the Device to Simulate. Must not be nil.
  */
-@property (nonatomic, copy, readonly) NSString *deviceName;
+@property (nonatomic, copy, readonly) FBDeviceName deviceName;
 
 /**
  A String Representation of the OS Version of the Simulator. Must not be nil.
@@ -78,8 +78,8 @@ NS_ASSUME_NONNULL_BEGIN
  A Device with the provided name.
  Will return nil, if no device with the given name could be found.
  */
-+ (nullable instancetype)withDeviceNamed:(NSString *)deviceName;
-- (nullable instancetype)withDeviceNamed:(NSString *)deviceName;
++ (instancetype)withDeviceNamed:(FBDeviceName)deviceName;
+- (instancetype)withDeviceNamed:(FBDeviceName)deviceName;
 
 #pragma mark iPhone Devices
 
