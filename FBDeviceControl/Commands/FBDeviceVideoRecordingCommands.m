@@ -25,7 +25,7 @@
 
 @implementation FBDeviceVideoRecordingCommands
 
-+ (instancetype)withDevice:(FBDevice *)device
++ (instancetype)commandsWithDevice:(FBDevice *)device
 {
   return [[self alloc] initWithDevice:device];
 }

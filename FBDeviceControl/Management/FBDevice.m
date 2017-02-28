@@ -210,7 +210,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
 - (FBDeviceVideoRecordingCommands *)recordingCommand
 {
   if (!_recordingCommand) {
-    _recordingCommand = [FBDeviceVideoRecordingCommands withDevice:self];
+    _recordingCommand = [FBDeviceVideoRecordingCommands commandsWithDevice:self];
   }
   return _recordingCommand;
 }

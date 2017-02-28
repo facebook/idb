@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to perform actions on.
  @return a new FBSimulatorApplicationCommands instance.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

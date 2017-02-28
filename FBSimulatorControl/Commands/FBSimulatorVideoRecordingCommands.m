@@ -24,7 +24,7 @@
 
 @implementation FBSimulatorVideoRecordingCommands
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
 }

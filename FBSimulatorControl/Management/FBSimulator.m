@@ -292,7 +292,7 @@
     [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
     [FBSimulatorLifecycleCommands commandsWithSimulator:simulator],
     [FBSimulatorSettingsCommands commandWithSimulator:simulator],
-    [FBSimulatorVideoRecordingCommands withSimulator:simulator],
+    [FBSimulatorVideoRecordingCommands commandsWithSimulator:simulator],
     [FBSimulatorXCTestCommands commandsWithSimulator:simulator],
   ];
 }
