@@ -85,4 +85,14 @@
   return nil;
 }
 
+- (BOOL)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
+{
+  return NO;
+}
+
+- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return NO;
+}
+
 @end

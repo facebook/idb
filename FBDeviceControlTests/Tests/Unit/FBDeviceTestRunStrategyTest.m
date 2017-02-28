@@ -10,11 +10,11 @@
 #import <XCTest/XCTest.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
-@interface FBDeviceTestRunStrategyTest : XCTestCase
+@interface FBDeviceXCTestCommandsTest : XCTestCase
 
 @end
 
-@implementation FBDeviceTestRunStrategyTest
+@implementation FBDeviceXCTestCommandsTest
 
 - (void)testBuildXCTestRunProperties {
 
@@ -22,7 +22,7 @@
   NSString *testBundlePath = @"/tmp/test_host_path.app/test_bundle_path.xctest";
 
   FBDevice *device = [[FBDevice alloc] init];
-  FBDeviceTestRunStrategy *strategy = [FBDeviceTestRunStrategy
+  FBDeviceXCTestCommands *strategy = [FBDeviceXCTestCommands
     strategyWithDevice:device
     testHostPath:testHostPath
     testBundlePath:testBundlePath

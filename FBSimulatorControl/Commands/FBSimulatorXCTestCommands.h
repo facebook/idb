@@ -9,9 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 @class FBSimulator;
 @class FBApplicationLaunchConfiguration;
-@class FBTestBundle;
 @class FBTestLaunchConfiguration;
 @protocol FBTestManagerTestReporter;
 
@@ -20,15 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Commands to perform on a Simulator, related to XCTest.
  */
-@protocol FBSimulatorXCTestCommands <NSObject>
-
-/**
- Starts testing application using test bundle. It will use simulator's auxillaryDirectory as working directory
-
- @param testLaunchConfiguration configuration used to launch test.
- @return the reciever, for chaining.
- */
-- (BOOL)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error;
+@protocol FBSimulatorXCTestCommands <NSObject, FBXCTestCommands>
 
 /**
  Starts testing application using test bundle.
@@ -48,15 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return the reciever, for chaining.
  */
 - (BOOL)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory error:(NSError **)error;
-
-/**
- Starting test runner does not wait till test execution has finished. In same maner as starting application does not wait till application has finished execution.
- This method can be used in order to wait till all testing sessions have finished and possbily process the results.
-
- @param timeout the maximum time to wait for test to finish.
- @return the reciever, for chaining.
- */
-- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 @end
 
