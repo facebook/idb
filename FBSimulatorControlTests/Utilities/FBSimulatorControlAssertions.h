@@ -14,7 +14,6 @@
 @class FBSimulator;
 @class FBSimulatorControl;
 @class FBSimulatorPool;
-@protocol FBInteraction;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -22,18 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  FBSimulatorControl Assertion Helpers.
  */
 @interface XCTestCase (FBSimulatorControlAssertions)
-
-#pragma mark Interactions
-
-/**
- Assertion Failure if the Interaction Fails.
- */
-- (void)assertInteractionSuccessful:(id<FBInteraction>)interaction;
-
-/**
- Assertion Failure if the Interaction Succeeds.
- */
-- (void)assertInteractionFailed:(id<FBInteraction>)interaction;
 
 #pragma mark Sessions
 
@@ -96,6 +83,14 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Simulator if succesful, nil otherwise.
  */
 - (nullable FBSimulator *)assertObtainsBootedSimulator;
+
+/**
+ Asserts that a booted Simulator with the default configuration can be obtained.
+
+ @param application the Application to install.
+ @return a Simulator if succesful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application;
 
 /**
  Asserts that a booted Simulator with the provided configurations can be obtained.

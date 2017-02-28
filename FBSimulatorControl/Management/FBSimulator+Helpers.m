@@ -17,7 +17,6 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBSimulatorInteraction.h"
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorProcessFetcher.h"
@@ -26,11 +25,6 @@
 @implementation FBSimulator (Helpers)
 
 #pragma mark Properties
-
-- (FBSimulatorInteraction *)interact
-{
-  return [FBSimulatorInteraction withSimulator:self];
-}
 
 - (FBSimulatorLaunchCtl *)launchctl
 {

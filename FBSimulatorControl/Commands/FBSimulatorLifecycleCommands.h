@@ -9,16 +9,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBSimulatorInteraction.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBSimulator;
+@class FBProcessInfo;
 @class FBSimulatorBootConfiguration;
 
 /**
  Interactions for the Lifecycle of the Simulator.
  */
-@interface FBSimulatorInteraction (Lifecycle)
+@protocol FBSimulatorLifecycleCommands <NSObject>
 
 /**
  Boots the Simulator with the default Simulator Launch Configuration.\
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the reciever, for chaining.
  */
-- (instancetype)bootSimulator;
+- (BOOL)bootSimulatorWithError:(NSError **)error;
 
 /**
  Boots the Simulator with the default Simulator Launch Configuration.
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the reciever, for chaining.
  */
-- (instancetype)bootSimulator:(FBSimulatorBootConfiguration *)configuration;
+- (BOOL)bootSimulator:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error;
 
 /**
  Shuts the Simulator down.
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @return the reciever, for chaining.
  */
-- (instancetype)shutdownSimulator;
+- (BOOL)shutdownSimulatorWithError:(NSError **)error;
 
 /**
  Opens the provided URL on the Simulator.
@@ -50,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param url the URL to open.
  @return the reciever, for chaining.
  */
-- (instancetype)openURL:(NSURL *)url;
+- (BOOL)openURL:(NSURL *)url error:(NSError **)error;
 
 /**
  Terminates a Subprocess of the Simulator.
@@ -58,7 +58,22 @@ NS_ASSUME_NONNULL_BEGIN
  @param process the process to terminate.
  @return the reciever, for chaining.
  */
-- (instancetype)terminateSubprocess:(FBProcessInfo *)process;
+- (BOOL)terminateSubprocess:(FBProcessInfo *)process error:(NSError **)error;
+
+@end
+
+/**
+ The Implementation of FBSimulatorLifecycleCommands
+ */
+@interface FBSimulatorLifecycleCommands : NSObject <FBSimulatorLifecycleCommands>
+
+/**
+ The Designated Intializer
+
+ @param simulator the Simulator.
+ @return a new Simulator Lifecycle Commands Instance.
+ */
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

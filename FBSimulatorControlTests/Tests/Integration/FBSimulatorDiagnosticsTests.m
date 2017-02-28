@@ -42,12 +42,15 @@
     return;
   }
 
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
   NSString *path = [[NSBundle bundleForClass: self.class] pathForResource:@"libShimulator" ofType:@"dylib"];
   FBApplicationLaunchConfiguration *configuration = [self.tableSearchAppLaunch injectingLibrary:path];
   FBApplicationLaunchConfiguration *appLaunch = [configuration withEnvironmentAdditions:@{@"SHIMULATOR_CRASH_AFTER" : @"1"}];
 
-  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+  NSError *error = nil;
+  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   // Shimulator sends an unrecognized selector to NSFileManager to cause a crash.
   // The CrashReporter service is a background service as it will symbolicate in a separate process.
@@ -75,9 +78,13 @@
     return;
   }
 
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
-  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+
+  NSError *error = nil;
+  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   [self assertFindsNeedle:@"Shimulator" fromHaystackBlock:^ NSString * {
     return [[simulator.simulatorDiagnostics.launchedProcessLogs.allValues firstObject] asString];
@@ -95,9 +102,13 @@
   NSString *stdOutPath = [path stringByAppendingPathComponent:@"stdout.log"];
 
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration configurationWithStdOut:stdOutPath stdErr:stdErrPath error:nil];
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
   FBApplicationLaunchConfiguration *appLaunch = [[self.tableSearchAppLaunch withOutput:output] injectingShimulator];
-  [self assertInteractionSuccessful:[[simulator.interact installApplication:self.tableSearchApplication] launchApplication:appLaunch]];
+
+  NSError *error = nil;
+  BOOL success = [simulator launchApplication:appLaunch error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
 
   NSFileManager *fileManager = [NSFileManager defaultManager];
   XCTAssertTrue([fileManager fileExistsAtPath:stdErrPath]);

@@ -13,19 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/**
- A Strategy for clearing the system keychain.
- This is useful if you wish to restore the Simulator to a state where there are no login credentials in the keychain.
- */
-@interface FBKeychainClearStrategy : NSObject
-
-/**
- Creates and returns a new Strategy.
-
- @param simulator the Simulator to operate on.
- @return a strategy for the provided Simulator.
- */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
+@protocol FBSimulatorKeychainCommands <NSObject>
 
 /**
  Cleans the keychain of the Simulator.
@@ -36,5 +24,22 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)clearKeychainWithError:(NSError **)error;
 
 @end
+
+/**
+ A Strategy for clearing the system keychain.
+ This is useful if you wish to restore the Simulator to a state where there are no login credentials in the keychain.
+ */
+@interface FBSimulatorKeychainCommands : NSObject <FBSimulatorKeychainCommands>
+
+/**
+ Creates and returns a new Strategy.
+
+ @param simulator the Simulator to operate on.
+ @return a strategy for the provided Simulator.
+ */
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
+
+@end
+
 
 NS_ASSUME_NONNULL_END

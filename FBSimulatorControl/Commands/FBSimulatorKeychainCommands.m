@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBKeychainClearStrategy.h"
+#import "FBSimulatorKeychainCommands.h"
 
 #import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
@@ -16,15 +16,15 @@
 
 static NSString *const SecuritydServiceName = @"com.apple.securityd";
 
-@interface FBKeychainClearStrategy ()
+@interface FBSimulatorKeychainCommands ()
 
-@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, weak, readonly) FBSimulator *simulator;
 
 @end
 
-@implementation FBKeychainClearStrategy
+@implementation FBSimulatorKeychainCommands
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
 }

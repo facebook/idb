@@ -15,32 +15,16 @@
 
 @implementation XCTestCase (FBSimulatorControlAssertions)
 
-#pragma mark Interactions
-
-- (void)assertInteractionSuccessful:(id<FBInteraction>)interaction
-{
-  NSError *error = nil;
-  BOOL success = [interaction perform:&error];
-  XCTAssertNil(error);
-  XCTAssertTrue(success);
-}
-
-- (void)assertInteractionFailed:(id<FBInteraction>)interaction
-{
-  NSError *error = nil;
-  BOOL success = [interaction perform:&error];
-  XCTAssertNotNil(error);
-  XCTAssertFalse(success);
-}
-
 #pragma mark Sessions
 
 - (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator
 {
-  [self assertInteractionSuccessful:simulator.interact.shutdownSimulator];
-
   NSError *error = nil;
-  BOOL success = [simulator.pool freeSimulator:simulator error:&error];
+  BOOL success = [simulator shutdownSimulatorWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  [simulator.pool freeSimulator:simulator error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   [self assertSimulatorShutdown:simulator];
@@ -120,6 +104,16 @@
   return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:self.simulatorLaunchConfiguration];
 }
 
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application
+{
+  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  NSError *error = nil;
+  BOOL success = [simulator installApplication:application error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  return simulator;
+}
+
 - (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorBootConfiguration *)launchConfiguration
 {
   NSError *error = nil;
@@ -130,7 +124,10 @@
 
   FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
   [self.assert consumeAllNotifications];
-  [self assertInteractionSuccessful:[simulator.interact bootSimulator:launchConfiguration]];
+
+  BOOL success = [simulator bootSimulator:launchConfiguration error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
   [self.assert bootingNotificationsFired:launchConfiguration];
   [self.assert consumeAllNotifications];
   return simulator;
@@ -138,13 +135,22 @@
 
 - (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
-  [self assertInteractionSuccessful:[[simulator.interact installApplication:application] launchApplication:applicationLaunchConfiguration]];
+  NSError *error = nil;
+  BOOL success = [simulator installApplication:application error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+  success = [simulator launchApplication:applicationLaunchConfiguration error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
   [self assertLastLaunchedApplicationIsRunning:simulator];
 
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
   [self assertSimulatorBooted:simulator];
-  [self assertInteractionFailed:[simulator.interact launchApplication:applicationLaunchConfiguration]];
+
+  success = [simulator launchApplication:applicationLaunchConfiguration error:&error];
+  XCTAssertFalse(success);
 
   return simulator;
 }
@@ -160,7 +166,11 @@
   FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration launches:simulatorLaunchConfiguration thenLaunchesApplication:application  withApplicationLaunchConfiguration:applicationLaunchConfiguration];
   FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
 
-  [self assertInteractionSuccessful:simulator.interact.relaunchLastLaunchedApplication];
+  NSError *error = nil;
+  BOOL success = [simulator relaunchLastLaunchedApplicationWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate];
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];

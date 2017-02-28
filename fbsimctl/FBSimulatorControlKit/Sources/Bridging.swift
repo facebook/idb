@@ -16,18 +16,6 @@ extension FBSimulatorState {
   }}
 }
 
-class Interaction : NSObject, FBInteractionProtocol {
-  let interaction:(Void)throws -> Void
-
-  init(_ interaction: @escaping (Void) throws -> Void) {
-    self.interaction = interaction
-  }
-
-  func perform() throws {
-    return try self.interaction()
-  }
-}
-
 extension FBiOSTargetQuery {
   static func parseUDIDToken(_ token: String) throws -> String {
     if let _ = UUID(uuidString: token) {

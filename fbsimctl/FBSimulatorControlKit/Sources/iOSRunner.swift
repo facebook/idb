@@ -48,31 +48,26 @@ struct iOSActionProvider {
         try target.uninstallApplication(withBundleID: appBundleID)
       }
     case .launchApp(let appLaunch):
-      return iOSTargetRunner(
-        reporter: reporter,
-        name: EventName.Launch,
-        subject: ControlCoreSubject(appLaunch),
-        interaction: FBCommandInteractions.launchApplication(appLaunch, command: target)
-      )
+      return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(appLaunch)) {
+        try target.launchApplication(appLaunch)
+      }
     case .listApps:
       return iOSTargetRunner(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
     case .record(let start):
-      return iOSTargetRunner(
-        reporter: reporter,
-        name: EventName.Record,
-        subject: start,
-        interaction: start ? FBCommandInteractions.startRecording(withCommand: target) : FBCommandInteractions.stopRecording(withCommand: target)
-      )
+      return iOSTargetRunner(reporter, EventName.Record, start) {
+        if start {
+          try target.startRecording()
+        } else {
+          try target.stopRecording()
+        }
+      }
     case .terminate(let bundleID):
-      return iOSTargetRunner(
-        reporter: reporter,
-        name: EventName.Terminate,
-        subject: ControlCoreSubject(bundleID as NSString),
-        interaction: FBCommandInteractions.killApplication(withBundleID: bundleID, command: target)
-      )
+      return iOSTargetRunner(reporter, EventName.Terminate, ControlCoreSubject(bundleID as NSString)) {
+        try target.killApplication(withBundleID: bundleID)
+      }
     default:
       return nil
     }
@@ -83,17 +78,13 @@ struct iOSTargetRunner : Runner {
   let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
-  let interaction: FBInteractionProtocol
+  let action: (Void) throws -> Void
 
-  init(reporter: iOSReporter, name: EventName?, subject: EventReporterSubject, interaction: FBInteractionProtocol) {
+  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> Void) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
-    self.interaction = interaction
-  }
-
-  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> Void) {
-    self.init(reporter: reporter, name: name, subject: subject, interaction: Interaction(action))
+    self.action = action
   }
 
   func run() -> CommandResult {
@@ -101,7 +92,7 @@ struct iOSTargetRunner : Runner {
       if let name = self.name {
         self.reporter.report(name, EventType.Started, self.subject)
       }
-      try self.interaction.perform()
+      try self.action()
       if let name = self.name {
         self.reporter.report(name, EventType.Ended, self.subject)
       }
