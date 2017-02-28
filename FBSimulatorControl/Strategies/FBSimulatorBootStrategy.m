@@ -293,7 +293,7 @@
 
 @implementation FBSimulatorBootStrategy
 
-+ (instancetype)withConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
++ (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   if (configuration.shouldUseDirectLaunch) {
     return FBControlCoreGlobalConfiguration.isXcode8OrGreater

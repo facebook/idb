@@ -39,7 +39,7 @@ typedef void (^FBAgentLaunchHandler)(int stat_loc);
  @param simulator the Simulator to launch on.
  @return a new Agent Launch Strategy.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
 #pragma mark Public Methdds
 

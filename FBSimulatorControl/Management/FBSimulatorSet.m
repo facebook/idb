@@ -64,7 +64,7 @@
 
   _allSimulators = @[];
   _processFetcher = [FBSimulatorProcessFetcher fetcherWithProcessFetcher:[FBProcessFetcher new]];
-  _inflationStrategy = [FBSimulatorInflationStrategy forSet:self];
+  _inflationStrategy = [FBSimulatorInflationStrategy strategyForSet:self];
 
   return self;
 }
@@ -336,7 +336,7 @@
 
 - (FBCoreSimulatorTerminationStrategy *)coreSimulatorTerminationStrategy
 {
-  return [FBCoreSimulatorTerminationStrategy withProcessFetcher:self.processFetcher logger:self.logger];
+  return [FBCoreSimulatorTerminationStrategy strategyWithProcessFetcher:self.processFetcher logger:self.logger];
 }
 
 - (FBSimulatorEraseStrategy *)eraseStrategy

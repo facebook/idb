@@ -90,7 +90,7 @@
     defaultConfiguration]
     withOptions:FBSimulatorBootOptionsEnableDirectLaunch];
 
-  if (![[FBSimulatorBootStrategy withConfiguration:bootConfiguration simulator:simulator] boot:error]) {
+  if (![[FBSimulatorBootStrategy strategyWithConfiguration:bootConfiguration simulator:simulator] boot:error]) {
     [self.logger logFormat:@"Failed to boot simulator: %@", *error];
     return nil;
   }

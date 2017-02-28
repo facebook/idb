@@ -62,7 +62,7 @@
 - (BOOL)bootSimulator:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error
 {
   return [[FBSimulatorBootStrategy
-    withConfiguration:configuration simulator:self.simulator]
+    strategyWithConfiguration:configuration simulator:self.simulator]
     boot:error];
 }
 
@@ -88,7 +88,7 @@
 {
   NSParameterAssert(process);
     return [[FBSimulatorSubprocessTerminationStrategy
-      forSimulator:self.simulator]
+      strategyWithSimulator:self.simulator]
       terminate:process error:error];
 }
 

@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param useBridge YES if the SimulatorBridge should be used, NO otherwise.
  @return a new Application Launch Strategy.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
 
 /**
  Creates and returns a new Application Launch Strategy.
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to launch the Application on.
  @return a new Application Launch Strategy.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
 /**
  Launches and returns the process info for the launched application.

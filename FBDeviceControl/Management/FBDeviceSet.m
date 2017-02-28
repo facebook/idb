@@ -123,7 +123,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 
 - (FBDeviceInflationStrategy *)inflationStrategy
 {
-  return [FBDeviceInflationStrategy forSet:self];
+  return [FBDeviceInflationStrategy strategyForSet:self];
 }
 
 - (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid

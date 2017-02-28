@@ -23,7 +23,7 @@
 @interface FBSimulatorTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 
 /**
- Creates and returns a strategy with given paramenters.
+ Creates and returns a Strategy strategyWith given paramenters.
  Will use default implementations of the File Manager and Codesign.
 
  @param testLaunchConfiguration configuration used to launch test.
@@ -34,7 +34,7 @@
                                    workingDirectory:(NSString *)workingDirectory;
 
 /**
- Creates and returns a strategy with given paramenters.
+ Creates and returns a Strategy strategyWith given paramenters.
 
  @param testLaunchConfiguration configuration used to launch test.
  @param workingDirectory directory used to prepare all bundles.

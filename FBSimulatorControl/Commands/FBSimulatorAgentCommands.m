@@ -49,7 +49,7 @@
 - (BOOL)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
   NSParameterAssert(agentLaunch);
-  return [[FBAgentLaunchStrategy withSimulator:self.simulator] launchAgent:agentLaunch error:error] != nil;
+  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch error:error] != nil;
 }
 
 - (BOOL)killAgent:(FBBinaryDescriptor *)agent error:(NSError **)error
@@ -67,7 +67,7 @@
       inSimulator:self.simulator]
       failBool:error];
   }
-  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy withProcessFetcher:self.simulator.processFetcher.processFetcher logger:self.simulator.logger];
+  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher logger:self.simulator.logger];
   if (![strategy killProcess:process error:error]) {
     return [[[FBSimulatorError
       describeFormat:@"SIGKILL of Agent %@ of PID %d failed", agent, process.processIdentifier]

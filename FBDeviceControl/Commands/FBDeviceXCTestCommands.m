@@ -158,7 +158,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
 + (BOOL)terminateReparentedXcodeBuildProcessesForDevice:(FBDevice *)device processFetcher:(FBProcessFetcher *)processFetcher error:(NSError **)error
 {
   NSArray<FBProcessInfo *> *processes = [processFetcher processesWithProcessName:@"xcodebuild"];
-  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy withProcessFetcher:processFetcher logger:device.logger];
+  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher logger:device.logger];
   NSString *udid = device.udid;
   for (FBProcessInfo *process in processes) {
     if (![process.environment[XcodebuildSubprocessEnvironmentIdentifier] isEqualToString:udid]) {

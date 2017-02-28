@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param processFetcher the Process Query object to use.
  @param logger the logger to use.
  */
-+ (instancetype)withProcessFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithProcessFetcher:(FBSimulatorProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 
 /**
  Kills all of the 'com.apple.CoreSimulatorService' processes that are not used by the current `FBSimulatorControl` configuration.

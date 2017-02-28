@@ -19,7 +19,7 @@
 @interface FBDeviceTestPreparationStrategy : NSObject <FBXCTestPreparationStrategy>
 
 /**
- Creates and returns a strategy with given paramenters
+ Creates and returns a Strategy strategyWith given paramenters
 
  @param applicationPath path to tested application (.app)
  @param applicationDataPath path to application data bundle (.xcappdata)
@@ -31,7 +31,7 @@
                     testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration;
 
 /**
- Creates and returns a strategy with given paramenters
+ Creates and returns a Strategy strategyWith given paramenters
 
  @param applicationPath path to tested application (.app)
  @param applicationDataPath path to application data bundle (.xcappdata)

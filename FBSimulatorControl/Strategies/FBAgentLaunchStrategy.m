@@ -30,7 +30,7 @@
 
 @implementation FBAgentLaunchStrategy
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
 }
@@ -147,7 +147,7 @@
   }
 
   // The Process launches and terminates synchronously
-  pid_t processIdentifier = [[FBAgentLaunchStrategy withSimulator:self.simulator]
+  pid_t processIdentifier = [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
     spawnShortRunningWithPath:agentLaunch.agentBinary.path
     options:options
     timeout:FBControlCoreGlobalConfiguration.fastTimeout

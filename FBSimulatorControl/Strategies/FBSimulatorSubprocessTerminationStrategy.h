@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param simulator the Simulator to Terminate Processes.
  */
-+ (instancetype)forSimulator:(FBSimulator *)simulator;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
 /**
  Terminates a Process for a Simulator.
