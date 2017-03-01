@@ -991,6 +991,15 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 @end
 
+@implementation FBControlCoreConfiguration_iOS_10_3
+
+- (NSString *)name
+{
+  return @"iOS 10.3";
+}
+
+@end
+
 @implementation FBControlCoreConfiguration_tvOS_Base
 
 - (FBOSVersionName)name
