@@ -183,7 +183,7 @@ extension ListenInterface : EventReporterSubject {
     }
 
     return JSON.dictionary([
-      "stdin" : JSON.number(NSNumber(booleanLiteral: self.stdin)),
+      "stdin" : JSON.bool(self.stdin),
       "http" : httpValue,
       "hid" : hidValue
     ])

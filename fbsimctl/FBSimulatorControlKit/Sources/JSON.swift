@@ -44,6 +44,7 @@ public indirect enum JSON {
   case array([JSON])
   case string(String)
   case number(NSNumber)
+  case bool(Bool)
   case null
 
   static func encode(_ object: AnyObject) throws -> JSON {
@@ -101,6 +102,8 @@ public indirect enum JSON {
       return string as AnyObject
     case .number(let number):
       return number
+    case .bool(let bool):
+      return NSNumber(booleanLiteral: bool)
     case .null:
       return NSNull()
     }
@@ -211,6 +214,8 @@ extension JSON {
     switch self {
     case .number(let number):
       return number.boolValue
+    case .bool(let bool):
+      return bool
     default:
       throw JSONError.parse("\(self) is not a number/boolean")
     }
