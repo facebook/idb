@@ -173,17 +173,17 @@ extension ListenInterface : Accumulator {
 
 extension ListenInterface : EventReporterSubject {
   public var jsonDescription: JSON { get {
-    var httpValue = JSON.jNull
+    var httpValue = JSON.null
     if let portNumber = self.http {
-      httpValue = JSON.jNumber(NSNumber(integerLiteral: Int(portNumber)))
+      httpValue = JSON.number(NSNumber(integerLiteral: Int(portNumber)))
     }
-    var hidValue = JSON.jNull
+    var hidValue = JSON.null
     if let portNumber = self.hid {
-      hidValue = JSON.jNumber(NSNumber(integerLiteral: Int(portNumber)))
+      hidValue = JSON.number(NSNumber(integerLiteral: Int(portNumber)))
     }
 
-    return JSON.jDictionary([
-      "stdin" : JSON.jNumber(NSNumber(booleanLiteral: self.stdin)),
+    return JSON.dictionary([
+      "stdin" : JSON.number(NSNumber(booleanLiteral: self.stdin)),
       "http" : httpValue,
       "hid" : hidValue
     ])

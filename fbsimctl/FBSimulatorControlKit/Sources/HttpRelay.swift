@@ -53,13 +53,13 @@ private class HttpEventReporter : EventReporter {
   }
 
   var jsonDescription: JSON { get {
-    return JSON.jArray(self.events.map { $0.jsonDescription })
+    return JSON.array(self.events.map { $0.jsonDescription })
   }}
 
   static func errorResponse(_ errorMessage: String?) -> HttpResponse {
-    let json = JSON.jDictionary([
-      ResponseKeys.Status.rawValue : JSON.jString(ResponseKeys.Failure.rawValue),
-      ResponseKeys.Message.rawValue : JSON.jString(errorMessage ?? "Unknown Error")
+    let json = JSON.dictionary([
+      ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Failure.rawValue),
+      ResponseKeys.Message.rawValue : JSON.string(errorMessage ?? "Unknown Error")
     ])
     return HttpResponse.internalServerError(json.data)
   }
@@ -67,21 +67,21 @@ private class HttpEventReporter : EventReporter {
   func interactionResultResponse(_ result: CommandResult) -> HttpResponse {
     switch result {
     case .failure(let string):
-      let json = JSON.jDictionary([
-        ResponseKeys.Status.rawValue : JSON.jString(ResponseKeys.Failure.rawValue),
-        ResponseKeys.Message.rawValue : JSON.jString(string),
+      let json = JSON.dictionary([
+        ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Failure.rawValue),
+        ResponseKeys.Message.rawValue : JSON.string(string),
         ResponseKeys.Events.rawValue : self.jsonDescription
       ])
       return HttpResponse.internalServerError(json.data)
     case .success(let subject):
       var dictionary = [
-        ResponseKeys.Status.rawValue : JSON.jString(ResponseKeys.Success.rawValue),
+        ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Success.rawValue),
         ResponseKeys.Events.rawValue : self.jsonDescription
       ]
       if let subject = subject {
         dictionary[ResponseKeys.Subject.rawValue] = subject.jsonDescription
       }
-      let json = JSON.jDictionary(dictionary)
+      let json = JSON.dictionary(dictionary)
       return HttpResponse.ok(json.data)
     }
   }
@@ -445,12 +445,12 @@ class HttpRelay : Relay {
   fileprivate static var uploadRoute: Route { get {
     let jsonToDiagnostics:(JSON)throws -> [FBDiagnostic] = { json in
       switch json {
-      case .jArray(let array):
+      case .array(let array):
         let diagnostics = try array.map { jsonDiagnostic in
           return try FBDiagnostic.inflate(fromJSON: jsonDiagnostic.decode())
         }
         return diagnostics
-      case .jDictionary:
+      case .dictionary:
         let diagnostic = try FBDiagnostic.inflate(fromJSON: json.decode())
         return [diagnostic]
       default:
