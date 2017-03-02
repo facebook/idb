@@ -14,9 +14,9 @@
 
 @interface FBTestManagerTestReporterCompositeTests : XCTestCase
 
-@property (nonatomic) id testManagerAPIMediator;
-@property (nonatomic) NSArray<OCMockObject<FBTestManagerTestReporter> *> *reporters;
-@property (nonatomic) FBTestManagerTestReporterComposite *compositeReporter;
+@property (nonatomic, copy, readwrite) NSArray<OCMockObject<FBTestManagerTestReporter> *> *reporters;
+@property (nonatomic, strong, readwrite) id testManagerAPIMediator;
+@property (nonatomic, strong, readwrite) FBTestManagerTestReporterComposite *compositeReporter;
 
 @end
 

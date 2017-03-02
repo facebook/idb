@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  Sets latitude and longitude of the Simulator.
  The behaviour of a directly-launched Simulator differs from Simulator.app slightly, in that the location isn't automatically set.
  Simulator.app will typically set a location from NSUserDefaults, so Applications will have a default location.
- 
+
  @param latitude the latitude of the location.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.

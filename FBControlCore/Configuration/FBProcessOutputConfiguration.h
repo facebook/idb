@@ -45,7 +45,7 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
 
 /**
  Construct a copy of the reciever, with the stdOut applied
- 
+
  @param stdOut the stdout, see the documentation for the stdOut property for details.
  @param error an error if the parameters are incorrect.
  @return a new configuration, or nil if the stdOut is incorrectly defined.

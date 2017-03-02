@@ -70,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Create a consumer for the provided client.
- 
+
  @param clientAddress the client address.
  @return a consumer of the socket.
  */

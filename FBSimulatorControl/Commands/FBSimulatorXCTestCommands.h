@@ -11,8 +11,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBSimulator;
 @class FBApplicationLaunchConfiguration;
+@class FBSimulator;
+@class FBTestBundle;
 @class FBTestLaunchConfiguration;
 @protocol FBTestManagerTestReporter;
 
