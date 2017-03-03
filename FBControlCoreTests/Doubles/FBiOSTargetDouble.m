@@ -70,7 +70,7 @@
   return NO;
 }
 
-- (BOOL)startRecordingWithError:(NSError **)error
+- (BOOL)startRecordingToFile:(NSString *)filePath error:(NSError **)error
 {
   return NO;
 }

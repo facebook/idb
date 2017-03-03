@@ -69,7 +69,7 @@ struct iOSActionProvider {
     case .record(let start):
       return iOSTargetRunner(reporter, EventName.Record, start) {
         if start {
-          try target.startRecording()
+          try target.startRecording(toFile: nil)
         } else {
           try target.stopRecording()
         }

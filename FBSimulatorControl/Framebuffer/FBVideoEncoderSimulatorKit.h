@@ -9,8 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBFramebufferVideo.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebufferRenderable;
@@ -19,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Video Encoder using SimDisplayVideoWriter.
  */
-@interface FBVideoEncoderSimulatorKit : NSObject <FBFramebufferVideo>
+@interface FBVideoEncoderSimulatorKit : NSObject
 
 /**
  Create a new Encoder with the provided parameters.
@@ -35,6 +33,20 @@ NS_ASSUME_NONNULL_BEGIN
  YES if this class is supported, NO otherwise.
  */
 + (BOOL)isSupported;
+
+/**
+ Starts Recording Video.
+
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
+ */
+- (void)startRecording:(dispatch_group_t)group;
+
+/**
+ Stops Recording Video.
+
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
+ */
+- (void)stopRecording:(dispatch_group_t)group;
 
 @end
 

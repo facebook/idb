@@ -56,7 +56,7 @@
 
 #pragma mark Public Methods
 
-- (void)startRecording:(dispatch_group_t)group
+- (void)startRecordingToFile:(NSString *)filePath group:(dispatch_group_t)group
 {
   if (self.encoder) {
     [self.logger log:@"Cannot Start Recording, there is already an active encoder"];
@@ -64,7 +64,7 @@
   }
   // Construct the Path for the Log
   FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.configuration.diagnostic];
-  NSString *path = logBuilder.createPath;
+  NSString *path = filePath ?: logBuilder.createPath;
 
   // Create the encoder and start it
   self.encoder = [FBVideoEncoderBuiltIn encoderWithConfiguration:self.configuration videoPath:path logger:self.logger];
@@ -133,7 +133,7 @@
 
   BOOL pendingStart = (configuration.videoOptions & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord;
   if (pendingStart) {
-    [self startRecording:dispatch_group_create()];
+    [self startRecordingToFile:nil group:dispatch_group_create()];
   }
 
   return self;
@@ -146,7 +146,7 @@
   return FBVideoEncoderSimulatorKit.isSupported;
 }
 
-- (void)startRecording:(dispatch_group_t)group
+- (void)startRecordingToFile:(NSString *)filePath group:(dispatch_group_t)group;
 {
   if (self.encoder) {
     [self.logger log:@"Cannot Start Recording, there is already an active encoder"];
@@ -155,7 +155,7 @@
 
   // Construct the Path for the Log
   FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.configuration.diagnostic];
-  NSString *path = logBuilder.createPath;
+  NSString *path = filePath ?: logBuilder.createPath;
 
   // Create and start the encoder.
   self.encoder = [FBVideoEncoderSimulatorKit encoderWithRenderable:self.renderable videoPath:path logger:self.logger];

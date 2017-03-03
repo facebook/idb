@@ -26,9 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts Recording Video.
 
+ @param filePath the (optional) file path to record to. If nil is provided, a default path will be used.
  @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
-- (void)startRecording:(dispatch_group_t)group;
+- (void)startRecordingToFile:(nullable NSString *)filePath group:(dispatch_group_t)group;
 
 /**
  Stops Recording Video.

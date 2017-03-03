@@ -42,7 +42,7 @@
 
 #pragma mark FBVideoRecordingCommands Implementation
 
-- (BOOL)startRecordingWithError:(NSError **)error
+- (BOOL)startRecordingToFile:(NSString *)filePath error:(NSError **)error
 {
   NSError *innerError = nil;
   id<FBFramebufferVideo> video = [self obtainSimulatorVideoWithError:&innerError];
@@ -51,7 +51,7 @@
   }
 
   dispatch_group_t waitGroup = dispatch_group_create();
-  [video startRecording:waitGroup];
+  [video startRecordingToFile:filePath group:waitGroup];
   long fail = dispatch_group_wait(waitGroup, FBControlCoreGlobalConfiguration.regularDispatchTimeout);
   if (fail) {
     return [[FBSimulatorError

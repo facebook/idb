@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBFramebufferFrameSink.h>
-#import <FBSimulatorControl/FBFramebufferVideo.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  An built-in implementation of a video encoder, using AVFoundation.
  All media activity is serialized on a queue, this queue is internal and should not be used by clients.
  */
-@interface FBVideoEncoderBuiltIn : NSObject <FBFramebufferFrameSink, FBFramebufferVideo>
+@interface FBVideoEncoderBuiltIn : NSObject <FBFramebufferFrameSink>
 
 /**
  The Designated Initializer.
@@ -31,6 +30,20 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new Video Encoder instance.
  */
 + (instancetype)encoderWithConfiguration:(FBFramebufferConfiguration *)configuration videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger;
+
+/**
+ Starts Recording Video.
+
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
+ */
+- (void)startRecording:(dispatch_group_t)group;
+
+/**
+ Stops Recording Video.
+
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
+ */
+- (void)stopRecording:(dispatch_group_t)group;
 
 @end
 
