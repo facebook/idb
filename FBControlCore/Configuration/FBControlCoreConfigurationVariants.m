@@ -49,6 +49,7 @@ FBOSVersionName const FBOSVersionNameiOS_9_3_2 = @"iOS 9.3.2";
 FBOSVersionName const FBOSVersionNameiOS_10_0 = @"iOS 10.0";
 FBOSVersionName const FBOSVersionNameiOS_10_1 = @"iOS 10.1";
 FBOSVersionName const FBOSVersionNameiOS_10_2 = @"iOS 10.2";
+FBOSVersionName const FBOSVersionNameiOS_10_2_1 = @"iOS 10.2.1";
 FBOSVersionName const FBOSVersionNameiOS_10_3 = @"iOS 10.3";
 FBOSVersionName const FBOSVersionNametvOS_9_0 = @"tvOS 9.0";
 FBOSVersionName const FBOSVersionNametvOS_9_1 = @"tvOS 9.1";
@@ -982,6 +983,15 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 @end
 
+@implementation FBControlCoreConfiguration_iOS_10_2_1
+
+- (FBOSVersionName)name
+{
+  return FBOSVersionNameiOS_10_2_1;
+}
+
+@end
+
 @implementation FBControlCoreConfiguration_iOS_10_3
 
 - (FBOSVersionName)name
@@ -1187,6 +1197,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
       FBControlCoreConfiguration_iOS_10_0.new,
       FBControlCoreConfiguration_iOS_10_1.new,
       FBControlCoreConfiguration_iOS_10_2.new,
+      FBControlCoreConfiguration_iOS_10_2_1.new,
       FBControlCoreConfiguration_iOS_10_3.new,
       FBControlCoreConfiguration_tvOS_9_0.new,
       FBControlCoreConfiguration_tvOS_9_1.new,

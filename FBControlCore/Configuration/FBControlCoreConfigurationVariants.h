@@ -265,6 +265,9 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 @interface FBControlCoreConfiguration_iOS_10_2 : FBControlCoreConfiguration_iOS_Base
 @end
 
+@interface FBControlCoreConfiguration_iOS_10_2_1 : FBControlCoreConfiguration_iOS_Base
+@end
+
 @interface FBControlCoreConfiguration_iOS_10_3 : FBControlCoreConfiguration_iOS_Base
 @end
 
