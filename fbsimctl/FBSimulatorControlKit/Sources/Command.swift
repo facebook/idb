@@ -56,6 +56,14 @@ public enum DiagnosticFormat : String {
 }
 
 /**
+ An Enumeration for controlling recording.
+ */
+public enum Record {
+  case start(String?)
+  case stop
+}
+
+/**
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
@@ -78,7 +86,7 @@ public enum Action {
   case listDeviceSets
   case listen(ListenInterface)
   case open(URL)
-  case record(Bool)
+  case record(Record)
   case relaunch(FBApplicationLaunchConfiguration)
   case search(FBBatchLogSearch)
   case serviceInfo(String)
@@ -243,6 +251,18 @@ public func == (left: CreationSpecification, right: CreationSpecification) -> Bo
   }
 }
 
+extension Record : Equatable {}
+public func == (left: Record, right: Record) -> Bool {
+  switch (left, right) {
+  case (.start(let leftPath), .start(let rightPath)):
+    return leftPath == rightPath
+  case (.stop, .stop):
+    return true
+  default:
+    return false
+  }
+}
+
 extension Action : Equatable { }
 public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
@@ -352,8 +372,8 @@ extension Action {
       return (EventName.Listen, nil)
     case .open(let url):
       return (EventName.Open, url.absoluteString)
-    case .record(let start):
-      return (EventName.Record, start)
+    case .record(let record):
+      return (EventName.Record, record)
     case .relaunch(let appLaunch):
       return (EventName.Relaunch, ControlCoreSubject(appLaunch))
     case .search(let search):

@@ -400,8 +400,10 @@ class HttpRelay : Relay {
 
   fileprivate static var recordRoute: Route { get {
     return ActionRoute.post(EventName.Record) { json in
-      let start = try json.getValue("start").getBool()
-      return Action.record(start)
+      if try json.getValue("start").getBool() {
+        return Action.record(Record.start(nil))
+      }
+      return Action.record(Record.stop)
     }
   }}
 

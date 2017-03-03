@@ -66,11 +66,12 @@ struct iOSActionProvider {
         let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
-    case .record(let start):
-      return iOSTargetRunner(reporter, EventName.Record, start) {
-        if start {
-          try target.startRecording(toFile: nil)
-        } else {
+    case .record(let record):
+      return iOSTargetRunner(reporter, nil, record) {
+        switch record {
+        case .start(let maybePath):
+          try target.startRecording(toFile: maybePath)
+        case .stop:
           try target.stopRecording()
         }
       }

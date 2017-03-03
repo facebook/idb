@@ -446,6 +446,24 @@ extension ListenInterface : Parsable {
   }
 }
 
+extension Record : Parsable {
+  public static var parser: Parser<Record> {
+    return Parser.alternative([
+      self.startParser,
+      self.stopParser
+    ])
+  }
+
+  private static var startParser: Parser<Record> {
+    return Parser
+      .ofCommandWithArg("start", Parser<String>.ofAny.optional())
+      .fmap { Record.start($0) }
+  }
+
+  private static var stopParser: Parser<Record> {
+    return Parser.ofString("stop", Record.stop)
+  }
+}
 
 extension Action : Parsable {
   public static var parser: Parser<Action> {
@@ -644,13 +662,8 @@ extension Action : Parsable {
   }
 
   static var recordParser: Parser<Action> {
-    let startStopParser: Parser<Bool> = Parser.alternative([
-      Parser.ofString("start", true),
-      Parser.ofString("stop", false)
-    ])
-
-    return Parser<Bool>
-      .ofCommandWithArg(EventName.Record.rawValue, startStopParser)
+    return Parser<Record>
+      .ofCommandWithArg(EventName.Record.rawValue, Record.parser)
       .fmap { Action.record($0) }
   }
 

@@ -208,6 +208,34 @@ struct StringsSubject: EventReporterSubject {
   }}
 }
 
+extension Record : EventReporterSubject {
+  public var jsonDescription: JSON {
+    var contents: [String : JSON] = [:]
+    switch self {
+    case .start(let maybePath):
+      contents["start"] = JSON.bool(true)
+      if let path = maybePath {
+        contents["path"] = JSON.string(path)
+      } else {
+        contents["path"] = JSON.null
+      }
+    case .stop:
+      contents["start"] = JSON.bool(false)
+    }
+    return JSON.dictionary(contents)
+  }
+
+  public var description: String { get {
+    switch self {
+    case .start(let maybePath):
+      let destination = maybePath ?? "Default Destination"
+      return "Start Recording \(destination)"
+    case .stop:
+      return "Stop Recording"
+    }
+  }}
+}
+
 extension String : EventReporterSubject {
   public var jsonDescription: JSON { get {
     return JSON.string(self)
