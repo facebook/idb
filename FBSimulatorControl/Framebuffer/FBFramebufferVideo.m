@@ -113,9 +113,8 @@
 
 @implementation FBFramebufferVideo_SimulatorKit
 
-+ (instancetype)withConfiguration:(FBFramebufferConfiguration *)configuration ioClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)withConfiguration:(FBFramebufferConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:ioClient];
   return [[self alloc] initWithConfiguration:configuration renderable:renderable logger:logger eventSink:eventSink];
 }
 

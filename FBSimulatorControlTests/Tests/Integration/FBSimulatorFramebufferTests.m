@@ -41,7 +41,7 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:launchConfiguration];
   [self assertSimulator:simulator launchesApplication:self.safariApplication withApplicationLaunchConfiguration:self.safariAppLaunch];
   NSError *error = nil;
-  BOOL success = [simulator startRecordingWithError:&error];
+  BOOL success = [simulator startRecordingToFile:nil error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   [self assertSimulator:simulator launchesApplication:self.tableSearchApplication withApplicationLaunchConfiguration:self.tableSearchAppLaunch];

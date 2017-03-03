@@ -184,9 +184,8 @@
 
 @implementation FBFramebufferImage_Surface
 
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink ioClient:(SimDeviceIOClient *)ioClient
++ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic renderable:(FBFramebufferRenderable *)renderable eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:ioClient];
   return [[self alloc] initWithDiagnostic:diagnostic eventSink:eventSink renderable:renderable];
 }
 

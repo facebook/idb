@@ -14,7 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebufferConfiguration;
-@class SimDeviceIOClient;
+@class FBFramebufferRenderable;
 @protocol FBControlCoreLogger;
 @protocol FBSimulatorEventSink;
 
@@ -68,12 +68,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param configuration the configuration to use for encoding.
- @param ioClient the SimDeviceIOClient to connect to.
+ @param renderable the Renderable to Record.
  @param logger the logger object to log events to, may be nil.
  @param eventSink an event sink to report video output to.
  @return a new FBFramebufferVideo instance.
  */
-+ (instancetype)withConfiguration:(FBFramebufferConfiguration *)configuration ioClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)withConfiguration:(FBFramebufferConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  YES if this class is supported, NO otherwise.
