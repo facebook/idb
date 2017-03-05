@@ -35,6 +35,7 @@
 #import "FBFramebufferFrameGenerator.h"
 #import "FBFramebufferImage.h"
 #import "FBFramebufferVideo.h"
+#import "FBFramebufferRenderable.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorDiagnostics.h"
@@ -157,8 +158,9 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.simulatorDiagnostics.video];
   // If we support the Xcode 8.1 SimDisplayVideoWriter, we can construct and use it here.
   if (FBFramebufferVideo_SimulatorKit.isSupported) {
-    FBFramebufferVideo_SimulatorKit *video = [FBFramebufferVideo_SimulatorKit withConfiguration:videoConfiguration ioClient:ioClient logger:logger eventSink:simulator.eventSink];
-    FBFramebufferImage_Surface *image = [FBFramebufferImage_Surface withDiagnostic:simulator.simulatorDiagnostics.screenshot eventSink:simulator.eventSink ioClient:ioClient];
+    FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:ioClient];
+    FBFramebufferVideo_SimulatorKit *video = [FBFramebufferVideo_SimulatorKit withConfiguration:videoConfiguration renderable:renderable logger:logger eventSink:simulator.eventSink];
+    FBFramebufferImage_Surface *image = [FBFramebufferImage_Surface withDiagnostic:simulator.simulatorDiagnostics.screenshot renderable:renderable eventSink:simulator.eventSink];
     return [[FBFramebuffer_SimulatorKit alloc] initWithConfiguration:configuration onQueue:queue video:video image:image ioClient:ioClient logger:logger];
   }
   // Otherwise we have to use the built-in frame generation.

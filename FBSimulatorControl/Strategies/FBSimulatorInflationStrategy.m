@@ -26,7 +26,7 @@
 
 @implementation FBSimulatorInflationStrategy
 
-+ (instancetype)forSet:(FBSimulatorSet *)set
++ (instancetype)strategyForSet:(FBSimulatorSet *)set
 {
   return [[self alloc] initWithSet:set processFetcher:set.processFetcher];
 }

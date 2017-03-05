@@ -56,6 +56,14 @@ public enum DiagnosticFormat : String {
 }
 
 /**
+ An Enumeration for controlling recording.
+ */
+public enum Record {
+  case start(String?)
+  case stop
+}
+
+/**
  An Interaction represents a Single, synchronous interaction with a Simulator.
  */
 public enum Action {
@@ -78,7 +86,7 @@ public enum Action {
   case listDeviceSets
   case listen(ListenInterface)
   case open(URL)
-  case record(Bool)
+  case record(Record)
   case relaunch(FBApplicationLaunchConfiguration)
   case search(FBBatchLogSearch)
   case serviceInfo(String)
@@ -173,17 +181,17 @@ extension ListenInterface : Accumulator {
 
 extension ListenInterface : EventReporterSubject {
   public var jsonDescription: JSON { get {
-    var httpValue = JSON.jNull
+    var httpValue = JSON.null
     if let portNumber = self.http {
-      httpValue = JSON.jNumber(NSNumber(integerLiteral: Int(portNumber)))
+      httpValue = JSON.number(NSNumber(integerLiteral: Int(portNumber)))
     }
-    var hidValue = JSON.jNull
+    var hidValue = JSON.null
     if let portNumber = self.hid {
-      hidValue = JSON.jNumber(NSNumber(integerLiteral: Int(portNumber)))
+      hidValue = JSON.number(NSNumber(integerLiteral: Int(portNumber)))
     }
 
-    return JSON.jDictionary([
-      "stdin" : JSON.jNumber(NSNumber(booleanLiteral: self.stdin)),
+    return JSON.dictionary([
+      "stdin" : JSON.bool(self.stdin),
       "http" : httpValue,
       "hid" : hidValue
     ])
@@ -238,6 +246,18 @@ public func == (left: CreationSpecification, right: CreationSpecification) -> Bo
     return true
   case (.individual(let leftConfiguration), .individual(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
+  default:
+    return false
+  }
+}
+
+extension Record : Equatable {}
+public func == (left: Record, right: Record) -> Bool {
+  switch (left, right) {
+  case (.start(let leftPath), .start(let rightPath)):
+    return leftPath == rightPath
+  case (.stop, .stop):
+    return true
   default:
     return false
   }
@@ -352,8 +372,8 @@ extension Action {
       return (EventName.Listen, nil)
     case .open(let url):
       return (EventName.Open, url.absoluteString)
-    case .record(let start):
-      return (EventName.Record, start)
+    case .record(let record):
+      return (EventName.Record, record)
     case .relaunch(let appLaunch):
       return (EventName.Relaunch, ControlCoreSubject(appLaunch))
     case .search(let search):

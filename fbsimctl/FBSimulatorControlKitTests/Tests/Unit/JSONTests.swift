@@ -41,4 +41,20 @@ class JSONTests : XCTestCase {
     }
   }
 
+  func testParsesBoolFromNumber() {
+    let input: [String : AnyObject] = [
+      "value" : NSNumber(booleanLiteral: false)
+    ]
+    do {
+      var json = try JSON.encode(input as AnyObject)
+      XCTAssertEqual(try json.getValue("value").getBool(), false)
+      json = JSON.dictionary(["value" : JSON.bool(false)])
+      XCTAssertEqual(try json.getValue("value").getBool(), false)
+      json = JSON.dictionary(["value" : JSON.number(NSNumber(booleanLiteral: true))])
+      XCTAssertEqual(try json.getValue("value").getBool(), true)
+    } catch let error {
+      XCTFail("JSON Failure \(error)")
+    }
+  }
+
 }

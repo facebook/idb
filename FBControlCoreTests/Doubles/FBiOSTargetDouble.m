@@ -70,7 +70,7 @@
   return NO;
 }
 
-- (BOOL)startRecordingWithError:(NSError **)error
+- (BOOL)startRecordingToFile:(NSString *)filePath error:(NSError **)error
 {
   return NO;
 }
@@ -83,6 +83,16 @@
 - (NSArray<FBApplicationDescriptor *> *)installedApplications
 {
   return nil;
+}
+
+- (BOOL)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
+{
+  return NO;
+}
+
+- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return NO;
 }
 
 @end

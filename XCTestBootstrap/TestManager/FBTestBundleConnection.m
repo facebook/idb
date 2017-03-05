@@ -395,7 +395,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
     return nil;
   }
   [self.logger logFormat:@"Test Plan Ended"];
-  self.state = FBTestBundleConnectionStateEndedTestPlan;;
+  self.state = FBTestBundleConnectionStateEndedTestPlan;
   return [self.interface _XCT_didFinishExecutingTestPlan];
 }
 

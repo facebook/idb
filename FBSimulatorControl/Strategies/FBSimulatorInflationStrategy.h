@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param set the Simulator Set to insert into.
  @return a new Simulator Inflation Strategy Instance.
  */
-+ (instancetype)forSet:(FBSimulatorSet *)set;
++ (instancetype)strategyForSet:(FBSimulatorSet *)set;
 
 /**
  Creates the Array of Simulators matching the Array of SimDevices passed in.

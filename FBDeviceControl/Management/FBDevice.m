@@ -18,6 +18,7 @@
 
 #import "FBiOSDeviceOperator.h"
 #import "FBDeviceVideoRecordingCommands.h"
+#import "FBDeviceXCTestCommands.h"
 #import "FBDeviceSet+Private.h"
 #import "FBAMDevice.h"
 
@@ -43,6 +44,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 @synthesize deviceOperator = _deviceOperator;
 @synthesize recordingCommand = _recordingCommand;
+@synthesize xcTestCommand = _xcTestCommand;
 @synthesize dvtDevice = _dvtDevice;
 
 #pragma mark Initializers
@@ -193,10 +195,13 @@ void (*FBAMDSetLogLevel)(int32_t level);
 - (id)forwardingTargetForSelector:(SEL)selector
 {
   // Try the Recording Command first, constructing a DeviceOperator is expensive.
-  if ([self.recordingCommand respondsToSelector:selector]) {
+  if ([FBDeviceVideoRecordingCommands instancesRespondToSelector:selector]) {
     return self.recordingCommand;
   }
-  if ([self.deviceOperator respondsToSelector:selector]) {
+  if ([FBDeviceXCTestCommands instancesRespondToSelector:selector]) {
+    return self.xcTestCommand;
+  }
+  if ([FBiOSDeviceOperator instancesRespondToSelector:selector]) {
     return self.deviceOperator;
   }
   return [super forwardingTargetForSelector:selector];
@@ -205,9 +210,17 @@ void (*FBAMDSetLogLevel)(int32_t level);
 - (FBDeviceVideoRecordingCommands *)recordingCommand
 {
   if (!_recordingCommand) {
-    _recordingCommand = [FBDeviceVideoRecordingCommands withDevice:self];
+    _recordingCommand = [FBDeviceVideoRecordingCommands commandsWithDevice:self];
   }
   return _recordingCommand;
+}
+
+- (id<FBXCTestCommands>)xcTestCommand
+{
+  if (!_xcTestCommand) {
+    _xcTestCommand = [FBDeviceXCTestCommands commandsWithDevice:self];
+  }
+  return _xcTestCommand;
 }
 
 @end

@@ -201,7 +201,7 @@
 
   // Spawn and get the output
   return [[FBAgentLaunchStrategy
-    withSimulator:self.simulator]
+    strategyWithSimulator:self.simulator]
     launchConsumingStdout:launchConfiguration error:error];
 }
 

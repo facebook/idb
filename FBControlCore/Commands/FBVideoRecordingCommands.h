@@ -19,10 +19,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Starts the Recording of Video.
 
+ @param filePath an optional filePath to write to. If not provided, a default file path will be used.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)startRecordingWithError:(NSError **)error;
+- (BOOL)startRecordingToFile:(nullable NSString *)filePath error:(NSError **)error;
 
 /**
  Stops the Recording of Video.

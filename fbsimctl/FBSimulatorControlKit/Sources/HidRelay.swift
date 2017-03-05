@@ -43,8 +43,8 @@ class HIDSocketConsumer : NSObject, FBSocketConsumer {
       let json = try JSON.fromData(input)
       let event = try FBSimulatorHIDEvent.inflate(fromJSON: json.decode())
       try event.perform(on: self.hid)
-      let response = JSON.jDictionary([
-        ResponseKeys.Status.rawValue : JSON.jString(ResponseKeys.Success.rawValue),
+      let response = JSON.dictionary([
+        ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Success.rawValue),
         ResponseKeys.Events.rawValue: json,
       ])
       return try! response.serializeToString(false)
@@ -57,12 +57,12 @@ class HIDSocketConsumer : NSObject, FBSocketConsumer {
 
   private static func describeError(error: CustomStringConvertible?) -> String {
     var contents = [
-      ResponseKeys.Status.rawValue : JSON.jString(ResponseKeys.Failure.rawValue),
+      ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Failure.rawValue),
     ]
     if let string = error?.description {
-      contents[ResponseKeys.Message.rawValue] = JSON.jString(string)
+      contents[ResponseKeys.Message.rawValue] = JSON.string(string)
     }
-    return try! JSON.jDictionary(contents).serializeToString(false)
+    return try! JSON.dictionary(contents).serializeToString(false)
   }
 }
 

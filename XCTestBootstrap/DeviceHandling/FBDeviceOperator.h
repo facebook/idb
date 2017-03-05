@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Unique Device Identifier of the iOS Target.
  */
-@property (nonatomic, readonly) NSString *udid;
+@property (nonatomic, copy, readonly) NSString *udid;
 
 /**
  Starts test manager daemon and creates DTXTransport connection with it

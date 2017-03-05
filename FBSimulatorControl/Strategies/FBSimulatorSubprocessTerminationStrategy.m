@@ -28,7 +28,7 @@
 
 @implementation FBSimulatorSubprocessTerminationStrategy
 
-+ (instancetype)forSimulator:(FBSimulator *)simulator
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
 }

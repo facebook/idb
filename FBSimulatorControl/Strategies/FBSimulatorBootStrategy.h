@@ -20,13 +20,13 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorBootStrategy : NSObject
 
 /**
- Creates and returns a new strategy with the given configuration.
+ Creates and returns a new Strategy strategyWith the given configuration.
 
  @param configuration the configuration to use.
  @param simulator the simulator to boot.
  @return a new FBSimulatorBootStrategy instance.
  */
-+ (instancetype)withConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
++ (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
 /**
  Boots the Simulator.

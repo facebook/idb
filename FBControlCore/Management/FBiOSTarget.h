@@ -9,11 +9,12 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBApplicationCommands.h>
-#import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBArchitecture.h>
+#import <FBControlCore/FBDebugDescribeable.h>
+#import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBXCTestCommands.h>
 
 @class FBProcessInfo;
 @class FBiOSTargetDiagnostics;
@@ -49,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Common Properties of Devices & Simulators.
  */
-@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBVideoRecordingCommands>
+@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBVideoRecordingCommands, FBXCTestCommands>
 
 /**
  Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.

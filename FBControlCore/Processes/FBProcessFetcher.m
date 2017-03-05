@@ -286,7 +286,7 @@ static BOOL ProcessNameForProcessIdentifier(pid_t processIdentifier, char *buffe
   IterateOpenFiles(self.pidBuffer, self.pidBufferSize, filename, ^ BOOL (pid_t pid) {
     processIdentifier = pid;
     return NO;
-  });;
+  });
   return processIdentifier;
 }
 

@@ -24,7 +24,7 @@
 
 @implementation FBDeviceInflationStrategy
 
-+ (instancetype)forSet:(FBDeviceSet *)set
++ (instancetype)strategyForSet:(FBDeviceSet *)set
 {
   return [[self alloc] initWithSet:set];
 }

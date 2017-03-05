@@ -19,22 +19,6 @@ struct DeviceActionRunner : Runner {
     let context = self.context.replace((action, device, reporter))
 
     switch (action) {
-      case .launchXCTest(let configuration):
-        do {
-          let arguments = configuration.applicationLaunchConfiguration?.arguments ?? []
-
-          let strategy = FBDeviceTestRunStrategy(
-            device: device,
-            testHostPath: configuration.testHostPath,
-            testBundlePath: configuration.testBundlePath,
-            withTimeout: configuration.timeout,
-            withArguments:arguments
-          )
-          try strategy.start();
-        } catch let error as NSError {
-          return CommandResult.failure(error.description)
-        }
-        return CommandResult.success(configuration.description)
       default:
         return DeviceActionRunner.makeRunner(context).run()
     }

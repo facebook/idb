@@ -40,11 +40,12 @@ public enum JSONError : Error {
  The JSON Type.
  */
 public indirect enum JSON {
-  case jDictionary([String : JSON])
-  case jArray([JSON])
-  case jString(String)
-  case jNumber(NSNumber)
-  case jNull
+  case dictionary([String : JSON])
+  case array([JSON])
+  case string(String)
+  case number(NSNumber)
+  case bool(Bool)
+  case null
 
   static func encode(_ object: AnyObject) throws -> JSON {
     switch object {
@@ -53,7 +54,7 @@ public indirect enum JSON {
       for element in array {
         encoded.append(try encode(element as AnyObject))
       }
-      return JSON.jArray(encoded)
+      return JSON.array(encoded)
     case let dictionary as NSDictionary:
       var encoded: [String : JSON] = [:]
       for (key, value) in dictionary {
@@ -62,13 +63,13 @@ public indirect enum JSON {
         }
         encoded[key as String] = try encode(value as AnyObject)
       }
-      return JSON.jDictionary(encoded)
+      return JSON.dictionary(encoded)
     case let string as NSString:
-      return JSON.jString(string as String)
+      return JSON.string(string as String)
     case let number as NSNumber:
-      return JSON.jNumber(number)
+      return JSON.number(number)
     case is NSNull:
-      return JSON.jNull
+      return JSON.null
     default:
       throw JSONError.nonEncodable(object)
     }
@@ -85,32 +86,34 @@ public indirect enum JSON {
 
   func decode() -> AnyObject {
     switch self {
-    case .jDictionary(let dictionary):
+    case .dictionary(let dictionary):
       let decoded = NSMutableDictionary()
       for (key, value) in dictionary {
         decoded[key] = value.decode()
       }
       return decoded.copy() as AnyObject
-    case .jArray(let array):
+    case .array(let array):
       let decoded = NSMutableArray()
       for value in array {
         decoded.add(value.decode())
       }
       return decoded.copy() as AnyObject
-    case .jString(let string):
+    case .string(let string):
       return string as AnyObject
-    case .jNumber(let number):
+    case .number(let number):
       return number
-    case .jNull:
+    case .bool(let bool):
+      return NSNumber(booleanLiteral: bool)
+    case .null:
       return NSNull()
     }
   }
 
   public func decodeContainer() throws -> AnyObject {
     switch self {
-    case .jArray:
+    case .array:
       return self.decode()
-    case .jDictionary:
+    case .dictionary:
       return self.decode()
     default:
       throw JSONError.notContainer(self)
@@ -147,7 +150,7 @@ extension JSON {
 
   func getOptionalValue(_ key: String) throws -> JSON? {
     switch self {
-    case .jDictionary(let dictionary):
+    case .dictionary(let dictionary):
       guard let value = dictionary[key] else {
         return nil
       }
@@ -159,7 +162,7 @@ extension JSON {
 
   func getOptionalArray() -> [JSON]? {
     switch self {
-    case .jArray(let array):
+    case .array(let array):
       return array
     default:
       return nil
@@ -175,7 +178,7 @@ extension JSON {
 
   func getOptionalDictionary() -> [String : JSON]? {
     switch self {
-    case .jDictionary(let dictionary):
+    case .dictionary(let dictionary):
       return dictionary
     default:
       return nil
@@ -191,7 +194,7 @@ extension JSON {
 
   func getString() throws -> String {
     switch self {
-    case .jString(let string):
+    case .string(let string):
       return string
     default:
       throw JSONError.parse("\(self) not a string")
@@ -200,7 +203,7 @@ extension JSON {
 
   func getNumber() throws -> NSNumber {
     switch self {
-    case .jNumber(let number):
+    case .number(let number):
       return number
     default:
       throw JSONError.parse("\(self) is not a number")
@@ -209,8 +212,10 @@ extension JSON {
 
   func getBool() throws -> Bool {
     switch self {
-    case .jNumber(let number):
+    case .number(let number):
       return number.boolValue
+    case .bool(let bool):
+      return bool
     default:
       throw JSONError.parse("\(self) is not a number/boolean")
     }

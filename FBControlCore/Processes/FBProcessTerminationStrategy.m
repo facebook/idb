@@ -80,7 +80,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
 
 @implementation FBProcessTerminationStrategy
 
-+ (instancetype)withConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger;
 {
   BOOL useWorkspaceKilling = (configuration.options & FBProcessTerminationStrategyOptionsUseNSRunningApplication) == FBProcessTerminationStrategyOptionsUseNSRunningApplication;
   return useWorkspaceKilling
@@ -88,9 +88,9 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     : [[FBProcessTerminationStrategy alloc] initWithConfiguration:configuration processFetcher:processFetcher logger:logger];
 }
 
-+ (instancetype)withProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithProcessFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
 {
-  return [self withConfiguration:FBProcessTerminationStrategyConfigurationDefault processFetcher:processFetcher logger:logger];
+  return [self strategyWithConfiguration:FBProcessTerminationStrategyConfigurationDefault processFetcher:processFetcher logger:logger];
 }
 
 - (instancetype)initWithConfiguration:(FBProcessTerminationStrategyConfiguration)configuration processFetcher:(FBProcessFetcher *)processFetcher logger:(id<FBControlCoreLogger>)logger
@@ -178,7 +178,7 @@ static const FBProcessTerminationStrategyConfiguration FBProcessTerminationStrat
     FBProcessTerminationStrategyConfiguration configuration = self.configuration;
     configuration.signo = SIGKILL;
     [self.logger.debug logFormat:@"Backing off kill of %@ to SIGKILL", process.shortDescription];
-    if (![[FBProcessTerminationStrategy withConfiguration:configuration processFetcher:self.processFetcher logger:self.logger] killProcess:process error:&innerError]) {
+    if (![[FBProcessTerminationStrategy strategyWithConfiguration:configuration processFetcher:self.processFetcher logger:self.logger] killProcess:process error:&innerError]) {
       return [[[[[FBControlCoreError
         describeFormat:@"Attempted to SIGKILL %@ after failed kill with signo %d", process.shortDescription, self.configuration.signo]
         attachProcessInfoForIdentifier:process.processIdentifier processFetcher:self.processFetcher]

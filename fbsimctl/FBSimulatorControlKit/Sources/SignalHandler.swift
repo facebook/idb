@@ -14,9 +14,9 @@ struct SignalInfo : EventReporterSubject {
   let name: String
 
   var jsonDescription: JSON { get {
-    return JSON.jDictionary([
-      "signo" : JSON.jNumber(NSNumber(value: self.signo as Int32)),
-      "name" : JSON.jString(self.name),
+    return JSON.dictionary([
+      "signo" : JSON.number(NSNumber(value: self.signo as Int32)),
+      "name" : JSON.string(self.name),
     ])
   }}
 

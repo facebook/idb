@@ -11,8 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBSimulator;
 @class FBProcessInfo;
+@class FBSimulator;
 @class FBSimulatorBootConfiguration;
 
 /**

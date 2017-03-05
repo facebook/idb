@@ -163,7 +163,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
     }
     self.hasTerminated = YES;
   };
-  self.process = [[FBAgentLaunchStrategy withSimulator:self.simulator]
+  self.process = [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
     launchAgentWithLaunchPath:self.launchPath
     arguments:self.arguments
     environment:self.environment

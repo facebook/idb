@@ -98,16 +98,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) {
         try simulator.launchApplication(launch)
       }
-    case .launchXCTest(var configuration):
-      // Always initialize for UI Testing until we make this optional
-      configuration = configuration.withUITesting(true)
-      return iOSTargetRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(configuration)) {
-        try simulator.startTest(with: configuration)
-
-        if configuration.timeout > 0 {
-          try simulator.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: configuration.timeout)
-        }
-      }
     case .open(let url):
       return iOSTargetRunner(reporter, EventName.Open, url.bridgedAbsoluteString) {
         try simulator.open(url)

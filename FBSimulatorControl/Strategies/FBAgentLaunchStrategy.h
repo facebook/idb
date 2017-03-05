@@ -18,10 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  The Defined Callback for an Agent.
- 
+
  The parameter to the block is an integer from waitpid(2).
  This is a bitmasked integer, so information about the exit of the process
- can be obtained using the macros defined in <sys/wait.h> 
+ can be obtained using the macros defined in <sys/wait.h>
  The details of these macros are documented in the manpage for waitpid.
  */
 typedef void (^FBAgentLaunchHandler)(int stat_loc);
@@ -39,7 +39,7 @@ typedef void (^FBAgentLaunchHandler)(int stat_loc);
  @param simulator the Simulator to launch on.
  @return a new Agent Launch Strategy.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
 
 #pragma mark Public Methdds
 

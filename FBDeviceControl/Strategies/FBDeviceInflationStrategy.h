@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param set the Device Set to insert into.
  @return a new Device Set Strategy Instance.
  */
-+ (instancetype)forSet:(FBDeviceSet *)set;
++ (instancetype)strategyForSet:(FBDeviceSet *)set;
 
 /**
  Creates the Array of Simulators matching the Array of SimDevices passed in.

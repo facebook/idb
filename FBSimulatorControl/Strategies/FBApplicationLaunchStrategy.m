@@ -47,15 +47,15 @@
 
 @implementation FBApplicationLaunchStrategy
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator useBridge:(BOOL)useBridge;
 {
   Class strategyClass = useBridge ? FBApplicationLaunchStrategy_CoreSimulator.class : FBApplicationLaunchStrategy_CoreSimulator.class;
   return [[strategyClass alloc] initWithSimulator:simulator];
 }
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator
 {
-  return [self withSimulator:simulator useBridge:NO];
+  return [self strategyWithSimulator:simulator useBridge:NO];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -185,7 +185,7 @@
   NSError *innerError = nil;
   FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
   if (process) {
-    if (![[FBSimulatorSubprocessTerminationStrategy forSimulator:simulator] terminate:process error:error]) {
+    if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:error]) {
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }
@@ -239,7 +239,7 @@
 
   // Kill the Application Process
   NSError *innerError = nil;
-  if (![[FBSimulatorSubprocessTerminationStrategy forSimulator:simulator] terminate:process error:error]) {
+  if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:error]) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to terminate app %@", process.shortDescription]
       causedBy:innerError]

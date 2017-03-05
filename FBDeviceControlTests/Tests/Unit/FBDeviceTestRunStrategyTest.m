@@ -10,26 +10,30 @@
 #import <XCTest/XCTest.h>
 #import <FBDeviceControl/FBDeviceControl.h>
 
-@interface FBDeviceTestRunStrategyTest : XCTestCase
+@interface FBDeviceXCTestCommandsTest : XCTestCase
 
 @end
 
-@implementation FBDeviceTestRunStrategyTest
+@implementation FBDeviceXCTestCommandsTest
 
 - (void)testBuildXCTestRunProperties {
 
   NSString *testHostPath = @"/tmp/test_host_path.app";
   NSString *testBundlePath = @"/tmp/test_host_path.app/test_bundle_path.xctest";
 
-  FBDevice *device = [[FBDevice alloc] init];
-  FBDeviceTestRunStrategy *strategy = [FBDeviceTestRunStrategy
-    strategyWithDevice:device
-    testHostPath:testHostPath
-    testBundlePath:testBundlePath
-    withTimeout:0
-    withArguments: @[]];
+  FBApplicationLaunchConfiguration *appLaunch = [FBApplicationLaunchConfiguration
+    configurationWithBundleID:@"com.bundle.id"
+    bundleName:@"BundleName"
+    arguments:@[]
+    environment:@{}
+    output:FBProcessOutputConfiguration.outputToDevNull];
 
-  NSDictionary *properties = [strategy buildXCTestRunProperties];
+  FBTestLaunchConfiguration *configuration = [[[FBTestLaunchConfiguration
+    configurationWithTestBundlePath:testBundlePath]
+    withTestHostPath:testHostPath]
+    withApplicationLaunchConfiguration:appLaunch];
+
+  NSDictionary *properties = [FBDeviceXCTestCommands xctestRunProperties:configuration];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];
 
   XCTAssertNotNil(stubBundleProperties);

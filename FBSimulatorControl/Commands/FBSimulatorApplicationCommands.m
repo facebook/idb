@@ -100,7 +100,7 @@
 
 - (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration error:(NSError **)error
 {
-  return [[FBApplicationLaunchStrategy withSimulator:self.simulator] launchApplication:configuration error:error] != nil;
+  return [[FBApplicationLaunchStrategy strategyWithSimulator:self.simulator] launchApplication:configuration error:error] != nil;
 }
 
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -114,7 +114,7 @@
       causedBy:innerError]
       failBool:error];
   }
-  if (![[FBSimulatorSubprocessTerminationStrategy forSimulator:self.simulator] terminate:process error:&innerError]) {
+  if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:self.simulator] terminate:process error:&innerError]) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
@@ -188,7 +188,7 @@
 {
   NSParameterAssert(appLaunch);
   return [[FBApplicationLaunchStrategy
-    withSimulator:self.simulator]
+    strategyWithSimulator:self.simulator]
     launchOrRelaunchApplication:appLaunch error:error];
 }
 
@@ -201,14 +201,14 @@
 - (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error
 {
   return [[FBApplicationLaunchStrategy
-    withSimulator:self.simulator]
+    strategyWithSimulator:self.simulator]
     relaunchLastLaunchedApplicationWithError:error];
 }
 
 - (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error
 {
   return [[FBApplicationLaunchStrategy
-    withSimulator:self.simulator]
+    strategyWithSimulator:self.simulator]
     terminateLastLaunchedApplicationWithError:error];
 }
 

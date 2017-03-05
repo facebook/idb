@@ -176,17 +176,15 @@
   return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:self.os auxillaryDirectory:self.auxillaryDirectory];
 }
 
-+ (nullable instancetype)withDeviceNamed:(NSString *)deviceName
++ (instancetype)withDeviceNamed:(FBDeviceName)deviceName
 {
   return [self.defaultConfiguration withDeviceNamed:deviceName];
 }
 
-- (nullable instancetype)withDeviceNamed:(NSString *)deviceName
+- (instancetype)withDeviceNamed:(FBDeviceName)deviceName
 {
   id<FBControlCoreConfiguration_Device> device = FBControlCoreConfigurationVariants.nameToDevice[deviceName];
-  if (!device) {
-    return nil;
-  }
+  NSAssert(device, @"%@ is not a valid device name", deviceName);
   return [self withDevice:device];
 }
 
