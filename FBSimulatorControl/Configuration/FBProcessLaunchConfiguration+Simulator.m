@@ -32,8 +32,8 @@
 
 - (BOOL)createDiagnosticForSelector:(SEL)selector simulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic **)diagnosticOut error:(NSError **)error
 {
-  NSString *output = [self.output performSelector:selector];
-  if (![output isKindOfClass:NSString.class]) {
+  NSString *outputPath = [self.output performSelector:selector];
+  if (![outputPath isKindOfClass:NSString.class]) {
     return YES;
   }
 
@@ -41,17 +41,23 @@
   FBDiagnostic *diagnostic = [simulator.diagnostics performSelector:diagnosticSelector withObject:self];
   FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
 
-  NSString *path = [output isEqualToString:FBProcessOutputToFileDefaultLocation] ? [builder createPath] : output;
+  if ([outputPath isEqualToString:FBProcessOutputToFileDefaultLocation]) {
+    NSString *defaultOuputPath = [builder createPath];
+    NSString *filename = defaultOuputPath.lastPathComponent;
+    outputPath = [[[defaultOuputPath stringByDeletingLastPathComponent]
+      stringByAppendingPathComponent:NSUUID.UUID.UUIDString]
+      stringByAppendingPathComponent:filename];
+  }
 
-  [builder updateStorageDirectory:[path stringByDeletingLastPathComponent]];
+  [builder updateStorageDirectory:[outputPath stringByDeletingLastPathComponent]];
 
-  if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
+  if (![NSFileManager.defaultManager createFileAtPath:outputPath contents:NSData.data attributes:nil]) {
     return [[FBSimulatorError
-      describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
+      describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), outputPath, self]
       failBool:error];
   }
 
-  [builder updatePath:path];
+  [builder updatePath:outputPath];
 
   if (diagnosticOut) {
     *diagnosticOut = [builder build];
