@@ -67,10 +67,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param application the Application to Launch.
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
+ @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
  @param output the output configuration for the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
++ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
 
 /**
  Creates and returns a new Configuration with the provided parameters.
@@ -79,10 +80,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
  @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
+ @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
  @param output the output configuration for the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
 
 /**
  Adds output configuration.
@@ -101,6 +103,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Name (CFBundleName) of the the Application to Launch. May be nil.
  */
 @property (nullable, nonatomic, copy, readonly) NSString *bundleName;
+
+
+/**
+ A BOOL signalizing whether the application should wait for debugger to be attached immediately after launch.
+ */
+@property (nonatomic, assign, readonly) BOOL waitForDebugger;
 
 @end
 

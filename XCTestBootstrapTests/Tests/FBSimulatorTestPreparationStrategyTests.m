@@ -125,6 +125,7 @@
     bundleName:@""
     arguments:@[]
     environment:@{}
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 }
 

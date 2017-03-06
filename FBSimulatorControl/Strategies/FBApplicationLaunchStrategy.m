@@ -284,7 +284,8 @@
   FBSimulator *simulator = self.simulator;
   NSDictionary<NSString *, id> *options = [appLaunch
     simDeviceLaunchOptionsWithStdOutPath:[self translateAbsolutePath:stdOutPath toPathRelativeTo:simulator.dataDirectory]
-    stdErrPath:[self translateAbsolutePath:stdErrPath toPathRelativeTo:simulator.dataDirectory]];
+    stdErrPath:[self translateAbsolutePath:stdErrPath toPathRelativeTo:simulator.dataDirectory]
+    waitForDebugger:appLaunch.waitForDebugger];
   return [simulator.device launchApplicationWithID:appLaunch.bundleID options:options error:error];
 }
 

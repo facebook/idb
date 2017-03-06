@@ -94,7 +94,7 @@
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} output:FBProcessOutputConfiguration.outputToDevNull];
+  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
@@ -103,7 +103,7 @@
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} output:FBProcessOutputConfiguration.outputToDevNull];
+  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
 - (FBAgentLaunchConfiguration *)agentLaunch1
@@ -121,6 +121,7 @@
     configurationWithApplication:self.tableSearchApplication
     arguments:@[@"LAUNCH1"]
     environment:@{@"FOO" : @"BAR"}
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
@@ -130,6 +131,7 @@
     configurationWithApplication:self.safariApplication
     arguments:@[@"LAUNCH2"]
     environment:@{@"BING" : @"BONG"}
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 }
 

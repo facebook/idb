@@ -88,6 +88,7 @@
     configurationWithApplication:photosApp
     arguments:@[]
     environment:@{@"SHIMULATOR_UPLOAD_VIDEO" : joinedPaths}
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull]
     injectingShimulator];
 

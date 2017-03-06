@@ -987,7 +987,13 @@ struct FBProcessLaunchConfigurationParsers {
       .fmap { (output, bundleIDOrApplicationDescriptor, arguments) in
         let (bundleId, appDescriptor) = bundleIDOrApplicationDescriptor
         return (
-          FBApplicationLaunchConfiguration(bundleID: bundleId, bundleName: nil, arguments: arguments, environment : [:], output: output),
+          FBApplicationLaunchConfiguration(
+            bundleID: bundleId,
+            bundleName: nil,
+            arguments: arguments,
+            environment: [:],
+            waitForDebugger: false,
+            output: output),
           appDescriptor
         )
       }

@@ -195,7 +195,7 @@
   return productBundle;
 }
 
-- (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment error:(NSError **)error
+- (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment waitForDebugger:(BOOL)waitForDebugger error:(NSError **)error
 {
   FBApplicationDescriptor *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!app) {
@@ -206,6 +206,7 @@
     configurationWithApplication:app
     arguments:arguments
     environment:environment
+    waitForDebugger:waitForDebugger
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   if (![self.simulator launchOrRelaunchApplication:configuration error:error]) {

@@ -103,13 +103,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)overridingLocalization:(FBLocalizationOverride *)localizationOverride;
 
 /**
- Creates the Dictionary of launch options for launching an Agent.
+ Creates the Dictionary of launch options for launching an Application.
 
  @param stdOutPath the path to launch stdout to, may be nil.
  @param stdErrPath the path to launch stderr to, may be nil.
+ @param waitForDebugger YES if the Application should be launched waiting for a debugger to attach. NO otherwise.
  @return a Dictionary if successful, nil otherwise.
  */
-- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath;
+- (NSDictionary<NSString *, id> *)simDeviceLaunchOptionsWithStdOutPath:(nullable NSString *)stdOutPath stdErrPath:(nullable NSString *)stdErrPath waitForDebugger:(BOOL)waitForDebugger;
 
 @end
 

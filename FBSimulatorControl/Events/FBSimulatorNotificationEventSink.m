@@ -30,6 +30,7 @@ NSString *const FBSimulatorNotificationUserInfoKeyDiagnostic = @"diagnostic_log"
 NSString *const FBSimulatorNotificationUserInfoKeyConnection = @"connection";
 NSString *const FBSimulatorNotificationUserInfoKeyState = @"simulator_state";
 NSString *const FBSimulatorNotificationUserInfoKeyTestManager = @"testManager";
+NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting_for_debugger";
 
 @interface FBSimulatorNotificationNameEventSink ()
 
@@ -112,6 +113,7 @@ NSString *const FBSimulatorNotificationUserInfoKeyTestManager = @"testManager";
 {
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch userInfo:@{
     FBSimulatorNotificationUserInfoKeyProcess : applicationProcess,
+    FBSimulatorNotificationUserInfoKeyWaitingForDebugger : @(launchConfig.waitForDebugger),
   }];
 }
 

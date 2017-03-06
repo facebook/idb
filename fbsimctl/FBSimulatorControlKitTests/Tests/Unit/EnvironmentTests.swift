@@ -19,7 +19,7 @@ class EnvironmentTests : XCTestCase {
   ]
 
   func testAppendsEnvironmentToLaunchConfiguration() {
-    let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], output: FBProcessOutputConfiguration.outputToDevNull())
+    let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], waitForDebugger: false, output: FBProcessOutputConfiguration.outputToDevNull())
     let actual = Action.launchApp(launchConfig).appendEnvironment(testEnvironment)
     let expected  = Action.launchApp(launchConfig.withEnvironmentAdditions([
       "FOO" : "BAR",
@@ -29,7 +29,7 @@ class EnvironmentTests : XCTestCase {
   }
 
   func testAppendsEnvironmentToXCTestLaunchConfiguration() {
-    let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], output: FBProcessOutputConfiguration.outputToDevNull())
+    let launchConfig = FBApplicationLaunchConfiguration(application: Fixtures.application, arguments: [], environment: [:], waitForDebugger: false, output: FBProcessOutputConfiguration.outputToDevNull())
 
     let actual = Action.launchXCTest(FBTestLaunchConfiguration().withApplicationLaunchConfiguration(launchConfig)).appendEnvironment(testEnvironment)
     let expected = Action.launchXCTest(FBTestLaunchConfiguration().withApplicationLaunchConfiguration(launchConfig.withEnvironmentAdditions([

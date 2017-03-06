@@ -192,6 +192,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     bundleName:bundleID
     arguments:arguments
     environment:environment
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   if(![self.processDelegate testManagerMediator:self launchApplication:launch atPath:path error:&error]) {

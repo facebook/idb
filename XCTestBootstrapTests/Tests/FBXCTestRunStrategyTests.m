@@ -26,7 +26,7 @@
 {
   [super setUp];
 
-  self.applicationLaunchConfiguration = [FBApplicationLaunchConfiguration configurationWithBundleID:@"com.foo.Bar" bundleName:@"Bar" arguments:@[] environment:@{} output:FBProcessOutputConfiguration.outputToDevNull];
+  self.applicationLaunchConfiguration = [FBApplicationLaunchConfiguration configurationWithBundleID:@"com.foo.Bar" bundleName:@"Bar" arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
   self.testManagerMock = [OCMockObject niceMockForClass:FBTestManager.class];
   [[[self.testManagerMock stub] andReturn:self.testManagerMock] testManagerWithContext:OCMArg.any iosTarget:OCMArg.any reporter:OCMArg.any logger:OCMArg.any];
   [[[[self.testManagerMock stub] ignoringNonObjectArgs] andReturn:nil] connectWithTimeout:0];
@@ -62,6 +62,7 @@
     bundleName:@"com.bundle"
     arguments:@[@"4"]
     environment:@{@"A" : @"B"}
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   OCMockObject<FBDeviceOperator> *deviceOperatorMock = [OCMockObject niceMockForProtocol:@protocol(FBDeviceOperator)];

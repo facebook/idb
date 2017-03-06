@@ -18,6 +18,7 @@ static NSString *const KeyBundleID = @"bundle_id";
 static NSString *const KeyBundleName = @"bundle_name";
 static NSString *const KeyArguments = @"arguments";
 static NSString *const KeyEnvironment = @"environment";
+static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
 static NSString *const KeyOutput = @"output";
 
 @implementation FBProcessLaunchConfiguration
@@ -142,22 +143,22 @@ static NSString *const KeyOutput = @"output";
 
 @implementation FBApplicationLaunchConfiguration
 
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output
++ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
 {
   if (!bundleID || !arguments || !environment) {
     return nil;
   }
 
-  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment output:output];
+  return [[self alloc] initWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger output:output];
 }
 
-+ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output
++ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
 {
   if (!application) {
     return nil;
   }
 
-  return [self configurationWithBundleID:application.bundleID bundleName:application.name arguments:arguments environment:environment output:output];
+  return [self configurationWithBundleID:application.bundleID bundleName:application.name arguments:arguments environment:environment waitForDebugger:waitForDebugger output:output];
 }
 
 + (instancetype)inflateFromJSON:(id)json error:(NSError **)error
@@ -178,6 +179,10 @@ static NSString *const KeyOutput = @"output";
   if (![FBCollectionInformation isDictionaryHeterogeneous:environment keyClass:NSString.class valueClass:NSString.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary of <string, strings> for environment", arguments] fail:error];
   }
+  NSNumber *waitForDebugger = json[KeyWaitForDebugger] ?: @NO;
+  if (![waitForDebugger isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError describeFormat:@"%@ is not a boolean signalizing whether to wait for debugger", waitForDebugger] fail:error];
+  }
 
   FBProcessOutputConfiguration *output = [[FBProcessOutputConfiguration alloc] init];
   NSDictionary *outputDictionary = json[KeyOutput];
@@ -187,10 +192,10 @@ static NSString *const KeyOutput = @"output";
       return nil;
     }
   }
-  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment output:output];
+  return [self configurationWithBundleID:bundleID bundleName:bundleName arguments:arguments environment:environment waitForDebugger:waitForDebugger.boolValue output:output];
 }
 
-- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output
+- (instancetype)initWithBundleID:(NSString *)bundleID bundleName:(NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output
 {
   self = [super initWithArguments:arguments environment:environment output:output];
   if (!self) {
@@ -199,6 +204,7 @@ static NSString *const KeyOutput = @"output";
 
   _bundleID = bundleID;
   _bundleName = bundleName;
+  _waitForDebugger = waitForDebugger;
 
   return self;
 }
@@ -210,6 +216,7 @@ static NSString *const KeyOutput = @"output";
       bundleName:self.bundleName
       arguments:self.arguments
       environment:self.environment
+      waitForDebugger:self.waitForDebugger
       output:output];
 }
 
@@ -218,10 +225,11 @@ static NSString *const KeyOutput = @"output";
 - (NSString *)debugDescription
 {
   return [NSString stringWithFormat:
-    @"%@ | Arguments %@ | Environment %@ | Output %@",
+    @"%@ | Arguments %@ | Environment %@ | WaitForDebugger %@ | Output %@",
     self.shortDescription,
     self.arguments,
     self.environment,
+    self.waitForDebugger ? @"YES" : @"NO",
     self.output
   ];
 }
@@ -240,6 +248,7 @@ static NSString *const KeyOutput = @"output";
     bundleName:self.bundleName
     arguments:self.arguments
     environment:self.environment
+    waitForDebugger:self.waitForDebugger
     output:self.output];
 }
 
@@ -254,6 +263,7 @@ static NSString *const KeyOutput = @"output";
 
   _bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
   _bundleName = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleName))];
+  _waitForDebugger = [coder decodeBoolForKey:NSStringFromSelector(@selector(waitForDebugger))];
 
   return self;
 }
@@ -264,20 +274,24 @@ static NSString *const KeyOutput = @"output";
 
   [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
   [coder encodeObject:self.bundleName forKey:NSStringFromSelector(@selector(bundleName))];
+  [coder encodeBool:self.waitForDebugger forKey:NSStringFromSelector(@selector(waitForDebugger))];
+
 }
 
 #pragma mark NSObject
 
 - (NSUInteger)hash
 {
-  return [super hash] ^ self.bundleID.hash ^ self.bundleName.hash;
+  return [super hash] ^ self.bundleID.hash ^ self.bundleName.hash + (self.waitForDebugger ? 1231 : 1237);
 }
 
 - (BOOL)isEqual:(FBApplicationLaunchConfiguration *)object
 {
   return [super isEqual:object] &&
          [self.bundleID isEqualToString:object.bundleID] &&
-         (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]);
+         (self.bundleName == object.bundleName || [self.bundleName isEqual:object.bundleName]) &&
+          self.waitForDebugger == object.waitForDebugger;
+
 }
 
 #pragma mark FBJSONSerializable
@@ -287,6 +301,7 @@ static NSString *const KeyOutput = @"output";
   NSMutableDictionary *representation = [[super jsonSerializableRepresentation] mutableCopy];
   representation[KeyBundleID] = self.bundleID;
   representation[KeyBundleName] = self.bundleName;
+  representation[KeyWaitForDebugger] = @(self.waitForDebugger);
   return [representation mutableCopy];
 }
 

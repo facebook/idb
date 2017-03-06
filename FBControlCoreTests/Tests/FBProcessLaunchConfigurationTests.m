@@ -23,8 +23,8 @@
 + (NSArray<FBApplicationLaunchConfiguration *> *)appLaunchConfigurations
 {
   return @[
-    [FBApplicationLaunchConfiguration configurationWithBundleID:@"com.foo.bar" bundleName:@"Foo" arguments:@[@"a", @"b"] environment:@{@"d": @"e"} output:FBProcessOutputConfiguration.defaultOutputToFile],
-    [FBApplicationLaunchConfiguration configurationWithBundleID:@"com.foo.bar" bundleName:@"Foo" arguments:@[@"a", @"b"] environment:@{@"d": @"e"} output:FBProcessOutputConfiguration.outputToDevNull],
+    [FBApplicationLaunchConfiguration configurationWithBundleID:@"com.foo.bar" bundleName:@"Foo" arguments:@[@"a", @"b"] environment:@{@"d": @"e"} waitForDebugger:NO output:FBProcessOutputConfiguration.defaultOutputToFile],
+    [FBApplicationLaunchConfiguration configurationWithBundleID:@"com.foo.bar" bundleName:@"Foo" arguments:@[@"a", @"b"] environment:@{@"d": @"e"} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull],
   ];
 }
 
