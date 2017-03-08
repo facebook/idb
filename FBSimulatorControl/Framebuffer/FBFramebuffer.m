@@ -295,14 +295,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 {
   [super framebufferDidBecomeInvalid:framebuffer error:error teardownGroup:teardownGroup];
 
-  [self.frameGenerator.sink framebuffer:self didBecomeInvalidWithError:error teardownGroup:teardownGroup];
-}
-
-- (void)performTeardownWork
-{
-  [super performTeardownWork];
-
-  [self.frameGenerator frameSteamEnded];
+  [self.frameGenerator frameSteamEndedWithTeardownGroup:teardownGroup error:error];
 }
 
 - (FBFramebufferFrameGenerator *)frameGenerator
@@ -341,7 +334,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   }
 
   _framebufferService = framebufferService;
-  _backingStoreGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one sink:frameSink queue:clientQueue logger:logger];
+  _backingStoreGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithScale:NSDecimalNumber.one sink:frameSink queue:clientQueue logger:logger];
 
   return self;
 }
@@ -392,7 +385,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   }
 
   _surfaceClient = surfaceClient;
-  _ioSurfaceGenerator = [FBFramebufferIOSurfaceFrameGenerator generatorWithFramebuffer:self scale:NSDecimalNumber.one sink:frameSink queue:clientQueue logger:logger];
+  _ioSurfaceGenerator = [FBFramebufferIOSurfaceFrameGenerator generatorWithScale:NSDecimalNumber.one sink:frameSink queue:clientQueue logger:logger];
 
   return self;
 }

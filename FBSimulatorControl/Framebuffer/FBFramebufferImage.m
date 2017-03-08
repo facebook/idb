@@ -151,14 +151,14 @@
 
 #pragma mark FBFramebufferCounterDelegate Implementation
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(self.writeQueue, ^{
     self.lastFrame = frame;
   });
 }
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   dispatch_group_async(teardownGroup, self.writeQueue, ^{
     FBDiagnostic *diagnostic = [FBFramebufferImage_FrameSink appendImage:self.lastFrame.image toDiagnostic:self.diagnostic];

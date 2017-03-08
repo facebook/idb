@@ -130,7 +130,7 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
 
 #pragma mark FBFramebufferFrameSink Implementation
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(self.mediaQueue, ^{
     // Push the image, it will be updated to the appropriate video timing.
@@ -138,7 +138,7 @@ static const OSType FBVideoEncoderPixelFormat = kCVPixelFormatType_32ARGB;
   });
 }
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   dispatch_group_enter(teardownGroup);
   dispatch_barrier_async(self.mediaQueue, ^{

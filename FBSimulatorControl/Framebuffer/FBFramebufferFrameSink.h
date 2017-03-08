@@ -11,31 +11,32 @@
 #import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
 
-@class FBFramebuffer;
 @class FBFramebufferFrame;
+@class FBFramebufferFrameGenerator;
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A Reciever of Generated Frame from a Simulator's Framebuffer.
+ A reciever of Frames, connected to a FBFramebufferFrameGenerator
  */
 @protocol FBFramebufferFrameSink <NSObject>
 
 /**
  Called when an Image Frame is available.
 
+ @param frameGenerator the frame generator.
  @param frame the updated frame.
  */
-- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame;
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame;
 
 /**
  Called when the framebuffer is no longer valid, typically when the Simulator shuts down.
 
- @param framebuffer the framebuffer that was updated.
+ @param frameGenerator the frame generator.
  @param error an error, if any occured in the teardown of the simulator.
  @param teardownGroup a dispatch_group to add asynchronous tasks to that should be performed in the teardown of the Framebuffer.
  */
-- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(nullable NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(nullable NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
 
 @end
 

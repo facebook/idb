@@ -32,14 +32,13 @@ NS_ASSUME_NONNULL_BEGIN
  Creates and returns a new Generator.
  Must be called on the subclasses of FBFramebufferFrameGenerator.
 
- @param framebuffer the Framebuffer to generate frames for.
  @param scale the Scale Factor.
  @param sink the reciever of Frames.
  @param queue the Queue the Delegate will be called on.
  @param logger the logger to log to.
  @return a new Framebuffer Frame Generator;
  */
-+ (instancetype)generatorWithFramebuffer:(FBFramebuffer *)framebuffer scale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)generatorWithScale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Properties
 
@@ -53,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  To be called when there are no further frames.
  */
-- (void)frameSteamEnded;
+- (void)frameSteamEndedWithTeardownGroup:(dispatch_group_t)group error:(NSError *)error;
 
 @end
 

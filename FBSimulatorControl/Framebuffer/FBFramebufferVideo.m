@@ -88,14 +88,14 @@
 
 #pragma mark FBFramebufferFrameSink Implementation
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame
 {
-  [self.encoder framebuffer:framebuffer didUpdate:frame];
+  [self.encoder frameGenerator:frameGenerator didUpdate:frame];
 }
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
-  [self.encoder framebuffer:framebuffer didBecomeInvalidWithError:error teardownGroup:teardownGroup];
+  [self.encoder frameGenerator:frameGenerator didBecomeInvalidWithError:error teardownGroup:teardownGroup];
 }
 
 @end

@@ -36,17 +36,17 @@
 
 #pragma mark FBFramebufferFrameSink Implementation
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame
 {
   for (id<FBFramebufferFrameSink> delegate in self.sinks) {
-    [delegate framebuffer:framebuffer didUpdate:frame];
+    [delegate frameGenerator:frameGenerator didUpdate:frame];
   }
 }
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   for (id<FBFramebufferFrameSink> delegate in self.sinks) {
-    [delegate framebuffer:framebuffer didBecomeInvalidWithError:error teardownGroup:teardownGroup];
+    [delegate frameGenerator:frameGenerator didBecomeInvalidWithError:error teardownGroup:teardownGroup];
   }
 }
 

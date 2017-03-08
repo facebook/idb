@@ -52,7 +52,7 @@
 
 #pragma mark FBFramebufferFrameSink Implementation
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didUpdate:(FBFramebufferFrame *)frame
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame
 {
   dispatch_async(dispatch_get_main_queue(), ^{
     if (frame.count == 0) {
@@ -62,7 +62,7 @@
   });
 }
 
-- (void)framebuffer:(FBFramebuffer *)framebuffer didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(NSError *)error teardownGroup:(dispatch_group_t)teardownGroup
 {
   [self teardownWindow];
 }
