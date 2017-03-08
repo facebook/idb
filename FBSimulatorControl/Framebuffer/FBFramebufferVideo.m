@@ -34,7 +34,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withConfiguration:(FBFramebufferConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBFramebufferConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   return [[self alloc] initWithConfiguration:configuration logger:logger eventSink:eventSink];
 }
@@ -112,7 +112,7 @@
 
 @implementation FBFramebufferVideo_SimulatorKit
 
-+ (instancetype)withConfiguration:(FBFramebufferConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBFramebufferConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   return [[self alloc] initWithConfiguration:configuration renderable:renderable logger:logger eventSink:eventSink];
 }
