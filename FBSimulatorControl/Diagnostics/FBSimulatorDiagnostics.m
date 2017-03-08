@@ -18,10 +18,10 @@
 #import "FBSimulator.h"
 #import "FBSimulatorHistory+Queries.h"
 
-NSString *const FBSimulatorLogNameSyslog = @"system_log";
-NSString *const FBSimulatorLogNameCoreSimulator = @"coresimulator";
-NSString *const FBSimulatorLogNameSimulatorBootstrap = @"launchd_bootstrap";
-NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
+NSString *const FBDiagnosticNameSyslog = @"system_log";
+NSString *const FBDiagnosticNameCoreSimulator = @"coresimulator";
+NSString *const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap";
+NSString *const FBDiagnosticNameScreenshot = @"screenshot";
 
 @interface FBDiagnosticQuery (Simulators)
 
@@ -98,7 +98,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 {
   return [[[[self.baseLogBuilder
     updatePath:self.systemLogPath]
-    updateShortName:FBSimulatorLogNameSyslog]
+    updateShortName:FBDiagnosticNameSyslog]
     updateHumanReadableName:@"System Log"]
     build];
 }
@@ -107,7 +107,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 {
   return [[[[self.baseLogBuilder
     updatePath:self.coreSimulatorLogPath]
-    updateShortName:FBSimulatorLogNameCoreSimulator]
+    updateShortName:FBDiagnosticNameCoreSimulator]
     updateHumanReadableName:@"Core Simulator Log"]
     build];
 }
@@ -120,7 +120,7 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 
   return [[[[self.baseLogBuilder
     updatePath:expectedPath]
-    updateShortName:FBSimulatorLogNameSimulatorBootstrap]
+    updateShortName:FBDiagnosticNameSimulatorBootstrap]
     updateHumanReadableName:@"Launchd Bootstrap"]
     build];
 }
@@ -136,10 +136,10 @@ NSString *const FBSimulatorLogNameScreenshot = @"screenshot";
 - (FBDiagnostic *)screenshot
 {
   return [[[[[self.baseLogBuilder
-    updateShortName:FBSimulatorLogNameScreenshot]
+    updateShortName:FBDiagnosticNameScreenshot]
     updateFileType:@"png"]
     updatePathFromDefaultLocation]
-    updateDiagnostic:self.eventLogs[FBSimulatorLogNameScreenshot]]
+    updateDiagnostic:self.eventLogs[FBDiagnosticNameScreenshot]]
     build];
 }
 
