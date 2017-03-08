@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name the name of the Window.
  @return a new FBFramebufferDebugWindow instance.
  */
-+ (instancetype)withName:(NSString *)name;
++ (instancetype)debugWindowWithName:(NSString *)name;
 
 @end
 

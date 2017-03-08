@@ -121,7 +121,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   [frameSinks addObject:video];
   [frameSinks addObject:image];
   if (configuration.showDebugWindow) {
-    [frameSinks addObject:[FBFramebufferDebugWindow withName:@"Simulator"]];
+    [frameSinks addObject:[FBFramebufferDebugWindow debugWindowWithName:@"Simulator"]];
   }
   id<FBFramebufferFrameSink> delegate = [FBFramebufferCompositeFrameSink withSinks:[frameSinks copy]];
   if (videoOut) {

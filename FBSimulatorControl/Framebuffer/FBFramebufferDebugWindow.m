@@ -26,7 +26,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withName:(NSString *)name;
++ (instancetype)debugWindowWithName:(NSString *)name
 {
   return [[self alloc] initWithName:name];
 }
