@@ -19,6 +19,8 @@
 #import <objc/runtime.h>
 
 #import "FBFramebuffer.h"
+#import "FBFramebufferConfiguration.h"
+#import "FBFramebufferRenderable.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -27,7 +29,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBFramebufferConfiguration.h"
 
 @interface FBFramebufferConnectStrategy ()
 
@@ -87,8 +88,10 @@
 
 - (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
 {
+  FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:(SimDeviceIOClient *)simulator.device.io];
+
   return [[FBFramebuffer
-    withIOClient:(SimDeviceIOClient *)simulator.device.io configuration:self.configuration simulator:simulator]
+    framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator]
     startListeningInBackground];
 }
 

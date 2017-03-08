@@ -14,9 +14,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebufferConfiguration;
+@class FBFramebufferRenderable;
 @class FBSimulator;
 @class SimDeviceFramebufferService;
-@class SimDeviceIOClient;
 @protocol FBFramebufferFrameSink;
 @protocol FBFramebufferVideo;
 @protocol FBFramebufferImage;
@@ -42,12 +42,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates and returns a new FBSimulatorDirectLaunch object for the provided ioClient.
 
- @param ioClient the SimDeviceFramebufferService to connect to.
+ @param renderable the Renderable to connect to.
  @param configuration the configuration of the Framebuffer.
  @param simulator the Simulator to which the Framebuffer belongs.
  @return a new FBSimulatorDirectLaunch instance. Must not be nil.
  */
-+ (instancetype)withIOClient:(SimDeviceIOClient *)ioClient configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
++ (instancetype)framebufferWithRenderable:(FBFramebufferRenderable *)renderable configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
 /**
  Starts listening for Framebuffer events from the SimDeviceFramebufferService on an internal background queue.
