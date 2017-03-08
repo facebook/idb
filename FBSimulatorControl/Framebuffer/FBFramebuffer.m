@@ -29,7 +29,6 @@
 #import <CoreSimulator/SimDeviceIO.h>
 #import <CoreSimulator/SimDeviceIOClient.h>
 
-#import "FBFramebufferDebugWindow.h"
 #import "FBFramebufferFrameSink.h"
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferFrameGenerator.h"
@@ -114,16 +113,10 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 + (id<FBFramebufferFrameSink>)frameSinkForSimulator:(FBSimulator *)simulator configuration:(FBFramebufferConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger videoOut:(FBFramebufferVideo_BuiltIn **)videoOut imageOut:(FBFramebufferImage_FrameSink **)imageOut;
 {
-  NSMutableArray<id<FBFramebufferFrameSink>> *frameSinks = [NSMutableArray array];
   FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.simulatorDiagnostics.video];
   FBFramebufferVideo_BuiltIn *video = [FBFramebufferVideo_BuiltIn videoWithConfiguration:videoConfiguration logger:logger eventSink:simulator.eventSink];
   FBFramebufferImage_FrameSink *image = [FBFramebufferImage_FrameSink imageWithDiagnostic:simulator.simulatorDiagnostics.screenshot eventSink:simulator.eventSink];
-  [frameSinks addObject:video];
-  [frameSinks addObject:image];
-  if (configuration.showDebugWindow) {
-    [frameSinks addObject:[FBFramebufferDebugWindow debugWindowWithName:@"Simulator"]];
-  }
-  id<FBFramebufferFrameSink> delegate = [FBFramebufferCompositeFrameSink withSinks:[frameSinks copy]];
+  id<FBFramebufferFrameSink> delegate = [FBFramebufferCompositeFrameSink withSinks:@[video, image]];
   if (videoOut) {
     *videoOut = video;
   }

@@ -37,11 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) FBFramebufferVideoOptions videoOptions;
 
 /**
- YES to show a debug window, NO otherwise.
- */
-@property (nonatomic, assign, readonly) BOOL showDebugWindow;
-
-/**
  The Timescale used in Video Encoding.
  */
 @property (nonatomic, assign, readonly) CMTimeScale timescale;
