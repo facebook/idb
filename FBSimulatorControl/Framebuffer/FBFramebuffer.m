@@ -117,7 +117,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   NSMutableArray<id<FBFramebufferFrameSink>> *frameSinks = [NSMutableArray array];
   FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.simulatorDiagnostics.video];
   FBFramebufferVideo_BuiltIn *video = [FBFramebufferVideo_BuiltIn withConfiguration:videoConfiguration logger:logger eventSink:simulator.eventSink];
-  FBFramebufferImage_FrameSink *image = [FBFramebufferImage_FrameSink withDiagnostic:simulator.simulatorDiagnostics.screenshot eventSink:simulator.eventSink];
+  FBFramebufferImage_FrameSink *image = [FBFramebufferImage_FrameSink imageWithDiagnostic:simulator.simulatorDiagnostics.screenshot eventSink:simulator.eventSink];
   [frameSinks addObject:video];
   [frameSinks addObject:image];
   if (configuration.showDebugWindow) {
@@ -158,7 +158,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   // If we support the Xcode 8.1 SimDisplayVideoWriter, we can construct and use it here.
   if (FBFramebufferVideo_SimulatorKit.isSupported) {
     FBFramebufferVideo_SimulatorKit *video = [FBFramebufferVideo_SimulatorKit withConfiguration:videoConfiguration renderable:renderable logger:logger eventSink:simulator.eventSink];
-    FBFramebufferImage_Surface *image = [FBFramebufferImage_Surface withDiagnostic:simulator.simulatorDiagnostics.screenshot renderable:renderable eventSink:simulator.eventSink];
+    FBFramebufferImage_Surface *image = [FBFramebufferImage_Surface imageWithDiagnostic:simulator.simulatorDiagnostics.screenshot renderable:renderable eventSink:simulator.eventSink];
     return [[FBFramebuffer_SimulatorKit alloc] initWithConfiguration:configuration onQueue:queue video:video image:image renderable:renderable logger:logger];
   }
   // Otherwise we have to use the built-in frame generation.

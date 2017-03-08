@@ -63,7 +63,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param eventSink the Event Sink to report Image Logs to.
  @return a new FBFramebufferImage instance.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)imageWithDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 @end
 
@@ -80,7 +80,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param eventSink the Event Sink to report Image Logs to.
  @return a new FBFramebufferImage instance.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic renderable:(FBFramebufferRenderable *)renderable eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)imageWithDiagnostic:(FBDiagnostic *)diagnostic renderable:(FBFramebufferRenderable *)renderable eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 @end
 

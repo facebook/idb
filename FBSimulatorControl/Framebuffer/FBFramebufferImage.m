@@ -45,7 +45,7 @@
 
 @implementation FBFramebufferImage_FrameSink
 
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)imageWithDiagnostic:(FBDiagnostic *)diagnostic eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
   return [[self alloc] initWithDiagnostic:diagnostic eventSink:eventSink writeQueue:queue];
@@ -184,7 +184,7 @@
 
 @implementation FBFramebufferImage_Surface
 
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic renderable:(FBFramebufferRenderable *)renderable eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)imageWithDiagnostic:(FBDiagnostic *)diagnostic renderable:(FBFramebufferRenderable *)renderable eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   return [[self alloc] initWithDiagnostic:diagnostic eventSink:eventSink renderable:renderable];
 }
