@@ -199,9 +199,9 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBFramebufferRenderableConsumer
 
-- (void)currentSurfaceChanged:(nullable IOSurfaceRef)surface
+- (void)didChangeIOSurface:(nullable IOSurfaceRef)surface
 {
   [self.imageGenerator currentSurfaceChanged:surface];
   if (surface == NULL) {
@@ -213,6 +213,18 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   }
 }
 
+- (void)didRecieveDamageRect:(CGRect)rect
+{
+
+}
+
+- (NSString *)consumerIdentifier
+{
+  return NSStringFromClass(self.class);
+}
+
+#pragma mark Public
+
 - (void)frameSteamEndedWithTeardownGroup:(dispatch_group_t)group error:(NSError *)error
 {
   [super frameSteamEndedWithTeardownGroup:group error:error];
@@ -221,7 +233,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
     dispatch_source_cancel(self.timerSource);
     _timerSource = nil;
   }
-  [self currentSurfaceChanged:nil];
+  [self didChangeIOSurface:nil];
 }
 
 #pragma mark Private

@@ -423,7 +423,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   // This is the first surface that has been recieved.
   else if (self.state == FBSimulatorFramebufferStateStarting && surface != NULL) {
     self.state = FBSimulatorFramebufferStateRunning;
-    [self.ioSurfaceGenerator currentSurfaceChanged:surface];
+    [self.ioSurfaceGenerator didChangeIOSurface:surface];
   }
 }
 
@@ -434,7 +434,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 - (NSString *)consumerIdentifier
 {
-  return NSStringFromClass(self.ioSurfaceGenerator.class);
+  return self.ioSurfaceGenerator.consumerIdentifier;
 }
 
 @end

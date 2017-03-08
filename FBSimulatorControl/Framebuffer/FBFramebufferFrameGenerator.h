@@ -13,6 +13,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <FBSimulatorControl/FBFramebufferRenderable.h>
+
 @protocol FBFramebufferFrameSink;
 @class FBFramebuffer;
 @class SimDeviceFramebufferBackingStore;
@@ -82,14 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Frame Generator for the Xcode 8 'IOSurface'.
  */
-@interface FBFramebufferIOSurfaceFrameGenerator : FBFramebufferFrameGenerator
-
-/**
- To be called when the current IOSurface for a Framebuffer changes.
-
- @param surface the surface that has changed.
- */
-- (void)currentSurfaceChanged:(nullable IOSurfaceRef)surface;
+@interface FBFramebufferIOSurfaceFrameGenerator : FBFramebufferFrameGenerator <FBFramebufferRenderableConsumer>
 
 @end
 
