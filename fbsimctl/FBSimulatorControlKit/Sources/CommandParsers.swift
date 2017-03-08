@@ -58,8 +58,8 @@ extension Parser {
     }
   }
 
-  public static var ofDirectory: Parser<String> {
-    let desc = PrimitiveDesc(name: "directory", desc: "Path to a directory.")
+  public static var ofExistingDirectory: Parser<String> {
+    let desc = PrimitiveDesc(name: "directory", desc: "Path to an existing directory.")
     return Parser<String>.single(desc) { token  in
       let path = (token as NSString).standardizingPath
       var isDirectory: ObjCBool = false
@@ -73,8 +73,8 @@ extension Parser {
     }
   }
 
-  public static var ofFile: Parser<String> {
-    let desc = PrimitiveDesc(name: "file", desc: "Path to a file.")
+  public static var ofExistingFile: Parser<String> {
+    let desc = PrimitiveDesc(name: "file", desc: "Path to an existing file.")
     return Parser<String>.single(desc) { token in
       let path = (token as NSString).standardizingPath
       var isDirectory: ObjCBool = false
@@ -85,6 +85,18 @@ extension Parser {
         throw ParseError.custom("'\(path)' should be a file, but isn't")
       }
       return path
+    }
+  }
+
+  public static var ofFile: Parser<String> {
+    let desc = PrimitiveDesc(name: "file", desc: "Path to a file.")
+    return Parser<String>.single(desc) { token in
+      do {
+        let _ = try Parser.ofDashSeparator.parse([token])
+      } catch is ParseError {
+        return token
+      }
+      throw ParseError.custom("Not a File Path")
     }
   }
 
@@ -225,7 +237,7 @@ extension Configuration : Parsable {
 
   static var deviceSetPathParser: Parser<Configuration> {
     return Parser<Configuration>
-      .ofFlagWithArg("set", Parser<Any>.ofDirectory, "")
+      .ofFlagWithArg("set", Parser<Any>.ofExistingDirectory, "")
       .fmap(Configuration.ofDeviceSetPath)
   }
 }
@@ -286,7 +298,7 @@ extension IndividualCreationConfiguration : Parsable {
 
   static var auxDirectoryParser: Parser<String> {
     return Parser<String>
-      .ofFlagWithArg("aux", Parser<Any>.ofDirectory, "")
+      .ofFlagWithArg("aux", Parser<Any>.ofExistingDirectory, "")
   }
 
   static var auxDirectoryConfigurationParser: Parser<IndividualCreationConfiguration> {
@@ -456,7 +468,7 @@ extension Record : Parsable {
 
   private static var startParser: Parser<Record> {
     return Parser
-      .ofCommandWithArg("start", Parser<String>.ofAny.optional())
+      .ofCommandWithArg("start", Parser<String>.ofFile.optional())
       .fmap { Record.start($0) }
   }
 
@@ -587,7 +599,7 @@ extension Action : Parsable {
 
     let parser = Parser.ofThreeSequenced(
       optionalTimeoutFlag,
-      Parser<Any>.ofDirectory,
+      Parser<Any>.ofExistingDirectory,
       FBProcessLaunchConfigurationParsers.appLaunchAndApplicationDescriptorParser
     )
 
@@ -728,7 +740,7 @@ extension Action : Parsable {
     return Parser<[String]>
       .ofCommandWithArg(
         EventName.Upload.rawValue,
-        Parser.manyCount(1, Parser<String>.ofFile)
+        Parser.manyCount(1, Parser<String>.ofExistingFile)
       )
       .fmap { paths in
         let diagnostics: [FBDiagnostic] = paths.map { path in

@@ -293,6 +293,22 @@ class CommandParserTests : XCTestCase {
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
+  func testParsesRecordStartListen() {
+    let compoundComponents = [
+      ["record", "start"], ["listen"],
+    ]
+    let actions: [Action] = [Action.record(.start(nil)), Action.listen(ListenInterface())]
+    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+  }
+
+  func testParsesRecordToPathStartListen() {
+    let compoundComponents = [
+      ["record", "start", "/tmp/video.mp4"], ["listen"],
+    ]
+    let actions: [Action] = [Action.record(.start("/tmp/video.mp4")), Action.listen(ListenInterface())]
+    self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
+  }
+
   func testFailsToParseDanglingTokens() {
     let compoundComponents = [
       ["list"], ["create", "iPhone 5"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["YOLO"],
