@@ -17,6 +17,32 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol SimDeviceIOPortConsumer;
 
 /**
+ A Consumer of a Renderable.
+ */
+@protocol FBFramebufferRenderableConsumer <NSObject>
+
+/**
+ Called when an IOSurface becomes available or invalid
+ 
+ @param surface the surface, or NULL if a surface is not available/becomes unavailable
+ */
+- (void)didChangeIOSurface:(nullable IOSurfaceRef)surface;
+
+/**
+ When a Damage Rect becomes available.
+ 
+ @param rect the damage rectangle.
+ */
+- (void)didRecieveDamageRect:(CGRect)rect;
+
+/**
+ The Identifier of the Consumer.
+ */
+@property (nonatomic, copy, readonly) NSString *consumerIdentifier;
+
+@end
+
+/**
  A Container Object for a Renderable IOSurface Client.
  */
 @interface FBFramebufferRenderable : NSObject
@@ -35,14 +61,14 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param consumer the consumer to attach.
  */
-- (void)attachConsumer:(id<SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>)consumer;
+- (void)attachConsumer:(id<FBFramebufferRenderableConsumer>)consumer;
 
 /**
  Detaches a Consumer with the Renderable
 
  @param consumer the consumer to attach.
  */
-- (void)detachConsumer:(id<SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>)consumer;
+- (void)detachConsumer:(id<FBFramebufferRenderableConsumer>)consumer;
 
 @end
 

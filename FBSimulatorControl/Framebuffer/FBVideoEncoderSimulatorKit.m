@@ -12,13 +12,15 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import <objc/runtime.h>
+#import <xpc/xpc.h>
+#import <IOSurface/IOSurface.h>
 
 #import <SimulatorKit/SimDisplayVideoWriter.h>
 #import <SimulatorKit/SimDisplayVideoWriter+Removed.h>
 
 #import "FBFramebufferRenderable.h"
 
-@interface FBVideoEncoderSimulatorKit ()
+@interface FBVideoEncoderSimulatorKit () <FBFramebufferRenderableConsumer>
 
 @property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
 @property (nonatomic, strong, readonly) dispatch_queue_t mediaQueue;
@@ -98,7 +100,7 @@
   [self.logger log:@"Start Writing in Video Writer"];
   [self.writer startWriting];
   [self.logger log:@"Attaching Consumer in Video Writer"];
-  [self.renderable attachConsumer:self.writer];
+  [self.renderable attachConsumer:self];
 
   return YES;
 }
@@ -113,12 +115,34 @@
   // Detach the Consumer first, we don't want to send any more Damage Rects.
   // If a Damage Rect send races with finishWriting, a crash can occur.
   [self.logger log:@"Detaching Consumer in Video Writer"];
-  [self.renderable detachConsumer:self.writer];
+  [self.renderable detachConsumer:self];
   // Now there are no more incoming rects, tear down the video encoding.
   [self.logger log:@"Finishing Writing in Video Writer"];
   [self.writer finishWriting];
 
   return YES;
+}
+
+#pragma mark FBFramebufferConsumable
+
+- (void)didChangeIOSurface:(IOSurfaceRef)surface
+{
+  if (!surface) {
+    [self.writer didChangeIOSurface:NULL];
+    return;
+  }
+  xpc_object_t xpcSurface = IOSurfaceCreateXPCObject(surface);
+  [self.writer didChangeIOSurface:xpcSurface];
+}
+
+- (void)didRecieveDamageRect:(CGRect)rect
+{
+  [self.writer didReceiveDamageRect:rect];
+}
+
+- (NSString *)consumerIdentifier
+{
+  return self.writer.consumerIdentifier;
 }
 
 @end

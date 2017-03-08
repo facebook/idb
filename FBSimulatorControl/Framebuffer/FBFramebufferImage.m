@@ -171,7 +171,7 @@
 
 @end
 
-@interface FBFramebufferImage_Surface () <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
+@interface FBFramebufferImage_Surface () <FBFramebufferRenderableConsumer>
 
 @property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
@@ -205,21 +205,19 @@
   return self;
 }
 
-#pragma mark SimDisplay Protocols
+#pragma mark FBFramebufferRenderableConsumer
 
 - (NSString *)consumerIdentifier
 {
   return NSStringFromClass(self.class);
 }
 
-- (void)didChangeIOSurface:(xpc_object_t)surfaceXPC
+- (void)didChangeIOSurface:(IOSurfaceRef)surface
 {
-  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(surfaceXPC);
   [self.imageGenerator currentSurfaceChanged:surface];
-  CFRelease(surface);
 }
 
-- (void)didReceiveDamageRect:(CGRect)rect
+- (void)didRecieveDamageRect:(CGRect)rect
 {
 
 }
