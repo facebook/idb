@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBSimulatorControl/FBFramebufferFrameSink.h>
+#import <FBSimulatorControl/FBFramebufferRenderable.h>
 
 @class FBDiagnostic;
 @class FBFramebufferRenderable;

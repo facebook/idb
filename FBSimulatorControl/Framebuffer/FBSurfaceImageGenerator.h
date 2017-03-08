@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBSimulatorControl/FBFramebufferRenderable.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
@@ -16,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An object-container for an IOSurface, that can generate Images.
  */
-@interface FBSurfaceImageGenerator : NSObject
+@interface FBSurfaceImageGenerator : NSObject <FBFramebufferRenderableConsumer>
 
 /**
  Create and return a new Image Generator.
@@ -43,13 +45,6 @@ NS_ASSUME_NONNULL_BEGIN
  This will not 'consume' the Image and can be fetched regardless of the last image consumed.
  */
 - (nullable CGImageRef)image;
-
-/**
- To be called when the current IOSurface for a changes.
-
- @param surface the surface that has changed.
- */
-- (void)currentSurfaceChanged:(nullable IOSurfaceRef)surface;
 
 @end
 

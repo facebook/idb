@@ -203,7 +203,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 - (void)didChangeIOSurface:(nullable IOSurfaceRef)surface
 {
-  [self.imageGenerator currentSurfaceChanged:surface];
+  [self.imageGenerator didChangeIOSurface:surface];
   if (surface == NULL) {
     dispatch_suspend(self.timerSource);
   } else {
@@ -215,7 +215,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 - (void)didRecieveDamageRect:(CGRect)rect
 {
-
+  [self.imageGenerator didRecieveDamageRect:rect];
 }
 
 - (NSString *)consumerIdentifier

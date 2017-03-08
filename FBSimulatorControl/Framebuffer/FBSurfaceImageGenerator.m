@@ -52,22 +52,7 @@
   return self;
 }
 
-- (void)currentSurfaceChanged:(IOSurfaceRef)surface
-{
-  self.lastSeedValue = 0;
-  if (self.surface != NULL) {
-    [self.logger.info logFormat:@"Removing old surface %@", surface];
-    IOSurfaceDecrementUseCount(self.surface);
-    CFRelease(self.surface);
-    self.surface = nil;
-  }
-  if (surface != NULL) {
-    IOSurfaceIncrementUseCount(surface);
-    CFRetain(surface);
-    [self.logger.info logFormat:@"Recieved IOSurface from Framebuffer Service %@", surface];
-    self.surface = surface;
-  }
-}
+#pragma mark Public
 
 - (nullable CGImageRef)availableImage
 {
@@ -95,6 +80,35 @@
   }
   CFAutorelease(cgImage);
   return cgImage;
+}
+
+#pragma mark FBFramebufferRenderableConsumer
+
+- (void)didChangeIOSurface:(IOSurfaceRef)surface
+{
+  self.lastSeedValue = 0;
+  if (self.surface != NULL) {
+    [self.logger.info logFormat:@"Removing old surface %@", surface];
+    IOSurfaceDecrementUseCount(self.surface);
+    CFRelease(self.surface);
+    self.surface = nil;
+  }
+  if (surface != NULL) {
+    IOSurfaceIncrementUseCount(surface);
+    CFRetain(surface);
+    [self.logger.info logFormat:@"Recieved IOSurface from Framebuffer Service %@", surface];
+    self.surface = surface;
+  }
+}
+
+- (void)didRecieveDamageRect:(CGRect)rect
+{
+
+}
+
+- (NSString *)consumerIdentifier
+{
+  return NSStringFromClass(self.class);
 }
 
 @end
