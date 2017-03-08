@@ -17,7 +17,6 @@
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBFramebufferSurfaceClient.h"
 #import "FBFramebufferRenderable.h"
 #import "FBVideoEncoderBuiltIn.h"
 #import "FBVideoEncoderSimulatorKit.h"

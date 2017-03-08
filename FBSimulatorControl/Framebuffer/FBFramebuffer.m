@@ -42,7 +42,6 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBFramebufferSurfaceClient.h"
 
 /**
  Enumeration to keep track of internal state.
@@ -73,12 +72,12 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 @end
 
-@interface FBFramebuffer_FrameGenerator_IOSurface : FBFramebuffer_FrameGenerator
+@interface FBFramebuffer_FrameGenerator_IOSurface : FBFramebuffer_FrameGenerator <FBFramebufferRenderableConsumer>
 
 @property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *ioSurfaceGenerator;
-@property (nonatomic, strong, readonly) FBFramebufferSurfaceClient *surfaceClient;
+@property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video image:(id<FBFramebufferImage>)image frameSink:(id<FBFramebufferFrameSink>)frameSink surfaceClient:(FBFramebufferSurfaceClient *)surfaceClient logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video image:(id<FBFramebufferImage>)image frameSink:(id<FBFramebufferFrameSink>)frameSink renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -144,8 +143,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   id<FBFramebufferFrameSink> frameSink = [self frameSinkForSimulator:simulator configuration:configuration logger:logger videoOut:&video imageOut:&image];
 
   if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-    FBFramebufferSurfaceClient *surfaceClient = [FBFramebufferSurfaceClient clientForFramebufferService:framebufferService clientQueue:self.createClientQueue];
-    return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:configuration onQueue:queue video:video image:image frameSink:frameSink surfaceClient:surfaceClient logger:logger];
+    FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForFramebufferService:framebufferService clientQueue:self.createClientQueue];
+    return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:configuration onQueue:queue video:video image:image frameSink:frameSink renderable:renderable logger:logger];
   }
   return [[FBFramebuffer_FrameGenerator_BackingStore alloc] initWithConfiguration:configuration onQueue:queue video:video image:image frameSink:frameSink framebufferService:framebufferService logger:logger];
 }
@@ -167,8 +166,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   FBFramebufferVideo_BuiltIn *video = nil;
   FBFramebufferImage_FrameSink *image = nil;
   id<FBFramebufferFrameSink> frameSink = [self frameSinkForSimulator:simulator configuration:configuration logger:logger videoOut:&video imageOut:&image];
-  FBFramebufferSurfaceClient *surfaceClient = [FBFramebufferSurfaceClient clientForIOClient:ioClient clientQueue:queue];
-  return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:videoConfiguration onQueue:queue video:video image:image frameSink:frameSink surfaceClient:surfaceClient logger:logger];
+  FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:ioClient];
+  return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:videoConfiguration onQueue:queue video:video image:image frameSink:frameSink renderable:renderable logger:logger];
 }
 
 - (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(id<FBFramebufferVideo>)video image:(id<FBFramebufferImage>)image logger:(id<FBControlCoreLogger>)logger
@@ -377,14 +376,14 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 #pragma mark Initializers
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video image:(FBFramebufferImage_FrameSink *)image frameSink:(id<FBFramebufferFrameSink>)frameSink surfaceClient:(FBFramebufferSurfaceClient *)surfaceClient logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(FBFramebufferVideo_BuiltIn *)video image:(FBFramebufferImage_FrameSink *)image frameSink:(id<FBFramebufferFrameSink>)frameSink renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithConfiguration:configuration onQueue:clientQueue video:video image:image frameSink:frameSink logger:logger];
   if (!self) {
     return nil;
   }
 
-  _surfaceClient = surfaceClient;
+  _renderable = renderable;
   _ioSurfaceGenerator = [FBFramebufferIOSurfaceFrameGenerator generatorWithScale:NSDecimalNumber.one sink:frameSink queue:clientQueue logger:logger];
 
   return self;
@@ -401,9 +400,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 {
   [super startListeningInBackground];
 
-  [self.surfaceClient obtainSurface:^(IOSurfaceRef surface) {
-    [self ioSurfaceUpdated:surface];
-  }];
+  [self.renderable attachConsumer:self];
   return self;
 }
 
@@ -411,13 +408,13 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 {
   [super stopListeningWithTeardownGroup:teardownGroup];
 
-  [self.surfaceClient detach];
+  [self.renderable detachConsumer:self];
   return self;
 }
 
-#pragma mark Private
+#pragma mark FBFramebufferRenderableConsumer
 
-- (void)ioSurfaceUpdated:(IOSurfaceRef)surface
+- (void)didChangeIOSurface:(IOSurfaceRef)surface
 {
   // The client recieves a NULL surface, before recieving the first surface.
   if (self.state == FBSimulatorFramebufferStateStarting && surface == NULL) {
@@ -428,6 +425,16 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
     self.state = FBSimulatorFramebufferStateRunning;
     [self.ioSurfaceGenerator currentSurfaceChanged:surface];
   }
+}
+
+- (void)didRecieveDamageRect:(CGRect)rect
+{
+
+}
+
+- (NSString *)consumerIdentifier
+{
+  return NSStringFromClass(self.ioSurfaceGenerator.class);
 }
 
 @end

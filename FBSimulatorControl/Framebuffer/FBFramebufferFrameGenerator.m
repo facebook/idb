@@ -18,7 +18,6 @@
 
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferFrameSink.h"
-#import "FBFramebufferSurfaceClient.h"
 #import "FBSurfaceImageGenerator.h"
 
 static const NSInteger FBFramebufferLogFrameFrequency = 100;

@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class SimDeviceIOClient;
+@class SimDeviceFramebufferService;
 @protocol SimDisplayDamageRectangleDelegate;
 @protocol SimDisplayIOSurfaceRenderableDelegate;
 @protocol SimDeviceIOPortConsumer;
@@ -55,6 +56,15 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Port Interface, should be retained by the reciever.
  */
 + (nullable instancetype)mainScreenRenderableForClient:(SimDeviceIOClient *)ioClient;
+
+/**
+ Obtains an IOSurface froma FramebufferService.
+
+ @param framebufferService the Framebuffer Service to obtain from.
+ @param clientQueue the queue to schedule work on.
+ @return a Service Client.
+ */
++ (instancetype)mainScreenRenderableForFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue;
 
 /**
  Attaches a Consumer with the Renderable
