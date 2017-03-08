@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to which the Framebuffer belongs.
  @return a new FBSimulatorDirectLaunch instance. Must not be nil.
  */
-+ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
++ (instancetype)framebufferWithService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
 /**
  Creates and returns a new FBSimulatorDirectLaunch object for the provided ioClient.

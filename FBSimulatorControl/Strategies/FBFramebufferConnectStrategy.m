@@ -111,7 +111,7 @@
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
   return [[FBFramebuffer
-    withFramebufferService:mainScreenService configuration:self.configuration simulator:simulator]
+    framebufferWithService:mainScreenService configuration:self.configuration simulator:simulator]
     startListeningInBackground];
 }
 

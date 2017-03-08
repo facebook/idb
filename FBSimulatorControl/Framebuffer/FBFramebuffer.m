@@ -133,7 +133,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   return delegate;
 }
 
-+ (instancetype)withFramebufferService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
++ (instancetype)framebufferWithService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   dispatch_queue_t queue = self.createClientQueue;
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
