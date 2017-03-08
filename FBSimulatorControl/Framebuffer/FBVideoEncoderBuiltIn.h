@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFramebufferConfiguration;
+@class FBVideoEncoderConfiguration;
 @protocol FBControlCoreLogger;
 
 /**
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param logger the logger object to log events to, may be nil.
  @return a new Video Encoder instance.
  */
-+ (instancetype)encoderWithConfiguration:(FBFramebufferConfiguration *)configuration videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)encoderWithConfiguration:(FBVideoEncoderConfiguration *)configuration videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  Starts Recording Video.

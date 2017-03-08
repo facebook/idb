@@ -47,6 +47,8 @@
 		AA0EE6701D06AB5600422361 /* FBiOSTargetDescriptionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0EE66F1D06AB5600422361 /* FBiOSTargetDescriptionTests.m */; };
 		AA0F6F2A1CA3DCF700926518 /* FBWeakFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0F6F2B1CA3DCF700926518 /* FBWeakFrameworkLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */; };
+		AA0FF9091E6DE3EC0052634B /* FBVideoEncoderConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0FF9071E6DE3EC0052634B /* FBVideoEncoderConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0FF90A1E6DE3EC0052634B /* FBVideoEncoderConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0FF9081E6DE3EC0052634B /* FBVideoEncoderConfiguration.m */; };
 		AA111CCE1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m in Sources */ = {isa = PBXBuildFile; fileRef = AA111CCD1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m */; };
 		AA1174B21CEA17DB00EB699E /* FBApplicationCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1174B11CEA17DB00EB699E /* FBApplicationCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA1174B61CEA183F00EB699E /* FBSimulatorApplicationCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1174B41CEA183F00EB699E /* FBSimulatorApplicationCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -642,6 +644,8 @@
 		AA0EE66F1D06AB5600422361 /* FBiOSTargetDescriptionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDescriptionTests.m; sourceTree = "<group>"; };
 		AA0F6F281CA3DCF700926518 /* FBWeakFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBWeakFrameworkLoader.h; sourceTree = "<group>"; };
 		AA0F6F291CA3DCF700926518 /* FBWeakFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBWeakFrameworkLoader.m; sourceTree = "<group>"; };
+		AA0FF9071E6DE3EC0052634B /* FBVideoEncoderConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBVideoEncoderConfiguration.h; sourceTree = "<group>"; };
+		AA0FF9081E6DE3EC0052634B /* FBVideoEncoderConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBVideoEncoderConfiguration.m; sourceTree = "<group>"; };
 		AA111CCC1BBE7C5A0054AFDD /* CoreSimulatorDoubles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreSimulatorDoubles.h; sourceTree = "<group>"; };
 		AA111CCD1BBE7C5A0054AFDD /* CoreSimulatorDoubles.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CoreSimulatorDoubles.m; sourceTree = "<group>"; };
 		AA1174B11CEA17DB00EB699E /* FBApplicationCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBApplicationCommands.h; sourceTree = "<group>"; };
@@ -1929,6 +1933,8 @@
 				AA9516CF1C15F54600A89CAD /* FBSimulatorControlConfiguration.m */,
 				AAEE42581D86939F0077D141 /* FBSimulatorScale.h */,
 				AAEE42591D86939F0077D141 /* FBSimulatorScale.m */,
+				AA0FF9071E6DE3EC0052634B /* FBVideoEncoderConfiguration.h */,
+				AA0FF9081E6DE3EC0052634B /* FBVideoEncoderConfiguration.m */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
@@ -2719,6 +2725,7 @@
 				AA25770A1DF16B1300789490 /* FBDefaultsModificationStrategy.h in Headers */,
 				AAFE93B61CE4954500A50F76 /* FBSimulatorEraseStrategy.h in Headers */,
 				AA19DA881C77450A009BB89B /* FBSimulatorPool+Private.h in Headers */,
+				AA0FF9091E6DE3EC0052634B /* FBVideoEncoderConfiguration.h in Headers */,
 				AA95177C1C15F54600A89CAD /* FBSimulator+Helpers.h in Headers */,
 				AA14B55B1DF7401700085855 /* FBSimulatorVideoRecordingCommands.h in Headers */,
 				AA791BA81C63668C00AE49EB /* SimulatorBridge-Protocol.h in Headers */,
@@ -3267,6 +3274,7 @@
 				AA6A3B401CC1597000E016C4 /* FBSimulatorBootStrategy.m in Sources */,
 				AA9517611C15F54600A89CAD /* FBSimulatorNotificationEventSink.m in Sources */,
 				AAF7B0DA1DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m in Sources */,
+				AA0FF90A1E6DE3EC0052634B /* FBVideoEncoderConfiguration.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -106,7 +106,7 @@
   }
 
   self.framebuffer = [[FBFramebufferConnectStrategy
-    strategyWithConfiguration:FBFramebufferConfiguration.defaultConfiguration]
+    strategyWithConfiguration:[FBFramebufferConfiguration.defaultConfiguration inSimulator:self.simulator]]
     connect:self.simulator error:error];
   return self.framebuffer;
 }

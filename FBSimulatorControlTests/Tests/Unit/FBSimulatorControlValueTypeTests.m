@@ -112,13 +112,23 @@
   XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale_50.new);
 }
 
+- (void)testEncoderConfigurations
+{
+  NSArray<FBVideoEncoderConfiguration *> *values = @[
+    FBVideoEncoderConfiguration.prudentConfiguration,
+    FBVideoEncoderConfiguration.defaultConfiguration,
+    [[[FBVideoEncoderConfiguration withOptions:FBVideoEncoderOptionsAutorecord | FBVideoEncoderOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
+    [[[FBVideoEncoderConfiguration withOptions:FBVideoEncoderOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertUnarchiving:values];
+  [self assertJSONSerialization:values];
+}
+
 - (void)testFramebufferConfigurations
 {
   NSArray<FBFramebufferConfiguration *> *values = @[
-    FBFramebufferConfiguration.prudentConfiguration,
-    FBFramebufferConfiguration.defaultConfiguration,
-    [[[FBFramebufferConfiguration withVideoOptions:FBFramebufferVideoOptionsAutorecord | FBFramebufferVideoOptionsFinalFrame ] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardZero] withFileType:@"foo"],
-    [[[FBFramebufferConfiguration withVideoOptions:FBFramebufferVideoOptionsImmediateFrameStart] withRoundingMethod:kCMTimeRoundingMethod_RoundTowardNegativeInfinity] withFileType:@"bar"]
+    FBFramebufferConfiguration.new,
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];

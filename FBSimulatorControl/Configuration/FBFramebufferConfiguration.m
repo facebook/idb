@@ -9,53 +9,45 @@
 
 #import "FBFramebufferConfiguration.h"
 
-#import <AVFoundation/AVFoundation.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorScale.h"
+#import "FBVideoEncoderConfiguration.h"
+#import "FBSimulator.h"
+#import "FBSimulatorDiagnostics.h"
 
 @implementation FBFramebufferConfiguration
+
++ (NSString *)defaultImagePath
+{
+  return [NSHomeDirectory() stringByAppendingString:@"image.png"];
+}
+
++ (instancetype)configurationWithScale:(nullable id<FBSimulatorScale>)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
+{
+  return [[self alloc] initWithScale:scale encoder:encoder imagePath:imagePath];
+}
 
 + (instancetype)defaultConfiguration
 {
   return [self new];
 }
 
-+ (instancetype)prudentConfiguration
-{
-  return [FBFramebufferConfiguration
-    withDiagnostic:nil
-    scale:nil
-    videoOptions:FBFramebufferVideoOptionsImmediateFrameStart | FBFramebufferVideoOptionsFinalFrame
-    timescale:1000
-    roundingMethod:kCMTimeRoundingMethod_QuickTime
-    fileType:AVFileTypeQuickTimeMovie];
-}
-
-+ (instancetype)withDiagnostic:(nullable FBDiagnostic *)diagnostic scale:(nullable id<FBSimulatorScale>)scale videoOptions:(FBFramebufferVideoOptions)videoOptions timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(nullable NSString *)fileType
-{
-  return [[FBFramebufferConfiguration alloc] initWithDiagnostic:diagnostic scale:scale videoOptions:videoOptions timescale:timescale roundingMethod:roundingMethod fileType:fileType];
-}
-
 - (instancetype)init
 {
-  return [self initWithDiagnostic:nil scale:nil videoOptions:FBFramebufferVideoOptionsImmediateFrameStart | FBFramebufferVideoOptionsFinalFrame timescale:1000 roundingMethod:kCMTimeRoundingMethod_RoundTowardZero fileType:AVFileTypeMPEG4];
+  return [self initWithScale:nil encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:FBFramebufferConfiguration.defaultImagePath];
 }
 
-- (instancetype)initWithDiagnostic:(nullable FBDiagnostic *)diagnostic scale:(nullable id<FBSimulatorScale>)scale videoOptions:(FBFramebufferVideoOptions)videoOptions timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(nullable NSString *)fileType
+- (instancetype)initWithScale:(nullable id<FBSimulatorScale>)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _diagnostic = diagnostic;
   _scale = scale;
-  _videoOptions = videoOptions;
-  _timescale = timescale;
-  _roundingMethod = roundingMethod;
-  _fileType = fileType;
+  _encoder = encoder;
+  _imagePath = imagePath;
 
   return self;
 }
@@ -71,7 +63,7 @@
 
 - (NSUInteger)hash
 {
-  return self.diagnostic.hash ^ self.scale.hash ^ self.videoOptions ^ (NSUInteger) self.timescale ^ (NSUInteger) self.roundingMethod ^ self.fileType.hash;
+  return self.scale.hash ^ self.encoder.hash ^ self.imagePath.hash;
 }
 
 - (BOOL)isEqual:(FBFramebufferConfiguration *)configuration
@@ -80,12 +72,9 @@
     return NO;
   }
 
-  return (self.diagnostic == configuration.diagnostic || [self.diagnostic isEqual:configuration.diagnostic]) &&
-         (self.scale == configuration.scale || [self.scale isEqual:configuration.scale]) &&
-         (self.videoOptions == configuration.videoOptions) &&
-         (self.timescale == configuration.timescale) &&
-         (self.roundingMethod == configuration.roundingMethod) &&
-         (self.fileType == configuration.fileType || [self.fileType isEqual:configuration.fileType]);
+  return (self.scale == configuration.scale || [self.scale isEqual:configuration.scale]) &&
+         (self.encoder == configuration.encoder || [self.encoder isEqual:configuration.encoder]) &&
+         (self.imagePath == configuration.imagePath || [self.imagePath isEqual:configuration.imagePath]);
 }
 
 #pragma mark NSCoding
@@ -97,37 +86,32 @@
     return nil;
   }
 
-  _diagnostic = [decoder decodeObjectForKey:NSStringFromSelector(@selector(diagnostic))];
   _scale = [decoder decodeObjectForKey:NSStringFromSelector(@selector(scale))];
-  _videoOptions = [[decoder decodeObjectForKey:NSStringFromSelector(@selector(videoOptions))] unsignedIntegerValue];
-  _timescale = [decoder decodeInt32ForKey:NSStringFromSelector(@selector(timescale))];
-  _roundingMethod = [[decoder decodeObjectForKey:NSStringFromSelector(@selector(roundingMethod))] unsignedIntValue];
-  _fileType = [decoder decodeObjectForKey:NSStringFromSelector(@selector(fileType))];
+  _encoder = [decoder decodeObjectForKey:NSStringFromSelector(@selector(encoder))];
+  _imagePath = [decoder decodeObjectForKey:NSStringFromSelector(@selector(imagePath))];
 
   return self;
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
 {
-  [coder encodeObject:self.diagnostic forKey:NSStringFromSelector(@selector(diagnostic))];
   [coder encodeObject:self.scale forKey:NSStringFromSelector(@selector(scale))];
-  [coder encodeObject:@(self.videoOptions) forKey:NSStringFromSelector(@selector(videoOptions))];
-  [coder encodeInt32:self.timescale forKey:NSStringFromSelector(@selector(timescale))];
-  [coder encodeObject:@(self.roundingMethod) forKey:NSStringFromSelector(@selector(roundingMethod))];
-  [coder encodeObject:self.fileType forKey:NSStringFromSelector(@selector(fileType))];
+  [coder encodeObject:self.encoder forKey:NSStringFromSelector(@selector(encoder))];
+  [coder encodeObject:self.imagePath forKey:NSStringFromSelector(@selector(imagePath))];
 }
 
 #pragma mark FBJSONSerializable
 
+static NSString *KeyScale = @"scale";
+static NSString *KeyEncoder = @"encoder";
+static NSString *KeyImagePath = @"image_path";
+
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"diagnostic" : self.diagnostic.jsonSerializableRepresentation ?: NSNull.null,
-    @"scale" : self.scale.scaleString ?: NSNull.null,
-    @"video_options" : [FBFramebufferConfiguration stringsFromVideoOptions:self.videoOptions],
-    @"timescale" : @(self.timescale),
-    @"rounding_method" : @(self.roundingMethod),
-    @"file_type" : self.fileType ?: NSNull.null,
+    KeyScale : self.scale.scaleString ?: NSNull.null,
+    KeyEncoder : self.encoder.jsonSerializableRepresentation,
+    KeyImagePath : self.imagePath,
   };
 }
 
@@ -136,11 +120,10 @@
 - (NSString *)shortDescription
 {
   return [NSString stringWithFormat:
-    @"Options %@ | Scale %@ | Timescale %d | Rounding Method %d",
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBFramebufferConfiguration stringsFromVideoOptions:self.videoOptions]],
+    @"Scale %@ | Encoder %@ | Image Path %@",
     self.scale.scaleString,
-    self.timescale,
-    self.roundingMethod
+    self.encoder.shortDescription,
+    self.imagePath
   ];
 }
 
@@ -154,76 +137,16 @@
   return self.shortDescription;
 }
 
-#pragma mark Diagnostics
-
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic
-{
-  return [self.defaultConfiguration withDiagnostic:diagnostic];
-}
-
-- (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic
-{
-  return [[self.class alloc] initWithDiagnostic:diagnostic scale:self.scale videoOptions:self.videoOptions timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
-}
-
-#pragma mark Autorecord
-
-+ (instancetype)withVideoOptions:(FBFramebufferVideoOptions)videoOptions
-{
-  return [self.defaultConfiguration withVideoOptions:videoOptions];
-}
-
-- (instancetype)withVideoOptions:(FBFramebufferVideoOptions)videoOptions
-{
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic scale:self.scale videoOptions:videoOptions timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
-}
-
-#pragma mark Timescale
-
-+ (instancetype)withTimescale:(CMTimeScale)timescale
-{
-  return [self.defaultConfiguration withTimescale:timescale];
-}
-
-- (instancetype)withTimescale:(CMTimeScale)timescale
-{
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic scale:self.scale videoOptions:self.videoOptions timescale:timescale roundingMethod:self.roundingMethod fileType:self.fileType];
-}
-
-#pragma mark Rounding
-
-+ (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod
-{
-  return [self.defaultConfiguration withRoundingMethod:roundingMethod];
-}
-
-- (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod
-{
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic scale:self.scale videoOptions:self.videoOptions timescale:self.timescale roundingMethod:roundingMethod fileType:self.fileType];
-}
-
-#pragma mark File Type
-
-+ (instancetype)withFileType:(NSString *)fileType
-{
-  return [self.defaultConfiguration withFileType:fileType];
-}
-
-- (instancetype)withFileType:(NSString *)fileType
-{
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic scale:self.scale videoOptions:self.videoOptions timescale:self.timescale roundingMethod:self.roundingMethod fileType:fileType];
-}
-
 #pragma mark Scale
 
 + (instancetype)withScale:(nullable id<FBSimulatorScale>)scale
 {
-  return [self.defaultConfiguration withScale:scale];
+  return [self.new withScale:scale];
 }
 
 - (instancetype)withScale:(nullable id<FBSimulatorScale>)scale
 {
-  return [[self.class alloc] initWithDiagnostic:self.diagnostic scale:scale videoOptions:self.videoOptions timescale:self.timescale roundingMethod:self.roundingMethod fileType:self.fileType];
+  return [[self.class alloc] initWithScale:scale encoder:self.encoder imagePath:self.imagePath];
 }
 
 - (nullable NSDecimalNumber *)scaleValue
@@ -241,21 +164,49 @@
   return CGSizeMake(size.width * scale, size.height * scale);
 }
 
-#pragma mark Private
+#pragma mark Encoder
 
-+ (NSArray<NSString *> *)stringsFromVideoOptions:(FBFramebufferVideoOptions)options
++ (instancetype)withEncoder:(FBVideoEncoderConfiguration *)encoder
 {
-  NSMutableArray<NSString *> *strings = [NSMutableArray array];
-  if ((options & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord) {
-    [strings addObject:@"Autorecord"];
-  }
-  if ((options & FBFramebufferVideoOptionsImmediateFrameStart) == FBFramebufferVideoOptionsImmediateFrameStart) {
-    [strings addObject:@"Immediate Frame Start"];
-  }
-  if ((options & FBFramebufferVideoOptionsFinalFrame) == FBFramebufferVideoOptionsFinalFrame) {
-    [strings addObject:@"Final Frame"];
-  }
-  return [strings copy];
+  return [self.new withEncoder:encoder];
+}
+
+- (instancetype)withEncoder:(FBVideoEncoderConfiguration *)encoder
+{
+  return [[self.class alloc] initWithScale:self.scale encoder:encoder imagePath:self.imagePath];
+}
+
+#pragma mark Diagnostics
+
++ (instancetype)withImagePath:(NSString *)imagePath
+{
+  return [self.new withImagePath:imagePath];
+}
+
+- (instancetype)withImagePath:(NSString *)imagePath
+{
+  return [[self.class alloc] initWithScale:self.scale encoder:self.encoder imagePath:imagePath];
+}
+
++ (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic
+{
+  return [self.new withImageDiagnostic:diagnostic];
+}
+
+- (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic
+{
+  FBDiagnosticBuilder *builder = [FBDiagnosticBuilder builderWithDiagnostic:diagnostic];
+  return [[self.class alloc] initWithScale:self.scale encoder:self.encoder imagePath:builder.createPath];
+}
+
+#pragma mark Simulators
+
+- (instancetype)inSimulator:(FBSimulator *)simulator
+{
+  FBDiagnosticBuilder *imageBuilder = [FBDiagnosticBuilder builderWithDiagnostic:simulator.simulatorDiagnostics.screenshot];
+  FBDiagnosticBuilder *videoBuilder = [FBDiagnosticBuilder builderWithDiagnostic:simulator.simulatorDiagnostics.screenshot];
+  FBVideoEncoderConfiguration *encoder = [self.encoder withFilePath:videoBuilder.createPath];
+  return [[self withEncoder:encoder] withImagePath:imageBuilder.createPath];
 }
 
 @end

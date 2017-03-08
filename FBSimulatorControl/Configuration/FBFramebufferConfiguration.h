@@ -7,22 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 
 @class FBDiagnostic;
+@class FBSimulator;
+@class FBVideoEncoderConfiguration;
 @protocol FBSimulatorScale;
-
-/**
- Options for FBFramebufferVideo.
- */
-typedef NS_OPTIONS(NSUInteger, FBFramebufferVideoOptions) {
-  FBFramebufferVideoOptionsAutorecord = 1 << 0, /** If Set, will automatically start recording when the first video frame is recieved. **/
-  FBFramebufferVideoOptionsImmediateFrameStart = 1 << 1, /** If Set, will start recording a video immediately, using the previously delivered frame **/
-  FBFramebufferVideoOptionsFinalFrame = 1 << 2, /** If Set, will repeat the last frame just before a video is stopped **/
-};
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -32,101 +24,32 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBFramebufferConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
- The Options for the Video Component.
- */
-@property (nonatomic, assign, readonly) FBFramebufferVideoOptions videoOptions;
-
-/**
- The Timescale used in Video Encoding.
- */
-@property (nonatomic, assign, readonly) CMTimeScale timescale;
-
-/**
- The Rounding Method used for Video Frames.
- */
-@property (nonatomic, assign, readonly) CMTimeRoundingMethod roundingMethod;
-
-/**
  The Scale of the Framebuffer.
  */
 @property (nonatomic, nullable, copy, readonly) id<FBSimulatorScale> scale;
 
 /**
- The Diagnostic Value to determine the video path.
+ The Video Encoder Configuration.
  */
-@property (nonatomic, nullable, copy, readonly) FBDiagnostic *diagnostic;
+@property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *encoder;
 
 /**
- The FileType of the Video.
+ The Default Image Path to write to.
  */
-@property (nonatomic, nullable, copy, readonly) NSString *fileType;
-
-#pragma mark Defaults & Initializers
-
-/**
- The Default Value of FBFramebufferConfiguration.
- Uses Reasonable Defaults.
- */
-+ (instancetype)defaultConfiguration;
-
-/**
- The Default Value of FBFramebufferConfiguration.
- Use this in preference to 'defaultConfiguration' if video encoding is problematic.
- */
-+ (instancetype)prudentConfiguration;
+@property (nonatomic, strong, readonly) NSString *imagePath;
 
 /**
  Creates and Returns a new FBFramebufferConfiguration Value with the provided parameters.
 
- @param diagnostic The Diagnostic Value to determine the video path
  @param scale the Scale of the Framebuffer.
- @param videoOptions The Flags for FBFramebufferVideo.
- @param timescale The Timescale used in Video Encoding.
- @param roundingMethod The Rounding Method used for Video Frames.
- @param fileType The FileType of the Video.
  @return a FBFramebufferConfiguration instance.
  */
-+ (instancetype)withDiagnostic:(nullable FBDiagnostic *)diagnostic scale:(nullable id<FBSimulatorScale>)scale videoOptions:(FBFramebufferVideoOptions)videoOptions timescale:(CMTimeScale)timescale roundingMethod:(CMTimeRoundingMethod)roundingMethod fileType:(nullable NSString *)fileType;
-
-#pragma mark Diagnostics
++ (instancetype)configurationWithScale:(nullable id<FBSimulatorScale>)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath;
 
 /**
- Returns a new Configuration with the Diagnostic Applied.
+ The Default Configuration.
  */
-+ (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
-- (instancetype)withDiagnostic:(FBDiagnostic *)diagnostic;
-
-#pragma mark Options
-
-/**
- Returns a new Configuration with the Options Applied.
- */
-- (instancetype)withVideoOptions:(FBFramebufferVideoOptions)videoOptions;
-+ (instancetype)withVideoOptions:(FBFramebufferVideoOptions)videoOptions;
-
-#pragma mark Timescale
-
-/**
- Returns a new Configuration with the Timescale Applied.
- */
-- (instancetype)withTimescale:(CMTimeScale)timescale;
-+ (instancetype)withTimescale:(CMTimeScale)timescale;
-
-#pragma mark Rounding
-
-/**
- Returns a new Configuration with the Rounding Method Applied.
- */
-- (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod;
-+ (instancetype)withRoundingMethod:(CMTimeRoundingMethod)roundingMethod;
-
-#pragma mark File Type
-
-/**
- Returns a new Configuration with the File Type Applied.
- */
-- (instancetype)withFileType:(NSString *)fileType;
-+ (instancetype)withFileType:(NSString *)fileType;
++ (instancetype)defaultConfiguration;
 
 #pragma mark Scale
 
@@ -137,12 +60,42 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)withScale:(nullable id<FBSimulatorScale>)scale;
 
 /**
- Scales the provided size with the receiver's scale/
+ The Scale, as a Decimal.
+ */
+- (nullable NSDecimalNumber *)scaleValue;
+
+/**
+ Scales the provided size with the receiver's scale.
 
  @param size the size to scale.
  @return a scaled size.
  */
 - (CGSize)scaleSize:(CGSize)size;
+
+#pragma mark Encoder
+
+/**
+ Returns a Configuration with the Encoder Applied.
+ */
++ (instancetype)withEncoder:(FBVideoEncoderConfiguration *)encoder;
+- (instancetype)withEncoder:(FBVideoEncoderConfiguration *)encoder;
+
+#pragma mark Image Path
+
+/**
+ Returns a new Configuration with the Diagnostic Applied.
+ */
++ (instancetype)withImagePath:(NSString *)imagePath;
+- (instancetype)withImagePath:(NSString *)imagePath;
++ (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic;
+- (instancetype)withImageDiagnostic:(FBDiagnostic *)diagnostic;
+
+#pragma mark Simulators
+
+/**
+ Returns a new Configuration with the diagnostic paths from the Simulator.
+ */
+- (instancetype)inSimulator:(FBSimulator *)simulator;
 
 @end
 

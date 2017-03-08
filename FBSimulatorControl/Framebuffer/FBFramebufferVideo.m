@@ -17,13 +17,13 @@
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBFramebufferRenderable.h"
+#import "FBVideoEncoderConfiguration.h"
 #import "FBVideoEncoderBuiltIn.h"
 #import "FBVideoEncoderSimulatorKit.h"
 
 @interface FBFramebufferVideo_BuiltIn ()
 
-@property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 @property (nonatomic, strong, readwrite) FBVideoEncoderBuiltIn *encoder;
@@ -34,12 +34,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)videoWithConfiguration:(FBFramebufferConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   return [[self alloc] initWithConfiguration:configuration logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -61,16 +61,20 @@
     [self.logger log:@"Cannot Start Recording, there is already an active encoder"];
     return;
   }
-  // Construct the Path for the Log
-  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.configuration.diagnostic];
-  NSString *path = filePath ?: logBuilder.createPath;
+  // Choose the Path for the Log
+  NSString *path = filePath ?: self.configuration.filePath;
 
   // Create the encoder and start it
   self.encoder = [FBVideoEncoderBuiltIn encoderWithConfiguration:self.configuration videoPath:path logger:self.logger];
   [self.encoder startRecording:group ?: dispatch_group_create()];
 
   // Report the availability of the video
-  [self.eventSink diagnosticAvailable:[[logBuilder updatePath:path] build]];
+  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
+    updatePath:path]
+    updateFileType:self.configuration.fileType]
+    updatePath:path]
+    build];
+  [self.eventSink diagnosticAvailable:diagnostic];
 }
 
 - (void)stopRecording:(dispatch_group_t)group
@@ -101,7 +105,7 @@
 
 @interface FBFramebufferVideo_SimulatorKit ()
 
-@property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
@@ -112,12 +116,12 @@
 
 @implementation FBFramebufferVideo_SimulatorKit
 
-+ (instancetype)videoWithConfiguration:(FBFramebufferConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   return [[self alloc] initWithConfiguration:configuration renderable:renderable logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -129,7 +133,7 @@
   _logger = logger;
   _eventSink = eventSink;
 
-  BOOL pendingStart = (configuration.videoOptions & FBFramebufferVideoOptionsAutorecord) == FBFramebufferVideoOptionsAutorecord;
+  BOOL pendingStart = (configuration.options & FBVideoEncoderOptionsAutorecord) == FBVideoEncoderOptionsAutorecord;
   if (pendingStart) {
     [self startRecordingToFile:nil group:dispatch_group_create()];
   }
@@ -150,17 +154,20 @@
     [self.logger log:@"Cannot Start Recording, there is already an active encoder"];
     return;
   }
-
-  // Construct the Path for the Log
-  FBDiagnosticBuilder *logBuilder = [FBDiagnosticBuilder builderWithDiagnostic:self.configuration.diagnostic];
-  NSString *path = filePath ?: logBuilder.createPath;
+  // Choose the Path for the Log
+  NSString *path = filePath ?: self.configuration.filePath;
 
   // Create and start the encoder.
   self.encoder = [FBVideoEncoderSimulatorKit encoderWithRenderable:self.renderable videoPath:path logger:self.logger];
   [self.encoder startRecording:group ?: dispatch_group_create()];
 
   // Report the availability of the video
-  [self.eventSink diagnosticAvailable:[[logBuilder updatePath:path] build]];
+  FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
+    updatePath:path]
+    updateFileType:self.configuration.fileType]
+    updatePath:path]
+    build];
+  [self.eventSink diagnosticAvailable:diagnostic];
 }
 
 - (void)stopRecording:(dispatch_group_t)group

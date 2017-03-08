@@ -41,6 +41,7 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorError.h"
+#import "FBVideoEncoderConfiguration.h"
 
 /**
  Enumeration to keep track of internal state.
@@ -113,8 +114,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
 
 + (id<FBFramebufferFrameSink>)frameSinkForSimulator:(FBSimulator *)simulator configuration:(FBFramebufferConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger videoOut:(FBFramebufferVideo_BuiltIn **)videoOut imageOut:(FBFramebufferImage_FrameSink **)imageOut;
 {
-  FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.simulatorDiagnostics.video];
-  FBFramebufferVideo_BuiltIn *video = [FBFramebufferVideo_BuiltIn videoWithConfiguration:videoConfiguration logger:logger eventSink:simulator.eventSink];
+  FBFramebufferVideo_BuiltIn *video = [FBFramebufferVideo_BuiltIn videoWithConfiguration:configuration.encoder logger:logger eventSink:simulator.eventSink];
   FBFramebufferImage_FrameSink *image = [FBFramebufferImage_FrameSink imageWithDiagnostic:simulator.simulatorDiagnostics.screenshot eventSink:simulator.eventSink];
   id<FBFramebufferFrameSink> delegate = [FBFramebufferCompositeFrameSink withSinks:@[video, image]];
   if (videoOut) {
@@ -147,10 +147,9 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   dispatch_queue_t queue = self.createClientQueue;
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
 
-  FBFramebufferConfiguration *videoConfiguration = [configuration withDiagnostic:simulator.simulatorDiagnostics.video];
   // If we support the Xcode 8.1 SimDisplayVideoWriter, we can construct and use it here.
   if (FBFramebufferVideo_SimulatorKit.isSupported) {
-    FBFramebufferVideo_SimulatorKit *video = [FBFramebufferVideo_SimulatorKit videoWithConfiguration:videoConfiguration renderable:renderable logger:logger eventSink:simulator.eventSink];
+    FBFramebufferVideo_SimulatorKit *video = [FBFramebufferVideo_SimulatorKit videoWithConfiguration:configuration.encoder renderable:renderable logger:logger eventSink:simulator.eventSink];
     FBFramebufferImage_Surface *image = [FBFramebufferImage_Surface imageWithDiagnostic:simulator.simulatorDiagnostics.screenshot renderable:renderable eventSink:simulator.eventSink];
     return [[FBFramebuffer_SimulatorKit alloc] initWithConfiguration:configuration onQueue:queue video:video image:image renderable:renderable logger:logger];
   }
@@ -158,7 +157,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorFramebufferState) {
   FBFramebufferVideo_BuiltIn *video = nil;
   FBFramebufferImage_FrameSink *image = nil;
   id<FBFramebufferFrameSink> frameSink = [self frameSinkForSimulator:simulator configuration:configuration logger:logger videoOut:&video imageOut:&image];
-  return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:videoConfiguration onQueue:queue video:video image:image frameSink:frameSink renderable:renderable logger:logger];
+  return [[FBFramebuffer_FrameGenerator_IOSurface alloc] initWithConfiguration:configuration onQueue:queue video:video image:image frameSink:frameSink renderable:renderable logger:logger];
 }
 
 - (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration onQueue:(dispatch_queue_t)clientQueue video:(id<FBFramebufferVideo>)video image:(id<FBFramebufferImage>)image logger:(id<FBControlCoreLogger>)logger
