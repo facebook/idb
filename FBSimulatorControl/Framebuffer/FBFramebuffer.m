@@ -153,6 +153,20 @@
   [self.frameGenerator detachSink:frameSink];
 }
 
+- (BOOL)attachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+{
+  return [[FBSimulatorError
+    describeFormat:@"%@ a Surface Consumer is not supported for class %@", NSStringFromSelector(_cmd), NSStringFromClass(self.class)]
+    failBool:error];
+}
+
+- (BOOL)detachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+{
+  return [[FBSimulatorError
+    describeFormat:@"%@ a Surface Consumer is not supported for class %@", NSStringFromSelector(_cmd), NSStringFromClass(self.class)]
+    failBool:error];
+}
+
 #pragma mark Properties
 
 - (id<FBFramebufferImage>)image
@@ -243,6 +257,18 @@
 }
 
 #pragma mark Public
+
+- (BOOL)attachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+{
+  [self.renderable attachConsumer:consumer];
+  return YES;
+}
+
+- (BOOL)detachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+{
+  [self.renderable detachConsumer:consumer];
+  return YES;
+}
 
 #pragma mark Properties
 

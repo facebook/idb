@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 @class SimDeviceFramebufferService;
 @protocol FBFramebufferFrameSink;
+@protocol FBFramebufferRenderableConsumer;
 @protocol FBFramebufferVideo;
 @protocol FBFramebufferImage;
 
@@ -26,8 +27,9 @@ NS_ASSUME_NONNULL_BEGIN
  The Framebuffer is a representation of a Simulator's Screen, exposed as public API.
  By default there are the default 'video' and 'image' components that allow access to a video encoder and image representation respectively.
 
- It is also possible to attach to a Framebuffer using an FBFramebufferRenderableConsumer.
- This allows consumption of an IOSurface backing the Simulator as well as events for damage rectangles.
+ It is also possible to attach to a Framebuffer in two ways:
+ 1) Connecting using an FBFramebufferRenderableConsumer. This allows consumption of an IOSurface backing the Simulator as well as events for damage rectangles.
+ 2) Connecting using a FBFramebufferFrameSink. This will internally generate an FBFramebufferFrame object, suitable for further consumption.
  */
 @interface FBFramebuffer : NSObject <FBJSONSerializable>
 
@@ -78,6 +80,24 @@ NS_ASSUME_NONNULL_BEGIN
  @param frameSink the Frame Sink to detach.
  */
 - (void)detatchFrameSink:(id<FBFramebufferFrameSink>)frameSink;
+
+/**
+ Attaches a Surface Consumer.
+
+ @param consumer the consumer to attach.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)attachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error;
+
+/**
+ Detaches a Surface Consumer.
+
+ @param consumer the consumer to detach.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)detachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error;
 
 #pragma mark Properties
 
