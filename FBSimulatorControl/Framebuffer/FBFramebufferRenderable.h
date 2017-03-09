@@ -45,6 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Container Object for a Renderable IOSurface Client.
+ Adapts IOSurface fetching to a common protocol.
  */
 @interface FBFramebufferRenderable : NSObject
 

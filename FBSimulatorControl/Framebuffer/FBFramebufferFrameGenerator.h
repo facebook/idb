@@ -16,75 +16,105 @@
 #import <FBSimulatorControl/FBFramebufferRenderable.h>
 
 @protocol FBFramebufferFrameSink;
-@class FBFramebuffer;
+@class FBFramebufferFrame;
 @class SimDeviceFramebufferBackingStore;
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- Generates Image Frames Objects and forwards them to the a sink.
+ Generates Frames from a Simulator's Framebuffer.
  This class is abstract, use FBFramebufferBackingStoreFrameGenerator or FBFramebufferIOSurfaceFrameGenerator as appropriate.
- This is provided for compatability with older versions of Xcode. Using IOSurface directly is far more efficient.
+ This is provided for compatability with older versions of Xcode. Using FBFramebufferRenderable directly is far more efficient.
+
+ Frame Sinks can be attached to register interest in recieving Frames.
+ A Frame Generator is completely inert until a consumer is attached in 'attachSink:'.
  */
 @interface FBFramebufferFrameGenerator : NSObject <FBJSONSerializable>
-
-#pragma mark Public Intializers
-
-/**
- Creates and returns a new Generator.
- Must be called on the subclasses of FBFramebufferFrameGenerator.
-
- @param scale the Scale Factor.
- @param sink the reciever of Frames.
- @param queue the Queue the Delegate will be called on.
- @param logger the logger to log to.
- @return a new Framebuffer Frame Generator;
- */
-+ (instancetype)generatorWithScale:(NSDecimalNumber *)scale sink:(id<FBFramebufferFrameSink>)sink queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Public Properties
 
 /**
- The sink owned by the Frame Generator.
- */
-@property (nonatomic, strong, readonly) id<FBFramebufferFrameSink> sink;
+ Attaches a Sink to the Frame Generator.
 
-#pragma mark Public Methods.
+ @param sink the Sink to Attach.
+ */
+- (void)attachSink:(id<FBFramebufferFrameSink>)sink;
 
 /**
- To be called when there are no further frames.
+ Attaches a Sink to the Frame Generator.
+
+ @param sink the Sink to Detatch.
  */
-- (void)frameSteamEndedWithTeardownGroup:(dispatch_group_t)group error:(NSError *)error;
+- (void)detachSink:(id<FBFramebufferFrameSink>)sink;
+
+/**
+ Tears down the Frame Generator, notifying all sinks.
+
+ @param teardownGroup a dispatch_group to add asynchronous tasks to that should be performed in the teardown of the Framebuffer.
+ */
+- (void)teardownWithGroup:(dispatch_group_t)teardownGroup;
 
 @end
 
 /**
- A Frame Generator for the Xcode 7 'SimDeviceFramebufferBackingStore'
+ A Frame Generator for Xcode 7's 'SimDeviceFramebufferService'.
  */
 @interface FBFramebufferBackingStoreFrameGenerator : FBFramebufferFrameGenerator
 
-#pragma mark Public Methods
+#pragma mark Initializers
 
 /**
- To be called when the first frame of a Framebuffer Arrives
+ Creates and returns a new Generator for the Xcode 7 'SimDeviceFramebufferBackingStore'.
 
- @param backingStore the Backing Store that has recieved it's first frame.
+ @param service the Framebuffer Service
+ @param scale the Scale Factor.
+ @param queue the Queue that attached sinks will be notified on.
+ @param logger the logger to log to.
+ @return a new Framebuffer Frame Generator.
  */
-- (void)firstFrameWithBackingStore:(SimDeviceFramebufferBackingStore *)backingStore;
-
-/**
- To be called when the backing store of a Framebuffer updates.
-
- @param backingStore the Backing Store that has been updated.
- */
-- (void)backingStoreDidUpdate:(SimDeviceFramebufferBackingStore *)backingStore;
++ (instancetype)generatorWithFramebufferService:(SimDeviceFramebufferService *)service scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
 /**
- A Frame Generator for the Xcode 8 'IOSurface'.
+ A Frame Generator for the an IOSurface reprentation, available in Xcode 8 or greater.
  */
 @interface FBFramebufferIOSurfaceFrameGenerator : FBFramebufferFrameGenerator <FBFramebufferRenderableConsumer>
+
+/**
+ Creates and returns a new Generator for FBFramebufferRenderable.
+
+ @param renderable the renderable to connect to.
+ @param scale the Scale Factor.
+ @param queue the Queue that attached sinks will be notified on.
+ @param logger the logger to log to.
+ @return a new Framebuffer Frame Generator.
+ */
++ (instancetype)generatorWithRenderable:(FBFramebufferRenderable *)renderable scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
+
+@end
+
+/**
+ A reciever of Frames, connected to a FBFramebufferFrameGenerator.
+ */
+@protocol FBFramebufferFrameSink <NSObject>
+
+/**
+ Called when an Image Frame is available.
+
+ @param frameGenerator the frame generator.
+ @param frame the updated frame.
+ */
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame;
+
+/**
+ Called when the framebuffer is no longer valid, typically when the Simulator shuts down.
+
+ @param frameGenerator the frame generator.
+ @param error an error, if any occured in the teardown of the simulator.
+ @param teardownGroup a dispatch_group to add asynchronous tasks to that should be performed in the teardown of the Framebuffer.
+ */
+- (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didBecomeInvalidWithError:(nullable NSError *)error teardownGroup:(dispatch_group_t)teardownGroup;
 
 @end
 

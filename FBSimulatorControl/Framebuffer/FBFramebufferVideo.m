@@ -19,13 +19,16 @@
 #import "FBSimulatorEventSink.h"
 #import "FBVideoEncoderConfiguration.h"
 #import "FBVideoEncoderBuiltIn.h"
+#import "FBFramebufferFrameGenerator.h"
 #import "FBVideoEncoderSimulatorKit.h"
 
 @interface FBFramebufferVideo_BuiltIn ()
 
 @property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
+
 @property (nonatomic, strong, readwrite) FBVideoEncoderBuiltIn *encoder;
 
 @end
@@ -34,12 +37,12 @@
 
 #pragma mark Initializers
 
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithConfiguration:configuration logger:logger eventSink:eventSink];
+  return [[self alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -47,6 +50,7 @@
   }
 
   _configuration = configuration;
+  _frameGenerator = frameGenerator;
   _logger = logger;
   _eventSink = eventSink;
 
@@ -68,6 +72,9 @@
   self.encoder = [FBVideoEncoderBuiltIn encoderWithConfiguration:self.configuration videoPath:path logger:self.logger];
   [self.encoder startRecording:group ?: dispatch_group_create()];
 
+  // Register the encoder with the Frame Generator
+  [self.frameGenerator attachSink:self.encoder];
+
   // Report the availability of the video
   FBDiagnostic *diagnostic = [[[[[FBDiagnosticBuilder builder]
     updatePath:path]
@@ -84,7 +91,8 @@
     return;
   }
 
-  // Stop the encoder, and release it.
+  // Detach the Encoder, stop, then release it.
+  [self.frameGenerator detachSink:self.encoder];
   [self.encoder stopRecording:group ?: dispatch_group_create()];
   self.encoder = nil;
 }

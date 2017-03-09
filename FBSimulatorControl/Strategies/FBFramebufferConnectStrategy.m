@@ -89,10 +89,8 @@
 - (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
 {
   FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:(SimDeviceIOClient *)simulator.device.io];
-
-  return [[FBFramebuffer
-    framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator]
-    startListeningInBackground];
+  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
+  return framebuffer;
 }
 
 @end
@@ -110,9 +108,8 @@
   if (!mainScreenService) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  return [[FBFramebuffer
-    framebufferWithService:mainScreenService configuration:self.configuration simulator:simulator]
-    startListeningInBackground];
+  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithService:mainScreenService configuration:self.configuration simulator:simulator];
+  return framebuffer;
 }
 
 - (BOOL)meetsPreconditionsForConnectingToSimulator:(FBSimulator *)simulator error:(NSError **)error

@@ -33,26 +33,28 @@
 #import "FBSimulatorError.h"
 #import "FBSurfaceImageGenerator.h"
 #import "FBSimulatorDiagnostics.h"
+#import "FBFramebufferFrameGenerator.h"
 
-@interface FBFramebufferImage_FrameSink ()
-
+@interface FBFramebufferImage_FrameSink () <FBFramebufferFrameSink>
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
 
-@property (nonatomic, strong, readonly) NSString *filePath;
+@property (nonatomic, copy, readonly) NSString *filePath;
+@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
+@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @end
 
 @implementation FBFramebufferImage_FrameSink
 
-+ (instancetype)imageWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithFilePath:filePath eventSink:eventSink writeQueue:queue];
+  return [[self alloc] initWithFilePath:filePath frameGenerator:frameGenerator eventSink:eventSink writeQueue:queue];
 }
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue
+- (instancetype)initWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue
 {
   self = [super init];
   if (!self) {
@@ -60,8 +62,10 @@
   }
 
   _filePath = filePath;
+  _frameGenerator = frameGenerator;
   _eventSink = eventSink;
   _writeQueue = writeQueue;
+  [frameGenerator attachSink:self];
 
   return self;
 }

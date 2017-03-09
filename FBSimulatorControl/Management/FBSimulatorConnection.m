@@ -125,8 +125,8 @@
 {
   NSParameterAssert(NSThread.currentThread.isMainThread);
 
-  // First stop the Framebuffer
-  [self.framebuffer stopListeningWithTeardownGroup:self.teardownGroup];
+  // Tear Down the Framebuffer
+  [self.framebuffer teardownWithGroup:self.teardownGroup];
 
   // Disconnect the HID
   [self.hid disconnect];

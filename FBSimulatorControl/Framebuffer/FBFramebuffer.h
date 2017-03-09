@@ -22,15 +22,16 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBFramebufferImage;
 
 /**
- A container and client for a Simulator's Framebuffer that forwards important events to delegates.
-
- The class itself doesn't perform much behaviour other than to manage the lifecycle.
- Implementors of FBFramebufferFrameSink perform individual behaviours such as recording videos and images.
+ A container and client for a Simulator's Framebuffer.
+ The Framebuffer is a representation of a Simulator's Screen, exposed as public API.
+ By default there are the default 'video' and 'image' components that allow access to a video encoder and image representation respectively.
  */
 @interface FBFramebuffer : NSObject <FBJSONSerializable>
 
+#pragma mark Initializers
+
 /**
- Creates and returns a new FBSimulatorDirectLaunch object for the provided SimDeviceFramebufferService.
+ Creates and returns a FBFramebuffer.
 
  @param framebufferService the SimDeviceFramebufferService to connect to.
  @param configuration the configuration of the Framebuffer.
@@ -40,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)framebufferWithService:(SimDeviceFramebufferService *)framebufferService configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
 /**
- Creates and returns a new FBSimulatorDirectLaunch object for the provided ioClient.
+ Creates and returns a FBFramebuffer.
 
  @param renderable the Renderable to connect to.
  @param configuration the configuration of the Framebuffer.
@@ -49,26 +50,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)framebufferWithRenderable:(FBFramebufferRenderable *)renderable configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
-/**
- Starts listening for Framebuffer events from the SimDeviceFramebufferService on an internal background queue.
- Events are delivered to the Framebuffer's Delegate on this queue.
- Delegates can do work on the queue on which they recieve events, but any heavy work should be dispatched to other queues.
- Must only be called from the main queue.
-
- @return the reciever, for chaining.
- */
-- (instancetype)startListeningInBackground;
+#pragma mark Public Methods
 
 /**
- Stops listening for Framebuffer Events from SimDeviceFramebufferService.
+ Causes the Framebuffer to Tear Down.
  Must only be called from the main queue.
  A dispatch_group is provided to allow for delegates to append any asychronous operations that may need cleanup.
  For example in the case of the Video Recorder, this means completing the writing to file.
 
  @param teardownGroup the dispatch_group to append asynchronous operations to.
- @return the reciever, for chaining.
  */
-- (instancetype)stopListeningWithTeardownGroup:(dispatch_group_t)teardownGroup;
+- (void)teardownWithGroup:(dispatch_group_t)teardownGroup;
+
+#pragma mark Properties
 
 /**
  The FBFramebufferVideo instance owned by the receiver.

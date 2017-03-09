@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBFramebufferFrameSink.h>
+#import <FBSimulatorControl/FBFramebufferFrameGenerator.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

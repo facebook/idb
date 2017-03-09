@@ -9,10 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBFramebufferFrameSink.h>
 #import <FBSimulatorControl/FBFramebufferRenderable.h>
 
 @class FBDiagnostic;
+@class FBFramebufferFrameGenerator;
 @class FBFramebufferRenderable;
 @protocol FBSimulatorEventSink;
 
@@ -54,16 +54,17 @@ NS_ASSUME_NONNULL_BEGIN
  Just as this occurs, this class will report the image to the Event Sink.
  This means that the final frame will be captured.
  */
-@interface FBFramebufferImage_FrameSink : NSObject <FBFramebufferImage, FBFramebufferFrameSink>
+@interface FBFramebufferImage_FrameSink : NSObject <FBFramebufferImage>
 
 /**
  Creates a new FBFramebufferImage instance.
 
  @param filePath the File Path to write to.
+ @param frameGenerator the Frame Generator to register with.
  @param eventSink the Event Sink to report Image Logs to.
  @return a new FBFramebufferImage instance.
  */
-+ (instancetype)imageWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 @end
 
