@@ -991,12 +991,13 @@ struct FBSimulatorBootConfigurationParser {
 struct FBProcessLaunchConfigurationParsers {
   static var appLaunchAndApplicationDescriptorParser: Parser<(FBApplicationLaunchConfiguration, FBApplicationDescriptor?)> {
     return Parser
-      .ofThreeSequenced(
+      .ofFourSequenced(
         FBProcessOutputConfigurationParser.parser,
+        self.waitForDebuggerParser,
         Parser<Any>.ofBundleIDOrApplicationDescriptor,
         self.argumentParser
       )
-      .fmap { (output, bundleIDOrApplicationDescriptor, arguments) in
+      .fmap { (output, waitForDebugger, bundleIDOrApplicationDescriptor, arguments) in
         let (bundleId, appDescriptor) = bundleIDOrApplicationDescriptor
         return (
           FBApplicationLaunchConfiguration(
@@ -1004,7 +1005,7 @@ struct FBProcessLaunchConfigurationParsers {
             bundleName: nil,
             arguments: arguments,
             environment: [:],
-            waitForDebugger: false,
+            waitForDebugger: waitForDebugger,
             output: output),
           appDescriptor
         )
@@ -1033,6 +1034,13 @@ struct FBProcessLaunchConfigurationParsers {
         Parser<NSNull>.ofDashSeparator,
         Parser<String>.ofAny
       )
+  }
+
+  static var waitForDebuggerParser: Parser<Bool> {
+    return Parser<Bool>.alternative([
+      Parser<Bool>.ofString("--wait-for-debugger", true),
+      Parser<Bool>.ofString("-w", true)
+      ]).fallback(false)
   }
 }
 

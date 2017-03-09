@@ -26,6 +26,7 @@
     bundleName:@"BundleName"
     arguments:@[]
     environment:@{}
+    waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
   FBTestLaunchConfiguration *configuration = [[[FBTestLaunchConfiguration
