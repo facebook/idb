@@ -25,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
  A container and client for a Simulator's Framebuffer.
  The Framebuffer is a representation of a Simulator's Screen, exposed as public API.
  By default there are the default 'video' and 'image' components that allow access to a video encoder and image representation respectively.
+
+ It is also possible to attach to a Framebuffer using an FBFramebufferRenderableConsumer.
+ This allows consumption of an IOSurface backing the Simulator as well as events for damage rectangles.
  */
 @interface FBFramebuffer : NSObject <FBJSONSerializable>
 
@@ -61,6 +64,20 @@ NS_ASSUME_NONNULL_BEGIN
  @param teardownGroup the dispatch_group to append asynchronous operations to.
  */
 - (void)teardownWithGroup:(dispatch_group_t)teardownGroup;
+
+/**
+ Attaches a Frame Sink
+
+ @param frameSink the Frame Sink to attach.
+ */
+- (void)attachFrameSink:(id<FBFramebufferFrameSink>)frameSink;
+
+/**
+ Detatches a Frame Sink
+
+ @param frameSink the Frame Sink to detach.
+ */
+- (void)detatchFrameSink:(id<FBFramebufferFrameSink>)frameSink;
 
 #pragma mark Properties
 

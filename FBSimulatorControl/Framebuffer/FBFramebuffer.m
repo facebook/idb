@@ -141,6 +141,18 @@
   [self.frameGenerator teardownWithGroup:teardownGroup];
 }
 
+- (void)attachFrameSink:(id<FBFramebufferFrameSink>)frameSink
+{
+  NSParameterAssert(frameSink);
+  [self.frameGenerator attachSink:frameSink];
+}
+
+- (void)detatchFrameSink:(id<FBFramebufferFrameSink>)frameSink
+{
+  NSParameterAssert(frameSink);
+  [self.frameGenerator detachSink:frameSink];
+}
+
 #pragma mark Properties
 
 - (id<FBFramebufferImage>)image
