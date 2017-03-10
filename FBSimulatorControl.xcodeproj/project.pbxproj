@@ -290,7 +290,6 @@
 		AAB84EA31D0AB18000D6F3ED /* FBiOSTargetQueryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB84EA21D0AB18000D6F3ED /* FBiOSTargetQueryTests.m */; };
 		AAB84EA81D0ACEC200D6F3ED /* FBiOSTargetDouble.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB84EA71D0ACEC200D6F3ED /* FBiOSTargetDouble.m */; };
 		AABBF31F1DAC0F9400E2B6AF /* FBTerminationHandle.h in Headers */ = {isa = PBXBuildFile; fileRef = AABBF31D1DAC0F9400E2B6AF /* FBTerminationHandle.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AABBF3201DAC0F9400E2B6AF /* FBTerminationHandle.m in Sources */ = {isa = PBXBuildFile; fileRef = AABBF31E1DAC0F9400E2B6AF /* FBTerminationHandle.m */; };
 		AABBF3231DAC110000E2B6AF /* FBTaskBuilder.h in Headers */ = {isa = PBXBuildFile; fileRef = AABBF3211DAC110000E2B6AF /* FBTaskBuilder.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AABBF3241DAC110000E2B6AF /* FBTaskBuilder.m in Sources */ = {isa = PBXBuildFile; fileRef = AABBF3221DAC110000E2B6AF /* FBTaskBuilder.m */; };
 		AABBF32B1DAC112900E2B6AF /* FBTaskConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AABBF3291DAC112900E2B6AF /* FBTaskConfiguration.h */; };
@@ -1069,7 +1068,6 @@
 		AAB84EA61D0ACEC200D6F3ED /* FBiOSTargetDouble.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetDouble.h; sourceTree = "<group>"; };
 		AAB84EA71D0ACEC200D6F3ED /* FBiOSTargetDouble.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetDouble.m; sourceTree = "<group>"; };
 		AABBF31D1DAC0F9400E2B6AF /* FBTerminationHandle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTerminationHandle.h; sourceTree = "<group>"; };
-		AABBF31E1DAC0F9400E2B6AF /* FBTerminationHandle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTerminationHandle.m; sourceTree = "<group>"; };
 		AABBF3211DAC110000E2B6AF /* FBTaskBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTaskBuilder.h; sourceTree = "<group>"; };
 		AABBF3221DAC110000E2B6AF /* FBTaskBuilder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTaskBuilder.m; sourceTree = "<group>"; };
 		AABBF3291DAC112900E2B6AF /* FBTaskConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = FBTaskConfiguration.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
@@ -2644,7 +2642,6 @@
 				AAD0DE011CEB064200C28B58 /* FBSubstringUtilities.h */,
 				AAD0DE021CEB064200C28B58 /* FBSubstringUtilities.m */,
 				AABBF31D1DAC0F9400E2B6AF /* FBTerminationHandle.h */,
-				AABBF31E1DAC0F9400E2B6AF /* FBTerminationHandle.m */,
 				EE2EC7AA1CAC3F97009A7BB1 /* FBWeakFramework.h */,
 				EE2EC7AB1CAC3F97009A7BB1 /* FBWeakFramework.m */,
 				EE2EC7AE1CAC5119009A7BB1 /* FBWeakFramework+ApplePrivateFrameworks.h */,
@@ -3420,7 +3417,6 @@
 				AADDED331D6D87D30011EE15 /* FBServiceManagement.m in Sources */,
 				EEBD60671C9062E900298A07 /* FBProcessFetcher+Helpers.m in Sources */,
 				EEBD60811C9062E900298A07 /* FBControlCoreGlobalConfiguration.m in Sources */,
-				AABBF3201DAC0F9400E2B6AF /* FBTerminationHandle.m in Sources */,
 				AA9B24D91D07F9BB00CEE14F /* FBiOSTargetPredicates.m in Sources */,
 				EEBD606E1C9062E900298A07 /* FBTask.m in Sources */,
 				AA89546C1D5C7400006BD815 /* FBControlCoreFrameworkLoader.m in Sources */,

@@ -12,17 +12,8 @@
 /**
  Simple protocol that defines termination of something
  */
-@protocol FBTerminationHandle<NSObject>
+@protocol FBTerminationHandle <NSObject>
 
 - (void)terminate;
-
-@end
-
-@interface FBTerminationHandle : NSObject
-
-/**
- Creates a termination handle that will call the block when `terminate` is called.
- */
-+ (id<FBTerminationHandle>)terminationHandleWithBlock:( void(^)(void) )block;
 
 @end

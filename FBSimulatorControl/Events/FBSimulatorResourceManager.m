@@ -39,8 +39,8 @@
 
 @interface FBSimulatorResourceManager ()
 @property (nonatomic, strong, readonly, nonnull) NSMutableSet<FBTestManager *> *mutableTestManagers;
-@property (nonatomic, strong, readonly, nonnull) NSMutableDictionary<FBProcessInfo *, NSMutableArray<FBTerminationHandle *> *> *processToHandles;
-@property (nonatomic, strong, readonly, nonnull) NSMutableArray<FBTerminationHandle *> *simulatorTerminationHandles;
+@property (nonatomic, strong, readonly, nonnull) NSMutableDictionary<FBProcessInfo *, NSMutableArray<id<FBTerminationHandle>> *> *processToHandles;
+@property (nonatomic, strong, readonly, nonnull) NSMutableArray<id<FBTerminationHandle>> *simulatorTerminationHandles;
 
 @end
 

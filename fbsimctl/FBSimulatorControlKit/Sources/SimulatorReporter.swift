@@ -83,7 +83,7 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
     self.reportValue(EventName.StateChange, EventType.Discrete, state.description as NSString)
   }
 
-  open func terminationHandleAvailable(_ terminationHandle: FBTerminationHandleProtocol) {
+  open func terminationHandleAvailable(_ terminationHandle: FBTerminationHandle) {
 
   }
 }
