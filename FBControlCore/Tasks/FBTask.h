@@ -21,6 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
 extern NSString *const FBTaskErrorDomain;
 
 /**
+ The Termination Handle Type for a Task.
+ */
+extern FBTerminationHandleType const FBTerminationHandleTypeTask;
+
+/**
  Programmatic interface to a Task.
  */
 @interface FBTask : NSObject <FBTerminationHandle>

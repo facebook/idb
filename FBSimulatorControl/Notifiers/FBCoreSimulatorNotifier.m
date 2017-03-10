@@ -17,6 +17,8 @@
 #import "FBSimulator.h"
 #import "FBSimulatorSet.h"
 
+FBTerminationHandleType const FBTerminationHandleTypeCoreSimulatorNotifier = @"CoreSimulatorNotifier";
+
 @interface FBCoreSimulatorNotifier ()
 
 @property (nonatomic, readonly, assign) unsigned long long handle;
@@ -63,6 +65,11 @@
 - (void)terminate
 {
   [self.notifier unregisterNotificationHandler:self.handle error:nil];
+}
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationHandleTypeCoreSimulatorNotifier;
 }
 
 @end

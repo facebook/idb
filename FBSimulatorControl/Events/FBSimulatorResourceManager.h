@@ -14,6 +14,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ The Termination Handle Type for a File Handle.
+ */
+extern FBTerminationHandleType const FBTerminationHandleTypeFileHandle;
+
+/**
  An event sink responsible for cleaning up resources that are allocated for Simulators and their subprocesses.
  */
 @interface FBSimulatorResourceManager : NSObject <FBSimulatorEventSink>

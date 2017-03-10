@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
+
 @interface FBTerminationHandle_NSFileHandle : NSObject <FBTerminationHandle>
 
 @property (nonatomic, strong, readonly, nonnull) NSFileHandle *fileHandle;
@@ -33,6 +35,11 @@
 - (void)terminate
 {
   [self.fileHandle closeFile];
+}
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationHandleFileHandle;
 }
 
 @end

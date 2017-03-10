@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
 
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
+FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @interface FBTaskOutput : NSObject
 
@@ -354,6 +355,11 @@ NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 - (void)terminate
 {
   [self terminateWithErrorMessage:nil];
+}
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationHandleTypeTask;
 }
 
 #pragma mark - FBTask Protocl

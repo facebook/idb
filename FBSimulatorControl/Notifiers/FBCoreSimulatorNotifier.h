@@ -18,6 +18,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ The Termination Handle Type.
+ */
+extern FBTerminationHandleType const FBTerminationHandleTypeCoreSimulatorNotifier;
+
+/**
  A class for wrapping Core Simulator Notifiers in a `FBTerminationHandle`
  */
 @interface FBCoreSimulatorNotifier : NSObject <FBTerminationHandle>

@@ -14,6 +14,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ The Termination Handle type for a Dispatch Source.
+ */
+extern FBTerminationHandleType const FBTerminationHandleTypeDispatchSource;
+
+/**
  A class for wrapping `dispatch_source` with some conveniences.
  */
 @interface FBDispatchSourceNotifier : NSObject <FBTerminationHandle>

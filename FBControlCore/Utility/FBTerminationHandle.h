@@ -10,10 +10,23 @@
 #import <Foundation/Foundation.h>
 
 /**
- Simple protocol that defines termination of something
+ Extensible Diagnostic Name Enumeration.
+ */
+typedef NSString *FBTerminationHandleType NS_EXTENSIBLE_STRING_ENUM;
+
+/**
+ Simple protocol that allows asynchronous operations to be terminated.
  */
 @protocol FBTerminationHandle <NSObject>
 
+/**
+ Terminates the asynchronous operation.
+ */
 - (void)terminate;
+
+/**
+ The Type of Termination Handle.
+ */
+- (FBTerminationHandleType)type;
 
 @end

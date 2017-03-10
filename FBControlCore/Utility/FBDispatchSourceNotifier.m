@@ -9,6 +9,8 @@
 
 #import "FBDispatchSourceNotifier.h"
 
+FBTerminationHandleType const FBTerminationHandleTypeDispatchSource = @"DispatchSource";
+
 @interface FBDispatchSourceNotifier ()
 
 @property (nonatomic, strong) dispatch_source_t dispatchSource;
@@ -53,6 +55,11 @@
     dispatch_source_cancel(self.dispatchSource);
     self.dispatchSource = nil;
   }
+}
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationHandleTypeDispatchSource;
 }
 
 - (void)dealloc
