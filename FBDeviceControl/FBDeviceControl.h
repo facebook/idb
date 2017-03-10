@@ -14,4 +14,5 @@
 #import <FBDeviceControl/FBDeviceSet.h>
 #import <FBDeviceControl/FBDeviceXCTestCommands.h>
 #import <FBDeviceControl/FBDeviceVideo.h>
+#import <FBDeviceControl/FBDeviceVideoFileEncoder.h>
 #import <FBDeviceControl/FBiOSDeviceOperator.h>
