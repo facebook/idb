@@ -367,9 +367,9 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   }
 }
 
-- (void)didRecieveDamageRect:(CGRect)rect
+- (void)didReceiveDamageRect:(CGRect)rect
 {
-  [self.imageGenerator didRecieveDamageRect:rect];
+  [self.imageGenerator didReceiveDamageRect:rect];
 }
 
 - (NSString *)consumerIdentifier

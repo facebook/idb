@@ -135,7 +135,7 @@
   [self.writer didChangeIOSurface:xpcSurface];
 }
 
-- (void)didRecieveDamageRect:(CGRect)rect
+- (void)didReceiveDamageRect:(CGRect)rect
 {
   [self.writer didReceiveDamageRect:rect];
 }

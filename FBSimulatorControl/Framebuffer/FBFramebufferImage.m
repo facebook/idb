@@ -226,9 +226,9 @@
   [self.imageGenerator didChangeIOSurface:surface];
 }
 
-- (void)didRecieveDamageRect:(CGRect)rect
+- (void)didReceiveDamageRect:(CGRect)rect
 {
-  [self.imageGenerator didRecieveDamageRect:rect];
+  [self.imageGenerator didReceiveDamageRect:rect];
 }
 
 #pragma mark FBFramebufferImage Implementation

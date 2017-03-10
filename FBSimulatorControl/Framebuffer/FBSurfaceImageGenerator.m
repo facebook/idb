@@ -101,7 +101,7 @@
   }
 }
 
-- (void)didRecieveDamageRect:(CGRect)rect
+- (void)didReceiveDamageRect:(CGRect)rect
 {
 
 }

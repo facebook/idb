@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  
  @param rect the damage rectangle.
  */
-- (void)didRecieveDamageRect:(CGRect)rect;
+- (void)didReceiveDamageRect:(CGRect)rect;
 
 /**
  The Identifier of the Consumer.

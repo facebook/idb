@@ -64,7 +64,7 @@
 
 - (void)didReceiveDamageRect:(CGRect)rect
 {
-  [self.consumer didRecieveDamageRect:rect];
+  [self.consumer didReceiveDamageRect:rect];
 }
 
 - (NSString *)consumerIdentifier
