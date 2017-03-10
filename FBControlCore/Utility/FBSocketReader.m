@@ -36,7 +36,7 @@
   }
 
   _consumer = consumer;
-  _writer = [FBFileWriter writerWithFileHandle:fileHandle];
+  _writer = [FBFileWriter writerWithFileHandle:fileHandle blocking:NO];
   _reader = [FBFileReader readerWithFileHandle:fileHandle consumer:self];
   _completionQueue = completionQueue;
   _completionHandler = completionHandler;

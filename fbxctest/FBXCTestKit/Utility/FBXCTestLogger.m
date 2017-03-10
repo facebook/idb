@@ -183,7 +183,7 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   NSString *fileName = [NSString stringWithFormat:@"%@.%@", uuid.UUIDString, outputKind];
   NSString *filePath = [self.logDirectory stringByAppendingPathComponent:fileName];
   NSError *error = nil;
-  FBFileWriter *writer = [FBFileWriter writerForFilePath:filePath error:&error];
+  FBFileWriter *writer = [FBFileWriter writerForFilePath:filePath blocking:NO error:&error];
   NSAssert(writer, @"Could not make side-channel writer %@", error);
 
   return [FBCompositeFileConsumer consumerWithConsumers:@[
