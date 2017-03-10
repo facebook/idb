@@ -59,7 +59,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 @interface FBFramebufferIOSurfaceFrameGenerator ()
 
-@property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
+@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
 @property (nonatomic, strong, readonly) dispatch_source_t timerSource;
 
@@ -326,19 +326,19 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 #pragma mark Initializers
 
-+ (instancetype)generatorWithRenderable:(FBFramebufferRenderable *)renderable scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
++ (instancetype)generatorWithRenderable:(FBFramebufferSurface *)surface scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithRenderable:renderable scale:scale queue:queue logger:logger];
+  return [[self alloc] initWithRenderable:surface scale:scale queue:queue logger:logger];
 }
 
-- (instancetype)initWithRenderable:(FBFramebufferRenderable *)renderable scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithRenderable:(FBFramebufferSurface *)surface scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithScale:scale queue:queue logger:logger];
   if (!self) {
     return nil;
   }
 
-  _renderable = renderable;
+  _surface = surface;
 
   // Only rescale if the original scale is different to 1.
   _timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.queue);
@@ -353,7 +353,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   return self;
 }
 
-#pragma mark FBFramebufferRenderableConsumer
+#pragma mark FBFramebufferSurfaceConsumer
 
 - (void)didChangeIOSurface:(nullable IOSurfaceRef)surface
 {
@@ -384,7 +384,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   [super firstConsumerAttached];
 
   // Start Consuming
-  [self.renderable attachConsumer:self];
+  [self.surface attachConsumer:self];
 }
 
 - (void)detatchAllConsumers:(dispatch_group_t)teardownGroup
@@ -392,7 +392,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   [super detatchAllConsumers:teardownGroup];
 
   // Stop Consuming
-  [self.renderable detachConsumer:self];
+  [self.surface detachConsumer:self];
 
   // Tear down the rest
   if (self.timerSource) {

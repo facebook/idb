@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebufferFrameGenerator;
-@class FBFramebufferRenderable;
+@class FBFramebufferSurface;
 @class FBVideoEncoderConfiguration;
 @protocol FBControlCoreLogger;
 @protocol FBSimulatorEventSink;
@@ -66,12 +66,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param configuration the configuration to use for encoding.
- @param renderable the Renderable to Record.
+ @param surface the Renderable to Record.
  @param logger the logger object to log events to, may be nil.
  @param eventSink an event sink to report video output to.
  @return a new FBFramebufferVideo instance.
  */
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
  YES if this class is supported, NO otherwise.

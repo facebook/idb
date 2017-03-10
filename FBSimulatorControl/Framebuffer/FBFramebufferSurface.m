@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBFramebufferRenderable.h"
+#import "FBFramebufferSurface.h"
 
 #import <CoreSimulator/SimDeviceIOClient.h>
 
@@ -29,16 +29,16 @@
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
 
-@interface FBFramebufferRenderable_IOClient_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
+@interface FBFramebufferSurface_IOClient_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
 
-@property (nonatomic, weak, readonly) id<FBFramebufferRenderableConsumer> consumer;
+@property (nonatomic, weak, readonly) id<FBFramebufferSurfaceConsumer> consumer;
 @property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
 
 @end
 
-@implementation FBFramebufferRenderable_IOClient_Forwarder
+@implementation FBFramebufferSurface_IOClient_Forwarder
 
-- (instancetype)initWithConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (instancetype)initWithConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   self = [super init];
   if (!self) {
@@ -74,15 +74,15 @@
 
 @end
 
-@interface FBFramebufferRenderable_SimDeviceFramebufferService_Forwarder : NSObject
+@interface FBFramebufferSurface_SimDeviceFramebufferService_Forwarder : NSObject
 
-@property (nonatomic, weak, readonly) id<FBFramebufferRenderableConsumer> consumer;
+@property (nonatomic, weak, readonly) id<FBFramebufferSurfaceConsumer> consumer;
 
 @end
 
-@implementation FBFramebufferRenderable_SimDeviceFramebufferService_Forwarder
+@implementation FBFramebufferSurface_SimDeviceFramebufferService_Forwarder
 
-- (instancetype)initWithConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (instancetype)initWithConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   self = [super init];
   if (!self) {
@@ -101,67 +101,67 @@
 
 @end
 
-@interface FBFramebufferRenderable_IOClient : FBFramebufferRenderable
+@interface FBFramebufferSurface_IOClient : FBFramebufferSurface
 
 @property (nonatomic, strong, readonly) SimDeviceIOClient *ioClient;
 @property (nonatomic, strong, readonly) id<SimDeviceIOPortInterface> port;
-@property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> renderable;
-@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferRenderableConsumer>, FBFramebufferRenderable_IOClient_Forwarder *> *forwarders;
+@property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
+@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferSurfaceConsumer>, FBFramebufferSurface_IOClient_Forwarder *> *forwarders;
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port renderable:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)renderable;
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface;
 
 @end
 
-@interface FBFramebufferRenderable_FramebufferService : FBFramebufferRenderable
+@interface FBFramebufferSurface_FramebufferService : FBFramebufferSurface
 
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
-@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferRenderableConsumer>, FBFramebufferRenderable_SimDeviceFramebufferService_Forwarder *> *forwarders;
+@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferSurfaceConsumer>, FBFramebufferSurface_SimDeviceFramebufferService_Forwarder *> *forwarders;
 
 - (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue;
 
 @end
 
-@implementation FBFramebufferRenderable
+@implementation FBFramebufferSurface
 
-+ (nullable instancetype)mainScreenRenderableForClient:(SimDeviceIOClient *)ioClient
++ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient
 {
   for (id<SimDeviceIOPortInterface> port in ioClient.ioPorts) {
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
       continue;
     }
-    id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> renderable = (id) [port descriptor];
-    if (![renderable conformsToProtocol:@protocol(SimDisplayRenderable)]) {
+    id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface = (id) [port descriptor];
+    if (![surface conformsToProtocol:@protocol(SimDisplayRenderable)]) {
       continue;
     }
-    if (![renderable conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
+    if (![surface conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
       continue;
     }
-    return [[FBFramebufferRenderable_IOClient alloc] initWithIOClient:ioClient port:port renderable:renderable];
+    return [[FBFramebufferSurface_IOClient alloc] initWithIOClient:ioClient port:port surface:surface];
   }
   return nil;
 }
 
-+ (instancetype)mainScreenRenderableForFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue
++ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue
 {
-  return [[FBFramebufferRenderable_FramebufferService alloc] initWithFramebufferService:framebufferService clientQueue:clientQueue];
+  return [[FBFramebufferSurface_FramebufferService alloc] initWithFramebufferService:framebufferService clientQueue:clientQueue];
 }
 
-- (void)attachConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (void)attachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
 
-- (void)detachConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
 
 @end
 
-@implementation FBFramebufferRenderable_IOClient
+@implementation FBFramebufferSurface_IOClient
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port renderable:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)renderable
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface
 {
   self = [super init];
   if (!self) {
@@ -170,7 +170,7 @@
 
   _ioClient = ioClient;
   _port = port;
-  _renderable = renderable;
+  _surface = surface;
   _forwarders = [NSMapTable
     mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
     valueOptions:NSPointerFunctionsStrongMemory];
@@ -178,19 +178,19 @@
   return self;
 }
 
-- (void)attachConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (void)attachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   // Don't attach the same consumer twice
-  FBFramebufferRenderable_IOClient_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
+  FBFramebufferSurface_IOClient_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
   NSAssert(forwarder == nil, @"Cannot re-attach the same consumer %@", forwarder.consumer);
 
   // Create the forwarder and keep a reference to it.
-  forwarder = [[FBFramebufferRenderable_IOClient_Forwarder alloc] initWithConsumer:consumer];
+  forwarder = [[FBFramebufferSurface_IOClient_Forwarder alloc] initWithConsumer:consumer];
   [self.forwarders setObject:forwarder forKey:consumer];
 
   // The Port *must* be retained, otherwise the delegate will not be notified of changes to the Damage Rect.
   // The Damage rect is essential for video encoding.
-  [forwarder didChangeIOSurface:self.renderable.ioSurface];
+  [forwarder didChangeIOSurface:self.surface.ioSurface];
   // simctl in Xcode 8.2 does not send the damage rect immediately, which means video encoding will start on the first change to the frame.
   // However, we want to immedately start as soon as the surface is available. In this case we say the whole rect is damaged for it to be rendered.
   [forwarder didReceiveDamageRect:self.fullDamageRect];
@@ -198,9 +198,9 @@
   [self.ioClient attachConsumer:forwarder toPort:self.port];
 }
 
-- (void)detachConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
-  FBFramebufferRenderable_IOClient_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
+  FBFramebufferSurface_IOClient_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
   if (!consumer) {
     return;
   }
@@ -209,13 +209,13 @@
 
 - (CGRect)fullDamageRect
 {
-  CGSize size = self.renderable.displaySize;
+  CGSize size = self.surface.displaySize;
   return CGRectMake(0, 0, size.width, size.height);
 }
 
 @end
 
-@implementation FBFramebufferRenderable_FramebufferService
+@implementation FBFramebufferSurface_FramebufferService
 
 - (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue
 {
@@ -233,23 +233,23 @@
   return self;
 }
 
-- (void)attachConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (void)attachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   // Don't attach the same consumer twice
-  FBFramebufferRenderable_SimDeviceFramebufferService_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
+  FBFramebufferSurface_SimDeviceFramebufferService_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
   NSAssert(forwarder == nil, @"Cannot re-attach the same consumer %@", forwarder.consumer);
 
   // Create the forwarder and keep a reference to it.
-  forwarder = [[FBFramebufferRenderable_SimDeviceFramebufferService_Forwarder alloc] initWithConsumer:consumer];
+  forwarder = [[FBFramebufferSurface_SimDeviceFramebufferService_Forwarder alloc] initWithConsumer:consumer];
   [self.forwarders setObject:forwarder forKey:consumer];
 
   // Register for the callbacks.
   [self.framebufferService registerClient:forwarder onQueue:self.clientQueue];
 }
 
-- (void)detachConsumer:(id<FBFramebufferRenderableConsumer>)consumer
+- (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
-  FBFramebufferRenderable_SimDeviceFramebufferService_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
+  FBFramebufferSurface_SimDeviceFramebufferService_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
   if (!consumer) {
     return;
   }

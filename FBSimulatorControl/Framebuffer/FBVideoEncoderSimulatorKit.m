@@ -18,11 +18,11 @@
 #import <SimulatorKit/SimDisplayVideoWriter.h>
 #import <SimulatorKit/SimDisplayVideoWriter+Removed.h>
 
-#import "FBFramebufferRenderable.h"
+#import "FBFramebufferSurface.h"
 
-@interface FBVideoEncoderSimulatorKit () <FBFramebufferRenderableConsumer>
+@interface FBVideoEncoderSimulatorKit () <FBFramebufferSurfaceConsumer>
 
-@property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
+@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readonly) dispatch_queue_t mediaQueue;
 @property (nonatomic, strong, readonly) SimDisplayVideoWriter *writer;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -31,22 +31,22 @@
 
 @implementation FBVideoEncoderSimulatorKit
 
-+ (instancetype)encoderWithRenderable:(FBFramebufferRenderable *)renderable videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)encoderWithRenderable:(FBFramebufferSurface *)surface videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSURL *fileURL = [NSURL fileURLWithPath:videoPath];
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.videoencoder.simulatorkit", DISPATCH_QUEUE_SERIAL);
   logger = [logger onQueue:queue];
-  return [[self alloc] initWithRenderable:renderable fileURL:fileURL mediaQueue:queue logger:logger];
+  return [[self alloc] initWithRenderable:surface fileURL:fileURL mediaQueue:queue logger:logger];
 }
 
-- (instancetype)initWithRenderable:(FBFramebufferRenderable *)renderable fileURL:(NSURL *)fileURL mediaQueue:(dispatch_queue_t)mediaQueue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithRenderable:(FBFramebufferSurface *)surface fileURL:(NSURL *)fileURL mediaQueue:(dispatch_queue_t)mediaQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _renderable = renderable;
+  _surface = surface;
   _logger = logger;
   _mediaQueue = mediaQueue;
   _writer = [self createVideoWriterForURL:fileURL mediaQueue:mediaQueue];
@@ -100,7 +100,7 @@
   [self.logger log:@"Start Writing in Video Writer"];
   [self.writer startWriting];
   [self.logger log:@"Attaching Consumer in Video Writer"];
-  [self.renderable attachConsumer:self];
+  [self.surface attachConsumer:self];
 
   return YES;
 }
@@ -115,7 +115,7 @@
   // Detach the Consumer first, we don't want to send any more Damage Rects.
   // If a Damage Rect send races with finishWriting, a crash can occur.
   [self.logger log:@"Detaching Consumer in Video Writer"];
-  [self.renderable detachConsumer:self];
+  [self.surface detachConsumer:self];
   // Now there are no more incoming rects, tear down the video encoding.
   [self.logger log:@"Finishing Writing in Video Writer"];
   [self.writer finishWriting];

@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFramebufferRenderable;
+@class FBFramebufferSurface;
 @protocol FBControlCoreLogger;
 
 /**
@@ -22,12 +22,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Create a new Encoder with the provided parameters.
 
- @param renderable the renderable to connect to.
+ @param surface the surface to connect to.
  @param videoPath the video path to write to.
  @param logger the optional logger to log to.
  @return a new Encoder Instance.
  */
-+ (instancetype)encoderWithRenderable:(FBFramebufferRenderable *)renderable videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)encoderWithRenderable:(FBFramebufferSurface *)surface videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger;
 
 /**
  YES if this class is supported, NO otherwise.

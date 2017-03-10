@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBSimulatorControl/FBFramebufferRenderable.h>
+#import <FBSimulatorControl/FBFramebufferSurface.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An object-container for an IOSurface, that can generate Images.
  */
-@interface FBSurfaceImageGenerator : NSObject <FBFramebufferRenderableConsumer>
+@interface FBSurfaceImageGenerator : NSObject <FBFramebufferSurfaceConsumer>
 
 /**
  Create and return a new Image Generator.

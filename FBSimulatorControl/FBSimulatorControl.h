@@ -17,7 +17,7 @@
 #import <FBSimulatorControl/FBFramebuffer.h>
 #import <FBSimulatorControl/FBFramebufferConfiguration.h>
 #import <FBSimulatorControl/FBFramebufferImage.h>
-#import <FBSimulatorControl/FBFramebufferRenderable.h>
+#import <FBSimulatorControl/FBFramebufferSurface.h>
 #import <FBSimulatorControl/FBFramebufferVideo.h>
 #import <FBSimulatorControl/FBMutableSimulatorEventSink.h>
 #import <FBSimulatorControl/FBProcessLaunchConfiguration+Simulator.h>

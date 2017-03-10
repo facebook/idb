@@ -29,7 +29,7 @@
 
 #import "FBFramebufferFrame.h"
 #import "FBSimulatorEventSink.h"
-#import "FBFramebufferRenderable.h"
+#import "FBFramebufferSurface.h"
 #import "FBSimulatorError.h"
 #import "FBSurfaceImageGenerator.h"
 #import "FBSimulatorDiagnostics.h"
@@ -180,12 +180,12 @@
 
 @end
 
-@interface FBFramebufferImage_Surface () <FBFramebufferRenderableConsumer>
+@interface FBFramebufferImage_Surface () <FBFramebufferSurfaceConsumer>
 
 @property (nonatomic, copy, readonly) NSString *filePath;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 @property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
-@property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
+@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 
 @property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
 
@@ -193,12 +193,12 @@
 
 @implementation FBFramebufferImage_Surface
 
-+ (instancetype)imageWithFilePath:(NSString *)filePath renderable:(FBFramebufferRenderable *)renderable eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithFilePath:filePath eventSink:eventSink renderable:renderable];
+  return [[self alloc] initWithFilePath:filePath eventSink:eventSink surface:surface];
 }
 
-- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink renderable:(FBFramebufferRenderable *)renderable
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink surface:(FBFramebufferSurface *)surface
 {
   self = [super init];
   if (!self) {
@@ -207,14 +207,14 @@
 
   _filePath = filePath;
   _eventSink = eventSink;
-  _renderable = renderable;
+  _surface = surface;
   _consumerUUID = [NSUUID UUID];
   _imageGenerator = [FBSurfaceImageGenerator imageGeneratorWithScale:NSDecimalNumber.one logger:nil];
 
   return self;
 }
 
-#pragma mark FBFramebufferRenderableConsumer
+#pragma mark FBFramebufferSurfaceConsumer
 
 - (NSString *)consumerIdentifier
 {
@@ -239,7 +239,7 @@
   if (image) {
     return image;
   }
-  [self.renderable attachConsumer:self];
+  [self.surface attachConsumer:self];
   return self.imageGenerator.image;
 }
 

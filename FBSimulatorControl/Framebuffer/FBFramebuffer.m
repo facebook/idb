@@ -33,7 +33,7 @@
 #import "FBFramebufferFrameGenerator.h"
 #import "FBFramebufferImage.h"
 #import "FBFramebufferVideo.h"
-#import "FBFramebufferRenderable.h"
+#import "FBFramebufferSurface.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorDiagnostics.h"
@@ -60,9 +60,9 @@
 @interface FBFramebuffer_IOSurface : FBFramebuffer
 
 @property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *ioSurfaceGenerator;
-@property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
+@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -89,33 +89,33 @@
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
 
   if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-    FBFramebufferRenderable *renderable = [FBFramebufferRenderable
-      mainScreenRenderableForFramebufferService:framebufferService
+    FBFramebufferSurface *surface = [FBFramebufferSurface
+      mainScreenSurfaceForFramebufferService:framebufferService
       clientQueue:queue];
     FBFramebufferFrameGenerator *frameGenerator = [FBFramebufferIOSurfaceFrameGenerator
-      generatorWithRenderable:renderable
+      generatorWithRenderable:surface
       scale:configuration.scaleValue
       queue:queue
       logger:logger];
 
-    return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator renderable:renderable logger:logger];
+    return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
   }
   FBFramebufferBackingStoreFrameGenerator *frameGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebufferService:framebufferService scale:configuration.scaleValue queue:queue logger:logger];
   return [[FBFramebuffer_FramebufferService alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator logger:logger];
 }
 
-+ (instancetype)framebufferWithRenderable:(FBFramebufferRenderable *)renderable configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
++ (instancetype)framebufferWithRenderable:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   dispatch_queue_t queue = self.createClientQueue;
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
 
   // Otherwise we have to use the built-in frame generation.
   FBFramebufferFrameGenerator *frameGenerator = [FBFramebufferIOSurfaceFrameGenerator
-    generatorWithRenderable:renderable
+    generatorWithRenderable:surface
     scale:configuration.scaleValue
     queue:queue
     logger:logger];
-  return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator renderable:renderable logger:logger];
+  return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
 }
 
 - (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger
@@ -153,14 +153,14 @@
   [self.frameGenerator detachSink:frameSink];
 }
 
-- (BOOL)attachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+- (BOOL)attachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
 {
   return [[FBSimulatorError
     describeFormat:@"%@ a Surface Consumer is not supported for class %@", NSStringFromSelector(_cmd), NSStringFromClass(self.class)]
     failBool:error];
 }
 
-- (BOOL)detachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+- (BOOL)detachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
 {
   return [[FBSimulatorError
     describeFormat:@"%@ a Surface Consumer is not supported for class %@", NSStringFromSelector(_cmd), NSStringFromClass(self.class)]
@@ -244,29 +244,29 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
   self = [super initWithConfiguration:configuration eventSink:eventSink frameGenerator:frameGenerator logger:logger];
   if (!self) {
     return nil;
   }
 
-  _renderable = renderable;
+  _surface = surface;
 
   return self;
 }
 
 #pragma mark Public
 
-- (BOOL)attachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+- (BOOL)attachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
 {
-  [self.renderable attachConsumer:consumer];
+  [self.surface attachConsumer:consumer];
   return YES;
 }
 
-- (BOOL)detachSurfaceConsumer:(id<FBFramebufferRenderableConsumer>)consumer error:(NSError **)error
+- (BOOL)detachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
 {
-  [self.renderable detachConsumer:consumer];
+  [self.surface detachConsumer:consumer];
   return YES;
 }
 
@@ -274,13 +274,13 @@
 
 - (id<FBFramebufferImage>)createImage
 {
-  return [FBFramebufferImage_Surface imageWithFilePath:self.configuration.imagePath renderable:self.renderable eventSink:self.eventSink];
+  return [FBFramebufferImage_Surface imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
 }
 
 - (id<FBFramebufferVideo>)createVideo
 {
   return FBFramebufferVideo_SimulatorKit.isSupported
-    ? [FBFramebufferVideo_SimulatorKit videoWithConfiguration:self.configuration.encoder renderable:self.renderable logger:self.logger eventSink:self.eventSink]
+    ? [FBFramebufferVideo_SimulatorKit videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger eventSink:self.eventSink]
     : [FBFramebufferVideo_BuiltIn videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
 }
 

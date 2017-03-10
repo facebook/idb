@@ -20,7 +20,7 @@
 
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
-#import "FBFramebufferRenderable.h"
+#import "FBFramebufferSurface.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -88,7 +88,7 @@
 
 - (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
 {
-  FBFramebufferRenderable *renderable = [FBFramebufferRenderable mainScreenRenderableForClient:(SimDeviceIOClient *)simulator.device.io];
+  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io];
   FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
   return framebuffer;
 }

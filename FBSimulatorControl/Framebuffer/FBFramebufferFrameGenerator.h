@@ -13,7 +13,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <FBSimulatorControl/FBFramebufferRenderable.h>
+#import <FBSimulatorControl/FBFramebufferSurface.h>
 
 @protocol FBFramebufferFrameSink;
 @class FBFramebufferFrame;
@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Generates Frames from a Simulator's Framebuffer.
  This class is abstract, use FBFramebufferBackingStoreFrameGenerator or FBFramebufferIOSurfaceFrameGenerator as appropriate.
- This is provided for compatability with older versions of Xcode. Using FBFramebufferRenderable directly is far more efficient.
+ This is provided for compatability with older versions of Xcode. Using FBFramebufferSurface directly is far more efficient.
 
  Frame Sinks can be attached to register interest in recieving Frames.
  A Frame Generator is completely inert until a consumer is attached in 'attachSink:'.
@@ -79,18 +79,18 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Frame Generator for the an IOSurface reprentation, available in Xcode 8 or greater.
  */
-@interface FBFramebufferIOSurfaceFrameGenerator : FBFramebufferFrameGenerator <FBFramebufferRenderableConsumer>
+@interface FBFramebufferIOSurfaceFrameGenerator : FBFramebufferFrameGenerator <FBFramebufferSurfaceConsumer>
 
 /**
- Creates and returns a new Generator for FBFramebufferRenderable.
+ Creates and returns a new Generator for FBFramebufferSurface.
 
- @param renderable the renderable to connect to.
+ @param surface the surface to connect to.
  @param scale the Scale Factor.
  @param queue the Queue that attached sinks will be notified on.
  @param logger the logger to log to.
  @return a new Framebuffer Frame Generator.
  */
-+ (instancetype)generatorWithRenderable:(FBFramebufferRenderable *)renderable scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)generatorWithRenderable:(FBFramebufferSurface *)surface scale:(NSDecimalNumber *)scale queue:(dispatch_queue_t)queue logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

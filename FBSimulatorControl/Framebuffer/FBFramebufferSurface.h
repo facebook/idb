@@ -18,9 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol SimDeviceIOPortConsumer;
 
 /**
- A Consumer of a Renderable.
+ A Consumer of a Surface.
  */
-@protocol FBFramebufferRenderableConsumer <NSObject>
+@protocol FBFramebufferSurfaceConsumer <NSObject>
 
 /**
  Called when an IOSurface becomes available or invalid
@@ -44,42 +44,40 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- A Container Object for a Renderable IOSurface Client.
- Adapts IOSurface fetching to a common protocol.
+ Provides Surfaces to interested consumers, wrapping the underlying implementation.
  */
-@interface FBFramebufferRenderable : NSObject
+@interface FBFramebufferSurface : NSObject
 
 /**
- Obtains the Renderable from the Client.
+ Obtains an IOSurface from the SimDeviceIOClient.
 
  @param ioClient the IOClient to attach to.
- @prarm delegate the delegate to attach.
- @return a Port Interface, should be retained by the reciever.
+ @return a new FBFramebufferSurface.
  */
-+ (nullable instancetype)mainScreenRenderableForClient:(SimDeviceIOClient *)ioClient;
++ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient;
 
 /**
- Obtains an IOSurface froma FramebufferService.
+ Obtains an IOSurface from the SimDeviceFramebufferService.
 
  @param framebufferService the Framebuffer Service to obtain from.
  @param clientQueue the queue to schedule work on.
- @return a Service Client.
+ @return a new FBFramebufferSurface.
  */
-+ (instancetype)mainScreenRenderableForFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue;
++ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue;
 
 /**
- Attaches a Consumer with the Renderable
+ Attaches a Consumer.
 
  @param consumer the consumer to attach.
  */
-- (void)attachConsumer:(id<FBFramebufferRenderableConsumer>)consumer;
+- (void)attachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer;
 
 /**
- Detaches a Consumer with the Renderable
+ Detaches a Consumer.
 
  @param consumer the consumer to attach.
  */
-- (void)detachConsumer:(id<FBFramebufferRenderableConsumer>)consumer;
+- (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer;
 
 @end
 

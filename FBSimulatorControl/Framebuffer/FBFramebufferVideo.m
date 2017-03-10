@@ -114,7 +114,7 @@
 @interface FBFramebufferVideo_SimulatorKit ()
 
 @property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBFramebufferRenderable *renderable;
+@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
@@ -124,12 +124,12 @@
 
 @implementation FBFramebufferVideo_SimulatorKit
 
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithConfiguration:configuration renderable:renderable logger:logger eventSink:eventSink];
+  return [[self alloc] initWithConfiguration:configuration surface:surface logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration renderable:(FBFramebufferRenderable *)renderable logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -137,7 +137,7 @@
   }
 
   _configuration = configuration;
-  _renderable = renderable;
+  _surface = surface;
   _logger = logger;
   _eventSink = eventSink;
 
@@ -166,7 +166,7 @@
   NSString *path = filePath ?: self.configuration.filePath;
 
   // Create and start the encoder.
-  self.encoder = [FBVideoEncoderSimulatorKit encoderWithRenderable:self.renderable videoPath:path logger:self.logger];
+  self.encoder = [FBVideoEncoderSimulatorKit encoderWithRenderable:self.surface videoPath:path logger:self.logger];
   [self.encoder startRecording:group ?: dispatch_group_create()];
 
   // Report the availability of the video
