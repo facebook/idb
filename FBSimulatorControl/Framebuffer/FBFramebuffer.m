@@ -147,7 +147,7 @@
   [self.frameGenerator attachSink:frameSink];
 }
 
-- (void)detatchFrameSink:(id<FBFramebufferFrameSink>)frameSink
+- (void)detachFrameSink:(id<FBFramebufferFrameSink>)frameSink
 {
   NSParameterAssert(frameSink);
   [self.frameGenerator detachSink:frameSink];

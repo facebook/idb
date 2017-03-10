@@ -138,7 +138,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
     if (self.state == FBFramebufferServiceStateTerminated) {
       return;
     }
-    [self detatchAllConsumers:teardownGroup];
+    [self detachAllConsumers:teardownGroup];
   });
 }
 
@@ -149,7 +149,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   self.state = FBFramebufferServiceStateStarting;
 }
 
-- (void)detatchAllConsumers:(dispatch_group_t)teardownGroup
+- (void)detachAllConsumers:(dispatch_group_t)teardownGroup
 {
   if (self.timebase) {
     CFRelease(self.timebase);
@@ -308,7 +308,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   [self.service resume];
 }
 
-- (void)detatchAllConsumers:(dispatch_group_t)teardownGroup
+- (void)detachAllConsumers:(dispatch_group_t)teardownGroup
 {
   [self.service suspend];
 }
@@ -387,9 +387,9 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   [self.surface attachConsumer:self];
 }
 
-- (void)detatchAllConsumers:(dispatch_group_t)teardownGroup
+- (void)detachAllConsumers:(dispatch_group_t)teardownGroup
 {
-  [super detatchAllConsumers:teardownGroup];
+  [super detachAllConsumers:teardownGroup];
 
   // Stop Consuming
   [self.surface detachConsumer:self];

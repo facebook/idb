@@ -75,11 +75,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)attachFrameSink:(id<FBFramebufferFrameSink>)frameSink;
 
 /**
- Detatches a Frame Sink
+ Detaches a Frame Sink
 
  @param frameSink the Frame Sink to detach.
  */
-- (void)detatchFrameSink:(id<FBFramebufferFrameSink>)frameSink;
+- (void)detachFrameSink:(id<FBFramebufferFrameSink>)frameSink;
 
 /**
  Attaches a Surface Consumer.

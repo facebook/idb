@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Attaches a Sink to the Frame Generator.
 
- @param sink the Sink to Detatch.
+ @param sink the Sink to detach.
  */
 - (void)detachSink:(id<FBFramebufferFrameSink>)sink;
 
