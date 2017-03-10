@@ -204,7 +204,7 @@ static NSString *KeyImagePath = @"image_path";
 - (instancetype)inSimulator:(FBSimulator *)simulator
 {
   FBDiagnosticBuilder *imageBuilder = [FBDiagnosticBuilder builderWithDiagnostic:simulator.simulatorDiagnostics.screenshot];
-  FBDiagnosticBuilder *videoBuilder = [FBDiagnosticBuilder builderWithDiagnostic:simulator.simulatorDiagnostics.screenshot];
+  FBDiagnosticBuilder *videoBuilder = [FBDiagnosticBuilder builderWithDiagnostic:simulator.simulatorDiagnostics.video];
   FBVideoEncoderConfiguration *encoder = [self.encoder withFilePath:videoBuilder.createPath];
   return [[self withEncoder:encoder] withImagePath:imageBuilder.createPath];
 }

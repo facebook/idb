@@ -218,7 +218,7 @@
 
 - (id<FBFramebufferVideo>)createVideo
 {
-  return [FBFramebufferVideo_BuiltIn videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
+  return [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
 }
 
 #pragma mark NSObject
@@ -279,9 +279,9 @@
 
 - (id<FBFramebufferVideo>)createVideo
 {
-  return FBFramebufferVideo_SimulatorKit.isSupported
-    ? [FBFramebufferVideo_SimulatorKit videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger eventSink:self.eventSink]
-    : [FBFramebufferVideo_BuiltIn videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
+  return FBFramebufferVideo.surfaceSupported
+    ? [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger eventSink:self.eventSink]
+    : [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
 }
 
 @end

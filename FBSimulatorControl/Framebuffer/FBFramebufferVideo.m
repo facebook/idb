@@ -22,27 +22,47 @@
 #import "FBFramebufferFrameGenerator.h"
 #import "FBVideoEncoderSimulatorKit.h"
 
-@interface FBFramebufferVideo_BuiltIn ()
+@interface FBFramebufferVideo ()
 
 @property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
-@property (nonatomic, strong, readwrite) FBVideoEncoderBuiltIn *encoder;
+@property (nonatomic, strong, readwrite) id encoder;
 
 @end
 
-@implementation FBFramebufferVideo_BuiltIn
+@interface FBFramebufferVideo_BuiltIn : FBFramebufferVideo
+
+@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
+
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+
+@end
+
+@interface FBFramebufferVideo_SimulatorKit : FBFramebufferVideo
+
+@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
+
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+
+@end
+
+@implementation FBFramebufferVideo
 
 #pragma mark Initializers
 
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[self alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger eventSink:eventSink];
+  return [[FBFramebufferVideo_BuiltIn alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger eventSink:eventSink];
 }
 
-- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
++ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+{
+  return [[FBFramebufferVideo_SimulatorKit alloc] initWithConfiguration:configuration surface:surface logger:logger eventSink:eventSink];
+}
+
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -50,9 +70,43 @@
   }
 
   _configuration = configuration;
-  _frameGenerator = frameGenerator;
   _logger = logger;
   _eventSink = eventSink;
+
+  return self;
+}
+
+#pragma mark Public Methods
+
+- (void)startRecordingToFile:(NSString *)filePath group:(dispatch_group_t)group;
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (void)stopRecording:(dispatch_group_t)group
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
++ (BOOL)surfaceSupported
+{
+  return FBVideoEncoderSimulatorKit.isSupported;
+}
+
+@end
+
+@implementation FBFramebufferVideo_BuiltIn
+
+#pragma mark Initializers
+
+- (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
+{
+  self = [super initWithConfiguration:configuration logger:logger eventSink:eventSink];
+  if (!self) {
+    return nil;
+  }
+
+  _frameGenerator = frameGenerator;
 
   return self;
 }
@@ -111,35 +165,17 @@
 
 @end
 
-@interface FBFramebufferVideo_SimulatorKit ()
-
-@property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
-
-@property (nonatomic, strong, readwrite) FBVideoEncoderSimulatorKit *encoder;
-
-@end
-
 @implementation FBFramebufferVideo_SimulatorKit
 
-+ (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
-{
-  return [[self alloc] initWithConfiguration:configuration surface:surface logger:logger eventSink:eventSink];
-}
 
 - (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  self = [super init];
+  self = [super initWithConfiguration:configuration logger:logger eventSink:eventSink];
   if (!self) {
     return nil;
   }
 
-  _configuration = configuration;
   _surface = surface;
-  _logger = logger;
-  _eventSink = eventSink;
 
   BOOL pendingStart = (configuration.options & FBVideoEncoderOptionsAutorecord) == FBVideoEncoderOptionsAutorecord;
   if (pendingStart) {
@@ -150,11 +186,6 @@
 }
 
 #pragma mark Public
-
-+ (BOOL)isSupported
-{
-  return FBVideoEncoderSimulatorKit.isSupported;
-}
 
 - (void)startRecordingToFile:(NSString *)filePath group:(dispatch_group_t)group;
 {

@@ -40,12 +40,12 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- An implementation of FBFramebufferVideo, using FBVideoEncoderBuiltIn.
+ Implementations of FBFramebufferVideo.
  */
-@interface FBFramebufferVideo_BuiltIn : NSObject <FBFramebufferVideo>
+@interface FBFramebufferVideo : NSObject <FBFramebufferVideo>
 
 /**
- The Designated Initializer.
+ The Initializer for a Frame Generator.
 
  @param configuration the configuration to use for encoding.
  @param frameGenerator the Frame Generator to register with.
@@ -54,13 +54,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBFramebufferVideo instance.
  */
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
-
-@end
-
-/**
- An implementation of FBFramebufferVideo, using FBVideoEncoderSimulatorKit
- */
-@interface FBFramebufferVideo_SimulatorKit : NSObject <FBFramebufferVideo>
 
 /**
  The Designated Initializer.
@@ -74,9 +67,9 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
 /**
- YES if this class is supported, NO otherwise.
+ YES if Surface Based Supporting is available, NO otherwise.
  */
-+ (BOOL)isSupported;
++ (BOOL)surfaceSupported;
 
 @end
 
