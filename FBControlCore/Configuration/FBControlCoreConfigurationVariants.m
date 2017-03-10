@@ -1139,6 +1139,19 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 @end
 
+@implementation FBControlCoreConfiguration_OS_Generic
+
+@synthesize name=_name;
+
+- (id)initWithOSName:(NSString *)osName
+{
+  self = [super init];
+  _name = osName;
+  return self;
+}
+
+@end
+
 @implementation FBControlCoreConfigurationVariants
 
 #pragma mark Lookup Tables

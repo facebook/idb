@@ -313,6 +313,10 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 @interface FBControlCoreConfiguration_watchOS_3_2 : FBControlCoreConfiguration_watchOS_Base
 @end
 
+@interface FBControlCoreConfiguration_OS_Generic : FBControlCoreConfiguration_OS_Base
+- (id)initWithOSName:(NSString *)osName;
+@end
+
 /**
  Mappings of Variants.
  */
