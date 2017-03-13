@@ -18,31 +18,11 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBSimulatorEventSink;
 
 /**
- A Framebuffer Component that encodes video and writes to a file.
+ A Framebuffer Component that encodes video and writes it to a file.
  */
-@protocol FBFramebufferVideo <NSObject>
+@interface FBFramebufferVideo : NSObject
 
-/**
- Starts Recording Video.
-
- @param filePath the (optional) file path to record to. If nil is provided, a default path will be used.
- @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
- */
-- (void)startRecordingToFile:(nullable NSString *)filePath group:(dispatch_group_t)group;
-
-/**
- Stops Recording Video.
-
- @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
- */
-- (void)stopRecording:(dispatch_group_t)group;
-
-@end
-
-/**
- Implementations of FBFramebufferVideo.
- */
-@interface FBFramebufferVideo : NSObject <FBFramebufferVideo>
+#pragma mark Initializers
 
 /**
  The Initializer for a Frame Generator.
@@ -65,6 +45,23 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBFramebufferVideo instance.
  */
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
+
+#pragma mark Public Methods
+
+/**
+ Starts Recording Video.
+
+ @param filePath the (optional) file path to record to. If nil is provided, a default path will be used.
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
+ */
+- (void)startRecordingToFile:(nullable NSString *)filePath group:(dispatch_group_t)group;
+
+/**
+ Stops Recording Video.
+
+ @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
+ */
+- (void)stopRecording:(dispatch_group_t)group;
 
 /**
  YES if Surface Based Supporting is available, NO otherwise.

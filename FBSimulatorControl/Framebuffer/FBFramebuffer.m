@@ -177,7 +177,7 @@
   return _image;
 }
 
-- (id<FBFramebufferVideo>)video
+- (FBFramebufferVideo *)video
 {
   if (!_video) {
     _video = [self createVideo];
@@ -191,7 +191,7 @@
   return nil;
 }
 
-- (id<FBFramebufferVideo>)createVideo
+- (FBFramebufferVideo *)createVideo
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -215,7 +215,7 @@
   return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
 }
 
-- (id<FBFramebufferVideo>)createVideo
+- (FBFramebufferVideo *)createVideo
 {
   return [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
 }
@@ -269,7 +269,7 @@
   return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
 }
 
-- (id<FBFramebufferVideo>)createVideo
+- (FBFramebufferVideo *)createVideo
 {
   return FBFramebufferVideo.surfaceSupported
     ? [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger eventSink:self.eventSink]
