@@ -201,8 +201,7 @@
 
 - (id)jsonSerializableRepresentation
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  return self.frameGenerator.jsonSerializableRepresentation;
 }
 
 @end
@@ -229,13 +228,6 @@
     @"Framebuffer %@",
     self.frameGenerator
   ];
-}
-
-#pragma mark FBJSONSerializable Implementation
-
-- (id)jsonSerializableRepresentation
-{
-  return self.frameGenerator.jsonSerializableRepresentation;
 }
 
 @end
