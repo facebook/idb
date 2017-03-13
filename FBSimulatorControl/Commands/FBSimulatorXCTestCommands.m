@@ -11,9 +11,11 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBSimulatorTestRunStrategy.h"
-#import "FBSimulatorError.h"
+#import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBSimulatorError.h"
+#import "FBSimulatorResourceManager.h"
+#import "FBSimulatorTestRunStrategy.h"
 
 @interface FBSimulatorXCTestCommands ()
 
@@ -58,11 +60,11 @@
 
 - (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  FBTestManagerResult *result = [[FBSimulatorTestRunStrategy
-    strategyWithSimulator:self.simulator configuration:nil workingDirectory:nil reporter:nil]
-    waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:timeout];
-  if (!result.didEndSuccessfully) {
-    return [FBSimulatorError failBoolWithError:result.error errorOut:error];
+  for (FBTestManager *testManager in self.simulator.resourceSink.testManagers.copy) {
+    FBTestManagerResult *result = [testManager waitUntilTestingHasFinishedWithTimeout:timeout];
+    if (!result.didEndSuccessfully) {
+      return NO;
+    }
   }
   return YES;
 }

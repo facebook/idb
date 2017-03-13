@@ -12,13 +12,14 @@
 @class FBSimulator;
 @class FBSimulator;
 @class FBTestLaunchConfiguration;
+@class FBTestManager;
 @class FBTestManagerResult;
 @protocol FBTestManagerTestReporter;
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- A Strategy for Running Tests on a booted Simulator.
+ A Strategy that encompasses a Single Test Run on a Simulator.
  */
 @interface FBSimulatorTestRunStrategy : NSObject
 
@@ -31,23 +32,15 @@ NS_ASSUME_NONNULL_BEGIN
  @param workingDirectory a directory which can be used for storage of temporary files.
  @return a new Test Run Strategy instance.
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(nullable FBTestLaunchConfiguration *)configuration  workingDirectory:(nullable NSString *)workingDirectory reporter:(nullable id<FBTestManagerTestReporter>)reporter;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBTestLaunchConfiguration *)configuration workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter;
 
 /**
  Starts the Connection to the Test Host.
 
  @param error an error out for any error that occurs.
- @return the reciver for chaining. Will be nil if an error occurs.s
+ @return the Test Manager that has connected if successful, nil otherwise.
  */
-- (nullable instancetype)connectAndStartWithError:(NSError **)error;
-
-/**
- Starts the Connection to the Test Host.
-
- @param timeout a Timeout to wait for the the tests to complete in.
- @return a Test Manager Result.
- */
-- (FBTestManagerResult *)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout;
+- (nullable FBTestManager *)connectAndStartWithError:(NSError **)error;
 
 @end
 
