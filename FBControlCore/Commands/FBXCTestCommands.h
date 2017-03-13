@@ -38,9 +38,9 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
 
  @param testLaunchConfiguration the configuration used for the test launch.
  @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ @return a Test Operation if successful, nil otherwise.
  */
-- (BOOL)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error;
+- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error;
 
 /**
  Calling -[FBXCTestCommands startTestWithLaunchConfiguration:error:] will start the execution of the test run.

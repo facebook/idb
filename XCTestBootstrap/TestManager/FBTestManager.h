@@ -9,20 +9,20 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBTestManagerContext;
+#import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
+@class FBTestManagerContext;
+@class FBTestManagerResult;
 @protocol FBiOSTarget;
 @protocol FBControlCoreLogger;
 @protocol FBTestManagerTestReporter;
 
-@class FBTestManagerResult;
-
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  Manages a connection with the 'testmanagerd' daemon.
  */
-@interface FBTestManager : NSObject
+@interface FBTestManager : NSObject <FBXCTestOperation>
 
 /**
  Creates and returns a test manager with given paramenters.

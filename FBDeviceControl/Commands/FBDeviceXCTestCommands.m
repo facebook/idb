@@ -7,18 +7,52 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBDeviceControl/FBDeviceControl.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import "FBDevice.h"
+#import "FBDeviceXCTestCommands.h"
 #import "FBDeviceControlError.h"
 
 static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_DEVICE_IDENTIFIER";
+
+@interface FBDeviceXCTestCommands_TestOperation : NSObject <FBXCTestOperation>
+
+@property (nonatomic, strong, nullable, readonly) FBTask *task;
+
+@end
+
+@implementation FBDeviceXCTestCommands_TestOperation
+
+- (instancetype)initWithTask:(FBTask *)task
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _task = task;
+
+  return self;
+}
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationHandleTypeTestOperation;
+}
+
+- (void)terminate
+{
+  [self.task terminate];
+  _task = nil;
+}
+
+@end
 
 @interface FBDeviceXCTestCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, strong, nullable, readonly) FBTask *task;
+@property (nonatomic, strong, nullable, readonly) FBDeviceXCTestCommands_TestOperation *operation;
 
 @end
 
@@ -55,55 +89,56 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   };
 }
 
-- (BOOL)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
+- (id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
 {
   // Return early and fail if there is already a test run for the device.
   // There should only ever be one test run per-device.
-  if (self.task) {
+  if (self.operation) {
     return [[FBDeviceControlError
       describeFormat:@"Cannot Start Test Manager with Configuration %@ as it is already running", testLaunchConfiguration]
-      failBool:error];
+      fail:error];
   }
   // Terminate the reparented xcodebuild invocations.
   NSError *innerError = nil;
   if (![FBDeviceXCTestCommands terminateReparentedXcodeBuildProcessesForDevice:self.device processFetcher:self.processFetcher error:&innerError]) {
-    return [FBDeviceControlError failBoolWithError:innerError errorOut:error];
+    return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
 
   // Create the .xctestrun file
   NSString *filePath = [FBDeviceXCTestCommands createXCTestRunFileFromConfiguration:testLaunchConfiguration forDevice:self.device error:&innerError];
   if (!filePath) {
-    return [FBDeviceControlError failBoolWithError:innerError errorOut:error];
+    return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
 
   // Find the path to xcodebuild
   NSString *xcodeBuildPath = [FBDeviceXCTestCommands xcodeBuildPathWithError:&innerError];
   if (!xcodeBuildPath) {
-    return [FBDeviceControlError failBoolWithError:innerError errorOut:error];
+    return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
 
-  // Create the Task and store it.
-  _task = [FBDeviceXCTestCommands createTask:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath device:self.device];
-  [self.task startAsynchronously];
+  // Create the Task, wrap it and store it
+  FBTask *task = [FBDeviceXCTestCommands createTask:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath device:self.device];
+  [task startAsynchronously];
+  _operation = [[FBDeviceXCTestCommands_TestOperation alloc] initWithTask:task];
 
-  return YES;
+  return _operation;
 }
 
 - (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  if (!self.task) {
+  if (!self.operation) {
     return YES;
   }
   NSError *innerError = nil;
-  if (![self.task waitForCompletionWithTimeout:timeout error:&innerError]) {
-    [self.task terminate];
-    _task = nil;
+  if (![self.operation.task waitForCompletionWithTimeout:timeout error:&innerError]) {
+    [self.operation terminate];
+    _operation = nil;
     return [[[FBDeviceControlError
       describe:@"Failed waiting for timeout"]
       causedBy:innerError]
       failBool:error];
   }
-  _task = nil;
+  _operation = nil;
   return YES;
 }
 

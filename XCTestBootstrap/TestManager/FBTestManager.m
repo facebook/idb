@@ -81,4 +81,16 @@
   return self.mediator.description;
 }
 
+#pragma mark FBXCTestOperation
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationHandleTypeTestOperation;
+}
+
+- (void)terminate
+{
+  [self disconnect];
+}
+
 @end
