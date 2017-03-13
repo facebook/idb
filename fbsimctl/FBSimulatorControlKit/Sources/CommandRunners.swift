@@ -139,7 +139,7 @@ struct CommandRunner : Runner {
       let context = self.context.replace((action, query))
       let runner = ActionRunner(context: context)
       result = result.append(runner.run())
-      if case .failure = result {
+      if case .failure = result.outcome {
         return result
       }
     }

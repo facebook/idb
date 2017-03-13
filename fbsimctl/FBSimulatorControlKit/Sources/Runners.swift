@@ -28,7 +28,7 @@ struct SequenceRunner : Runner {
     var output = CommandResult.success(nil)
     for runner in runners {
       output = output.append(runner.run())
-      switch output {
+      switch output.outcome {
       case .failure: return output
       default: continue
       }

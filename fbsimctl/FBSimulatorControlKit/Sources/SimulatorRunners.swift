@@ -198,7 +198,7 @@ private struct UploadRunner : Runner {
         try FBUploadMediaStrategy(simulator: self.reporter.simulator).uploadMedia(paths)
       }
       let result = runner.run()
-      switch result {
+      switch result.outcome {
       case .failure: return result
       default: break
       }

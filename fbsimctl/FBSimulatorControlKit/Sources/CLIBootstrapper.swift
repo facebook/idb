@@ -47,7 +47,13 @@ struct CLIRunner : Runner {
   }
 
   func runForStatus() -> Int32 {
-    switch self.run() {
+    // Start the runner
+    let result = self.run()
+    // Now we're done. Terminate any remaining asynchronous work
+    for handle in result.handles {
+      handle.terminate()
+    }
+    switch result.outcome {
       case .failure(let message):
         self.reporter.reportError(message)
         return 1

@@ -52,13 +52,36 @@ extension CommandPerformer {
 }
 
 /**
- Defines the Result of a Command.
+ Defines the Output of running a Command.
  */
-public enum CommandResult {
+public struct CommandResult {
+  let outcome: CommandOutcome
+  let handles: [FBTerminationHandle]
+
+  static func success(_ subject: EventReporterSubject?) -> CommandResult {
+    return CommandResult(outcome: .success(subject), handles: [])
+  }
+
+  static func failure(_ message: String) -> CommandResult {
+    return CommandResult(outcome: .failure(message), handles: [])
+  }
+
+  func append(_ second: CommandResult) -> CommandResult {
+    return CommandResult(
+      outcome: self.outcome.append(second.outcome),
+      handles: self.handles + second.handles
+    )
+  }
+}
+
+/**
+ Defines the Outcome of runnic a Command.
+ */
+public enum CommandOutcome : CustomStringConvertible, CustomDebugStringConvertible {
   case success(EventReporterSubject?)
   case failure(String)
 
-  func append(_ second: CommandResult) -> CommandResult {
+  func append(_ second: CommandOutcome) -> CommandOutcome {
     switch (self, second) {
     case (.success(.some(let leftSubject)), .success(.some(let rightSubject))):
       return .success(leftSubject.append(rightSubject))
@@ -76,9 +99,7 @@ public enum CommandResult {
       return .failure("\(firstString)\n\(secondString)")
     }
   }
-}
 
-extension CommandResult : CustomStringConvertible, CustomDebugStringConvertible {
   public var description: String { get {
     switch self {
     case .success: return "Success"

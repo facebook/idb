@@ -65,7 +65,7 @@ private class HttpEventReporter : EventReporter {
   }
 
   func interactionResultResponse(_ result: CommandResult) -> HttpResponse {
-    switch result {
+    switch result.outcome {
     case .failure(let string):
       let json = JSON.dictionary([
         ResponseKeys.Status.rawValue : JSON.string(ResponseKeys.Failure.rawValue),
