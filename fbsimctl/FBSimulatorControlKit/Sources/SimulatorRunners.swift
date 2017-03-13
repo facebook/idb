@@ -59,51 +59,51 @@ struct SimulatorActionRunner : Runner {
 
     switch action {
     case .approve(let bundleIDs):
-      return iOSTargetRunner(reporter, EventName.Approve, StringsSubject(bundleIDs)) {
+      return iOSTargetRunner.simple(reporter, EventName.Approve, StringsSubject(bundleIDs)) {
         try simulator.authorizeLocationSettings(bundleIDs)
       }
     case .boot(let maybeBootConfiguration):
       let bootConfiguration = maybeBootConfiguration ?? FBSimulatorBootConfiguration.default()
-      return iOSTargetRunner(reporter, EventName.Boot, ControlCoreSubject(bootConfiguration)) {
+      return iOSTargetRunner.simple(reporter, EventName.Boot, ControlCoreSubject(bootConfiguration)) {
         try simulator.bootSimulator(bootConfiguration)
       }
     case .clearKeychain(let maybeBundleID):
-      return iOSTargetRunner(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.ClearKeychain, ControlCoreSubject(simulator)) {
         if let bundleID = maybeBundleID {
           try simulator.killApplication(withBundleID: bundleID)
         }
         try simulator.clearKeychain()
       }
     case .delete:
-      return iOSTargetRunner(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.Delete, ControlCoreSubject(simulator)) {
         try simulator.set!.delete(simulator)
       }
     case .erase:
-      return iOSTargetRunner(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
     case .hid(let event):
-      return iOSTargetRunner(reporter, EventName.Hid, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.Hid, ControlCoreSubject(simulator)) {
         try event.perform(on: simulator.connect().connectToHID())
       }
     case .keyboardOverride:
-      return iOSTargetRunner(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.KeyboardOverride, ControlCoreSubject(simulator)) {
         try simulator.setupKeyboard()
       }
     case .launchAgent(let launch):
-      return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) {
+      return iOSTargetRunner.simple(reporter, EventName.Launch, ControlCoreSubject(launch)) {
         try simulator.launchAgent(launch)
       }
     case .launchApp(let launch):
-      return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(launch)) {
+      return iOSTargetRunner.simple(reporter, EventName.Launch, ControlCoreSubject(launch)) {
         try simulator.launchApplication(launch)
       }
     case .open(let url):
-      return iOSTargetRunner(reporter, EventName.Open, url.bridgedAbsoluteString) {
+      return iOSTargetRunner.simple(reporter, EventName.Open, url.bridgedAbsoluteString) {
         try simulator.open(url)
       }
     case .relaunch(let appLaunch):
-      return iOSTargetRunner(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) {
+      return iOSTargetRunner.simple(reporter, EventName.Relaunch, ControlCoreSubject(appLaunch)) {
         try simulator.launchOrRelaunchApplication(appLaunch)
       }
     case .search(let search):
@@ -111,22 +111,22 @@ struct SimulatorActionRunner : Runner {
     case .serviceInfo(let identifier):
       return ServiceInfoRunner(reporter: reporter, identifier: identifier)
     case .shutdown:
-      return iOSTargetRunner(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.kill(simulator)
       }
     case .tap(let x, let y):
-      return iOSTargetRunner(reporter, EventName.Tap, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.Tap, ControlCoreSubject(simulator)) {
         let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
         try event.perform(on: simulator.connect().connectToHID())
       }
     case .setLocation(let latitude, let longitude):
-      return iOSTargetRunner(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) {
+      return iOSTargetRunner.simple(reporter, EventName.SetLocation, ControlCoreSubject(simulator)) {
         try simulator.setLocation(latitude, longitude: longitude)
       }
     case .upload(let diagnostics):
       return UploadRunner(reporter, diagnostics)
     case .watchdogOverride(let bundleIDs, let timeout):
-      return iOSTargetRunner(reporter, EventName.WatchdogOverride, StringsSubject(bundleIDs)) {
+      return iOSTargetRunner.simple(reporter, EventName.WatchdogOverride, StringsSubject(bundleIDs)) {
         try simulator.overrideWatchDogTimer(forApplications: bundleIDs, withTimeout: timeout)
       }
     default:
@@ -194,7 +194,7 @@ private struct UploadRunner : Runner {
 
     if media.count > 0 {
       let paths = media.map { $0.1 }
-      let runner = iOSTargetRunner(reporter, EventName.Upload, StringsSubject(paths)) {
+      let runner = iOSTargetRunner.simple(reporter, EventName.Upload, StringsSubject(paths)) {
         try FBUploadMediaStrategy(simulator: self.reporter.simulator).uploadMedia(paths)
       }
       let result = runner.run()

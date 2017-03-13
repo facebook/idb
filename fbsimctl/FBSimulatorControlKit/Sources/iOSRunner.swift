@@ -33,7 +33,7 @@ struct iOSActionProvider {
     case .diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
     case .install(let appPath, let codeSign):
-      return iOSTargetRunner(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
+      return iOSTargetRunner.simple(reporter, EventName.Install, ControlCoreSubject(appPath as NSString)) {
         let (extractedAppPath, cleanupDirectory) = try FBApplicationDescriptor.findOrExtract(atPath: appPath)
         if codeSign {
           try FBCodesignProvider.codeSignCommandWithAdHocIdentity().recursivelySignBundle(atPath: extractedAppPath)
@@ -44,30 +44,30 @@ struct iOSActionProvider {
         }
       }
     case .uninstall(let appBundleID):
-      return iOSTargetRunner(reporter, EventName.Uninstall,ControlCoreSubject(appBundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, EventName.Uninstall, ControlCoreSubject(appBundleID as NSString)) {
         try target.uninstallApplication(withBundleID: appBundleID)
       }
     case .launchApp(let appLaunch):
-      return iOSTargetRunner(reporter, EventName.Launch, ControlCoreSubject(appLaunch)) {
+      return iOSTargetRunner.simple(reporter, EventName.Launch, ControlCoreSubject(appLaunch)) {
         try target.launchApplication(appLaunch)
       }
     case .launchXCTest(var configuration):
       // Always initialize for UI Testing until we make this optional
       configuration = configuration.withUITesting(true)
-      return iOSTargetRunner(reporter, EventName.LaunchXCTest, ControlCoreSubject(configuration)) {
-        try target.startTest(with: configuration)
-
+      return iOSTargetRunner.handled(reporter, EventName.LaunchXCTest, ControlCoreSubject(configuration)) {
+        let handle = try target.startTest(with: configuration)
         if configuration.timeout > 0 {
           try target.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: configuration.timeout)
         }
+        return handle
       }
     case .listApps:
-      return iOSTargetRunner(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
+      return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
     case .record(let record):
-      return iOSTargetRunner(reporter, nil, record) {
+      return iOSTargetRunner.simple(reporter, nil, record) {
         switch record {
         case .start(let maybePath):
           try target.startRecording(toFile: maybePath)
@@ -76,7 +76,7 @@ struct iOSActionProvider {
         }
       }
     case .terminate(let bundleID):
-      return iOSTargetRunner(reporter, EventName.Terminate, ControlCoreSubject(bundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, EventName.Terminate, ControlCoreSubject(bundleID as NSString)) {
         try target.killApplication(withBundleID: bundleID)
       }
     default:
@@ -89,13 +89,24 @@ struct iOSTargetRunner : Runner {
   let reporter: iOSReporter
   let name: EventName?
   let subject: EventReporterSubject
-  let action: (Void) throws -> Void
+  let action:(Void)throws -> FBTerminationHandle?
 
-  init(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> Void) {
+  private init(reporter: iOSReporter, name: EventName?, subject: EventReporterSubject, action: @escaping (Void) throws -> FBTerminationHandle?) {
     self.reporter = reporter
     self.name = name
     self.subject = subject
     self.action = action
+  }
+
+  static func simple(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> Void) -> iOSTargetRunner {
+    return iOSTargetRunner(reporter: reporter, name: name, subject: subject) {
+      try action()
+      return nil
+    }
+  }
+
+  static func handled(_ reporter: iOSReporter, _ name: EventName?, _ subject: EventReporterSubject, _ action: @escaping (Void) throws -> FBTerminationHandle?) -> iOSTargetRunner {
+    return iOSTargetRunner(reporter: reporter, name: name, subject: subject, action: action)
   }
 
   func run() -> CommandResult {
@@ -103,10 +114,14 @@ struct iOSTargetRunner : Runner {
       if let name = self.name {
         self.reporter.report(name, EventType.Started, self.subject)
       }
-      try self.action()
+      var handles: [FBTerminationHandle] = []
+      if let handle = try self.action() {
+        handles = [handle]
+      }
       if let name = self.name {
         self.reporter.report(name, EventType.Ended, self.subject)
       }
+      return CommandResult(outcome: .success(nil), handles: handles)
     } catch let error as NSError {
       return .failure(error.description)
     } catch let error as JSONError {
@@ -114,7 +129,6 @@ struct iOSTargetRunner : Runner {
     } catch {
       return .failure("Unknown Error")
     }
-    return .success(nil)
   }
 }
 
