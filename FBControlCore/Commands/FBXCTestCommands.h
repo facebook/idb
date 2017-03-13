@@ -9,7 +9,21 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBTerminationHandle.h>
+
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ The Termination Handle Type.
+ */
+extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
+
+/**
+ A Running Test Operation that can awaited and cancelled.
+ */
+@protocol FBXCTestOperation <NSObject, FBTerminationHandle>
+
+@end
 
 @class FBTestLaunchConfiguration;
 
