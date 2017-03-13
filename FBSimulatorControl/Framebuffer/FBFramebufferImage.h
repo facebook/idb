@@ -48,16 +48,16 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- A FBFramebufferImage Implementation using FBFramebufferFrameSink.
+ Implementations of FBFramebufferImage
 
  When a Framebuffer is torn down, all it's delegates will be too.
  Just as this occurs, this class will report the image to the Event Sink.
  This means that the final frame will be captured.
  */
-@interface FBFramebufferImage_FrameSink : NSObject <FBFramebufferImage>
+@interface FBFramebufferImage : NSObject <FBFramebufferImage>
 
 /**
- Creates a new FBFramebufferImage instance.
+ Creates a new FBFramebufferImage instance using a Frame Generator.
 
  @param filePath the File Path to write to.
  @param frameGenerator the Frame Generator to register with.
@@ -66,15 +66,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink;
 
-@end
-
 /**
- A FBFramebufferImage Implementation using SimulatorKit
- */
-@interface FBFramebufferImage_Surface : NSObject <FBFramebufferImage>
-
-/**
- Creates a new FBFramebufferImage instance.
+ Creates a new FBFramebufferImage instance using a Surface.
 
  @param filePath the File Path to write to.
  @param surface the surface to obtain frames from.

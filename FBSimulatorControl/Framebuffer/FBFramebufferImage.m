@@ -35,26 +35,51 @@
 #import "FBSimulatorDiagnostics.h"
 #import "FBFramebufferFrameGenerator.h"
 
-@interface FBFramebufferImage_FrameSink () <FBFramebufferFrameSink>
-@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
-@property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
+@interface FBFramebufferImage ()
 
 @property (nonatomic, copy, readonly) NSString *filePath;
-@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
-@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @end
 
-@implementation FBFramebufferImage_FrameSink
+@interface FBFramebufferImage_FrameSink : FBFramebufferImage <FBFramebufferFrameSink>
+
+@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
+@property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
+
+@property (nonatomic, strong, readwrite) FBFramebufferFrame *lastFrame;
+
+- (instancetype)initWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue;
+
+@end
+
+@interface FBFramebufferImage_Surface : FBFramebufferImage <FBFramebufferSurfaceConsumer>
+
+@property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
+@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
+@property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
+
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink surface:(FBFramebufferSurface *)surface;
+
+@end
+
+@implementation FBFramebufferImage
+
+#pragma mark Initializers
 
 + (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
-  return [[self alloc] initWithFilePath:filePath frameGenerator:frameGenerator eventSink:eventSink writeQueue:queue];
+  return [[FBFramebufferImage_FrameSink alloc] initWithFilePath:filePath frameGenerator:frameGenerator eventSink:eventSink writeQueue:queue];
 }
 
-- (instancetype)initWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue
++ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventSink:(id<FBSimulatorEventSink>)eventSink
+{
+  return [[FBFramebufferImage_Surface alloc] initWithFilePath:filePath eventSink:eventSink surface:surface];
+}
+
+
+- (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   self = [super init];
   if (!self) {
@@ -62,33 +87,27 @@
   }
 
   _filePath = filePath;
-  _frameGenerator = frameGenerator;
   _eventSink = eventSink;
-  _writeQueue = writeQueue;
-  [frameGenerator attachSink:self];
 
   return self;
 }
 
-#pragma mark Public
+#pragma mark FBFramebufferImage
 
 - (nullable CGImageRef)image
 {
-  CGImageRef image = self.lastFrame.image;
-  if (!image) {
-    return NULL;
-  }
-  return image;
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return 0;
 }
 
 - (nullable NSData *)jpegImageDataWithError:(NSError **)error
 {
-  return [FBFramebufferImage_FrameSink jpegImageDataFromImage:self.image error:error];
+  return [FBFramebufferImage jpegImageDataFromImage:self.image error:error];
 }
 
 - (nullable NSData *)pngImageDataWithError:(NSError **)error
 {
-  return [FBFramebufferImage_FrameSink pngImageDataFromImage:self.image error:error];
+  return [FBFramebufferImage pngImageDataFromImage:self.image error:error];
 }
 
 #pragma mark Private
@@ -154,6 +173,35 @@
   return data;
 }
 
+@end
+
+@implementation FBFramebufferImage_FrameSink
+
+- (instancetype)initWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue
+{
+  self = [super initWithFilePath:filePath eventSink:eventSink];
+  if (!self) {
+    return nil;
+  }
+
+  _frameGenerator = frameGenerator;
+  _writeQueue = writeQueue;
+  [frameGenerator attachSink:self];
+
+  return self;
+}
+
+#pragma mark Public
+
+- (nullable CGImageRef)image
+{
+  CGImageRef image = self.lastFrame.image;
+  if (!image) {
+    return NULL;
+  }
+  return image;
+}
+
 #pragma mark FBFramebufferCounterDelegate Implementation
 
 - (void)frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator didUpdate:(FBFramebufferFrame *)frame
@@ -180,33 +228,15 @@
 
 @end
 
-@interface FBFramebufferImage_Surface () <FBFramebufferSurfaceConsumer>
-
-@property (nonatomic, copy, readonly) NSString *filePath;
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
-@property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
-@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
-
-@property (nonatomic, strong, readwrite) NSUUID *consumerUUID;
-
-@end
-
 @implementation FBFramebufferImage_Surface
-
-+ (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventSink:(id<FBSimulatorEventSink>)eventSink
-{
-  return [[self alloc] initWithFilePath:filePath eventSink:eventSink surface:surface];
-}
 
 - (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink surface:(FBFramebufferSurface *)surface
 {
-  self = [super init];
+  self = [super initWithFilePath:filePath eventSink:eventSink];
   if (!self) {
     return nil;
   }
 
-  _filePath = filePath;
-  _eventSink = eventSink;
   _surface = surface;
   _consumerUUID = [NSUUID UUID];
   _imageGenerator = [FBSurfaceImageGenerator imageGeneratorWithScale:NSDecimalNumber.one logger:nil];
@@ -241,16 +271,6 @@
   }
   [self.surface attachConsumer:self];
   return self.imageGenerator.image;
-}
-
-- (nullable NSData *)jpegImageDataWithError:(NSError **)error
-{
-  return [FBFramebufferImage_FrameSink jpegImageDataFromImage:self.image error:error];
-}
-
-- (nullable NSData *)pngImageDataWithError:(NSError **)error
-{
-  return [FBFramebufferImage_FrameSink pngImageDataFromImage:self.image error:error];
 }
 
 @end

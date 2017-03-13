@@ -212,7 +212,7 @@
 
 - (id<FBFramebufferImage>)createImage
 {
-  return [FBFramebufferImage_FrameSink imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
+  return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
 }
 
 - (id<FBFramebufferVideo>)createVideo
@@ -266,7 +266,7 @@
 
 - (id<FBFramebufferImage>)createImage
 {
-  return [FBFramebufferImage_Surface imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
+  return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
 }
 
 - (id<FBFramebufferVideo>)createVideo
