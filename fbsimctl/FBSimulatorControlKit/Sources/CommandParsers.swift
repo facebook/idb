@@ -656,9 +656,14 @@ extension Action : Parsable {
   }
 
   static var installParser: Parser<Action> {
-    return Parser<String>
-      .ofCommandWithArg(EventName.Install.rawValue, Parser<String>.ofAny)
-      .fmap { Action.install($0, false) }
+    return Parser
+      .ofTwoSequenced(
+        Parser<String>.ofCommandWithArg(EventName.Install.rawValue, Parser<String>.ofAny),
+        Parser<Bool>.ofFlag("codesign",
+          "Before installing, sign the bundle and all its frameworks with a certificate from the keychain"
+        )
+      )
+      .fmap { (path, shouldCodesign) in Action.install(path, shouldCodesign) }
   }
 
   static var keyboardOverrideParser: Parser<Action> {
