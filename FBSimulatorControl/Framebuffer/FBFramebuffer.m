@@ -169,7 +169,7 @@
 
 #pragma mark Properties
 
-- (id<FBFramebufferImage>)image
+- (FBFramebufferImage *)image
 {
   if (!_image) {
     _image = [self createImage];
@@ -185,7 +185,7 @@
   return _video;
 }
 
-- (id<FBFramebufferImage>)createImage
+- (FBFramebufferImage *)createImage
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -210,7 +210,7 @@
 
 #pragma mark Properties
 
-- (id<FBFramebufferImage>)createImage
+- (FBFramebufferImage *)createImage
 {
   return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
 }
@@ -264,7 +264,7 @@
 
 #pragma mark Properties
 
-- (id<FBFramebufferImage>)createImage
+- (FBFramebufferImage *)createImage
 {
   return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
 }
