@@ -205,7 +205,8 @@ function cli_framework_test() {
 function cli_e2e_test() {
   NAME=$1
   pushd $NAME/cli-tests
-  ./tests.py
+  py=$(which python3.6 || which python3 || which python)
+  $py ./tests.py
   popd
 }
 
