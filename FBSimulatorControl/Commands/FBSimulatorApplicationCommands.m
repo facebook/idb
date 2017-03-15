@@ -13,12 +13,15 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator.h"
-#import "FBSimulator+Helpers.h"
-#import "FBSimulatorError.h"
 #import "FBApplicationLaunchStrategy.h"
-#import "FBSimulatorSubprocessTerminationStrategy.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulator+Helpers.h"
+#import "FBSimulator+Private.h"
+#import "FBSimulator.h"
+#import "FBSimulatorError.h"
+#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorProcessFetcher.h"
+#import "FBSimulatorSubprocessTerminationStrategy.h"
 
 @interface FBSimulatorApplicationCommands ()
 
@@ -287,11 +290,17 @@
   if (!application) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-
-  return [[[self.simulator
-    launchdSimSubprocesses]
-    filteredArrayUsingPredicate:[FBSimulatorApplicationCommands predicateForApplicationProcessOfApplication:application]]
-    firstObject];
+  pid_t processIdentifier = 0;
+  if (![self.simulator.launchctl serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:&innerError]) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+  FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier];
+  if (!processInfo) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not fetch process info for %@ %d", processInfo, processIdentifier]
+      fail:error];
+  }
+  return processInfo;
 }
 
 #pragma mark Private
@@ -310,19 +319,6 @@
       fail:error];
   }
   return appInfo;
-}
-
-+ (NSPredicate *)predicateForApplicationProcessOfApplication:(FBApplicationDescriptor *)application
-{
-  NSPredicate *launchPathPredicate = [FBProcessFetcher processesWithLaunchPath:application.binary.path];
-  NSPredicate *environmentPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSProcessInfo *processInfo, NSDictionary *_) {
-    return [processInfo.environment[@"XPC_SERVICE_NAME"] containsString:application.bundleID];
-  }];
-
-  return [NSCompoundPredicate orPredicateWithSubpredicates:@[
-    launchPathPredicate,
-    environmentPredicate
-  ]];
 }
 
 @end
