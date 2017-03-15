@@ -69,6 +69,9 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
 
   open func applicationDidLaunch(_ launchConfig: FBApplicationLaunchConfiguration, didStart applicationProcess: FBProcessInfo) {
     self.reportValue(EventName.Launch, EventType.Discrete, applicationProcess)
+    if launchConfig.waitForDebugger {
+      self.reporter.logInfo("Application launched. To debug, run lldb -p \(applicationProcess.processIdentifier).")
+    }
   }
 
   open func applicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
