@@ -100,6 +100,14 @@ static NSString *const ApplicationPathKey = @"Path";
 - (BOOL)eraseWithError:(NSError **)error;
 
 /**
+ Brings the Simulator window to front, with a descriptive message in the event of a failure.
+
+ @param error a descriptive error for any error that occurred.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)focusWithError:(NSError **)error;
+
+/**
  A Dictionary Representing the iPhone Simulator.app Preferences.
  */
 + (NSDictionary<NSString *, id> *)simulatorApplicationPreferences;

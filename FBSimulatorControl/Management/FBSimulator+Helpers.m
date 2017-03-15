@@ -22,6 +22,8 @@
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
 
+#import <AppKit/AppKit.h>
+
 @implementation FBSimulator (Helpers)
 
 #pragma mark Properties
@@ -94,6 +96,18 @@
 - (BOOL)eraseWithError:(NSError **)error
 {
   return [self.set eraseSimulator:self error:error];
+}
+
+- (BOOL)focusWithError:(NSError **)error
+{
+  NSArray *apps = NSWorkspace.sharedWorkspace.runningApplications;
+  NSPredicate *matchingPid = [NSPredicate predicateWithFormat:@"processIdentifier = %@", @(self.containerApplication.processIdentifier)];
+  NSRunningApplication *app = [apps filteredArrayUsingPredicate:matchingPid].firstObject;
+  if (!app) {
+    return [[FBSimulatorError describeFormat:@"Simulator application for %@ is not running", self.udid] failBool:error];
+  }
+
+  return [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
 }
 
 + (NSDictionary<NSString *, id> *)simulatorApplicationPreferences
