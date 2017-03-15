@@ -19,11 +19,10 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 @protocol FBSimulatorEventSink;
 
-
 /**
- Implementations of FBFramebufferVideo.
+ Controls the Recording of a Simulator's Framebuffer to a Video.
  */
-@interface FBFramebufferVideo : NSObject <FBVideoRecordingSession>
+@interface FBSimulatorVideo : NSObject <FBVideoRecordingSession>
 
 /**
  The Initializer for a Frame Generator.
@@ -32,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param frameGenerator the Frame Generator to register with.
  @param logger the logger object to log events to, may be nil.
  @param eventSink an event sink to report video output to.
- @return a new FBFramebufferVideo instance.
+ @return a new FBSimulatorVideo instance.
  */
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 
@@ -43,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param surface the Renderable to Record.
  @param logger the logger object to log events to, may be nil.
  @param eventSink an event sink to report video output to.
- @return a new FBFramebufferVideo instance.
+ @return a new FBSimulatorVideo instance.
  */
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink;
 

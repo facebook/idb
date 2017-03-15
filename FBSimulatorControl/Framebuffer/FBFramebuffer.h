@@ -16,8 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBFramebufferConfiguration;
 @class FBFramebufferImage;
 @class FBFramebufferSurface;
-@class FBFramebufferVideo;
 @class FBSimulator;
+@class FBSimulatorVideo;
 @class SimDeviceFramebufferService;
 @protocol FBFramebufferFrameSink;
 @protocol FBFramebufferSurfaceConsumer;
@@ -102,9 +102,9 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Properties
 
 /**
- The FBFramebufferVideo instance owned by the receiver.
+ The FBSimulatorVideo instance owned by the receiver.
  */
-@property (nonatomic, strong, readonly) FBFramebufferVideo *video;
+@property (nonatomic, strong, readonly) FBSimulatorVideo *video;
 
 /**
  The FBFramebufferImage instance owned by the receiver.

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBFramebufferVideo.h"
+#import "FBSimulatorVideo.h"
 
 #import <objc/runtime.h>
 
@@ -22,7 +22,7 @@
 #import "FBFramebufferFrameGenerator.h"
 #import "FBVideoEncoderSimulatorKit.h"
 
-@interface FBFramebufferVideo ()
+@interface FBSimulatorVideo ()
 
 @property (nonatomic, strong, readonly) FBVideoEncoderConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -32,7 +32,7 @@
 
 @end
 
-@interface FBFramebufferVideo_BuiltIn : FBFramebufferVideo
+@interface FBSimulatorVideo_BuiltIn : FBSimulatorVideo
 
 @property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 
@@ -40,7 +40,7 @@
 
 @end
 
-@interface FBFramebufferVideo_SimulatorKit : FBFramebufferVideo
+@interface FBSimulatorVideo_SimulatorKit : FBSimulatorVideo
 
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 
@@ -48,18 +48,18 @@
 
 @end
 
-@implementation FBFramebufferVideo
+@implementation FBSimulatorVideo
 
 #pragma mark Initializers
 
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[FBFramebufferVideo_BuiltIn alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger eventSink:eventSink];
+  return [[FBSimulatorVideo_BuiltIn alloc] initWithConfiguration:configuration frameGenerator:frameGenerator logger:logger eventSink:eventSink];
 }
 
 + (instancetype)videoWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[FBFramebufferVideo_SimulatorKit alloc] initWithConfiguration:configuration surface:surface logger:logger eventSink:eventSink];
+  return [[FBSimulatorVideo_SimulatorKit alloc] initWithConfiguration:configuration surface:surface logger:logger eventSink:eventSink];
 }
 
 - (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink
@@ -97,7 +97,7 @@
 {
   dispatch_group_t waitGroup = dispatch_group_create();
   [self startRecordingToFile:filePath group:waitGroup];
-  long fail = dispatch_group_wait(waitGroup, [FBFramebufferVideo convertTimeIntervalToDispatchTime:timeout]);
+  long fail = dispatch_group_wait(waitGroup, [FBSimulatorVideo convertTimeIntervalToDispatchTime:timeout]);
   if (fail) {
     return [[FBSimulatorError
       describeFormat:@"Timeout waiting for video to start recording in %f seconds", timeout]
@@ -110,7 +110,7 @@
 {
   dispatch_group_t waitGroup = dispatch_group_create();
   [self stopRecording:waitGroup];
-  long fail = dispatch_group_wait(waitGroup, [FBFramebufferVideo convertTimeIntervalToDispatchTime:timeout]);
+  long fail = dispatch_group_wait(waitGroup, [FBSimulatorVideo convertTimeIntervalToDispatchTime:timeout]);
   if (fail) {
     return [[FBSimulatorError
       describeFormat:@"Timeout waiting for video to stop recording in %f seconds", timeout]
@@ -141,7 +141,7 @@
 
 @end
 
-@implementation FBFramebufferVideo_BuiltIn
+@implementation FBSimulatorVideo_BuiltIn
 
 #pragma mark Initializers
 
@@ -211,7 +211,7 @@
 
 @end
 
-@implementation FBFramebufferVideo_SimulatorKit
+@implementation FBSimulatorVideo_SimulatorKit
 
 
 - (instancetype)initWithConfiguration:(FBVideoEncoderConfiguration *)configuration surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger eventSink:(id<FBSimulatorEventSink>)eventSink

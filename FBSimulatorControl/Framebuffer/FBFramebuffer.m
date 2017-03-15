@@ -32,7 +32,7 @@
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferFrameGenerator.h"
 #import "FBFramebufferImage.h"
-#import "FBFramebufferVideo.h"
+#import "FBSimulatorVideo.h"
 #import "FBFramebufferSurface.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulator.h"
@@ -177,7 +177,7 @@
   return _image;
 }
 
-- (FBFramebufferVideo *)video
+- (FBSimulatorVideo *)video
 {
   if (!_video) {
     _video = [self createVideo];
@@ -191,7 +191,7 @@
   return nil;
 }
 
-- (FBFramebufferVideo *)createVideo
+- (FBSimulatorVideo *)createVideo
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -215,9 +215,9 @@
   return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
 }
 
-- (FBFramebufferVideo *)createVideo
+- (FBSimulatorVideo *)createVideo
 {
-  return [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
+  return [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
 }
 
 #pragma mark NSObject
@@ -269,11 +269,11 @@
   return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
 }
 
-- (FBFramebufferVideo *)createVideo
+- (FBSimulatorVideo *)createVideo
 {
-  return FBFramebufferVideo.surfaceSupported
-    ? [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger eventSink:self.eventSink]
-    : [FBFramebufferVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
+  return FBSimulatorVideo.surfaceSupported
+    ? [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder surface:self.surface logger:self.logger eventSink:self.eventSink]
+    : [FBSimulatorVideo videoWithConfiguration:self.configuration.encoder frameGenerator:self.frameGenerator logger:self.logger eventSink:self.eventSink];
 }
 
 @end

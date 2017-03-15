@@ -14,7 +14,7 @@
 #import "FBSimulator+Connection.h"
 #import "FBSimulator+Framebuffer.h"
 #import "FBFramebuffer.h"
-#import "FBFramebufferVideo.h"
+#import "FBSimulatorVideo.h"
 
 @interface FBSimulatorVideoRecordingCommands ()
 
@@ -45,7 +45,7 @@
 - (nullable id<FBVideoRecordingSession>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
 {
   NSError *innerError = nil;
-  FBFramebufferVideo *video = [self obtainSimulatorVideoWithError:&innerError];
+  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&innerError];
   if (!video) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -58,7 +58,7 @@
 - (BOOL)stopRecordingWithError:(NSError **)error
 {
   NSError *innerError = nil;
-  FBFramebufferVideo *video = [self obtainSimulatorVideoWithError:&innerError];
+  FBSimulatorVideo *video = [self obtainSimulatorVideoWithError:&innerError];
   if (!video) {
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
@@ -67,7 +67,7 @@
 
 #pragma mark
 
-- (FBFramebufferVideo *)obtainSimulatorVideoWithError:(NSError **)error
+- (FBSimulatorVideo *)obtainSimulatorVideoWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
   if (simulator.state != FBSimulatorStateBooted) {
@@ -81,10 +81,10 @@
   if (!framebuffer) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  FBFramebufferVideo *video = framebuffer.video;
+  FBSimulatorVideo *video = framebuffer.video;
   if (!video) {
     return [[[FBSimulatorError
-      describe:@"Simulator Does not have a FBFramebufferVideo instance"]
+      describe:@"Simulator Does not have a FBSimulatorVideo instance"]
       inSimulator:simulator]
       fail:error];
   }
