@@ -18,6 +18,7 @@
 #import "FBSimulatorError.h"
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
+#import "FBSimulator+Helpers.h"
 
 @interface FBSimulatorApplicationCommands ()
 
@@ -43,7 +44,7 @@
   return self;
 }
 
-#pragma mark FBApplicationCommands Implementation
+#pragma mark - FBApplicationCommands Implementation
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
@@ -177,12 +178,16 @@
   return YES;
 }
 
-#pragma mark FBSimulatorApplicationCommands
+#pragma mark - FBSimulatorApplicationCommands
+
+#pragma mark Installing Applications
 
 - (BOOL)installApplication:(FBApplicationDescriptor *)application error:(NSError **)error
 {
   return [self installApplicationWithPath:application.path error:error];
 }
+
+#pragma mark Launching / Terminating Applications
 
 - (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
 {
@@ -210,6 +215,114 @@
   return [[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
     terminateLastLaunchedApplicationWithError:error];
+}
+
+#pragma mark Querying Application State
+
+- (nullable FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSParameterAssert(bundleID);
+
+  NSError *innerError = nil;
+  NSDictionary *appInfo = [self appInfo:bundleID error:&innerError];
+  if (!appInfo) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+  NSString *appPath = appInfo[ApplicationPathKey];
+  NSString *typeString = appInfo[ApplicationTypeKey];
+  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appPath installTypeString:typeString error:&innerError];
+  if (!application) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to get App Path of %@ at %@", bundleID, appPath]
+      inSimulator:self.simulator]
+      causedBy:innerError]
+      fail:error];
+  }
+  return application;
+}
+
+- (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSParameterAssert(bundleID);
+
+  NSError *innerError = nil;
+  NSDictionary *appInfo = [self appInfo:bundleID error:&innerError];
+  if (!appInfo) {
+    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+  }
+
+  return [appInfo[ApplicationTypeKey] isEqualToString:@"System"];
+}
+
+- (nullable NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSParameterAssert(bundleID);
+
+  // It appears that the release notes for Xcode 8.3 Beta 2 aren't correct in referencing rdar://30224453
+  // "The simctl get_app_container command can now return the path of an app's data container or App Group containers"
+  // It doesn't appear that simctl currently supports this, it will only show the Installed path of an Application.
+  // This means it won't show it's "Container" Jail.
+  // It appears that the API for getting this location is only provided on the Simulator side in MobileCoreServices.framework
+  // There is a call to a function called container_create_or_lookup_path_for_current_user, which allows the HOME environment variable
+  // to be set for any Application. This is likely the true path to the Application Container, not where the .app is installed.
+  NSError *innerError = nil;
+  FBProcessInfo *runningApplication = [self runningApplicationWithBundleID:bundleID error:&innerError];
+  if (!runningApplication) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+  NSString *homeDirectory = runningApplication.environment[@"HOME"];
+  if (![NSFileManager.defaultManager fileExistsAtPath:homeDirectory]) {
+    return [[FBSimulatorError describeFormat:@"App Home Directory does not exist at path %@", homeDirectory] fail:error];
+  }
+
+  return homeDirectory;
+}
+
+- (nullable FBProcessInfo *)runningApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSParameterAssert(bundleID);
+
+  NSError *innerError = nil;
+  FBApplicationDescriptor *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
+  if (!application) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+
+  return [[[self.simulator
+    launchdSimSubprocesses]
+    filteredArrayUsingPredicate:[FBSimulatorApplicationCommands predicateForApplicationProcessOfApplication:application]]
+    firstObject];
+}
+
+#pragma mark Private
+
+- (nullable NSDictionary<NSString *, id> *)appInfo:(NSString *)bundleID error:(NSError **)error
+{
+  NSError *innerError = nil;
+  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&innerError];
+  if (!appInfo) {
+    NSDictionary *installedApps = [self.simulator.device installedAppsWithError:nil];
+    return [[[[[FBSimulatorError
+      describeFormat:@"Application with bundle ID '%@' is not installed", bundleID]
+      extraInfo:@"installed_apps" value:installedApps.allKeys]
+      inSimulator:self.simulator]
+      causedBy:innerError]
+      fail:error];
+  }
+  return appInfo;
+}
+
++ (NSPredicate *)predicateForApplicationProcessOfApplication:(FBApplicationDescriptor *)application
+{
+  NSPredicate *launchPathPredicate = [FBProcessFetcher processesWithLaunchPath:application.binary.path];
+  NSPredicate *environmentPredicate = [NSPredicate predicateWithBlock:^ BOOL (NSProcessInfo *processInfo, NSDictionary *_) {
+    return [processInfo.environment[@"XPC_SERVICE_NAME"] containsString:application.bundleID];
+  }];
+
+  return [NSCompoundPredicate orPredicateWithSubpredicates:@[
+    launchPathPredicate,
+    environmentPredicate
+  ]];
 }
 
 @end
