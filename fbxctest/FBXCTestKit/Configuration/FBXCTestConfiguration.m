@@ -283,7 +283,7 @@
 
 - (NSTimeInterval)defaultTimeout
 {
-  return 1000;
+  return 500;
 }
 
 - (NSString *)testType
