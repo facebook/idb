@@ -133,4 +133,16 @@
   return [self.encoder stopRecordingWithError:error];
 }
 
+#pragma mark FBTerminationHandle
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationTypeHandleVideoRecording;
+}
+
+- (void)terminate
+{
+  [self.encoder stopRecordingWithError:nil];
+}
+
 @end

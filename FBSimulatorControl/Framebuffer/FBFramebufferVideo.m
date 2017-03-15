@@ -93,6 +93,52 @@
   return FBVideoEncoderSimulatorKit.isSupported;
 }
 
+- (BOOL)startRecordingToFile:(nullable NSString *)filePath timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  dispatch_group_t waitGroup = dispatch_group_create();
+  [self startRecordingToFile:filePath group:waitGroup];
+  long fail = dispatch_group_wait(waitGroup, [FBFramebufferVideo convertTimeIntervalToDispatchTime:timeout]);
+  if (fail) {
+    return [[FBSimulatorError
+      describeFormat:@"Timeout waiting for video to start recording in %f seconds", timeout]
+      failBool:error];
+  }
+  return YES;
+}
+
+- (BOOL)stopRecordingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  dispatch_group_t waitGroup = dispatch_group_create();
+  [self stopRecording:waitGroup];
+  long fail = dispatch_group_wait(waitGroup, [FBFramebufferVideo convertTimeIntervalToDispatchTime:timeout]);
+  if (fail) {
+    return [[FBSimulatorError
+      describeFormat:@"Timeout waiting for video to stop recording in %f seconds", timeout]
+      failBool:error];
+  }
+  return YES;
+}
+
+#pragma mark FBTerminationHandle
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationTypeHandleVideoRecording;
+}
+
+- (void)terminate
+{
+  [self stopRecordingWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:nil];
+}
+
+#pragma mark Private
+
++ (dispatch_time_t)convertTimeIntervalToDispatchTime:(NSTimeInterval)timeInterval
+{
+  int64_t timeoutInt = ((int64_t) timeInterval) * ((int64_t) NSEC_PER_SEC);
+  return dispatch_time(DISPATCH_TIME_NOW, timeoutInt);
+}
+
 @end
 
 @implementation FBFramebufferVideo_BuiltIn

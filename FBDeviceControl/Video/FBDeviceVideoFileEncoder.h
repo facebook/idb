@@ -39,6 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Stops the Video Encoder.
+ If the encoder is running, it will block until the Capture Session has been torn down.
 
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.

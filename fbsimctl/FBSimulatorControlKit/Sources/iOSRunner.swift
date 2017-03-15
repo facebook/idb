@@ -67,13 +67,15 @@ struct iOSActionProvider {
         reporter.reporter.reportSimple(EventName.ListApps, EventType.Discrete, subject)
       }
     case .record(let record):
-      return iOSTargetRunner.simple(reporter, nil, record) {
-        switch record {
+      switch record {
         case .start(let maybePath):
-          try target.startRecording(toFile: maybePath)
+          return iOSTargetRunner.handled(reporter, nil, record) {
+            return try target.startRecording(toFile: maybePath)
+          }
         case .stop:
-          try target.stopRecording()
-        }
+          return iOSTargetRunner.simple(reporter, nil, record) {
+            try target.stopRecording()
+          }
       }
     case .terminate(let bundleID):
       return iOSTargetRunner.simple(reporter, EventName.Terminate, ControlCoreSubject(bundleID as NSString)) {

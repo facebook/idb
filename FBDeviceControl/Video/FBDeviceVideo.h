@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBDevice;
@@ -16,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Class for obtaining Video Configuration for a Device.
  */
-@interface FBDeviceVideo : NSObject
+@interface FBDeviceVideo : NSObject <FBVideoRecordingSession>
 
 /**
  A Factory method for obtaining the Video for a Device.

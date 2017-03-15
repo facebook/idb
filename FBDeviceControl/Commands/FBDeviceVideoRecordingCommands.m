@@ -41,7 +41,7 @@
   return self;
 }
 
-- (BOOL)startRecordingToFile:(NSString *)filePath error:(NSError **)error
+- (nullable id<FBVideoRecordingSession>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
 {
   NSError *innerError = nil;
   if (!self.video) {
@@ -49,11 +49,14 @@
     filePath = filePath ?: logBuilder.createPath;
     FBDeviceVideo *video = [FBDeviceVideo videoForDevice:self.device filePath:filePath error:&innerError];
     if (!video) {
-      return [FBDeviceControlError failBoolWithError:innerError errorOut:error];
+      return [FBDeviceControlError failWithError:innerError errorOut:error];
     }
     self.video = video;
   }
-  return [self.video startRecordingWithError:error];
+  if (![self.video startRecordingWithError:error]) {
+    return nil;
+  }
+  return self.video;
 }
 
 - (BOOL)stopRecordingWithError:(NSError **)error

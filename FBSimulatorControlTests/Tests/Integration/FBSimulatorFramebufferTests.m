@@ -41,10 +41,11 @@
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:launchConfiguration];
   [self assertSimulator:simulator launchesApplication:self.safariApplication withApplicationLaunchConfiguration:self.safariAppLaunch];
   NSError *error = nil;
-  BOOL success = [simulator startRecordingToFile:nil error:&error];
+  id<FBVideoRecordingSession> session = [simulator startRecordingToFile:nil error:&error];
   XCTAssertNil(error);
-  XCTAssertTrue(success);
+  XCTAssertNotNil(session);
   [self assertSimulator:simulator launchesApplication:self.tableSearchApplication withApplicationLaunchConfiguration:self.tableSearchAppLaunch];
+  [session terminate];
 }
 
 @end

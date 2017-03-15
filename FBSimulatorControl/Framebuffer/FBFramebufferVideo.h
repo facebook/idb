@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBFramebufferFrameGenerator;
@@ -17,12 +19,11 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 @protocol FBSimulatorEventSink;
 
-/**
- A Framebuffer Component that encodes video and writes it to a file.
- */
-@interface FBFramebufferVideo : NSObject
 
-#pragma mark Initializers
+/**
+ Implementations of FBFramebufferVideo.
+ */
+@interface FBFramebufferVideo : NSObject <FBVideoRecordingSession>
 
 /**
  The Initializer for a Frame Generator.
@@ -49,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Public Methods
 
 /**
- Starts Recording Video.
+ Starts Recording Video asynchronously.
 
  @param filePath the (optional) file path to record to. If nil is provided, a default path will be used.
  @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
@@ -57,11 +58,30 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)startRecordingToFile:(nullable NSString *)filePath group:(dispatch_group_t)group;
 
 /**
- Stops Recording Video.
+ Starts Recording Video synchronously.
+
+ @param filePath the (optional) file path to record to. If nil is provided, a default path will be used.
+ @param timeout the amount of time to wait for the encoding to start.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)startRecordingToFile:(nullable NSString *)filePath timeout:(NSTimeInterval)timeout error:(NSError **)error;
+
+/**
+ Stops Recording Video asynchronously.
 
  @param group the dispatch_group to put asynchronous work into. When the group's blocks have completed the recording has processed. If nil, an anonymous group will be created.
  */
 - (void)stopRecording:(dispatch_group_t)group;
+
+/**
+ Stops Recording Video synchronously
+
+ @param timeout the amount of time to wait for the encoding to finish.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)stopRecordingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
  YES if Surface Based Supporting is available, NO otherwise.

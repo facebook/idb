@@ -70,9 +70,9 @@
   return NO;
 }
 
-- (BOOL)startRecordingToFile:(NSString *)filePath error:(NSError **)error
+- (nullable id<FBXCTestCommands>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
 {
-  return NO;
+  return nil;
 }
 
 - (BOOL)stopRecordingWithError:(NSError **)error
