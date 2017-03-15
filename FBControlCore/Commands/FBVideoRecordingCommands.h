@@ -9,7 +9,21 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBTerminationHandle.h>
+
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ The Termination Handle Type for an Recording Operation.
+ */
+extern FBTerminationHandleType const FBTerminationTypeHandleVideoRecording;
+
+/**
+ Defines an async Video Recording Operation, suitable for being stopped.
+ */
+@protocol FBVideoRecordingSession <NSObject, FBTerminationHandle>
+
+@end
 
 /**
  Defines an interface for Video Recording.
