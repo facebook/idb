@@ -489,6 +489,7 @@ extension Action : Parsable {
         self.deleteParser,
         self.diagnoseParser,
         self.eraseParser,
+        self.focusParser,
         self.installParser,
         self.keyboardOverrideParser,
         self.launchAgentParser,
@@ -570,6 +571,10 @@ extension Action : Parsable {
 
   static var eraseParser: Parser<Action> {
     return Parser.ofString(EventName.Erase.rawValue, Action.erase)
+  }
+
+  static var focusParser: Parser<Action> {
+    return Parser.ofString(EventName.Focus.rawValue, Action.focus)
   }
 
   static var launchAgentParser: Parser<Action> {

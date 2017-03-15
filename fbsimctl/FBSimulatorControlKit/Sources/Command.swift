@@ -74,6 +74,7 @@ public enum Action {
   case create(CreationSpecification)
   case delete
   case diagnose(FBDiagnosticQuery, DiagnosticFormat)
+  case focus
   case erase
   case hid(FBSimulatorHIDEvent)
   case install(String, Bool)
@@ -282,6 +283,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftQuery == rightQuery && leftFormat == rightFormat
   case (.erase, .erase):
     return true
+  case (.focus, .focus):
+    return true
   case (.hid(let leftEvent), .hid(let rightEvent)):
     return leftEvent == rightEvent
   case (.install(let leftApp, let leftSign), .install(let rightApp, let rightSign)):
@@ -350,6 +353,8 @@ extension Action {
       return (EventName.Diagnose, ControlCoreSubject(query))
     case .erase:
       return (EventName.Erase, nil)
+    case .focus:
+      return (EventName.Focus, nil)
     case .hid(let event):
       return (EventName.Hid, ControlCoreSubject(event))
     case .install:

@@ -19,6 +19,7 @@ public enum EventName : String {
   case Delete = "delete"
   case Diagnose = "diagnose"
   case Diagnostic = "diagnostic"
+  case Focus = "focus"
   case Erase = "erase"
   case Failure = "failure"
   case Help = "help"

@@ -82,6 +82,10 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, EventName.Erase, ControlCoreSubject(simulator)) {
         try simulator.erase()
       }
+    case .focus:
+      return iOSTargetRunner.simple(reporter, EventName.Focus, ControlCoreSubject(simulator)) {
+        try simulator.focus()
+      }
     case .hid(let event):
       return iOSTargetRunner.simple(reporter, EventName.Hid, ControlCoreSubject(simulator)) {
         try event.perform(on: simulator.connect().connectToHID())

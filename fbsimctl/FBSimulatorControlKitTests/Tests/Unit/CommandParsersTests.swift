@@ -193,6 +193,7 @@ let validActions: [([String], Action)] = [
   (["diagnose", "--path", "--crashes-since", "100", "--application"], Action.diagnose(FBDiagnosticQuery.crashes(of: FBCrashLogInfoProcessType.application, since: Date(timeIntervalSince1970: 100)), DiagnosticFormat.Path)),
   (["diagnose"], Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)),
   (["erase"], Action.erase),
+  (["focus"], Action.focus),
   (["install", Fixtures.application.path], Action.install(Fixtures.application.path, false)),
   (["install", Fixtures.application.path, "--codesign"], Action.install(Fixtures.application.path, true)),
   (["keyboard_override"], Action.keyboardOverride),
