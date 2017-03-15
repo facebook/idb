@@ -31,7 +31,7 @@
 
 #import "FBFramebufferFrame.h"
 #import "FBFramebufferFrameGenerator.h"
-#import "FBFramebufferImage.h"
+#import "FBSimulatorImage.h"
 #import "FBSimulatorVideo.h"
 #import "FBFramebufferSurface.h"
 #import "FBFramebufferConfiguration.h"
@@ -169,7 +169,7 @@
 
 #pragma mark Properties
 
-- (FBFramebufferImage *)image
+- (FBSimulatorImage *)image
 {
   if (!_image) {
     _image = [self createImage];
@@ -185,7 +185,7 @@
   return _video;
 }
 
-- (FBFramebufferImage *)createImage
+- (FBSimulatorImage *)createImage
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
@@ -210,9 +210,9 @@
 
 #pragma mark Properties
 
-- (FBFramebufferImage *)createImage
+- (FBSimulatorImage *)createImage
 {
-  return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
+  return [FBSimulatorImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
 }
 
 - (FBSimulatorVideo *)createVideo
@@ -264,9 +264,9 @@
 
 #pragma mark Properties
 
-- (FBFramebufferImage *)createImage
+- (FBSimulatorImage *)createImage
 {
-  return [FBFramebufferImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
+  return [FBSimulatorImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
 }
 
 - (FBSimulatorVideo *)createVideo

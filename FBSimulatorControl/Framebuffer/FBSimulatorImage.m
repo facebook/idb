@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBFramebufferImage.h"
+#import "FBSimulatorImage.h"
 
 #import <CoreImage/CoreImage.h>
 
@@ -35,14 +35,14 @@
 #import "FBSimulatorDiagnostics.h"
 #import "FBFramebufferFrameGenerator.h"
 
-@interface FBFramebufferImage ()
+@interface FBSimulatorImage ()
 
 @property (nonatomic, copy, readonly) NSString *filePath;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 
 @end
 
-@interface FBFramebufferImage_FrameSink : FBFramebufferImage <FBFramebufferFrameSink>
+@interface FBSimulatorImage_FrameSink : FBSimulatorImage <FBFramebufferFrameSink>
 
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
@@ -53,7 +53,7 @@
 
 @end
 
-@interface FBFramebufferImage_Surface : FBFramebufferImage <FBFramebufferSurfaceConsumer>
+@interface FBSimulatorImage_Surface : FBSimulatorImage <FBFramebufferSurfaceConsumer>
 
 @property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
@@ -63,19 +63,19 @@
 
 @end
 
-@implementation FBFramebufferImage
+@implementation FBSimulatorImage
 
 #pragma mark Initializers
 
 + (instancetype)imageWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBSimulatorControl.framebuffer.image", DISPATCH_QUEUE_SERIAL);
-  return [[FBFramebufferImage_FrameSink alloc] initWithFilePath:filePath frameGenerator:frameGenerator eventSink:eventSink writeQueue:queue];
+  return [[FBSimulatorImage_FrameSink alloc] initWithFilePath:filePath frameGenerator:frameGenerator eventSink:eventSink writeQueue:queue];
 }
 
 + (instancetype)imageWithFilePath:(NSString *)filePath surface:(FBFramebufferSurface *)surface eventSink:(id<FBSimulatorEventSink>)eventSink
 {
-  return [[FBFramebufferImage_Surface alloc] initWithFilePath:filePath eventSink:eventSink surface:surface];
+  return [[FBSimulatorImage_Surface alloc] initWithFilePath:filePath eventSink:eventSink surface:surface];
 }
 
 
@@ -92,7 +92,7 @@
   return self;
 }
 
-#pragma mark FBFramebufferImage
+#pragma mark FBSimulatorImage
 
 - (nullable CGImageRef)image
 {
@@ -102,12 +102,12 @@
 
 - (nullable NSData *)jpegImageDataWithError:(NSError **)error
 {
-  return [FBFramebufferImage jpegImageDataFromImage:self.image error:error];
+  return [FBSimulatorImage jpegImageDataFromImage:self.image error:error];
 }
 
 - (nullable NSData *)pngImageDataWithError:(NSError **)error
 {
-  return [FBFramebufferImage pngImageDataFromImage:self.image error:error];
+  return [FBSimulatorImage pngImageDataFromImage:self.image error:error];
 }
 
 #pragma mark Private
@@ -175,7 +175,7 @@
 
 @end
 
-@implementation FBFramebufferImage_FrameSink
+@implementation FBSimulatorImage_FrameSink
 
 - (instancetype)initWithFilePath:(NSString *)filePath frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator eventSink:(id<FBSimulatorEventSink>)eventSink writeQueue:(dispatch_queue_t)writeQueue
 {
@@ -218,7 +218,7 @@
       updatePath:self.filePath]
       updateShortName:FBDiagnosticNameScreenshot]
       build];
-    diagnostic = [FBFramebufferImage_FrameSink appendImage:self.lastFrame.image toDiagnostic:diagnostic];
+    diagnostic = [FBSimulatorImage_FrameSink appendImage:self.lastFrame.image toDiagnostic:diagnostic];
     id<FBSimulatorEventSink> eventSink = self.eventSink;
     dispatch_async(dispatch_get_main_queue(), ^{
       [eventSink diagnosticAvailable:diagnostic];
@@ -228,7 +228,7 @@
 
 @end
 
-@implementation FBFramebufferImage_Surface
+@implementation FBSimulatorImage_Surface
 
 - (instancetype)initWithFilePath:(NSString *)filePath eventSink:(id<FBSimulatorEventSink>)eventSink surface:(FBFramebufferSurface *)surface
 {
@@ -261,7 +261,7 @@
   [self.imageGenerator didReceiveDamageRect:rect];
 }
 
-#pragma mark FBFramebufferImage Implementation
+#pragma mark FBSimulatorImage Implementation
 
 - (nullable CGImageRef)image
 {
