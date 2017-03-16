@@ -101,12 +101,17 @@
 
 @end
 
+@interface FBFramebufferSurface ()
+
+@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *forwarders;
+
+@end
+
 @interface FBFramebufferSurface_IOClient : FBFramebufferSurface
 
 @property (nonatomic, strong, readonly) SimDeviceIOClient *ioClient;
 @property (nonatomic, strong, readonly) id<SimDeviceIOPortInterface> port;
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
-@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferSurfaceConsumer>, FBFramebufferSurface_IOClient_Forwarder *> *forwarders;
 
 - (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface;
 
@@ -116,13 +121,14 @@
 
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
-@property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferSurfaceConsumer>, FBFramebufferSurface_SimDeviceFramebufferService_Forwarder *> *forwarders;
 
 - (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService clientQueue:(dispatch_queue_t)clientQueue;
 
 @end
 
 @implementation FBFramebufferSurface
+
+#pragma mark Initializers
 
 + (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient
 {
@@ -147,6 +153,28 @@
   return [[FBFramebufferSurface_FramebufferService alloc] initWithFramebufferService:framebufferService clientQueue:clientQueue];
 }
 
+- (instancetype)initWithForwarders:(NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *)forwarders
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _forwarders = forwarders;
+
+  return self;
+}
+
+- (instancetype)init
+{
+  NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *forwarders = [NSMapTable
+    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
+    valueOptions:NSPointerFunctionsStrongMemory];
+  return [self initWithForwarders:forwarders];
+}
+
+#pragma mark Public Methods
+
 - (void)attachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
@@ -155,6 +183,15 @@
 - (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (NSArray<id<FBFramebufferSurfaceConsumer>> *)attachedConsumers
+{
+  NSMutableArray<id<FBFramebufferSurfaceConsumer>> *consumers = [NSMutableArray array];
+  for (id<FBFramebufferSurfaceConsumer> consumer in self.forwarders.keyEnumerator) {
+    [consumers addObject:consumer];
+  }
+  return [consumers copy];
 }
 
 @end
@@ -171,9 +208,6 @@
   _ioClient = ioClient;
   _port = port;
   _surface = surface;
-  _forwarders = [NSMapTable
-    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
-    valueOptions:NSPointerFunctionsStrongMemory];
 
   return self;
 }
@@ -226,9 +260,6 @@
 
   _framebufferService = framebufferService;
   _clientQueue = clientQueue;
-  _forwarders = [NSMapTable
-    mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
-    valueOptions:NSPointerFunctionsStrongMemory];
 
   return self;
 }

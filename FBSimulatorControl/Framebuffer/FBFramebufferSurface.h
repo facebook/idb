@@ -79,6 +79,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer;
 
+/**
+ An Array of all attached consumers
+ */
+- (NSArray<id<FBFramebufferSurfaceConsumer>> *)attachedConsumers;
+
 @end
 
 NS_ASSUME_NONNULL_END
