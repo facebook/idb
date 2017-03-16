@@ -81,24 +81,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)detachFrameSink:(id<FBFramebufferFrameSink>)frameSink;
 
-/**
- Attaches a Surface Consumer.
-
- @param consumer the consumer to attach.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)attachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error;
-
-/**
- Detaches a Surface Consumer.
-
- @param consumer the consumer to detach.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)detachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error;
-
 #pragma mark Properties
 
 /**
@@ -110,6 +92,11 @@ NS_ASSUME_NONNULL_BEGIN
  The FBSimulatorImage instance owned by the receiver.
  */
 @property (nonatomic, strong, readonly) FBSimulatorImage *image;
+
+/**
+ The FBFramebufferSurface owned by the reciever, if supported.
+ */
+@property (nonatomic, strong, nullable, readonly) FBFramebufferSurface *surface;
 
 @end
 

@@ -49,7 +49,7 @@
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -58,11 +58,6 @@
 @end
 
 @interface FBFramebuffer_IOSurface : FBFramebuffer
-
-@property (nonatomic, strong, readonly) FBFramebufferIOSurfaceFrameGenerator *ioSurfaceGenerator;
-@property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
-
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -101,7 +96,7 @@
     return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
   }
   FBFramebufferBackingStoreFrameGenerator *frameGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebufferService:framebufferService scale:configuration.scaleValue queue:queue logger:logger];
-  return [[FBFramebuffer_FramebufferService alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator logger:logger];
+  return [[FBFramebuffer_FramebufferService alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:nil logger:logger];
 }
 
 + (instancetype)framebufferWithRenderable:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
@@ -118,7 +113,7 @@
   return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -128,6 +123,7 @@
   _configuration = configuration;
   _eventSink = eventSink;
   _frameGenerator = frameGenerator;
+  _surface = surface;
   _logger = logger;
 
   return self;
@@ -151,20 +147,6 @@
 {
   NSParameterAssert(frameSink);
   [self.frameGenerator detachSink:frameSink];
-}
-
-- (BOOL)attachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
-{
-  return [[FBSimulatorError
-    describeFormat:@"%@ a Surface Consumer is not supported for class %@", NSStringFromSelector(_cmd), NSStringFromClass(self.class)]
-    failBool:error];
-}
-
-- (BOOL)detachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
-{
-  return [[FBSimulatorError
-    describeFormat:@"%@ a Surface Consumer is not supported for class %@", NSStringFromSelector(_cmd), NSStringFromClass(self.class)]
-    failBool:error];
 }
 
 #pragma mark Properties
@@ -233,34 +215,6 @@
 @end
 
 @implementation FBFramebuffer_IOSurface
-
-#pragma mark Initializers
-
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
-{
-  self = [super initWithConfiguration:configuration eventSink:eventSink frameGenerator:frameGenerator logger:logger];
-  if (!self) {
-    return nil;
-  }
-
-  _surface = surface;
-
-  return self;
-}
-
-#pragma mark Public
-
-- (BOOL)attachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
-{
-  [self.surface attachConsumer:consumer];
-  return YES;
-}
-
-- (BOOL)detachSurfaceConsumer:(id<FBFramebufferSurfaceConsumer>)consumer error:(NSError **)error
-{
-  [self.surface detachConsumer:consumer];
-  return YES;
-}
 
 #pragma mark Properties
 
