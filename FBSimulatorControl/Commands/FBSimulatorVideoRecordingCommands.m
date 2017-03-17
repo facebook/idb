@@ -15,6 +15,10 @@
 #import "FBSimulator+Framebuffer.h"
 #import "FBFramebuffer.h"
 #import "FBSimulatorVideo.h"
+#import "FBFramebufferSurface.h"
+#import "FBSimulatorBitmapStream.h"
+
+FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStreaming";
 
 @interface FBSimulatorVideoRecordingCommands ()
 
@@ -65,19 +69,23 @@
   return [video stopRecordingWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout error:error];
 }
 
-#pragma mark
+#pragma mark FBSimulatorStreamingCommands
+
+- (nullable FBSimulatorBitmapStream *)createStreamWithError:(NSError **)error
+{
+  FBFramebufferSurface *surface = [self obtainSurfaceWithError:error];
+  if (!surface) {
+    return nil;
+  }
+  return [FBSimulatorBitmapStream streamWithSurface:surface logger:self.simulator.logger];
+}
+
+#pragma mark Private
 
 - (FBSimulatorVideo *)obtainSimulatorVideoWithError:(NSError **)error
 {
-  FBSimulator *simulator = self.simulator;
-  if (simulator.state != FBSimulatorStateBooted) {
-    return [[FBSimulatorError
-      describeFormat:@"Cannot get the Video for a non-booted simulator %@", simulator]
-      fail:error];
-  }
-
   NSError *innerError = nil;
-  FBFramebuffer *framebuffer = [simulator framebufferWithError:&innerError];
+  FBFramebuffer *framebuffer = [self.simulator framebufferWithError:&innerError];
   if (!framebuffer) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -85,10 +93,26 @@
   if (!video) {
     return [[[FBSimulatorError
       describe:@"Simulator Does not have a FBSimulatorVideo instance"]
-      inSimulator:simulator]
+      inSimulator:self.simulator]
       fail:error];
   }
   return video;
+}
+
+- (FBFramebufferSurface *)obtainSurfaceWithError:(NSError **)error
+{
+  NSError *innerError = nil;
+  FBFramebuffer *framebuffer = [self.simulator framebufferWithError:&innerError];
+  if (!framebuffer) {
+    return [FBSimulatorError failWithError:innerError errorOut:error];
+  }
+  FBFramebufferSurface *surface = framebuffer.surface;
+  if (!surface) {
+    return [[FBSimulatorError
+      describe:@"Framebuffer does not have a surface"]
+      fail:error];
+  }
+  return surface;
 }
 
 @end

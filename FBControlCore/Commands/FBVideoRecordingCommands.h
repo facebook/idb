@@ -13,6 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBFileConsumer;
 @protocol FBVideoRecordingSession;
 
 /**
@@ -33,7 +34,7 @@ extern FBTerminationHandleType const FBTerminationTypeHandleVideoRecording;
 @protocol FBVideoRecordingCommands <NSObject>
 
 /**
- Starts the Recording of Video.
+ Starts the Recording of Video to a File.
 
  @param filePath an optional filePath to write to. If not provided, a default file path will be used.
  @param error an error out for any error that occurs.
