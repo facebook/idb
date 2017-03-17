@@ -69,281 +69,32 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Devices
 
 /**
- An OS with the given configuration.
+ A Configuration with the provided Device Configuration.
  */
 + (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device;
 - (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device;
 
 /**
- A Device with the provided name.
- Will return nil, if no device with the given name could be found.
+ A Configuration with the provided Device Name.
+ Will assert if the deviceName is not a valid Device Name.
  */
 + (instancetype)withDeviceNamed:(FBDeviceName)deviceName;
 - (instancetype)withDeviceNamed:(FBDeviceName)deviceName;
 
-#pragma mark iPhone Devices
-
-/**
- An iPhone 4s.
- */
-+ (instancetype)iPhone4s;
-- (instancetype)iPhone4s;
-
-/**
- An iPhone 5.
- */
-+ (instancetype)iPhone5;
-- (instancetype)iPhone5;
-
-/**
- An iPhone 5s.
- */
-+ (instancetype)iPhone5s;
-- (instancetype)iPhone5s;
-
-/**
- An iPhone 6.
- */
-+ (instancetype)iPhone6;
-- (instancetype)iPhone6;
-
-/**
- An iPhone 6s.
- */
-+ (instancetype)iPhone6s;
-- (instancetype)iPhone6s;
-
-/**
- An iPhone 6 Plus.
- */
-+ (instancetype)iPhone6Plus;
-- (instancetype)iPhone6Plus;
-
-/**
- An iPhone 6s Plus.
- */
-+ (instancetype)iPhone6sPlus;
-- (instancetype)iPhone6sPlus;
-
-/**
- An iPhone 6s Plus.
- */
-+ (instancetype)iPhoneSE;
-- (instancetype)iPhoneSE;
-
-/**
- An iPhone 7.
- */
-+ (instancetype)iPhone7;
-- (instancetype)iPhone7;
-
-/**
- An iPhone 7 Plus.
- */
-+ (instancetype)iPhone7Plus;
-- (instancetype)iPhone7Plus;
-
-#pragma mark iPad Devices
-
-/**
- An iPad 2.
- */
-+ (instancetype)iPad2;
-- (instancetype)iPad2;
-
-/**
- An iPad Retina.
- */
-+ (instancetype)iPadRetina;
-- (instancetype)iPadRetina;
-
-/**
- An iPad Pro.
- */
-+ (instancetype)iPadPro;
-- (instancetype)iPadPro;
-
-/**
- An iPad Air.
- */
-+ (instancetype)iPadAir;
-- (instancetype)iPadAir;
-
-/**
- An iPad Air.
- */
-+ (instancetype)iPadAir2;
-- (instancetype)iPadAir2;
-
-#pragma mark Watch Devices
-
-/**
- The 38mm Apple Watch.
- */
-+ (instancetype)watch38mm;
-- (instancetype)watch38mm;
-
-/**
- The 42mm Apple Watch.
- */
-+ (instancetype)watch42mm;
-- (instancetype)watch42mm;
-
-/**
- The 38mm Apple Watch Series 2.
- */
-+ (instancetype)watchSeries2_38mm;
-- (instancetype)watchSeries2_38mm;
-
-/**
- The 42mm Apple Watch Series 2.
- */
-+ (instancetype)watchSeries2_42mm;
-- (instancetype)watchSeries2_42mm;
-
-#pragma mark Apple TV Devices
-
-/**
- The 1080p Apple TV.
- */
-+ (instancetype)appleTV1080p;
-- (instancetype)appleTV1080p;
-
 #pragma mark - OS Versions
 
 /**
- An OS with the given configuration.
+ A Configuration with the provided OS.
  */
 + (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os;
 - (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os;
 
 /**
- Device with the given OS version.
- Will return nil, if no OS with the given name could be found.
+ A Configuration with the provided OS Name.
+ Will assert if the deviceName is not a valid Device Name.
  */
-+ (nullable instancetype)withOSNamed:(NSString *)osName;
-
-/**
- Device with the given OS version.
- Will return nil, if no OS with the given name could be found.
- */
-- (nullable instancetype)withOSNamed:(NSString *)osName;
-
-#pragma mark iOS Versions
-
-/**
- iOS 7.1
- */
-- (instancetype)iOS_7_1;
-
-/**
- iOS 8.0
- */
-- (instancetype)iOS_8_0;
-
-/**
- iOS 8.1
- */
-- (instancetype)iOS_8_1;
-
-/**
- iOS 8.2
- */
-- (instancetype)iOS_8_2;
-
-/**
- iOS 8.3
- */
-- (instancetype)iOS_8_3;
-
-/**
- iOS 8.4
- */
-- (instancetype)iOS_8_4;
-
-/**
- iOS 9.0
- */
-- (instancetype)iOS_9_0;
-
-/**
- iOS 9.1
- */
-- (instancetype)iOS_9_1;
-
-/**
- iOS 9.2
- */
-- (instancetype)iOS_9_2;
-
-/**
- iOS 9.3
- */
-- (instancetype)iOS_9_3;
-
-/**
- iOS 10.0
- */
-- (instancetype)iOS_10_0;
-
-/**
- iOS 10.1
- */
-- (instancetype)iOS_10_1;
-
-#pragma mark tvOS Versions
-
-/**
- tvOS 9.0
- */
-- (instancetype)tvOS_9_0;
-
-/**
- tvOS 9.1
- */
-- (instancetype)tvOS_9_1;
-
-/**
- tvOS 9.2
- */
-- (instancetype)tvOS_9_2;
-
-/**
- tvOS 10.0
- */
-- (instancetype)tvOS_10_0;
-
-/**
- tvOS 10.1
- */
-- (instancetype)tvOS_10_1;
-
-#pragma mark watchOS Versions
-
-/**
- watchOS 2.0
- */
-- (instancetype)watchOS_2_0;
-
-/**
- watchOS 2.1
- */
-- (instancetype)watchOS_2_1;
-
-/**
- watchOS 2.2
- */
-- (instancetype)watchOS_2_2;
-
-/**
- watchOS 3.0
- */
-- (instancetype)watchOS_3_0;
-
-/**
- watchOS 3.1
- */
-- (instancetype)watchOS_3_1;
++ (instancetype)withOSNamed:(FBOSVersionName)osName;
+- (instancetype)withOSNamed:(FBOSVersionName)osName;
 
 #pragma mark Auxillary Directory
 

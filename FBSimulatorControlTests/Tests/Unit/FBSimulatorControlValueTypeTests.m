@@ -56,8 +56,8 @@
 {
   NSArray<FBSimulatorConfiguration *> *values = @[
     FBSimulatorConfiguration.defaultConfiguration,
-    FBSimulatorConfiguration.iPhone5,
-    FBSimulatorConfiguration.iPad2.iOS_8_3
+    [FBSimulatorConfiguration withDeviceNamed:FBDeviceNameiPhone5],
+    [[FBSimulatorConfiguration withDeviceNamed:FBDeviceNameiPad2] withOSNamed:FBOSVersionNameiOS_8_3],
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];
