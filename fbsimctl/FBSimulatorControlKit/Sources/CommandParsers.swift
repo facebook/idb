@@ -477,6 +477,15 @@ extension Record : Parsable {
   }
 }
 
+extension FileOutput : Parsable {
+  public static var parser: Parser<FileOutput> {
+    return Parser.alternative([
+      Parser.ofString("-", FileOutput.standardOut),
+      Parser<FileOutput>.ofFile.fmap(FileOutput.path),
+    ])
+  }
+}
+
 extension Action : Parsable {
   public static var parser: Parser<Action> {
     return Parser
@@ -505,6 +514,7 @@ extension Action : Parsable {
         self.serviceInfoParser,
         self.setLocationParser,
         self.shutdownParser,
+        self.streamParser,
         self.tapParser,
         self.terminateParser,
         self.uninstallParser,
@@ -730,6 +740,12 @@ extension Action : Parsable {
       .fmap { (latitude, longitude) in
         Action.setLocation(latitude, longitude)
       }
+  }
+
+  static var streamParser: Parser<Action> {
+    return Parser
+      .ofCommandWithArg(EventName.Stream.rawValue, FileOutput.parser.optional())
+      .fmap(Action.stream)
   }
 
   static var terminateParser: Parser<Action> {

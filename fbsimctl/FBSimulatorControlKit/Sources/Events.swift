@@ -43,6 +43,7 @@ public enum EventName : String {
   case Shutdown = "shutdown"
   case Signalled = "signalled"
   case StateChange = "state"
+  case Stream = "stream"
   case Tap = "tap"
   case Terminate = "terminate"
   case Uninstall = "uninstall"
