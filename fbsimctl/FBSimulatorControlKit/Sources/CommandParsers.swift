@@ -28,7 +28,9 @@ extension Parser {
     let desc = PrimitiveDesc(name: "double",
                              desc: "Double-precision floating point number.")
     return Parser<Double>.single(desc) { token in
-      guard let double = NumberFormatter().number(from: token)?.doubleValue else {
+      let numberFormatter = NumberFormatter()
+      numberFormatter.decimalSeparator = "."
+      guard let double = numberFormatter.number(from: token)?.doubleValue else {
         throw ParseError.couldNotInterpret("Double", token)
       }
       return double
