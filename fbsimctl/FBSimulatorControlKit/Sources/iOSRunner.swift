@@ -77,6 +77,17 @@ struct iOSActionProvider {
             try target.stopRecording()
           }
       }
+    case .stream(let maybeOutput):
+      return iOSTargetRunner.handled(reporter, EventName.Stream, ControlCoreSubject(target as! ControlCoreValue)) {
+        let stream = try target.createStream()
+        if let output = maybeOutput {
+          try stream.startStreaming(output.makeWriter())
+        } else {
+          let attributes = try stream.streamAttributes()
+          reporter.reportValue(.Stream, .Discrete, attributes)
+        }
+        return stream
+      }
     case .terminate(let bundleID):
       return iOSTargetRunner.simple(reporter, EventName.Terminate, ControlCoreSubject(bundleID as NSString)) {
         try target.killApplication(withBundleID: bundleID)

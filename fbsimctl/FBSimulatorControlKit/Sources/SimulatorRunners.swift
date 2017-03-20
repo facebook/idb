@@ -129,17 +129,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, EventName.Shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.kill(simulator)
       }
-    case .stream(let maybeOutput):
-      return iOSTargetRunner.handled(reporter, EventName.Stream, ControlCoreSubject(simulator)) {
-        let stream = try simulator.createStream()
-        if let output = maybeOutput {
-          try stream.startStreaming(output.makeWriter())
-        } else {
-          let attributes = try stream.streamAttributes()
-          reporter.reportValue(.Stream, .Discrete, attributes)
-        }
-        return stream
-      }
     case .tap(let x, let y):
       return iOSTargetRunner.simple(reporter, EventName.Tap, ControlCoreSubject(simulator)) {
         let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
