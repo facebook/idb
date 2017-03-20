@@ -13,12 +13,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class AVCaptureSession;
 @class FBDevice;
 
 /**
  A Class for obtaining Video Configuration for a Device.
  */
 @interface FBDeviceVideo : NSObject <FBVideoRecordingSession>
+
+/**
+ Obtains the AVCaptureSession for a Device.
+
+ @param device the Device to obtain the Session for.
+ @param error an error out for any error that occurs.
+ @return A Capture Session if successful, nil otherwise.
+ */
++ (nullable AVCaptureSession *)captureSessionForDevice:(FBDevice *)device error:(NSError **)error;
 
 /**
  A Factory method for obtaining the Video for a Device.

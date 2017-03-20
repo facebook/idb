@@ -72,12 +72,10 @@
 
 #pragma mark Initializers
 
-+ (nullable instancetype)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath error:(NSError **)error
++ (nullable AVCaptureSession *)captureSessionForDevice:(FBDevice *)device error:(NSError **)error
 {
-  id<FBControlCoreLogger> logger = device.logger;
-  NSError *innerError = nil;
-
   // Allow Access
+  NSError *innerError = nil;
   if (![self allowAccessToScreenCaptureDevicesWithError:&innerError]) {
     return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
@@ -103,8 +101,20 @@
   }
   [session addInput:deviceInput];
 
+  return session;
+}
+
++ (nullable instancetype)videoForDevice:(FBDevice *)device filePath:(NSString *)filePath error:(NSError **)error
+{
+  // Add the Input to a new Session.
+  NSError *innerError = nil;
+  AVCaptureSession *session = [self captureSessionForDevice:device error:&innerError];
+  if (!session) {
+    return [FBDeviceControlError failWithError:innerError errorOut:error];
+  }
+
   // Construct the Device Video instance.
-  FBDeviceVideoFileEncoder *encoder = [FBDeviceVideoFileEncoder encoderWithSession:session filePath:filePath logger:logger error:&innerError];
+  FBDeviceVideoFileEncoder *encoder = [FBDeviceVideoFileEncoder encoderWithSession:session filePath:filePath logger:device.logger error:&innerError];
   if (!encoder) {
     return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
