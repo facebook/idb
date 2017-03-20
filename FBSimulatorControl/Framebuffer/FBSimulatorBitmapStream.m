@@ -28,37 +28,6 @@
 
 #import "FBSimulatorError.h"
 
-FBTerminationHandleType const FBTerminationHandleTypeVideoStreaming = @"VideoStreaming";
-
-@implementation FBBitmapStreamAttributes
-
-- (instancetype)initWithAttributes:(NSDictionary<NSString *, id> *)attributes
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _attributes = attributes;
-  return self;
-}
-
-#pragma mark NSObject
-
-- (NSString *)description
-{
-  return [FBCollectionInformation oneLineDescriptionFromDictionary:self.attributes];
-}
-
-#pragma mark FBJSONSerializable
-
-- (id)jsonSerializableRepresentation
-{
-  return self.attributes;
-}
-
-@end
-
 @interface FBSimulatorBitmapStream ()
 
 @property (nonatomic, weak, readonly) FBFramebufferSurface *surface;

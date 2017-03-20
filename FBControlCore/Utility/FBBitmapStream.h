@@ -9,41 +9,47 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
-
-#import <FBSimulatorControl/FBFramebufferSurface.h>
+#import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBTerminationHandle.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBFramebufferSurface;
+/**
+ The Termination Handle Type for an Recording Operation.
+ */
+extern FBTerminationHandleType const FBTerminationHandleTypeVideoStreaming;
+
+/**
+ A Value container for Stream Attributes.
+ */
+@interface FBBitmapStreamAttributes : NSObject <FBJSONSerializable>
+
+/**
+ The Underlying Dictionary Representation.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, id> *attributes;
+
+/**
+ The Designated Initializer
+ */
+- (instancetype)initWithAttributes:(NSDictionary<NSString *, id> *)attributes;
+
+@end
+
 @protocol FBFileConsumer;
-@protocol FBControlCoreLogger;
 
 /**
- A Bitmap Stream of a Simulator's Framebuffer.
- This component can be used to provide a real-time stream of a Simulator's Framebuffer.
- This can be connected to additional software via a stream to a File Handle or Fifo.
+ Streams Bitmaps to a File Sink
  */
-@interface FBSimulatorBitmapStream : NSObject <FBFramebufferSurfaceConsumer, FBBitmapStream>
-
-#pragma mark Initializers
-
-/**
- Constructs a Bitmap Stream
-
- @param surface the surface to connect to.
- @param logger the logger to log to.
- @return a new Bitmap Stream object.
- */
-+ (instancetype)streamWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
+@protocol FBBitmapStream <FBTerminationHandle>
 
 #pragma mark Public Methods
 
 /**
- Obtains a Dictonary Describing the Attributes of the Stream. 
- 
+ Obtains a Dictonary Describing the Attributes of the Stream.
+
  @param error an error out for any error that occurs.
- @return the Attributes if successful, nil otherwise.
+ @return the Attributes if successful, NO otherwise.
  */
 - (nullable FBBitmapStreamAttributes *)streamAttributesWithError:(NSError **)error;
 
