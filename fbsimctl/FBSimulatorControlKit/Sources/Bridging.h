@@ -21,9 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface Constants : NSObject
 
-+ (int32_t)sol_socket;
-+ (int32_t)so_reuseaddr;
-
 + (int32_t)asl_level_info;
 + (int32_t)asl_level_debug;
 + (int32_t)asl_level_err;

@@ -10,24 +10,10 @@
 #import "Bridging.h"
 
 #import <asl.h>
-
 #import <FBSimulatorControlKit/FBSimulatorControlKit-Swift.h>
-
-#import <sys/socket.h>
-
 #import <GCDWebServers/GCDWebServers.h>
 
 @implementation Constants
-
-+ (int32_t)sol_socket
-{
-  return SOL_SOCKET;
-}
-
-+ (int32_t)so_reuseaddr
-{
-  return SO_REUSEADDR;
-}
 
 + (int32_t)asl_level_info
 {
