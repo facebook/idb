@@ -33,7 +33,7 @@ public struct ListenInterface {
  A Configuration for Creating an Individual Simulator.
  */
 public struct IndividualCreationConfiguration {
-  let osVersion: FBControlCoreConfiguration_OS?
+  let osVersion: FBOSVersionName?
   let deviceType: FBControlCoreConfiguration_Device?
   let auxDirectory : String?
 }
@@ -225,7 +225,7 @@ extension ListenInterface : EventReporterSubject {
 
 extension IndividualCreationConfiguration : Equatable {}
 public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
-  return left.osVersion?.name == right.osVersion?.name &&
+  return left.osVersion == right.osVersion &&
          left.deviceType?.deviceName == right.deviceType?.deviceName &&
          left.auxDirectory == right.auxDirectory
 }

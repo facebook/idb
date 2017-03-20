@@ -67,12 +67,12 @@
   }];
 }
 
-+ (NSPredicate *)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions
++ (NSPredicate *)osVersions:(NSArray<FBOSVersionName> *)osVersions
 {
-  NSSet<id<FBControlCoreConfiguration_OS>> *osConfigurationSet = [NSSet setWithArray:osVersions];
+  NSSet<FBOSVersionName> *osConfigurationSet = [NSSet setWithArray:osVersions];
 
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
-    return [osConfigurationSet containsObject:candidate.osConfiguration];
+    return [osConfigurationSet containsObject:candidate.osConfiguration.name];
   }];
 }
 

@@ -274,15 +274,15 @@ extension IndividualCreationConfiguration : Parsable {
     }
   }
 
-  static var osVersionParser: Parser<FBControlCoreConfiguration_OS> {
+  static var osVersionParser: Parser<FBOSVersionName> {
     let desc = PrimitiveDesc(name: "os-version", desc: "OS Version.")
     return Parser.single(desc) { token in
       let nameToOSVersion = FBControlCoreConfigurationVariants.nameToOSVersion
       let osVersionName = FBOSVersionName(rawValue: token)
-      guard let osVersion = nameToOSVersion[osVersionName] else {
+      guard let _ = nameToOSVersion[osVersionName] else {
         throw ParseError.custom("\(token) is not a valid device name")
       }
-      return osVersion
+      return osVersionName
     }
   }
 

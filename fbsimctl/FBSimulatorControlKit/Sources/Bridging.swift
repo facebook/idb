@@ -92,8 +92,7 @@ extension FBiOSTargetQuery : Accumulator {
   public func append(_ other: FBiOSTargetQuery) -> Self {
     let deviceSet = other.devices as NSSet
     let deviceArray = Array(deviceSet) as! [FBControlCoreConfiguration_Device]
-    let osVersionsSet = other.osVersions as NSSet
-    let osVersionsArray = Array(osVersionsSet) as! [FBControlCoreConfiguration_OS]
+    let osVersions = Array(other.osVersions)
     let targetType = self.targetType.append(other.targetType)
 
     return self
@@ -102,7 +101,7 @@ extension FBiOSTargetQuery : Accumulator {
       .architectures(Array(other.architectures))
       .targetType(targetType)
       .devices(deviceArray)
-      .osVersions(osVersionsArray)
+      .osVersions(osVersions)
       .range(other.range)
   }
 }
@@ -177,7 +176,7 @@ extension IndividualCreationConfiguration {
       configuration = configuration.withDevice(device)
     }
     if let os = self.osVersion {
-      configuration = configuration.withOS(os)
+      configuration = configuration.withOSNamed(os)
     }
     if let auxDirectory = self.auxDirectory {
       configuration = configuration.withAuxillaryDirectory(auxDirectory)

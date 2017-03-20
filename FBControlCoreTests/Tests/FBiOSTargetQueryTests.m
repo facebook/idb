@@ -65,14 +65,14 @@
 {
   NSArray<FBiOSTargetQuery *> *values = @[
     [[[FBiOSTargetQuery udids:@[@"foo", @"bar"]] range:NSMakeRange(2, 10)] devices:@[FBControlCoreConfiguration_Device_iPhone5.new, FBControlCoreConfiguration_Device_iPad2.new]],
-    [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooting]] osVersions:@[FBControlCoreConfiguration_iOS_7_1.new, FBControlCoreConfiguration_iOS_9_0.new]],
+    [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooting]] osVersions:@[FBOSVersionNameiOS_7_1, FBOSVersionNameiOS_9_0]],
     [[FBiOSTargetQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E"]] states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateBooted), @(FBSimulatorStateBooting)]]],
     [FBiOSTargetQuery allTargets],
     [FBiOSTargetQuery targetType:FBiOSTargetTypeDevice],
     [FBiOSTargetQuery targetType:FBiOSTargetTypeSimulator],
     [FBiOSTargetQuery targetType:FBiOSTargetTypeNone],
     [FBiOSTargetQuery devices:@[FBControlCoreConfiguration_Device_iPad2.new, FBControlCoreConfiguration_Device_iPadAir.new]],
-    [FBiOSTargetQuery osVersions:@[FBControlCoreConfiguration_iOS_9_0.new, FBControlCoreConfiguration_iOS_9_1.new]],
+    [FBiOSTargetQuery osVersions:@[FBOSVersionNameiOS_9_0, FBOSVersionNameiOS_9_1]],
     [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
     [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
     [FBiOSTargetQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E", @"C5579925-158B-4802-96C3-58B564C901C1", @"41862F9E-A8CA-4816-B4C1-251DA57C1143"]],

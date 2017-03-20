@@ -55,7 +55,7 @@
 
 - (void)testFilterBySingleOSVersion
 {
-  FBiOSTargetQuery *query = [FBiOSTargetQuery osVersions:@[FBControlCoreConfiguration_iOS_9_1.new]];
+  FBiOSTargetQuery *query = [FBiOSTargetQuery osVersions:@[FBOSVersionNameiOS_9_1]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
   NSArray<FBSimulator *> *expected = @[self.simulators[4], self.simulators[5]];
   XCTAssertEqualObjects(expected, actual);
@@ -63,7 +63,7 @@
 
 - (void)testFilterByMulitpleOSVersions
 {
-  FBiOSTargetQuery *query = [FBiOSTargetQuery osVersions:@[FBControlCoreConfiguration_iOS_9_2.new, FBControlCoreConfiguration_iOS_9_3.new]];
+  FBiOSTargetQuery *query = [FBiOSTargetQuery osVersions:@[FBOSVersionNameiOS_9_2, FBOSVersionNameiOS_9_3]];
   NSArray<FBSimulator *> *actual = [self.set query:query];
   NSArray<FBSimulator *> *expected = @[self.simulators[6], self.simulators[7]];
   XCTAssertEqualObjects(expected, actual);

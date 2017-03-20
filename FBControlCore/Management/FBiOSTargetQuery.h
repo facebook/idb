@@ -72,8 +72,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param osVersions the OS Versions to match against.
  @return a new Target Query.
  */
-+ (instancetype)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions;
-- (instancetype)osVersions:(NSArray<id<FBControlCoreConfiguration_OS>> *)osVersions;
++ (instancetype)osVersions:(NSArray<FBOSVersionName> *)osVersions;
+- (instancetype)osVersions:(NSArray<FBOSVersionName> *)osVersions;
 
 /**
  A Query that matches the given Devices.
@@ -137,7 +137,7 @@ NS_ASSUME_NONNULL_BEGIN
  The OS Versions to match against.
  An Empty Set means that no OS Version filtering will occur.
  */
-@property (nonatomic, readonly, copy) NSSet<id<FBControlCoreConfiguration_OS>> *osVersions;
+@property (nonatomic, readonly, copy) NSSet<FBOSVersionName> *osVersions;
 
 /**
  The Device Types to match against.

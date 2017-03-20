@@ -135,7 +135,7 @@ let validQueries: [([String], FBiOSTargetQuery)] = [
   (["all"], FBiOSTargetQuery.allTargets()),
   (["iPhone 5"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPhone5()])),
   (["iPad 2"], FBiOSTargetQuery.devices([FBControlCoreConfiguration_Device_iPad2()])),
-  (["iOS 9.0", "iOS 9.1"], FBiOSTargetQuery.osVersions([FBControlCoreConfiguration_iOS_9_0(), FBControlCoreConfiguration_iOS_9_1()])),
+  (["iOS 9.0", "iOS 9.1"], FBiOSTargetQuery.osVersions([.nameiOS_9_0, .nameiOS_9_1])),
   (["--state=creating"], FBiOSTargetQuery.simulatorStates([.creating])),
   (["--state=shutdown"], FBiOSTargetQuery.simulatorStates([.shutdown])),
   (["--state=booted"], FBiOSTargetQuery.simulatorStates([.booted])),
