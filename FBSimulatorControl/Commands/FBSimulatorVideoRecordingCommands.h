@@ -17,24 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulatorBitmapStream;
 
 /**
- Simulator-Specific Application Commands.
- */
-@protocol FBSimulatorStreamingCommands
-
-/**
- Creates a Bitmap Stream for a Simulator.
-
- @param error an error out for any error that occurs.
- @return the Video Recording session on success, nil otherwise.
- */
-- (nullable FBSimulatorBitmapStream *)createStreamWithError:(NSError **)error;
-
-@end
-
-/**
  An implementation of Video Recording Commands for Simulators.
  */
-@interface FBSimulatorVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBSimulatorStreamingCommands>
+@interface FBSimulatorVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBBitmapStreamingCommands>
 
 /**
  Creates a FBSimulatorApplicationCommands instance.

@@ -62,6 +62,7 @@
 #import <FBControlCore/FBTerminationHandle.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBBitmapStreamingCommands.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
 #import <FBControlCore/FBXCTestCommands.h>
