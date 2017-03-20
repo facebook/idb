@@ -28,6 +28,25 @@
 
 #import "FBSimulatorError.h"
 
+static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer);
+static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixelBuffer(CVPixelBufferRef pixelBuffer)
+{
+  size_t width = CVPixelBufferGetWidth(pixelBuffer);
+  size_t height = CVPixelBufferGetHeight(pixelBuffer);
+  size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
+  size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
+  OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
+  NSString *pixelFormatString = (__bridge NSString *) UTCreateStringForOSType(pixelFormat);
+
+  return @{
+    @"width" : @(width),
+    @"height" : @(height),
+    @"row_size" : @(rowSize),
+    @"frame_size" : @(frameSize),
+    @"format" : pixelFormatString,
+  };
+}
+
 @interface FBSimulatorBitmapStream ()
 
 @property (nonatomic, weak, readonly) FBFramebufferSurface *surface;
@@ -35,7 +54,7 @@
 
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 @property (nonatomic, assign, nullable, readwrite) CVPixelBufferRef pixelBuffer;
-@property (nonatomic, assign, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
+@property (nonatomic, copy, nullable, readwrite) NSDictionary<NSString *, id> *pixelBufferAttributes;
 
 @end
 
@@ -156,7 +175,7 @@
   }
 
   // Get the Attributes
-  NSDictionary<NSString *, id> *attributes = [FBSimulatorBitmapStream pixelBufferAttributesFromPixelBuffer:buffer];
+  NSDictionary<NSString *, id> *attributes = FBBitmapStreamPixelBufferAttributesFromPixelBuffer(buffer);
   [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
 
   // Swap the pixel buffers.
@@ -176,24 +195,6 @@
   [consumer consumeData:data];
 
   CVPixelBufferUnlockBaseAddress(pixelBuffer,kCVPixelBufferLock_ReadOnly);
-}
-
-+ (NSDictionary<NSString *, id> *)pixelBufferAttributesFromPixelBuffer:(CVPixelBufferRef)pixelBuffer
-{
-  size_t width = CVPixelBufferGetWidth(pixelBuffer);
-  size_t height = CVPixelBufferGetHeight(pixelBuffer);
-  size_t frameSize = CVPixelBufferGetDataSize(pixelBuffer);
-  size_t rowSize = CVPixelBufferGetBytesPerRow(pixelBuffer);
-  OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  NSString *pixelFormatString = (__bridge NSString *) UTCreateStringForOSType(pixelFormat);
-
-  return @{
-    @"width" : @(width),
-    @"height" : @(height),
-    @"row_size" : @(rowSize),
-    @"frame_size" : @(frameSize),
-    @"format" : pixelFormatString,
-  };
 }
 
 #pragma mark FBTerminationHandle
