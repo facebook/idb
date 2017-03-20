@@ -34,7 +34,7 @@ public struct ListenInterface {
  */
 public struct IndividualCreationConfiguration {
   let osVersion: FBOSVersionName?
-  let deviceType: FBControlCoreConfiguration_Device?
+  let deviceType: FBDeviceName?
   let auxDirectory : String?
 }
 
@@ -226,7 +226,7 @@ extension ListenInterface : EventReporterSubject {
 extension IndividualCreationConfiguration : Equatable {}
 public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
   return left.osVersion == right.osVersion &&
-         left.deviceType?.deviceName == right.deviceType?.deviceName &&
+         left.deviceType == right.deviceType &&
          left.auxDirectory == right.auxDirectory
 }
 

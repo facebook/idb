@@ -58,12 +58,12 @@
   }];
 }
 
-+ (NSPredicate *)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)deviceConfigurations
++ (NSPredicate *)devices:(NSArray<FBDeviceName> *)deviceConfigurations
 {
-  NSSet<id<FBControlCoreConfiguration_Device>> *deviceConfigurationSet = [NSSet setWithArray:deviceConfigurations];
+  NSSet<FBDeviceName> *deviceConfigurationSet = [NSSet setWithArray:deviceConfigurations];
 
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
-    return [deviceConfigurationSet containsObject:candidate.deviceConfiguration];
+    return [deviceConfigurationSet containsObject:candidate.deviceConfiguration.deviceName];
   }];
 }
 

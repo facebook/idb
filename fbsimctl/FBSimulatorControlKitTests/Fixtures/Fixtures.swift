@@ -63,7 +63,7 @@ extension CreationSpecification {
 
   static var iPhone6Configuration: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: nil, deviceType: FBControlCoreConfiguration_Device_iPhone6(), auxDirectory: nil)
+      IndividualCreationConfiguration(osVersion: nil, deviceType: .nameiPhone6, auxDirectory: nil)
     )
   }}
 
@@ -75,13 +75,13 @@ extension CreationSpecification {
 
   static var compoundConfiguration0: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: .nameiOS_9_3, deviceType: FBControlCoreConfiguration_Device_iPhone6S(), auxDirectory: nil)
+      IndividualCreationConfiguration(osVersion: .nameiOS_9_3, deviceType: .nameiPhone6S, auxDirectory: nil)
     )
   }}
 
   static var compoundConfiguration1: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: .nameiOS_10_0, deviceType: FBControlCoreConfiguration_Device_iPadAir2(), auxDirectory: nil)
+      IndividualCreationConfiguration(osVersion: .nameiOS_10_0, deviceType: .nameiPadAir2, auxDirectory: nil)
     )
   }}
 }

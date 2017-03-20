@@ -83,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param deviceConfigurations the Device Configurations to match against.
  @return an NSPredicate.
  */
-+ (NSPredicate *)devices:(NSArray<id<FBControlCoreConfiguration_Device>> *)deviceConfigurations;
++ (NSPredicate *)devices:(NSArray<FBDeviceName> *)deviceConfigurations;
 
 /**
  Predicate for matching against many OS Versions.
