@@ -75,6 +75,11 @@
   return nil;
 }
 
+- (nullable id<FBBitmapStream>)createStreamWithError:(NSError **)error
+{
+  return nil;
+}
+
 - (BOOL)stopRecordingWithError:(NSError **)error
 {
   return NO;
