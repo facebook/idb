@@ -36,16 +36,24 @@ function assert_has_carthage() {
 }
 
 function build_fbsimctl_deps() {
-  assert_xcode_version 8
-  assert_has_carthage
-  pushd fbsimctl
-  carthage bootstrap --platform Mac
-  popd
+  if [ -z "$CUSTOM_FBSIMCTL_DEPS_SCRIPT" ]; then
+    assert_xcode_version 8
+    assert_has_carthage
+    pushd fbsimctl
+    carthage bootstrap --platform Mac
+    popd
+  else
+    "$CUSTOM_FBSIMCTL_DEPS_SCRIPT"
+  fi
 }
 
 function build_test_deps() {
-  assert_has_carthage
-  carthage bootstrap --platform Mac
+  if [ -z "$CUSTOM_TEST_DEPS_SCRIPT" ]; then
+    assert_has_carthage
+    carthage bootstrap --platform Mac
+  else
+    "$CUSTOM_TEST_DEPS_SCRIPT"
+  fi
 }
 
 function framework_build() {
