@@ -210,7 +210,7 @@
 + (NSPredicate *)runtimeProductFamilyPredicate:(FBDeviceType *)device
 {
   return [NSPredicate predicateWithBlock:^ BOOL (SimRuntime *runtime, NSDictionary *_) {
-    return [runtime.supportedProductFamilyIDs containsObject:@(device.family.productFamilyID)];
+    return [runtime.supportedProductFamilyIDs containsObject:@(device.family)];
   }];
 }
 

@@ -230,7 +230,7 @@
 
 + (BOOL)device:(FBDeviceType *)device andOSPairSupported:(FBOSVersion *)os
 {
-  return [os.families containsObject:device.family];
+  return [os.families containsObject:@(device.family)];
 }
 
 @end

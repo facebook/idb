@@ -90,30 +90,6 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 @interface FBControlCoreConfigurationVariant_Base : NSObject <NSCoding, NSCopying>
 @end
 
-#pragma mark Families
-
-@protocol FBControlCoreConfiguration_Family <NSObject>
-
-@property (nonatomic, assign, readonly) FBControlCoreProductFamily productFamilyID;
-
-@end
-
-@interface FBControlCoreConfiguration_Family_iPhone : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
-
-@end
-
-@interface FBControlCoreConfiguration_Family_iPad : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
-
-@end
-
-@interface FBControlCoreConfiguration_Family_Watch : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
-
-@end
-
-@interface FBControlCoreConfiguration_Family_TV : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_Family>
-
-@end
-
 #pragma mark Devices
 
 @interface FBDeviceType : NSObject <NSCopying>
@@ -141,7 +117,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 /**
  The Supported Product Family.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreConfiguration_Family> family;
+@property (nonatomic, assign, readonly) FBControlCoreProductFamily family;
 
 @end
 
@@ -162,7 +138,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 /**
  The Supported Families of the OS Version.
  */
-@property (nonatomic, copy, readonly) NSSet<id<FBControlCoreConfiguration_Family>> *families;
+@property (nonatomic, copy, readonly) NSSet<NSNumber *> *families;
 
 /**
  A Generic OS with the Given Name.

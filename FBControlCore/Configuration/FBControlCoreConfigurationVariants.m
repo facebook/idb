@@ -110,47 +110,9 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 @end
 
-#pragma mark Families
-
-@implementation FBControlCoreConfiguration_Family_iPhone
-
-- (FBControlCoreProductFamily)productFamilyID
-{
-  return FBControlCoreProductFamilyiPhone;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_Family_iPad
-
-- (FBControlCoreProductFamily)productFamilyID
-{
-  return FBControlCoreProductFamilyiPad;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_Family_TV
-
-- (FBControlCoreProductFamily)productFamilyID
-{
-  return FBControlCoreProductFamilyAppleTV;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_Family_Watch
-
-- (FBControlCoreProductFamily)productFamilyID
-{
-  return FBControlCoreProductFamilyAppleWatch;
-}
-
-@end
-
 @implementation FBDeviceType
 
-- (instancetype)initWithName:(FBDeviceName)name productTypes:(NSSet<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture family:(id<FBControlCoreConfiguration_Family>)family
+- (instancetype)initWithName:(FBDeviceName)name productTypes:(NSSet<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture family:(FBControlCoreProductFamily)family
 {
   self = [super init];
   if (!self) {
@@ -197,22 +159,22 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 + (instancetype)iPhoneWithName:(FBDeviceName)deviceName productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
 {
-  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreConfiguration_Family_iPhone.new];
+  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyiPhone];
 }
 
 + (instancetype)iPadWithName:(FBDeviceName)deviceName productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
 {
-  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreConfiguration_Family_iPad.new];
+  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyiPad];
 }
 
 + (instancetype)tvWithName:(FBDeviceName)deviceName productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
 {
-  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreConfiguration_Family_TV.new];
+  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyAppleTV];
 }
 
 + (instancetype)watchWithName:(FBDeviceName)deviceName productTypes:(NSArray<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture
 {
-  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreConfiguration_Family_Watch.new];
+  return [[self alloc] initWithName:deviceName productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyAppleWatch];
 }
 
 @end
@@ -221,7 +183,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 @implementation FBOSVersion
 
-- (instancetype)initWithName:(FBOSVersionName)name families:(NSSet<id<FBControlCoreConfiguration_Family>> *)families
+- (instancetype)initWithName:(FBOSVersionName)name families:(NSSet<NSNumber *> *)families
 {
   self = [super init];
   if (!self){
@@ -270,8 +232,8 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 + (instancetype)iOSWithName:(FBOSVersionName)name
 {
   NSSet *families = [NSSet setWithArray:@[
-    FBControlCoreConfiguration_Family_iPhone.new,
-    FBControlCoreConfiguration_Family_iPad.new,
+    @(FBControlCoreProductFamilyiPhone),
+    @(FBControlCoreProductFamilyiPad),
   ]];
   return [[self alloc] initWithName:name families:families];
 }
@@ -283,12 +245,12 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 + (instancetype)tvOSWithName:(FBOSVersionName)name
 {
-  return [[self alloc] initWithName:name families:[NSSet setWithObject:FBControlCoreConfiguration_Family_TV.new]];
+  return [[self alloc] initWithName:name families:[NSSet setWithObject:@(FBControlCoreProductFamilyAppleTV)]];
 }
 
 + (instancetype)watchOSWithName:(FBOSVersionName)name
 {
-  return [[self alloc] initWithName:name families:[NSSet setWithObject:FBControlCoreConfiguration_Family_Watch.new]];
+  return [[self alloc] initWithName:name families:[NSSet setWithObject:@(FBControlCoreProductFamilyAppleWatch)]];
 }
 
 @end
