@@ -54,7 +54,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     return NO;
   }
 
-  if (![self.simulator installApplication:testRunnerApp error:error]) {
+  if (![self.simulator installApplicationWithPath:testRunnerApp.path error:error]) {
     [self.configuration.logger logFormat:@"Failed to install test runner application: %@", *error];
     return NO;
   }

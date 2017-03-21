@@ -43,7 +43,7 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   NSError *error = nil;
-  BOOL success = [simulator installApplication:self.tableSearchApplication error:&error];
+  BOOL success = [simulator installApplicationWithPath:self.tableSearchApplication.path error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;

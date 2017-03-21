@@ -108,7 +108,7 @@
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   NSError *error = nil;
-  BOOL success = [simulator installApplication:application error:&error];
+  BOOL success = [simulator installApplicationWithPath:application.path error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   return simulator;
@@ -136,7 +136,7 @@
 - (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
   NSError *error = nil;
-  BOOL success = [simulator installApplication:application error:&error];
+  BOOL success = [simulator installApplicationWithPath:application.path error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
   success = [simulator launchApplication:applicationLaunchConfiguration error:&error];

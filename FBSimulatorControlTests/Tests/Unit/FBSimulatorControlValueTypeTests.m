@@ -106,10 +106,10 @@
   XCTAssertNil(launchConfiguration.scale);
 
   launchConfiguration = [launchConfiguration scale75Percent];
-  XCTAssertEqualObjects(launchConfiguration.scale, FBSimulatorScale_75.new);
-  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale_75.new);
-  XCTAssertNotEqualObjects(launchConfiguration.scale, FBSimulatorScale_50.new);
-  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale_50.new);
+  XCTAssertEqualObjects(launchConfiguration.scale, FBSimulatorScale75);
+  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale75);
+  XCTAssertNotEqualObjects(launchConfiguration.scale, FBSimulatorScale50);
+  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale50);
 }
 
 - (void)testEncoderConfigurations

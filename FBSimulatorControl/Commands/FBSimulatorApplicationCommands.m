@@ -65,6 +65,7 @@
   }
   return installResult;
 }
+
 - (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSParameterAssert(bundleID);
@@ -182,13 +183,6 @@
 }
 
 #pragma mark - FBSimulatorApplicationCommands
-
-#pragma mark Installing Applications
-
-- (BOOL)installApplication:(FBApplicationDescriptor *)application error:(NSError **)error
-{
-  return [self installApplicationWithPath:application.path error:error];
-}
 
 #pragma mark Launching / Terminating Applications
 

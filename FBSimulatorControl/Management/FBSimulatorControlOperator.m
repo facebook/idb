@@ -47,7 +47,7 @@
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:path error:error];
-  if (![self.simulator installApplication:application error:error]) {
+  if (![self.simulator installApplicationWithPath:application.path error:error]) {
     return NO;
   }
   return YES;

@@ -167,7 +167,7 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
   return self.name.hash;
 }
 
-- (NSDecimalNumber *)versionNumber
+- (NSDecimalNumber *)number
 {
   NSString *versionString = [self.name componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet][1];
   return [NSDecimalNumber decimalNumberWithString:versionString];
@@ -229,13 +229,13 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
       [FBDeviceType iPhoneWithName:FBDeviceNameiPhoneSE productType:@"iPhone8,4" deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithName:FBDeviceNameiPhone7 productTypes:@[@"iPhone9,1", @"iPhone9,2"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType iPhoneWithName:FBDeviceNameiPhone7Plus productTypes:@[@"iPhone9,2", @"iPhone9,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithName:FBDeviceNameiPad2 productTypes:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType iPhoneWithName:FBDeviceNameiPadRetina productTypes:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
-      [FBDeviceType iPhoneWithName:FBDeviceNameiPadAir productTypes:@[@"iPad4,1", @"iPad4,2", @"iPad4,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithName:FBDeviceNameiPadAir2 productTypes:@[@"iPad5,3", @"iPad5,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithName:FBDeviceNameiPadPro productTypes:@[@"iPad6,7", @"iPad6,8", @"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithName:FBDeviceNameiPadPro_9_7_Inch productTypes:@[@"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
-      [FBDeviceType iPhoneWithName:FBDeviceNameiPadPro_12_9_Inch productTypes:@[@"iPad6,7", @"iPad6,8"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPadWithName:FBDeviceNameiPad2 productTypes:@[@"iPad2,1", @"iPad2,2", @"iPad2,3", @"iPad2,4"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
+      [FBDeviceType iPadWithName:FBDeviceNameiPadRetina productTypes:@[@"iPad3,1", @"iPad3,2", @"iPad3,3", @"iPad3,4", @"iPad3,5", @"iPad3,6"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
+      [FBDeviceType iPadWithName:FBDeviceNameiPadAir productTypes:@[@"iPad4,1", @"iPad4,2", @"iPad4,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPadWithName:FBDeviceNameiPadAir2 productTypes:@[@"iPad5,3", @"iPad5,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPadWithName:FBDeviceNameiPadPro productTypes:@[@"iPad6,7", @"iPad6,8", @"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPadWithName:FBDeviceNameiPadPro_9_7_Inch productTypes:@[@"iPad6,3", @"iPad6,4"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
+      [FBDeviceType iPadWithName:FBDeviceNameiPadPro_12_9_Inch productTypes:@[@"iPad6,7", @"iPad6,8"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType tvWithName:FBDeviceNameAppleTV1080p productTypes:@[@"AppleTV5,3"] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64],
       [FBDeviceType watchWithName:FBDeviceNameAppleWatch38mm productTypes:@[@"Watch1,1"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],
       [FBDeviceType watchWithName:FBDeviceNameAppleWatch42mm productTypes:@[@"Watch1,2"] deviceArchitecture:FBArchitectureArmv7 simulatorArchitecture:FBArchitectureI386],

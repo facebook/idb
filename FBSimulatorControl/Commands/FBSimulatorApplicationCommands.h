@@ -20,18 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBSimulatorApplicationCommands <FBApplicationCommands>
 
-#pragma mark Installing Applications
-
-/**
- Installs the given Application.
- Will always succeed if the Application is a System Application.
-
- @param application the Application to Install.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)installApplication:(FBApplicationDescriptor *)application error:(NSError **)error;
-
 #pragma mark Launching / Terminating Applications
 
 /**
