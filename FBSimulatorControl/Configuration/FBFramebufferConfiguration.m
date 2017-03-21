@@ -23,7 +23,7 @@
   return [NSHomeDirectory() stringByAppendingString:@"image.png"];
 }
 
-+ (instancetype)configurationWithScale:(nullable id<FBSimulatorScale>)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
++ (instancetype)configurationWithScale:(nullable FBSimulatorScale)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
 {
   return [[self alloc] initWithScale:scale encoder:encoder imagePath:imagePath];
 }
@@ -38,7 +38,7 @@
   return [self initWithScale:nil encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:FBFramebufferConfiguration.defaultImagePath];
 }
 
-- (instancetype)initWithScale:(nullable id<FBSimulatorScale>)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
+- (instancetype)initWithScale:(nullable FBSimulatorScale)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
 {
   self = [super init];
   if (!self) {
@@ -109,7 +109,7 @@ static NSString *KeyImagePath = @"image_path";
 - (id)jsonSerializableRepresentation
 {
   return @{
-    KeyScale : self.scale.scaleString ?: NSNull.null,
+    KeyScale : self.scale ?: NSNull.null,
     KeyEncoder : self.encoder.jsonSerializableRepresentation,
     KeyImagePath : self.imagePath,
   };
@@ -121,7 +121,7 @@ static NSString *KeyImagePath = @"image_path";
 {
   return [NSString stringWithFormat:
     @"Scale %@ | Encoder %@ | Image Path %@",
-    self.scale.scaleString,
+    self.scale,
     self.encoder.shortDescription,
     self.imagePath
   ];
@@ -139,19 +139,19 @@ static NSString *KeyImagePath = @"image_path";
 
 #pragma mark Scale
 
-+ (instancetype)withScale:(nullable id<FBSimulatorScale>)scale
++ (instancetype)withScale:(nullable FBSimulatorScale)scale
 {
   return [self.new withScale:scale];
 }
 
-- (instancetype)withScale:(nullable id<FBSimulatorScale>)scale
+- (instancetype)withScale:(nullable FBSimulatorScale)scale
 {
   return [[self.class alloc] initWithScale:scale encoder:self.encoder imagePath:self.imagePath];
 }
 
 - (nullable NSDecimalNumber *)scaleValue
 {
-  return self.scale.scaleString ? [NSDecimalNumber decimalNumberWithString:self.scale.scaleString] : nil;
+  return self.scale ? [NSDecimalNumber decimalNumberWithString:self.scale] : nil;
 }
 
 - (CGSize)scaleSize:(CGSize)size

@@ -13,22 +13,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBSimulatorScale <NSObject>
+typedef NSString *FBSimulatorScale NS_STRING_ENUM;
 
-- (NSString *)scaleString;
-
-@end
-
-@interface FBSimulatorScale_25 : FBControlCoreConfigurationVariant_Base <FBSimulatorScale>
-@end
-
-@interface FBSimulatorScale_50 : FBControlCoreConfigurationVariant_Base <FBSimulatorScale>
-@end
-
-@interface FBSimulatorScale_75 : FBControlCoreConfigurationVariant_Base <FBSimulatorScale>
-@end
-
-@interface FBSimulatorScale_100 : FBControlCoreConfigurationVariant_Base <FBSimulatorScale>
-@end
+extern FBSimulatorScale const FBSimulatorScale25;
+extern FBSimulatorScale const FBSimulatorScale50;
+extern FBSimulatorScale const FBSimulatorScale75;
+extern FBSimulatorScale const FBSimulatorScale100;
 
 NS_ASSUME_NONNULL_END

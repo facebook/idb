@@ -985,13 +985,13 @@ struct FBSimulatorBootConfigurationParser {
   static var scaleParser: Parser<FBSimulatorScale> {
     let subparsers: [Parser<FBSimulatorScale>] = [
       Parser<FBSimulatorScale>
-        .ofFlag("scale=25", FBSimulatorScale_25(), ""),
+        .ofFlag("scale=25", .scale25, ""),
       Parser<FBSimulatorScale>
-        .ofFlag("scale=50", FBSimulatorScale_50(), ""),
+        .ofFlag("scale=50", .scale50, ""),
       Parser<FBSimulatorScale>
-        .ofFlag("scale=75", FBSimulatorScale_75(), ""),
+        .ofFlag("scale=75", .scale75, ""),
       Parser<FBSimulatorScale>
-        .ofFlag("scale=100", FBSimulatorScale_100(), "")
+        .ofFlag("scale=100", .scale100, "")
     ]
 
     return Parser.alternative(subparsers)

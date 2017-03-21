@@ -34,7 +34,7 @@
     @"-CurrentDeviceUDID", simulator.udid,
     @"-ConnectHardwareKeyboard", @"0",
   ]];
-  NSString *scale = self.scale.scaleString;
+  NSString *scale = self.scale;
   if (scale) {
     [arguments addObjectsFromArray:@[
       [self lastScaleCommandLineSwitchForSimulator:simulator], scale,

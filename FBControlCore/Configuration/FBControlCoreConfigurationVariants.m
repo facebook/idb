@@ -64,52 +64,6 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_0 = @"watchOS 3.0";
 FBOSVersionName const FBOSVersionNamewatchOS_3_1 = @"watchOS 3.1";
 FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
-@implementation FBControlCoreConfigurationVariant_Base
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  // Only needs to be implemented to encode the classes
-  // Each instance of a FBControlCoreConfigurationVariant has no state
-  // So no state will need to be encoded.
-}
-
-#pragma mark NSObject
-
-- (BOOL)isEqual:(NSObject *)object
-{
-  return [object isMemberOfClass:self.class];
-}
-
-- (NSUInteger)hash
-{
-  return [NSStringFromClass(self.class) hash];
-}
-
-- (NSString *)description
-{
-  return NSStringFromClass(self.class);
-}
-
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return self;
-}
-
-@end
-
 @implementation FBDeviceType
 
 - (instancetype)initWithName:(FBDeviceName)name productTypes:(NSSet<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture family:(FBControlCoreProductFamily)family

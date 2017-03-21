@@ -10,11 +10,11 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <FBSimulatorControl/FBSimulatorScale.h>
 
 @class FBDiagnostic;
 @class FBSimulator;
 @class FBVideoEncoderConfiguration;
-@protocol FBSimulatorScale;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Scale of the Framebuffer.
  */
-@property (nonatomic, nullable, copy, readonly) id<FBSimulatorScale> scale;
+@property (nonatomic, nullable, copy, readonly) FBSimulatorScale scale;
 
 /**
  The Video Encoder Configuration.
@@ -44,7 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param scale the Scale of the Framebuffer.
  @return a FBFramebufferConfiguration instance.
  */
-+ (instancetype)configurationWithScale:(nullable id<FBSimulatorScale>)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath;
++ (instancetype)configurationWithScale:(nullable FBSimulatorScale)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath;
 
 /**
  The Default Configuration.
@@ -56,8 +56,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Returns a new Configuration with the Scale Applied.
  */
-- (instancetype)withScale:(nullable id<FBSimulatorScale>)scale;
-+ (instancetype)withScale:(nullable id<FBSimulatorScale>)scale;
+- (instancetype)withScale:(nullable FBSimulatorScale)scale;
++ (instancetype)withScale:(nullable FBSimulatorScale)scale;
 
 /**
  The Scale, as a Decimal.

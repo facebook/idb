@@ -33,7 +33,7 @@
   return [self initWithOptions:FBSimulatorBootOptionsAwaitServices scale:nil localizationOverride:nil framebuffer:nil];
 }
 
-- (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(id<FBSimulatorScale>)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(FBSimulatorScale)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
 {
   self = [super init];
   if (!self) {
@@ -89,14 +89,14 @@
   }
 
   return self.options == configuration.options &&
-         (self.scaleString == configuration.scaleString || [self.scaleString isEqualToString:configuration.scaleString]) &&
+         (self.scale == configuration.scale || [self.scale isEqualToString:configuration.scale]) &&
          (self.localizationOverride == configuration.localizationOverride || [self.localizationOverride isEqual:configuration.localizationOverride]) &&
          (self.framebuffer == configuration.framebuffer || [self.framebuffer isEqual:configuration.framebuffer]);
 }
 
 - (NSUInteger)hash
 {
-  return self.options ^ self.scaleString.hash ^ self.localizationOverride.hash ^ self.framebuffer.hash;
+  return self.options ^ self.scale.hash ^ self.localizationOverride.hash ^ self.framebuffer.hash;
 }
 
 #pragma mark FBDebugDescribeable
@@ -105,7 +105,7 @@
 {
   return [NSString stringWithFormat:
     @"Scale %@ | %@ | Options %@ | %@",
-    self.scaleString,
+    self.scale,
     self.localizationOverride ? self.localizationOverride : @"No Locale Override",
     [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromLaunchOptions:self.options]],
     self.framebuffer ?: @"No Framebuffer"
@@ -127,7 +127,7 @@
 - (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
-    @"scale" : self.scaleString ?: NSNull.null,
+    @"scale" : self.scale ?: NSNull.null,
     @"localization_override" : self.localizationOverride.jsonSerializableRepresentation ?: NSNull.null,
     @"options" : [FBSimulatorBootConfiguration stringsFromLaunchOptions:self.options],
     @"framebuffer" : self.framebuffer.jsonSerializableRepresentation ?: NSNull.null,
@@ -136,14 +136,9 @@
 
 #pragma mark Accessors
 
-- (nullable NSString *)scaleString
-{
-  return self.scale.scaleString;
-}
-
 - (nullable NSDecimalNumber *)scaleValue
 {
-  return self.scaleString ? [NSDecimalNumber decimalNumberWithString:self.scaleString] : nil;
+  return self.scale ? [NSDecimalNumber decimalNumberWithString:self.scale] : nil;
 }
 
 #pragma mark Options
@@ -167,7 +162,7 @@
 
 - (instancetype)scale25Percent
 {
-  return [self withScale:FBSimulatorScale_25.new];
+  return [self withScale:FBSimulatorScale25];
 }
 
 + (instancetype)scale50Percent
@@ -177,7 +172,7 @@
 
 - (instancetype)scale50Percent
 {
-  return [self withScale:FBSimulatorScale_50.new];
+  return [self withScale:FBSimulatorScale50];
 }
 
 + (instancetype)scale75Percent
@@ -187,7 +182,7 @@
 
 - (instancetype)scale75Percent
 {
-  return [self withScale:FBSimulatorScale_75.new];
+  return [self withScale:FBSimulatorScale75];
 }
 
 + (instancetype)scale100Percent
@@ -197,15 +192,15 @@
 
 - (instancetype)scale100Percent
 {
-  return [self withScale:FBSimulatorScale_100.new];
+  return [self withScale:FBSimulatorScale100];
 }
 
-+ (instancetype)withScale:(id<FBSimulatorScale>)scale
++ (instancetype)withScale:(FBSimulatorScale)scale
 {
   return [self.defaultConfiguration withScale:scale];
 }
 
-- (instancetype)withScale:(id<FBSimulatorScale>)scale
+- (instancetype)withScale:(FBSimulatorScale)scale
 {
   if (!scale) {
     return self;

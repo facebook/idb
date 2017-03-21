@@ -9,40 +9,7 @@
 
 #import "FBSimulatorScale.h"
 
-#pragma mark Scales
-
-@implementation FBSimulatorScale_25
-
-- (NSString *)scaleString
-{
-  return @"0.25";
-}
-
-@end
-
-@implementation FBSimulatorScale_50
-
-- (NSString *)scaleString
-{
-  return @"0.50";
-}
-
-@end
-
-@implementation FBSimulatorScale_75
-
-- (NSString *)scaleString
-{
-  return @"0.75";
-}
-
-@end
-
-@implementation FBSimulatorScale_100
-
-- (NSString *)scaleString
-{
-  return @"1.00";
-}
-
-@end
+FBSimulatorScale const FBSimulatorScale25 = @"0.25";
+FBSimulatorScale const FBSimulatorScale50 = @"0.50";
+FBSimulatorScale const FBSimulatorScale75 = @"0.75";
+FBSimulatorScale const FBSimulatorScale100 = @"1.00";

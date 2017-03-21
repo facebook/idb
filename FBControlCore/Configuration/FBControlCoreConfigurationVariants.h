@@ -87,9 +87,6 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_3_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 
-@interface FBControlCoreConfigurationVariant_Base : NSObject <NSCoding, NSCopying>
-@end
-
 #pragma mark Devices
 
 @interface FBDeviceType : NSObject <NSCopying>
