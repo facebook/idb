@@ -89,7 +89,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 
 #pragma mark Devices
 
-@interface FBDeviceType : NSObject <NSCopying>
+@interface FBDeviceType : NSObject <NSCopying, NSCoding>
 
 /**
  The Device Name of the Device.
@@ -120,7 +120,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 
 #pragma mark OS Versions
 
-@interface FBOSVersion : NSObject <NSCopying>
+@interface FBOSVersion : NSObject <NSCopying, NSCoding>
 
 /**
  The Version name of the OS.
