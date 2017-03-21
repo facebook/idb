@@ -353,7 +353,7 @@
 {
   NSMutableArray<FBDeviceName> *devices = [NSMutableArray array];
   for (NSString *string in strings) {
-    id<FBControlCoreConfiguration_Device> device = FBControlCoreConfigurationVariants.nameToDevice[string];
+    FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[string];
     if (!device) {
       continue;
     }
@@ -362,7 +362,7 @@
   return [devices copy];
 }
 
-+ (NSArray<NSString *> *)stringsFromDevices:(NSArray<id<FBControlCoreConfiguration_Device>> *)devices
++ (NSArray<NSString *> *)stringsFromDevices:(NSArray<FBDeviceType *> *)devices
 {
   return [devices valueForKey:@"deviceName"];
 }

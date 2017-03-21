@@ -140,7 +140,7 @@
   return self.configuration.architecture;
 }
 
-- (id<FBControlCoreConfiguration_Device>)deviceConfiguration
+- (FBDeviceType *)deviceConfiguration
 {
   return self.configuration.device;
 }

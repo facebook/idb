@@ -26,7 +26,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithNamedDevice:(id<FBControlCoreConfiguration_Device>)device os:(FBOSVersion *)os auxillaryDirectory:(NSString *)auxillaryDirectory
+- (instancetype)initWithNamedDevice:(FBDeviceType *)device os:(FBOSVersion *)os auxillaryDirectory:(NSString *)auxillaryDirectory
 {
   NSParameterAssert(device);
   NSParameterAssert(os);
@@ -55,7 +55,7 @@
 
 + (instancetype)makeDefaultConfiguration
 {
-  id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone6.new;
+  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceNameiPhone6];
   FBOSVersion *os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
   NSAssert(
     os,
@@ -80,7 +80,7 @@
 
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
-  id<FBControlCoreConfiguration_Device> device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
+  FBDeviceType *device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
   FBOSVersion *os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
   NSString *auxillaryDirectory = [coder decodeObjectForKey:NSStringFromSelector(@selector(auxillaryDirectory))];
   return [self initWithNamedDevice:device os:os auxillaryDirectory:auxillaryDirectory];
@@ -165,12 +165,12 @@
 
 #pragma mark - Devices
 
-+ (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device
++ (instancetype)withDevice:(FBDeviceType *)device
 {
   return [self.defaultConfiguration withDevice:device];
 }
 
-- (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device
+- (instancetype)withDevice:(FBDeviceType *)device
 {
   NSParameterAssert(device);
   FBOSVersion *os = self.os;
@@ -189,7 +189,7 @@
 
 - (instancetype)withDeviceNamed:(FBDeviceName)deviceName
 {
-  id<FBControlCoreConfiguration_Device> device = FBControlCoreConfigurationVariants.nameToDevice[deviceName];
+  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[deviceName];
   NSAssert(device, @"%@ is not a valid device name", deviceName);
   return [self withDevice:device];
 }
@@ -228,7 +228,7 @@
 
 #pragma mark Private
 
-+ (BOOL)device:(id<FBControlCoreConfiguration_Device>)device andOSPairSupported:(FBOSVersion *)os
++ (BOOL)device:(FBDeviceType *)device andOSPairSupported:(FBOSVersion *)os
 {
   return [os.families containsObject:device.family];
 }

@@ -17,10 +17,10 @@
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
 
+@class FBDeviceType;
 @class FBOSVersion;
 @class FBProcessInfo;
 @class FBiOSTargetDiagnostics;
-@protocol FBControlCoreConfiguration_Device;
 @protocol FBDeviceOperator;
 
 /**
@@ -106,7 +106,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Configuration of the iOS Target's Device.
  */
-@property (nonatomic, copy, readonly) id<FBControlCoreConfiguration_Device> deviceConfiguration;
+@property (nonatomic, copy, readonly) FBDeviceType *deviceConfiguration;
 
 /**
  The Configuration of the iOS Target's OS.

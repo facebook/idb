@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Device Configuration.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreConfiguration_Device> device;
+@property (nonatomic, strong, readonly) FBDeviceType *device;
 
 /**
  The OS Configuration.
@@ -71,8 +71,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Configuration with the provided Device Configuration.
  */
-+ (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device;
-- (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device;
++ (instancetype)withDevice:(FBDeviceType *)device;
+- (instancetype)withDevice:(FBDeviceType *)device;
 
 /**
  A Configuration with the provided Device Name.
