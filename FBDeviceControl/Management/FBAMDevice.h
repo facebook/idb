@@ -9,8 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBOSVersion;
 @protocol FBControlCoreConfiguration_Device;
-@protocol FBControlCoreConfiguration_OS;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -69,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The FBControlCore Configuration Variant representing the Operating System.
  */
-@property (nonatomic, nullable, copy, readonly) id<FBControlCoreConfiguration_OS> osConfiguration;
+@property (nonatomic, nullable, copy, readonly) FBOSVersion *osConfiguration;
 
 /**
  The Architechture of the Device's CPU.

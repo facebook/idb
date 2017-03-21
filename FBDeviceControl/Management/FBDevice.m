@@ -118,7 +118,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return self.amDevice.deviceConfiguration;
 }
 
-- (id<FBControlCoreConfiguration_OS>)osConfiguration
+- (FBOSVersion *)osConfiguration
 {
   return self.amDevice.osConfiguration;
 }

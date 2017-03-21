@@ -36,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The OS Configuration.
  */
-@property (nonatomic, strong, readonly) id<FBControlCoreConfiguration_OS> os;
+@property (nonatomic, strong, readonly) FBOSVersion *os;
 
 /**
  The Name of the Device to Simulate. Must not be nil.
@@ -86,8 +86,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Configuration with the provided OS.
  */
-+ (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os;
-- (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os;
++ (instancetype)withOS:(FBOSVersion *)os;
+- (instancetype)withOS:(FBOSVersion *)os;
 
 /**
  A Configuration with the provided OS Name.

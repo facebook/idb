@@ -31,6 +31,6 @@
 
 @property (nonatomic, copy, readwrite) id<FBControlCoreConfiguration_Device> deviceConfiguration;
 
-@property (nonatomic, copy, readwrite) id<FBControlCoreConfiguration_OS> osConfiguration;
+@property (nonatomic, copy, readwrite) FBOSVersion *osConfiguration;
 
 @end

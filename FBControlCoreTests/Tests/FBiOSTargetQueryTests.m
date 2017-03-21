@@ -25,37 +25,37 @@
   FBiOSTargetDouble *target0 = [FBiOSTargetDouble new];
   target0.udid = @"AA";
   target0.deviceConfiguration = FBControlCoreConfiguration_Device_iPhone5.new;
-  target0.osConfiguration = FBControlCoreConfiguration_iOS_9_0.new;
+  target0.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_0];
   target0.targetType = FBiOSTargetTypeDevice;
 
   FBiOSTargetDouble *target1 = [FBiOSTargetDouble new];
   target1.udid = @"BB";
   target1.deviceConfiguration = FBControlCoreConfiguration_Device_iPhone6.new;
-  target1.osConfiguration = FBControlCoreConfiguration_iOS_9_1.new;
+  target1.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_1];
   target1.targetType = FBiOSTargetTypeDevice;
 
   FBiOSTargetDouble *target2 = [FBiOSTargetDouble new];
   target2.udid = @"CC";
   target2.deviceConfiguration = FBControlCoreConfiguration_Device_iPad2.new;
-  target2.osConfiguration = FBControlCoreConfiguration_iOS_9_2.new;
+  target2.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_2];
   target2.targetType = FBiOSTargetTypeDevice;
 
   FBiOSTargetDouble *target3 = [FBiOSTargetDouble new];
   target3.udid = @"DD";
   target3.deviceConfiguration = FBControlCoreConfiguration_Device_iPhone5.new;
-  target3.osConfiguration = FBControlCoreConfiguration_iOS_9_0.new;
+  target3.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_0];
   target3.targetType = FBiOSTargetTypeSimulator;
 
   FBiOSTargetDouble *target4 = [FBiOSTargetDouble new];
   target4.udid = @"EE";
   target4.deviceConfiguration = FBControlCoreConfiguration_Device_iPhone6.new;
-  target4.osConfiguration = FBControlCoreConfiguration_iOS_9_1.new;
+  target4.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_1];
   target4.targetType = FBiOSTargetTypeSimulator;
 
   FBiOSTargetDouble *target5 = [FBiOSTargetDouble new];
   target5.udid = @"FF";
   target5.deviceConfiguration = FBControlCoreConfiguration_Device_iPad2.new;
-  target5.osConfiguration = FBControlCoreConfiguration_iOS_9_2.new;
+  target5.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_2];
   target5.targetType = FBiOSTargetTypeSimulator;
 
   return @[target0, target1, target2, target3, target4, target5];

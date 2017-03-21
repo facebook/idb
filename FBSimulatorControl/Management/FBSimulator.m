@@ -145,7 +145,7 @@
   return self.configuration.device;
 }
 
-- (id<FBControlCoreConfiguration_OS>)osConfiguration
+- (FBOSVersion *)osConfiguration
 {
   return self.configuration.os;
 }

@@ -340,7 +340,7 @@
 {
   NSMutableArray<FBOSVersionName> *osVersions = [NSMutableArray array];
   for (NSString *string in strings) {
-    id<FBControlCoreConfiguration_OS> osVersion = FBControlCoreConfigurationVariants.nameToOSVersion[string];
+    FBOSVersion *osVersion = FBControlCoreConfigurationVariants.nameToOSVersion[string];
     if (!osVersion) {
       continue;
     }

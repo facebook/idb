@@ -11,9 +11,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBControlCoreConfiguration_Device;
-@protocol FBControlCoreConfiguration_OS;
+@class FBOSVersion;
 @class FBSimulatorConfiguration;
+@protocol FBControlCoreConfiguration_Device;
 
 /**
  The Base Destination.
@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param version the version to use. If nil the default will be used.
  @return a new iPhoneSimulator Destination.
  */
-- (instancetype)initWithDevice:(nullable id<FBControlCoreConfiguration_Device>)device version:(nullable id<FBControlCoreConfiguration_OS>)version;
+- (instancetype)initWithDevice:(nullable id<FBControlCoreConfiguration_Device>)device version:(nullable FBOSVersion *)version;
 
 /**
  The Device Type, if provided.
@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Device OS, if provided.
  */
-@property (nonatomic, strong, nullable, readwrite) id<FBControlCoreConfiguration_OS> version;
+@property (nonatomic, strong, nullable, readwrite) FBOSVersion *version;
 
 /**
  The Simulator Configuration.

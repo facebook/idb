@@ -814,12 +814,36 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 #pragma mark OS Versions
 
-@implementation FBControlCoreConfiguration_OS_Base
+@implementation FBOSVersion
 
-- (FBOSVersionName)name
+- (instancetype)initWithName:(FBOSVersionName)name families:(NSSet<id<FBControlCoreConfiguration_Family>> *)families
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  self = [super init];
+  if (!self){
+    return nil;
+  }
+
+  _name = name;
+  _families = families;
+
+  return self;
+}
+
+#pragma mark NSObject
+
+// Version String implies uniqueness
+- (BOOL)isEqual:(FBOSVersion *)version
+{
+  if (![version isKindOfClass:self.class]) {
+    return NO;
+  }
+
+  return [self.name isEqualToString:version.name];
+}
+
+- (NSUInteger)hash
+{
+  return self.name.hash;
 }
 
 - (NSDecimalNumber *)versionNumber
@@ -828,326 +852,38 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
   return [NSDecimalNumber decimalNumberWithString:versionString];
 }
 
-- (NSSet *)families
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
 {
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
+  // Object is immutable
+  return self;
 }
 
-@end
+#pragma mark Helpers
 
-@implementation FBControlCoreConfiguration_iOS_Base
-
-- (NSSet *)families
++ (instancetype)iOSWithName:(FBOSVersionName)name
 {
-  return [NSSet setWithArray:@[
+  NSSet *families = [NSSet setWithArray:@[
     FBControlCoreConfiguration_Family_iPhone.new,
     FBControlCoreConfiguration_Family_iPad.new,
   ]];
+  return [[self alloc] initWithName:name families:families];
 }
 
-@end
-
-@implementation FBControlCoreConfiguration_iOS_7_1
-
-- (FBOSVersionName)name
++ (instancetype)genericWithName:(NSString *)name
 {
-  return FBOSVersionNameiOS_7_1;
+  return [[self alloc] initWithName:name families:NSSet.set];
 }
 
-@end
-
-@implementation FBControlCoreConfiguration_iOS_8_0
-
-- (FBOSVersionName)name
++ (instancetype)tvOSWithName:(FBOSVersionName)name
 {
-  return FBOSVersionNameiOS_8_0;
+  return [[self alloc] initWithName:name families:[NSSet setWithObject:FBControlCoreConfiguration_Family_TV.new]];
 }
 
-@end
-
-@implementation FBControlCoreConfiguration_iOS_8_1
-
-- (FBOSVersionName)name
++ (instancetype)watchOSWithName:(FBOSVersionName)name
 {
-  return FBOSVersionNameiOS_8_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_8_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_8_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_8_3
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_8_3;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_8_4
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_8_4;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_9_0
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_9_0;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_9_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_9_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_9_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_9_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_9_3
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_9_3;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_9_3_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_9_3_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_9_3_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_9_3_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_10_0
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_10_0;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_10_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_10_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_10_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_10_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_10_2_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_10_2_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_iOS_10_3
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNameiOS_10_3;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_tvOS_Base
-
-- (FBOSVersionName)name
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSSet *)families
-{
-  return [NSSet setWithObject:FBControlCoreConfiguration_Family_TV.new];
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_tvOS_9_0
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNametvOS_9_0;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_tvOS_9_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNametvOS_9_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_tvOS_9_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNametvOS_9_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_tvOS_10_0
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNametvOS_10_0;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_tvOS_10_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNametvOS_10_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_tvOS_10_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNametvOS_10_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_watchOS_Base
-
-- (FBOSVersionName)name
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSSet *)families
-{
-  return [NSSet setWithObject:FBControlCoreConfiguration_Family_Watch.new];
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_watchOS_2_0
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNamewatchOS_2_0;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_watchOS_2_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNamewatchOS_2_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_watchOS_2_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNamewatchOS_2_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_watchOS_3_0
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNamewatchOS_3_0;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_watchOS_3_1
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNamewatchOS_3_1;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_watchOS_3_2
-
-- (FBOSVersionName)name
-{
-  return FBOSVersionNamewatchOS_3_2;
-}
-
-@end
-
-@implementation FBControlCoreConfiguration_OS_Generic
-
-@synthesize name=_name;
-
-- (id)initWithOSName:(NSString *)osName
-{
-  self = [super init];
-  _name = osName;
-  return self;
+  return [[self alloc] initWithName:name families:[NSSet setWithObject:FBControlCoreConfiguration_Family_Watch.new]];
 }
 
 @end
@@ -1189,41 +925,41 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
   return deviceConfigurations;
 }
 
-+ (NSArray<id<FBControlCoreConfiguration_OS>> *)OSConfigurations
++ (NSArray<FBOSVersion *> *)OSConfigurations
 {
   static dispatch_once_t onceToken;
-  static NSArray<id<FBControlCoreConfiguration_OS>> *OSConfigurations;
+  static NSArray<FBOSVersion *> *OSConfigurations;
   dispatch_once(&onceToken, ^{
     OSConfigurations = @[
-      FBControlCoreConfiguration_iOS_7_1.new,
-      FBControlCoreConfiguration_iOS_8_0.new,
-      FBControlCoreConfiguration_iOS_8_1.new,
-      FBControlCoreConfiguration_iOS_8_2.new,
-      FBControlCoreConfiguration_iOS_8_3.new,
-      FBControlCoreConfiguration_iOS_8_4.new,
-      FBControlCoreConfiguration_iOS_9_0.new,
-      FBControlCoreConfiguration_iOS_9_1.new,
-      FBControlCoreConfiguration_iOS_9_2.new,
-      FBControlCoreConfiguration_iOS_9_3.new,
-      FBControlCoreConfiguration_iOS_9_3_1.new,
-      FBControlCoreConfiguration_iOS_9_3_2.new,
-      FBControlCoreConfiguration_iOS_10_0.new,
-      FBControlCoreConfiguration_iOS_10_1.new,
-      FBControlCoreConfiguration_iOS_10_2.new,
-      FBControlCoreConfiguration_iOS_10_2_1.new,
-      FBControlCoreConfiguration_iOS_10_3.new,
-      FBControlCoreConfiguration_tvOS_9_0.new,
-      FBControlCoreConfiguration_tvOS_9_1.new,
-      FBControlCoreConfiguration_tvOS_9_2.new,
-      FBControlCoreConfiguration_tvOS_10_0.new,
-      FBControlCoreConfiguration_tvOS_10_1.new,
-      FBControlCoreConfiguration_tvOS_10_2.new,
-      FBControlCoreConfiguration_watchOS_2_0.new,
-      FBControlCoreConfiguration_watchOS_2_1.new,
-      FBControlCoreConfiguration_watchOS_2_2.new,
-      FBControlCoreConfiguration_watchOS_3_0.new,
-      FBControlCoreConfiguration_watchOS_3_1.new,
-      FBControlCoreConfiguration_watchOS_3_2.new,
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_7_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_8_0],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_8_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_8_2],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_8_3],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_8_4],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_9_0],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_9_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_9_2],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_9_3],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_9_3_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_9_3_2],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_0],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_2],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_2_1],
+      [FBOSVersion iOSWithName:FBOSVersionNameiOS_10_3],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_9_2],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_10_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_10_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNametvOS_10_2],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_2_2],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_3_0],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_3_1],
+      [FBOSVersion tvOSWithName:FBOSVersionNamewatchOS_3_2]
     ];
   });
   return OSConfigurations;
@@ -1261,14 +997,14 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
   return mapping;
 }
 
-+ (NSDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *)nameToOSVersion
++ (NSDictionary<FBOSVersionName, FBOSVersion *> *)nameToOSVersion
 {
   static dispatch_once_t onceToken;
-  static NSDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *mapping;
+  static NSDictionary<FBOSVersionName, FBOSVersion *> *mapping;
   dispatch_once(&onceToken, ^{
     NSArray *instances = self.OSConfigurations;
-    NSMutableDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *dictionary = [NSMutableDictionary dictionary];
-    for (id<FBControlCoreConfiguration_OS> os in instances) {
+    NSMutableDictionary<FBOSVersionName, FBOSVersion *> *dictionary = [NSMutableDictionary dictionary];
+    for (FBOSVersion *os in instances) {
       dictionary[os.name] = os;
     }
     mapping = [dictionary copy];

@@ -205,7 +205,7 @@
     return [[FBXCTestDestinationiPhoneSimulator alloc] initWithDevice:nil version:nil];
   }
   // Extract the destination.
-  id<FBControlCoreConfiguration_OS> os = nil;
+  FBOSVersion *os = nil;
   id<FBControlCoreConfiguration_Device> device = nil;
   if (![self parseSimulatorConfigurationFromDestination:destination osOut:&os deviceOut:&device error:error]) {
     return nil;
@@ -226,7 +226,7 @@
   return arguments[index];
 }
 
-+ (BOOL)parseSimulatorConfigurationFromDestination:(NSString *)destination osOut:(id<FBControlCoreConfiguration_OS> *)osOut deviceOut:(id<FBControlCoreConfiguration_Device> *)deviceOut error:(NSError **)error
++ (BOOL)parseSimulatorConfigurationFromDestination:(NSString *)destination osOut:(FBOSVersion **)osOut deviceOut:(id<FBControlCoreConfiguration_Device> *)deviceOut error:(NSError **)error
 {
   NSArray<NSString *> *parts = [destination componentsSeparatedByString:@","];
 
@@ -253,7 +253,7 @@
         *deviceOut = device;
       }
     } else if ([key isEqualToString:@"OS"]) {
-      id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[value];
+      FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[value];
       if (!os) {
         return [[FBXCTestError
           describeFormat:@"Could not use a os named '%@'", value]

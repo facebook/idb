@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param device the Device to obtain the OS Configuration for
  @return the newest OS Configuration for the provided Device Configuration, or nil if none is available.
  */
-+ (nullable id<FBControlCoreConfiguration_OS>)newestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device;
++ (nullable FBOSVersion *)newestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device;
 
 /**
  Returns a new Simulator Configuration, for the newest available OS for the current Device.
@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param device the Device to obtain the OS Configuration for
  @return the newest OS Configuration for the provided Device Configuration, or nil if none is available.
  */
-+ (nullable id<FBControlCoreConfiguration_OS>)oldestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device;
++ (nullable FBOSVersion *)oldestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device;
 
 /**
  Returns a new Simulator Configuration, for the oldest available OS for the current Device.
@@ -85,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param device the device to obtain runtimes for.
  @return an Array of OS Versions the Device can use.
  */
-+ (NSArray<id<FBControlCoreConfiguration_OS>> *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device;
++ (NSArray<FBOSVersion *> *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device;
 
 /**
  Returns an Array of all the Simulator Configurations that are available for the current environment.

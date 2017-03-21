@@ -17,10 +17,10 @@
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBXCTestCommands.h>
 
+@class FBOSVersion;
 @class FBProcessInfo;
 @class FBiOSTargetDiagnostics;
 @protocol FBControlCoreConfiguration_Device;
-@protocol FBControlCoreConfiguration_OS;
 @protocol FBDeviceOperator;
 
 /**
@@ -111,7 +111,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Configuration of the iOS Target's OS.
  */
-@property (nonatomic, copy, readonly) id<FBControlCoreConfiguration_OS> osConfiguration;
+@property (nonatomic, copy, readonly) FBOSVersion *osConfiguration;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`

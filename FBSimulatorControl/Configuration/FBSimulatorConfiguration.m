@@ -26,7 +26,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithNamedDevice:(id<FBControlCoreConfiguration_Device>)device os:(id<FBControlCoreConfiguration_OS>)os auxillaryDirectory:(NSString *)auxillaryDirectory
+- (instancetype)initWithNamedDevice:(id<FBControlCoreConfiguration_Device>)device os:(FBOSVersion *)os auxillaryDirectory:(NSString *)auxillaryDirectory
 {
   NSParameterAssert(device);
   NSParameterAssert(os);
@@ -56,7 +56,7 @@
 + (instancetype)makeDefaultConfiguration
 {
   id<FBControlCoreConfiguration_Device> device = FBControlCoreConfiguration_Device_iPhone6.new;
-  id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
+  FBOSVersion *os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
   NSAssert(
     os,
     @"Could not obtain OS for Default Device '%@'. Available OS Versions %@",
@@ -81,7 +81,7 @@
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
   id<FBControlCoreConfiguration_Device> device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
-  id<FBControlCoreConfiguration_OS> os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
+  FBOSVersion *os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
   NSString *auxillaryDirectory = [coder decodeObjectForKey:NSStringFromSelector(@selector(auxillaryDirectory))];
   return [self initWithNamedDevice:device os:os auxillaryDirectory:auxillaryDirectory];
 }
@@ -173,6 +173,12 @@
 - (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device
 {
   NSParameterAssert(device);
+  FBOSVersion *os = self.os;
+  if ([FBSimulatorConfiguration device:device andOSPairSupported:self.os]) {
+    return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:self.os auxillaryDirectory:self.auxillaryDirectory];
+  }
+  os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
+  NSAssert(os, @"Could not derive a compatible OS for device %@", device.deviceName);
   return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:self.os auxillaryDirectory:self.auxillaryDirectory];
 }
 
@@ -190,12 +196,12 @@
 
 #pragma mark - OS Versions
 
-+ (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os
++ (instancetype)withOS:(FBOSVersion *)os
 {
   return [self.defaultConfiguration withOS:os];
 }
 
-- (instancetype)withOS:(id<FBControlCoreConfiguration_OS>)os
+- (instancetype)withOS:(FBOSVersion *)os
 {
   NSParameterAssert(os);
   return [[FBSimulatorConfiguration alloc] initWithNamedDevice:self.device os:os auxillaryDirectory:self.auxillaryDirectory];
@@ -208,7 +214,7 @@
 
 - (instancetype)withOSNamed:(FBOSVersionName)osName
 {
-  id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[osName];
+  FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[osName];
   NSAssert(os, @"%@ is not a valid os name", osName);
   return [self withOS:os];
 }
@@ -222,31 +228,7 @@
 
 #pragma mark Private
 
-#pragma mark Deriving new Configurations
-
-- (instancetype)withDevice:(id<FBControlCoreConfiguration_Device>)device andOS:(id<FBControlCoreConfiguration_OS>)os
-{
-  NSParameterAssert(device);
-  NSParameterAssert(os);
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
-}
-
-- (instancetype)updateNamedDeviceClass:(Class)class
-{
-  id<FBControlCoreConfiguration_Device> device = [class new];
-  if ([FBSimulatorConfiguration device:device andOSPairSupported:self.os]) {
-    return [self withDevice:device];
-  }
-  id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
-  return [self withDevice:device andOS:os];
-}
-
-- (instancetype)updateOSVersionClass:(Class)class
-{
-  return [self withOS:[class new]];
-}
-
-+ (BOOL)device:(id<FBControlCoreConfiguration_Device>)device andOSPairSupported:(id<FBControlCoreConfiguration_OS>)os
++ (BOOL)device:(id<FBControlCoreConfiguration_Device>)device andOSPairSupported:(FBOSVersion *)os
 {
   return [os.families containsObject:device.family];
 }

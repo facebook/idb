@@ -206,115 +206,28 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 
 #pragma mark OS Versions
 
-@protocol FBControlCoreConfiguration_OS <NSObject>
+@interface FBOSVersion : NSObject <NSCopying>
 
+/**
+ The Version name of the OS.
+ */
 @property (nonatomic, copy, readonly) FBOSVersionName name;
-@property (nonatomic, copy, readonly) NSDecimalNumber *versionNumber;
-@property (nonatomic, copy, readonly) NSSet *families;
 
-@end
+/**
+ A Decimal Number Represnting the Version Number.
+ */
+@property (nonatomic, copy, readonly) NSDecimalNumber *number;
 
-@interface FBControlCoreConfiguration_OS_Base : FBControlCoreConfigurationVariant_Base <FBControlCoreConfiguration_OS>
-@end
+/**
+ The Supported Families of the OS Version.
+ */
+@property (nonatomic, copy, readonly) NSSet<id<FBControlCoreConfiguration_Family>> *families;
 
-@interface FBControlCoreConfiguration_iOS_Base : FBControlCoreConfiguration_OS_Base
-@end
+/**
+ A Generic OS with the Given Name.
+ */
++ (instancetype)genericWithName:(NSString *)name;
 
-@interface FBControlCoreConfiguration_iOS_7_1 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_8_0 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_8_1 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_8_2 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_8_3 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_8_4 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_9_0 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_9_1 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_9_2 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_9_3 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_9_3_1 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_9_3_2 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_10_0 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_10_1 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_10_2 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_10_2_1 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_iOS_10_3 : FBControlCoreConfiguration_iOS_Base
-@end
-
-@interface FBControlCoreConfiguration_tvOS_Base : FBControlCoreConfiguration_OS_Base
-@end
-
-@interface FBControlCoreConfiguration_tvOS_9_0 : FBControlCoreConfiguration_tvOS_Base
-@end
-
-@interface FBControlCoreConfiguration_tvOS_9_1 : FBControlCoreConfiguration_tvOS_Base
-@end
-
-@interface FBControlCoreConfiguration_tvOS_9_2 : FBControlCoreConfiguration_tvOS_Base
-@end
-
-@interface FBControlCoreConfiguration_tvOS_10_0 : FBControlCoreConfiguration_tvOS_Base
-@end
-
-@interface FBControlCoreConfiguration_tvOS_10_1 : FBControlCoreConfiguration_tvOS_Base
-@end
-
-@interface FBControlCoreConfiguration_tvOS_10_2 : FBControlCoreConfiguration_tvOS_Base
-@end
-
-@interface FBControlCoreConfiguration_watchOS_Base : FBControlCoreConfiguration_OS_Base
-@end
-
-@interface FBControlCoreConfiguration_watchOS_2_0 : FBControlCoreConfiguration_watchOS_Base
-@end
-
-@interface FBControlCoreConfiguration_watchOS_2_1 : FBControlCoreConfiguration_watchOS_Base
-@end
-
-@interface FBControlCoreConfiguration_watchOS_2_2 : FBControlCoreConfiguration_watchOS_Base
-@end
-
-@interface FBControlCoreConfiguration_watchOS_3_0 : FBControlCoreConfiguration_watchOS_Base
-@end
-
-@interface FBControlCoreConfiguration_watchOS_3_1 : FBControlCoreConfiguration_watchOS_Base
-@end
-
-@interface FBControlCoreConfiguration_watchOS_3_2 : FBControlCoreConfiguration_watchOS_Base
-@end
-
-@interface FBControlCoreConfiguration_OS_Generic : FBControlCoreConfiguration_OS_Base
-- (id)initWithOSName:(NSString *)osName;
 @end
 
 /**
@@ -335,7 +248,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 /**
  OS Version names to OS Versions.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<FBOSVersionName, id<FBControlCoreConfiguration_OS>> *nameToOSVersion;
+@property (class, nonatomic, copy, readonly) NSDictionary<FBOSVersionName, FBOSVersion *> *nameToOSVersion;
 
 /**
  Maps the architechture of the target to the compatible architechtures for binaries on the target.

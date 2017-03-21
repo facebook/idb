@@ -24,33 +24,33 @@
 
 #pragma mark Matching Configuration against Available Versions
 
-+ (id<FBControlCoreConfiguration_OS>)newestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device
++ (FBOSVersion *)newestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device
 {
   return [[[[FBSimulatorConfiguration supportedOSVersionsForDevice:device] reverseObjectEnumerator] allObjects] firstObject];
 }
 
 - (instancetype)newestAvailableOS
 {
-  id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration newestAvailableOSForDevice:self.device];
+  FBOSVersion *os = [FBSimulatorConfiguration newestAvailableOSForDevice:self.device];
   NSAssert(os, @"Expected to be able to find any runtime for device %@", self.device);
   return [self withOS:os];
 }
 
-+ (id<FBControlCoreConfiguration_OS>)oldestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device
++ (FBOSVersion *)oldestAvailableOSForDevice:(id<FBControlCoreConfiguration_Device>)device
 {
   return [[FBSimulatorConfiguration supportedOSVersionsForDevice:device] firstObject];
 }
 
 - (instancetype)oldestAvailableOS
 {
-  id<FBControlCoreConfiguration_OS> os = [FBSimulatorConfiguration oldestAvailableOSForDevice:self.device];
+  FBOSVersion *os = [FBSimulatorConfiguration oldestAvailableOSForDevice:self.device];
   NSAssert(os, @"Expected to be able to find any runtime for device %@", self.device);
   return [self withOS:os];
 }
 
 + (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error;
 {
-  id<FBControlCoreConfiguration_OS> configOS = FBControlCoreConfigurationVariants.nameToOSVersion[simDevice.runtime.name];
+  FBOSVersion *configOS = FBControlCoreConfigurationVariants.nameToOSVersion[simDevice.runtime.name];
   if (!configOS) {
     return [[FBSimulatorError describeFormat:@"Could not obtain OS Version for %@, perhaps it is unsupported by FBSimulatorControl", simDevice.runtime.name] fail:error];
   }
@@ -87,11 +87,11 @@
   return configurations;
 }
 
-+ (NSArray<id<FBControlCoreConfiguration_OS>> *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device
++ (NSArray<FBOSVersion *> *)supportedOSVersionsForDevice:(id<FBControlCoreConfiguration_Device>)device
 {
   NSMutableArray *array = [NSMutableArray array];
   for (SimRuntime *runtime in [self supportedRuntimesForDevice:device]) {
-    id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
+    FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
     if (os) {
       [array addObject:os];
     }
@@ -110,7 +110,7 @@
     if (!runtime.available) {
       continue;
     }
-    id<FBControlCoreConfiguration_OS> os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
+    FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
     if (!os) {
       [absentOSVersions addObject:runtime.name];
       continue;
@@ -214,7 +214,7 @@
   }];
 }
 
-+ (NSPredicate *)runtimeNamePredicate:(id<FBControlCoreConfiguration_OS>)OS
++ (NSPredicate *)runtimeNamePredicate:(FBOSVersion *)OS
 {
   return [NSPredicate predicateWithBlock:^ BOOL (SimRuntime *runtime, NSDictionary *_) {
     return [runtime.name isEqualToString:OS.name];

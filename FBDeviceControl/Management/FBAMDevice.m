@@ -156,8 +156,7 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
 
     NSString *osVersion = [FBAMDevice osVersionForDevice:device];
     self->_deviceConfiguration = FBControlCoreConfigurationVariants.productTypeToDevice[self->_productType];
-    self->_osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[osVersion]
-      ?: [[FBControlCoreConfiguration_OS_Generic alloc] initWithOSName:osVersion];
+    self->_osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[osVersion] ?: [FBOSVersion genericWithName:osVersion];
     return @YES;
   } error:nil] boolValue];
 }
