@@ -60,13 +60,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSSet *supportedArchitectures;
 
-/**
- Starts test manager daemon service
-
- @return AMDServiceConnection if the operation succeeds, otherwise NULL.
- */
-- (CFTypeRef)startTestManagerServiceWithError:(NSError **)error;
-
 @end
 
 NS_ASSUME_NONNULL_END

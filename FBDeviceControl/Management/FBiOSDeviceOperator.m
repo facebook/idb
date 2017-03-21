@@ -30,6 +30,7 @@
 #import <objc/runtime.h>
 
 #import "FBDevice.h"
+#import "FBDevice+Private.h"
 #import "FBDeviceControlError.h"
 #import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
@@ -164,7 +165,7 @@ static NSString *const ApplicationPathKey = @"Path";
      fail:error];
   }
   NSError *innerError;
-  CFTypeRef connection = [self.device startTestManagerServiceWithError:&innerError];
+  CFTypeRef connection = [self.device.amDevice startTestManagerServiceWithError:&innerError];
   if (!connection) {
     return
     [[[[FBDeviceControlError
