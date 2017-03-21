@@ -258,6 +258,62 @@ static NSString *const ApplicationPathKey = @"Path";
   return YES;
 }
 
+- (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSAssert(error, @"error is required for hub commands");
+  return
+  [[self executeHubProcessControlSelector:NSSelectorFromString(@"processIdentifierForBundleIdentifier:")
+                                    error:error
+                                arguments:bundleID, nil]
+   intValue];
+}
+
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID
+{
+  return nil;
+}
+
+- (NSString *)consoleString
+{
+  return [self.device.dvtDevice.token.deviceConsoleController consoleString];
+}
+
+- (BOOL)observeProcessWithID:(NSInteger)processID error:(NSError **)error
+{
+  NSAssert(error, @"error is required for hub commands");
+  [self executeHubProcessControlSelector:NSSelectorFromString(@"startObservingPid:")
+                                   error:error
+                               arguments:@(processID), nil];
+  return (*error == nil);
+}
+
+- (BOOL)killProcessWithID:(NSInteger)processID error:(NSError **)error
+{
+  NSAssert(error, @"error is required for hub commands");
+  [self executeHubProcessControlSelector:NSSelectorFromString(@"killPid:")
+                                   error:error
+                               arguments:@(processID), nil];
+  return (*error == nil);
+}
+
+- (NSArray<NSDictionary<NSString *, id> *> *)installedApplicationsData
+{
+  [self fetchApplications];
+
+  NSMutableArray *applications = [[NSMutableArray alloc] init];
+
+  for(NSObject *app in self.device.dvtDevice.applications) {
+    NSDictionary *dict = [app valueForKey:@"plist"];
+    if (!dict) {
+      continue;
+    }
+    [applications addObject:dict];
+  }
+  return applications;
+}
+
+#pragma mark FBApplicationCommands Implementation
+
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
   // Get the device here in the main thread. There is an assertion for main thread in
@@ -320,19 +376,13 @@ static NSString *const ApplicationPathKey = @"Path";
   return YES;
 }
 
-- (NSArray<NSDictionary<NSString *, id> *> *)installedApplicationsData {
-  [self fetchApplications];
-
-  NSMutableArray *applications = [[NSMutableArray alloc] init];
-
-  for(NSObject *app in self.device.dvtDevice.applications) {
-    NSDictionary *dict = [app valueForKey:@"plist"];
-    if (!dict) {
-      continue;
-    }
-    [applications addObject:dict];
+- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  pid_t PID = [self processIDWithBundleID:bundleID error:error];
+  if (PID < 1) {
+    return NO;
   }
-  return applications;
+  return [self killProcessWithID:PID error:error];
 }
 
 - (NSArray<FBApplicationDescriptor *> *)installedApplications
@@ -343,66 +393,16 @@ static NSString *const ApplicationPathKey = @"Path";
     if (app == nil) {
       continue;
     }
-    FBApplicationDescriptor *appData =
-      [FBApplicationDescriptor
-       remoteApplicationWithName:app[ApplicationNameKey]
-       path:app[ApplicationPathKey]
-       bundleID:app[ApplicationIdentifierKey]
-       ];
+    FBApplicationDescriptor *appData = [FBApplicationDescriptor
+      remoteApplicationWithName:app[ApplicationNameKey]
+      path:app[ApplicationPathKey]
+      bundleID:app[ApplicationIdentifierKey]];
 
     [installedApplications addObject:appData];
   }
 
   return [installedApplications copy];
 }
-
-- (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  NSAssert(error, @"error is required for hub commands");
-  return
-  [[self executeHubProcessControlSelector:NSSelectorFromString(@"processIdentifierForBundleIdentifier:")
-                                    error:error
-                                arguments:bundleID, nil]
-   intValue];
-}
-
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID
-{
-  return nil;
-}
-
-- (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  pid_t PID = [self processIDWithBundleID:bundleID error:error];
-  if (PID < 1) {
-    return NO;
-  }
-  return [self killProcessWithID:PID error:error];
-}
-
-- (NSString *)consoleString
-{
-  return [self.device.dvtDevice.token.deviceConsoleController consoleString];
-}
-
-- (BOOL)observeProcessWithID:(NSInteger)processID error:(NSError **)error
-{
-  NSAssert(error, @"error is required for hub commands");
-  [self executeHubProcessControlSelector:NSSelectorFromString(@"startObservingPid:")
-                                   error:error
-                               arguments:@(processID), nil];
-  return (*error == nil);
-}
-
-- (BOOL)killProcessWithID:(NSInteger)processID error:(NSError **)error
-{
-  NSAssert(error, @"error is required for hub commands");
-  [self executeHubProcessControlSelector:NSSelectorFromString(@"killPid:")
-                                   error:error
-                               arguments:@(processID), nil];
-  return (*error == nil);
-}
-
 
 #pragma mark - Helpers
 

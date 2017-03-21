@@ -41,11 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, strong, readonly) DVTiOSDevice *dvtDevice;
 
 /**
- Device operator used to control device
- */
-@property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
-
-/**
  Device's name
  */
 @property (nonatomic, copy, readonly) NSString *name;
