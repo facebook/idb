@@ -80,6 +80,11 @@ extension CLI {
   }
 
   private func createWriter() -> Writer {
-    return FileHandleWriter.stdOutWriter
+    switch self {
+    case .show:
+      return FileHandleWriter.stdErrWriter
+    default:
+      return FileHandleWriter.stdOutWriter
+    }
   }
 }
