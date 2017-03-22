@@ -53,11 +53,19 @@ struct CLIRunner : Runner {
 }
 
 extension CLI {
+  struct CLIError : Error, CustomStringConvertible {
+    let description: String
+  }
+
   public static func fromArguments(_ arguments: [String], environment: [String : String]) -> CLI {
     do {
       let (_, cli) = try CLI.parser.parse(arguments)
       return cli.appendEnvironment(environment)
     } catch let error as (CustomStringConvertible & Error) {
+      let help = Help(outputOptions: OutputOptions(), error: error, command: nil)
+      return CLI.show(help)
+    } catch {
+      let error = CLIError(description: "An Unknown Error Occurred")
       let help = Help(outputOptions: OutputOptions(), error: error, command: nil)
       return CLI.show(help)
     }
