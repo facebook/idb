@@ -14,21 +14,7 @@ import FBSimulatorControl
   open static func bootstrap() -> Int32 {
     let arguments = Array(CommandLine.arguments.dropFirst(1))
     let environment = ProcessInfo.processInfo.environment
-
-    // The Parsing of Logging Arguments needs to be processes first, so that the Private Frameworks are not loaded
-    do {
-      let (_, configuration) = try FBSimulatorControlKit.Configuration.parser.parse(arguments)
-      let debugEnabled = configuration.outputOptions.contains(OutputOptions.DebugLogging)
-
-      let reporter = configuration.outputOptions.createReporter(configuration.outputOptions.createLogWriter())
-      let bridge = ControlCoreLoggerBridge(reporter: reporter)
-      let logger = LogReporter(bridge: bridge, debug: debugEnabled)
-      FBControlCoreGlobalConfiguration.setDefaultLogger(logger)
-    } catch {
-      // Parse errors will be handled by the full parse
-    }
-    let cli = CLI.fromArguments(arguments, environment: environment)
-    let reporter = cli.createReporter(FileHandleWriter.stdOutWriter)
+    let (cli, reporter, _) = CLI.fromArguments(arguments, environment: environment).bootstrap()
     return CLIRunner(cli: cli, reporter: reporter).runForStatus()
   }
 }
@@ -63,5 +49,37 @@ struct CLIRunner : Runner {
       default:
         return 0
     }
+  }
+}
+
+extension CLI {
+  public static func fromArguments(_ arguments: [String], environment: [String : String]) -> CLI {
+    do {
+      let (_, cli) = try CLI.parser.parse(arguments)
+      return cli.appendEnvironment(environment)
+    } catch let error {
+      print("Failed to Parse Command \(error)")
+      let help = Help(outputOptions: OutputOptions(), userInitiated: false, command: nil)
+      return CLI.show(help)
+    }
+  }
+
+  public func bootstrap() -> (CLI, EventReporter, FBControlCoreLoggerProtocol)  {
+    let reporter = self.createReporter(self.createWriter())
+    if case .run(let command) = self {
+      let configuration = command.configuration
+      let debugEnabled = configuration.outputOptions.contains(OutputOptions.DebugLogging)
+      let bridge = ControlCoreLoggerBridge(reporter: reporter)
+      let logger = LogReporter(bridge: bridge, debug: debugEnabled)
+      FBControlCoreGlobalConfiguration.setDefaultLogger(logger)
+      return (self, reporter, logger)
+    }
+
+    let logger = FBControlCoreGlobalConfiguration.defaultLogger()
+    return (self, reporter, logger)
+  }
+
+  private func createWriter() -> Writer {
+    return FileHandleWriter.stdOutWriter
   }
 }
