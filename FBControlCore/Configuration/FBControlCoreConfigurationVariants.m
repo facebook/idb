@@ -66,6 +66,13 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 @implementation FBDeviceType
 
+#pragma mark Initializers
+
++ (instancetype)genericWithName:(NSString *)name
+{
+  return [[self alloc] initWithName:name productTypes:NSSet.set deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64 family:FBControlCoreProductFamilyUnknown];
+}
+
 - (instancetype)initWithName:(FBDeviceName)name productTypes:(NSSet<NSString *> *)productTypes deviceArchitecture:(FBArchitecture)deviceArchitecture simulatorArchitecture:(FBArchitecture)simulatorArchitecture family:(FBControlCoreProductFamily)family
 {
   self = [super init];
@@ -164,6 +171,13 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 
 @implementation FBOSVersion
 
+#pragma mark Initializers
+
++ (instancetype)genericWithName:(NSString *)name
+{
+  return [[self alloc] initWithName:name families:NSSet.set];
+}
+
 - (instancetype)initWithName:(FBOSVersionName)name families:(NSSet<NSNumber *> *)families
 {
   self = [super init];
@@ -238,11 +252,6 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
     @(FBControlCoreProductFamilyiPad),
   ]];
   return [[self alloc] initWithName:name families:families];
-}
-
-+ (instancetype)genericWithName:(NSString *)name
-{
-  return [[self alloc] initWithName:name families:NSSet.set];
 }
 
 + (instancetype)tvOSWithName:(FBOSVersionName)name

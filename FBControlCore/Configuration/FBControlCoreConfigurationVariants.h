@@ -116,6 +116,11 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
  */
 @property (nonatomic, assign, readonly) FBControlCoreProductFamily family;
 
+/**
+ A Generic Device with the Given Name.
+ */
++ (instancetype)genericWithName:(NSString *)name;
+
 @end
 
 #pragma mark OS Versions

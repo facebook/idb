@@ -173,13 +173,14 @@
 - (instancetype)withDevice:(FBDeviceType *)device
 {
   NSParameterAssert(device);
+  // Use the current os if compatible
   FBOSVersion *os = self.os;
-  if ([FBSimulatorConfiguration device:device andOSPairSupported:self.os]) {
-    return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:self.os auxillaryDirectory:self.auxillaryDirectory];
+  if ([FBSimulatorConfiguration device:device andOSPairSupported:os]) {
+    return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
   }
-  os = [FBSimulatorConfiguration newestAvailableOSForDevice:device];
-  NSAssert(os, @"Could not derive a compatible OS for device %@", device.deviceName);
-  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:self.os auxillaryDirectory:self.auxillaryDirectory];
+  // Attempt to find the newest OS for this device, otherwise use what we had before.
+  os = [FBSimulatorConfiguration newestAvailableOSForDevice:device] ?: os;
+  return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
 }
 
 + (instancetype)withDeviceNamed:(FBDeviceName)deviceName
@@ -190,7 +191,7 @@
 - (instancetype)withDeviceNamed:(FBDeviceName)deviceName
 {
   FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[deviceName];
-  NSAssert(device, @"%@ is not a valid device name", deviceName);
+  device = device ?: [FBDeviceType genericWithName:deviceName];
   return [self withDevice:device];
 }
 
@@ -215,7 +216,7 @@
 - (instancetype)withOSNamed:(FBOSVersionName)osName
 {
   FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[osName];
-  NSAssert(os, @"%@ is not a valid os name", osName);
+  os = os ?: [FBOSVersion genericWithName:osName];
   return [self withOS:os];
 }
 
