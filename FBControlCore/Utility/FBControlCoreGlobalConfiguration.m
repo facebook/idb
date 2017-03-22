@@ -126,6 +126,24 @@ static id<FBControlCoreLogger> logger;
   return logger;
 }
 
++ (void)setDefaultLogger:(id<FBControlCoreLogger>)defaultLogger
+{
+  if (logger) {
+    [defaultLogger logFormat:@"Overriding the Default Logger with %@", defaultLogger];
+  }
+  logger = defaultLogger;
+}
+
++ (BOOL)debugLoggingEnabled
+{
+  return [NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging] boolValue];
+}
+
++ (void)setDebugLoggingEnabled:(BOOL)enabled
+{
+  setenv(FBControlCoreDebugLogging.UTF8String, enabled ? "YES" : "NO", 1);
+}
+
 + (NSString *)description
 {
   return [NSString stringWithFormat:
@@ -140,21 +158,6 @@ static id<FBControlCoreLogger> logger;
 - (NSString *)description
 {
   return [FBControlCoreGlobalConfiguration description];
-}
-
-+ (BOOL)debugLoggingEnabled
-{
-  return [NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging] boolValue];
-}
-
-+ (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath
-{
-  NSCAssert([NSFileManager.defaultManager fileExistsAtPath:plistPath], @"plist does not exist at path '%@'", plistPath);
-  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:plistPath];
-  NSCAssert(infoPlist, @"Could not read plist at '%@'", plistPath);
-  id value = infoPlist[key];
-  NSCAssert(value, @"'%@' does not exist in plist '%@'", key, infoPlist.allKeys);
-  return value;
 }
 
 #pragma mark FBJSONConversion
@@ -205,22 +208,19 @@ static id<FBControlCoreLogger> logger;
   return directory;
 }
 
++ (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath
+{
+  NSCAssert([NSFileManager.defaultManager fileExistsAtPath:plistPath], @"plist does not exist at path '%@'", plistPath);
+  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:plistPath];
+  NSCAssert(infoPlist, @"Could not read plist at '%@'", plistPath);
+  id value = infoPlist[key];
+  NSCAssert(value, @"'%@' does not exist in plist '%@'", key, infoPlist.allKeys);
+  return value;
+}
+
 @end
 
-@implementation FBControlCoreGlobalConfiguration (Environment)
-
-+ (void)setDefaultLogger:(id<FBControlCoreLogger>)defaultLogger
-{
-  if (logger) {
-    [defaultLogger logFormat:@"Overriding the Default Logger with %@", defaultLogger];
-  }
-  logger = defaultLogger;
-}
-
-+ (void)setDebugLoggingEnabled:(BOOL)enabled
-{
-  setenv(FBControlCoreDebugLogging.UTF8String, enabled ? "YES" : "NO", 1);
-}
+@implementation FBControlCoreGlobalConfiguration (Setters)
 
 + (void)setDefaultLoggerToASLWithStderrLogging:(BOOL)stderrLogging debugLogging:(BOOL)debugLogging
 {

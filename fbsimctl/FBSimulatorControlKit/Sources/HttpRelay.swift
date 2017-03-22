@@ -313,7 +313,7 @@ class HttpRelay : Relay {
     self.httpServer = HttpServer(
       port: portNumber,
       routes: HttpRelay.actionRoutes.flatMap { $0.httpRoutes(performer) },
-      logger: FBControlCoreGlobalConfiguration.defaultLogger()
+      logger: FBControlCoreGlobalConfiguration.defaultLogger
     )
   }
 

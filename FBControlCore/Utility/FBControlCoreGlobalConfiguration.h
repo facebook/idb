@@ -92,19 +92,20 @@ extern NSString *const FBControlCoreDebugLogging;
 + (BOOL)supportsCustomDeviceSets;
 
 /**
- YES if additional debug logging should be provided to the logger, NO otherwise.
+ A Description of the Current Configuration.
  */
-+ (BOOL)debugLoggingEnabled;
++ (NSString *)description;
 
 /**
  The default logger to send log messages to.
  */
-+ (id<FBControlCoreLogger>)defaultLogger;
+@property (nonatomic, strong, readwrite, class) id<FBControlCoreLogger> defaultLogger;
 
 /**
- A Description of the Current Configuration.
+ YES if additional debug logging should be provided to the logger, NO otherwise.
+ This affects a number of subsystems.
  */
-+ (NSString *)description;
+@property (nonatomic, assign, readwrite, class) BOOL debugLoggingEnabled;
 
 @end
 
@@ -113,21 +114,6 @@ extern NSString *const FBControlCoreDebugLogging;
  These Methods should typically be called *before any other* method in FBControlCore.
  */
 @interface FBControlCoreGlobalConfiguration (Setters)
-
-/**
- This is provided as a global so that a custom logger can be provided to the Private Framework loader.
-
- @param logger the new default logger
- */
-+ (void)setDefaultLogger:(id<FBControlCoreLogger>)logger;
-
-/**
- Sets whether verbose debug logging should be enabled.
- This affects a number of subsystems.
-
- @param enabled YES if should be enabled, NO otherwise.
- */
-+ (void)setDebugLoggingEnabled:(BOOL)enabled;
 
 /**
  Update the current process environment to enable logging to stderr.

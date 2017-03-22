@@ -32,8 +32,8 @@
   }
 
   _logger = FBXCTestLogger.defaultLoggerInDefaultDirectory;
-  [FBControlCoreGlobalConfiguration setDefaultLogger:_logger];
-  [FBControlCoreGlobalConfiguration setDebugLoggingEnabled:YES];
+  FBControlCoreGlobalConfiguration.defaultLogger = _logger;
+  FBControlCoreGlobalConfiguration.debugLoggingEnabled = YES;
 
   return self;
 }

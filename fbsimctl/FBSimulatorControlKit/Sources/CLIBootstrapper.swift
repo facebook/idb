@@ -78,11 +78,11 @@ extension CLI {
       let debugEnabled = configuration.outputOptions.contains(OutputOptions.DebugLogging)
       let bridge = ControlCoreLoggerBridge(reporter: reporter)
       let logger = LogReporter(bridge: bridge, debug: debugEnabled)
-      FBControlCoreGlobalConfiguration.setDefaultLogger(logger)
+      FBControlCoreGlobalConfiguration.defaultLogger = logger
       return (self, reporter, logger)
     }
 
-    let logger = FBControlCoreGlobalConfiguration.defaultLogger()
+    let logger = FBControlCoreGlobalConfiguration.defaultLogger
     return (self, reporter, logger)
   }
 
