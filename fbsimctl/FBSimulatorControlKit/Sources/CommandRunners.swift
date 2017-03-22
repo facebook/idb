@@ -197,11 +197,12 @@ struct ListenRunner : Runner, CommandPerformer {
 
   func run() -> CommandResult {
     do {
-      let relay = SynchronousRelay(relay: try self.makeBaseRelay(), reporter: self.context.reporter) {
-        self.context.reporter.reportSimple(EventName.Listen, EventType.Started, self.context.value.0)
+      let interface = self.context.value.0
+      let relay = SynchronousRelay(relay: try self.makeBaseRelay(), reporter: self.context.reporter, handle: interface.handle) {
+        self.context.reporter.reportSimple(EventName.Listen, EventType.Started, interface)
       }
       let result = RelayRunner(relay: relay).run()
-      self.context.reporter.reportSimple(EventName.Listen, EventType.Ended, self.context.value.0)
+      self.context.reporter.reportSimple(EventName.Listen, EventType.Ended, interface)
       return result
     } catch let error as CustomStringConvertible {
       return CommandResult.failure(error.description)

@@ -27,6 +27,7 @@ public struct ListenInterface {
   let stdin: Bool
   let http: in_port_t?
   let hid: in_port_t?
+  let handle: FBTerminationHandle?
 }
 
 /**
@@ -171,6 +172,7 @@ extension ListenInterface : Accumulator {
     self.stdin = false
     self.http = nil
     self.hid = nil
+    self.handle = nil
   }
 
   public static var identity: ListenInterface { get {
@@ -181,7 +183,8 @@ extension ListenInterface : Accumulator {
     return ListenInterface(
       stdin: other.stdin ? other.stdin : self.stdin,
       http: other.http ?? self.http,
-      hid: other.hid ?? self.hid
+      hid: other.hid ?? self.hid,
+      handle: other.handle ?? self.handle
     )
   }
 }
@@ -196,11 +199,16 @@ extension ListenInterface : EventReporterSubject {
     if let portNumber = self.hid {
       hidValue = JSON.number(NSNumber(integerLiteral: Int(portNumber)))
     }
+    var handleValue = JSON.null
+    if let handle = self.handle {
+      handleValue = JSON.string(handle.type().rawValue)
+    }
 
     return JSON.dictionary([
       "stdin" : JSON.bool(self.stdin),
       "http" : httpValue,
-      "hid" : hidValue
+      "hid" : hidValue,
+      "handle" : handleValue,
     ])
   }}
 
@@ -218,6 +226,9 @@ extension ListenInterface : EventReporterSubject {
       description += "No"
     }
     description += " stdin: \(self.stdin)"
+    if let handle = self.handle {
+      description += " due to \(handle.type().rawValue)"
+    }
     return description
   }}
 }

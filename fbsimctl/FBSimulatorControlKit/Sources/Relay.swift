@@ -8,6 +8,7 @@
  */
 
 import Foundation
+import FBControlCore
 
 /**
  A Protocol for defining
@@ -47,11 +48,13 @@ class CompositeRelay : Relay {
 class SynchronousRelay : Relay {
   let relay: Relay
   let reporter: EventReporter
+  let handle: FBTerminationHandle?
   let started: (Void) -> Void
 
-  init(relay: Relay, reporter: EventReporter, started: @escaping (Void) -> Void) {
+  init(relay: Relay, reporter: EventReporter, handle: FBTerminationHandle?, started: @escaping (Void) -> Void) {
     self.relay = relay
     self.reporter = reporter
+    self.handle = handle
     self.started = started
   }
 

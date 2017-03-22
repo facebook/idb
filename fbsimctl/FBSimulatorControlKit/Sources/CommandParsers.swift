@@ -433,19 +433,19 @@ extension ListenInterface : Parsable {
 
   static var stdinParser: Parser<ListenInterface> {
     return Parser<ListenInterface>
-      .ofFlag("stdin", ListenInterface(stdin: true, http: nil, hid: nil), "Listen for commands on stdin")
+      .ofFlag("stdin", ListenInterface(stdin: true, http: nil, hid: nil, handle: nil), "Listen for commands on stdin")
   }
 
   static var httpParser:  Parser<ListenInterface> {
     return Parser<ListenInterface>
       .ofFlagWithArg("http", portParser, "The HTTP Port to listen on")
-      .fmap { ListenInterface(stdin: false, http: $0, hid: nil) }
+      .fmap { ListenInterface(stdin: false, http: $0, hid: nil, handle: nil) }
   }
 
   static var hidParser: Parser<ListenInterface> {
     return Parser<ListenInterface>
       .ofFlagWithArg("hid", portParser, "The HID Port to listen on")
-      .fmap { ListenInterface(stdin: false, http: nil, hid: $0) }
+      .fmap { ListenInterface(stdin: false, http: nil, hid: $0, handle: nil) }
   }
 
   private static var portParser: Parser<UInt16> {
