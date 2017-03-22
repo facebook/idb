@@ -83,8 +83,19 @@ extension CLI {
     switch self {
     case .show:
       return FileHandleWriter.stdErrWriter
-    default:
-      return FileHandleWriter.stdOutWriter
+    case .run(let command):
+      return command.createWriter()
     }
+  }
+}
+
+extension Command {
+  func createWriter() -> Writer {
+    for action in self.actions {
+      if case .stream = action {
+        return FileHandleWriter.stdErrWriter
+      }
+    }
+    return FileHandleWriter.stdOutWriter
   }
 }
