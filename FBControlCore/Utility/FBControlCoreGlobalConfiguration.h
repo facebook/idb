@@ -34,67 +34,67 @@ extern NSString *const FBControlCoreDebugLogging;
 /**
  The File Path to of Xcode's /Xcode.app/Contents/Developer directory.
  */
-+ (NSString *)developerDirectory;
+@property (nonatomic, copy, readonly, class) NSString *developerDirectory;
 
 /**
  The File Path of Apple's 'Apple Configurator' Application, if installed.
  */
-+ (nullable NSString *)appleConfiguratorApplicationPath;
+@property (nonatomic, copy, readonly, nullable, class) NSString *appleConfiguratorApplicationPath;
 
 /**
  The Version Number for the Xcode defined by the Developer Directory.
  */
-+ (NSDecimalNumber *)xcodeVersionNumber;
+@property (nonatomic, copy, readonly, class) NSDecimalNumber *xcodeVersionNumber;
 
 /**
  The SDK Version for the Xcode defined by the Developer Directory.
  */
-+ (NSDecimalNumber *)iosSDKVersionNumber;
+@property (nonatomic, copy, readonly, class) NSDecimalNumber *iosSDKVersionNumber;
 
 /**
  Formatter for the SDK Version a string
  */
-+ (NSNumberFormatter *)iosSDKVersionNumberFormatter;
+@property (nonatomic, strong, readonly, class) NSDecimalNumber *iosSDKVersionNumberFormatter;
 
 /**
  The SDK Version of the current Xcode Version as a String.
  */
-+ (NSString *)iosSDKVersion;
+@property (nonatomic, copy, readonly, class) NSString *iosSDKVersion;
 
 /**
  A Timeout Value when waiting on events that should happen 'fast'
  */
-+ (NSTimeInterval)fastTimeout;
+@property (nonatomic, assign, readonly, class) NSTimeInterval fastTimeout;
 
 /**
  A Timeout Value when waiting on events that will take some time longer than 'fast' events.
  */
-+ (NSTimeInterval)regularTimeout;
+@property (nonatomic, assign, readonly, class) NSTimeInterval regularTimeout;
 
 /**
  A Timeout Value when waiting on events that will a longer period of time.
  */
-+ (NSTimeInterval)slowTimeout;
+@property (nonatomic, assign, readonly, class) NSTimeInterval slowTimeout;
 
 /**
  YES if Xcode 7 or greater, NO Otherwise.
  */
-+ (BOOL)isXcode7OrGreater;
+@property (nonatomic, assign, readonly, class) BOOL isXcode7OrGreater;
 
 /**
  YES if Xcode 8 or greater, NO Otherwise.
  */
-+ (BOOL)isXcode8OrGreater;
+@property (nonatomic, assign, readonly, class) BOOL isXcode8OrGreater;
 
 /**
  YES if passing a custom SimDeviceSet to the Simulator App is Supported.
  */
-+ (BOOL)supportsCustomDeviceSets;
+@property (nonatomic, assign, readonly, class) BOOL supportsCustomDeviceSets;
 
 /**
  A Description of the Current Configuration.
  */
-+ (NSString *)description;
+@property (nonatomic, copy, readonly, class) NSString *description;
 
 /**
  The default logger to send log messages to.
