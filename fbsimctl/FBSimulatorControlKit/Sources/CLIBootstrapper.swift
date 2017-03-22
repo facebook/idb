@@ -57,9 +57,8 @@ extension CLI {
     do {
       let (_, cli) = try CLI.parser.parse(arguments)
       return cli.appendEnvironment(environment)
-    } catch let error {
-      print("Failed to Parse Command \(error)")
-      let help = Help(outputOptions: OutputOptions(), userInitiated: false, command: nil)
+    } catch let error as (CustomStringConvertible & Error) {
+      let help = Help(outputOptions: OutputOptions(), error: error, command: nil)
       return CLI.show(help)
     }
   }

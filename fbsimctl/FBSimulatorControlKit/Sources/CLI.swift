@@ -28,7 +28,7 @@ public struct OutputOptions : OptionSet {
  */
 public struct Help {
   let outputOptions: OutputOptions
-  let userInitiated: Bool
+  let error: (Error & CustomStringConvertible)?
   let command: Command?
 }
 

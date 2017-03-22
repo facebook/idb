@@ -390,7 +390,7 @@ extension Help : Parsable {
         Parser.ofString("help", NSNull())
       )
       .fmap { (output, _) in
-        return Help(outputOptions: output, userInitiated: true, command: nil)
+        return Help(outputOptions: output, error: nil, command: nil)
       }
   }
 }

@@ -122,8 +122,10 @@ struct HelpRunner : Runner {
   let help: Help
 
   func run() -> CommandResult {
-    reporter.reportSimpleBridge(EventName.Help, EventType.Discrete, self.help.description as NSString)
-    return self.help.userInitiated ? .success(nil) : .failure("")
+    if let error = self.help.error {
+      return .failure(error.description)
+    }
+    return .success(self.help.description)
   }
 }
 
