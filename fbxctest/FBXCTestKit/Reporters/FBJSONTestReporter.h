@@ -7,10 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBControlCore/FBFileConsumer.h>
 #import "FBXCTestReporter.h"
 
 @interface FBJSONTestReporter : NSObject <FBXCTestReporter>
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType;
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType fileConsumer:(id <FBFileConsumer>)fileConsumer;
 
 @end
