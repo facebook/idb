@@ -68,7 +68,7 @@
     NSLog(@"Skipping running -[%@ %@] since Xcode 7 or smaller is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
-  self.simulatorConfiguration = [[FBSimulatorConfiguration withDeviceNamed:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_8_1];
+  self.simulatorConfiguration = [[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_8_1];
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
   NSError *error = nil;
   BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]

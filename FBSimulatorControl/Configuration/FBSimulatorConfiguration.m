@@ -183,15 +183,15 @@
   return [[FBSimulatorConfiguration alloc] initWithNamedDevice:device os:os auxillaryDirectory:self.auxillaryDirectory];
 }
 
-+ (instancetype)withDeviceNamed:(FBDeviceModel)deviceName
++ (instancetype)withDeviceModel:(FBDeviceModel)model
 {
-  return [self.defaultConfiguration withDeviceNamed:deviceName];
+  return [self.defaultConfiguration withDeviceModel:model];
 }
 
-- (instancetype)withDeviceNamed:(FBDeviceModel)deviceName
+- (instancetype)withDeviceModel:(FBDeviceModel)model
 {
-  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[deviceName];
-  device = device ?: [FBDeviceType genericWithName:deviceName];
+  FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[model];
+  device = device ?: [FBDeviceType genericWithName:model];
   return [self withDevice:device];
 }
 

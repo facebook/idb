@@ -72,8 +72,8 @@ NS_ASSUME_NONNULL_BEGIN
  A Configuration with the provided Device Name.
  Will assume a 'Default' Configuration of the provided Device Name if it is unknown to the Framework.
  */
-+ (instancetype)withDeviceNamed:(FBDeviceModel)deviceName;
-- (instancetype)withDeviceNamed:(FBDeviceModel)deviceName;
++ (instancetype)withDeviceModel:(FBDeviceModel)model;
+- (instancetype)withDeviceModel:(FBDeviceModel)model;
 
 #pragma mark - OS Versions
 

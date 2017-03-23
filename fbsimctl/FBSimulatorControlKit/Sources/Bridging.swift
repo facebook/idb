@@ -172,7 +172,7 @@ extension IndividualCreationConfiguration {
   public var simulatorConfiguration : FBSimulatorConfiguration { get {
     var configuration = FBSimulatorConfiguration.default()
     if let device = self.deviceType {
-      configuration = configuration.withDeviceNamed(device)
+      configuration = configuration.withDeviceModel(device)
     }
     if let os = self.osVersion {
       configuration = configuration.withOSNamed(os)

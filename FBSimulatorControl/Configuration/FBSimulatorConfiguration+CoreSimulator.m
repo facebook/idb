@@ -66,7 +66,7 @@
   }
   return [[FBSimulatorConfiguration.defaultConfiguration
     withOSNamed:osName]
-    withDeviceNamed:osName];
+    withDeviceModel:osName];
 }
 
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError **)error
@@ -134,7 +134,7 @@
         continue;
       }
 
-      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceNamed:model] withOSNamed:osName];
+      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceModel:model] withOSNamed:osName];
       [configurations addObject:configuration];
     }
   }
