@@ -33,7 +33,7 @@
 {
   FBOSVersion *os = [FBSimulatorConfiguration newestAvailableOSForDevice:self.device];
   NSAssert(os, @"Expected to be able to find any runtime for device %@", self.device);
-  return [self withOS:os];
+  return [self withOSNamed:os.name];
 }
 
 + (FBOSVersion *)oldestAvailableOSForDevice:(FBDeviceType *)device
@@ -45,7 +45,7 @@
 {
   FBOSVersion *os = [FBSimulatorConfiguration oldestAvailableOSForDevice:self.device];
   NSAssert(os, @"Expected to be able to find any runtime for device %@", self.device);
-  return [self withOS:os];
+  return [self withOSNamed:os.name];
 }
 
 + (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error;
@@ -118,8 +118,8 @@
     if (!runtime.available) {
       continue;
     }
-    FBOSVersion *os = FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name];
-    if (!os) {
+    FBOSVersionName osName = runtime.name;
+    if (!FBControlCoreConfigurationVariants.nameToOSVersion[runtime.name]) {
       [absentOSVersions addObject:runtime.name];
       continue;
     }
@@ -134,7 +134,7 @@
         continue;
       }
 
-      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceNamed:model] withOS:os];
+      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceNamed:model] withOSNamed:osName];
       [configurations addObject:configuration];
     }
   }

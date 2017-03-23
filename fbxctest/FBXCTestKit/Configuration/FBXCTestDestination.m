@@ -52,7 +52,7 @@
     configuration = [configuration withDeviceNamed:self.device.model];
   }
   if (self.version) {
-    configuration = [configuration withOS:self.version];
+    configuration = [configuration withOSNamed:self.version.name];
   }
   return configuration;
 }

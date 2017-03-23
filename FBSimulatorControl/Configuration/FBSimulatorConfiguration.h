@@ -78,12 +78,6 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - OS Versions
 
 /**
- A Configuration with the provided OS.
- */
-+ (instancetype)withOS:(FBOSVersion *)os;
-- (instancetype)withOS:(FBOSVersion *)os;
-
-/**
  A Configuration with the provided OS Name.
  Will assert if the deviceName is not a valid Device Name.
  */
