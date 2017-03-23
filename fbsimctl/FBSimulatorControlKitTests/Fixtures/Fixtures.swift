@@ -51,37 +51,37 @@ struct Fixtures {
 extension CreationSpecification {
   static var empty: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: nil)
+      IndividualCreationConfiguration(os: nil, model: nil, auxDirectory: nil)
     )
   }}
 
   static var iOS9CreationSpecification: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: .nameiOS_9_0, deviceType: nil, auxDirectory: nil)
+      IndividualCreationConfiguration(os: .nameiOS_9_0, model: nil, auxDirectory: nil)
     )
   }}
 
   static var iPhone6Configuration: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: nil, deviceType: .modeliPhone6, auxDirectory: nil)
+      IndividualCreationConfiguration(os: nil, model: .modeliPhone6, auxDirectory: nil)
     )
   }}
 
   static var auxDirectoryConfiguration: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: nil, deviceType: nil, auxDirectory: "/usr/bin")
+      IndividualCreationConfiguration(os: nil, model: nil, auxDirectory: "/usr/bin")
     )
   }}
 
   static var compoundConfiguration0: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: .nameiOS_9_3, deviceType: .modeliPhone6S, auxDirectory: nil)
+      IndividualCreationConfiguration(os: .nameiOS_9_3, model: .modeliPhone6S, auxDirectory: nil)
     )
   }}
 
   static var compoundConfiguration1: CreationSpecification { get {
     return CreationSpecification.individual(
-      IndividualCreationConfiguration(osVersion: .nameiOS_10_0, deviceType: .modeliPadAir2, auxDirectory: nil)
+      IndividualCreationConfiguration(os: .nameiOS_10_0, model: .modeliPadAir2, auxDirectory: nil)
     )
   }}
 }

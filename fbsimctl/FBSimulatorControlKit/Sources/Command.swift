@@ -34,8 +34,8 @@ public struct ListenInterface {
  A Configuration for Creating an Individual Simulator.
  */
 public struct IndividualCreationConfiguration {
-  let osVersion: FBOSVersionName?
-  let deviceType: FBDeviceModel?
+  let os: FBOSVersionName?
+  let model: FBDeviceModel?
   let auxDirectory : String?
 }
 
@@ -236,22 +236,22 @@ extension ListenInterface : EventReporterSubject {
 
 extension IndividualCreationConfiguration : Equatable {}
 public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
-  return left.osVersion == right.osVersion &&
-         left.deviceType == right.deviceType &&
+  return left.os == right.os &&
+         left.model == right.model &&
          left.auxDirectory == right.auxDirectory
 }
 
 extension IndividualCreationConfiguration : Accumulator {
   public init() {
-    self.osVersion = nil
-    self.deviceType = nil
+    self.os = nil
+    self.model = nil
     self.auxDirectory = nil
   }
 
   public func append(_ other: IndividualCreationConfiguration) -> IndividualCreationConfiguration {
     return IndividualCreationConfiguration(
-      osVersion: other.osVersion ?? self.osVersion,
-      deviceType: other.deviceType ?? self.deviceType,
+      os: other.os ?? self.os,
+      model: other.model ?? self.model,
       auxDirectory: other.auxDirectory ?? self.auxDirectory
     )
   }

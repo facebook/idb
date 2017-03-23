@@ -171,10 +171,10 @@ extension FBProcessOutputConfiguration : Accumulator {
 extension IndividualCreationConfiguration {
   public var simulatorConfiguration : FBSimulatorConfiguration { get {
     var configuration = FBSimulatorConfiguration.default()
-    if let device = self.deviceType {
-      configuration = configuration.withDeviceModel(device)
+    if let model = self.model {
+      configuration = configuration.withDeviceModel(model)
     }
-    if let os = self.osVersion {
+    if let os = self.os {
       configuration = configuration.withOSNamed(os)
     }
     if let auxDirectory = self.auxDirectory {
