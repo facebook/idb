@@ -95,11 +95,6 @@
 
 #pragma mark Accessors
 
-- (NSString *)osVersionString
-{
-  return self.os.name;
-}
-
 - (FBArchitecture)architecture
 {
   return self.device.simulatorArchitecture;
@@ -232,6 +227,11 @@
 - (FBDeviceModel)deviceModel
 {
   return self.device.model;
+}
+
+- (FBOSVersionName)osVersionString
+{
+  return self.os.name;
 }
 
 @end

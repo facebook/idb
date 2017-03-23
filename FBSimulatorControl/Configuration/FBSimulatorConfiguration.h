@@ -39,11 +39,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) FBOSVersion *os;
 
 /**
- A String Representation of the OS Version of the Simulator. Must not be nil.
- */
-@property (nonatomic, copy, readonly) NSString *osVersionString;
-
-/**
  A String Representation of the Instruction Set Architecture of the Simulator. Must not be nil.
  */
 @property (nonatomic, copy, readonly) NSString *architecture;
