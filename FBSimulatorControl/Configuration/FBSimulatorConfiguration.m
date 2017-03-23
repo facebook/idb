@@ -93,13 +93,6 @@
   [coder encodeObject:self.auxillaryDirectory forKey:NSStringFromSelector(@selector(auxillaryDirectory))];
 }
 
-#pragma mark Accessors
-
-- (FBArchitecture)architecture
-{
-  return self.device.simulatorArchitecture;
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash
@@ -232,6 +225,11 @@
 - (FBOSVersionName)osVersionString
 {
   return self.os.name;
+}
+
+- (FBArchitecture)architecture
+{
+  return self.device.simulatorArchitecture;
 }
 
 @end

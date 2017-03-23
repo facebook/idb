@@ -137,7 +137,7 @@
 
 - (FBArchitecture)architecture
 {
-  return self.configuration.architecture;
+  return self.configuration.device.simulatorArchitecture;
 }
 
 - (FBDeviceType *)deviceConfiguration
