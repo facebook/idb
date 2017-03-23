@@ -95,11 +95,6 @@
 
 #pragma mark Accessors
 
-- (FBDeviceModel)deviceName
-{
-  return self.device.model;
-}
-
 - (NSString *)osVersionString
 {
   return self.os.name;
@@ -114,7 +109,7 @@
 
 - (NSUInteger)hash
 {
-  return self.deviceName.hash ^ self.osVersionString.hash ^ self.auxillaryDirectory.hash;
+  return self.deviceModel.hash ^ self.osVersionString.hash ^ self.auxillaryDirectory.hash;
 }
 
 - (BOOL)isEqual:(FBSimulatorConfiguration *)object
@@ -123,7 +118,7 @@
     return NO;
   }
 
-  return [self.deviceName isEqualToString:object.deviceName] &&
+  return [self.deviceModel isEqualToString:object.deviceModel] &&
          [self.osVersionString isEqualToString:object.osVersionString] &&
          (self.auxillaryDirectory == object.auxillaryDirectory || [self.auxillaryDirectory isEqualToString:object.auxillaryDirectory]);
 }
@@ -134,7 +129,7 @@
 {
   return [NSString stringWithFormat:
     @"Device '%@' | OS Version '%@' | Aux Directory %@ | Architecture '%@'",
-    self.deviceName,
+    self.deviceModel,
     self.osVersionString,
     self.auxillaryDirectory,
     self.architecture
@@ -156,7 +151,7 @@
 - (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
-    @"device" : self.deviceName,
+    @"device" : self.deviceModel,
     @"os" : self.osVersionString,
     @"aux_directory" : self.auxillaryDirectory ?: NSNull.null,
     @"architecture" : self.architecture
@@ -232,6 +227,11 @@
 + (BOOL)device:(FBDeviceType *)device andOSPairSupported:(FBOSVersion *)os
 {
   return [os.families containsObject:@(device.family)];
+}
+
+- (FBDeviceModel)deviceModel
+{
+  return self.device.model;
 }
 
 @end
