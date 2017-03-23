@@ -379,17 +379,16 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
             return
         (simulator, _) = self.testLaunchesSystemApplication()
         arguments = [
-            simulator.get_udid(), 'record', 'start',
+            simulator.get_udid(),
+            'record', 'start',
             '--', 'listen',
             '--', 'record', 'stop',
-            '--', 'shutdown',
         ]
         # Launch the process, terminate and confirm teardown is successful
         with self.fbsimctl.launch(arguments) as process:
             process.wait_for_event('listen', 'started')
             process.terminate()
             process.wait_for_event('listen', 'ended')
-            process.wait_for_event('shutdown', 'ended')
         # Get the diagnostics
         diagnose_events = self.assertExtractAndKeyDiagnostics(
             self.assertEventsFromRun(

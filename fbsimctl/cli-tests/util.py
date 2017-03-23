@@ -91,9 +91,9 @@ class FBSimctlProcess:
         )
         return self
 
-    def terminate(self):
+    def terminate(self, wait=False):
         self.__loop.run_until_complete(
-            self._terminate_process(),
+            self._terminate_process(wait),
         )
 
     def __enter__(self):
@@ -102,7 +102,7 @@ class FBSimctlProcess:
         return self.start()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.terminate()
+        self.terminate(wait=True)
         self.__loop.close()
         self.__loop = None
 
@@ -120,7 +120,7 @@ class FBSimctlProcess:
         return process
 
     @asyncio.coroutine
-    def _terminate_process(self):
+    def _terminate_process(self, wait):
         if not self.__process:
             raise Exception(
                 'Cannot termnated a process when none has started',
@@ -129,7 +129,10 @@ class FBSimctlProcess:
             return
         log.info('Terminating {0}'.format(self.__process))
         self.__process.terminate()
-        yield from self.__process.wait()
+        if not wait:
+            log.info('Passing Back to Consumer')
+            return
+        yield from self.__process.communicate()
         log.info('Terminated {0}'.format(self.__process))
 
     @asyncio.coroutine
@@ -144,7 +147,14 @@ class FBSimctlProcess:
         while time.time() < start_time + timeout:
             data = yield from self.__process.stdout.readline()
             line = data.decode('utf-8').rstrip()
+            if not len(line) and self.__process.stdout.at_eof():
+                raise Exception(
+                    'Reached end of output waiting for {0}/{1}'.format(
+                    event_name,
+                    event_type,
+                ))
             log.info(line)
+            event = json.loads(line)
             matching = self._match_event(
                 event_name,
                 event_type,
