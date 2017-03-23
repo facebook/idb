@@ -104,6 +104,11 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
   return self.model.hash;
 }
 
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Model '%@'", self.model];
+}
+
 #pragma mark NSCoding
 
 - (instancetype)initWithCoder:(NSCoder *)coder
@@ -233,6 +238,11 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
 {
   NSString *versionString = [self.name componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet][1];
   return [NSDecimalNumber decimalNumberWithString:versionString];
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"OS '%@'", self.name];
 }
 
 #pragma mark NSCopying
