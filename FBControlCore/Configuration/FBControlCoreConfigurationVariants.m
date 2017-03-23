@@ -170,6 +170,11 @@ FBOSVersionName const FBOSVersionNamewatchOS_3_2 = @"watchOS 3.2";
   return [[self alloc] initWithModel:model productTypes:[NSSet setWithArray:productTypes] deviceArchitecture:deviceArchitecture simulatorArchitecture:simulatorArchitecture family:FBControlCoreProductFamilyAppleWatch];
 }
 
++ (instancetype)genericWithModel:(NSString *)model
+{
+  return [[self alloc] initWithModel:model productTypes:[NSSet set] deviceArchitecture:FBArchitectureArm64 simulatorArchitecture:FBArchitectureX86_64 family:FBControlCoreProductFamilyUnknown];
+}
+
 @end
 
 #pragma mark OS Versions

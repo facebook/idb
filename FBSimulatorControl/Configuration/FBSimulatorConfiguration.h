@@ -69,14 +69,8 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Devices
 
 /**
- A Configuration with the provided Device Configuration.
- */
-+ (instancetype)withDevice:(FBDeviceType *)device;
-- (instancetype)withDevice:(FBDeviceType *)device;
-
-/**
  A Configuration with the provided Device Name.
- Will assert if the deviceName is not a valid Device Name.
+ Will assume a 'Default' Configuration of the provided Device Name if it is unknown to the Framework.
  */
 + (instancetype)withDeviceNamed:(FBDeviceModel)deviceName;
 - (instancetype)withDeviceNamed:(FBDeviceModel)deviceName;

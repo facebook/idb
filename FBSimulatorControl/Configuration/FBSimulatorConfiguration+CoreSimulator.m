@@ -50,15 +50,23 @@
 
 + (instancetype)inferSimulatorConfigurationFromDevice:(SimDevice *)simDevice error:(NSError **)error;
 {
-  FBOSVersion *configOS = FBControlCoreConfigurationVariants.nameToOSVersion[simDevice.runtime.name];
-  if (!configOS) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain OS Version for %@, perhaps it is unsupported by FBSimulatorControl", simDevice.runtime.name] fail:error];
+  FBOSVersionName osName = simDevice.runtime.name;
+  FBOSVersion *osVersion = FBControlCoreConfigurationVariants.nameToOSVersion[osName];
+  if (!osVersion) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not obtain OS Version for %@, perhaps it is unsupported by FBSimulatorControl", osName]
+      fail:error];
   }
-  FBDeviceType *configDevice = FBControlCoreConfigurationVariants.nameToDevice[simDevice.deviceType.name];
-  if (!configDevice) {
-    return [[FBSimulatorError describeFormat:@"Could not obtain Device for for %@, perhaps it is unsupported by FBSimulatorControl", simDevice.deviceType.name] fail:error];
+  FBDeviceModel model = simDevice.deviceType.name;
+  FBDeviceType *deviceType = FBControlCoreConfigurationVariants.nameToDevice[model];
+  if (!deviceType) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not obtain Device for for %@, perhaps it is unsupported by FBSimulatorControl", model]
+      fail:error];
   }
-  return [[FBSimulatorConfiguration.defaultConfiguration withOS:configOS] withDevice:configDevice];
+  return [[FBSimulatorConfiguration.defaultConfiguration
+    withOSNamed:osName]
+    withDeviceNamed:osName];
 }
 
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError **)error
@@ -120,13 +128,13 @@
       if (![runtime supportsDeviceType:deviceType]) {
         continue;
       }
-      FBDeviceType *device = FBControlCoreConfigurationVariants.nameToDevice[deviceType.name];
-      if (!device) {
+      FBDeviceModel model = deviceType.name;
+      if (!FBControlCoreConfigurationVariants.nameToDevice[model]) {
         [absentDeviceTypes addObject:deviceType.name];
         continue;
       }
 
-      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDevice:device] withOS:os];
+      FBSimulatorConfiguration *configuration = [[FBSimulatorConfiguration withDeviceNamed:model] withOS:os];
       [configurations addObject:configuration];
     }
   }
