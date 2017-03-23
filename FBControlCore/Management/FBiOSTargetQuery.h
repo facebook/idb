@@ -81,8 +81,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param devices the Devices to match against.
  @return a new Target Query.
  */
-+ (instancetype)devices:(NSArray<FBDeviceName> *)devices;
-- (instancetype)devices:(NSArray<FBDeviceName> *)devices;
++ (instancetype)devices:(NSArray<FBDeviceModel> *)devices;
+- (instancetype)devices:(NSArray<FBDeviceModel> *)devices;
 
 /**
  A Query that matches the given Range.
@@ -143,7 +143,7 @@ NS_ASSUME_NONNULL_BEGIN
  The Device Types to match against.
  An Empty Set means that no Device filtering will occur.
  */
-@property (nonatomic, readonly, copy) NSSet<FBDeviceName> *devices;
+@property (nonatomic, readonly, copy) NSSet<FBDeviceModel> *devices;
 
 /**
  The Range of Simulators to match against when fetched.

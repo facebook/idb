@@ -41,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Name of the Device to Simulate. Must not be nil.
  */
-@property (nonatomic, copy, readonly) FBDeviceName deviceName;
+@property (nonatomic, copy, readonly) FBDeviceModel deviceName;
 
 /**
  A String Representation of the OS Version of the Simulator. Must not be nil.
@@ -78,8 +78,8 @@ NS_ASSUME_NONNULL_BEGIN
  A Configuration with the provided Device Name.
  Will assert if the deviceName is not a valid Device Name.
  */
-+ (instancetype)withDeviceNamed:(FBDeviceName)deviceName;
-- (instancetype)withDeviceNamed:(FBDeviceName)deviceName;
++ (instancetype)withDeviceNamed:(FBDeviceModel)deviceName;
+- (instancetype)withDeviceNamed:(FBDeviceModel)deviceName;
 
 #pragma mark - OS Versions
 

@@ -133,8 +133,8 @@ let validConfigurations: [([String], Configuration)] = [
 
 let validQueries: [([String], FBiOSTargetQuery)] = [
   (["all"], FBiOSTargetQuery.allTargets()),
-  (["iPhone 5"], FBiOSTargetQuery.devices([.nameiPhone5])),
-  (["iPad 2"], FBiOSTargetQuery.devices([.nameiPad2])),
+  (["iPhone 5"], FBiOSTargetQuery.devices([.modeliPhone5])),
+  (["iPad 2"], FBiOSTargetQuery.devices([.modeliPad2])),
   (["iOS 9.0", "iOS 9.1"], FBiOSTargetQuery.osVersions([.nameiOS_9_0, .nameiOS_9_1])),
   (["--state=creating"], FBiOSTargetQuery.simulatorStates([.creating])),
   (["--state=shutdown"], FBiOSTargetQuery.simulatorStates([.shutdown])),
@@ -148,15 +148,15 @@ let validQueries: [([String], FBiOSTargetQuery)] = [
   (["--arch=arm64"], FBiOSTargetQuery.architectures([.arm64])),
   (["--simulators"], FBiOSTargetQuery.targetType(FBiOSTargetType.simulator)),
   (["--devices"], FBiOSTargetQuery.targetType(FBiOSTargetType.device)),
-  (["--simulators", "--devices", "iPhone 6s"], FBiOSTargetQuery.targetType(FBiOSTargetType.simulator.union(FBiOSTargetType.device)).devices([.nameiPhone6S])),
-  (["--first", "2", "iPhone 6"], FBiOSTargetQuery.devices([.nameiPhone6]).ofCount(2)),
+  (["--simulators", "--devices", "iPhone 6s"], FBiOSTargetQuery.targetType(FBiOSTargetType.simulator.union(FBiOSTargetType.device)).devices([.modeliPhone6S])),
+  (["--first", "2", "iPhone 6"], FBiOSTargetQuery.devices([.modeliPhone6]).ofCount(2)),
   (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"])),
   (["0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"], FBiOSTargetQuery.udids(["0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"])),
-  (["iPhone 5", "iPad 2"], FBiOSTargetQuery.devices([.nameiPhone5, .nameiPad2])),
+  (["iPhone 5", "iPad 2"], FBiOSTargetQuery.devices([.modeliPhone5, .modeliPad2])),
   (["--state=creating", "--state=booting", "--state=shutdown"], FBiOSTargetQuery.simulatorStates([.creating, .booting, .shutdown])),
   (["--arch=i386", "--arch=armv7s"], FBiOSTargetQuery.architectures([.I386, .armv7s])),
   (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8", "0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8", "0123456789abcdefABCDEFaaaaaaaaaaaaaaaaaa"])),
-  (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.devices([.nameiPhone6]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
+  (["iPhone 6", "124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"], FBiOSTargetQuery.devices([.modeliPhone6]).udids(["124DAC9C-4DFF-4F0C-9828-998CCFFCD4C8"])),
 ]
 
 let invalidQueries: [[String]] = [
@@ -342,10 +342,10 @@ class CommandParserTests : XCTestCase {
     return self.unzipAndAssert(actions, suffix: suffix, extras: [
       ([], nil, nil),
       (["all"], FBiOSTargetQuery.allTargets(), nil),
-      (["iPad 2"], FBiOSTargetQuery.devices([.nameiPad2]), nil),
+      (["iPad 2"], FBiOSTargetQuery.devices([.modeliPad2]), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
-      (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([.nameiPhone5, .nameiPhone6]).simulatorStates([.shutdown]), nil),
-      (["iPad 2", "--device-name", "--os"], FBiOSTargetQuery.devices([.nameiPad2]), FBiOSTargetFormat(fields: [.deviceName, .osVersion])),
+      (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([.modeliPhone5, .modeliPhone6]).simulatorStates([.shutdown]), nil),
+      (["iPad 2", "--device-name", "--os"], FBiOSTargetQuery.devices([.modeliPad2]), FBiOSTargetFormat(fields: [.deviceName, .osVersion])),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], FBiOSTargetQuery.udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }

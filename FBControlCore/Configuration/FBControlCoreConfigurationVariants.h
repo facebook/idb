@@ -28,30 +28,30 @@ typedef NS_ENUM(NSUInteger, FBControlCoreProductFamily) {
 /**
  Device Names Enumeration.
  */
-typedef NSString *FBDeviceName NS_STRING_ENUM;
+typedef NSString *FBDeviceModel NS_STRING_ENUM;
 
-extern FBDeviceName const FBDeviceNameiPhone4s;
-extern FBDeviceName const FBDeviceNameiPhone5;
-extern FBDeviceName const FBDeviceNameiPhone5s;
-extern FBDeviceName const FBDeviceNameiPhone6;
-extern FBDeviceName const FBDeviceNameiPhone6Plus;
-extern FBDeviceName const FBDeviceNameiPhone6S;
-extern FBDeviceName const FBDeviceNameiPhone6SPlus;
-extern FBDeviceName const FBDeviceNameiPhoneSE;
-extern FBDeviceName const FBDeviceNameiPhone7;
-extern FBDeviceName const FBDeviceNameiPhone7Plus;
-extern FBDeviceName const FBDeviceNameiPad2;
-extern FBDeviceName const FBDeviceNameiPadRetina;
-extern FBDeviceName const FBDeviceNameiPadAir;
-extern FBDeviceName const FBDeviceNameiPadAir2;
-extern FBDeviceName const FBDeviceNameiPadPro;
-extern FBDeviceName const FBDeviceNameiPadPro_9_7_Inch;
-extern FBDeviceName const FBDeviceNameiPadPro_12_9_Inch;
-extern FBDeviceName const FBDeviceNameAppleTV1080p;
-extern FBDeviceName const FBDeviceNameAppleWatch38mm;
-extern FBDeviceName const FBDeviceNameAppleWatch42mm;
-extern FBDeviceName const FBDeviceNameAppleWatchSeries2_38mm;
-extern FBDeviceName const FBDeviceNameAppleWatchSeries2_42mm;
+extern FBDeviceModel const FBDeviceModeliPhone4s;
+extern FBDeviceModel const FBDeviceModeliPhone5;
+extern FBDeviceModel const FBDeviceModeliPhone5s;
+extern FBDeviceModel const FBDeviceModeliPhone6;
+extern FBDeviceModel const FBDeviceModeliPhone6Plus;
+extern FBDeviceModel const FBDeviceModeliPhone6S;
+extern FBDeviceModel const FBDeviceModeliPhone6SPlus;
+extern FBDeviceModel const FBDeviceModeliPhoneSE;
+extern FBDeviceModel const FBDeviceModeliPhone7;
+extern FBDeviceModel const FBDeviceModeliPhone7Plus;
+extern FBDeviceModel const FBDeviceModeliPad2;
+extern FBDeviceModel const FBDeviceModeliPadRetina;
+extern FBDeviceModel const FBDeviceModeliPadAir;
+extern FBDeviceModel const FBDeviceModeliPadAir2;
+extern FBDeviceModel const FBDeviceModeliPadPro;
+extern FBDeviceModel const FBDeviceModeliPadPro_9_7_Inch;
+extern FBDeviceModel const FBDeviceModeliPadPro_12_9_Inch;
+extern FBDeviceModel const FBDeviceModelAppleTV1080p;
+extern FBDeviceModel const FBDeviceModelAppleWatch38mm;
+extern FBDeviceModel const FBDeviceModelAppleWatch42mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSeries2_38mm;
+extern FBDeviceModel const FBDeviceModelAppleWatchSeries2_42mm;
 
 /**
  OS Versions Name Enumeration.
@@ -94,7 +94,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 /**
  The Device Name of the Device.
  */
-@property (nonatomic, copy, readonly) FBDeviceName deviceName;
+@property (nonatomic, copy, readonly) FBDeviceModel model;
 
 /**
  The String Representations of the Product Types.
@@ -157,7 +157,7 @@ extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
 /**
  Maps Device Names to Devices.
  */
-@property (class, nonatomic, copy, readonly) NSDictionary<FBDeviceName, FBDeviceType *> *nameToDevice;
+@property (class, nonatomic, copy, readonly) NSDictionary<FBDeviceModel, FBDeviceType *> *nameToDevice;
 
 /**
  Maps Device 'ProductType' to Device Variants.

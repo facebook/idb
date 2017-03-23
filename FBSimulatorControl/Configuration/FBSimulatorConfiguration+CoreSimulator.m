@@ -231,7 +231,7 @@
 + (NSPredicate *)deviceTypePredicate:(FBDeviceType *)device
 {
   return [NSPredicate predicateWithBlock:^ BOOL (SimDeviceType *deviceType, NSDictionary *_) {
-    return [deviceType.name isEqualToString:device.deviceName];
+    return [deviceType.name isEqualToString:device.model];
   }];
 }
 

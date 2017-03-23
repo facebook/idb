@@ -24,37 +24,37 @@
 {
   FBiOSTargetDouble *target0 = [FBiOSTargetDouble new];
   target0.udid = @"AA";
-  target0.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceNameiPhone5];
+  target0.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceModeliPhone5];
   target0.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_0];
   target0.targetType = FBiOSTargetTypeDevice;
 
   FBiOSTargetDouble *target1 = [FBiOSTargetDouble new];
   target1.udid = @"BB";
-  target1.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceNameiPhone6];
+  target1.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceModeliPhone6];
   target1.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_1];
   target1.targetType = FBiOSTargetTypeDevice;
 
   FBiOSTargetDouble *target2 = [FBiOSTargetDouble new];
   target2.udid = @"CC";
-  target2.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceNameiPad2];
+  target2.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceModeliPad2];
   target2.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_2];
   target2.targetType = FBiOSTargetTypeDevice;
 
   FBiOSTargetDouble *target3 = [FBiOSTargetDouble new];
   target3.udid = @"DD";
-  target3.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceNameiPhone5];
+  target3.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceModeliPhone5];
   target3.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_0];
   target3.targetType = FBiOSTargetTypeSimulator;
 
   FBiOSTargetDouble *target4 = [FBiOSTargetDouble new];
   target4.udid = @"EE";
-  target4.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceNameiPhone6];
+  target4.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceModeliPhone6];
   target4.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_1];
   target4.targetType = FBiOSTargetTypeSimulator;
 
   FBiOSTargetDouble *target5 = [FBiOSTargetDouble new];
   target5.udid = @"FF";
-  target5.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceNameiPad2];
+  target5.deviceConfiguration = FBControlCoreConfigurationVariants.nameToDevice[FBDeviceModeliPad2];
   target5.osConfiguration = FBControlCoreConfigurationVariants.nameToOSVersion[FBOSVersionNameiOS_9_2];
   target5.targetType = FBiOSTargetTypeSimulator;
 
@@ -64,14 +64,14 @@
 - (void)testValueSemantics
 {
   NSArray<FBiOSTargetQuery *> *values = @[
-    [[[FBiOSTargetQuery udids:@[@"foo", @"bar"]] range:NSMakeRange(2, 10)] devices:@[FBDeviceNameiPhone5, FBDeviceNameiPad2]],
+    [[[FBiOSTargetQuery udids:@[@"foo", @"bar"]] range:NSMakeRange(2, 10)] devices:@[FBDeviceModeliPhone5, FBDeviceModeliPad2]],
     [[FBiOSTargetQuery states:[NSIndexSet indexSetWithIndex:FBSimulatorStateBooting]] osVersions:@[FBOSVersionNameiOS_7_1, FBOSVersionNameiOS_9_0]],
     [[FBiOSTargetQuery udids:@[@"BA1248D3-24B2-43F5-B1CD-57DCB000D12E"]] states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateBooted), @(FBSimulatorStateBooting)]]],
     [FBiOSTargetQuery allTargets],
     [FBiOSTargetQuery targetType:FBiOSTargetTypeDevice],
     [FBiOSTargetQuery targetType:FBiOSTargetTypeSimulator],
     [FBiOSTargetQuery targetType:FBiOSTargetTypeNone],
-    [FBiOSTargetQuery devices:@[FBDeviceNameiPad2, FBDeviceNameiPadAir]],
+    [FBiOSTargetQuery devices:@[FBDeviceModeliPad2, FBDeviceModeliPadAir]],
     [FBiOSTargetQuery osVersions:@[FBOSVersionNameiOS_9_0, FBOSVersionNameiOS_9_1]],
     [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],
     [FBiOSTargetQuery states:[FBCollectionOperations indecesFromArray:@[@(FBSimulatorStateCreating), @(FBSimulatorStateShutdown)]]],

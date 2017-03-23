@@ -251,12 +251,12 @@ extension IndividualCreationConfiguration : Parsable {
     ])
   }
 
-  static var deviceParser: Parser<FBDeviceName> {
+  static var deviceParser: Parser<FBDeviceModel> {
     let desc = PrimitiveDesc(name: "device-name", desc: "Device Name.")
 
     return Parser.single(desc) { token in
       let nameToDevice = FBControlCoreConfigurationVariants.nameToDevice
-      let deviceName = FBDeviceName(rawValue: token)
+      let deviceName = FBDeviceModel(rawValue: token)
       guard let _ = nameToDevice[deviceName] else {
         throw ParseError.custom("\(token) is not a valid device name")
       }

@@ -35,7 +35,7 @@ public struct ListenInterface {
  */
 public struct IndividualCreationConfiguration {
   let osVersion: FBOSVersionName?
-  let deviceType: FBDeviceName?
+  let deviceType: FBDeviceModel?
   let auxDirectory : String?
 }
 
