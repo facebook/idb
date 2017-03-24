@@ -423,20 +423,23 @@
   FBControlCoreProductFamily family = self.simulator.productFamily;
   if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
     if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-      return @[
-        @"com.apple.backboardd",
-        @"com.apple.medialibraryd",
-        @"com.apple.mobile.installd",
-        @"com.apple.SimulatorBridge",
-        @"com.apple.SpringBoard",
-      ];
+        NSArray *xcode8Services = @[@"com.apple.backboardd",
+                                    @"com.apple.mobile.installd",
+                                    @"com.apple.SimulatorBridge",
+                                    @"com.apple.SpringBoard"];
+
+        NSDecimalNumber *simulatorVersion = self.simulator.osConfiguration.number;
+        NSDecimalNumber *iOS9 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
+
+        // medialibraryd does not load on simulators < iOS 9.
+        if ([simulatorVersion isGreaterThanOrEqualTo:iOS9]) {
+            NSMutableArray *mutable = [NSMutableArray arrayWithArray:xcode8Services];
+            [mutable insertObject:@"com.apple.medialibraryd" atIndex:1];
+            xcode8Services = [NSArray arrayWithArray:mutable];
+        }
+
+        return xcode8Services;
     }
-    return @[
-      @"com.apple.backboardd",
-      @"com.apple.mobile.installd",
-      @"com.apple.SimulatorBridge",
-      @"com.apple.SpringBoard",
-    ];
   }
   if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {
     if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
