@@ -358,12 +358,13 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 - (void)didChangeIOSurface:(nullable IOSurfaceRef)surface
 {
   [self.imageGenerator didChangeIOSurface:surface];
-  if (surface == NULL) {
-    dispatch_suspend(self.timerSource);
-  } else {
+  dispatch_source_t timerSource = self.timerSource;
+  if (surface == NULL && timerSource != nil) {
+    dispatch_suspend(timerSource);
+  } else if (timerSource != nil) {
     [self startTimebaseNow];
     [self pushNewFrameFromCurrentTime];
-    dispatch_resume(self.timerSource);
+    dispatch_resume(timerSource);
   }
 }
 

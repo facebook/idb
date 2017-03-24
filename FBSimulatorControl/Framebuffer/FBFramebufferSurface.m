@@ -235,7 +235,7 @@
 - (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
 {
   FBFramebufferSurface_IOClient_Forwarder *forwarder = [self.forwarders objectForKey:consumer];
-  if (!consumer) {
+  if (!forwarder) {
     return;
   }
   [self.ioClient detachConsumer:forwarder fromPort:self.port];
