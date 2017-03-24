@@ -25,10 +25,10 @@
 - (void)testDividesAllocatedAndUnAllocated
 {
   NSArray<FBSimulator *> *mockedSimulators = [self createPoolWithExistingSimDeviceSpecs:@[
-    @{@"name" : FBDeviceModeliPhone6S, @"state" : @(FBSimulatorStateShuttingDown)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateCreating)},
-    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateBooted)},
     @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateShutdown)},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateBooted)},
+    @{@"name" : FBDeviceModeliPhone6S, @"state" : @(FBSimulatorStateShuttingDown)},
     @{@"name" : FBDeviceModeliPad2, @"state" : @(FBSimulatorStateBooted)},
     @{@"name" : FBDeviceModeliPadAir, @"state" : @(FBSimulatorStateBooted)},
     @{@"name" : FBDeviceModeliPadAir2, @"state" : @(FBSimulatorStateCreating)},
@@ -44,14 +44,14 @@
   XCTAssertEqual(simulators.count, 2u);
 
   FBSimulator *simulator = simulators[0];
-  XCTAssertEqualObjects(simulator.name, FBDeviceModeliPhone6S);
-  XCTAssertEqual(simulator.state, FBSimulatorStateShuttingDown);
+  XCTAssertEqualObjects(simulator.name, FBDeviceModeliPhone5);
+  XCTAssertEqual(simulator.state, FBSimulatorStateCreating);
   XCTAssertEqual(simulator.set, self.set);
   XCTAssertEqual(simulator.pool, self.pool);
 
   simulator = simulators[1];
-  XCTAssertEqualObjects(simulator.name, FBDeviceModeliPhone5);
-  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
+  XCTAssertEqualObjects(simulator.name, FBDeviceModeliPhone6S);
+  XCTAssertEqual(simulator.state, FBSimulatorStateShuttingDown);
   XCTAssertEqual(simulator.set, self.set);
   XCTAssertEqual(simulator.pool, self.pool);
 
@@ -60,13 +60,13 @@
 
   simulator = simulators[0];
   XCTAssertEqualObjects(simulator.name, FBDeviceModeliPhone5);
-  XCTAssertEqual(simulator.state, FBSimulatorStateCreating);
+  XCTAssertEqual(simulator.state, FBSimulatorStateShutdown);
   XCTAssertEqual(simulator.set, self.set);
   XCTAssertNil(simulator.pool);
 
   simulator = simulators[1];
   XCTAssertEqualObjects(simulator.name, FBDeviceModeliPhone5);
-  XCTAssertEqual(simulator.state, FBSimulatorStateShutdown);
+  XCTAssertEqual(simulator.state, FBSimulatorStateBooted);
   XCTAssertEqual(simulator.set, self.set);
   XCTAssertNil(simulator.pool);
 

@@ -32,7 +32,7 @@
 /**
  Creates a Simulator Pool with an array of Specs for SimDevices.
  */
-- (NSArray<FBSimulator *> *)createPoolWithExistingSimDeviceSpecs:(NSArray<NSDictionary *> *)simulatorSpecs;
+- (NSArray<FBSimulator *> *)createPoolWithExistingSimDeviceSpecs:(NSArray<NSDictionary<NSString *, id> *> *)simulatorSpecs;
 
 /**
  Mocks the Allocation of Simulators based on their UDID.

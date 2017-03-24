@@ -27,14 +27,14 @@
 {
   // Assumes that the orderding of the input is the same as the ordering as -[FBSimulatorSet allSimulators]
   self.simulators = [self createPoolWithExistingSimDeviceSpecs:@[
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateCreating), @"os" : @"iOS 8.0"},
-    @{@"name" : @"iPad 2", @"state" : @(FBSimulatorStateBooted), @"os" : @"iOS 8.0"},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown), @"os" : @"iOS 9.0"},
-    @{@"name" : @"iPhone 6s", @"state" : @(FBSimulatorStateShuttingDown), @"os" : @"iOS 9.0"},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateBooted), @"os" : @"iOS 9.1"},
-    @{@"name" : @"iPad Air 2", @"state" : @(FBSimulatorStateCreating), @"os" : @"iOS 9.1"},
-    @{@"name" : @"iPhone 5", @"state" : @(FBSimulatorStateShutdown), @"os" : @"iOS 9.2"},
-    @{@"name" : @"iPad Air", @"state" : @(FBSimulatorStateBooted), @"os" : @"iOS 9.3"},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateCreating), @"os" : FBOSVersionNameiOS_8_0},
+    @{@"name" : FBDeviceModeliPad2, @"state" : @(FBSimulatorStateBooted), @"os" : FBOSVersionNameiOS_8_0},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateShutdown), @"os" : FBOSVersionNameiOS_9_0},
+    @{@"name" : FBDeviceModeliPhone6S, @"state" : @(FBSimulatorStateShuttingDown), @"os" : FBOSVersionNameiOS_9_0},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateBooted), @"os" : FBOSVersionNameiOS_9_1},
+    @{@"name" : FBDeviceModeliPadAir2, @"state" : @(FBSimulatorStateCreating), @"os" : FBOSVersionNameiOS_9_1},
+    @{@"name" : FBDeviceModeliPhone5, @"state" : @(FBSimulatorStateShutdown), @"os" : FBOSVersionNameiOS_9_2},
+    @{@"name" : FBDeviceModeliPadAir, @"state" : @(FBSimulatorStateBooted), @"os" : FBOSVersionNameiOS_9_3},
   ]];
 }
 

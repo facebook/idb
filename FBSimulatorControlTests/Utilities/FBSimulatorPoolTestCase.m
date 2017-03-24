@@ -25,13 +25,13 @@
   _pool = nil;
 }
 
-- (NSArray<FBSimulator *> *)createPoolWithExistingSimDeviceSpecs:(NSArray<NSDictionary *> *)simulatorSpecs
+- (NSArray<FBSimulator *> *)createPoolWithExistingSimDeviceSpecs:(NSArray<NSDictionary<NSString *, id> *> *)simulatorSpecs
 {
   NSMutableArray<SimDevice *> *simDevices = [NSMutableArray array];
-  for (NSDictionary *simulatorSpec in simulatorSpecs) {
-    NSString *name = simulatorSpec[@"name"];
+  for (NSDictionary<NSString *, id> *simulatorSpec in simulatorSpecs) {
+    FBDeviceModel name = simulatorSpec[@"name"];
     NSUUID *uuid = simulatorSpec[@"uuid"] ?: [NSUUID UUID];
-    NSString *os = simulatorSpec[@"os"] ?: @"iOS 9.0";
+    FBOSVersionName os = simulatorSpec[@"os"] ?: FBOSVersionNameiOS_9_0;
     NSString *version = [[os componentsSeparatedByCharactersInSet:NSCharacterSet.whitespaceCharacterSet] lastObject];
     FBSimulatorState state = [(simulatorSpec[@"state"] ?: @(FBSimulatorStateShutdown)) unsignedIntegerValue];
 
@@ -61,6 +61,14 @@
 
   NSArray<FBSimulator *> *simulators = _set.allSimulators;
   XCTAssertEqual(simulators.count, simDevices.count);
+
+  // Also confirm that the input ordering is the same as the output ordering
+  for (NSUInteger index = 0; index < simulators.count; index++) {
+    FBDeviceModel expected = simulatorSpecs[index][@"name"];
+    FBDeviceModel actual = simulators[index].deviceConfiguration.model;
+    XCTAssertEqualObjects(expected, actual);
+  }
+
   return simulators;
 }
 

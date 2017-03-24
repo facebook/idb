@@ -66,7 +66,7 @@
   }
   return [[FBSimulatorConfiguration.defaultConfiguration
     withOSNamed:osName]
-    withDeviceModel:osName];
+    withDeviceModel:model];
 }
 
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError **)error
