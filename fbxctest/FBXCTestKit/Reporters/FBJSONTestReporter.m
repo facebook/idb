@@ -21,11 +21,12 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 @property (nonatomic, copy, readwrite) NSMutableArray<NSString *> *pendingTestOutput;
 @property (nonatomic, copy, readwrite) NSString *currentTestName;
 @property (nonatomic, assign, readwrite) BOOL finished;
+@property (nonatomic, strong, readwrite) id<FBFileConsumer> fileConsumer;
 @end
 
 @implementation FBJSONTestReporter
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType fileConsumer:(id <FBFileConsumer>)fileConsumer
 {
   self = [super init];
   if (self) {
@@ -36,6 +37,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     _pendingTestOutput = [NSMutableArray array];
     _currentTestName = nil;
     _finished = NO;
+    _fileConsumer = fileConsumer;
   }
   return self;
 }
@@ -55,6 +57,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   for (NSDictionary *event in _events) {
     [self printEvent:event];
   }
+  [self.fileConsumer consumeEndOfFile];
   return YES;
 }
 
@@ -68,8 +71,8 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 - (void)printEvent:(NSDictionary *)event
 {
   NSData *data = [NSJSONSerialization dataWithJSONObject:event options:0 error:nil];
-  [[NSFileHandle fileHandleWithStandardOutput] writeData:data];
-  [[NSFileHandle fileHandleWithStandardOutput] writeData:[NSData dataWithBytes:"\n" length:1]];
+  [self.fileConsumer consumeData:data];
+  [self.fileConsumer consumeData:[NSData dataWithBytes:"\n" length:1]];
 }
 
 - (NSDictionary *)createOCUnitBeginEvent
