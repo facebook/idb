@@ -421,8 +421,9 @@
 - (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted
 {
   FBControlCoreProductFamily family = self.simulator.productFamily;
+  id<FBControlCoreGlobalConfiguration_OS> version = self.simulator.osConfiguration;
   if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
-    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater && [[version versionNumber] doubleValue] >= 9.0) {
       return @[
         @"com.apple.backboardd",
         @"com.apple.medialibraryd",
