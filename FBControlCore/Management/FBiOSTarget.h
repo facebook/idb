@@ -109,9 +109,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) FBDeviceType *deviceType;
 
 /**
- The Configuration of the iOS Target's OS.
+ The OS Version of the Target.
  */
-@property (nonatomic, copy, readonly) FBOSVersion *osConfiguration;
+@property (nonatomic, copy, readonly) FBOSVersion *osVersion;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`

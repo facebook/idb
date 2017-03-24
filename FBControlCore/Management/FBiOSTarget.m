@@ -87,7 +87,7 @@ extern NSComparisonResult FBiOSTargetComparison(id<FBiOSTarget> left, id<FBiOSTa
   if (comparison != NSOrderedSame) {
     return comparison;
   }
-  comparison = [left.osConfiguration.number compare:right.osConfiguration.number];
+  comparison = [left.osVersion.number compare:right.osVersion.number];
   if (comparison != NSOrderedSame) {
     return comparison;
   }

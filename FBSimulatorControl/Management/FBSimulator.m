@@ -145,7 +145,7 @@
   return self.configuration.device;
 }
 
-- (FBOSVersion *)osConfiguration
+- (FBOSVersion *)osVersion
 {
   return self.configuration.os;
 }

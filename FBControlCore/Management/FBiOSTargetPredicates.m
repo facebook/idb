@@ -72,7 +72,7 @@
   NSSet<FBOSVersionName> *osConfigurationSet = [NSSet setWithArray:osVersions];
 
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
-    return [osConfigurationSet containsObject:candidate.osConfiguration.name];
+    return [osConfigurationSet containsObject:candidate.osVersion.name];
   }];
 }
 

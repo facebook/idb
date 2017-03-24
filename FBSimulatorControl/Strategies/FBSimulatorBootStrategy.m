@@ -428,7 +428,7 @@
                                     @"com.apple.SimulatorBridge",
                                     @"com.apple.SpringBoard"];
 
-        NSDecimalNumber *simulatorVersion = self.simulator.osConfiguration.number;
+        NSDecimalNumber *simulatorVersion = self.simulator.osVersion.number;
         NSDecimalNumber *iOS9 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
 
         // medialibraryd does not load on simulators < iOS 9.
