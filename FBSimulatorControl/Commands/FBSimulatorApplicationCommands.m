@@ -156,7 +156,7 @@
   }
 
   NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
-  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceConfiguration.simulatorArchitecture];
+  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
   if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
     return [[FBSimulatorError
       describeFormat:

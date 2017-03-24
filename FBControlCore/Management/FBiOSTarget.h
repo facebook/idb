@@ -104,9 +104,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
 
 /**
- The Configuration of the iOS Target's Device.
+ The Device Type of the Target.
  */
-@property (nonatomic, copy, readonly) FBDeviceType *deviceConfiguration;
+@property (nonatomic, copy, readonly) FBDeviceType *deviceType;
 
 /**
  The Configuration of the iOS Target's OS.

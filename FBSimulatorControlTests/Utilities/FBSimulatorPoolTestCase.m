@@ -65,7 +65,7 @@
   // Also confirm that the input ordering is the same as the output ordering
   for (NSUInteger index = 0; index < simulators.count; index++) {
     FBDeviceModel expected = simulatorSpecs[index][@"name"];
-    FBDeviceModel actual = simulators[index].deviceConfiguration.model;
+    FBDeviceModel actual = simulators[index].deviceType.model;
     XCTAssertEqualObjects(expected, actual);
   }
 

@@ -63,7 +63,7 @@
   NSSet<FBDeviceModel> *deviceConfigurationSet = [NSSet setWithArray:deviceConfigurations];
 
   return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
-    return [deviceConfigurationSet containsObject:candidate.deviceConfiguration.model];
+    return [deviceConfigurationSet containsObject:candidate.deviceType.model];
   }];
 }
 
