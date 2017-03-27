@@ -211,16 +211,24 @@
 
 #pragma mark JSON
 
+static NSString *const KeyUDIDs = @"udids";
+static NSString *const KeyStates = @"states";
+static NSString *const KeyArchitectures = @"architectures";
+static NSString *const KeyTargetTypes = @"target_types";
+static NSString *const KeyOSVersions = @"os_versions";
+static NSString *const KeyDevices = @"devices";
+static NSString *const KeyRange = @"range";
+
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"udids" : self.udids.allObjects,
-    @"states" : [FBiOSTargetQuery stateStringsForStateIndeces:self.states],
-    @"architectures" : self.architectures.allObjects,
-    @"target_types" : FBiOSTargetTypeStringsFromTargetType(self.targetType),
-    @"os_versions" : self.osVersions.allObjects,
-    @"devices" : self.devices.allObjects,
-    @"range" : NSStringFromRange(self.range),
+    KeyUDIDs : self.udids.allObjects,
+    KeyStates : [FBiOSTargetQuery stateStringsForStateIndeces:self.states],
+    KeyArchitectures : self.architectures.allObjects,
+    KeyTargetTypes : FBiOSTargetTypeStringsFromTargetType(self.targetType),
+    KeyOSVersions : self.osVersions.allObjects,
+    KeyDevices : self.devices.allObjects,
+    KeyRange : NSStringFromRange(self.range),
   };
 }
 
@@ -229,39 +237,39 @@
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an NSDictionary<NSString, id>", json] fail:error];
   }
-  NSArray<NSString *> *udids = json[@"udids"] ?: @[];
+  NSArray<NSString *> *udids = json[KeyUDIDs] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:udids withClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"'udids' %@ is not an NSArray<NSString>", udids] fail:error];
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSArray<NSString>", KeyUDIDs, udids] fail:error];
   }
-  NSArray<NSString *> *stateStrings = json[@"states"] ?: @[];
+  NSArray<NSString *> *stateStrings = json[KeyStates] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:udids withClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"'states' %@ is not an NSArray<NSString>", udids] fail:error];
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSArray<NSString>", KeyStates, udids] fail:error];
   }
-  NSArray<NSString *> *architectures = json[@"architectures"] ?: @[];
+  NSArray<NSString *> *architectures = json[KeyArchitectures] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:architectures withClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"'architectures' %@ is not an NSArray<NSString>", architectures] fail:error];
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSArray<NSString>", KeyArchitectures, architectures] fail:error];
   }
-  NSArray<NSString *> *targetTypeStrings = json[@"target_types"] ?: @[];
+  NSArray<NSString *> *targetTypeStrings = json[KeyTargetTypes] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:targetTypeStrings withClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"'target_types' %@ is not an NSArray<NSString>", targetTypeStrings] fail:error];
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSArray<NSString>", KeyTargetTypes, targetTypeStrings] fail:error];
   }
   FBiOSTargetType targetType = FBiOSTargetTypeFromTargetTypeStrings(targetTypeStrings);
 
   NSIndexSet *stateIndeces = [FBiOSTargetQuery stateIndecesForStateStrings:stateStrings];
-  NSArray<NSString *> *osVersionStrings = json[@"os_versions"] ?: @[];
+  NSArray<NSString *> *osVersionStrings = json[KeyOSVersions] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:osVersionStrings withClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"'os_versions' %@ is not an NSArray<NSString>", udids] fail:error];
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSArray<NSString>", KeyOSVersions, udids] fail:error];
   }
   NSArray<FBOSVersionName> *osVersions = [FBiOSTargetQuery osVersionsFromStrings:osVersionStrings];
-  NSArray<NSString *> *devicesStrings = json[@"devices"] ?: @[];
+  NSArray<NSString *> *devicesStrings = json[KeyDevices] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:osVersionStrings withClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"'devices' %@ is not an NSArray<NSString>", udids] fail:error];
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSArray<NSString>", KeyDevices, udids] fail:error];
   }
   NSArray<FBDeviceModel> *devices = [FBiOSTargetQuery devicesFromStrings:devicesStrings];
 
-  NSString *rangeString = json[@"range"];
+  NSString *rangeString = json[KeyRange];
   if (![rangeString isKindOfClass:NSString.class]) {
-    return [[FBControlCoreError describeFormat:@"'range' %@ is not an NSString", rangeString] fail:error];
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSString", KeyRange, rangeString] fail:error];
   }
   NSRange range = NSRangeFromString(rangeString);
   if (range.location == 0 && range.length == 0) {
