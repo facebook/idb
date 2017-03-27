@@ -44,6 +44,15 @@
   }];
 }
 
++ (NSPredicate *)names:(NSArray<NSString *> *)names
+{
+  NSSet<NSString *> *namesSet = [NSSet setWithArray:names];
+
+  return [NSPredicate predicateWithBlock:^ BOOL (id<FBiOSTarget> candidate, NSDictionary *_) {
+    return [namesSet containsObject:candidate.name];
+  }];
+}
+
 + (NSPredicate *)udid:(NSString *)udid
 {
   return [self udids:@[udid]];

@@ -21,16 +21,17 @@
 
 - (instancetype)init
 {
-  return [self initWithUDIDs:NSSet.new states:NSIndexSet.new architectures:NSSet.new targetType:FBiOSTargetTypeAll osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
+  return [self initWithNames:NSSet.new udids:NSSet.new states:NSIndexSet.new architectures:NSSet.new targetType:FBiOSTargetTypeAll osVersions:NSSet.new devices:NSSet.new range:NSMakeRange(NSNotFound, 0)];
 }
 
-- (instancetype)initWithUDIDs:(NSSet<NSString *> *)udids states:(NSIndexSet *)states architectures:(NSSet<FBArchitecture> *)architectures targetType:(FBiOSTargetType)targetType osVersions:(NSSet<FBOSVersionName> *)osVersions devices:(NSSet<FBDeviceModel> *)devices range:(NSRange)range
+- (instancetype)initWithNames:(NSSet<NSString *> *)names udids:(NSSet<NSString *> *)udids states:(NSIndexSet *)states architectures:(NSSet<FBArchitecture> *)architectures targetType:(FBiOSTargetType)targetType osVersions:(NSSet<FBOSVersionName> *)osVersions devices:(NSSet<FBDeviceModel> *)devices range:(NSRange)range
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _names = names;
   _udids = udids;
   _states = states;
   _architectures = architectures;
@@ -49,6 +50,19 @@
   return [self new];
 }
 
++ (instancetype)names:(NSArray<NSString *> *)names
+{
+  return [self.allTargets names:names];
+}
+
+- (instancetype)names:(NSArray<NSString *> *)names
+{
+  if (names.count == 0) {
+    return self;
+  }
+  return [[self.class alloc] initWithNames:[self.names setByAddingObjectsFromArray:names] udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
+}
+
 + (instancetype)udids:(NSArray<NSString *> *)udids
 {
   return [self.allTargets udids:udids];
@@ -60,7 +74,7 @@
     return self;
   }
 
-  return [[self.class alloc] initWithUDIDs:[self.udids setByAddingObjectsFromArray:udids] states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
+  return [[self.class alloc] initWithNames:self.names udids:[self.udids setByAddingObjectsFromArray:udids] states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
 + (instancetype)states:(NSIndexSet *)states
@@ -76,7 +90,7 @@
 
   NSMutableIndexSet *indexSet = [self.states mutableCopy];
   [indexSet addIndexes:states];
-  return [[self.class alloc] initWithUDIDs:self.udids states:[indexSet copy] architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
+  return [[self.class alloc] initWithNames:self.names udids:self.udids states:[indexSet copy] architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
 + (instancetype)architectures:(NSArray<FBArchitecture> *)architectures {
@@ -88,7 +102,7 @@
     return self;
   }
 
-  return [[self.class alloc] initWithUDIDs:self.udids states:self.states architectures:[self.architectures setByAddingObjectsFromArray:architectures] targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
+  return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:[self.architectures setByAddingObjectsFromArray:architectures] targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
 + (instancetype)targetType:(FBiOSTargetType)targetType
@@ -98,7 +112,7 @@
 
 - (instancetype)targetType:(FBiOSTargetType)targetType
 {
-  return [[self.class alloc] initWithUDIDs:self.udids states:self.states architectures:self.architectures targetType:targetType osVersions:self.osVersions devices:self.devices range:self.range];
+  return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
 + (instancetype)osVersions:(NSArray<FBOSVersionName> *)osVersions
@@ -112,7 +126,7 @@
     return self;
   }
 
-  return [[self.class alloc] initWithUDIDs:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:[self.osVersions setByAddingObjectsFromArray:osVersions] devices:self.devices range:self.range];
+  return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:[self.osVersions setByAddingObjectsFromArray:osVersions] devices:self.devices range:self.range];
 }
 
 + (instancetype)devices:(NSArray<FBDeviceModel> *)devices
@@ -126,7 +140,7 @@
     return self;
   }
 
-  return [[self.class alloc] initWithUDIDs:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:[self.devices setByAddingObjectsFromArray:devices] range:self.range];
+  return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:[self.devices setByAddingObjectsFromArray:devices] range:self.range];
 }
 
 + (instancetype)range:(NSRange)range
@@ -140,13 +154,16 @@
     return self;
   }
 
-  return [[self.class alloc] initWithUDIDs:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:range];
+  return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:range];
 }
 
 - (NSArray<id<FBiOSTarget>> *)filter:(NSArray<id<FBiOSTarget>> *)targets
 {
   NSMutableArray<NSPredicate *> *predicates = [NSMutableArray array];
   [predicates addObject:[FBiOSTargetPredicates targetType:self.targetType]];
+  if (self.names.count > 0) {
+    [predicates addObject:[FBiOSTargetPredicates names:self.names.allObjects]];
+  }
   if (self.udids.count > 0) {
     [predicates addObject:[FBiOSTargetPredicates udids:self.udids.allObjects]];
   }
@@ -181,13 +198,14 @@
 
 - (instancetype)copyWithZone:(NSZone *)zone
 {
-  return [[FBiOSTargetQuery alloc] initWithUDIDs:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
+  return [[FBiOSTargetQuery alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
 #pragma mark NSCoding
 
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
+  NSSet<NSString *> *names = [coder decodeObjectForKey:NSStringFromSelector(@selector(names))];
   NSSet<NSString *> *udids = [coder decodeObjectForKey:NSStringFromSelector(@selector(udids))];
   NSIndexSet *states = [coder decodeObjectForKey:NSStringFromSelector(@selector(states))];
   NSSet<NSString *> *architectures = [coder decodeObjectForKey:NSStringFromSelector(@selector(architectures))];
@@ -195,11 +213,12 @@
   NSSet<FBOSVersionName> *osVersions = [coder decodeObjectForKey:NSStringFromSelector(@selector(osVersions))];
   NSSet<FBDeviceModel> *devices = [coder decodeObjectForKey:NSStringFromSelector(@selector(devices))];
   NSRange range = [[coder decodeObjectForKey:NSStringFromSelector(@selector(range))] rangeValue];
-  return [self initWithUDIDs:udids states:states architectures:architectures targetType:targetType osVersions:osVersions devices:devices range:range];
+  return [self initWithNames:names udids:udids states:states architectures:architectures targetType:targetType osVersions:osVersions devices:devices range:range];
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
 {
+  [coder encodeObject:self.names forKey:NSStringFromSelector(@selector(names))];
   [coder encodeObject:self.udids forKey:NSStringFromSelector(@selector(udids))];
   [coder encodeObject:self.states forKey:NSStringFromSelector(@selector(states))];
   [coder encodeObject:self.architectures forKey:NSStringFromSelector(@selector(architectures))];
@@ -211,6 +230,7 @@
 
 #pragma mark JSON
 
+static NSString *const KeyNames = @"names";
 static NSString *const KeyUDIDs = @"udids";
 static NSString *const KeyStates = @"states";
 static NSString *const KeyArchitectures = @"architectures";
@@ -222,6 +242,7 @@ static NSString *const KeyRange = @"range";
 - (id)jsonSerializableRepresentation
 {
   return @{
+    KeyNames : self.names.allObjects,
     KeyUDIDs : self.udids.allObjects,
     KeyStates : [FBiOSTargetQuery stateStringsForStateIndeces:self.states],
     KeyArchitectures : self.architectures.allObjects,
@@ -236,6 +257,10 @@ static NSString *const KeyRange = @"range";
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an NSDictionary<NSString, id>", json] fail:error];
+  }
+  NSArray<NSString *> *names = json[KeyNames] ?: @[];
+  if (![FBCollectionInformation isArrayHeterogeneous:names withClass:NSString.class]) {
+    return [[FBControlCoreError describeFormat:@"'%@' %@ is not an NSArray<NSString>", KeyNames, names] fail:error];
   }
   NSArray<NSString *> *udids = json[KeyUDIDs] ?: @[];
   if (![FBCollectionInformation isArrayHeterogeneous:udids withClass:NSString.class]) {
@@ -277,7 +302,8 @@ static NSString *const KeyRange = @"range";
   }
 
   return [[FBiOSTargetQuery alloc]
-    initWithUDIDs:[NSSet setWithArray:udids]
+    initWithNames:[NSSet setWithArray:names]
+    udids:[NSSet setWithArray:udids]
     states:stateIndeces
     architectures:[NSSet setWithArray:architectures]
     targetType:targetType
@@ -294,7 +320,8 @@ static NSString *const KeyRange = @"range";
     return NO;
   }
 
-  return [self.udids isEqualToSet:query.udids] &&
+  return [self.names isEqualToSet:query.names] &&
+         [self.udids isEqualToSet:query.udids] &&
          [self.states isEqualToIndexSet:query.states] &&
          [self.architectures isEqualToSet:query.architectures] &&
          self.targetType == query.targetType &&
@@ -305,13 +332,14 @@ static NSString *const KeyRange = @"range";
 
 - (NSUInteger)hash
 {
-  return self.udids.hash ^ self.states.hash ^ self.architectures.hash ^ self.targetType ^ self.devices.hash ^ self.osVersions.hash ^ self.range.length ^ self.range.location;
+  return self.names.hash ^ self.udids.hash ^ self.states.hash ^ self.architectures.hash ^ self.targetType ^ self.devices.hash ^ self.osVersions.hash ^ self.range.length ^ self.range.location;
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"UDIDs %@ | States %@ | Architectures %@ | Target Types %@ | Devices %@ | OS Versions %@ | Range %@",
+    @"Names %@ | UDIDs %@ | States %@ | Architectures %@ | Target Types %@ | Devices %@ | OS Versions %@ | Range %@",
+    [FBCollectionInformation oneLineDescriptionFromArray:self.names.allObjects],
     [FBCollectionInformation oneLineDescriptionFromArray:self.udids.allObjects],
     [FBCollectionInformation oneLineDescriptionFromArray:[FBiOSTargetQuery stateStringsForStateIndeces:self.states]],
     [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects],
@@ -368,11 +396,6 @@ static NSString *const KeyRange = @"range";
     [devices addObject:string];
   }
   return [devices copy];
-}
-
-+ (NSArray<NSString *> *)stringsFromDevices:(NSArray<FBDeviceType *> *)devices
-{
-  return [devices valueForKey:@"deviceName"];
 }
 
 @end

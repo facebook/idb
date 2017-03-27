@@ -62,6 +62,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSPredicate *)architectures:(NSArray<NSString *> *)architectures;
 
 /**
+ Predicate for matching against one of multiple Names.
+
+ @param names the Names to match against. Must not be nil.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)names:(NSArray<NSString *> *)names;
+
+/**
  Predicate for matching against a single Simulator UDID.
 
  @param udid the UDID to match against. Must not be nil.

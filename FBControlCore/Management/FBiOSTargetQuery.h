@@ -31,6 +31,15 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)allTargets;
 
 /**
+ A Query that matches the given Names.
+ 
+ @param names the names to match against.
+ @return a new Target Query.
+ */
++ (instancetype)names:(NSArray<NSString *> *)names;
+- (instancetype)names:(NSArray<NSString *> *)names;
+
+/**
  A Query that matches the given UDIDs.
 
  @param udids the UDIDs to match against.
@@ -108,6 +117,12 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if all targets of the given type are excluded from the query, NO otherwise.
  */
 - (BOOL)excludesAll:(FBiOSTargetType)targetType;
+
+/**
+ The Names to Match against
+ An Empty Set means that no Name filtering will occur.
+ */
+@property (nonatomic, readonly, copy) NSSet<NSString *> *names;
 
 /**
  The UDIDs to Match against.
