@@ -72,6 +72,16 @@ static NSString *const KeyRange = @"range";
   return [[self.class alloc] initWithNames:[self.names setByAddingObjectsFromArray:names] udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
++ (instancetype)named:(NSString *)name
+{
+  return [self names:@[name]];
+}
+
+- (instancetype)named:(NSString *)name
+{
+  return [self names:@[name]];
+}
+
 + (instancetype)udids:(NSArray<NSString *> *)udids
 {
   return [self.allTargets udids:udids];
@@ -84,6 +94,16 @@ static NSString *const KeyRange = @"range";
   }
 
   return [[self.class alloc] initWithNames:self.names udids:[self.udids setByAddingObjectsFromArray:udids] states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
+}
+
++ (instancetype)udid:(NSString *)udid
+{
+  return [self udids:@[udid]];
+}
+
+- (instancetype)udid:(NSString *)udid
+{
+  return [self udids:@[udid]];
 }
 
 + (instancetype)states:(NSIndexSet *)states
@@ -102,6 +122,16 @@ static NSString *const KeyRange = @"range";
   return [[self.class alloc] initWithNames:self.names udids:self.udids states:[indexSet copy] architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
 }
 
++ (instancetype)state:(FBSimulatorState)state
+{
+  return [self states:[NSIndexSet indexSetWithIndex:state]];
+}
+
+- (instancetype)state:(FBSimulatorState)state
+{
+  return [self states:[NSIndexSet indexSetWithIndex:state]];
+}
+
 + (instancetype)architectures:(NSArray<FBArchitecture> *)architectures {
   return [self.allTargets architectures:architectures];
 }
@@ -112,6 +142,16 @@ static NSString *const KeyRange = @"range";
   }
 
   return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:[self.architectures setByAddingObjectsFromArray:architectures] targetType:self.targetType osVersions:self.osVersions devices:self.devices range:self.range];
+}
+
++ (instancetype)architecture:(FBArchitecture)architecture
+{
+  return [self architectures:@[architecture]];
+}
+
+- (instancetype)architecture:(FBArchitecture)architecture
+{
+  return [self architectures:@[architecture]];
 }
 
 + (instancetype)targetType:(FBiOSTargetType)targetType
@@ -138,6 +178,16 @@ static NSString *const KeyRange = @"range";
   return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:[self.osVersions setByAddingObjectsFromArray:osVersions] devices:self.devices range:self.range];
 }
 
++ (instancetype)osVersion:(FBOSVersionName)osVersion
+{
+  return [self osVersions:@[osVersion]];
+}
+
+- (instancetype)osVersion:(FBOSVersionName)osVersion
+{
+  return [self osVersions:@[osVersion]];
+}
+
 + (instancetype)devices:(NSArray<FBDeviceModel> *)devices
 {
   return [self.allTargets devices:devices];
@@ -150,6 +200,16 @@ static NSString *const KeyRange = @"range";
   }
 
   return [[self.class alloc] initWithNames:self.names udids:self.udids states:self.states architectures:self.architectures targetType:self.targetType osVersions:self.osVersions devices:[self.devices setByAddingObjectsFromArray:devices] range:self.range];
+}
+
++ (instancetype)device:(FBDeviceModel)device
+{
+  return [self devices:@[device]];
+}
+
+- (instancetype)device:(FBDeviceModel)device
+{
+  return [self devices:@[device]];
 }
 
 + (instancetype)range:(NSRange)range
