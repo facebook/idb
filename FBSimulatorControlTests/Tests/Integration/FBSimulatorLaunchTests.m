@@ -62,7 +62,7 @@
 
 - (void)testLaunchesiPad
 {
-  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPadRetina]];
+  [self testLaunchesSingleSimulator:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPadAir]];
 }
 
 - (void)testLaunchesWatch
@@ -101,7 +101,7 @@
   if (!simulator2) {
     return;
   }
-  FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPadRetina]];
+  FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPadAir]];
   if (!simulator3) {
     return;
   }
