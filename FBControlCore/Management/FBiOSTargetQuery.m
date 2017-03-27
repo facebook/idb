@@ -15,6 +15,15 @@
 #import "FBControlCoreConfigurationVariants.h"
 #import "FBiOSTargetPredicates.h"
 
+static NSString *const KeyNames = @"names";
+static NSString *const KeyUDIDs = @"udids";
+static NSString *const KeyStates = @"states";
+static NSString *const KeyArchitectures = @"architectures";
+static NSString *const KeyTargetTypes = @"target_types";
+static NSString *const KeyOSVersions = @"os_versions";
+static NSString *const KeyDevices = @"devices";
+static NSString *const KeyRange = @"range";
+
 @implementation FBiOSTargetQuery
 
 #pragma mark Initializers
@@ -205,39 +214,30 @@
 
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
-  NSSet<NSString *> *names = [coder decodeObjectForKey:NSStringFromSelector(@selector(names))];
-  NSSet<NSString *> *udids = [coder decodeObjectForKey:NSStringFromSelector(@selector(udids))];
-  NSIndexSet *states = [coder decodeObjectForKey:NSStringFromSelector(@selector(states))];
-  NSSet<NSString *> *architectures = [coder decodeObjectForKey:NSStringFromSelector(@selector(architectures))];
-  FBiOSTargetType targetType = [[coder decodeObjectForKey:NSStringFromSelector(@selector(targetType))] unsignedIntegerValue];
-  NSSet<FBOSVersionName> *osVersions = [coder decodeObjectForKey:NSStringFromSelector(@selector(osVersions))];
-  NSSet<FBDeviceModel> *devices = [coder decodeObjectForKey:NSStringFromSelector(@selector(devices))];
-  NSRange range = [[coder decodeObjectForKey:NSStringFromSelector(@selector(range))] rangeValue];
+  NSSet<NSString *> *names = [coder decodeObjectForKey:KeyNames];
+  NSSet<NSString *> *udids = [coder decodeObjectForKey:KeyUDIDs];
+  NSIndexSet *states = [coder decodeObjectForKey:KeyStates];
+  NSSet<NSString *> *architectures = [coder decodeObjectForKey:KeyArchitectures];
+  FBiOSTargetType targetType = [[coder decodeObjectForKey:KeyTargetTypes] unsignedIntegerValue];
+  NSSet<FBOSVersionName> *osVersions = [coder decodeObjectForKey:KeyOSVersions];
+  NSSet<FBDeviceModel> *devices = [coder decodeObjectForKey:KeyDevices];
+  NSRange range = [[coder decodeObjectForKey:KeyRange] rangeValue];
   return [self initWithNames:names udids:udids states:states architectures:architectures targetType:targetType osVersions:osVersions devices:devices range:range];
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
 {
-  [coder encodeObject:self.names forKey:NSStringFromSelector(@selector(names))];
-  [coder encodeObject:self.udids forKey:NSStringFromSelector(@selector(udids))];
-  [coder encodeObject:self.states forKey:NSStringFromSelector(@selector(states))];
-  [coder encodeObject:self.architectures forKey:NSStringFromSelector(@selector(architectures))];
-  [coder encodeObject:@(self.targetType) forKey:NSStringFromSelector(@selector(targetType))];
-  [coder encodeObject:self.osVersions forKey:NSStringFromSelector(@selector(osVersions))];
-  [coder encodeObject:self.devices forKey:NSStringFromSelector(@selector(devices))];
-  [coder encodeObject:[NSValue valueWithRange:self.range] forKey:NSStringFromSelector(@selector(range))];
+  [coder encodeObject:self.names forKey:KeyNames];
+  [coder encodeObject:self.udids forKey:KeyUDIDs];
+  [coder encodeObject:self.states forKey:KeyStates];
+  [coder encodeObject:self.architectures forKey:KeyArchitectures];
+  [coder encodeObject:@(self.targetType) forKey:KeyTargetTypes];
+  [coder encodeObject:self.osVersions forKey:KeyOSVersions];
+  [coder encodeObject:self.devices forKey:KeyDevices];
+  [coder encodeObject:[NSValue valueWithRange:self.range] forKey:KeyRange];
 }
 
 #pragma mark JSON
-
-static NSString *const KeyNames = @"names";
-static NSString *const KeyUDIDs = @"udids";
-static NSString *const KeyStates = @"states";
-static NSString *const KeyArchitectures = @"architectures";
-static NSString *const KeyTargetTypes = @"target_types";
-static NSString *const KeyOSVersions = @"os_versions";
-static NSString *const KeyDevices = @"devices";
-static NSString *const KeyRange = @"range";
 
 - (id)jsonSerializableRepresentation
 {
