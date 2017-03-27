@@ -72,11 +72,24 @@
 - (BOOL)checkRuntimeRequirementsReturningError:(NSError **)error
 {
   NSError *innerError = nil;
-  if (![self obtainRuntimeWithError:&innerError]) {
-    return [[[FBSimulatorError describeFormat:@"Could not obtain available SimRuntime for configuration %@", self] causedBy:innerError] failBool:error];
+  SimRuntime *runtime = [self obtainRuntimeWithError:&innerError];
+  if (!runtime) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not obtain available SimRuntime for configuration %@", self]
+      causedBy:innerError]
+      failBool:error];
   }
-  if (![self obtainDeviceTypeWithError:&innerError]) {
-    return [[[FBSimulatorError describeFormat:@"Could not obtain availableSimDeviceType for configuration %@", self] causedBy:innerError] failBool:error];
+  SimDeviceType *deviceType = [self obtainDeviceTypeWithError:&innerError];
+  if (!deviceType) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not obtain availableSimDeviceType for configuration %@", self]
+      causedBy:innerError]
+      failBool:error];
+  }
+  if (![runtime supportsDeviceType:deviceType]) {
+    return [[FBSimulatorError
+      describeFormat:@"Device Type %@ does not support Runtime %@", deviceType.name, runtime.name]
+      failBool:error];
   }
   return YES;
 }

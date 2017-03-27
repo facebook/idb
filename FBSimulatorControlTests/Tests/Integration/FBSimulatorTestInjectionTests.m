@@ -39,9 +39,12 @@
 
 #pragma mark Tests
 
-- (FBSimulator *)assertObtainsBootedSimulatorWithTableSearch
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithTableSearch
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  if (!simulator) {
+    return nil;
+  }
   NSError *error = nil;
   BOOL success = [simulator installApplicationWithPath:self.tableSearchApplication.path error:&error];
   XCTAssertNil(error);
@@ -70,6 +73,9 @@
   }
   self.simulatorConfiguration = [[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5] withOSNamed:FBOSVersionNameiOS_8_1];
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithTableSearch];
+  if (!simulator) {
+    return;
+  }
   NSError *error = nil;
   BOOL success = [simulator startTestWithLaunchConfiguration:self.testLaunch reporter:self error:&error]
               && [simulator waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:20 error:&error];

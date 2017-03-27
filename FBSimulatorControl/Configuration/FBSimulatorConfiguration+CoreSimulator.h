@@ -72,6 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
  it may be the case the configuration represents an OS Version or Device that is unavaiable.
 
  Additionally, there are invalid OS Version to Device Type combinations that need to be checked at runtime.
+ This will confirm that the Runtime and Device Typpe are completely compatible and can therefore be created.
 
  @param error an error out for any error that occurred.
  @return YES if the Runtime requirements are met, NO otherwise.

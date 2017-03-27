@@ -88,6 +88,10 @@
 - (nullable FBSimulator *)assertObtainsSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration
 {
   NSError *error = nil;
+  if (![configuration checkRuntimeRequirementsReturningError:&error]) {
+    NSLog(@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error);
+    return nil;
+  }
   FBSimulator *simulator = [self.control.pool allocateSimulatorWithConfiguration:configuration options:self.allocationOptions error:&error];
   XCTAssertNil(error);
   XCTAssertNotNil(simulator);
@@ -107,6 +111,9 @@
 - (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  if (!simulator) {
+    return nil;
+  }
   NSError *error = nil;
   BOOL success = [simulator installApplicationWithPath:application.path error:&error];
   XCTAssertNil(error);
@@ -116,15 +123,13 @@
 
 - (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorBootConfiguration *)launchConfiguration
 {
-  NSError *error = nil;
-  if (![configuration checkRuntimeRequirementsReturningError:&error]) {
-    XCTFail(@"Configuration %@ does not meet the runtime requirements with error %@", configuration, error);
+  FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
+  if (!simulator) {
     return nil;
   }
-
-  FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
   [self.assert consumeAllNotifications];
 
+  NSError *error = nil;
   BOOL success = [simulator bootSimulator:launchConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);

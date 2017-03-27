@@ -43,6 +43,9 @@
 {
   FBSimulatorBootConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration launchConfiguration:self.simulatorLaunchConfiguration];
+  if (!simulator) {
+    return;
+  }
 
   [self assertSimulatorBooted:simulator];
   XCTAssertEqual(simulator.history.launchedAgentProcesses.count, 0u);
@@ -91,8 +94,17 @@
   // Simulator Pool management is single threaded since it relies on unsynchronised mutable state
   // Create the sessions in sequence, then boot them in paralell.
   FBSimulator *simulator1 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5]];
+  if (!simulator1) {
+    return;
+  }
   FBSimulator *simulator2 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhone5]];
+  if (!simulator2) {
+    return;
+  }
   FBSimulator *simulator3 = [self assertObtainsSimulatorWithConfiguration:[FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPadRetina]];
+  if (!simulator3) {
+    return;
+  }
 
   XCTAssertEqual(self.control.pool.allocatedSimulators.count, 3u);
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
