@@ -189,6 +189,19 @@ extension ListenInterface : Accumulator {
   }
 }
 
+extension FBTerminationHandleType {
+  var listenDescription: String? { get {
+    switch self {
+      case FBTerminationHandleType.videoStreaming:
+        return "Recording Video"
+    case FBTerminationHandleType.testOperation:
+        return "Test Operation"
+      default:
+        return nil
+    }
+  }}
+}
+
 extension ListenInterface : EventReporterSubject {
   public var jsonDescription: JSON { get {
     var httpValue = JSON.null
@@ -213,6 +226,9 @@ extension ListenInterface : EventReporterSubject {
   }}
 
   public var description: String { get {
+    if let listenDescription = self.listenDescription {
+      return listenDescription
+    }
     var description = "Http: "
     if let httpPort = self.http {
       description += httpPort.description
@@ -231,8 +247,18 @@ extension ListenInterface : EventReporterSubject {
     }
     return description
   }}
-}
 
+  private var listenDescription: String? { get {
+    if !self.isEmptyListen {
+      return nil
+    }
+    return self.handle?.type.listenDescription
+  }}
+
+  private var isEmptyListen: Bool { get {
+    return self.stdin == false && self.http == nil && self.hid == nil
+  }}
+}
 
 extension IndividualCreationConfiguration : Equatable {}
 public func == (left: IndividualCreationConfiguration, right: IndividualCreationConfiguration) -> Bool {
