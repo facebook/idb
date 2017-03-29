@@ -28,19 +28,19 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
   }}
 
   open func containerApplicationDidLaunch(_ applicationProcess: FBProcessInfo) {
-    self.reportValue(.launch, .Discrete, applicationProcess)
+    self.reportValue(.launch, .discrete, applicationProcess)
   }
 
   open func containerApplicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
-    self.reportValue(.terminate, .Discrete, applicationProcess)
+    self.reportValue(.terminate, .discrete, applicationProcess)
   }
 
   open func connectionDidConnect(_ connection: FBSimulatorConnection) {
-    self.reportValue(.launch, .Discrete, connection)
+    self.reportValue(.launch, .discrete, connection)
   }
 
   open func connectionDidDisconnect(_ connection: FBSimulatorConnection, expected: Bool) {
-    self.reportValue(.terminate, .Discrete, connection)
+    self.reportValue(.terminate, .discrete, connection)
   }
 
   open func testmanagerDidConnect(_ testManager: FBTestManager) {
@@ -52,38 +52,38 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
   }
 
   open func simulatorDidLaunch(_ launchdProcess: FBProcessInfo) {
-    self.reportValue(.launch, .Discrete, launchdProcess)
+    self.reportValue(.launch, .discrete, launchdProcess)
   }
 
   open func simulatorDidTerminate(_ launchdProcess: FBProcessInfo, expected: Bool) {
-    self.reportValue(.terminate, .Discrete, launchdProcess)
+    self.reportValue(.terminate, .discrete, launchdProcess)
   }
 
   open func agentDidLaunch(_ launchConfig: FBAgentLaunchConfiguration, didStart agentProcess: FBProcessInfo, stdOut: FileHandle, stdErr: FileHandle) {
-    self.reportValue(.launch, .Discrete, agentProcess)
+    self.reportValue(.launch, .discrete, agentProcess)
   }
 
   open func agentDidTerminate(_ agentProcess: FBProcessInfo, expected: Bool) {
-    self.reportValue(.terminate, .Discrete, agentProcess)
+    self.reportValue(.terminate, .discrete, agentProcess)
   }
 
   open func applicationDidLaunch(_ launchConfig: FBApplicationLaunchConfiguration, didStart applicationProcess: FBProcessInfo) {
-    self.reportValue(.launch, .Discrete, applicationProcess)
+    self.reportValue(.launch, .discrete, applicationProcess)
     if launchConfig.waitForDebugger {
       self.reporter.logInfo("Application launched. To debug, run lldb -p \(applicationProcess.processIdentifier).")
     }
   }
 
   open func applicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
-    self.reportValue(.terminate, .Discrete, applicationProcess)
+    self.reportValue(.terminate, .discrete, applicationProcess)
   }
 
   open func diagnosticAvailable(_ log: FBDiagnostic) {
-    self.reportValue(.diagnostic, .Discrete, log)
+    self.reportValue(.diagnostic, .discrete, log)
   }
 
   open func didChange(_ state: FBSimulatorState) {
-    self.reportValue(.stateChange, .Discrete, state.description as NSString)
+    self.reportValue(.stateChange, .discrete, state.description as NSString)
   }
 
   open func terminationHandleAvailable(_ terminationHandle: FBTerminationHandle) {

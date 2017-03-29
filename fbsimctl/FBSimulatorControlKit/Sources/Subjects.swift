@@ -64,7 +64,7 @@ struct SimpleSubject : EventReporterSubject {
 
   var shortDescription: String { get {
     switch self.eventType {
-    case .Discrete:
+    case .discrete:
       return self.subject.description
     default:
       return "\(self.eventName) \(self.eventType): \(self.subject.description)"
@@ -136,7 +136,7 @@ struct iOSTargetWithSubject : EventReporterSubject {
 
   var description: String { get {
     switch self.eventType {
-    case .Discrete:
+    case .discrete:
       return "\(self.targetSubject): \(self.eventName.rawValue): \(self.subject.description)"
     default:
       return ""
@@ -151,7 +151,7 @@ struct LogSubject : EventReporterSubject {
   var jsonDescription: JSON { get {
     return JSON.dictionary([
       JSONKeys.EventName.rawValue : JSON.string(EventName.log.rawValue),
-      JSONKeys.EventType.rawValue : JSON.string(EventType.Discrete.rawValue),
+      JSONKeys.EventType.rawValue : JSON.string(EventType.discrete.rawValue),
       JSONKeys.Level.rawValue : JSON.string(self.levelString),
       JSONKeys.Subject.rawValue : JSON.string(self.logString),
       JSONKeys.Timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),

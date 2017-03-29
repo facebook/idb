@@ -25,7 +25,7 @@ extension EventReporter {
   }
 
   func reportError(_ message: String) {
-    self.reportSimpleBridge(.failure, .Discrete, message as NSString)
+    self.reportSimpleBridge(.failure, .discrete, message as NSString)
   }
 
   func logDebug(_ string: String) {

@@ -53,7 +53,7 @@ public enum EventName : String {
 }
 
 public enum EventType : String {
-  case Started = "started"
-  case Ended = "ended"
-  case Discrete = "discrete"
+  case started = "started"
+  case ended = "ended"
+  case discrete = "discrete"
 }

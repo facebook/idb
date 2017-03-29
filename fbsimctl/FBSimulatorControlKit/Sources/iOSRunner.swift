@@ -64,7 +64,7 @@ struct iOSActionProvider {
     case .listApps:
       return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
-        reporter.reporter.reportSimple(.listApps, .Discrete, subject)
+        reporter.reporter.reportSimple(.listApps, .discrete, subject)
       }
     case .record(let record):
       switch record {
@@ -84,7 +84,7 @@ struct iOSActionProvider {
           try stream.startStreaming(output.makeWriter())
         } else {
           let attributes = try stream.streamAttributes()
-          reporter.reportValue(.stream, .Discrete, attributes)
+          reporter.reportValue(.stream, .discrete, attributes)
         }
         return stream
       }
@@ -125,14 +125,14 @@ struct iOSTargetRunner : Runner {
   func run() -> CommandResult {
     do {
       if let name = self.name {
-        self.reporter.report(name, .Started, self.subject)
+        self.reporter.report(name, .started, self.subject)
       }
       var handles: [FBTerminationHandle] = []
       if let handle = try self.action() {
         handles = [handle]
       }
       if let name = self.name {
-        self.reporter.report(name, .Ended, self.subject)
+        self.reporter.report(name, .ended, self.subject)
       }
       return CommandResult(outcome: .success(nil), handles: handles)
     } catch let error as NSError {
@@ -159,14 +159,14 @@ private struct DiagnosticsRunner : Runner {
   }
 
   func run() -> CommandResult {
-    reporter.reportValue(.diagnose, .Started, query)
+    reporter.reportValue(.diagnose, .started, query)
     let diagnostics = self.fetchDiagnostics()
-    reporter.reportValue(.diagnose, .Ended, query)
+    reporter.reportValue(.diagnose, .ended, query)
 
     let subjects: [EventReporterSubject] = diagnostics.map { diagnostic in
       return SimpleSubject(
         .diagnostic,
-        .Discrete,
+        .discrete,
         ControlCoreSubject(diagnostic)
       )
     }
