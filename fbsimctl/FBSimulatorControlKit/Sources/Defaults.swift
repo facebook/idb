@@ -86,9 +86,9 @@ open class Defaults {
       case .diagnose:
         return FBiOSTargetQuery.allTargets()
       case .approve:
-        return FBiOSTargetQuery.simulatorStates([.shutdown])
+        return FBiOSTargetQuery.state(.shutdown)
       default:
-        return FBiOSTargetQuery.simulatorStates([.booted])
+        return FBiOSTargetQuery.state(.booted)
     }
   }
 

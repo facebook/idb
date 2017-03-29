@@ -67,18 +67,6 @@ extension FBiOSTargetType : Accumulator {
 }
 
 extension FBiOSTargetQuery {
-  public static func simulatorStates(_ states: [FBSimulatorState]) -> FBiOSTargetQuery {
-    return self.allTargets().simulatorStates(states)
-  }
-
-  public func simulatorStates(_ states: [FBSimulatorState]) -> FBiOSTargetQuery {
-    let indexSet = states.reduce(NSMutableIndexSet()) { (indexSet, state) in
-      indexSet.add(Int(state.rawValue))
-      return indexSet
-    }
-    return self.states(indexSet as IndexSet)
-  }
-
   public static func ofCount(_ count: Int) -> FBiOSTargetQuery {
     return self.allTargets().ofCount(count)
   }
