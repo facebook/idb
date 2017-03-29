@@ -219,7 +219,7 @@ struct ListenRunner : Runner, CommandPerformer {
       relays.append(HttpRelay(portNumber: httpPort, performer: performer))
     }
     if interface.stdin {
-      let commandBuffer = LineBuffer(performer: self, reporter: self.context.reporter)
+      let commandBuffer = CommandBuffer(performer: self, reporter: self.context.reporter)
       relays.append(FileHandleRelay(commandBuffer: commandBuffer))
     }
     if let hidPort = interface.hid {

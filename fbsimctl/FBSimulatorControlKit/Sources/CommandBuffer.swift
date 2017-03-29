@@ -12,43 +12,28 @@ import Foundation
 /**
  A Sink of raw data, which will result in command/s occuring when a full command is encountered.
  */
-protocol CommandBuffer {
-  var performer: CommandPerformer { get }
-  var reporter: EventReporter { get }
-  func append(_ data: Data) -> [CommandResult]
-}
-
-/**
- A CommandBuffer that will dispatch a command when a newline is encountered.
- */
-class LineBuffer : CommandBuffer {
+class CommandBuffer {
   internal let performer: CommandPerformer
   internal let reporter: EventReporter
-  fileprivate var buffer: String = ""
+  fileprivate let buffer: FBLineBuffer
 
   init (performer: CommandPerformer, reporter: EventReporter) {
     self.performer = performer
     self.reporter = reporter
+    self.buffer = FBLineBuffer()
   }
 
   func append(_ data: Data) -> [CommandResult] {
-    let string = String(data: data, encoding: String.Encoding.utf8)!
-    self.buffer.append(string)
+    self.buffer.append(data)
     return self.runBuffer()
   }
 
   fileprivate func runBuffer() -> [CommandResult] {
-    let buffer = self.buffer
-    let lines = buffer
-      .components(separatedBy: CharacterSet.newlines)
-      .filter { line in
-        line != ""
-    }
-    if (lines.isEmpty) {
+    let lines = Array(IteratorSequence(self.buffer.stringIterator()))
+    if lines.isEmpty {
       return []
     }
 
-    self.buffer = ""
     var results: [CommandResult] = []
     DispatchQueue.main.sync {
       for line in lines {

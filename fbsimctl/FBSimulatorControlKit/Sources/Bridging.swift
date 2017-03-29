@@ -207,8 +207,20 @@ struct LineBufferDataIterator : IteratorProtocol {
   }
 }
 
+struct LineBufferStringIterator : IteratorProtocol {
+  let lineBuffer: FBLineBuffer
+
+  mutating func next() -> String? {
+    return self.lineBuffer.consumeLineString()
+  }
+}
+
 extension FBLineBuffer {
   func dataIterator() -> LineBufferDataIterator {
     return LineBufferDataIterator(lineBuffer: self)
+  }
+
+  func stringIterator() -> LineBufferStringIterator {
+    return LineBufferStringIterator(lineBuffer: self)
   }
 }
