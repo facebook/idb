@@ -64,7 +64,7 @@ struct iOSActionProvider {
     case .listApps:
       return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
-        reporter.reporter.reportSimple(.ListApps, EventType.Discrete, subject)
+        reporter.reporter.reportSimple(.ListApps, .Discrete, subject)
       }
     case .record(let record):
       switch record {
@@ -125,14 +125,14 @@ struct iOSTargetRunner : Runner {
   func run() -> CommandResult {
     do {
       if let name = self.name {
-        self.reporter.report(name, EventType.Started, self.subject)
+        self.reporter.report(name, .Started, self.subject)
       }
       var handles: [FBTerminationHandle] = []
       if let handle = try self.action() {
         handles = [handle]
       }
       if let name = self.name {
-        self.reporter.report(name, EventType.Ended, self.subject)
+        self.reporter.report(name, .Ended, self.subject)
       }
       return CommandResult(outcome: .success(nil), handles: handles)
     } catch let error as NSError {
@@ -159,14 +159,14 @@ private struct DiagnosticsRunner : Runner {
   }
 
   func run() -> CommandResult {
-    reporter.reportValue(.Diagnose, EventType.Started, query)
+    reporter.reportValue(.Diagnose, .Started, query)
     let diagnostics = self.fetchDiagnostics()
-    reporter.reportValue(.Diagnose, EventType.Ended, query)
+    reporter.reportValue(.Diagnose, .Ended, query)
 
     let subjects: [EventReporterSubject] = diagnostics.map { diagnostic in
       return SimpleSubject(
         .Diagnostic,
-        EventType.Discrete,
+        .Discrete,
         ControlCoreSubject(diagnostic)
       )
     }

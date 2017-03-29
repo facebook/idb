@@ -62,7 +62,7 @@ class SynchronousRelay : Relay {
     // Setup the Signal Handling first, so sending a Signal cannot race with starting the relay.
     var signalled = false
     let handler = SignalHandler { info in
-      self.reporter.reportSimple(.Signalled, EventType.Discrete, info)
+      self.reporter.reportSimple(.Signalled, .Discrete, info)
       signalled = true
     }
     handler.register()

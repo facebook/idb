@@ -27,10 +27,10 @@ struct SimulatorCreationRunner : Runner {
   func run() -> CommandResult {
     do {
       for configuration in self.configurations {
-        self.context.reporter.reportSimpleBridge(.Create, EventType.Started, configuration)
+        self.context.reporter.reportSimpleBridge(.Create, .Started, configuration)
         let simulator = try self.context.simulatorControl.set.createSimulator(with: configuration)
         self.context.defaults.updateLastQuery(FBiOSTargetQuery.udids([simulator.udid]))
-        self.context.reporter.reportSimpleBridge(.Create, EventType.Ended, simulator)
+        self.context.reporter.reportSimpleBridge(.Create, .Ended, simulator)
       }
       return .success(nil)
     } catch let error as NSError {
@@ -163,7 +163,7 @@ private struct SearchRunner : Runner {
     let simulator = self.reporter.simulator
     let diagnostics = simulator.diagnostics.allDiagnostics()
     let results = search.search(diagnostics)
-    self.reporter.report(.Search, EventType.Discrete, ControlCoreSubject(results))
+    self.reporter.report(.Search, .Discrete, ControlCoreSubject(results))
     return .success(nil)
   }
 }
@@ -180,7 +180,7 @@ private struct ServiceInfoRunner : Runner {
     guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {
       return .failure("Could not get process info for pid \(pid)")
     }
-    return .success(SimpleSubject(.ServiceInfo, EventType.Discrete, ControlCoreSubject(processInfo)))
+    return .success(SimpleSubject(.ServiceInfo, .Discrete, ControlCoreSubject(processInfo)))
   }
 }
 
@@ -227,7 +227,7 @@ private struct UploadRunner : Runner {
         return CommandResult.failure("Could not write out diagnostic \(sourcePath) to path")
       }
       let destinationDiagnostic = FBDiagnosticBuilder().updatePath(destinationPath).build()
-      self.reporter.report(.Upload, EventType.Discrete, ControlCoreSubject(destinationDiagnostic))
+      self.reporter.report(.Upload, .Discrete, ControlCoreSubject(destinationDiagnostic))
     }
 
     return .success(nil)
