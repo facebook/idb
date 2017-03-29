@@ -150,7 +150,7 @@ struct LogSubject : EventReporterSubject {
 
   var jsonDescription: JSON { get {
     return JSON.dictionary([
-      JSONKeys.EventName.rawValue : JSON.string(EventName.Log.rawValue),
+      JSONKeys.EventName.rawValue : JSON.string(EventName.log.rawValue),
       JSONKeys.EventType.rawValue : JSON.string(EventType.Discrete.rawValue),
       JSONKeys.Level.rawValue : JSON.string(self.levelString),
       JSONKeys.Subject.rawValue : JSON.string(self.logString),

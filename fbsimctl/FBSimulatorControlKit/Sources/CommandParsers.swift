@@ -528,7 +528,7 @@ extension Action : Parsable {
   static var approveParser: Parser<Action> {
     return Parser<[String]>
       .ofCommandWithArg(
-        EventName.Approve.rawValue,
+        EventName.approve.rawValue,
         Parser.manyCount(1, Parser<String>.ofBundleIDOrApplicationDescriptorBundleID)
       )
       .fmap(Action.approve)
@@ -538,7 +538,7 @@ extension Action : Parsable {
   static var bootParser: Parser<Action> {
     return Parser<FBSimulatorBootConfiguration?>
       .ofCommandWithArg(
-        EventName.Boot.rawValue,
+        EventName.boot.rawValue,
         FBSimulatorBootConfigurationParser.parser.optional()
       )
       .fmap(Action.boot)
@@ -548,7 +548,7 @@ extension Action : Parsable {
   static var clearKeychainParser: Parser<Action> {
     return Parser<String?>
       .ofCommandWithArg(
-        EventName.ClearKeychain.rawValue,
+        EventName.clearKeychain.rawValue,
         Parser<String>.ofBundleIDOrApplicationDescriptorBundleID.optional()
       )
       .fmap(Action.clearKeychain)
@@ -556,13 +556,13 @@ extension Action : Parsable {
   }
 
   static var configParser: Parser<Action> {
-    return Parser.ofString(EventName.Config.rawValue, Action.config)
+    return Parser.ofString(EventName.config.rawValue, Action.config)
   }
 
   static var createParser: Parser<Action> {
     return Parser<CreationSpecification>
       .ofCommandWithArg(
-        EventName.Create.rawValue,
+        EventName.create.rawValue,
         CreationSpecification.parser
       )
       .fmap(Action.create)
@@ -570,13 +570,13 @@ extension Action : Parsable {
   }
 
   static var deleteParser: Parser<Action> {
-    return Parser.ofString(EventName.Delete.rawValue, Action.delete)
+    return Parser.ofString(EventName.delete.rawValue, Action.delete)
   }
 
   static var diagnoseParser: Parser<Action> {
     return Parser<(DiagnosticFormat, FBDiagnosticQuery)>
       .ofCommandWithArg(
-        EventName.Diagnose.rawValue,
+        EventName.diagnose.rawValue,
         Parser.ofTwoSequenced(
           DiagnosticFormat.parser.fallback(DiagnosticFormat.CurrentFormat),
           FBDiagnosticQueryParser.parser
@@ -589,17 +589,17 @@ extension Action : Parsable {
   }
 
   static var eraseParser: Parser<Action> {
-    return Parser.ofString(EventName.Erase.rawValue, Action.erase)
+    return Parser.ofString(EventName.erase.rawValue, Action.erase)
   }
 
   static var focusParser: Parser<Action> {
-    return Parser.ofString(EventName.Focus.rawValue, Action.focus)
+    return Parser.ofString(EventName.focus.rawValue, Action.focus)
   }
 
   static var launchAgentParser: Parser<Action> {
     return Parser<FBAgentLaunchConfiguration>
       .ofCommandWithArg(
-        EventName.Launch.rawValue,
+        EventName.launch.rawValue,
         FBProcessLaunchConfigurationParsers.agentLaunchParser
       )
       .fmap(Action.launchAgent)
@@ -609,7 +609,7 @@ extension Action : Parsable {
   static var launchAppParser: Parser<Action> {
     return Parser<FBApplicationLaunchConfiguration>
       .ofCommandWithArg(
-        EventName.Launch.rawValue,
+        EventName.launch.rawValue,
         FBProcessLaunchConfigurationParsers.appLaunchParser
       )
       .fmap(Action.launchApp)
@@ -645,7 +645,7 @@ extension Action : Parsable {
 
     return Parser
       .ofCommandWithArg(
-        EventName.LaunchXCTest.rawValue,
+        EventName.launchXCTest.rawValue,
         configurationParser
       )
       .fmap(Action.launchXCTest)
@@ -655,7 +655,7 @@ extension Action : Parsable {
   static var listenParser: Parser<Action> {
     return Parser<ListenInterface>
       .ofCommandWithArg(
-        EventName.Listen.rawValue,
+        EventName.listen.rawValue,
         ListenInterface.parser
       )
       .fmap(Action.listen)
@@ -663,21 +663,21 @@ extension Action : Parsable {
   }
 
   static var listParser: Parser<Action> {
-    return Parser.ofString(EventName.List.rawValue, Action.list)
+    return Parser.ofString(EventName.list.rawValue, Action.list)
   }
 
   static var listAppsParser: Parser<Action> {
-    return Parser.ofString(EventName.ListApps.rawValue, Action.listApps)
+    return Parser.ofString(EventName.listApps.rawValue, Action.listApps)
   }
 
   static var listDeviceSetsParser: Parser<Action> {
-    return Parser.ofString(EventName.ListDeviceSets.rawValue, Action.listDeviceSets)
+    return Parser.ofString(EventName.listDeviceSets.rawValue, Action.listDeviceSets)
   }
 
   static var openParser: Parser<Action> {
     return Parser<URL>
       .ofCommandWithArg(
-        EventName.Open.rawValue,
+        EventName.open.rawValue,
         Parser<URL>.ofURL
       )
       .fmap(Action.open)
@@ -686,7 +686,7 @@ extension Action : Parsable {
   static var installParser: Parser<Action> {
     return Parser
       .ofTwoSequenced(
-        Parser<String>.ofCommandWithArg(EventName.Install.rawValue, Parser<String>.ofAny),
+        Parser<String>.ofCommandWithArg(EventName.install.rawValue, Parser<String>.ofAny),
         Parser<Bool>.ofFlag("codesign",
           "Before installing, sign the bundle and all its frameworks with a certificate from the keychain"
         )
@@ -697,13 +697,13 @@ extension Action : Parsable {
   }
 
   static var keyboardOverrideParser: Parser<Action> {
-    return Parser.ofString(EventName.KeyboardOverride.rawValue, Action.keyboardOverride)
+    return Parser.ofString(EventName.keyboardOverride.rawValue, Action.keyboardOverride)
   }
 
   static var relaunchParser: Parser<Action> {
     return Parser<FBApplicationLaunchConfiguration>
       .ofCommandWithArg(
-        EventName.Relaunch.rawValue,
+        EventName.relaunch.rawValue,
         FBProcessLaunchConfigurationParsers.appLaunchParser
       )
       .fmap(Action.relaunch)
@@ -712,12 +712,12 @@ extension Action : Parsable {
 
   static var recordParser: Parser<Action> {
     return Parser<Record>
-      .ofCommandWithArg(EventName.Record.rawValue, Record.parser)
+      .ofCommandWithArg(EventName.record.rawValue, Record.parser)
       .fmap(Action.record)
   }
 
   static var shutdownParser: Parser<Action> {
-    return Parser.ofString(EventName.Shutdown.rawValue, Action.shutdown)
+    return Parser.ofString(EventName.shutdown.rawValue, Action.shutdown)
   }
 
   static var tapParser: Parser<Action> {
@@ -728,7 +728,7 @@ extension Action : Parsable {
 
     return Parser
       .ofCommandWithArg(
-        EventName.Tap.rawValue,
+        EventName.tap.rawValue,
         coordParser
       )
       .fmap { (x, y) in
@@ -739,7 +739,7 @@ extension Action : Parsable {
   static var serviceInfoParser: Parser<Action> {
     return Parser
       .ofCommandWithArg(
-        EventName.ServiceInfo.rawValue,
+        EventName.serviceInfo.rawValue,
         Parser<String>.ofBundleIDOrApplicationDescriptorBundleID
       )
       .fmap(Action.serviceInfo)
@@ -752,7 +752,7 @@ extension Action : Parsable {
 
     return Parser
       .ofCommandWithArg(
-        EventName.SetLocation.rawValue,
+        EventName.setLocation.rawValue,
         latLngParser
       )
       .fmap { (latitude, longitude) in
@@ -762,14 +762,14 @@ extension Action : Parsable {
 
   static var streamParser: Parser<Action> {
     return Parser
-      .ofCommandWithArg(EventName.Stream.rawValue, FileOutput.parser.optional())
+      .ofCommandWithArg(EventName.stream.rawValue, FileOutput.parser.optional())
       .fmap(Action.stream)
   }
 
   static var terminateParser: Parser<Action> {
     return Parser<String>
       .ofCommandWithArg(
-        EventName.Terminate.rawValue,
+        EventName.terminate.rawValue,
         Parser<String>.ofBundleIDOrApplicationDescriptorBundleID
       )
       .fmap(Action.terminate)
@@ -778,7 +778,7 @@ extension Action : Parsable {
   static var uninstallParser: Parser<Action> {
     return Parser<String>
       .ofCommandWithArg(
-        EventName.Uninstall.rawValue,
+        EventName.uninstall.rawValue,
         Parser<String>.ofBundleIDOrApplicationDescriptorBundleID
       )
       .fmap(Action.uninstall)
@@ -787,7 +787,7 @@ extension Action : Parsable {
   static var uploadParser: Parser<Action> {
     return Parser<[String]>
       .ofCommandWithArg(
-        EventName.Upload.rawValue,
+        EventName.upload.rawValue,
         Parser.manyCount(1, Parser<String>.ofExistingFile)
       )
       .fmap { paths in
@@ -801,7 +801,7 @@ extension Action : Parsable {
   static var watchdogOverrideParser: Parser<Action> {
     return Parser<(Double, [String])>
       .ofCommandWithArg(
-        EventName.WatchdogOverride.rawValue,
+        EventName.watchdogOverride.rawValue,
         Parser.ofTwoSequenced(
           Parser<Double>.ofDouble,
           Parser.manyCount(1, Parser<String>.ofBundleIDOrApplicationDescriptorBundleID)

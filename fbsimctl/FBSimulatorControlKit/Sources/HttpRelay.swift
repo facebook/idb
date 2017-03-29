@@ -330,25 +330,25 @@ class HttpRelay : Relay {
   }
 
   fileprivate static var clearKeychainRoute: Route { get {
-    return ActionRoute.post(.ClearKeychain) { json in
+    return ActionRoute.post(.clearKeychain) { json in
       let bundleID = try json.getValue("bundle_id").getString()
       return Action.clearKeychain(bundleID)
     }
   }}
 
   fileprivate static var configRoute: Route { get {
-    return ActionRoute.getConstant(.Config, action: Action.config)
+    return ActionRoute.getConstant(.config, action: Action.config)
   }}
 
   fileprivate static var diagnosticQueryRoute: Route { get {
-    return ActionRoute.post(.Diagnose) { json in
+    return ActionRoute.post(.diagnose) { json in
       let query = try FBDiagnosticQuery.inflate(fromJSON: json.decode())
       return Action.diagnose(query, DiagnosticFormat.Content)
     }
   }}
 
   fileprivate static var diagnosticRoute: Route { get {
-    return ActionRoute.get(.Diagnose) { components in
+    return ActionRoute.get(.diagnose) { components in
       guard let name = components.last else {
         throw ParseError.custom("No diagnostic name provided")
       }
@@ -358,21 +358,21 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var hidRoute: Route { get {
-    return ActionRoute.post(.Hid) { json in
+    return ActionRoute.post(.hid) { json in
       let event = try FBSimulatorHIDEvent.inflate(fromJSON: json.decode())
       return Action.hid(event)
     }
   }}
 
   fileprivate static var installRoute: Route { get {
-    return ActionRoute.postFile(.Install, "ipa") { request, file in
+    return ActionRoute.postFile(.install, "ipa") { request, file in
       let shouldCodeSign = request.getBoolQueryParam("codesign", false)
       return Action.install(file.path, shouldCodeSign)
     }
   }}
 
   fileprivate static var launchRoute: Route { get {
-    return ActionRoute.post(.Launch) { json in
+    return ActionRoute.post(.launch) { json in
       if let agentLaunch = try? FBAgentLaunchConfiguration.inflate(fromJSON: json.decode()) {
         return Action.launchAgent(agentLaunch)
       }
@@ -385,11 +385,11 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var listRoute: Route { get {
-    return ActionRoute.getConstant(.List, action: Action.list)
+    return ActionRoute.getConstant(.list, action: Action.list)
   }}
 
   fileprivate static var openRoute: Route { get {
-    return ActionRoute.post(.Open) { json in
+    return ActionRoute.post(.open) { json in
       let urlString = try json.getValue("url").getString()
       guard let url = URL(string: urlString) else {
         throw JSONError.parse("\(urlString) is not a valid URL")
@@ -399,7 +399,7 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var recordRoute: Route { get {
-    return ActionRoute.post(.Record) { json in
+    return ActionRoute.post(.record) { json in
       if try json.getValue("start").getBool() {
         return Action.record(Record.start(nil))
       }
@@ -408,21 +408,21 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var relaunchRoute: Route { get {
-    return ActionRoute.post(.Relaunch) { json in
+    return ActionRoute.post(.relaunch) { json in
       let launchConfiguration = try FBApplicationLaunchConfiguration.inflate(fromJSON: json.decode())
       return Action.relaunch(launchConfiguration)
     }
   }}
 
   fileprivate static var searchRoute: Route { get {
-    return ActionRoute.post(.Search) { json in
+    return ActionRoute.post(.search) { json in
       let search = try FBBatchLogSearch.inflate(fromJSON: json.decode())
       return Action.search(search)
     }
   }}
 
   fileprivate static var setLocationRoute: Route { get {
-    return ActionRoute.post(.SetLocation) { json in
+    return ActionRoute.post(.setLocation) { json in
       let latitude = try json.getValue("latitude").getNumber().doubleValue
       let longitude = try json.getValue("longitude").getNumber().doubleValue
       return Action.setLocation(latitude, longitude)
@@ -430,7 +430,7 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var tapRoute: Route { get {
-    return ActionRoute.post(.Tap) { json in
+    return ActionRoute.post(.tap) { json in
       let x = try json.getValue("x").getNumber().doubleValue
       let y = try json.getValue("y").getNumber().doubleValue
       return Action.tap(x, y)
@@ -438,7 +438,7 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var terminateRoute: Route { get {
-    return ActionRoute.post(.Terminate) { json in
+    return ActionRoute.post(.terminate) { json in
       let bundleID = try json.getValue("bundle_id").getString()
       return Action.terminate(bundleID)
     }
@@ -460,7 +460,7 @@ class HttpRelay : Relay {
       }
     }
 
-    return ActionRoute.post(.Upload) { json in
+    return ActionRoute.post(.upload) { json in
       return Action.upload(try jsonToDiagnostics(json))
     }
   }}

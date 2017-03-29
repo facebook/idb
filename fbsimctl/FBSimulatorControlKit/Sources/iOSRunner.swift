@@ -33,7 +33,7 @@ struct iOSActionProvider {
     case .diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
     case .install(let appPath, let codeSign):
-      return iOSTargetRunner.simple(reporter, .Install, ControlCoreSubject(appPath as NSString)) {
+      return iOSTargetRunner.simple(reporter, .install, ControlCoreSubject(appPath as NSString)) {
         let (extractedAppPath, cleanupDirectory) = try FBApplicationDescriptor.findOrExtract(atPath: appPath)
         if codeSign {
           try FBCodesignProvider.codeSignCommandWithAdHocIdentity().recursivelySignBundle(atPath: extractedAppPath)
@@ -44,17 +44,17 @@ struct iOSActionProvider {
         }
       }
     case .uninstall(let appBundleID):
-      return iOSTargetRunner.simple(reporter, .Uninstall, ControlCoreSubject(appBundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, .uninstall, ControlCoreSubject(appBundleID as NSString)) {
         try target.uninstallApplication(withBundleID: appBundleID)
       }
     case .launchApp(let appLaunch):
-      return iOSTargetRunner.simple(reporter, .Launch, ControlCoreSubject(appLaunch)) {
+      return iOSTargetRunner.simple(reporter, .launch, ControlCoreSubject(appLaunch)) {
         try target.launchApplication(appLaunch)
       }
     case .launchXCTest(var configuration):
       // Always initialize for UI Testing until we make this optional
       configuration = configuration.withUITesting(true)
-      return iOSTargetRunner.handled(reporter, .LaunchXCTest, ControlCoreSubject(configuration)) {
+      return iOSTargetRunner.handled(reporter, .launchXCTest, ControlCoreSubject(configuration)) {
         let handle = try target.startTest(with: configuration)
         if configuration.timeout > 0 {
           try target.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: configuration.timeout)
@@ -64,7 +64,7 @@ struct iOSActionProvider {
     case .listApps:
       return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)
-        reporter.reporter.reportSimple(.ListApps, .Discrete, subject)
+        reporter.reporter.reportSimple(.listApps, .Discrete, subject)
       }
     case .record(let record):
       switch record {
@@ -78,18 +78,18 @@ struct iOSActionProvider {
           }
       }
     case .stream(let maybeOutput):
-      return iOSTargetRunner.handled(reporter, .Stream, ControlCoreSubject(target as! ControlCoreValue)) {
+      return iOSTargetRunner.handled(reporter, .stream, ControlCoreSubject(target as! ControlCoreValue)) {
         let stream = try target.createStream()
         if let output = maybeOutput {
           try stream.startStreaming(output.makeWriter())
         } else {
           let attributes = try stream.streamAttributes()
-          reporter.reportValue(.Stream, .Discrete, attributes)
+          reporter.reportValue(.stream, .Discrete, attributes)
         }
         return stream
       }
     case .terminate(let bundleID):
-      return iOSTargetRunner.simple(reporter, .Terminate, ControlCoreSubject(bundleID as NSString)) {
+      return iOSTargetRunner.simple(reporter, .terminate, ControlCoreSubject(bundleID as NSString)) {
         try target.killApplication(withBundleID: bundleID)
       }
     default:
@@ -159,13 +159,13 @@ private struct DiagnosticsRunner : Runner {
   }
 
   func run() -> CommandResult {
-    reporter.reportValue(.Diagnose, .Started, query)
+    reporter.reportValue(.diagnose, .Started, query)
     let diagnostics = self.fetchDiagnostics()
-    reporter.reportValue(.Diagnose, .Ended, query)
+    reporter.reportValue(.diagnose, .Ended, query)
 
     let subjects: [EventReporterSubject] = diagnostics.map { diagnostic in
       return SimpleSubject(
-        .Diagnostic,
+        .diagnostic,
         .Discrete,
         ControlCoreSubject(diagnostic)
       )

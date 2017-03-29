@@ -395,69 +395,69 @@ extension Action {
   public var reportable: (EventName, EventReporterSubject?) { get {
     switch self {
     case .approve(let bundleIDs):
-      return (.Approve, StringsSubject(bundleIDs))
+      return (.approve, StringsSubject(bundleIDs))
     case .boot:
-      return (.Boot, nil)
+      return (.boot, nil)
     case .clearKeychain(let bundleID):
-      return (.ClearKeychain, bundleID)
+      return (.clearKeychain, bundleID)
     case .config:
-      return (.Config, nil)
+      return (.config, nil)
     case .create:
-      return (.Create, nil)
+      return (.create, nil)
     case .delete:
-      return (.Delete, nil)
+      return (.delete, nil)
     case .diagnose(let query, _):
-      return (.Diagnose, ControlCoreSubject(query))
+      return (.diagnose, ControlCoreSubject(query))
     case .erase:
-      return (.Erase, nil)
+      return (.erase, nil)
     case .focus:
-      return (.Focus, nil)
+      return (.focus, nil)
     case .hid(let event):
-      return (.Hid, ControlCoreSubject(event))
+      return (.hid, ControlCoreSubject(event))
     case .install:
-      return (.Install, nil)
+      return (.install, nil)
     case .keyboardOverride:
-      return (.KeyboardOverride, nil)
+      return (.keyboardOverride, nil)
     case .launchAgent(let launch):
-      return (.Launch, ControlCoreSubject(launch))
+      return (.launch, ControlCoreSubject(launch))
     case .launchApp(let launch):
-      return (.Launch, ControlCoreSubject(launch))
+      return (.launch, ControlCoreSubject(launch))
     case .launchXCTest(let configuration):
-        return (.LaunchXCTest, ControlCoreSubject(configuration))
+        return (.launchXCTest, ControlCoreSubject(configuration))
     case .list:
-        return (.List, nil)
+        return (.list, nil)
     case .listApps:
-      return (.ListApps, nil)
+      return (.listApps, nil)
     case .listDeviceSets:
-      return (.ListDeviceSets, nil)
+      return (.listDeviceSets, nil)
     case .listen:
-      return (.Listen, nil)
+      return (.listen, nil)
     case .open(let url):
-      return (.Open, url.absoluteString)
+      return (.open, url.absoluteString)
     case .record(let record):
-      return (.Record, record)
+      return (.record, record)
     case .relaunch(let appLaunch):
-      return (.Relaunch, ControlCoreSubject(appLaunch))
+      return (.relaunch, ControlCoreSubject(appLaunch))
     case .search(let search):
-      return (.Search, ControlCoreSubject(search))
+      return (.search, ControlCoreSubject(search))
     case .serviceInfo:
-      return (.ServiceInfo, nil)
+      return (.serviceInfo, nil)
     case .setLocation:
-      return (.SetLocation, nil)
+      return (.setLocation, nil)
     case .shutdown:
-      return (.Shutdown, nil)
+      return (.shutdown, nil)
     case .stream:
-      return (.Stream, nil)
+      return (.stream, nil)
     case .tap:
-      return (.Tap, nil)
+      return (.tap, nil)
     case .terminate(let bundleID):
-      return (.Terminate, bundleID)
+      return (.terminate, bundleID)
     case .uninstall(let bundleID):
-      return (.Uninstall, bundleID)
+      return (.uninstall, bundleID)
     case .upload:
-      return (.Diagnose, nil)
+      return (.diagnose, nil)
     case .watchdogOverride(let bundleIDs, _):
-      return (.WatchdogOverride, StringsSubject(bundleIDs))
+      return (.watchdogOverride, StringsSubject(bundleIDs))
     }
   }}
 }
