@@ -17,7 +17,7 @@
 
 FBiOSTargetFormatKey const FBiOSTargetFormatUDID = @"udid";
 FBiOSTargetFormatKey const FBiOSTargetFormatName = @"name";
-FBiOSTargetFormatKey const FBiOSTargetFormatDeviceName = @"device-name";
+FBiOSTargetFormatKey const FBiOSTargetFormatModel = @"model";
 FBiOSTargetFormatKey const FBiOSTargetFormatOSVersion = @"os";
 FBiOSTargetFormatKey const FBiOSTargetFormatState = @"state";
 FBiOSTargetFormatKey const FBiOSTargetFormatArchitecture = @"arch";
@@ -43,7 +43,7 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
       FBiOSTargetFormatUDID,
       FBiOSTargetFormatName,
       FBiOSTargetFormatState,
-      FBiOSTargetFormatDeviceName,
+      FBiOSTargetFormatModel,
       FBiOSTargetFormatOSVersion,
     ]];
   });
@@ -59,7 +59,7 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
       FBiOSTargetFormatUDID,
       FBiOSTargetFormatName,
       FBiOSTargetFormatState,
-      FBiOSTargetFormatDeviceName,
+      FBiOSTargetFormatModel,
       FBiOSTargetFormatOSVersion,
       FBiOSTargetFormatArchitecture,
       FBiOSTargetFormatProcessIdentifier,
@@ -191,7 +191,7 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
     return target.udid;
   } else if ([field isEqualToString:FBiOSTargetFormatName]) {
     return target.name;
-  } else if ([field isEqualToString:FBiOSTargetFormatDeviceName]) {
+  } else if ([field isEqualToString:FBiOSTargetFormatModel]) {
     return target.deviceType.model;
   } else if ([field isEqualToString:FBiOSTargetFormatOSVersion]) {
     return target.osVersion.name;

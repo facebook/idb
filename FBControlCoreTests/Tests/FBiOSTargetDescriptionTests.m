@@ -24,7 +24,7 @@
 {
   NSArray *values = @[
     [FBiOSTargetFormat formatWithFields:@[FBiOSTargetFormatName, FBiOSTargetFormatUDID, FBiOSTargetFormatState]],
-    [FBiOSTargetFormat formatWithFields:@[FBiOSTargetFormatName, FBiOSTargetFormatUDID, FBiOSTargetFormatOSVersion, FBiOSTargetFormatDeviceName]],
+    [FBiOSTargetFormat formatWithFields:@[FBiOSTargetFormatName, FBiOSTargetFormatUDID, FBiOSTargetFormatOSVersion, FBiOSTargetFormatModel]],
     [FBiOSTargetFormat formatWithFields:@[]],
   ];
   [self assertEqualityOfCopy:values];

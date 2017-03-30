@@ -98,7 +98,7 @@ extension FBiOSTargetFormatKey {
     return [
       FBiOSTargetFormatKey.UDID,
       FBiOSTargetFormatKey.name,
-      FBiOSTargetFormatKey.deviceName,
+      FBiOSTargetFormatKey.model,
       FBiOSTargetFormatKey.osVersion,
       FBiOSTargetFormatKey.state,
       FBiOSTargetFormatKey.architecture,

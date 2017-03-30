@@ -17,7 +17,7 @@ class FBiOSTargetFormatParserTests : XCTestCase {
     self.assertParsesAll(FBiOSTargetFormatParsers.parser, [
       (["--udid"], FBiOSTargetFormat(fields: [.UDID])),
       (["--name"], FBiOSTargetFormat(fields: [.name])),
-      (["--device-name"], FBiOSTargetFormat(fields: [.deviceName])),
+      (["--model"], FBiOSTargetFormat(fields: [.model])),
       (["--os"], FBiOSTargetFormat(fields: [.osVersion])),
       (["--state"], FBiOSTargetFormat(fields: [.state])),
       (["--arch"], FBiOSTargetFormat(fields: [.architecture])),
@@ -345,7 +345,7 @@ class CommandParserTests : XCTestCase {
       (["iPad 2"], .device(.modeliPad2), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], .udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([.modeliPhone5, .modeliPhone6]).state(.shutdown), nil),
-      (["iPad 2", "--device-name", "--os"], .device(.modeliPad2), FBiOSTargetFormat(fields: [.deviceName, .osVersion])),
+      (["iPad 2", "--model", "--os"], .device(.modeliPad2), FBiOSTargetFormat(fields: [.model, .osVersion])),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], .udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }

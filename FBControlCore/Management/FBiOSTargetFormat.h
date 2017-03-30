@@ -28,7 +28,7 @@ extern FBiOSTargetFormatKey const FBiOSTargetFormatName;
 /**
  The Apple Device Name.
  */
-extern FBiOSTargetFormatKey const FBiOSTargetFormatDeviceName;
+extern FBiOSTargetFormatKey const FBiOSTargetFormatModel;
 
 /**
  The OS Version of the Target.
