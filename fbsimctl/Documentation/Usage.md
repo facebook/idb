@@ -98,7 +98,11 @@ Additionally, it is possible to listen on an interface for incoming commands:
 
 ## Video Recording with Xcode 8
 
-Since Xcode 8, `fbsimctl` can record the video of any booted Simulator, regardless of where it was booted. There's a handy script called [`fbsimrecord` for doing this](../Scripts/README.md). This script is included in the standard install for convenience and quick recall.
+Since Xcode 8, `fbsimctl` can record the video of any booted Simulator, regardless of where it was booted. There's a handy script called [`fbsimrecord` for doing this](../Scripts/README.md). This script is included in the standard install for convenience and quick recall. You an specify the output path of the video, if you wish:
+
+```
+$ fbsimctl record start /tmp/Recorded.mp4
+```
 
 The location of the video file for each booted simulator will be printed to `stdout`. This makes it easy to combine with `open(1)`, `cp(1)` or any other command for further automation. The script itself simple so you can automate in any way that you choose.
 
