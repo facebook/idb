@@ -1,3 +1,5 @@
+#!/usr/bin/env xcrun swift -F /usr/local/Frameworks
+
 import Metal
 
 // Exits non-zero if Metal is supported by the OS version but not
