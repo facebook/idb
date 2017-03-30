@@ -133,8 +133,9 @@ struct CommandRunner : Runner {
   let context: iOSRunnerContext<Command>
 
   func run() -> CommandResult {
+    let command = self.context.value
     var result = CommandResult.success(nil)
-    for action in self.context.value.actions {
+    for action in command.actions {
       guard let query = self.context.value.query ?? self.context.defaults.queryForAction(action) else {
         return CommandResult.failure("No Query Provided")
       }
@@ -145,7 +146,25 @@ struct CommandRunner : Runner {
         return result
       }
     }
+    // Some commands are asynchronous, therefore we need to add a listen
+    if let listenHandle = CommandRunner.shouldAddListen(command: command, result: result) {
+      let listenInterface = ListenInterface(stdin: false, http: nil, hid: nil, handle: listenHandle)
+      let runner = ListenRunner(context: self.context.replace((listenInterface, FBiOSTargetQuery.allTargets())))
+      let _ = runner.run()
+    }
     return result
+  }
+
+  private static func shouldAddListen(command: Command, result: CommandResult) -> FBTerminationHandle? {
+    guard let handle = result.handles.first else {
+      return nil
+    }
+    for action in command.actions {
+      if case .listen = action {
+        return nil
+      }
+    }
+    return handle
   }
 }
 

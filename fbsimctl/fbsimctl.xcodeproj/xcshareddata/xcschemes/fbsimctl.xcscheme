@@ -73,7 +73,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "list"
+            argument = "record start"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

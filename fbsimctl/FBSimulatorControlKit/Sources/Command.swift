@@ -192,9 +192,11 @@ extension ListenInterface : Accumulator {
 extension FBTerminationHandleType {
   var listenDescription: String? { get {
     switch self {
-      case FBTerminationHandleType.videoStreaming:
+      case FBTerminationHandleType.typeHandleVideoRecording:
         return "Recording Video"
-    case FBTerminationHandleType.testOperation:
+      case FBTerminationHandleType.videoStreaming:
+        return "Streaming Video"
+      case FBTerminationHandleType.testOperation:
         return "Test Operation"
       default:
         return nil
