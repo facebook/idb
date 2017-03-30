@@ -22,7 +22,7 @@ FBiOSTargetFormatKey const FBiOSTargetFormatOSVersion = @"os";
 FBiOSTargetFormatKey const FBiOSTargetFormatState = @"state";
 FBiOSTargetFormatKey const FBiOSTargetFormatArchitecture = @"arch";
 FBiOSTargetFormatKey const FBiOSTargetFormatProcessIdentifier = @"pid";
-FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifier = @"container_pid";
+FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifier = @"container-pid";
 
 @implementation FBiOSTargetFormat
 

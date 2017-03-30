@@ -22,7 +22,7 @@ class FBiOSTargetFormatParserTests : XCTestCase {
       (["--state"], FBiOSTargetFormat(fields: [.state])),
       (["--arch"], FBiOSTargetFormat(fields: [.architecture])),
       (["--pid"], FBiOSTargetFormat(fields: [.processIdentifier])),
-      (["--container_pid"], FBiOSTargetFormat(fields: [.containerApplicationProcessIdentifier]))
+      (["--container-pid"], FBiOSTargetFormat(fields: [.containerApplicationProcessIdentifier]))
     ])
   }
 }
