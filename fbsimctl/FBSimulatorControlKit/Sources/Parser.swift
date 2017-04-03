@@ -217,9 +217,24 @@ extension Parser {
   static func ofFlagWithArg<A>(_ flag: String,
                                _ arg: Parser<A>,
                                _ explanation: String) -> Parser<A> {
-    return Parser<()>
+    let description = PrimitiveDesc(name: flag, desc: explanation)
+    let trimSet = CharacterSet(charactersIn: "'")
+    let prefix = "--" + flag + "="
+    let equalParser = Parser<A>.single(description) { token in
+      var format = token
+      guard let range = token.range(of: prefix) else {
+        throw ParseError.doesNotMatch(prefix, token)
+      }
+      format.removeSubrange(range)
+      format = format.trimmingCharacters(in: trimSet)
+      let (_, result) = try arg.parse([format])
+      return result
+    }
+
+    let sequentialParser = Parser<()>
       .ofFlag(flag, (), explanation)
       .sequence(arg)
+    return Parser<A>.alternative([equalParser, sequentialParser])
   }
 
   static func ofCommandWithArg(_ cmd: String, _ arg: Parser<A>) -> Parser<A> {

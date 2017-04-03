@@ -126,6 +126,7 @@ let validConfigurations: [([String], Configuration)] = [
   (["--debug-logging"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions(), deviceSetPath: nil)),
   (["--kill-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.killAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: nil)),
   (["--set", "/usr/bin"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions(), deviceSetPath: "/usr/bin")),
+  (["--set=/usr/bin"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions(), deviceSetPath: "/usr/bin")),
   (["--debug-logging", "--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin")),
   (["--delete-all", "--set", "/usr/bin", "--debug-logging", "--kill-spurious"], Configuration(outputOptions: OutputOptions.DebugLogging, managementOptions: FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin")),
   (["--set", "/usr/bin", "--delete-all", "--kill-spurious"], Configuration(outputOptions: OutputOptions(), managementOptions: FBSimulatorManagementOptions.deleteAllOnFirstStart.union(.killSpuriousSimulatorsOnFirstStart), deviceSetPath: "/usr/bin"))
