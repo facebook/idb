@@ -78,17 +78,16 @@ extension FBiOSTargetQuery {
 
 extension FBiOSTargetQuery : Accumulator {
   public func append(_ other: FBiOSTargetQuery) -> Self {
-    let osVersions = Array(other.osVersions)
-    let devices = Array(other.devices)
     let targetType = self.targetType.append(other.targetType)
 
     return self
       .udids(Array(other.udids))
+      .names(Array(other.names))
       .states(other.states)
       .architectures(Array(other.architectures))
       .targetType(targetType)
-      .osVersions(osVersions)
-      .devices(devices)
+      .osVersions(Array(other.osVersions))
+      .devices(Array(other.devices))
       .range(other.range)
   }
 }

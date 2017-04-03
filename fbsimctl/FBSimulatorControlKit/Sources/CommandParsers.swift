@@ -862,6 +862,7 @@ public struct FBiOSTargetQueryParsers {
     return Parser.alternative([
       self.firstParser,
       self.uuidParser,
+      self.nameParser,
       self.simulatorStateParser,
       self.architectureParser,
       self.targetTypeParser,
@@ -881,6 +882,16 @@ public struct FBiOSTargetQueryParsers {
     return Parser<FBiOSTargetQuery>
       .ofUDID
       .fmap(FBiOSTargetQuery.udid)
+  }
+
+  static var nameParser: Parser<FBiOSTargetQuery> {
+    let parser: (String) -> FBiOSTargetQuery = FBiOSTargetQuery.named
+    let description = PrimitiveDesc(name: "name", desc: "An iOS Target Name")
+    return Parser<FBiOSTargetQuery>.ofFlagWithArg(
+      "name",
+      Parser.single(description, f: parser),
+      "An iOS Target Name"
+    )
   }
 
   static var architectureParser: Parser<FBiOSTargetQuery> {
