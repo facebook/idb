@@ -7,14 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationDescriptor.h>
+#import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBASLParser.h>
 #import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBBinaryParser.h>
 #import <FBControlCore/FBBitmapStream.h>
+#import <FBControlCore/FBBitmapStreamingCommands.h>
 #import <FBControlCore/FBBundleDescriptor.h>
 #import <FBControlCore/FBCapacityQueue.h>
 #import <FBControlCore/FBCodesignProvider.h>
@@ -62,7 +65,6 @@
 #import <FBControlCore/FBTerminationHandle.h>
 #import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
-#import <FBControlCore/FBBitmapStreamingCommands.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
 #import <FBControlCore/FBXCTestCommands.h>

@@ -8,6 +8,8 @@
  */
 
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
+#import <FBControlCore/FBApplicationLaunchConfiguration.h>
+#import <FBControlCore/FBAgentLaunchConfiguration.h>
 
 @class FBLocalizationOverride;
 

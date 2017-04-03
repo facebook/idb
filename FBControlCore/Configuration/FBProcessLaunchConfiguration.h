@@ -54,84 +54,27 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)withArguments:(NSArray<NSString *> *)arguments;
 
-@end
+/**
+ The Designated Initializer.
+
+ @param arguments the Arguments.
+ @param environment the Environment.
+ @param output the Output Configuration.
+ @return a new FBProcessLaunchConfiguration Instance.
+ */
+- (instancetype)initWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
 
 /**
- A Value object with the information required to launch an Application.
+ Extracts Common Values from JSON.
+
+ @param json the JSON to extract from.
+ @param argumentsOut an outparam for the Arguments.
+ @param environmentOut an outparam for the Environment.
+ @param outputOut an outparam for the Process Output.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
  */
-@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBJSONDeserializable>
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
- @param application the Application to Launch.
- @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
- @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
- @param output the output configuration for the launched process.
- @returns a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
-
-/**
- Creates and returns a new Configuration with the provided parameters.
-
- @param bundleID the Bundle ID (CFBundleIdentifier) of the App to Launch. Must not be nil.
- @param bundleName the BundleName (CFBundleName) of the App to Launch. May be nil.
- @param arguments an NSArray<NSString *> of arguments to the process. Must not be nil.
- @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
- @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
- @param output the output configuration for the launched process.
- @returns a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
-
-/**
- Adds output configuration.
-
- @param output output configuration
- @return new application launch configuration with changes applied.
- */
-- (instancetype)withOutput:(FBProcessOutputConfiguration *)output;
-
-/**
- The Bundle ID (CFBundleIdentifier) of the the Application to Launch. Will not be nil.
- */
-@property (nonnull, nonatomic, copy, readonly) NSString *bundleID;
-
-/**
- The Name (CFBundleName) of the the Application to Launch. May be nil.
- */
-@property (nullable, nonatomic, copy, readonly) NSString *bundleName;
-
-
-/**
- A BOOL signalizing whether the application should wait for debugger to be attached immediately after launch.
- */
-@property (nonatomic, assign, readonly) BOOL waitForDebugger;
-
-@end
-
-/**
- A Value object with the information required to launch a Binary Agent.
- */
-@interface FBAgentLaunchConfiguration : FBProcessLaunchConfiguration <FBJSONDeserializable>
-
-/**
- Creates and returns a new Configuration with the provided parameters
-
- @param agentBinary the Binary Path of the agent to Launch. Must not be nil.
- @param arguments an array-of-strings of arguments to the process. Must not be nil.
- @param environment a Dictionary, mapping Strings to Strings of the Environment to set in the launched Application process. Must not be nil.
- @param output the output configuration for the launched process.
- @returns a new Configuration Object with the arguments applied.
- */
-+ (instancetype)configurationWithBinary:(FBBinaryDescriptor *)agentBinary arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment output:(FBProcessOutputConfiguration *)output;
-
-/**
- The Binary Path of the agent to Launch.
- */
-@property (nonatomic, copy, readonly) FBBinaryDescriptor *agentBinary;
++ (BOOL)fromJSON:(id)json extractArguments:(NSArray<NSString *> *_Nullable*_Nullable)argumentsOut environment:(NSDictionary<NSString *, NSString *> *_Nullable*_Nullable)environmentOut output:(FBProcessOutputConfiguration *_Nullable*_Nullable)outputOut error:(NSError **)error;
 
 @end
 
