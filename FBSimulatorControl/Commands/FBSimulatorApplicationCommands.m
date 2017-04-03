@@ -51,15 +51,14 @@
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
-  NSError *innerError = nil;
   NSURL *tempDirURL = nil;
 
-  NSString *appPath = [FBApplicationDescriptor findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:&innerError];
+  NSString *appPath = [FBApplicationDescriptor findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:error];
   if (appPath == nil) {
-    return [[FBSimulatorError causedBy:innerError] failBool:error];
+    return NO;
   }
 
-  BOOL installResult = [self installExtractedApplicationWithPath:appPath error:&innerError];
+  BOOL installResult = [self installExtractedApplicationWithPath:appPath error:error];
   if (tempDirURL != nil) {
     [NSFileManager.defaultManager removeItemAtURL:tempDirURL error:nil];
   }
