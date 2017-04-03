@@ -831,18 +831,13 @@ extension DiagnosticFormat : Parsable {
 
 public struct FBiOSTargetFormatParsers {
   public static var parser: Parser<FBiOSTargetFormat> {
-    let parsers = FBiOSTargetFormatKey.allFields.map { field in
-      return Parser.ofString("--" + field.rawValue, field)
-    }
-
-    let altParser = Parser
-      .alternative(parsers)
-      .sectionize("target-format", "Target Format", "")
-
-    return Parser
-      .manyCount(1, altParser)
-      .fmap(FBiOSTargetFormat.init)
-    }
+    let description = PrimitiveDesc(name: "Target Format", desc: "An iOS Target Format")
+    return Parser<FBiOSTargetFormat>.ofFlagWithArg(
+      "format",
+      Parser.single(description, f: FBiOSTargetFormat.init),
+      "An iOS Target Format"
+    )
+  }
 }
 
 public struct FBiOSTargetQueryParsers {

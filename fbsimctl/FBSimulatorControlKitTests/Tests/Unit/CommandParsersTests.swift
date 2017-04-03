@@ -15,14 +15,20 @@ import FBSimulatorControl
 class FBiOSTargetFormatParserTests : XCTestCase {
   func testParsesKeywords() {
     self.assertParsesAll(FBiOSTargetFormatParsers.parser, [
-      (["--udid"], FBiOSTargetFormat(fields: [.UDID])),
-      (["--name"], FBiOSTargetFormat(fields: [.name])),
-      (["--model"], FBiOSTargetFormat(fields: [.model])),
-      (["--os"], FBiOSTargetFormat(fields: [.osVersion])),
-      (["--state"], FBiOSTargetFormat(fields: [.state])),
-      (["--arch"], FBiOSTargetFormat(fields: [.architecture])),
-      (["--pid"], FBiOSTargetFormat(fields: [.processIdentifier])),
-      (["--container-pid"], FBiOSTargetFormat(fields: [.containerApplicationProcessIdentifier]))
+      (["--format", "%u"], FBiOSTargetFormat(fields: [.UDID])),
+      (["--format=%u"], FBiOSTargetFormat(fields: [.UDID])),
+      (["--format", "%n"], FBiOSTargetFormat(fields: [.name])),
+      (["--format=%n"], FBiOSTargetFormat(fields: [.name])),
+      (["--format", "%m"], FBiOSTargetFormat(fields: [.model])),
+      (["--format=%m"], FBiOSTargetFormat(fields: [.model])),
+      (["--format", "%o"], FBiOSTargetFormat(fields: [.osVersion])),
+      (["--format=%o"], FBiOSTargetFormat(fields: [.osVersion])),
+      (["--format", "%s"], FBiOSTargetFormat(fields: [.state])),
+      (["--format=%s"], FBiOSTargetFormat(fields: [.state])),
+      (["--format", "%a"], FBiOSTargetFormat(fields: [.architecture])),
+      (["--format=%a"], FBiOSTargetFormat(fields: [.architecture])),
+      (["--format", "%p"], FBiOSTargetFormat(fields: [.processIdentifier])),
+      (["--format=%p"], FBiOSTargetFormat(fields: [.processIdentifier])),
     ])
   }
 }
@@ -346,7 +352,7 @@ class CommandParserTests : XCTestCase {
       (["iPad 2"], .device(.modeliPad2), nil),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], .udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
       (["iPhone 5", "--state=shutdown", "iPhone 6"], FBiOSTargetQuery.devices([.modeliPhone5, .modeliPhone6]).state(.shutdown), nil),
-      (["iPad 2", "--model", "--os"], .device(.modeliPad2), FBiOSTargetFormat(fields: [.model, .osVersion])),
+      (["iPad 2", "--format=%m%o"], .device(.modeliPad2), FBiOSTargetFormat(fields: [.model, .osVersion])),
       (["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"], .udids(["B8EEA6C4-841B-47E5-92DE-014E0ECD8139"]), nil),
     ])
   }

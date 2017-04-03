@@ -12,6 +12,7 @@ These are flags and options that are provided to the `fbsimctl` process that def
 
 - `--debug-logging` increases the verbosity of logging output. This can be helpful when you want to figure out what is going on when things go wrong.
 - `--json` outputs linewise JSON to `stdout` instead of Human-Readable events to `stdout` and logging to `stderr`. 
+- `--format=` Can be used to change how Simulators & Devices are reported when `--json` is not passed. For example `--format=%m%p` will print just the Device Model, followed by the OS Version.
 - `--set /path/to/device-set` Will point `fbsimctl` at an alternative Simulator Device Set, with the provided Path. By default `fbsimctl` will use the 'Default Device Set' that is located at `~/Library/Developer/CoreSimulator/Devices`.
 
 ## Query
