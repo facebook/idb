@@ -85,6 +85,10 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
       @"UseUITargetAppProvidedByTests" : @YES,
       @"IsUITestBundle" : @YES,
       @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,
+      @"TestingEnvironmentVariables": @{
+            @"DYLD_FRAMEWORK_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+            @"DYLD_LIBRARY_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+      },
     }
   };
 }
