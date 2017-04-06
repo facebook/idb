@@ -11,6 +11,8 @@
 
 #import "FBSimulatorScale.h"
 #import "FBFramebufferConfiguration.h"
+#import "FBSimulator.h"
+#import "FBSimulatorError.h"
 
 @implementation FBSimulatorBootConfiguration
 
@@ -107,7 +109,7 @@
     @"Scale %@ | %@ | Options %@ | %@",
     self.scale,
     self.localizationOverride ? self.localizationOverride : @"No Locale Override",
-    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromLaunchOptions:self.options]],
+    [FBCollectionInformation oneLineDescriptionFromArray:[FBSimulatorBootConfiguration stringsFromBootOptions:self.options]],
     self.framebuffer ?: @"No Framebuffer"
   ];
 }
@@ -124,13 +126,53 @@
 
 #pragma mark FBJSONSerializable
 
+static NSString *const KeyScale = @"scale";
+static NSString *const KeyLocalizationOverride = @"localization_override";
+static NSString *const KeyOptions = @"options";
+static NSString *const KeyFramebuffer = @"framebuffer";
+
++ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
+{
+  FBSimulatorScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
+  if (![scale isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a String %@", scale, KeyScale]
+      fail:error];
+  }
+  FBLocalizationOverride *override = nil;
+  NSDictionary<NSString *, id> *localizationDictionary = [FBCollectionOperations nullableValueForDictionary:json key:KeyLocalizationOverride];
+  if (localizationDictionary) {
+    override = [FBLocalizationOverride inflateFromJSON:localizationDictionary error:error];
+    if (!override) {
+      return nil;
+    }
+  }
+  NSDictionary<NSString *, id> *framebufferDictionary = [FBCollectionOperations nullableValueForDictionary:json key:KeyFramebuffer];
+  FBFramebufferConfiguration *framebuffer = nil;
+  if (framebufferDictionary) {
+    framebuffer = [FBFramebufferConfiguration inflateFromJSON:framebufferDictionary error:error];
+    if (!framebuffer) {
+      return nil;
+    }
+  }
+  NSArray<NSString *> *bootOptionsStrings = json[KeyOptions];
+  if (![FBCollectionInformation isArrayHeterogeneous:bootOptionsStrings withClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not Array<String> | nil | %@", bootOptionsStrings, KeyOptions]
+      fail:error];
+  }
+  FBSimulatorBootOptions bootOptions = [self bootOptionsFromStrings:bootOptionsStrings];
+
+  return [[self alloc] initWithOptions:bootOptions scale:scale localizationOverride:override framebuffer:framebuffer];
+}
+
 - (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
-    @"scale" : self.scale ?: NSNull.null,
-    @"localization_override" : self.localizationOverride.jsonSerializableRepresentation ?: NSNull.null,
-    @"options" : [FBSimulatorBootConfiguration stringsFromLaunchOptions:self.options],
-    @"framebuffer" : self.framebuffer.jsonSerializableRepresentation ?: NSNull.null,
+    KeyScale : self.scale ?: NSNull.null,
+    KeyLocalizationOverride : self.localizationOverride.jsonSerializableRepresentation ?: NSNull.null,
+    KeyOptions : [FBSimulatorBootConfiguration stringsFromBootOptions:self.options],
+    KeyFramebuffer : self.framebuffer.jsonSerializableRepresentation ?: NSNull.null,
   };
 }
 
@@ -235,19 +277,38 @@
 
 #pragma mark Utility
 
-+ (NSArray<NSString *> *)stringsFromLaunchOptions:(FBSimulatorBootOptions)options
+static NSString *const BootOptionStringConnectBridge = @"Connect Bridge";
+static NSString *const BootOptionStringDirectLaunch = @"Direct Launch";
+static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
+
++ (NSArray<NSString *> *)stringsFromBootOptions:(FBSimulatorBootOptions)options
 {
   NSMutableArray<NSString *> *strings = [NSMutableArray array];
   if ((options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) {
-    [strings addObject:@"Connect Bridge"];
+    [strings addObject:BootOptionStringConnectBridge];
   }
   if ((options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch) {
-    [strings addObject:@"Direct Launch"];
+    [strings addObject:BootOptionStringDirectLaunch];
   }
   if ((options & FBSimulatorBootOptionsUseNSWorkspace) == FBSimulatorBootOptionsUseNSWorkspace) {
-    [strings addObject:@"Use NSWorkspace"];
+    [strings addObject:BootOptionStringUseNSWorkspace];
   }
   return [strings copy];
+}
+
++ (FBSimulatorBootOptions)bootOptionsFromStrings:(NSArray<NSString *> *)strings
+{
+  FBSimulatorBootOptions options = 0;
+  for (NSString *string in strings) {
+    if ([string isEqualToString:BootOptionStringConnectBridge]) {
+      options = options | FBSimulatorBootOptionsConnectBridge;
+    } else if ([string isEqualToString:BootOptionStringDirectLaunch]) {
+      options = options | FBSimulatorBootOptionsEnableDirectLaunch;
+    } else if ([string isEqualToString:BootOptionStringUseNSWorkspace]) {
+      options = options | FBSimulatorBootOptionsUseNSWorkspace;
+    }
+  }
+  return options;
 }
 
 @end
