@@ -88,18 +88,18 @@ private class HttpEventReporter : EventReporter {
 }
 
 extension ActionPerformer {
-  func dispatchAction(_ action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> HttpResponse {
+  func dispatchAction(_ action: Action, queryOverride: FBiOSTargetQuery?) -> HttpResponse {
     let reporter = HttpEventReporter()
     var result: CommandResult? = nil
     DispatchQueue.main.sync {
-      result = self.perform(reporter, action: action, queryOverride: queryOverride)
+      result = self.perform(reporter: reporter, action: action, queryOverride: queryOverride)
     }
 
     return reporter.interactionResultResponse(result!)
   }
 
   func runWithSingleSimulator<A>(_ query: FBiOSTargetQuery, action: (FBSimulator) throws -> A) throws -> A {
-    let simulator = try self.commandPerformer.runnerContext(HttpEventReporter()).querySingleSimulator(query)
+    let simulator = try self.runnerContext(HttpEventReporter()).querySingleSimulator(query)
     var result: A? = nil
     var error: Error? = nil
     DispatchQueue.main.sync {

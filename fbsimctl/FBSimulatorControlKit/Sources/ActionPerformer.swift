@@ -10,39 +10,22 @@
 import Foundation
 
 /**
- A Protocol for performing an Command producing an CommandResult.
+ Runs an Action, yielding a result
  */
-protocol CommandPerformer {
+protocol ActionPerformer {
+  var configuration: Configuration { get }
+  var query: FBiOSTargetQuery { get }
+
   func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()>
-  func perform(_ command: Command, reporter: EventReporter) -> CommandResult
+  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery?) -> CommandResult
 }
 
-/**
- Forwards to a CommandPerformer based on Constructor Arguments
- */
-struct ActionPerformer {
-  let commandPerformer: CommandPerformer
-  let configuration: Configuration
-  let query: FBiOSTargetQuery
-  let format: FBiOSTargetFormat?
-
-  func perform(_ reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery? = nil, formatOverride: FBiOSTargetFormat? = nil) -> CommandResult {
-    let command = Command(
-      configuration: self.configuration,
-      actions: [action],
-      query: queryOverride ?? self.query,
-      format: formatOverride ?? self.format
-    )
-    return self.commandPerformer.perform(command, reporter: reporter)
-  }
-}
-
-extension CommandPerformer {
+extension ActionPerformer {
   func perform(_ input: String, reporter: EventReporter) -> CommandResult {
     do {
       let arguments = Arguments.fromString(input)
-      let (_, command) = try Command.parser.parse(arguments)
-      return self.perform(command, reporter: reporter)
+      let (_, action) = try Action.parser.parse(arguments)
+      return self.perform(reporter: reporter, action: action, queryOverride: nil)
     } catch let error as ParseError {
       return .failure("Error: \(error.description)")
     } catch let error as NSError {

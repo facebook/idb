@@ -211,8 +211,16 @@ struct ActionRunner : Runner {
   }
 }
 
-struct ListenRunner : Runner, CommandPerformer {
+struct ListenRunner : Runner, ActionPerformer {
   let context: iOSRunnerContext<(ListenInterface, FBiOSTargetQuery)>
+  let configuration: Configuration
+  let query: FBiOSTargetQuery
+
+  init(context: iOSRunnerContext<(ListenInterface, FBiOSTargetQuery)>) {
+    self.context = context
+    self.configuration = context.configuration
+    self.query = context.value.1
+  }
 
   func run() -> CommandResult {
     do {
@@ -231,11 +239,10 @@ struct ListenRunner : Runner, CommandPerformer {
   }
 
   func makeBaseRelay() throws -> Relay {
-    let (interface, query) = self.context.value
+    let (interface, _) = self.context.value
     var relays: [Relay] = []
     if let httpPort = interface.http {
-      let performer = ActionPerformer(commandPerformer: self, configuration: self.context.configuration, query: query, format: self.context.format)
-      relays.append(HttpRelay(portNumber: httpPort, performer: performer))
+      relays.append(HttpRelay(portNumber: httpPort, performer: self))
     }
     if interface.stdin {
       let commandBuffer = CommandBuffer(performer: self, reporter: self.context.reporter)
@@ -260,9 +267,10 @@ struct ListenRunner : Runner, CommandPerformer {
     )
   }
 
-  func perform(_ command: Command, reporter: EventReporter) -> CommandResult {
-    let context = self.runnerContext(reporter).replace(command)
-    return CommandRunner(context: context).run()
+  func perform(reporter: EventReporter, action: Action, queryOverride: FBiOSTargetQuery?) -> CommandResult {
+    let query = queryOverride ?? self.query
+    let context = self.runnerContext(reporter).replace((action, query))
+    return ActionRunner(context: context).run()
   }
 }
 

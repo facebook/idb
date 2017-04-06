@@ -13,11 +13,11 @@ import Foundation
  A Sink of raw data, which will result in command/s occuring when a full command is encountered.
  */
 class CommandBuffer {
-  internal let performer: CommandPerformer
+  internal let performer: ActionPerformer
   internal let reporter: EventReporter
   fileprivate let buffer: FBLineBuffer
 
-  init (performer: CommandPerformer, reporter: EventReporter) {
+  init (performer: ActionPerformer, reporter: EventReporter) {
     self.performer = performer
     self.reporter = reporter
     self.buffer = FBLineBuffer()

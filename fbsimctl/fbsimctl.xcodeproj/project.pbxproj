@@ -32,7 +32,7 @@
 		AA3F8BDE1D70AD40002197D3 /* GCDWebServers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */; };
 		AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF711C4814BA006D5118 /* Arguments.swift */; };
 		AA54EF751C48275B006D5118 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA54EF741C48275B006D5118 /* JSON.swift */; };
-		AA5AA62C1CCE003900EC0298 /* CommandPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5AA62B1CCE003900EC0298 /* CommandPerformer.swift */; };
+		AA5AA62C1CCE003900EC0298 /* ActionPerformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5AA62B1CCE003900EC0298 /* ActionPerformer.swift */; };
 		AA6046901C7A96E500639DD5 /* SimulatorRunners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */; };
 		AA719E4C1D672DBD00947611 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA719E4B1D672DBD00947611 /* Foundation.framework */; };
 		AA719E4D1D672DCA00947611 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA719E4B1D672DBD00947611 /* Foundation.framework */; };
@@ -129,7 +129,7 @@
 		AA3F8BDD1D70AD40002197D3 /* GCDWebServers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GCDWebServers.framework; path = Carthage/Build/Mac/GCDWebServers.framework; sourceTree = "<group>"; };
 		AA54EF711C4814BA006D5118 /* Arguments.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Arguments.swift; sourceTree = "<group>"; };
 		AA54EF741C48275B006D5118 /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
-		AA5AA62B1CCE003900EC0298 /* CommandPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandPerformer.swift; sourceTree = "<group>"; };
+		AA5AA62B1CCE003900EC0298 /* ActionPerformer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionPerformer.swift; sourceTree = "<group>"; };
 		AA60468E1C7A96E500639DD5 /* SimulatorRunners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimulatorRunners.swift; sourceTree = "<group>"; };
 		AA719E4B1D672DBD00947611 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		AA75CD151D243F73003C45B0 /* DeviceReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeviceReporter.swift; sourceTree = "<group>"; };
@@ -202,6 +202,7 @@
 			isa = PBXGroup;
 			children = (
 				AA384EDF1CB4F1FC00476BB8 /* AbstractTypes.swift */,
+				AA5AA62B1CCE003900EC0298 /* ActionPerformer.swift */,
 				AA54EF711C4814BA006D5118 /* Arguments.swift */,
 				AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */,
 				AA1B7F601C2867EE0038C6A5 /* Bridging.m */,
@@ -211,7 +212,6 @@
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
 				AA1B7F621C2867EE0038C6A5 /* CommandBuffer.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
-				AA5AA62B1CCE003900EC0298 /* CommandPerformer.swift */,
 				AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */,
 				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
 				AA75CD151D243F73003C45B0 /* DeviceReporter.swift */,
@@ -515,7 +515,7 @@
 				AA1B7F6D1C2867EE0038C6A5 /* CommandParsers.swift in Sources */,
 				AA1B7F6C1C2867EE0038C6A5 /* Command.swift in Sources */,
 				AA0DE44E1C68894000B4D2AF /* HttpRelay.swift in Sources */,
-				AA5AA62C1CCE003900EC0298 /* CommandPerformer.swift in Sources */,
+				AA5AA62C1CCE003900EC0298 /* ActionPerformer.swift in Sources */,
 				AA384EE01CB4F1FC00476BB8 /* AbstractTypes.swift in Sources */,
 				AA1B7F761C2867EE0038C6A5 /* SignalHandler.swift in Sources */,
 				AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */,
