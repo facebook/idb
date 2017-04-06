@@ -78,6 +78,7 @@ FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessIdentifie
       FBiOSTargetFormatState,
       FBiOSTargetFormatModel,
       FBiOSTargetFormatOSVersion,
+      FBiOSTargetFormatArchitecture,
     ]];
   });
   return format;
