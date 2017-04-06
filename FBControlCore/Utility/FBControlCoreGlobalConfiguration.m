@@ -147,9 +147,10 @@ static id<FBControlCoreLogger> logger;
 + (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Developer Directory %@ | iOS SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
+    @"Developer Directory %@ | Xcode Version %@ | iOS SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
     self.developerDirectory,
-    self.iosSDKVersion,
+    self.xcodeVersionNumber,
+    self.iosSDKVersionNumber,
     self.supportsCustomDeviceSets,
     self.debugLoggingEnabled
   ];
@@ -167,6 +168,7 @@ static id<FBControlCoreLogger> logger;
   return @{
      @"developer_directory" : FBControlCoreGlobalConfiguration.developerDirectory,
      @"xcode_version" : FBControlCoreGlobalConfiguration.xcodeVersionNumber,
+     @"ios_sdk_version" : FBControlCoreGlobalConfiguration.iosSDKVersionNumber,
   };
 }
 
