@@ -129,11 +129,14 @@
 - (void)testFramebufferConfigurations
 {
   NSArray<FBFramebufferConfiguration *> *values = @[
-    FBFramebufferConfiguration.new,
+    FBFramebufferConfiguration.defaultConfiguration,
+    [FBFramebufferConfiguration configurationWithScale:FBSimulatorScale25 encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:@"/img.png"],
+    [FBFramebufferConfiguration configurationWithScale:FBSimulatorScale75 encoder:FBVideoEncoderConfiguration.prudentConfiguration imagePath:@"/img.png"],
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
 }
 
 - (void)testDiagnosticQueries

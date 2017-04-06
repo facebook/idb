@@ -14,6 +14,7 @@
 #import "FBSimulatorScale.h"
 #import "FBVideoEncoderConfiguration.h"
 #import "FBSimulator.h"
+#import "FBSimulatorError.h"
 #import "FBSimulatorDiagnostics.h"
 
 @implementation FBFramebufferConfiguration
@@ -113,6 +114,32 @@ static NSString *KeyImagePath = @"image_path";
     KeyEncoder : self.encoder.jsonSerializableRepresentation,
     KeyImagePath : self.imagePath,
   };
+}
+
++ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a Dictionary<String, Any>", json]
+      fail:error];
+  }
+  FBSimulatorScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
+  if (scale && ![scale isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a String for %@", scale, KeyScale]
+      fail:error];
+  }
+  FBVideoEncoderConfiguration *encoder = [FBVideoEncoderConfiguration inflateFromJSON:json[KeyEncoder] error:error];
+  if (!encoder) {
+    return nil;
+  }
+  NSString *imagePath = json[KeyImagePath];
+  if (![imagePath isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a String for %@", imagePath, KeyImagePath]
+      fail:error];
+  }
+  return [[self alloc] initWithScale:scale encoder:encoder imagePath:imagePath];
 }
 
 #pragma mark FBDebugDescribeable
