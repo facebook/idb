@@ -27,7 +27,7 @@ typedef NS_OPTIONS(NSUInteger, FBVideoEncoderOptions) {
 /**
  Configuration for the Built In Video Encoder.
  */
-@interface FBVideoEncoderConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
+@interface FBVideoEncoderConfiguration : NSObject <NSCopying, NSCoding, FBJSONDeserializable, FBJSONSerializable, FBDebugDescribeable>
 
 #pragma mark Properties
 

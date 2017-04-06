@@ -11,6 +11,8 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#import "FBSimulatorError.h"
+
 @implementation FBVideoEncoderConfiguration
 
 #pragma mark Initializers
@@ -130,8 +132,56 @@ static NSString *const KeyFileType = @"file_type";
     KeyTimescale : @(self.timescale),
     KeyRoundingMethod : @(self.roundingMethod),
     KeyFilePath : self.filePath,
-    KeyFileType : self.fileType,
+    KeyFileType : self.fileType ?: NSNull.null,
   };
+}
+
++ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not an Dictionary<String, Any>", json]
+      fail:error];
+  }
+  NSArray<NSString *> *optionStrings = json[KeyOptions];
+  FBVideoEncoderOptions options = 0;
+  if (![FBCollectionInformation isArrayHeterogeneous:optionStrings withClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not an Array<String> for %@", optionStrings, KeyOptions]
+      fail:error];
+  }
+  options = [FBVideoEncoderConfiguration videoOptionsFromStrings:optionStrings];
+  NSNumber *timescaleNumber = json[KeyTimescale];
+  if (![timescaleNumber isKindOfClass:NSNumber.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not an Number for %@", timescaleNumber, KeyTimescale]
+      fail:error];
+  }
+  NSNumber *roundingMethodNumber = json[KeyRoundingMethod];
+  if (![roundingMethodNumber isKindOfClass:NSNumber.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not an Number for %@", roundingMethodNumber, KeyRoundingMethod]
+      fail:error];
+  }
+  NSString *filePath = json[KeyFilePath];
+  if (![filePath isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not an String for %@", filePath, KeyFilePath]
+      fail:error];
+  }
+  NSString *fileType = [FBCollectionOperations nullableValueForDictionary:json key:KeyFileType];
+  if (fileType && ![fileType isKindOfClass:NSString.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not an String for %@", fileType, KeyFileType]
+      fail:error];
+  }
+
+  return [[FBVideoEncoderConfiguration alloc]
+    initWithOptions:options
+    timescale:timescaleNumber.intValue
+    roundingMethod:roundingMethodNumber.unsignedIntValue
+    filePath:filePath
+    fileType:fileType];
 }
 
 #pragma mark FBDebugDescribeable
@@ -231,19 +281,38 @@ static NSString *const KeyFileType = @"file_type";
 
 #pragma mark Private
 
+static NSString *const VideoOptionStringAutorecord = @"Autorecord";
+static NSString *const VideoOptionStringImmediateFrameStart = @"Immediate Frame Start";
+static NSString *const VideoOptionStringFinalFrame = @"Final Frame";
+
 + (NSArray<NSString *> *)stringsFromVideoOptions:(FBVideoEncoderOptions)options
 {
   NSMutableArray<NSString *> *strings = [NSMutableArray array];
   if ((options & FBVideoEncoderOptionsAutorecord) == FBVideoEncoderOptionsAutorecord) {
-    [strings addObject:@"Autorecord"];
+    [strings addObject:VideoOptionStringAutorecord];
   }
   if ((options & FBVideoEncoderOptionsImmediateFrameStart) == FBVideoEncoderOptionsImmediateFrameStart) {
-    [strings addObject:@"Immediate Frame Start"];
+    [strings addObject:VideoOptionStringImmediateFrameStart];
   }
   if ((options & FBVideoEncoderOptionsFinalFrame) == FBVideoEncoderOptionsFinalFrame) {
-    [strings addObject:@"Final Frame"];
+    [strings addObject:VideoOptionStringFinalFrame];
   }
   return [strings copy];
+}
+
++ (FBVideoEncoderOptions)videoOptionsFromStrings:(NSArray<NSString *> *)strings
+{
+  FBVideoEncoderOptions options = 0;
+  for (NSString *optionString in strings) {
+    if ([optionString isEqualToString:VideoOptionStringAutorecord]) {
+      options = options | FBVideoEncoderOptionsAutorecord;
+    } else if ([optionString isEqualToString:VideoOptionStringImmediateFrameStart]) {
+      options = options | FBVideoEncoderOptionsImmediateFrameStart;
+    } else if ([optionString isEqualToString:VideoOptionStringFinalFrame]) {
+      options = options | FBVideoEncoderOptionsFinalFrame;
+    }
+  }
+  return options;
 }
 
 @end
