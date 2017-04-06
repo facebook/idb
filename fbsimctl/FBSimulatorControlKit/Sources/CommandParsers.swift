@@ -326,20 +326,21 @@ extension CreationSpecification : Parsable {
 
 extension FBSimulatorState : Parsable {
   public static var parser: Parser<FBSimulatorState> {
-    return Parser.alternative([
-        stateFlag("creating", FBSimulatorState.creating, ""),
-        stateFlag("shutdown", FBSimulatorState.shutdown, ""),
-        stateFlag("booting", FBSimulatorState.booting, ""),
-        stateFlag("booted", FBSimulatorState.booted, ""),
-        stateFlag("shutting-down", FBSimulatorState.shuttingDown, "")
-    ])
-  }
-
-  static func stateFlag(_ stateLabel: String,
-                        _ state: FBSimulatorState,
-                        _ explain: String) -> Parser<FBSimulatorState> {
-    return Parser<FBSimulatorState>
-      .ofFlag("state=" + stateLabel, state, explain)
+    let names = [
+      ("creating", FBSimulatorState.creating),
+      ("shutdown", FBSimulatorState.shutdown),
+      ("booting", FBSimulatorState.booting),
+      ("booted", FBSimulatorState.booted),
+      ("shutting-down", FBSimulatorState.shuttingDown)
+    ]
+    let stateParsers = names.map { (name, state) in
+      return Parser.ofString(name, state)
+    }
+    return Parser<FBSimulatorState>.ofFlagWithArg(
+      "state",
+      Parser.alternative(stateParsers),
+      "A Simulator State"
+    )
   }
 }
 
