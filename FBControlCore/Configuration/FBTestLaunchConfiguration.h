@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value object with the information required to launch a XCTest.
  */
-@interface FBTestLaunchConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
+@interface FBTestLaunchConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  The Designated Initializer

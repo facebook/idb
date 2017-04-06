@@ -165,15 +165,86 @@
 
 #pragma mark FBJSONSerializable
 
+static NSString *const KeyAppLaunch = @"test_app_launch";
+static NSString *const KeyBundlePath = @"test_bundle_path";
+static NSString *const KeyHostPath = @"test_host_path";
+static NSString *const KeyInitializeUITesting = @"ui_testing";
+static NSString *const KeyTestsToRun = @"tests_to_run";
+static NSString *const KeyTestsToSkip = @"tests_to_skip";
+static NSString *const KeyTimeout = @"timeout";
+
 - (NSDictionary *)jsonSerializableRepresentation
 {
   return @{
-    @"test_bundle_path" : self.testBundlePath ?: NSNull.null,
-    @"test_app_bundle_id" : self.applicationLaunchConfiguration ?: NSNull.null,
-    @"test_host_path" : self.testHostPath ?: NSNull.null,
-    @"tests_to_run" : self.testsToRun.allObjects ?: NSNull.null,
-    @"tests_to_skip" : self.testsToSkip.allObjects ?: NSNull.null
+    KeyBundlePath : self.testBundlePath ?: NSNull.null,
+    KeyAppLaunch : self.applicationLaunchConfiguration.jsonSerializableRepresentation ?: NSNull.null,
+    KeyHostPath : self.testHostPath ?: NSNull.null,
+    KeyTimeout : @(self.timeout),
+    KeyInitializeUITesting : @(self.shouldInitializeUITesting),
+    KeyTestsToRun : self.testsToRun.allObjects ?: NSNull.null,
+    KeyTestsToSkip : self.testsToSkip.allObjects ?: NSNull.null
   };
+}
+
++ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
+{
+  NSString *bundlePath = [FBCollectionOperations nullableValueForDictionary:json key:KeyBundlePath];
+  if (bundlePath && ![bundlePath isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a String | Null for %@", bundlePath, KeyBundlePath]
+      fail:error];
+  }
+  NSDictionary<NSString *, id> *appLaunchDictionary = [FBCollectionOperations nullableValueForDictionary:json key:KeyAppLaunch];
+  FBApplicationLaunchConfiguration *appLaunch = nil;
+  if (appLaunchDictionary) {
+    appLaunch = [FBApplicationLaunchConfiguration inflateFromJSON:appLaunchDictionary error:error];
+    if (!appLaunch) {
+      return nil;
+    }
+  }
+  NSString *testHostPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyHostPath];
+  if (testHostPath && ![testHostPath isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a String | Null for %@", testHostPath, KeyHostPath]
+      fail:error];
+  }
+  NSNumber *timeoutNumber = [FBCollectionOperations nullableValueForDictionary:json key:KeyTimeout];
+  if (timeoutNumber && ![timeoutNumber isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a Number | Null for %@", timeoutNumber, KeyTimeout]
+      fail:error];
+  }
+  NSTimeInterval timeout = timeoutNumber ? timeoutNumber.doubleValue : 0;
+  NSNumber *initializeUITestingNumber = [FBCollectionOperations nullableValueForDictionary:json key:KeyInitializeUITesting];
+  if (initializeUITestingNumber && ![initializeUITestingNumber isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a Number | Null for %@", initializeUITestingNumber, KeyInitializeUITesting]
+      fail:error];
+  }
+  BOOL initializeUITesting = initializeUITestingNumber ? initializeUITestingNumber.boolValue : NO;
+  NSArray<NSString *> *testsToRunArray = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestsToRun];
+  if (testsToRunArray && ![FBCollectionInformation isArrayHeterogeneous:testsToRunArray withClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a Array<String> | Null for %@", testsToRunArray, KeyTestsToRun]
+      fail:error];
+  }
+  NSSet<NSString *> *testsToRun = testsToRunArray ? [NSSet setWithArray:testsToRunArray] : nil;
+  NSArray<NSString *> *testsToSkipArray = [FBCollectionOperations nullableValueForDictionary:json key:KeyTestsToSkip];
+  if (testsToRunArray && ![FBCollectionInformation isArrayHeterogeneous:testsToRunArray withClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a Array<String> | Null for %@", testsToSkipArray, KeyTestsToSkip]
+      fail:error];
+  }
+  NSSet<NSString *> *testsToSkip = testsToSkipArray ? [NSSet setWithArray:testsToSkipArray] : nil;
+
+  return [[self alloc]
+    initWithTestBundlePath:bundlePath
+    applicationLaunchConfiguration:appLaunch
+    testHostPath:testHostPath
+    timeout:timeout
+    initializeUITesting:initializeUITesting
+    testsToRun:testsToRun
+    testsToSkip:testsToSkip];
 }
 
 @end

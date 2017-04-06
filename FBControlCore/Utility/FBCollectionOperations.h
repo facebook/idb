@@ -34,6 +34,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (NSIndexSet *)indecesFromArray:(NSArray<NSNumber *> *)array;
 
+/**
+ objectForKey, converting NSNull to nil.
+
+ @param dictionary the dictionary to fetch from.
+ @param key the key to obtain for.
+ @return the value if present, else nil if NSNull.null or not present.
+ */
++ (nullable id)nullableValueForDictionary:(NSDictionary<id<NSCopying>, id> *)dictionary key:(id<NSCopying>)key;
+
 @end
 
 NS_ASSUME_NONNULL_END

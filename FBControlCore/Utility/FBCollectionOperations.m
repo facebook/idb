@@ -29,4 +29,13 @@
   return [indexSet copy];
 }
 
++ (nullable id)nullableValueForDictionary:(NSDictionary<id<NSCopying>, id> *)dictionary key:(id<NSCopying>)key
+{
+  id value = dictionary[key];
+  if ([value isKindOfClass:NSNull.class]) {
+    return nil;
+  }
+  return value;
+}
+
 @end
