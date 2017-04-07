@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch = @"launch_xctest";
+
 @implementation FBTestLaunchConfiguration
 
 - (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip
@@ -245,6 +247,30 @@ static NSString *const KeyTimeout = @"timeout";
     initializeUITesting:initializeUITesting
     testsToRun:testsToRun
     testsToSkip:testsToSkip];
+}
+
+#pragma mark FBiOSTargetAction
+
++ (FBiOSTargetActionType)actionType
+{
+  return FBiOSTargetActionTypeTestLaunch;
+}
+
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> *)handleOut error:(NSError **)error
+{
+  id<FBXCTestOperation> operation = [target startTestWithLaunchConfiguration:self error:error];
+  if (!operation) {
+    return NO;
+  }
+  if (self.timeout > 0) {
+    if (![target waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:self.timeout error:error]) {
+      return NO;
+    }
+  }
+  if (handleOut) {
+    *handleOut = operation;
+  }
+  return YES;
 }
 
 @end
