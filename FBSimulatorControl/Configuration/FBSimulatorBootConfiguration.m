@@ -14,6 +14,8 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 
+FBiOSTargetActionType const FBiOSTargetActionTypeBoot = @"boot";
+
 @implementation FBSimulatorBootConfiguration
 
 @synthesize scale = _scale;
@@ -309,6 +311,24 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
     }
   }
   return options;
+}
+
+#pragma mark FBiOSTargetAction
+
++ (FBiOSTargetActionType)actionType
+{
+  return FBiOSTargetActionTypeBoot;
+}
+
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> *)handleOut error:(NSError **)error
+{
+  if (![target isKindOfClass:FBSimulator.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ cannot be booted", target]
+      failBool:error];
+  }
+  FBSimulator *simulator = (FBSimulator *) target;
+  return [simulator bootSimulator:self error:error];
 }
 
 @end
