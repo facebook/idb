@@ -12,6 +12,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch = @"applaunch";
+
 static NSString *const KeyBundleID = @"bundle_id";
 static NSString *const KeyBundleName = @"bundle_name";
 static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
@@ -166,6 +168,18 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   representation[KeyBundleName] = self.bundleName;
   representation[KeyWaitForDebugger] = @(self.waitForDebugger);
   return [representation mutableCopy];
+}
+
+#pragma mark FBiOSTargetAction
+
++ (FBiOSTargetActionType)actionType
+{
+  return FBiOSTargetActionTypeApplicationLaunch;
+}
+
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> *)handleOut error:(NSError **)error
+{
+  return [target launchApplication:self error:error];
 }
 
 @end

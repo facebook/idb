@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetAction.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 
@@ -19,9 +20,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ The Action Type for an Application Launch.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch;
+
+/**
  A Value object with the information required to launch an Application.
  */
-@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBJSONDeserializable>
+@interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBiOSTargetAction>
 
 /**
  Creates and returns a new Configuration with the provided parameters.
@@ -65,7 +71,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Name (CFBundleName) of the the Application to Launch. May be nil.
  */
 @property (nullable, nonatomic, copy, readonly) NSString *bundleName;
-
 
 /**
  A BOOL signalizing whether the application should wait for debugger to be attached immediately after launch.
