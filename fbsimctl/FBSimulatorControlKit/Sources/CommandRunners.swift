@@ -225,7 +225,9 @@ struct ListenRunner : Runner, ActionPerformer {
   func run() -> CommandResult {
     do {
       let interface = self.context.value.0
-      let relay = SynchronousRelay(relay: try self.makeBaseRelay(), reporter: self.context.reporter, handle: interface.handle) {
+      let awaitable = interface.handle as? FBTerminationAwaitable
+
+      let relay = SynchronousRelay(relay: try self.makeBaseRelay(), reporter: self.context.reporter, awaitable: awaitable) {
         self.context.reporter.reportSimple(.listen, .started, interface)
       }
       let result = RelayRunner(relay: relay).run()
