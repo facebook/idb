@@ -21,7 +21,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
 /**
  A Running Test Operation that can awaited and cancelled.
  */
-@protocol FBXCTestOperation <NSObject, FBTerminationHandle>
+@protocol FBXCTestOperation <NSObject, FBTerminationAwaitable>
 
 @end
 

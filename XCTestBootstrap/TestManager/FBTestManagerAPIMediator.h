@@ -40,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Logger object to log events to, may be nil.
  */
-@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 /**
  Creates and returns a mediator with given paramenters
@@ -73,6 +73,13 @@ NS_ASSUME_NONNULL_BEGIN
  @return A TestManager Result if an early-error occured, nil otherwise.
  */
 - (nullable FBTestManagerResult *)executeTestPlanWithTimeout:(NSTimeInterval)timeout;
+
+/**
+ Checks Whether a Result is Available
+
+ @return A TestManager Result, if one is available.
+ */
+- (nullable FBTestManagerResult *)checkForResult;
 
 /**
  Connecting mediator does not wait till test execution has finished.

@@ -93,4 +93,9 @@
   [self disconnect];
 }
 
+- (BOOL)hasTerminated
+{
+  return [self.mediator checkForResult] != nil;
+}
+
 @end

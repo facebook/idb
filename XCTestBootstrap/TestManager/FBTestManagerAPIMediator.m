@@ -136,18 +136,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 - (FBTestManagerResult *)waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:(NSTimeInterval)timeout
 {
   FBTestManagerResult *result = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilExists:^ FBTestManagerResult * {
-    FBTestBundleResult *bundleResult = [self.bundleConnection checkForResult];
-    if (bundleResult && !bundleResult.didEndSuccessfully) {
-      return [FBTestManagerResult bundleConnectionFailed:bundleResult];
-    }
-    FBTestDaemonResult *daemonResult = [self.daemonConnection checkForResult];
-    if (daemonResult && !daemonResult.didEndSuccessfully) {
-      return [FBTestManagerResult daemonConnectionFailed:daemonResult];
-    }
-    if (daemonResult && bundleResult) {
-      return FBTestManagerResult.success;
-    }
-    return nil;
+    return [self checkForResult];
   }];
   return [self concludeWithResult:result ?: [FBTestManagerResult timedOutAfter:timeout]];
 }
@@ -167,6 +156,31 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 }
 
 #pragma mark Reporting
+
+- (nullable FBTestManagerResult *)checkForResult
+{
+  FBTestManagerResult *result = [self obtainResult];
+  if (result) {
+    [self concludeWithResult:result];
+  }
+  return result;
+}
+
+- (nullable FBTestManagerResult *)obtainResult
+{
+  FBTestBundleResult *bundleResult = [self.bundleConnection checkForResult];
+  if (bundleResult && !bundleResult.didEndSuccessfully) {
+    return [FBTestManagerResult bundleConnectionFailed:bundleResult];
+  }
+  FBTestDaemonResult *daemonResult = [self.daemonConnection checkForResult];
+  if (daemonResult && !daemonResult.didEndSuccessfully) {
+    return [FBTestManagerResult daemonConnectionFailed:daemonResult];
+  }
+  if (daemonResult && bundleResult) {
+    return FBTestManagerResult.success;
+  }
+  return nil;
+}
 
 - (FBTestManagerResult *)concludeWithResult:(FBTestManagerResult *)result
 {

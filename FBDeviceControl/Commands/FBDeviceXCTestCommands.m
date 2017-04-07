@@ -46,6 +46,11 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   _task = nil;
 }
 
+- (BOOL)hasTerminated
+{
+  return self.task.hasTerminated || self.task == nil;
+}
+
 @end
 
 @interface FBDeviceXCTestCommands ()
