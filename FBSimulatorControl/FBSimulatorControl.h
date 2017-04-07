@@ -9,6 +9,7 @@
 
 #import <FBSimulatorControl/FBAddVideoPolyfill.h>
 #import <FBSimulatorControl/FBAgentLaunchStrategy.h>
+#import <FBSimulatorControl/FBAgentLaunchConfiguration+Simulator.h>
 #import <FBSimulatorControl/FBApplicationLaunchStrategy.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>
 #import <FBSimulatorControl/FBCoreSimulatorNotifier.h>
