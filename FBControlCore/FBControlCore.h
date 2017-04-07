@@ -40,6 +40,7 @@
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBFileWriter.h>
 #import <FBControlCore/FBiOSTarget.h>
+#import <FBControlCore/FBiOSTargetAction.h>
 #import <FBControlCore/FBiOSTargetDiagnostics.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
 #import <FBControlCore/FBiOSTargetPredicates.h>
