@@ -9,16 +9,21 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBJSONConversion.h>
+#import <FBControlCore/FBControlCore.h>
 
 #import <FBSimulatorControl/FBSimulatorHID.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ The Action Type for the HID.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeHID;
+
+/**
  A Value representing a call to the HID System.
  */
-@interface FBSimulatorHIDEvent : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
+@interface FBSimulatorHIDEvent : NSObject <NSCopying, FBiOSTargetAction>
 
 /**
  A HID Event that is a touch-down followed by an immediate touch-up.

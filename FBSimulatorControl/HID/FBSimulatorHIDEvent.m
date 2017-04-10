@@ -13,6 +13,11 @@
 
 #import "FBSimulatorError.h"
 #import "FBSimulatorHID.h"
+#import "FBSimulator.h"
+#import "FBSimulator+Connection.h"
+#import "FBSimulatorConnection.h"
+
+FBiOSTargetActionType const FBiOSTargetActionTypeHID = @"hid";
 
 static NSString *const FBSimulatorEventKeyClass = @"class";
 static NSString *const FBSimulatorHIDEventKeyType = @"type";
@@ -587,7 +592,6 @@ static NSString *const FBSimulatorHIDEventKeyKeycode = @"keycode";
   return self;
 }
 
-
 static NSString *const FBSimulatorEventTypeStringDown = @"down";
 static NSString *const FBSimulatorEventTypeStringUp = @"up";
 
@@ -612,6 +616,28 @@ static NSString *const FBSimulatorEventTypeStringUp = @"up";
     default:
       return nil;
   }
+}
+
+#pragma mark FBiOSTargetAction
+
++ (FBiOSTargetActionType)actionType
+{
+  return FBiOSTargetActionTypeHID;
+}
+
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> *)handleOut error:(NSError **)error
+{
+  if (![target isKindOfClass:FBSimulator.class]) {
+    return [[FBSimulatorError
+      describeFormat:@"%@ is not a Simulator", target]
+      failBool:error];
+  }
+  FBSimulator *simulator = (FBSimulator *) target;
+  FBSimulatorHID *hid = [[simulator connectWithError:error] connectToHID:error];
+  if (!hid) {
+    return NO;
+  }
+  return [self performOnHID:hid error:error];
 }
 
 @end
