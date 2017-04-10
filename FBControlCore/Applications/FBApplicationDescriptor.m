@@ -304,7 +304,7 @@ static short const ZipFileMagicHeader = 0x4b50;
       fail:error];
   }
   FBTask *task = [[[[[FBTaskBuilder withLaunchPath:@"/usr/bin/unzip"]
-    withArguments:@[path, @"-d", [tempDirURL path]]]
+    withArguments:@[@"-o", @"-d", [tempDirURL path], path]]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     build]
     startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
