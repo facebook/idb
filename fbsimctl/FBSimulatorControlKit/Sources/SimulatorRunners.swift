@@ -105,10 +105,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .keyboardOverride, ControlCoreSubject(simulator)) {
         try simulator.setupKeyboard()
       }
-    case .launchAgent(let launch):
-      return iOSTargetRunner.simple(reporter, .launch, ControlCoreSubject(launch)) {
-        try simulator.launchAgent(launch)
-      }
     case .open(let url):
       return iOSTargetRunner.simple(reporter, .open, url.bridgedAbsoluteString) {
         try simulator.open(url)

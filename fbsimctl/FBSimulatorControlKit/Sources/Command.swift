@@ -86,7 +86,6 @@ public enum Action {
   case hid(FBSimulatorHIDEvent)
   case install(String, Bool)
   case keyboardOverride
-  case launchAgent(FBAgentLaunchConfiguration)
   case launchXCTest(FBTestLaunchConfiguration)
   case list
   case listApps
@@ -108,6 +107,10 @@ public enum Action {
 
   static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {
     return self.core(appLaunch)
+  }
+
+  static func launchAgent(_ agentLaunch: FBAgentLaunchConfiguration) -> Action {
+    return self.core(agentLaunch)
   }
 }
 
@@ -354,8 +357,6 @@ public func == (left: Action, right: Action) -> Bool {
     return leftApp == rightApp && leftSign == rightSign
   case (.keyboardOverride, .keyboardOverride):
     return true
-  case (.launchAgent(let leftLaunch), .launchAgent(let rightLaunch)):
-    return leftLaunch == rightLaunch
   case (.launchXCTest(let leftConfiguration), .launchXCTest(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
   case (.list, .list):
@@ -426,8 +427,6 @@ extension Action {
       return (.install, nil)
     case .keyboardOverride:
       return (.keyboardOverride, nil)
-    case .launchAgent(let launch):
-      return (.launch, ControlCoreSubject(launch))
     case .launchXCTest(let configuration):
         return (.launchXCTest, ControlCoreSubject(configuration))
     case .list:

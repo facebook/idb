@@ -229,6 +229,8 @@ extension FBiOSTargetAction {
     switch actionType {
     case FBiOSTargetActionType.applicationLaunch:
       return .launch
+    case FBiOSTargetActionType.agentLaunch:
+      return .launch
     default:
       break
     }
