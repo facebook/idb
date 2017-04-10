@@ -73,8 +73,7 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .approve, StringsSubject(bundleIDs)) {
         try simulator.authorizeLocationSettings(bundleIDs)
       }
-    case .boot(let maybeBootConfiguration):
-      let bootConfiguration = maybeBootConfiguration ?? FBSimulatorBootConfiguration.default()
+    case .boot(let bootConfiguration):
       return iOSTargetRunner.simple(reporter, .boot, ControlCoreSubject(bootConfiguration)) {
         try simulator.bootSimulator(bootConfiguration)
       }

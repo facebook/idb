@@ -192,7 +192,7 @@ let validActions: [([String], Action)] = [
   (["boot", "--locale", "fr_FR"], .boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR"))))),
   (["boot", "--scale=50"], .boot(FBSimulatorBootConfiguration.default().scale50Percent())),
   (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], .boot(FBSimulatorBootConfiguration.default().scale25Percent().withOptions([.connectBridge, .useNSWorkspace, .awaitServices]))),
-  (["boot"], .boot(nil)),
+  (["boot"], .boot(FBSimulatorBootConfiguration.default())),
   (["clear_keychain", "com.foo.bar"], .clearKeychain("com.foo.bar")),
   (["clear_keychain"], .clearKeychain(nil)),
   (["config"], .config),
@@ -300,7 +300,7 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["boot"], ["listen", "--http", "1000"], ["shutdown"],
     ]
-    let actions: [Action] = [.list, .boot(nil), .listen(ListenInterface(stdin: false, http: 1000, hid: nil, handle: nil)), .shutdown]
+    let actions: [Action] = [.list, .boot(FBSimulatorBootConfiguration.default()), .listen(ListenInterface(stdin: false, http: 1000, hid: nil, handle: nil)), .shutdown]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 

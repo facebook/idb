@@ -74,7 +74,7 @@ public enum FileOutput {
  */
 public enum Action {
   case approve([String])
-  case boot(FBSimulatorBootConfiguration?)
+  case boot(FBSimulatorBootConfiguration)
   case clearKeychain(String?)
   case config
   case core(FBiOSTargetAction)

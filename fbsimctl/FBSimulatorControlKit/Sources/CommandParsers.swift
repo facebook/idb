@@ -537,10 +537,10 @@ extension Action : Parsable {
   }
 
   static var bootParser: Parser<Action> {
-    return Parser<FBSimulatorBootConfiguration?>
+    return Parser<FBSimulatorBootConfiguration>
       .ofCommandWithArg(
         EventName.boot.rawValue,
-        FBSimulatorBootConfigurationParser.parser.optional()
+        FBSimulatorBootConfigurationParser.parser.fallback(FBSimulatorBootConfiguration.default())
       )
       .fmap(Action.boot)
       .sectionize("boot", "Action: Boot", "")
