@@ -14,13 +14,14 @@ import FBSimulatorControl
   open static func bootstrap() -> Int32 {
     let arguments = Array(CommandLine.arguments.dropFirst(1))
     let environment = ProcessInfo.processInfo.environment
-    let (cli, reporter, _) = CLI.fromArguments(arguments, environment: environment).bootstrap()
-    return CLIRunner(cli: cli, reporter: reporter).runForStatus()
+    let (cli, writer, reporter, _) = CLI.fromArguments(arguments, environment: environment).bootstrap()
+    return CLIRunner(cli: cli, writer: writer, reporter: reporter).runForStatus()
   }
 }
 
 struct CLIRunner : Runner {
   let cli: CLI
+  let writer: Writer
   let reporter: EventReporter
 
   func run() -> CommandResult {
@@ -71,19 +72,20 @@ extension CLI {
     }
   }
 
-  public func bootstrap() -> (CLI, EventReporter, FBControlCoreLoggerProtocol)  {
-    let reporter = self.createReporter(self.createWriter())
+  public func bootstrap() -> (CLI, Writer, EventReporter, FBControlCoreLoggerProtocol)  {
+    let writer = self.createWriter()
+    let reporter = self.createReporter(writer)
     if case .run(let command) = self {
       let configuration = command.configuration
       let debugEnabled = configuration.outputOptions.contains(OutputOptions.DebugLogging)
       let bridge = ControlCoreLoggerBridge(reporter: reporter)
       let logger = LogReporter(bridge: bridge, debug: debugEnabled)
       FBControlCoreGlobalConfiguration.defaultLogger = logger
-      return (self, reporter, logger)
+      return (self, writer, reporter, logger)
     }
 
     let logger = FBControlCoreGlobalConfiguration.defaultLogger
-    return (self, reporter, logger)
+    return (self, writer, reporter, logger)
   }
 
   private func createWriter() -> Writer {
