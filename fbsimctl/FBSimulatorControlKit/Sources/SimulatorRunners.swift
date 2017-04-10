@@ -109,10 +109,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .launch, ControlCoreSubject(launch)) {
         try simulator.launchAgent(launch)
       }
-    case .launchApp(let launch):
-      return iOSTargetRunner.simple(reporter, .launch, ControlCoreSubject(launch)) {
-        try simulator.launchApplication(launch)
-      }
     case .open(let url):
       return iOSTargetRunner.simple(reporter, .open, url.bridgedAbsoluteString) {
         try simulator.open(url)

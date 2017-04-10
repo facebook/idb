@@ -77,6 +77,7 @@ public enum Action {
   case boot(FBSimulatorBootConfiguration?)
   case clearKeychain(String?)
   case config
+  case core(FBiOSTargetAction)
   case create(CreationSpecification)
   case delete
   case diagnose(FBDiagnosticQuery, DiagnosticFormat)
@@ -86,7 +87,6 @@ public enum Action {
   case install(String, Bool)
   case keyboardOverride
   case launchAgent(FBAgentLaunchConfiguration)
-  case launchApp(FBApplicationLaunchConfiguration)
   case launchXCTest(FBTestLaunchConfiguration)
   case list
   case listApps
@@ -105,6 +105,10 @@ public enum Action {
   case uninstall(String)
   case upload([FBDiagnostic])
   case watchdogOverride([String], TimeInterval)
+
+  static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {
+    return self.core(appLaunch)
+  }
 }
 
 /**
@@ -332,6 +336,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftBundleID == rightBundleID
   case (.config, .config):
     return true
+  case (.core(let leftAction), .core(let rightAction)):
+    return leftAction.isEqual(rightAction)
   case (.create(let leftSpecification), .create(let rightSpecification)):
     return leftSpecification == rightSpecification
   case (.delete, .delete):
@@ -349,8 +355,6 @@ public func == (left: Action, right: Action) -> Bool {
   case (.keyboardOverride, .keyboardOverride):
     return true
   case (.launchAgent(let leftLaunch), .launchAgent(let rightLaunch)):
-    return leftLaunch == rightLaunch
-  case (.launchApp(let leftLaunch), .launchApp(let rightLaunch)):
     return leftLaunch == rightLaunch
   case (.launchXCTest(let leftConfiguration), .launchXCTest(let rightConfiguration)):
     return leftConfiguration == rightConfiguration
@@ -404,6 +408,8 @@ extension Action {
       return (.clearKeychain, bundleID)
     case .config:
       return (.config, nil)
+    case .core(let action):
+      return (action.eventName, ControlCoreSubject(action as! ControlCoreValue))
     case .create:
       return (.create, nil)
     case .delete:
@@ -421,8 +427,6 @@ extension Action {
     case .keyboardOverride:
       return (.keyboardOverride, nil)
     case .launchAgent(let launch):
-      return (.launch, ControlCoreSubject(launch))
-    case .launchApp(let launch):
       return (.launch, ControlCoreSubject(launch))
     case .launchXCTest(let configuration):
         return (.launchXCTest, ControlCoreSubject(configuration))

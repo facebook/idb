@@ -34,34 +34,12 @@ public extension Command {
   }
 }
 
-public extension Action {
-  func appendEnvironment(_ environment: [String : String]) -> Action {
-    switch self {
-    case .launchApp(let configuration):
-      return .launchApp(
-        configuration.withEnvironmentAdditions(
-          Action.subprocessEnvironment(environment)
-        )
-      )
-    case .launchAgent(let configuration):
-      return .launchAgent(
-        configuration.withEnvironmentAdditions(
-          Action.subprocessEnvironment(environment)
-        )
-      )
-    case .launchXCTest(let configuration):
-      if let appLaunchConf = configuration.applicationLaunchConfiguration?.withEnvironmentAdditions(
-        Action.subprocessEnvironment(environment)
-      ) {
-        return .launchXCTest(configuration.withApplicationLaunchConfiguration(appLaunchConf))
-      }
-      return .launchXCTest(configuration)
-    default:
-      return self
-    }
-  }
+protocol EnvironmentAdditive {
+  func withEnvironmentAdditions(_ environmentAdditions: [String : String]) -> Self
+}
 
-  fileprivate static func subprocessEnvironment(_ environment: [String : String]) -> [String : String] {
+extension EnvironmentAdditive {
+  static func subprocessEnvironment(_ environment: [String : String]) -> [String : String] {
     var additions: [String : String] = [:]
     for (key, value) in environment {
       if !key.hasPrefix(EnvironmentPrefix) {
@@ -70,5 +48,34 @@ public extension Action {
       additions[key.replacingOccurrences(of: EnvironmentPrefix, with: "")] = value
     }
     return additions
+  }
+}
+
+public extension Action {
+  func appendEnvironment(_ environment: [String : String]) -> Action {
+    switch self {
+    case .core(var action):
+      if let additive = action as? EnvironmentAdditive & FBiOSTargetAction {
+        action = additive.withEnvironmentAdditions(
+          FBProcessLaunchConfiguration.subprocessEnvironment(environment)
+        )
+      }
+      return .core(action)
+    case .launchAgent(let configuration):
+      return .launchAgent(
+        configuration.withEnvironmentAdditions(
+          FBProcessLaunchConfiguration.subprocessEnvironment(environment)
+        )
+      )
+    case .launchXCTest(let configuration):
+      if let appLaunchConf = configuration.applicationLaunchConfiguration?.withEnvironmentAdditions(
+        FBProcessLaunchConfiguration.subprocessEnvironment(environment)
+      ) {
+        return .launchXCTest(configuration.withApplicationLaunchConfiguration(appLaunchConf))
+      }
+      return .launchXCTest(configuration)
+    default:
+      return self
+    }
   }
 }

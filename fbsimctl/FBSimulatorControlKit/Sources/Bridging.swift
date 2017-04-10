@@ -42,7 +42,6 @@ extension URL {
   var bridgedAbsoluteString: String { get {
     return self.absoluteString
   }}
-
 }
 
 public typealias ControlCoreValue = FBJSONSerializable & CustomStringConvertible
@@ -221,5 +220,31 @@ extension FBLineBuffer {
 
   func stringIterator() -> LineBufferStringIterator {
     return LineBufferStringIterator(lineBuffer: self)
+  }
+}
+
+extension FBiOSTargetAction {
+  public var eventName: EventName { get {
+    let actionType = type(of: self).actionType
+    switch actionType {
+    case FBiOSTargetActionType.applicationLaunch:
+      return .launch
+    default:
+      break
+    }
+    assertionFailure("\(actionType) does not have a valid event name")
+    return EventName(rawValue: "")!
+  }}
+}
+
+extension FBProcessLaunchConfiguration : EnvironmentAdditive {}
+
+extension FBTestLaunchConfiguration : EnvironmentAdditive {
+  func withEnvironmentAdditions(_ environmentAdditions: [String : String]) -> Self {
+    guard let appLaunchConf = self.applicationLaunchConfiguration else {
+      return self
+    }
+    let subprocessEnvironment = FBProcessLaunchConfiguration.subprocessEnvironment(environmentAdditions)
+    return self.withApplicationLaunchConfiguration(appLaunchConf.withEnvironmentAdditions(subprocessEnvironment))
   }
 }
