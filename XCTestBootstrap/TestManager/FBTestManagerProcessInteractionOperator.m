@@ -38,7 +38,15 @@
 
 - (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error
 {
-  if (![self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
+  if (!path && ![self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
+    return NO;
+  }
+  if (path) {
+    if ([self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
+      if (![self.iosTarget uninstallApplicationWithBundleID:configuration.bundleID error:error]) {
+        return NO;
+      }
+    }
     if (![self.iosTarget installApplicationWithPath:path error:error]) {
       return NO;
     }
