@@ -358,7 +358,7 @@ class HttpRelay : Relay {
   }}
 
   fileprivate static var hidRoute: Route { get {
-    return ActionRoute.post(.hid) { json in
+    return ActionRoute.post(.HID) { json in
       let event = try FBSimulatorHIDEvent.inflate(fromJSON: json.decode())
       return Action.hid(event)
     }

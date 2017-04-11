@@ -15,7 +15,6 @@ public typealias EventName = FBiOSTargetActionType
 
 extension EventName {
   static var approve = EventName(rawValue: "approve")
-  static var boot = EventName(rawValue: "boot")
   static var clearKeychain = EventName(rawValue: "clear_keychain")
   static var config = EventName(rawValue: "config")
   static var create = EventName(rawValue: "create")
@@ -26,7 +25,6 @@ extension EventName {
   static var erase = EventName(rawValue: "erase")
   static var failure = EventName(rawValue: "failure")
   static var help = EventName(rawValue: "help")
-  static var hid = EventName(rawValue: "hid")
   static var install = EventName(rawValue: "install")
   static var keyboardOverride = EventName(rawValue: "keyboard_override")
   static var launch = EventName(rawValue: "launch")
