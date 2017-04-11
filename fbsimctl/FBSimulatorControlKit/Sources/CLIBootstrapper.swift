@@ -30,6 +30,8 @@ struct CLIRunner : Runner {
       return BaseCommandRunner(reporter: self.reporter, command: command).run()
     case .show(let help):
       return HelpRunner(reporter: self.reporter, help: help).run()
+    case .print(let action):
+      return PrintRunner(action: action, writer: self.writer).run()
     }
   }
 
@@ -50,6 +52,23 @@ struct CLIRunner : Runner {
       default:
         return 0
     }
+  }
+}
+
+struct PrintRunner : Runner {
+  let action: Action
+  let writer: Writer
+
+  func run() -> CommandResult {
+    switch self.action {
+    case .core(let action):
+      let output = action.printable()
+      self.writer.write(output)
+      return .success(nil)
+    default:
+      break
+    }
+    return .failure("Action \(self.action) not printable")
   }
 }
 
@@ -92,6 +111,8 @@ extension CLI {
     switch self {
     case .show:
       return FileHandleWriter.stdErrWriter
+    case .print:
+      return FileHandleWriter.stdOutWriter
     case .run(let command):
       return command.createWriter()
     }

@@ -80,8 +80,8 @@ public enum Action {
   case create(CreationSpecification)
   case delete
   case diagnose(FBDiagnosticQuery, DiagnosticFormat)
-  case focus
   case erase
+  case focus
   case install(String, Bool)
   case keyboardOverride
   case list

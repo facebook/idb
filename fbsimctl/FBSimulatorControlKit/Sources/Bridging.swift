@@ -243,6 +243,11 @@ extension FBiOSTargetAction {
     assertionFailure("\(actionType) does not have a valid event name")
     return EventName(rawValue: "")!
   }}
+
+  public func printable() -> String {
+    let json = try! JSON.encode(self.jsonSerializableRepresentation() as AnyObject)
+    return try! json.serializeToString(false)
+  }
 }
 
 extension FBProcessLaunchConfiguration : EnvironmentAdditive {}

@@ -287,6 +287,13 @@ class ActionParserTests : XCTestCase {
   func testFailsToParseInvalidActions() {
     self.assertFailsToParseAll(Action.parser, invalidActions)
   }
+
+  func testParsesInsidePrint() {
+    let pairs = validActions.map { (tokens, action) in
+      return (["print"] + tokens, CLI.print(action))
+    }
+    self.assertParsesAll(CLI.parser, pairs)
+  }
 }
 
 class CommandParserTests : XCTestCase {

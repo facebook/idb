@@ -118,6 +118,8 @@ public extension CLI {
       return command.createReporter(writer)
     case .show(let help):
       return help.createReporter(writer)
+    case .print:
+      return HumanReadableEventReporter(writer: writer)
     }
   }
 }
