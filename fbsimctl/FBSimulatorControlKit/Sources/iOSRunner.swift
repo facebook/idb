@@ -49,16 +49,6 @@ struct iOSActionProvider {
       }
     case .core(let action):
       return iOSTargetRunner.core(reporter, action.eventName, target, action)
-    case .launchXCTest(var configuration):
-      // Always initialize for UI Testing until we make this optional
-      configuration = configuration.withUITesting(true)
-      return iOSTargetRunner.handled(reporter, .launchXCTest, ControlCoreSubject(configuration)) {
-        let handle = try target.startTest(with: configuration)
-        if configuration.timeout > 0 {
-          try target.waitUntilAllTestRunnersHaveFinishedTesting(withTimeout: configuration.timeout)
-        }
-        return handle
-      }
     case .listApps:
       return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let subject = ControlCoreSubject(target.installedApplications().map { $0.jsonSerializableRepresentation() }  as NSArray)

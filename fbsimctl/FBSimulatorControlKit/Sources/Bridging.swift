@@ -233,6 +233,8 @@ extension FBiOSTargetAction {
       return .launch
     case FBiOSTargetActionType.boot:
       return .boot
+    case FBiOSTargetActionType.testLaunch:
+      return .launchXCTest
     default:
       break
     }

@@ -61,13 +61,6 @@ public extension Action {
         )
       }
       return .core(action)
-    case .launchXCTest(let configuration):
-      if let appLaunchConf = configuration.applicationLaunchConfiguration?.withEnvironmentAdditions(
-        FBProcessLaunchConfiguration.subprocessEnvironment(environment)
-      ) {
-        return .launchXCTest(configuration.withApplicationLaunchConfiguration(appLaunchConf))
-      }
-      return .launchXCTest(configuration)
     default:
       return self
     }
