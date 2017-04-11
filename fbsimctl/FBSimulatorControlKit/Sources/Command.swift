@@ -82,7 +82,6 @@ public enum Action {
   case diagnose(FBDiagnosticQuery, DiagnosticFormat)
   case focus
   case erase
-  case hid(FBSimulatorHIDEvent)
   case install(String, Bool)
   case keyboardOverride
   case list
@@ -105,6 +104,10 @@ public enum Action {
 
   static func boot(_ configuration: FBSimulatorBootConfiguration) -> Action {
     return self.core(configuration)
+  }
+
+  static func hid(_ event: FBSimulatorHIDEvent) -> Action {
+    return self.core(event)
   }
 
   static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {
@@ -355,8 +358,6 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.focus, .focus):
     return true
-  case (.hid(let leftEvent), .hid(let rightEvent)):
-    return leftEvent == rightEvent
   case (.install(let leftApp, let leftSign), .install(let rightApp, let rightSign)):
     return leftApp == rightApp && leftSign == rightSign
   case (.keyboardOverride, .keyboardOverride):
@@ -421,8 +422,6 @@ extension Action {
       return (.erase, nil)
     case .focus:
       return (.focus, nil)
-    case .hid(let event):
-      return (.hid, ControlCoreSubject(event))
     case .install:
       return (.install, nil)
     case .keyboardOverride:

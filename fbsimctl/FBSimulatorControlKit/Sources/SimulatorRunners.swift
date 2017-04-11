@@ -92,10 +92,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .focus, ControlCoreSubject(simulator)) {
         try simulator.focus()
       }
-    case .hid(let event):
-      return iOSTargetRunner.simple(reporter, .hid, ControlCoreSubject(simulator)) {
-        try event.perform(on: simulator.connect().connectToHID())
-      }
     case .keyboardOverride:
       return iOSTargetRunner.simple(reporter, .keyboardOverride, ControlCoreSubject(simulator)) {
         try simulator.setupKeyboard()

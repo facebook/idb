@@ -235,6 +235,8 @@ extension FBiOSTargetAction {
       return .boot
     case FBiOSTargetActionType.testLaunch:
       return .launchXCTest
+    case FBiOSTargetActionType.HID:
+      return .hid
     default:
       break
     }
