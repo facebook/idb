@@ -8,48 +8,51 @@
  */
 
 import Foundation
+import FBControlCore
 import FBSimulatorControl
 
-public enum EventName : String {
-  case approve = "approve"
-  case boot = "boot"
-  case clearKeychain = "clear_keychain"
-  case config = "config"
-  case create = "create"
-  case delete = "delete"
-  case diagnose = "diagnose"
-  case diagnostic = "diagnostic"
-  case focus = "focus"
-  case erase = "erase"
-  case failure = "failure"
-  case help = "help"
-  case hid = "hid"
-  case install = "install"
-  case keyboardOverride = "keyboard_override"
-  case launch = "launch"
-  case launchXCTest = "launch_xctest"
-  case list = "list"
-  case listApps = "list_apps"
-  case listDeviceSets = "list_device_sets"
-  case listen = "listen"
-  case log = "log"
-  case open = "open"
-  case query = "query"
-  case record = "record"
-  case relaunch = "relaunch"
-  case search = "search"
-  case serviceInfo = "service_info"
-  case setLocation = "set_location"
-  case shutdown = "shutdown"
-  case signalled = "signalled"
-  case stateChange = "state"
-  case stream = "stream"
-  case tap = "tap"
-  case terminate = "terminate"
-  case uninstall = "uninstall"
-  case upload = "upload"
-  case waitingForDebugger = "waiting_for_debugger"
-  case watchdogOverride = "watchdog_override"
+public typealias EventName = FBiOSTargetActionType
+
+extension EventName {
+  static var approve = EventName(rawValue: "approve")
+  static var boot = EventName(rawValue: "boot")
+  static var clearKeychain = EventName(rawValue: "clear_keychain")
+  static var config = EventName(rawValue: "config")
+  static var create = EventName(rawValue: "create")
+  static var delete = EventName(rawValue: "delete")
+  static var diagnose = EventName(rawValue: "diagnose")
+  static var diagnostic = EventName(rawValue: "diagnostic")
+  static var focus = EventName(rawValue: "focus")
+  static var erase = EventName(rawValue: "erase")
+  static var failure = EventName(rawValue: "failure")
+  static var help = EventName(rawValue: "help")
+  static var hid = EventName(rawValue: "hid")
+  static var install = EventName(rawValue: "install")
+  static var keyboardOverride = EventName(rawValue: "keyboard_override")
+  static var launch = EventName(rawValue: "launch")
+  static var launchXCTest = EventName(rawValue: "launch_xctest")
+  static var list = EventName(rawValue: "list")
+  static var listApps = EventName(rawValue: "list_apps")
+  static var listDeviceSets = EventName(rawValue: "list_device_sets")
+  static var listen = EventName(rawValue: "listen")
+  static var log = EventName(rawValue: "log")
+  static var open = EventName(rawValue: "open")
+  static var query = EventName(rawValue: "query")
+  static var record = EventName(rawValue: "record")
+  static var relaunch = EventName(rawValue: "relaunch")
+  static var search = EventName(rawValue: "search")
+  static var serviceInfo = EventName(rawValue: "service_info")
+  static var setLocation = EventName(rawValue: "set_location")
+  static var shutdown = EventName(rawValue: "shutdown")
+  static var signalled = EventName(rawValue: "signalled")
+  static var stateChange = EventName(rawValue: "state")
+  static var stream = EventName(rawValue: "stream")
+  static var tap = EventName(rawValue: "tap")
+  static var terminate = EventName(rawValue: "terminate")
+  static var uninstall = EventName(rawValue: "uninstall")
+  static var upload = EventName(rawValue: "upload")
+  static var waitingForDebugger = EventName(rawValue: "waiting_for_debugger")
+  static var watchdogOverride = EventName(rawValue: "watchdog_override")
 }
 
 public enum EventType : String {

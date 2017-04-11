@@ -231,17 +231,11 @@ extension FBiOSTargetAction {
       return .launch
     case FBiOSTargetActionType.agentLaunch:
       return .launch
-    case FBiOSTargetActionType.boot:
-      return .boot
     case FBiOSTargetActionType.testLaunch:
       return .launchXCTest
-    case FBiOSTargetActionType.HID:
-      return .hid
     default:
-      break
+      return actionType
     }
-    assertionFailure("\(actionType) does not have a valid event name")
-    return EventName(rawValue: "")!
   }}
 
   public func printable() -> String {
@@ -257,7 +251,6 @@ extension FBTestLaunchConfiguration : EnvironmentAdditive {
     guard let appLaunchConf = self.applicationLaunchConfiguration else {
       return self
     }
-    let subprocessEnvironment = FBProcessLaunchConfiguration.subprocessEnvironment(environmentAdditions)
-    return self.withApplicationLaunchConfiguration(appLaunchConf.withEnvironmentAdditions(subprocessEnvironment))
+    return self.withApplicationLaunchConfiguration(appLaunchConf.withEnvironmentAdditions(environmentAdditions))
   }
 }
