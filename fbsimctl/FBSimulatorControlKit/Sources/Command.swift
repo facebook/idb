@@ -74,7 +74,6 @@ public enum FileOutput {
  */
 public enum Action {
   case approve([String])
-  case boot(FBSimulatorBootConfiguration)
   case clearKeychain(String?)
   case config
   case core(FBiOSTargetAction)
@@ -104,6 +103,10 @@ public enum Action {
   case uninstall(String)
   case upload([FBDiagnostic])
   case watchdogOverride([String], TimeInterval)
+
+  static func boot(_ configuration: FBSimulatorBootConfiguration) -> Action {
+    return self.core(configuration)
+  }
 
   static func launchApp(_ appLaunch: FBApplicationLaunchConfiguration) -> Action {
     return self.core(appLaunch)
@@ -333,8 +336,6 @@ public func == (left: Action, right: Action) -> Bool {
   switch (left, right) {
   case (.approve(let leftBundleIDs), .approve(let rightBundleIDs)):
     return leftBundleIDs == rightBundleIDs
-  case (.boot(let leftConfiguration), .boot(let rightConfiguration)):
-    return leftConfiguration == rightConfiguration
   case (.clearKeychain(let leftBundleID), .clearKeychain(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.config, .config):
@@ -403,8 +404,6 @@ extension Action {
     switch self {
     case .approve(let bundleIDs):
       return (.approve, StringsSubject(bundleIDs))
-    case .boot:
-      return (.boot, nil)
     case .clearKeychain(let bundleID):
       return (.clearKeychain, bundleID)
     case .config:

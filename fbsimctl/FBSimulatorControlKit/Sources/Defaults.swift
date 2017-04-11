@@ -69,27 +69,7 @@ open class Defaults {
     if let query = self.query {
       return query
     }
-    // Use reasonable defaults for each action.
-    // Depending on what state the simulator is expected to be in.
-    // Descructive of machine-killing actions shouldn't have defaults.
-    switch action {
-      case .boot:
-        fallthrough
-      case .delete:
-        return nil
-      case .list:
-        fallthrough
-      case .listen:
-        fallthrough
-      case .search:
-        fallthrough
-      case .diagnose:
-        return FBiOSTargetQuery.allTargets()
-      case .approve:
-        return FBiOSTargetQuery.state(.shutdown)
-      default:
-        return FBiOSTargetQuery.state(.booted)
-    }
+    return action.defaultQuery
   }
 
   static func create(_ configuration: Configuration, logWriter: Writer) throws -> Defaults {
@@ -130,4 +110,41 @@ open class Defaults {
     let setPath = configuration.deviceSetPath ?? FBSimulatorControlConfiguration.defaultDeviceSetPath()
     return URL.urlRelativeTo(setPath, component: ".fbsimctl_last_query", isDirectory: false)
   }
+}
+
+extension Action {
+  var defaultQuery: FBiOSTargetQuery? { get {
+    // Use reasonable defaults for each action.
+    // Depending on what state the simulator is expected to be in.
+    // Descructive of machine-killing actions shouldn't have defaults.
+    switch self {
+      case .delete:
+        return nil
+      case .core(let action):
+        return type(of: action).actionType.defaultQuery
+      case .list:
+        fallthrough
+      case .listen:
+        fallthrough
+      case .search:
+        fallthrough
+      case .diagnose:
+        return FBiOSTargetQuery.allTargets()
+      case .approve:
+        return FBiOSTargetQuery.state(.shutdown)
+      default:
+        return FBiOSTargetQuery.state(.booted)
+    }
+  }}
+}
+
+extension FBiOSTargetActionType {
+  var defaultQuery: FBiOSTargetQuery? { get {
+    switch self {
+      case FBiOSTargetActionType.boot:
+        return nil
+      default:
+        return FBiOSTargetQuery.state(.booted)
+    }
+  }}
 }
