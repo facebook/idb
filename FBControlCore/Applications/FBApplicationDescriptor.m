@@ -325,6 +325,7 @@ static short const ZipFileMagicHeader = 0x4b50;
   for (NSURL *fileURL in directoryEnumerator) {
     if (isApplicationAtPath([fileURL path])) {
       applicationURLs = [applicationURLs setByAddingObject:fileURL];
+      [directoryEnumerator skipDescendants];
     }
   }
   if ([applicationURLs count] != 1) {
