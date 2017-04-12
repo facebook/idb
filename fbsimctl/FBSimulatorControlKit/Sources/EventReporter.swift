@@ -11,7 +11,12 @@ import Foundation
 import FBSimulatorControl
 import XCTestBootstrap
 
+public protocol EventInterpreter {
+  func interpret(_ subject: EventReporterSubject) -> [String]
+}
+
 public protocol EventReporter {
+  var interpreter: EventInterpreter { get }
   func report(_ subject: EventReporterSubject)
 }
 
@@ -37,49 +42,53 @@ extension EventReporter {
   }
 }
 
-open class HumanReadableEventReporter : EventReporter {
-  let writer: Writer
+class WritingEventReporter : EventReporter {
+  public let writer: Writer
+  public let interpreter: EventInterpreter
 
-  init(writer: Writer) {
+  init(writer: Writer, interpreter: EventInterpreter) {
     self.writer = writer
+    self.interpreter = interpreter
   }
 
-  open func report(_ subject: EventReporterSubject) {
-    for item in subject.subSubjects {
-      let string = item.description
-      if string.isEmpty {
-        return
-      }
-      self.writer.write(string)
+  public func report(_ subject: EventReporterSubject) {
+    for line in self.interpreter.interpret(subject) {
+      self.writer.write(line)
     }
   }
 }
 
-open class JSONEventReporter : NSObject, EventReporter {
-  let writer: Writer
+struct HumanReadableEventInterpreter : EventInterpreter {
+  public func interpret(_ subject: EventReporterSubject) -> [String] {
+    return subject.subSubjects.flatMap { item in
+      let string = item.description
+      if string.isEmpty {
+        return nil
+      }
+      return string
+    }
+  }
+}
+
+struct JSONEventInterpreter : EventInterpreter {
   let pretty: Bool
 
-  init(writer: Writer, pretty: Bool) {
-    self.writer = writer
-    self.pretty = pretty
-  }
-
-  open func report(_ subject: EventReporterSubject) {
-    for item in subject.subSubjects {
+  public func interpret(_ subject: EventReporterSubject) -> [String] {
+    return subject.subSubjects.flatMap { item in
       let json = item.jsonDescription
       guard let _ = try? json.getValue(JSONKeys.EventName.rawValue).getString() else {
         assertionFailure("\(json) does not have a \(JSONKeys.EventName.rawValue)")
-        return
+        return nil
       }
       guard let _ = try? json.getValue(JSONKeys.EventType.rawValue).getString() else {
         assertionFailure("\(json) does not have a \(JSONKeys.EventType.rawValue)")
-        return
+        return nil
       }
       do {
-        let line = try json.serializeToString(pretty)
-        self.writer.write(line as String)
+        return try json.serializeToString(pretty)
       } catch let error {
         assertionFailure("Failed to Serialize \(json) to string: \(error)")
+        return nil
       }
     }
   }
@@ -87,11 +96,15 @@ open class JSONEventReporter : NSObject, EventReporter {
 
 public extension OutputOptions {
   public func createReporter(_ writer: Writer) -> EventReporter {
+    return WritingEventReporter(writer: writer, interpreter: self.createInterpreter())
+  }
+
+  private func createInterpreter() -> EventInterpreter {
     if self.contains(OutputOptions.JSON) {
       let pretty = self.contains(OutputOptions.Pretty)
-      return JSONEventReporter(writer: writer, pretty: pretty)
+      return JSONEventInterpreter(pretty: pretty)
     }
-    return HumanReadableEventReporter(writer: writer)
+    return HumanReadableEventInterpreter()
   }
 
   public func createLogWriter() -> Writer {
@@ -119,7 +132,7 @@ public extension CLI {
     case .show(let help):
       return help.createReporter(writer)
     case .print:
-      return HumanReadableEventReporter(writer: writer)
+      return WritingEventReporter(writer: writer, interpreter: HumanReadableEventInterpreter())
     }
   }
 }

@@ -47,6 +47,7 @@ enum ResponseKeys : String {
 
 private class HttpEventReporter : EventReporter {
   var events: [EventReporterSubject] = []
+  let interpreter: EventInterpreter = JSONEventInterpreter(pretty: false)
 
   fileprivate func report(_ subject: EventReporterSubject) {
     self.events.append(subject)
@@ -177,7 +178,6 @@ class ActionHttpResponseHandler : NSObject, HttpResponseHandler {
       return response
     }
   }
-
 }
 
 class SimpleResponseHandler : NSObject, HttpResponseHandler {
