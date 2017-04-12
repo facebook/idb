@@ -256,7 +256,7 @@ static NSString *const KeyTimeout = @"timeout";
   return FBiOSTargetActionTypeTestLaunch;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> *)handleOut error:(NSError **)error
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
 {
   id<FBXCTestOperation> operation = [target startTestWithLaunchConfiguration:self error:error];
   if (!operation) {
@@ -267,9 +267,7 @@ static NSString *const KeyTimeout = @"timeout";
       return NO;
     }
   }
-  if (handleOut) {
-    *handleOut = operation;
-  }
+  [delegate action:self target:target didGenerateTerminationHandle:operation];
   return YES;
 }
 

@@ -108,9 +108,7 @@ struct iOSTargetRunner : Runner {
 
   static func core(_ reporter: iOSReporter, _ name: EventName?, _ target: FBiOSTarget, _ action: FBiOSTargetAction) -> iOSTargetRunner {
     return iOSTargetRunner(reporter: reporter, name: name, subject: ControlCoreSubject(action as! ControlCoreValue)) {
-      var handle: FBTerminationHandle? = nil
-      try action.run(with: target, handle: &handle)
-      return nil
+      return try action.runAction(target: target, reporter: reporter.reporter)
     }
   }
 

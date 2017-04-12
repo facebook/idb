@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBiOSTarget;
+@protocol FBiOSTargetActionDelegate;
 @protocol FBTerminationHandle;
 
 /**
@@ -35,10 +36,26 @@ typedef NSString *FBiOSTargetActionType NS_EXTENSIBLE_STRING_ENUM;
  Runs the Action.
 
  @param target the target to run against.
- @param handleOut an outparam for the termination handle return value.
+ @param delegate the delegate to be notified.
  @param error an error out for any error that occurs.
  */
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> _Nullable*_Nullable)handleOut error:(NSError **)error;
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error;
+
+@end
+
+/**
+ A Delegate that recieves information about the lifecycle of a Target Action.
+ */
+@protocol FBiOSTargetActionDelegate <NSObject>
+
+/**
+ A Termination Handle of an Asynchronous Operation has been generated.
+
+ @param action the action that the termination was generated for.
+ @param target the target the handle was generated for.
+ @param terminationHandle the generated termination handle.
+ */
+- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateTerminationHandle:(id<FBTerminationHandle>)terminationHandle;
 
 @end
 

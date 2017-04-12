@@ -223,6 +223,28 @@ extension FBLineBuffer {
   }
 }
 
+@objc class AccumilatingActionDelegate : NSObject, FBiOSTargetActionDelegate {
+  var handle: FBTerminationHandle? = nil
+  let reporter: EventReporter
+
+  init(reporter: EventReporter) {
+    self.reporter = reporter
+    super.init()
+  }
+
+  func action(_ action: FBiOSTargetAction, target: FBiOSTarget, didGenerate terminationHandle: FBTerminationHandle) {
+    self.handle = terminationHandle
+  }
+}
+
+extension FBiOSTargetAction {
+  func runAction(target: FBiOSTarget, reporter: EventReporter) throws -> FBTerminationHandle? {
+    let delegate = AccumilatingActionDelegate(reporter: reporter)
+    try self.run(with: target, delegate: delegate)
+    return delegate.handle
+  }
+}
+
 extension FBiOSTargetAction {
   public var eventName: EventName { get {
     let actionType = type(of: self).actionType

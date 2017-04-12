@@ -177,7 +177,7 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   return FBiOSTargetActionTypeApplicationLaunch;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> *)handleOut error:(NSError **)error
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
 {
   return [target launchApplication:self error:error];
 }

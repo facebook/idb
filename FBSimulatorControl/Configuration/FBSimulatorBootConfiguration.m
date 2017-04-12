@@ -320,7 +320,7 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
   return FBiOSTargetActionTypeBoot;
 }
 
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target handle:(id<FBTerminationHandle> *)handleOut error:(NSError **)error
+- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
 {
   if (![target isKindOfClass:FBSimulator.class]) {
     return [[FBSimulatorError
