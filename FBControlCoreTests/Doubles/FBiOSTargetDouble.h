@@ -13,6 +13,8 @@
 
 @interface FBiOSTargetDouble : NSObject <FBiOSTarget>
 
+@property (nonatomic, strong, readonly) FBiOSActionRouter *router;
+
 @property (nonatomic, copy, readwrite) NSString *udid;
 
 @property (nonatomic, copy, readwrite) NSString *name;

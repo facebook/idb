@@ -20,28 +20,29 @@
 
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
-#import "FBSimulatorApplicationCommands.h"
-#import "FBSimulatorAgentCommands.h"
-#import "FBSimulatorBridgeCommands.h"
-#import "FBSimulatorXCTestCommands.h"
-#import "FBSimulatorLifecycleCommands.h"
-#import "FBSimulatorSettingsCommands.h"
 #import "FBSimulator+Helpers.h"
+#import "FBSimulatorAgentCommands.h"
+#import "FBSimulatorApplicationCommands.h"
+#import "FBSimulatorBridgeCommands.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"
 #import "FBSimulatorControlConfiguration.h"
+#import "FBSimulatorControlOperator.h"
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventRelay.h"
 #import "FBSimulatorEventSink.h"
+#import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorHistoryGenerator.h"
+#import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorSet.h"
+#import "FBSimulatorSettingsCommands.h"
 #import "FBSimulatorVideoRecordingCommands.h"
-#import "FBSimulatorControlOperator.h"
+#import "FBSimulatorXCTestCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -106,6 +107,14 @@
 }
 
 #pragma mark FBiOSTarget
+
+- (FBiOSActionRouter *)router
+{
+  return [FBiOSActionRouter routerForTarget:self actionClasses:[FBiOSActionRouter.defaultActionClasses arrayByAddingObjectsFromArray:@[
+    FBAgentLaunchConfiguration.class,
+    FBSimulatorHIDEvent.class,
+  ]]];
+}
 
 - (id<FBDeviceOperator>)deviceOperator
 {

@@ -65,6 +65,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma mark FBiOSTarget
 
+- (FBiOSActionRouter *)router
+{
+  return [FBiOSActionRouter routerForTarget:self actionClasses:FBiOSActionRouter.defaultActionClasses];
+}
+
 - (NSString *)udid
 {
   return self.amDevice.udid;

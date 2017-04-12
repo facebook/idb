@@ -20,6 +20,7 @@
 @class FBDeviceType;
 @class FBOSVersion;
 @class FBProcessInfo;
+@class FBiOSActionRouter;
 @class FBiOSTargetDiagnostics;
 @protocol FBDeviceOperator;
 
@@ -54,9 +55,9 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBVideoRecordingCommands, FBXCTestCommands>
 
 /**
- Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.
+ A Router for the Reciever.
  */
-@property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) FBiOSActionRouter *router;
 
 /**
  The Unique Device Identifier of the iOS Target.
@@ -94,16 +95,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) FBArchitecture architecture;
 
 /**
- Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
- */
-@property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;
-
-/**
- Process Information about the Container Application of the iOS Target. Currently only applies to Simulators.
- */
-@property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
-
-/**
  The Device Type of the Target.
  */
 @property (nonatomic, copy, readonly) FBDeviceType *deviceType;
@@ -112,6 +103,20 @@ NS_ASSUME_NONNULL_BEGIN
  The OS Version of the Target.
  */
 @property (nonatomic, copy, readonly) FBOSVersion *osVersion;
+
+/**
+ Process Information about the launchd process of the iOS Target. Currently only applies to Simulators.
+ */
+@property (nonatomic, copy, nullable, readonly) FBProcessInfo *launchdProcess;
+
+/**
+ Process Information about the Container Application of the iOS Target. Currently only applies to Simulators.
+ */
+@property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
+/**
+ Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.
+ */
+@property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`
