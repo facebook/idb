@@ -73,8 +73,8 @@ static NSString *const KeyBinary = @"binary";
   return [NSString stringWithFormat:
     @"Agent Launch | Binary %@ | Arguments %@ | Environment %@ | Output %@",
     self.agentBinary,
-    self.arguments,
-    self.environment,
+    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
     self.output
   ];
 }

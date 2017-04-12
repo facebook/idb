@@ -93,8 +93,8 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
   return [NSString stringWithFormat:
     @"%@ | Arguments %@ | Environment %@ | WaitForDebugger %@ | Output %@",
     self.shortDescription,
-    self.arguments,
-    self.environment,
+    [FBCollectionInformation oneLineDescriptionFromArray:self.arguments],
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.environment],
     self.waitForDebugger ? @"YES" : @"NO",
     self.output
   ];
