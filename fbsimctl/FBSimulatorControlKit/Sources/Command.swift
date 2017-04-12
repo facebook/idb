@@ -214,6 +214,8 @@ extension FBTerminationHandleType {
         return "Streaming Video"
       case FBTerminationHandleType.testOperation:
         return "Test Operation"
+      case FBTerminationHandleType.actionReader:
+        return "Action Reader"
       default:
         return nil
     }
@@ -273,7 +275,7 @@ extension ListenInterface : EventReporterSubject {
     return self.handle?.type.listenDescription
   }}
 
-  private var isEmptyListen: Bool { get {
+  var isEmptyListen: Bool { get {
     return self.stdin == false && self.http == nil && self.hid == nil
   }}
 }

@@ -90,6 +90,19 @@ class SynchronousRelay : Relay {
 }
 
 /**
+ Bridges an Action Reader to a Relay
+ */
+extension FBiOSActionReader : Relay {
+  func start() throws {
+    try self.startListening()
+  }
+
+  func stop() throws {
+    try self.stopListening()
+  }
+}
+
+/**
  A Relay that accepts input from stdin, writing it to the Line Buffer.
  */
 class FileHandleRelay : Relay {

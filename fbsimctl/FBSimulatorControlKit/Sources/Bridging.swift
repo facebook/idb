@@ -237,15 +237,53 @@ extension FBLineBuffer {
   }
 }
 
+@objc class ActionReaderDelegateBridge : NSObject, FBiOSActionReaderDelegate {
+  let interpreter: EventInterpreter
+
+  init(interpreter: EventInterpreter) {
+    self.interpreter = interpreter
+    super.init()
+  }
+
+  func interpret(_ action: FBiOSTargetAction, _ eventType: EventType) -> String {
+    let subject = SimpleSubject(action.eventName, .started, ControlCoreSubject(action as! ControlCoreValue))
+    return self.interpret(subject)
+  }
+
+  func interpret(_ subject: EventReporterSubject) -> String {
+    let lines = self.interpreter.interpret(subject)
+    return lines.joined(separator: "\n") + "\n"
+  }
+
+  func readerDidFinishReading(_ reader: FBiOSActionReader) {
+
+  }
+
+  func reader(_ reader: FBiOSActionReader, failedToInterpretInput input: String, error: Error) -> String? {
+    return error.localizedDescription + "\n"
+  }
+
+  func reader(_ reader: FBiOSActionReader, willStartPerforming action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
+    return self.interpret(action, .started)
+  }
+
+  func reader(_ reader: FBiOSActionReader, didProcessAction action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
+    return self.interpret(action, .ended)
+  }
+
+  func reader(_ reader: FBiOSActionReader, didFailToProcessAction action: FBiOSTargetAction, on target: FBiOSTarget, error: Error) -> String? {
+    let subject = SimpleSubject(.failure, .discrete, error.localizedDescription)
+    return self.interpret(subject)
+  }
+}
+
 extension FBiOSTargetAction {
   func runAction(target: FBiOSTarget, reporter: EventReporter) throws -> FBTerminationHandle? {
     let delegate = AccumilatingActionDelegate(reporter: reporter)
     try self.run(with: target, delegate: delegate)
     return delegate.handle
   }
-}
 
-extension FBiOSTargetAction {
   public var eventName: EventName { get {
     let actionType = type(of: self).actionType
     switch actionType {
