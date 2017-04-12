@@ -19,7 +19,6 @@
 		AA1B7F6E1C2867EE0038C6A5 /* Bridging.h in Headers */ = {isa = PBXBuildFile; fileRef = AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA1B7F6F1C2867EE0038C6A5 /* Bridging.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F601C2867EE0038C6A5 /* Bridging.m */; };
 		AA1B7F701C2867EE0038C6A5 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F611C2867EE0038C6A5 /* Help.swift */; };
-		AA1B7F711C2867EE0038C6A5 /* CommandBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F621C2867EE0038C6A5 /* CommandBuffer.swift */; };
 		AA1B7F731C2867EE0038C6A5 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F641C2867EE0038C6A5 /* Parser.swift */; };
 		AA1B7F741C2867EE0038C6A5 /* Relay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F651C2867EE0038C6A5 /* Relay.swift */; };
 		AA1B7F751C2867EE0038C6A5 /* Runners.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B7F661C2867EE0038C6A5 /* Runners.swift */; };
@@ -115,7 +114,6 @@
 		AA1B7F5F1C2867EE0038C6A5 /* Bridging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Bridging.h; sourceTree = "<group>"; };
 		AA1B7F601C2867EE0038C6A5 /* Bridging.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Bridging.m; sourceTree = "<group>"; };
 		AA1B7F611C2867EE0038C6A5 /* Help.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Help.swift; sourceTree = "<group>"; };
-		AA1B7F621C2867EE0038C6A5 /* CommandBuffer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandBuffer.swift; sourceTree = "<group>"; };
 		AA1B7F641C2867EE0038C6A5 /* Parser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
 		AA1B7F651C2867EE0038C6A5 /* Relay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Relay.swift; sourceTree = "<group>"; };
 		AA1B7F661C2867EE0038C6A5 /* Runners.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Runners.swift; sourceTree = "<group>"; };
@@ -208,7 +206,6 @@
 				AA23910D1D1922EE00905C7F /* CLI.swift */,
 				AAFE7AB21C92F19D00D92E46 /* CLIBootstrapper.swift */,
 				AA1B7F5D1C2867EE0038C6A5 /* Command.swift */,
-				AA1B7F621C2867EE0038C6A5 /* CommandBuffer.swift */,
 				AA1B7F5E1C2867EE0038C6A5 /* CommandParsers.swift */,
 				AAB97CAA1CCE8EAD0056A3C2 /* CommandRunners.swift */,
 				AA3ADDB71C2B0B2D004E4FA9 /* Defaults.swift */,
@@ -486,7 +483,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAFE7AB31C92F19D00D92E46 /* CLIBootstrapper.swift in Sources */,
-				AA1B7F711C2867EE0038C6A5 /* CommandBuffer.swift in Sources */,
 				AA54EF721C4814BA006D5118 /* Arguments.swift in Sources */,
 				27B700E21D9D27F30067A882 /* ParserDescription.swift in Sources */,
 				AACF9F531C46E5C100B17E82 /* Environment.swift in Sources */,

@@ -251,8 +251,11 @@ struct ListenRunner : Runner, ActionPerformer {
       relays.append(HttpRelay(portNumber: httpPort, performer: self))
     }
     if interface.stdin {
-      let commandBuffer = CommandBuffer(performer: self, reporter: self.context.reporter)
-      relays.append(FileHandleRelay(commandBuffer: commandBuffer))
+      let target = try self.context.querySingleSimulator(query)
+      let bridge = ActionReaderDelegateBridge(interpreter: interpreter)
+      let reader = FBiOSActionReader.fileReader(for: target, delegate: bridge, read: FileHandle.standardInput, write: FileHandle.standardOutput)
+      awaitable = reader
+      relays.append(reader)
     }
     if let hidPort = interface.hid {
       let target = try self.context.querySingleSimulator(query)

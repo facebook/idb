@@ -101,35 +101,3 @@ extension FBiOSActionReader : Relay {
     try self.stopListening()
   }
 }
-
-/**
- A Relay that accepts input from stdin, writing it to the Line Buffer.
- */
-class FileHandleRelay : Relay {
-  let commandBuffer: CommandBuffer
-  let input: FileHandle
-
-  init(commandBuffer: CommandBuffer, input: FileHandle) {
-    self.commandBuffer = commandBuffer
-    self.input = input
-  }
-
-  convenience init(commandBuffer: CommandBuffer) {
-    self.init(
-      commandBuffer: commandBuffer,
-      input: FileHandle.standardInput
-    )
-  }
-
-  func start() throws {
-    let commandBuffer = self.commandBuffer
-    self.input.readabilityHandler = { handle in
-      let data = handle.availableData
-      let _ = commandBuffer.append(data)
-    }
-  }
-
-  func stop() {
-    self.input.readabilityHandler = nil
-  }
-}
