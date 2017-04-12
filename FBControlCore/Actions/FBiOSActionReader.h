@@ -1,0 +1,124 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+#import <Foundation/Foundation.h>
+
+#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBTerminationHandle.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@protocol FBiOSTarget;
+@protocol FBiOSTargetAction;
+@protocol FBiOSActionReaderDelegate;
+
+/**
+ The Termination Handle Type for an Action Reader.
+ */
+extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
+
+/**
+ Routes an Actions for Sockets and Files.
+ */
+@interface FBiOSActionReader : NSObject <FBTerminationAwaitable>
+
+/**
+ The Designated Initializer
+
+ @param target the target to run against.
+ @param delegate the delegate to notify.
+ @param port the port to bind on.
+ @return a Socket Reader.
+ */
++ (instancetype)socketReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate port:(in_port_t)port;
+
+/**
+ The Designated Initializer
+
+ @param target the target to run against.
+ @param delegate the delegate to notify.
+ @param readHandle the handle to read.
+ @param writeHandle the handle to write to.
+ @return a Socket Reader.
+ */
++ (instancetype)fileReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle;
+
+/**
+ Create and Listen to the socket.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)startListeningWithError:(NSError **)error;
+
+/**
+ Stop listening to the socket
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)stopListeningWithError:(NSError **)error;
+
+@end
+
+/**
+ The Delegate for the Action Reader.
+ */
+@protocol FBiOSActionReaderDelegate <NSObject>
+
+/**
+ Called when the Reader has finished reading.
+
+ @param reader the reader.
+ */
+- (void)readerDidFinishReading:(FBiOSActionReader *)reader;
+
+/**
+ Called when the Reader failed to interpret some input.
+
+ @param reader the reader.
+ @param input the line of input
+ @param error the generated error.
+ */
+- (nullable NSString *)reader:(FBiOSActionReader *)reader failedToInterpretInput:(NSString *)input error:(NSError *)error;
+
+/**
+ Called when the Reader is about to perform an action.
+
+ @param reader the reader performing the action
+ @param action the action to be performed
+ @param target the target
+ @return the string to write back to the reader, if relevant.
+ */
+- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartPerformingAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target;
+
+/**
+ Called when the Reader has successfully performed an action
+
+ @param reader the reader performing the action
+ @param action the action to be performed
+ @param target the target
+ @return the string to write back to the reader, if relevant.
+*/
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target;
+
+/**
+ Called when the Reader has failed to perform an action
+
+ @param reader the reader performing the action
+ @param action the action to be performed
+ @param target the target
+ @param error the error.
+ @return the string to write back to the reader, if relevant.
+ */
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didFailToProcessAction:(id<FBiOSTargetAction>)action onTarget:(id<FBiOSTarget>)target error:(NSError *)error;
+
+@end
+
+NS_ASSUME_NONNULL_END
