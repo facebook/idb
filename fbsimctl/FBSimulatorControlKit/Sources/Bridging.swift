@@ -261,7 +261,7 @@ extension FBiOSTargetAction {
   }}
 
   public func printable() -> String {
-    let json = try! JSON.encode(self.jsonSerializableRepresentation() as AnyObject)
+    let json = try! JSON.encode(FBiOSActionRouter.json(from: self) as AnyObject)
     return try! json.serializeToString(false)
   }
 }

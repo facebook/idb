@@ -67,12 +67,12 @@ struct SimpleSubject : EventReporterSubject {
     case .discrete:
       return self.subject.description
     default:
-      return "\(self.eventName) \(self.eventType): \(self.subject.description)"
+      return "\(self.eventName.rawValue) \(self.eventType.rawValue): \(self.subject.description)"
     }
   }}
 
   var description: String { get {
-      return self.shortDescription
+    return self.shortDescription
   }}
 }
 
