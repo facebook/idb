@@ -21,12 +21,15 @@ class HIDSocketConsumer : NSObject, FBSocketConsumer {
     super.init()
   }
 
-  func consumeData(_ data: Data) -> Data? {
+  func consumeData(_ data: Data, writeBack: FBFileConsumer) {
     self.buffer.append(data)
     guard let response = self.perform() else {
-      return nil
+      return
     }
-    return response.data(using: String.Encoding.utf8)
+    guard let data = response.data(using: String.Encoding.utf8) else {
+      return
+    }
+    writeBack.consumeData(data)
   }
 
   private func perform() -> String? {

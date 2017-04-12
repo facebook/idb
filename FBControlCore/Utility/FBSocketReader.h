@@ -14,6 +14,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBFileConsumer;
 @protocol FBSocketReaderDelegate;
 
 /**
@@ -57,9 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
  Consumes Data from the Socket.
 
  @param data the data to consume.
- @return any data to be written back.
+ @param writeBack a consumer to write back to.
  */
-- (nullable NSData *)consumeData:(NSData *)data;
+- (void)consumeData:(NSData *)data writeBack:(id<FBFileConsumer>)writeBack;
 
 @end
 

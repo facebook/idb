@@ -54,13 +54,11 @@
   return YES;
 }
 
+#pragma mark FBFileConsumer Implementation
+
 - (void)consumeData:(NSData *)data
 {
-  NSData *writeBack = [self.consumer consumeData:data];
-  if (!writeBack) {
-    return;
-  }
-  [self.writer consumeData:writeBack];
+  [self.consumer consumeData:data writeBack:self.writer];
 }
 
 - (void)consumeEndOfFile
