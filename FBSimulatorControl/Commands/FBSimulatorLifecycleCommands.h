@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  Boots the Simulator with the default Simulator Launch Configuration.\
  Will fail if the Simulator is currently booted.
 
+ @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
 - (BOOL)bootSimulatorWithError:(NSError **)error;
@@ -32,6 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  Boots the Simulator with the default Simulator Launch Configuration.
  Will fail if the Simulator is currently booted.
 
+ @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
 - (BOOL)bootSimulator:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error;
@@ -40,6 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  Shuts the Simulator down.
  Will fail if the Simulator is not booted.
 
+ @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
 - (BOOL)shutdownSimulatorWithError:(NSError **)error;
@@ -48,6 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  Opens the provided URL on the Simulator.
 
  @param url the URL to open.
+ @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
 - (BOOL)openURL:(NSURL *)url error:(NSError **)error;
@@ -56,6 +60,7 @@ NS_ASSUME_NONNULL_BEGIN
  Terminates a Subprocess of the Simulator.
 
  @param process the process to terminate.
+ @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
 - (BOOL)terminateSubprocess:(FBProcessInfo *)process error:(NSError **)error;

@@ -29,6 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param testLaunchConfiguration configuration used to launch test.
  @param reporter the reporter to report to.
+ @param error an error out for any error that occurs.
  @return a Test Operation if successful, nil otherwise.
  */
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error;
@@ -39,6 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param testLaunchConfiguration configuration used to launch test.
  @param reporter the reporter to report to.
  @param workingDirectory xctest working directory.
+ @param error an error out for any error that occurs.
  @return a Test Operation if successful, nil otherwise.
  */
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory error:(NSError **)error;

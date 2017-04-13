@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  Launches the provided Agent with the given Configuration.
 
  @param agentLaunch the Agent Launch Configuration to Launch.
- @param error an error out for any error that occurs.
+ @param error an error out, for any error that occurs.
  @return YES if the command succeeds, NO otherwise,
  */
 - (BOOL)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
