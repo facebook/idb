@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBDebugDescribeable.h>
+#import <FBControlCore/FBDiagnostic.h>
 #import <FBControlCore/FBJSONConversion.h>
 
 @class FBDiagnostic;
@@ -28,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  - The keys are the log names. A log must have 1 or more matches to have a key.
  - The values are an NSArrray of NSStrings for the lines that have been matched.
  */
-@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSArray<NSString *> *> *mapping;
+@property (nonatomic, copy, readonly) NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *mapping;
 
 /**
  Returns all matches from all elements in the mapping
@@ -57,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error in the mapping format.
  @return an FBBatchLogSearch instance if the mapping is valid, nil otherwise.
  */
-+ (instancetype)withMapping:(NSDictionary<NSArray<NSString *> *, NSArray<FBLogSearchPredicate *> *> *)mapping lines:(BOOL)lines error:(NSError **)error;
++ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping lines:(BOOL)lines error:(NSError **)error;
 
 /**
  Runs the Reciever over an array of Diagnostics.
@@ -75,7 +76,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param lines YES to include the full line in the output, NO for the matched substring.
  @return a NSDictionary specified by -[FBBatchLogSearchResult mapping].
  */
-+ (NSDictionary<NSString *, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate lines:(BOOL)lines;
++ (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate lines:(BOOL)lines;
 
 @end
 

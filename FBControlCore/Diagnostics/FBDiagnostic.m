@@ -16,7 +16,7 @@
 
 @interface FBDiagnostic ()
 
-@property (nonatomic, copy, readwrite) NSString *shortName;
+@property (nonatomic, copy, readwrite) FBDiagnosticName shortName;
 @property (nonatomic, copy, readwrite) NSString *fileType;
 @property (nonatomic, copy, readwrite) NSString *humanReadableName;
 @property (nonatomic, copy, readwrite) NSString *storageDirectory;

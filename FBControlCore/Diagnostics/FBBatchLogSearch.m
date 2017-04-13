@@ -20,7 +20,7 @@
 
 #pragma mark Initializers
 
-- (instancetype)initWithMapping:(NSDictionary<NSString *, NSArray<NSString *> *> *)mapping
+- (instancetype)initWithMapping:(NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)mapping
 {
   self = [super init];
   if (!self) {
@@ -128,7 +128,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)withMapping:(NSDictionary<NSArray<NSString *> *, NSArray<FBLogSearchPredicate *> *> *)mapping lines:(BOOL)lines error:(NSError **)error
++ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping lines:(BOOL)lines error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:mapping keyClass:NSString.class valueClass:NSArray.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary<string, string>", mapping] fail:error];
@@ -270,7 +270,7 @@
 {
   NSParameterAssert([FBCollectionInformation isArrayHeterogeneous:diagnostics withClass:FBDiagnostic.class]);
 
-  // Construct an NSDictionary<NSString, FBDiagnostic> of diagnostics.
+  // Construct an NSDictionary<FBDiagnosticName, FBDiagnostic> of diagnostics.
   NSDictionary *namesToDiagnostics = [NSDictionary dictionaryWithObjects:diagnostics forKeys:[diagnostics valueForKey:@"shortName"]];
 
   // Construct and NSArray<FBLogSearch> instances

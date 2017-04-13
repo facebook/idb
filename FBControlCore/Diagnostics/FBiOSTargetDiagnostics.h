@@ -9,16 +9,13 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBDiagnostic.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBDiagnostic;
 @class FBDiagnosticBuilder;
 @class FBDiagnosticQuery;
-
-/**
- Extensible Diagnostic Name Enumeration.
- */
-typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
 
 /**
  The Name of the Video Log

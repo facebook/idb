@@ -15,6 +15,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ Extensible Diagnostic Name Enumeration.
+ */
+typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
+
+/**
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
@@ -23,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The name of the Log for uniquely identifying the log.
  */
-@property (nullable, nonatomic, readonly, copy) NSString *shortName;
+@property (nullable, nonatomic, readonly, copy) FBDiagnosticName shortName;
 
 /**
  The File Extension of the log. The extension is used when writing to file.
@@ -131,7 +136,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param shortName the Short Name to update with.
  @return the reciever, for chaining.
  */
-- (instancetype)updateShortName:(NSString *)shortName;
+- (instancetype)updateShortName:(FBDiagnosticName)shortName;
 
 /**
  Updates the `fileType` of the underlying `FBDiagnostic`.
