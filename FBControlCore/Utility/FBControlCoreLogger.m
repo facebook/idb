@@ -164,13 +164,13 @@
 
 @implementation FBControlCoreLogger
 
-+ (id<FBControlCoreLogger>)aslLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
++ (id<FBControlCoreLogger>)systemLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging
 {
   int fileDescriptor = writeToStdErr ? STDERR_FILENO : 0;
-  return [self aslLoggerWritingToFileDescriptor:fileDescriptor withDebugLogging:debugLogging];
+  return [self systemLoggerWritingToFileDescriptor:fileDescriptor withDebugLogging:debugLogging];
 }
 
-+ (id<FBControlCoreLogger>)aslLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging
++ (id<FBControlCoreLogger>)systemLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging
 {
   FBASLClientManager *clientManager = [[FBASLClientManager alloc] initWithWritingToFileDescriptor:fileDescriptor debugLogging:debugLogging];
   asl_object_t client = [clientManager clientHandleForQueue:dispatch_get_main_queue()];

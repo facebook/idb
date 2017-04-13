@@ -65,6 +65,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ Implementations of Loggers.
+ */
 @interface FBControlCoreLogger : NSObject
 
 /**
@@ -74,7 +77,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
  @return an FBControlCoreLogger instance.
  */
-+ (id<FBControlCoreLogger>)aslLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
++ (id<FBControlCoreLogger>)systemLoggerWritingToStderrr:(BOOL)writeToStdErr withDebugLogging:(BOOL)debugLogging;
 
 /**
  An implementation of `FBControlCoreLogger` that logs all to a file descriptor using ASL.
@@ -83,7 +86,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param debugLogging YES if Debug messages should be written to stderr, NO otherwise.
  @return an FBControlCoreLogger instance.
  */
-+ (id<FBControlCoreLogger>)aslLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging;
++ (id<FBControlCoreLogger>)systemLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging;
 
 @end
 
