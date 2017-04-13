@@ -15,6 +15,9 @@
 #import "FBDiagnostic.h"
 #import "NSPredicate+FBControlCore.h"
 
+static NSString *const KeySubstrings = @"substrings";
+static NSString *const KeyRegex = @"regex";
+
 #pragma mark - FBLogSearchPredicate
 
 @interface FBLogSearchPredicate_Regex : FBLogSearchPredicate
@@ -81,7 +84,7 @@
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"regex" : self.regularExpression.pattern ?: NSNull.null
+    KeyRegex: self.regularExpression.pattern ?: NSNull.null
   };
 }
 
@@ -172,7 +175,7 @@
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"substrings" : self.substrings,
+    KeySubstrings: self.substrings,
   };
 }
 
@@ -225,12 +228,12 @@
     return [[FBControlCoreError describeFormat:@"%@ is not a dictionary<string, id>", json] fail:error];
   }
 
-  NSArray<NSString *> *substrings = json[@"substrings"];
+  NSArray<NSString *> *substrings = json[KeySubstrings];
   if ([FBCollectionInformation isArrayHeterogeneous:substrings withClass:NSString.class]) {
     return [self substrings:substrings];
   }
 
-  NSString *regexPattern = json[@"regex"];
+  NSString *regexPattern = json[KeyRegex];
   if ([regexPattern isKindOfClass:NSString.class]) {
     return [self regex:regexPattern];
   }
