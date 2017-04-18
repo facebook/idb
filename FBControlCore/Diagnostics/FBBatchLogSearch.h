@@ -19,6 +19,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
+ Options for the Log Search.
+ */
+typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
+  FBBatchLogSearchOptionsFullLines = 1 << 0, // Whether to return full lines.
+  FBBatchLogSearchOptionsFirstMatch = 1 << 2, // Return only the first match.
+};
+
+/**
  Defines a model for the result of a batch search on diagnostics.
  */
 @interface FBBatchLogSearchResult : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
@@ -54,11 +62,11 @@ NS_ASSUME_NONNULL_BEGIN
  - The values are an NSArray of FBLogSearchPredicates of the predicates to search the the diagnostic with.
 
  @param mapping the mapping to search with.
- @param lines YES to include the full line in the output, NO for the matched substring.
+ @param options the options to search with.
  @param error an error out for any error in the mapping format.
  @return an FBBatchLogSearch instance if the mapping is valid, nil otherwise.
  */
-+ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping lines:(BOOL)lines error:(NSError **)error;
++ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error;
 
 /**
  Runs the Reciever over an array of Diagnostics.
@@ -73,10 +81,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param diagnostics an NSArray of FBDiagnostics to search.
  @param predicate a Log Search Predicate to search with.
- @param lines YES to include the full line in the output, NO for the matched substring.
+ @param options the options to search with.
  @return a NSDictionary specified by -[FBBatchLogSearchResult mapping].
  */
-+ (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate lines:(BOOL)lines;
++ (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options;
 
 @end
 

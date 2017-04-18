@@ -151,10 +151,14 @@
 - (NSArray *)batches
 {
   return @[
-    [FBBatchLogSearch withMapping:self.complexMapping lines:YES error:nil],
-    [FBBatchLogSearch withMapping:self.complexMapping lines:NO error:nil],
-    [FBBatchLogSearch withMapping:self.searchAllMapping lines:YES error:nil],
-    [FBBatchLogSearch withMapping:self.searchAllMapping lines:NO error:nil],
+    [FBBatchLogSearch withMapping:self.complexMapping options:FBBatchLogSearchOptionsFirstMatch error:nil],
+    [FBBatchLogSearch withMapping:self.complexMapping options:FBBatchLogSearchOptionsFullLines error:nil],
+    [FBBatchLogSearch withMapping:self.complexMapping options:(FBBatchLogSearchOptionsFirstMatch |FBBatchLogSearchOptionsFullLines) error:nil],
+    [FBBatchLogSearch withMapping:self.complexMapping options:0 error:nil],
+    [FBBatchLogSearch withMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFirstMatch error:nil],
+    [FBBatchLogSearch withMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFullLines error:nil],
+    [FBBatchLogSearch withMapping:self.searchAllMapping options:(FBBatchLogSearchOptionsFirstMatch |FBBatchLogSearchOptionsFullLines) error:nil],
+    [FBBatchLogSearch withMapping:self.searchAllMapping options:0 error:nil],
   ];
 }
 
@@ -180,7 +184,7 @@
 
 - (void)testBatchSearchFindsLinesAcrossMultipleDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping lines:YES error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping options:FBBatchLogSearchOptionsFullLines error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 99u);
@@ -192,9 +196,21 @@
   XCTAssertEqualObjects(results[@"simulator_system"][98], @"Mar  7 16:50:21 some-hostname SpringBoard[24911]: ADDING REMOTE com.apple.Maps, <BBRemoteDataProvider 0x7fca290e3fc0; com.apple.Maps>");
 }
 
+- (void)testBatchSearchFindsFirstLineAcrossMultipleDiagnostics
+{
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping options:(FBBatchLogSearchOptionsFirstMatch | FBBatchLogSearchOptionsFullLines) error:nil];
+  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
+  XCTAssertNotNil(results);
+  XCTAssertEqual([results[@"simulator_system"] count], 3u);
+  XCTAssertEqual([results[@"tree"] count], 1u);
+  XCTAssertEqual([results[@"photo0"] count], 0u);
+
+  XCTAssertEqualObjects(results[@"simulator_system"][0], @"Mar  7 16:50:18 some-hostname backboardd[24912]: ____IOHIDSessionScheduleAsync_block_invoke: thread_id=0x700000323000");
+}
+
 - (void)testBatchSearchFindsExtractsAcrossMultipleDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping lines:NO error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.complexMapping options:0 error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 99u);
@@ -208,10 +224,20 @@
 
 - (void)testSearchAllFindsAcrossAllDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.searchAllMapping lines:YES error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFullLines error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 100u);
+  XCTAssertEqual([results[@"tree"] count], 1u);
+  XCTAssertEqual([results[@"photo0"] count], 0u);
+}
+
+- (void)testSearchAllFindsFirstAcrossAllDiagnostics
+{
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch withMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFirstMatch error:nil];
+  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
+  XCTAssertNotNil(results);
+  XCTAssertEqual([results[@"simulator_system"] count], 4u);
   XCTAssertEqual([results[@"tree"] count], 1u);
   XCTAssertEqual([results[@"photo0"] count], 0u);
 }
