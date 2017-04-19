@@ -81,16 +81,16 @@
   // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
   NSUUID *uuid = [NSUUID UUID];
   dispatch_queue_t queue = dispatch_get_main_queue();
-  id<FBFileConsumer> stdOutReader = [FBLineFileConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
     [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   stdOutReader = [self.configuration.logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid];
-  id<FBFileConsumer> stdErrReader = [FBLineFileConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> stdErrReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
     [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   stdErrReader = [self.configuration.logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid];
   // Consumes the shim output.
-  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer lineReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
     if ([line length] == 0) {
       return;
     }

@@ -66,21 +66,31 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Creates a Consumer of lines from a block.
- Lines will be delivered from a private queue.
+ Lines will be delivered synchronously.
 
  @param consumer the block to call when a line has been consumed.
  @return a new Line Reader.
  */
-+ (instancetype)lineReaderWithConsumer:(void (^)(NSString *))consumer;
++ (instancetype)synchronousReaderWithConsumer:(void (^)(NSString *))consumer;
 
 /**
  Creates a Consumer of lines from a block.
+ Lines will be delivered asynchronously to a private queue.
+
+ @param consumer the block to call when a line has been consumed.
+ @return a new Line Reader.
+ */
++ (instancetype)asynchronousReaderWithConsumer:(void (^)(NSString *))consumer;
+
+/**
+ Creates a Consumer of lines from a block.
+ Lines will be delivered asynchronously to the given queue.
 
  @param queue the queue to call the consumer from.
  @param consumer the block to call when a line has been consumed.
  @return a new Line Reader.
  */
-+ (instancetype)lineReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer;
++ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer;
 
 @end
 

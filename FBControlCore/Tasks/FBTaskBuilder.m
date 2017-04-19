@@ -141,12 +141,12 @@
 
 - (instancetype)withStdOutLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdOutConsumer:[FBLineFileConsumer lineReaderWithConsumer:reader]];
+  return [self withStdOutConsumer:[FBLineFileConsumer asynchronousReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdErrLineReader:(void (^)(NSString *))reader
 {
-  return [self withStdErrConsumer:[FBLineFileConsumer lineReaderWithConsumer:reader]];
+  return [self withStdErrConsumer:[FBLineFileConsumer asynchronousReaderWithConsumer:reader]];
 }
 
 - (instancetype)withStdOutToLogger:(id<FBControlCoreLogger>)logger

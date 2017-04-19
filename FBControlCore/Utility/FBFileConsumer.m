@@ -70,13 +70,18 @@
 
 @implementation FBLineFileConsumer
 
-+ (instancetype)lineReaderWithConsumer:(void (^)(NSString *))consumer
++ (instancetype)synchronousReaderWithConsumer:(void (^)(NSString *))consumer
+{
+  return [[self alloc] initWithQueue:nil consumer:consumer];
+}
+
++ (instancetype)asynchronousReaderWithConsumer:(void (^)(NSString *))consumer
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.FBControlCore.LineConsumer", DISPATCH_QUEUE_SERIAL);
   return [[self alloc] initWithQueue:queue consumer:consumer];
 }
 
-+ (instancetype)lineReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
++ (instancetype)asynchronousReaderWithQueue:(dispatch_queue_t)queue consumer:(void (^)(NSString *))consumer
 {
   return [[self alloc] initWithQueue:queue consumer:consumer];
 }
@@ -107,11 +112,13 @@
 {
   @synchronized (self) {
     [self dispatchAvailableLines];
-    dispatch_async(self.queue, ^{
-      self.consumer = nil;
-      self.queue = nil;
-      self.buffer = nil;
-    });
+    if (self.queue) {
+      dispatch_async(self.queue, ^{
+        [self tearDown];
+      });
+    } else {
+      [self tearDown];
+    }
   }
 }
 
@@ -120,11 +127,22 @@
   NSString *line = [self.buffer consumeLineString];
   while (line != nil) {
     void (^consumer)(NSString *) = self.consumer;
-    dispatch_async(self.queue, ^{
+    if (self.queue) {
+      dispatch_async(self.queue, ^{
+        consumer(line);
+      });
+    } else {
       consumer(line);
-    });
+    }
     line = [self.buffer consumeLineString];
   }
+}
+
+- (void)tearDown
+{
+  self.consumer = nil;
+  self.queue = nil;
+  self.buffer = nil;
 }
 
 @end

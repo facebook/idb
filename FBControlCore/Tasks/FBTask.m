@@ -313,7 +313,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   }
   else if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
     id<FBControlCoreLogger> logger = output;
-    consumer = [FBLineFileConsumer lineReaderWithConsumer:^(NSString *line) {
+    consumer = [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
       [logger log:line];
     }];
   }
