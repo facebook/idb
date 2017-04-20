@@ -7,8 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <SimulatorKit/FoundationXPCProtocolProxyable-Protocol.h>
 
 @protocol SimDisplayIOSurfaceRenderable <FoundationXPCProtocolProxyable>
-@property (readonly, nonatomic) id ioSurface;
+
+@property (readonly, nullable, nonatomic) xpc_object_t ioSurface;
+
 @end

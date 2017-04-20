@@ -100,7 +100,7 @@
   [self.logger log:@"Start Writing in Video Writer"];
   [self.writer startWriting];
   [self.logger log:@"Attaching Consumer in Video Writer"];
-  [self.surface attachConsumer:self];
+  [self.surface attachConsumer:self onQueue:self.mediaQueue];
 
   return YES;
 }

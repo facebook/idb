@@ -50,6 +50,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 @interface FBSimulatorBitmapStream ()
 
 @property (nonatomic, weak, readonly) FBFramebufferSurface *surface;
+@property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
@@ -60,12 +61,17 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @implementation FBSimulatorBitmapStream
 
-+ (instancetype)streamWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
++ (dispatch_queue_t)writeQueue
 {
-  return [[self alloc] initWithSurface:surface logger:logger];
+  return dispatch_queue_create("com.facebook.FBSimulatorControl.BitmapStream", DISPATCH_QUEUE_SERIAL);
 }
 
-- (instancetype)initWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
++ (instancetype)streamWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
+{
+  return [[self alloc] initWithSurface:surface writeQueue:self.writeQueue logger:logger];
+}
+
+- (instancetype)initWithSurface:(FBFramebufferSurface *)surface writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -73,6 +79,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
 
   _surface = surface;
+  _writeQueue = writeQueue;
   _logger = logger;
 
   return self;
@@ -127,7 +134,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if ([self.surface.attachedConsumers containsObject:self]) {
     return;
   }
-  [self.surface attachConsumer:self];
+  [self.surface attachConsumer:self onQueue:self.writeQueue];
 }
 
 #pragma mark FBFramebufferRenderableConsumer

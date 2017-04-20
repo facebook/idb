@@ -385,7 +385,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   [super firstConsumerAttached];
 
   // Start Consuming
-  [self.surface attachConsumer:self];
+  [self.surface attachConsumer:self onQueue:self.queue];
 }
 
 - (void)detachAllConsumers:(dispatch_group_t)teardownGroup
