@@ -7,11 +7,30 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBControlCore/FBFileConsumer.h>
-#import "FBXCTestReporter.h"
+#import <Foundation/Foundation.h>
+#import <FBControlCore/FBControlCore.h>
+#import <FBXCTestKit/FBXCTestReporter.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
+@protocol FBFileConsumer;
+@protocol FBControlCoreLogger;
+
+/**
+ A Reporter using xctool's linewise-json output.
+ */
 @interface FBJSONTestReporter : NSObject <FBXCTestReporter>
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType fileConsumer:(id <FBFileConsumer>)fileConsumer;
+/**
+ The Designated Initializer.
+
+ @param testBundlePath the Test Bundle to Report for.
+ @param testType the Test Type to Report for
+ @param logger the logger to log out-of-band information to.
+ @param fileConsumer the consumer of the output.
+ */
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType logger:(nullable id<FBControlCoreLogger>)logger fileConsumer:(id<FBFileConsumer>)fileConsumer;
 
 @end
+
+NS_ASSUME_NONNULL_END

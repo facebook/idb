@@ -16,6 +16,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 @interface FBJSONTestReporter ()
 
 @property (nonatomic, strong, readonly) id<FBFileConsumer> fileConsumer;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
 @property (nonatomic, copy, readonly) NSString *testType;
 @property (nonatomic, copy, readonly) NSMutableArray<NSDictionary<NSString *, id> *> *events;
@@ -29,7 +30,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 
 @implementation FBJSONTestReporter
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType fileConsumer:(id <FBFileConsumer>)fileConsumer
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType logger:(id<FBControlCoreLogger>)logger fileConsumer:(id<FBFileConsumer>)fileConsumer
 {
   self = [super init];
   if (!self) {
@@ -37,6 +38,7 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   }
 
   _fileConsumer = fileConsumer;
+  _logger = logger;
   _testBundlePath = testBundlePath;
   _testType = testType;
   _xctestNameExceptionsMapping = [NSMutableDictionary dictionary];

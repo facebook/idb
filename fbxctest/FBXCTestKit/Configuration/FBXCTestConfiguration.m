@@ -154,7 +154,7 @@
   }
   if (!self.reporter) {
     FBFileWriter *stdOutFileWriter = [FBFileWriter writerWithFileHandle:NSFileHandle.fileHandleWithStandardOutput blocking:YES];
-    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType fileConsumer:stdOutFileWriter];
+    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType logger:self.logger fileConsumer:stdOutFileWriter];
   }
   if (testFilter != nil) {
     NSString *expectedPrefix = [self.testBundlePath stringByAppendingString:@":"];
@@ -165,7 +165,7 @@
   }
   if (!self.reporter) {
     FBFileWriter *stdOutFileWriter = [FBFileWriter writerWithFileHandle:NSFileHandle.fileHandleWithStandardOutput blocking:YES];
-    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType fileConsumer:stdOutFileWriter];
+    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType logger:self.logger fileConsumer:stdOutFileWriter];
   }
 
   self.workingDirectory = workingDirectory;

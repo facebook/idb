@@ -28,7 +28,7 @@
   self.consumer = [FBLineFileConsumer synchronousReaderWithConsumer:^(NSString *line) {
     [lines addObject:line];
   }];
-  self.reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:@"/path.bundle" testType:@"footype" fileConsumer:self.consumer];
+  self.reporter = [[FBJSONTestReporter alloc] initWithTestBundlePath:@"/path.bundle" testType:@"footype" logger:nil fileConsumer:self.consumer];
   self.lines = lines;
 }
 
