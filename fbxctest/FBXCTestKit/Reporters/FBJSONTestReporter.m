@@ -151,8 +151,16 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self storeEvent:[FBJSONTestReporter testOutputEvent:output]];
 }
 
-- (void)handleExternalEvent:(NSDictionary *)event
+- (void)handleExternalEvent:(NSString *)line
 {
+  if (line.length == 0) {
+    return;
+  }
+  NSError *error = nil;
+  NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[line dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
+  if (event == nil) {
+    [self.logger logFormat:@"Received unexpected output from otest-shim:\n%@", line];
+  }
   if ([event[@"event"] isEqualToString:@"end-test"]) {
     NSMutableDictionary *mutableEvent = event.mutableCopy;
     mutableEvent[@"output"] = [self.pendingTestOutput componentsJoinedByString:@""];

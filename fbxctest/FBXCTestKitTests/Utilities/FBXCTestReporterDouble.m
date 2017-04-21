@@ -67,8 +67,13 @@
   return YES;
 }
 
-- (void)handleExternalEvent:(NSDictionary *)event
+- (void)handleExternalEvent:(NSString *)line
 {
+  NSError *error = nil;
+  NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[line dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
+  if (event == nil) {
+    return;
+  }
   [self.mutableExternalEvents addObject:event];
 }
 

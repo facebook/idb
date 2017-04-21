@@ -53,8 +53,10 @@
 - (BOOL)runTestsWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
+  id<FBXCTestReporter> reporter = self.configuration.reporter;
+  FBXCTestLogger *logger = self.configuration.logger;
 
-  [self.configuration.reporter didBeginExecutingTestPlan];
+  [reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
   NSString *otestShimPath = simulator ? self.configuration.shims.iOSSimulatorOtestShimPath : self.configuration.shims.macOtestShimPath;
@@ -81,26 +83,21 @@
   // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
   NSUUID *uuid = [NSUUID UUID];
   dispatch_queue_t queue = dispatch_get_main_queue();
+
+
   id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
-    [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
-  stdOutReader = [self.configuration.logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid];
+  stdOutReader = [logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid];
   id<FBFileConsumer> stdErrReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
-    [self.configuration.reporter testHadOutput:[line stringByAppendingString:@"\n"]];
+    [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
-  stdErrReader = [self.configuration.logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid];
+  stdErrReader = [logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid];
   // Consumes the shim output.
   id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
-    if ([line length] == 0) {
-      return;
-    }
-    NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[line dataUsingEncoding:NSUTF8StringEncoding] options:0 error:error];
-    if (event == nil) {
-      [self.configuration.logger logFormat:@"Received unexpected output from otest-shim:\n%@", line];
-    }
-    [self.configuration.reporter handleExternalEvent:event];
+    [reporter handleExternalEvent:line];
   }];
-  otestShimLineReader = [self.configuration.logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
+  otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
 
   FBLogicTestProcess *process = simulator
     ? [FBLogicTestProcess
@@ -126,11 +123,11 @@
   }
 
   if (self.configuration.waitForDebugger) {
-    [self.configuration.reporter processWaitingForDebuggerWithProcessIdentifier:pid];
+    [reporter processWaitingForDebuggerWithProcessIdentifier:pid];
     // If wait_for_debugger is passed, the child process receives SIGSTOP after immediately launch.
     // We wait until it receives SIGCONT from an attached debugger.
     waitid(P_PID, (id_t)pid, NULL, WCONTINUED);
-    [self.configuration.reporter debuggerAttached];
+    [reporter debuggerAttached];
   }
 
   // Create a reader of the otest-shim path and start reading it.
@@ -164,7 +161,7 @@
       failBool:error];
   }
 
-  [self.configuration.reporter didFinishExecutingTestPlan];
+  [reporter didFinishExecutingTestPlan];
 
   return YES;
 }

@@ -7,8 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <Foundation/Foundation.h>
+
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
+/**
+ fbxtest's reporting protocol.
+ */
 @protocol FBXCTestReporter <NSObject>
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid;
@@ -24,8 +31,10 @@
 
 - (void)testHadOutput:(NSString *)output;
 
-- (void)handleExternalEvent:(NSDictionary *)event;
+- (void)handleExternalEvent:(NSString *)event;
 
 - (BOOL)printReportWithError:(NSError **)error;
 
 @end
+
+NS_ASSUME_NONNULL_END
