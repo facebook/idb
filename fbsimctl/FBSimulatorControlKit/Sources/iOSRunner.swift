@@ -66,7 +66,7 @@ struct iOSActionProvider {
           }
       }
     case .stream(let output, let type):
-      return iOSTargetRunner.handled(reporter, stream, ControlCoreSubject(target as! ControlCoreValue)) {
+      return iOSTargetRunner.handled(reporter, .stream, ControlCoreSubject(target as! ControlCoreValue)) {
         let stream = try target.createStream(with: type)
         try stream.startStreaming(output.makeWriter())
         return stream
