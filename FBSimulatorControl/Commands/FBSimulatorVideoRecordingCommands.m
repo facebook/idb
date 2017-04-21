@@ -81,7 +81,7 @@ FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStr
   if (!surface) {
     return nil;
   }
-  return [FBSimulatorBitmapStream streamWithSurface:surface logger:self.simulator.logger];
+  return [FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:self.simulator.logger];
 }
 
 #pragma mark Private

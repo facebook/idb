@@ -29,13 +29,26 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Initializers
 
 /**
- Constructs a Bitmap Stream
+ Constructs a Bitmap Stream.
+ Bitmaps will only be written when there is a new bitmap available.
 
  @param surface the surface to connect to.
  @param logger the logger to log to.
  @return a new Bitmap Stream object.
  */
-+ (instancetype)streamWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)lazyStreamWithSurface:(FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
+
+/**
+ Constructs a Bitmap Stream.
+ Bitmaps will be written at an interval in seconds, regardless of whether the frame is new or not.
+
+ @param surface the surface to connect to.
+ @param framesPerSecond the number of frames to send per second.
+ @param logger the logger to log to.
+ @return a new Bitmap Stream object.
+ */
++ (instancetype)eagerStreamWithSurface:(FBFramebufferSurface *)surface framesPerSecond:(NSUInteger)framesPerSecond logger:(id<FBControlCoreLogger>)logger;
+
 
 #pragma mark Public Methods
 
