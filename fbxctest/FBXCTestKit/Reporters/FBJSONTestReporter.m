@@ -50,8 +50,8 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
       errorMessage = [errorMessage stringByAppendingString:@". Crash occurred while this test was running: "];
       errorMessage = [errorMessage stringByAppendingString:_currentTestName];
     }
-    [self printEvent:[self createOCUnitBeginEvent]];
-    [self printEvent:[self createOCUnitEndEventWithMessage:errorMessage success:NO]];
+    [self printEvent:[FBJSONTestReporter createOCUnitBeginEvent:self.testType testBundlePath:self.testBundlePath]];
+    [self printEvent:[FBJSONTestReporter createOCUnitEndEvent:self.testType testBundlePath:self.testBundlePath message:errorMessage success:NO]];
     return [[FBXCTestError describe:errorMessage] failBool:error];
   }
   for (NSDictionary *event in _events) {
@@ -75,64 +75,26 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   [self.fileConsumer consumeData:[NSData dataWithBytes:"\n" length:1]];
 }
 
-- (NSDictionary *)createOCUnitBeginEvent
-{
-  return @{
-           @"event" : @"begin-ocunit",
-           @"testType" : _testType,
-           @"bundleName" : [_testBundlePath lastPathComponent],
-           @"targetName" : _testBundlePath,
-           };
-}
-
-- (NSDictionary *)createOCUnitEndEventWithMessage:(NSString *)message success:(BOOL)success
-{
-  NSMutableDictionary<NSString *, id> *event = [NSMutableDictionary dictionary];
-  [event addEntriesFromDictionary:@{
-    @"event" : @"end-ocunit",
-    @"testType" : _testType,
-    @"bundleName" : [_testBundlePath lastPathComponent],
-    @"targetName" : _testBundlePath,
-    @"succeeded" : success ? @YES : @NO,
-  }];
-  if (message) {
-    event[@"message"] = message;
-  }
-  return [event copy];
-}
-
 #pragma mark FBXCTestReporter
 
 - (void)processWaitingForDebuggerWithProcessIdentifier:(pid_t)pid
 {
-  [self printEvent:@{
-                     @"event": @"begin-status",
-                     @"pid": @(pid),
-                     @"level": @"Info",
-                     @"message": [NSString stringWithFormat:@"Tests waiting for debugger. To debug run: lldb -p %@", @(pid)],
-                     }];
+  [self printEvent:[FBJSONTestReporter waitingForDebuggerEvent:pid]];
 }
 
 - (void)debuggerAttached
 {
-  [self printEvent:@{
-                     @"event": @"end-status",
-                     @"level": @"Info",
-                     @"message": @"Debugger attached",
-                     }];
+  [self printEvent:[FBJSONTestReporter debuggerAttachedEvent]];
 }
 
 - (void)didBeginExecutingTestPlan
 {
-  [self storeEvent:[self createOCUnitBeginEvent]];
+  [self storeEvent:[FBJSONTestReporter createOCUnitBeginEvent:self.testType testBundlePath:self.testBundlePath]];
 }
 
 - (void)testSuite:(NSString *)testSuite didStartAt:(NSString *)startTime
 {
-  [self storeEvent:@{
-    @"event" : @"begin-test-suite",
-    @"suite" : testSuite,
-  }];
+  [self storeEvent:[FBJSONTestReporter beginTestSuiteEvent:startTime]];
 }
 
 - (void)testCaseDidStartForTestClass:(NSString *)testClass method:(NSString *)method
@@ -140,68 +102,44 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
   NSString *xctestName = FBFullyFormattedXCTestName(testClass, method);
   _currentTestName = xctestName;
   self.xctestNameExceptionsMapping[xctestName] = [NSMutableArray array];
-  [self storeEvent:@{
-    @"event" : @"begin-test",
-    @"className" : testClass,
-    @"methodName" : method,
-    @"test" : FBFullyFormattedXCTestName(testClass, method),
-  }];
+  [self storeEvent:[FBJSONTestReporter beginTestCaseEvent:testClass testMethod:method]];
 }
 
 - (void)testCaseDidFailForTestClass:(NSString *)testClass method:(NSString *)method withMessage:(NSString *)message file:(NSString *)file line:(NSUInteger)line
 {
   NSString *xctestName = FBFullyFormattedXCTestName(testClass, method);
-  [self.xctestNameExceptionsMapping[xctestName] addObject:@{
-    @"lineNumber" : @(line),
-    @"filePathInProject" : file,
-    @"reason" : message,
-  }];
+  [self.xctestNameExceptionsMapping[xctestName] addObject:[FBJSONTestReporter exceptionEvent:message file:file line:line]];
 }
 
 - (void)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method withStatus:(FBTestReportStatus)status duration:(NSTimeInterval)duration
 {
   _currentTestName = nil;
-  NSString *xctestName = FBFullyFormattedXCTestName(testClass, method);
-  [self storeEvent:@{
-    @"event" : @"end-test",
-    @"result" : (status == FBTestReportStatusPassed ? @"success" : @"failure"),
-    @"output" : [self.pendingTestOutput componentsJoinedByString:@""],
-    @"test" : FBFullyFormattedXCTestName(testClass, method),
-    @"className" : testClass,
-    @"methodName" : method,
-    @"succeeded" : (status == FBTestReportStatusPassed ? @YES : @NO),
-    @"exceptions" : self.xctestNameExceptionsMapping[xctestName] ?: @[],
-    @"totalDuration" : @(duration),
-  }];
+  NSDictionary<NSString *, id> *event = [FBJSONTestReporter
+    testCaseDidFinishForTestClass:testClass
+    method:method
+    status:status
+    duration:duration
+    pendingTestOutput:self.pendingTestOutput
+    xctestNameExceptionsMapping:self.xctestNameExceptionsMapping];
+  [self storeEvent:event];
   [self.pendingTestOutput removeAllObjects];
 }
 
 - (void)finishedWithSummary:(FBTestManagerResultSummary *)summary
 {
-  [self storeEvent:@{
-    @"event" : @"end-test-suite",
-    @"suite" : summary.testSuite,
-    @"testCaseCount" : @(summary.runCount),
-    @"totalFailureCount" : @(summary.failureCount),
-    @"totalDuration" : @(summary.totalDuration),
-    @"unexpectedExceptionCount" : @(summary.unexpected),
-    @"testDuration" : @(summary.testDuration)
-  }];
+  [self storeEvent:[FBJSONTestReporter finishedEventFromSummary:summary]];
 }
 
 - (void)didFinishExecutingTestPlan
 {
   _finished = YES;
-  [self storeEvent:[self createOCUnitEndEventWithMessage:nil success:YES]];
+  [self storeEvent:[FBJSONTestReporter createOCUnitEndEvent:self.testType testBundlePath:self.testBundlePath message:nil success:YES]];
 }
 
 - (void)testHadOutput:(NSString *)output
 {
   [self.pendingTestOutput addObject:output];
-  [self storeEvent:@{
-    @"event": @"test-output",
-    @"output": output
-  }];
+  [self storeEvent:[FBJSONTestReporter testOutputEvent:output]];
 }
 
 - (void)handleExternalEvent:(NSDictionary *)event
@@ -213,6 +151,116 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
     [self.pendingTestOutput removeAllObjects];
   }
   [self.events addObject:event];
+}
+
+#pragma mark Event Synthesis
+
++ (NSDictionary<NSString *, id> *)exceptionEvent:(NSString *)reason file:(NSString *)file line:(NSUInteger)line
+{
+  return @{
+    @"lineNumber" : @(line),
+    @"filePathInProject" : file,
+    @"reason" : reason,
+  };
+}
+
++ (NSDictionary<NSString *, id> *)beginTestCaseEvent:(NSString *)testClass testMethod:(NSString *)method
+{
+  return @{
+    @"event" : @"begin-test",
+    @"className" : testClass,
+    @"methodName" : method,
+    @"test" : FBFullyFormattedXCTestName(testClass, method),
+  };
+}
+
++ (NSDictionary<NSString *, id> *)beginTestSuiteEvent:(NSString *)testSuite
+{
+  return @{
+    @"event" : @"begin-test-suite",
+    @"suite" : testSuite,
+  };
+}
+
++ (NSDictionary<NSString *, id> *)testOutputEvent:(NSString *)output
+{
+  return @{
+    @"event": @"test-output",
+    @"output": output,
+  };
+}
+
++ (NSDictionary<NSString *, id> *)waitingForDebuggerEvent:(pid_t)pid
+{
+  return @{
+    @"event": @"begin-status",
+    @"pid": @(pid),
+    @"level": @"Info",
+    @"message": [NSString stringWithFormat:@"Tests waiting for debugger. To debug run: lldb -p %@", @(pid)],
+  };
+}
+
++ (NSDictionary<NSString *, id> *)debuggerAttachedEvent
+{
+  return @{
+    @"event": @"end-status",
+    @"level": @"Info",
+    @"message": @"Debugger attached",
+  };
+}
+
++ (NSDictionary<NSString *, id> *)createOCUnitBeginEvent:(NSString *)testType testBundlePath:(NSString *)testBundlePath
+{
+  return @{
+    @"event" : @"begin-ocunit",
+    @"testType" : testType,
+    @"bundleName" : [testBundlePath lastPathComponent],
+    @"targetName" : testBundlePath,
+  };
+}
+
++ (NSDictionary<NSString *, id> *)createOCUnitEndEvent:(NSString *)testType testBundlePath:(NSString *)testBundlePath message:(NSString *)message success:(BOOL)success
+{
+  NSMutableDictionary<NSString *, id> *event = [NSMutableDictionary dictionaryWithDictionary:@{
+    @"event" : @"end-ocunit",
+    @"testType" : testType,
+    @"bundleName" : [testBundlePath lastPathComponent],
+    @"targetName" : testBundlePath,
+    @"succeeded" : success ? @YES : @NO,
+  }];
+  if (message) {
+    event[@"message"] = message;
+  }
+  return [event copy];
+}
+
++ (NSDictionary<NSString *, id> *)finishedEventFromSummary:(FBTestManagerResultSummary *)summary
+{
+  return @{
+    @"event" : @"end-test-suite",
+    @"suite" : summary.testSuite,
+    @"testCaseCount" : @(summary.runCount),
+    @"totalFailureCount" : @(summary.failureCount),
+    @"totalDuration" : @(summary.totalDuration),
+    @"unexpectedExceptionCount" : @(summary.unexpected),
+    @"testDuration" : @(summary.testDuration)
+  };
+}
+
++ (NSDictionary<NSString *, id> *)testCaseDidFinishForTestClass:(NSString *)testClass method:(NSString *)method status:(FBTestReportStatus)status duration:(NSTimeInterval)duration pendingTestOutput:(NSArray<NSString *> *)pendingTestOutput xctestNameExceptionsMapping:(NSDictionary<NSString *, NSArray<NSDictionary *> *> *)xctestNameExceptionsMapping
+{
+  NSString *xctestName = FBFullyFormattedXCTestName(testClass, method);
+  return @{
+    @"event" : @"end-test",
+    @"result" : (status == FBTestReportStatusPassed ? @"success" : @"failure"),
+    @"output" : [pendingTestOutput componentsJoinedByString:@""],
+    @"test" : xctestName,
+    @"className" : testClass,
+    @"methodName" : method,
+    @"succeeded" : (status == FBTestReportStatusPassed ? @YES : @NO),
+    @"exceptions" : xctestNameExceptionsMapping[xctestName] ?: @[],
+    @"totalDuration" : @(duration),
+  };
 }
 
 @end
