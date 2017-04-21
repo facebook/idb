@@ -31,6 +31,19 @@ extern FBTerminationHandleType const FBTerminationHandleTypeDispatchSource;
  */
 + (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler;
 
+/**
+ Creates and returns an `FBDispatchSourceNotifier` that will call the `handler` at a provided timing interval.
+
+ @param timeInterval the time interval to wait for.
+ @param handler the handler to call when the process exits
+ */
++ (instancetype)timerNotifierNotifierWithTimeInterval:(uint64_t)timeInterval queue:(dispatch_queue_t)queue handler:(void (^)(FBDispatchSourceNotifier *))handler;
+
+/**
+ The Wrapped Dispatch Source.
+ */
+@property (nonatomic, strong, nullable, readonly) dispatch_source_t dispatchSource;
+
 @end
 
 NS_ASSUME_NONNULL_END
