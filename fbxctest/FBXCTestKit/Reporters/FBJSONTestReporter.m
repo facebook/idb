@@ -14,14 +14,17 @@
 static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString *methodName);
 
 @interface FBJSONTestReporter ()
-@property (nonatomic, copy, readwrite) NSMutableDictionary<NSString *, NSMutableArray<NSDictionary *> *> *xctestNameExceptionsMapping;
-@property (nonatomic, copy, readwrite) NSString *testBundlePath;
-@property (nonatomic, copy, readwrite) NSString *testType;
-@property (nonatomic, copy, readwrite) NSMutableArray<NSDictionary *> *events;
-@property (nonatomic, copy, readwrite) NSMutableArray<NSString *> *pendingTestOutput;
+
+@property (nonatomic, strong, readonly) id<FBFileConsumer> fileConsumer;
+@property (nonatomic, copy, readonly) NSString *testBundlePath;
+@property (nonatomic, copy, readonly) NSString *testType;
+@property (nonatomic, copy, readonly) NSMutableArray<NSDictionary<NSString *, id> *> *events;
+@property (nonatomic, copy, readonly) NSMutableDictionary<NSString *, NSMutableArray<NSDictionary<NSString *, id> *> *> *xctestNameExceptionsMapping;
+@property (nonatomic, copy, readonly) NSMutableArray<NSString *> *pendingTestOutput;
+
 @property (nonatomic, copy, readwrite) NSString *currentTestName;
 @property (nonatomic, assign, readwrite) BOOL finished;
-@property (nonatomic, strong, readwrite) id<FBFileConsumer> fileConsumer;
+
 @end
 
 @implementation FBJSONTestReporter
@@ -29,16 +32,20 @@ static inline NSString *FBFullyFormattedXCTestName(NSString *className, NSString
 - (instancetype)initWithTestBundlePath:(NSString *)testBundlePath testType:(NSString *)testType fileConsumer:(id <FBFileConsumer>)fileConsumer
 {
   self = [super init];
-  if (self) {
-    _xctestNameExceptionsMapping = [NSMutableDictionary dictionary];
-    _testBundlePath = testBundlePath;
-    _testType = testType;
-    _events = [NSMutableArray array];
-    _pendingTestOutput = [NSMutableArray array];
-    _currentTestName = nil;
-    _finished = NO;
-    _fileConsumer = fileConsumer;
+  if (!self) {
+    return nil;
   }
+
+  _fileConsumer = fileConsumer;
+  _testBundlePath = testBundlePath;
+  _testType = testType;
+  _xctestNameExceptionsMapping = [NSMutableDictionary dictionary];
+  _pendingTestOutput = [NSMutableArray array];
+  _events = [NSMutableArray array];
+
+  _currentTestName = nil;
+  _finished = NO;
+
   return self;
 }
 
