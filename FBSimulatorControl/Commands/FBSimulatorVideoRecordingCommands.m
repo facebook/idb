@@ -71,8 +71,12 @@ FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStr
 
 #pragma mark FBSimulatorStreamingCommands
 
-- (nullable FBSimulatorBitmapStream *)createStreamWithError:(NSError **)error
+- (nullable FBSimulatorBitmapStream *)createStreamWithType:(FBBitmapStreamType)type error:(NSError **)error
 {
+  if (type != FBBitmapStreamTypeBGRA) {
+    return [FBSimulatorError failWithErrorMessage:@"Only BGRA is supported for simulators." errorOut:error];
+  }
+
   FBFramebufferSurface *surface = [self obtainSurfaceWithError:error];
   if (!surface) {
     return nil;

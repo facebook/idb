@@ -35,6 +35,16 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   };
 }
 
+@interface FBDeviceBitmapStream_BGRA : FBDeviceBitmapStream
+
+@end
+
+@interface FBDeviceBitmapStream_H264 : FBDeviceBitmapStream
+
+@property (nonatomic, assign, readwrite) BOOL sentH264SPSPPS;
+
+@end
+
 @interface FBDeviceBitmapStream () <AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -48,12 +58,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @implementation FBDeviceBitmapStream
 
-+ (instancetype)streamWithSession:(AVCaptureSession *)session logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)streamWithSession:(AVCaptureSession *)session type:(FBBitmapStreamType)type logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Create the output.
   AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
   output.alwaysDiscardsLateVideoFrames = YES;
-  output.videoSettings = FBDeviceBitmapStream.videoSettings;
+  output.videoSettings = [FBDeviceBitmapStream videoSettingsForType:type];
   if (![session canAddOutput:output]) {
     return [[FBDeviceControlError
       describe:@"Cannot add Data Output to session"]
@@ -63,7 +73,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
   // Create a serial queue to handle processing of frames
   dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.streamencoder", NULL);
-  return [[self alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+  switch (type) {
+    case FBBitmapStreamTypeBGRA:
+      return [[FBDeviceBitmapStream_BGRA alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+    case FBBitmapStreamTypeH264:
+      return [[FBDeviceBitmapStream_H264 alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+  }
 }
 
 - (instancetype)initWithSession:(AVCaptureSession *)session output:(AVCaptureVideoDataOutput *)output writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
@@ -118,14 +133,58 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return YES;
 }
 
-+ (NSDictionary *)videoSettings
++ (NSDictionary *)videoSettingsForType:(FBBitmapStreamType)type
 {
-  return @{(id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)};
+  switch (type) {
+    case FBBitmapStreamTypeH264:
+      return @{};
+    case FBBitmapStreamTypeBGRA:
+      return @{(id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)};
+  }
+
+  return @{};
 }
 
 #pragma mark AVCaptureAudioDataOutputSampleBufferDelegate
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
+{
+  if (!self.consumer) {
+    return;
+  }
+
+  [self consumeSampleBuffer:sampleBuffer];
+}
+
+- (void)captureOutput:(AVCaptureOutput *)captureOutput didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
+{
+  [self.logger logFormat:@"Dropped a sample!"];
+}
+
+#pragma mark Data consumption
+
+- (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+#pragma mark FBTerminationHandle
+
+- (FBTerminationHandleType)type
+{
+  return FBTerminationHandleTypeVideoStreaming;
+}
+
+- (void)terminate
+{
+  [self stopStreamingWithError:nil];
+}
+
+@end
+
+@implementation FBDeviceBitmapStream_BGRA
+
+- (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
   CVImageBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
   CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
@@ -144,20 +203,84 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   }
 }
 
-- (void)captureOutput:(AVCaptureOutput *)captureOutput didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
+@end
+
+@implementation FBDeviceBitmapStream_H264
+
+- (void)dispatchPacket:(const void *)data length:(size_t)length
 {
+  static const size_t startCodeLength = 4;
+  static const uint8_t startCode[] = {0x00, 0x00, 0x00, 0x01};
+  [self.consumer consumeData:[NSData dataWithBytesNoCopy:(void *)startCode length:startCodeLength freeWhenDone:NO]];
+  [self.consumer consumeData:[NSData dataWithBytesNoCopy:(void *)data length:length freeWhenDone:NO]];
 }
 
-#pragma mark FBTerminationHandle
-
-- (FBTerminationHandleType)type
+- (void)consumeSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
-  return FBTerminationHandleTypeVideoStreaming;
-}
+  BOOL syncFrame = NO;
+  CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, 0);
+  if (CFArrayGetCount(attachments) > 0) {
+    CFBooleanRef notSyncFrame = NULL;
+    Boolean keyExists = CFDictionaryGetValueIfPresent(CFArrayGetValueAtIndex(attachments, 0),
+                                                      kCMSampleAttachmentKey_NotSync,
+                                                      (const void **)&notSyncFrame);
+    syncFrame = !keyExists || !CFBooleanGetValue(notSyncFrame);
+  }
 
-- (void)terminate
-{
-  [self stopStreamingWithError:nil];
+  CMFormatDescriptionRef format = CMSampleBufferGetFormatDescription(sampleBuffer);
+
+  if (!self.pixelBufferAttributes) {
+    CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format);
+    NSDictionary *attributes = @{
+                                 @"width" : @(dimensions.width),
+                                 @"height" : @(dimensions.height),
+                                 @"format" : @"h264",
+                                 };
+    self.pixelBufferAttributes = attributes;
+    [self.logger logFormat:@"Mounting Surface with Attributes: %@", attributes];
+  }
+
+  if (syncFrame || !self.sentH264SPSPPS) {
+    size_t numberOfParameterSets = 0;
+    CMVideoFormatDescriptionGetH264ParameterSetAtIndex(format,
+                                                       0, NULL, NULL,
+                                                       &numberOfParameterSets,
+                                                       NULL);
+
+    for (size_t i = 0; i < numberOfParameterSets; i++) {
+      const uint8_t *data = NULL;
+      size_t length = 0;
+      CMVideoFormatDescriptionGetH264ParameterSetAtIndex(format,
+                                                         i,
+                                                         &data,
+                                                         &length,
+                                                         NULL, NULL);
+
+      [self dispatchPacket:data length:length];
+    }
+
+    self.sentH264SPSPPS = YES;
+  }
+
+  size_t bufferLength = 0;
+  uint8_t *buffer = NULL;
+  CMBlockBufferGetDataPointer(CMSampleBufferGetDataBuffer(sampleBuffer),
+                              0,
+                              NULL,
+                              &bufferLength,
+                              (char **)&buffer);
+
+  size_t currentBufferOffset = 0;
+  static const int headerLength = 4;
+  while (currentBufferOffset < (bufferLength - headerLength)) {
+    uint32_t thisUnitLength = 0;
+    memcpy(&thisUnitLength, buffer + currentBufferOffset, headerLength);
+    thisUnitLength = CFSwapInt32BigToHost(thisUnitLength);
+
+    [self dispatchPacket:(buffer + currentBufferOffset + headerLength) length:thisUnitLength];
+
+    currentBufferOffset += headerLength + thisUnitLength;
+  }
 }
 
 @end

@@ -79,13 +79,13 @@
 
 #pragma mark FBBitmapStreamingCommands
 
-- (nullable id<FBBitmapStream>)createStreamWithError:(NSError **)error
+- (nullable id<FBBitmapStream>)createStreamWithType:(FBBitmapStreamType)type error:(NSError **)error
 {
   AVCaptureSession *session = [FBDeviceVideo captureSessionForDevice:self.device error:error];
   if (!session) {
     return nil;
   }
-  return [FBDeviceBitmapStream streamWithSession:session logger:self.device.logger error:error];
+  return [FBDeviceBitmapStream streamWithSession:session type:type logger:self.device.logger error:error];
 }
 
 

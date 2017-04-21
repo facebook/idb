@@ -28,11 +28,12 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Initializer.
 
  @param session the Session to record from.
+ @param type the type of the stream to provide.
  @param logger the logger to log to.
  @param error an error out for any error that occurs.
  @return a new Video Encoder.
  */
-+ (instancetype)streamWithSession:(AVCaptureSession *)session logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
++ (instancetype)streamWithSession:(AVCaptureSession *)session type:(FBBitmapStreamType)type logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 @end
 

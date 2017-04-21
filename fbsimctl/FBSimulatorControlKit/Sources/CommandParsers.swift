@@ -771,8 +771,22 @@ extension Action : Parsable {
   }
 
   static var streamParser: Parser<Action> {
+    let typeParsers: [Parser<FBBitmapStreamType>] = [
+      Parser<FBBitmapStreamType>
+        .ofFlag("h264", .H264, "Output in h264 format."),
+      Parser<FBBitmapStreamType>
+        .ofFlag("bgra", .BGRA, "Output in BGRA format."),
+    ]
+    let typeAlternativeParser =
+      Parser
+        .alternative(typeParsers)
+        .fallback(.BGRA)
+
     return Parser
-      .ofCommandWithArg(EventName.stream.rawValue, FileOutput.parser.optional())
+      .ofTwoSequenced(
+        Parser.ofCommandWithArg(EventName.stream.rawValue, FileOutput.parser),
+        typeAlternativeParser
+      )
       .fmap(Action.stream)
   }
 
