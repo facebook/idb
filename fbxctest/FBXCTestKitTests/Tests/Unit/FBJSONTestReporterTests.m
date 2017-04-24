@@ -208,14 +208,24 @@
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
 
-  XCTAssertEqual(self.lines.count, 2u);
+  XCTAssertEqual(self.lines.count, 4u);
   XCTAssertEqualObjects(self[0][@"bundleName"], @"path.bundle");
   XCTAssertEqualObjects(self[0][@"event"], @"begin-ocunit");
 
-  XCTAssertEqualObjects(self[1][@"bundleName"], @"path.bundle");
-  XCTAssertEqualObjects(self[1][@"message"], @"No end-ocunit event was received, the test bundle has likely crashed");
-  XCTAssertEqualObjects(self[1][@"succeeded"], @0);
-  XCTAssertEqualObjects(self[1][@"event"], @"end-ocunit");
+  XCTAssertEqualObjects(self[1][@"className"], @"FooTest");
+  XCTAssertEqualObjects(self[1][@"methodName"], @"BarCase");
+  XCTAssertEqualObjects(self[1][@"event"], @"begin-test");
+  XCTAssertEqualObjects(self[1][@"test"], @"-[FooTest BarCase]");
+
+  XCTAssertEqualObjects(self[2][@"className"], @"FooTest");
+  XCTAssertEqualObjects(self[2][@"methodName"], @"BarCase");
+  XCTAssertEqualObjects(self[2][@"event"], @"end-test");
+  XCTAssertEqualObjects(self[2][@"test"], @"-[FooTest BarCase]");
+
+  XCTAssertEqualObjects(self[3][@"bundleName"], @"path.bundle");
+  XCTAssertEqualObjects(self[3][@"message"], @"No end-ocunit event was received, the test bundle has likely crashed");
+  XCTAssertEqualObjects(self[3][@"succeeded"], @0);
+  XCTAssertEqualObjects(self[3][@"event"], @"end-ocunit");
 }
 
 @end
