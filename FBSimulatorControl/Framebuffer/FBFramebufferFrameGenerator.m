@@ -61,7 +61,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 
 @property (nonatomic, strong, readonly) FBFramebufferSurface *surface;
 @property (nonatomic, strong, readonly) FBSurfaceImageGenerator *imageGenerator;
-@property (nonatomic, strong, readonly) dispatch_source_t timerSource;
+@property (nonatomic, strong, readonly) FBDispatchSourceNotifier *timer;
 
 @end
 
@@ -339,17 +339,10 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   }
 
   _surface = surface;
-
-  // Only rescale if the original scale is different to 1.
-  _timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.queue);
-  dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, FBSimulatorFramebufferFrameTimeInterval);
-  dispatch_source_set_timer(_timerSource, startTime, FBSimulatorFramebufferFrameTimeInterval, 0);
-
   __weak typeof(self) weakSelf = self;
-  dispatch_source_set_event_handler(_timerSource, ^{
+  _timer = [FBDispatchSourceNotifier timerNotifierNotifierWithTimeInterval:FBSimulatorFramebufferFrameTimeInterval queue:self.queue handler:^(FBDispatchSourceNotifier *_) {
     [weakSelf pushNewFrameFromCurrentTime];
-  });
-
+  }];
   return self;
 }
 
@@ -358,7 +351,7 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
 - (void)didChangeIOSurface:(nullable IOSurfaceRef)surface
 {
   [self.imageGenerator didChangeIOSurface:surface];
-  dispatch_source_t timerSource = self.timerSource;
+  dispatch_source_t timerSource = self.timer.dispatchSource;
   if (surface == NULL && timerSource != nil) {
     dispatch_suspend(timerSource);
   } else if (timerSource != nil) {
@@ -396,9 +389,9 @@ static const uint64_t FBSimulatorFramebufferFrameTimeInterval = NSEC_PER_MSEC * 
   [self.surface detachConsumer:self];
 
   // Tear down the rest
-  if (self.timerSource) {
-    dispatch_source_cancel(self.timerSource);
-    _timerSource = nil;
+  if (self.timer) {
+    [self.timer terminate];
+    _timer = nil;
   }
   [self didChangeIOSurface:nil];
 }
