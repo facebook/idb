@@ -71,17 +71,22 @@ FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStr
 
 #pragma mark FBSimulatorStreamingCommands
 
-- (nullable FBSimulatorBitmapStream *)createStreamWithEncoding:(FBBitmapStreamEncoding)encoding error:(NSError **)error
+- (nullable FBSimulatorBitmapStream *)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration error:(NSError **)error
 {
-  if (![encoding isEqualToString:FBBitmapStreamEncodingBGRA]) {
+  if (![configuration.encoding isEqualToString:FBBitmapStreamEncodingBGRA]) {
     return [FBSimulatorError failWithErrorMessage:@"Only BGRA is supported for simulators." errorOut:error];
   }
 
   FBFramebufferSurface *surface = [self obtainSurfaceWithError:error];
+  id<FBControlCoreLogger> logger = self.simulator.logger;
   if (!surface) {
     return nil;
   }
-  return [FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:self.simulator.logger];
+  NSNumber *framesPerSecond = configuration.framesPerSecond;
+  if (framesPerSecond) {
+    return [FBSimulatorBitmapStream eagerStreamWithSurface:surface framesPerSecond:framesPerSecond.unsignedIntegerValue logger:logger];
+  }
+  return [FBSimulatorBitmapStream lazyStreamWithSurface:surface logger:logger];
 }
 
 #pragma mark Private

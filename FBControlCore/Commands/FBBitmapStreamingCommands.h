@@ -9,10 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBBitmapStreamConfiguration.h>
-
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBBitmapStreamConfiguration;
 @protocol FBBitmapStream;
 
 /**
@@ -23,11 +22,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Bitmap Stream for a Simulator.
 
- @param encoding the bitmap stream encoding.
+ @param configuration the stream configuration.
  @param error an error out for any error that occurs.
  @return the Video Recording session on success, nil otherwise.
  */
-- (nullable id<FBBitmapStream>)createStreamWithEncoding:(FBBitmapStreamEncoding)encoding error:(NSError **)error;
+- (nullable id<FBBitmapStream>)createStreamWithConfiguration:(FBBitmapStreamConfiguration *)configuration error:(NSError **)error;
 
 @end
 
