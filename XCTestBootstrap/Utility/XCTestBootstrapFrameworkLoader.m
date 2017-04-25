@@ -9,15 +9,6 @@
 
 #import "XCTestBootstrapFrameworkLoader.h"
 
-#import <DVTFoundation/DVTDeviceManager.h>
-#import <DVTFoundation/DVTDeviceType.h>
-#import <DVTFoundation/DVTLogAspect.h>
-#import <DVTFoundation/DVTPlatform.h>
-
-#import <IDEFoundation/IDEFoundationTestInitializer.h>
-
-#import <FBControlCore/FBControlCore.h>
-
 static BOOL hasLoadedFrameworks = NO;
 
 @implementation XCTestBootstrapFrameworkLoader
