@@ -11,17 +11,23 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBFramebuffer;
 @class FBProcessInfo;
 @class FBSimulator;
 @class FBSimulatorBootConfiguration;
+@class FBSimulatorConnection;
+
+@protocol FBControlCoreLogger;
 
 /**
  Interactions for the Lifecycle of the Simulator.
  */
 @protocol FBSimulatorLifecycleCommands <NSObject>
 
+#pragma mark Boot/Shutdown
+
 /**
- Boots the Simulator with the default Simulator Launch Configuration.\
+ Boots the Simulator with the default Simulator Launch Configuration.
  Will fail if the Simulator is currently booted.
 
  @param error an error out for any error that occurs.
@@ -47,6 +53,38 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)shutdownSimulatorWithError:(NSError **)error;
 
+#pragma mark Connection
+
+/**
+ Connects to the FBSimulatorConnection.
+
+ @param error an error out for any error that occurs.
+ @return the Simulator Connection on success, nil otherwise.
+ */
+- (nullable FBSimulatorConnection *)connectWithError:(NSError **)error;
+
+/**
+ Disconnects from FBSimulatorConnection.
+
+ @param timeout the timeout in seconds to wait for all connected components to disconnect.
+ @param logger a logger to log to
+ @param error an error for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)disconnectWithTimeout:(NSTimeInterval)timeout logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
+
+#pragma mark Framebuffer
+
+/**
+ Obtains the Framebuffer.
+
+ @param error an error out for any error that occurs.
+ @return the Framebuffer on success, nil otherwise.
+ */
+- (nullable FBFramebuffer *)framebufferWithError:(NSError **)error;
+
+#pragma mark URLs
+
 /**
  Opens the provided URL on the Simulator.
 
@@ -55,6 +93,8 @@ NS_ASSUME_NONNULL_BEGIN
  @return the reciever, for chaining.
  */
 - (BOOL)openURL:(NSURL *)url error:(NSError **)error;
+
+#pragma mark Subprocesses
 
 /**
  Terminates a Subprocess of the Simulator.

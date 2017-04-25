@@ -14,7 +14,6 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBApplicationLaunchStrategy.h"
-#import "FBSimulator+Connection.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"

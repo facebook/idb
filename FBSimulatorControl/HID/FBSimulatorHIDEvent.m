@@ -14,7 +14,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorHID.h"
 #import "FBSimulator.h"
-#import "FBSimulator+Connection.h"
 #import "FBSimulatorConnection.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeHID = @"hid";

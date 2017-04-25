@@ -20,7 +20,6 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBSimulator+Helpers.h"
-#import "FBSimulator+Connection.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"

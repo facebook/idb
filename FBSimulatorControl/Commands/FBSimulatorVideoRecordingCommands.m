@@ -11,8 +11,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulator+Connection.h"
-#import "FBSimulator+Framebuffer.h"
 #import "FBFramebuffer.h"
 #import "FBSimulatorVideo.h"
 #import "FBFramebufferSurface.h"
