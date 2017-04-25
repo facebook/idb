@@ -19,7 +19,7 @@
 FBiOSTargetActionType const FBiOSTargetActionTypeHID = @"hid";
 
 static NSString *const KeyEventClass = @"class";
-static NSString *const KeyDirection = @"type";
+static NSString *const KeyDirection = @"direction";
 
 static NSString *const EventClassStringComposite = @"composite";
 static NSString *const EventClassStringTouch = @"touch";
