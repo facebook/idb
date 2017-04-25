@@ -132,7 +132,7 @@
 
 #pragma mark HID Manipulation
 
-- (BOOL)sendKeyboardEventWithType:(FBSimulatorHIDEventType)type keyCode:(unsigned int)keycode error:(NSError **)error
+- (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
 {
   IndigoButtonPayload payload;
   payload.eventSource = ButtonEventSourceKeyboard;
@@ -141,18 +141,18 @@
   payload.field5 = 0x000000cc;
 
   // Then Up/Down.
-  switch (type) {
-    case FBSimulatorHIDEventTypeDown:
+  switch (direction) {
+    case FBSimulatorHIDDirectionDown:
       payload.eventType = ButtonEventTypeDown;
       break;
-    case FBSimulatorHIDEventTypeUp:
+    case FBSimulatorHIDDirectionUp:
       payload.eventType = ButtonEventTypeUp;
       break;
   }
   return [self sendButtonEventWithPayload:&payload error:error];
 }
 
-- (BOOL)sendButtonEventWithType:(FBSimulatorHIDEventType)type button:(FBSimulatorHIDButton)button error:(NSError **)error
+- (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
 {
   IndigoButtonPayload payload;
   payload.eventClass = ButtonEventClassHardware;
@@ -176,17 +176,17 @@
       break;
   }
   // Then Up/Down.
-  switch (type) {
-    case FBSimulatorHIDEventTypeDown:
+  switch (direction) {
+    case FBSimulatorHIDDirectionDown:
       payload.eventType = ButtonEventTypeDown;
       break;
-    case FBSimulatorHIDEventTypeUp:
+    case FBSimulatorHIDDirectionUp:
       payload.eventType = ButtonEventTypeUp;
   }
   return [self sendButtonEventWithPayload:&payload error:error];
 }
 
-- (BOOL)sendTouchWithType:(FBSimulatorHIDEventType)type x:(double)x y:(double)y error:(NSError **)error
+- (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error
 {
   // Convert Screen Offset to Ratio for Indigo.
   CGPoint point = [self screenRatioFromPoint:CGPointMake(x, y)];
@@ -203,11 +203,11 @@
 
   // Setting the Values Signifying touch-down.
   switch (type) {
-    case FBSimulatorHIDEventTypeDown:
+    case FBSimulatorHIDDirectionDown:
       payload.field9 = 0x1;
       payload.field10 = 0x1;
       break;
-    case FBSimulatorHIDEventTypeUp:
+    case FBSimulatorHIDDirectionUp:
       payload.field9 = 0x0;
       payload.field10 = 0x0;
       break;

@@ -16,11 +16,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An Enumeration for the Event Type. Only Up/Down.
+ An Enumeration for the Direction of the Event.
  */
-typedef NS_ENUM(NSUInteger, FBSimulatorHIDEventType) {
-  FBSimulatorHIDEventTypeDown = 1,
-  FBSimulatorHIDEventTypeUp = 2,
+typedef NS_ENUM(NSUInteger, FBSimulatorHIDDirection) {
+  FBSimulatorHIDDirectionDown = 1,
+  FBSimulatorHIDDirectionUp = 2,
 };
 
 /**
@@ -71,22 +71,22 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
 /**
  Sends a Keyboard Event.
 
- @param type the event type.
+ @param direction the direction of the event.
  @param keycode the Key Code to send. The keycodes are 'Hardware Independent' as described in <HIToolbox/Events.h>.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)sendKeyboardEventWithType:(FBSimulatorHIDEventType)type keyCode:(unsigned int)keycode error:(NSError **)error;
+- (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error;
 
 /**
  Sends a Button Event.
 
- @param type the event type.
+ @param direction the direction of the event.
  @param button the button.
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)sendButtonEventWithType:(FBSimulatorHIDEventType)type button:(FBSimulatorHIDButton)button error:(NSError **)error;
+- (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error;
 
 /**
  Sends a Tap Event
@@ -98,7 +98,7 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise.
  */
-- (BOOL)sendTouchWithType:(FBSimulatorHIDEventType)type x:(double)x y:(double)y error:(NSError **)error;
+- (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error;
 
 @end
 
