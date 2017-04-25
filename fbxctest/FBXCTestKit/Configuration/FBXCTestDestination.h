@@ -9,10 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBDeviceType;
-@class FBOSVersion;
 @class FBSimulatorConfiguration;
 
 /**
@@ -42,26 +42,26 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Designated Initializer
 
- @param device the device to use. If nil the default will be used.
+ @param model the model of the device to use. If nil the default will be used.
  @param version the version to use. If nil the default will be used.
  @return a new iPhoneSimulator Destination.
  */
-- (instancetype)initWithDevice:(nullable FBDeviceType *)device version:(nullable FBOSVersion *)version;
+- (instancetype)initWithModel:(nullable FBDeviceModel)model version:(nullable FBOSVersionName)version;
 
 /**
- The Device Type, if provided.
+ The Device Model, if provided.
  */
-@property (nonatomic, strong, nullable, readwrite) FBDeviceType *device;
+@property (nonatomic, strong, nullable, readonly) FBDeviceModel model;
 
 /**
- The Device OS, if provided.
+ The Device OS Version, if provided.
  */
-@property (nonatomic, strong, nullable, readwrite) FBOSVersion *version;
+@property (nonatomic, strong, nullable, readonly) FBOSVersionName version;
 
 /**
  The Simulator Configuration.
  */
-@property (nonatomic, strong, readwrite) FBSimulatorConfiguration *simulatorConfiguration;
+@property (nonatomic, strong, readonly) FBSimulatorConfiguration *simulatorConfiguration;
 
 @end
 

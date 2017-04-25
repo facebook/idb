@@ -33,26 +33,27 @@
 
 @implementation FBXCTestDestinationiPhoneSimulator
 
-- (instancetype)initWithDevice:(nullable FBDeviceType *)device version:(nullable FBOSVersion *)version
+- (instancetype)initWithModel:(nullable FBDeviceModel)model version:(nullable FBOSVersionName)version
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _device = device;
+  _model = model;
   _version = version;
+
   return self;
 }
 
 - (FBSimulatorConfiguration *)simulatorConfiguration
 {
   FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration defaultConfiguration];
-  if (self.device) {
-    configuration = [configuration withDeviceModel:self.device.model];
+  if (self.model) {
+    configuration = [configuration withDeviceModel:self.model];
   }
   if (self.version) {
-    configuration = [configuration withOSNamed:self.version.name];
+    configuration = [configuration withOSNamed:self.version];
   }
   return configuration;
 }
