@@ -65,9 +65,8 @@ struct iOSActionProvider {
             try target.stopRecording()
           }
       }
-    case .stream(let output, let encoding):
-      return iOSTargetRunner.handled(reporter, .stream, ControlCoreSubject(target as! ControlCoreValue)) {
-        let configuration = FBBitmapStreamConfiguration(encoding: encoding, framesPerSecond: 0)
+    case .stream(let configuration, let output):
+      return iOSTargetRunner.handled(reporter, .stream, ControlCoreSubject(configuration)) {
         let stream = try target.createStream(with: configuration)
         try stream.startStreaming(output.makeWriter())
         return stream
