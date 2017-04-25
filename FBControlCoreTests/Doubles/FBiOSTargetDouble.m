@@ -75,7 +75,7 @@
   return nil;
 }
 
-- (nullable id<FBBitmapStream>)createStreamWithType:(FBBitmapStreamType)type error:(NSError **)error
+- (nullable id<FBBitmapStream>)createStreamWithEncoding:(FBBitmapStreamEncoding)encoding error:(NSError **)error
 {
   return nil;
 }

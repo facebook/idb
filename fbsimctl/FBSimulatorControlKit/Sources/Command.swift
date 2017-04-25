@@ -95,7 +95,7 @@ public enum Action {
   case serviceInfo(String)
   case setLocation(Double,Double)
   case shutdown
-  case stream(FileOutput, FBBitmapStreamType)
+  case stream(FileOutput, FBBitmapStreamEncoding)
   case tap(Double, Double)
   case terminate(String)
   case uninstall(String)
@@ -386,8 +386,8 @@ public func == (left: Action, right: Action) -> Bool {
     return leftLat == rightLat && leftLon == rightLon
   case (.shutdown, .shutdown):
     return true
-  case (.stream(let leftInfo, let leftType), .stream(let rightInfo, let rightType)):
-    return leftInfo == rightInfo && leftType == rightType
+  case (.stream(let leftOutput, let leftEncoding), .stream(let rightOutput, let rightEncoding)):
+    return leftOutput == rightOutput && leftEncoding == rightEncoding
   case (.tap(let leftX, let leftY), .tap(let rightX, let rightY)):
     return leftX == rightX && leftY == rightY
   case (.terminate(let leftBundleID), .terminate(let rightBundleID)):

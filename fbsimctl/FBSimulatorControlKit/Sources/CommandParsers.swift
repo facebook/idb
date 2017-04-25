@@ -771,10 +771,10 @@ extension Action : Parsable {
   }
 
   static var streamParser: Parser<Action> {
-    let typeParsers: [Parser<FBBitmapStreamType>] = [
-      Parser<FBBitmapStreamType>
+    let typeParsers: [Parser<FBBitmapStreamEncoding>] = [
+      Parser<FBBitmapStreamEncoding>
         .ofFlag("h264", .H264, "Output in h264 format."),
-      Parser<FBBitmapStreamType>
+      Parser<FBBitmapStreamEncoding>
         .ofFlag("bgra", .BGRA, "Output in BGRA format."),
     ]
     let typeAlternativeParser =

@@ -58,12 +58,12 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 @implementation FBDeviceBitmapStream
 
-+ (instancetype)streamWithSession:(AVCaptureSession *)session type:(FBBitmapStreamType)type logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)streamWithSession:(AVCaptureSession *)session encoding:(FBBitmapStreamEncoding)encoding logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   // Create the output.
   AVCaptureVideoDataOutput *output = [[AVCaptureVideoDataOutput alloc] init];
   output.alwaysDiscardsLateVideoFrames = YES;
-  output.videoSettings = [FBDeviceBitmapStream videoSettingsForType:type];
+  output.videoSettings = [FBDeviceBitmapStream videoSettingsForEncoding:encoding];
   if (![session canAddOutput:output]) {
     return [[FBDeviceControlError
       describe:@"Cannot add Data Output to session"]
@@ -73,12 +73,15 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
   // Create a serial queue to handle processing of frames
   dispatch_queue_t writeQueue = dispatch_queue_create("com.facebook.fbdevicecontrol.streamencoder", NULL);
-  switch (type) {
-    case FBBitmapStreamTypeBGRA:
-      return [[FBDeviceBitmapStream_BGRA alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
-    case FBBitmapStreamTypeH264:
-      return [[FBDeviceBitmapStream_H264 alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+  if ([encoding isEqualToString:FBBitmapStreamEncodingBGRA]) {
+    return [[FBDeviceBitmapStream_BGRA alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
   }
+  if ([encoding isEqualToString:FBBitmapStreamEncodingH264]) {
+    return [[FBDeviceBitmapStream_H264 alloc] initWithSession:session output:output writeQueue:writeQueue logger:logger];
+  }
+  return [[FBDeviceControlError
+    describeFormat:@"%@ is not a valid stream encoding", encoding]
+    fail:error];
 }
 
 - (instancetype)initWithSession:(AVCaptureSession *)session output:(AVCaptureVideoDataOutput *)output writeQueue:(dispatch_queue_t)writeQueue logger:(id<FBControlCoreLogger>)logger
@@ -133,15 +136,11 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   return YES;
 }
 
-+ (NSDictionary *)videoSettingsForType:(FBBitmapStreamType)type
++ (NSDictionary<NSString *, id> *)videoSettingsForEncoding:(FBBitmapStreamEncoding)encoding
 {
-  switch (type) {
-    case FBBitmapStreamTypeH264:
-      return @{};
-    case FBBitmapStreamTypeBGRA:
-      return @{(id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)};
+  if ([encoding isEqualToString:FBBitmapStreamEncodingBGRA]) {
+    return @{(id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)};
   }
-
   return @{};
 }
 

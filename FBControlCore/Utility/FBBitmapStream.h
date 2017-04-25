@@ -14,11 +14,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef NS_ENUM(NSUInteger, FBBitmapStreamType) {
-  FBBitmapStreamTypeH264,
-  FBBitmapStreamTypeBGRA,
-};
-
 /**
  The Termination Handle Type for an Recording Operation.
  */

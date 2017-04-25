@@ -71,9 +71,9 @@ FBTerminationHandleType const FBTerminationTypeHandleVideoStreaming = @"VideoStr
 
 #pragma mark FBSimulatorStreamingCommands
 
-- (nullable FBSimulatorBitmapStream *)createStreamWithType:(FBBitmapStreamType)type error:(NSError **)error
+- (nullable FBSimulatorBitmapStream *)createStreamWithEncoding:(FBBitmapStreamEncoding)encoding error:(NSError **)error
 {
-  if (type != FBBitmapStreamTypeBGRA) {
+  if (![encoding isEqualToString:FBBitmapStreamEncodingBGRA]) {
     return [FBSimulatorError failWithErrorMessage:@"Only BGRA is supported for simulators." errorOut:error];
   }
 
