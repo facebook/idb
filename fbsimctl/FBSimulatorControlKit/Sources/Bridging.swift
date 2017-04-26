@@ -260,7 +260,9 @@ extension FBLineBuffer {
   }
 
   func reader(_ reader: FBiOSActionReader, failedToInterpretInput input: String, error: Error) -> String? {
-    return error.localizedDescription + "\n"
+    let message = error.localizedDescription + ". input: " + input
+    let subject = SimpleSubject(.failure, .discrete, message)
+    return self.interpret(subject)
   }
 
   func reader(_ reader: FBiOSActionReader, willStartPerforming action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
@@ -275,6 +277,7 @@ extension FBLineBuffer {
     let subject = SimpleSubject(.failure, .discrete, error.localizedDescription)
     return self.interpret(subject)
   }
+
 }
 
 extension FBiOSTargetAction {
