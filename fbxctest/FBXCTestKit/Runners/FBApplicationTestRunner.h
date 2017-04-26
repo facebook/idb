@@ -9,8 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBApplicationTestConfiguration;
 @class FBSimulator;
+@class FBXCTestContext;
 
 /**
  A Runner for Application Tests.
@@ -22,8 +25,9 @@
 
  @param simulator the Simulator to use for hosting the Application.
  @param configuration the the configuration to use.
+ @param context the test context.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration;
++ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context;
 
 /**
  Run the Application Tests.
@@ -34,3 +38,5 @@
 - (BOOL)runTestsWithError:(NSError **)error;
 
 @end
+
+NS_ASSUME_NONNULL_END

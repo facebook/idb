@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBXCTestConfiguration;
+@class FBXCTestContext;
 
 /**
  A Runner for Listing Tests.
@@ -22,8 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
  Create and return a new Runner for Application Tests.
 
  @param configuration the the configuration to use.
+ @param context the test context to use.
  */
-+ (instancetype)runnerWithConfiguration:(FBXCTestConfiguration *)configuration;
++ (instancetype)runnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
 
 /**
  Lists the tests to the reporter.

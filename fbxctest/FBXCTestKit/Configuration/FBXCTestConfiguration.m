@@ -21,9 +21,6 @@
 
 @interface FBXCTestConfiguration ()
 
-@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
-@property (nonatomic, strong, readwrite) id<FBXCTestReporter> reporter;
-
 @property (nonatomic, copy, readwrite) NSString *workingDirectory;
 @property (nonatomic, copy, readwrite) NSString *testBundlePath;
 @property (nonatomic, copy, readwrite) NSString *runnerAppPath;
@@ -36,12 +33,12 @@
 
 @implementation FBXCTestConfiguration
 
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger error:(NSError **)error
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error
 {
-  return [self configurationFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory reporter:reporter logger:logger timeout:0 error:nil];
+  return [self configurationFromArguments:arguments processUnderTestEnvironment:environment workingDirectory:workingDirectory timeout:0 error:nil];
 }
 
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger timeout:(NSTimeInterval)timeout error:(NSError **)error
++ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   Class configurationClass = [self testConfigurationClassForArguments:arguments error:error];
   if (!configurationClass) {
@@ -52,14 +49,14 @@
     return nil;
   }
 
-  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithDestination:destination reporter:reporter logger:logger processUnderTestEnvironment:environment timeout:timeout];
+  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithDestination:destination processUnderTestEnvironment:environment timeout:timeout];
   if (![configuration loadWithArguments:arguments workingDirectory:workingDirectory error:error]) {
     return nil;
   }
   return configuration;
 }
 
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination reporter:(nullable id<FBXCTestReporter>)reporter logger:(FBXCTestLogger *)logger processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment timeout:(NSTimeInterval)timeout
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment timeout:(NSTimeInterval)timeout
 {
   self = [super init];
   if (!self) {
@@ -67,9 +64,7 @@
   }
 
   _destination = destination;
-  _reporter = reporter;
   _processUnderTestEnvironment = environment ?: @{};
-  _logger = logger;
   _testTimeout = timeout > 0 ? timeout : [self defaultTimeout];
 
   return self;
@@ -152,20 +147,12 @@
     }
     self.shims = shimConfiguration;
   }
-  if (!self.reporter) {
-    FBFileWriter *stdOutFileWriter = [FBFileWriter writerWithFileHandle:NSFileHandle.fileHandleWithStandardOutput blocking:YES];
-    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType logger:self.logger fileConsumer:stdOutFileWriter];
-  }
   if (testFilter != nil) {
     NSString *expectedPrefix = [self.testBundlePath stringByAppendingString:@":"];
     if (![testFilter hasPrefix:expectedPrefix]) {
       return [[FBXCTestError describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, self.testBundlePath] failBool:error];
     }
     self.testFilter = [testFilter substringFromIndex:expectedPrefix.length];
-  }
-  if (!self.reporter) {
-    FBFileWriter *stdOutFileWriter = [FBFileWriter writerWithFileHandle:NSFileHandle.fileHandleWithStandardOutput blocking:YES];
-    self.reporter = [[FBJSONTestReporter new] initWithTestBundlePath:_testBundlePath testType:self.testType logger:self.logger fileConsumer:stdOutFileWriter];
   }
 
   self.workingDirectory = workingDirectory;

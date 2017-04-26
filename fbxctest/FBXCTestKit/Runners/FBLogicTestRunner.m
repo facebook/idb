@@ -22,22 +22,24 @@
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTestDestination.h"
 #import "FBLogicTestProcess.h"
+#import "FBXCTestContext.h"
 
 @interface FBLogicTestRunner ()
 
 @property (nonatomic, strong, nullable, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestContext *context;
 
 @end
 
 @implementation FBLogicTestRunner
 
-+ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
++ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration];
+  return [[self alloc] initWithSimulator:simulator configuration:configuration context:context];
 }
 
-- (instancetype)initWithSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
+- (instancetype)initWithSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   self = [super init];
   if (!self) {
@@ -46,6 +48,7 @@
 
   _simulator = simulator;
   _configuration = configuration;
+  _context = context;
 
   return self;
 }
@@ -53,8 +56,8 @@
 - (BOOL)runTestsWithError:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
-  id<FBXCTestReporter> reporter = self.configuration.reporter;
-  FBXCTestLogger *logger = self.configuration.logger;
+  id<FBXCTestReporter> reporter = self.context.reporter;
+  FBXCTestLogger *logger = self.context.logger;
 
   [reporter didBeginExecutingTestPlan];
 

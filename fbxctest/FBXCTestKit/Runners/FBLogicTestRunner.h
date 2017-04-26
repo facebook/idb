@@ -11,6 +11,7 @@
 
 @class FBLogicTestConfiguration;
 @class FBSimulator;
+@class FBXCTestContext;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -24,9 +25,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param simulator the Simulator to run on (if an iOS Test).
  @param configuration the Configuration to use.
+ @param context the test context
  @return a new Logic Test Runner.
  */
-+ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration;
++ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context;
 
 /**
  Run the Logic Tests.

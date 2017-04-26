@@ -18,22 +18,24 @@
 #import "FBXCTestReporter.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTestError.h"
+#import "FBXCTestContext.h"
 #import "FBXCTestDestination.h"
 
 @interface FBListTestRunner ()
 
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestContext *context;
 
 @end
 
 @implementation FBListTestRunner
 
-+ (instancetype)runnerWithConfiguration:(FBXCTestConfiguration *)configuration
++ (instancetype)runnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
-  return [[self alloc] initWithConfiguration:configuration];
+  return [[self alloc] initWithConfiguration:configuration context:context];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   self = [super init];
   if (!self) {
@@ -41,12 +43,14 @@
   }
 
   _configuration = configuration;
+  _context = context;
+
   return self;
 }
 
 - (BOOL)listTestsWithError:(NSError **)error
 {
-  [self.configuration.reporter didBeginExecutingTestPlan];
+  [self.context.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
   NSString *otestQueryPath = self.configuration.shims.macOtestQueryPath;
@@ -110,11 +114,11 @@
     }
     NSString *className = [testName substringToIndex:slashRange.location];
     NSString *methodName = [testName substringFromIndex:slashRange.location + 1];
-    [self.configuration.reporter testCaseDidStartForTestClass:className method:methodName];
-    [self.configuration.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
+    [self.context.reporter testCaseDidStartForTestClass:className method:methodName];
+    [self.context.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
   }
 
-  [self.configuration.reporter didFinishExecutingTestPlan];
+  [self.context.reporter didFinishExecutingTestPlan];
 
   return YES;
 }

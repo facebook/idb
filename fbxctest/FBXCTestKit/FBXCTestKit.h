@@ -10,6 +10,7 @@
 #import <FBXCTestKit/FBJSONTestReporter.h>
 #import <FBXCTestKit/FBXCTestBootstrapper.h>
 #import <FBXCTestKit/FBXCTestConfiguration.h>
+#import <FBXCTestKit/FBXCTestContext.h>
 #import <FBXCTestKit/FBXCTestDestination.h>
 #import <FBXCTestKit/FBXCTestLogger.h>
 #import <FBXCTestKit/FBXCTestRunner.h>

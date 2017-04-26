@@ -9,11 +9,12 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
 @class FBSimulatorControl;
 @class FBXCTestConfiguration;
-
-NS_ASSUME_NONNULL_BEGIN
+@class FBXCTestLogger;
 
 /**
  Fetches a Simulator for a Test.
@@ -24,10 +25,11 @@ NS_ASSUME_NONNULL_BEGIN
  Creates a Simulator Fetcher for the given configuration
 
  @param configuration the configuration to use.
+ @param logger the logger to use.
  @param error an error out for any error that occurs.
  @return a Fetcher for the given Configuration.
  */
-+ (nullable instancetype)withConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error;
++ (nullable instancetype)withConfiguration:(FBXCTestConfiguration *)configuration logger:(FBXCTestLogger *)logger error:(NSError **)error;
 
 /**
  Gets a Simulator for the configuration provided in the constructor.

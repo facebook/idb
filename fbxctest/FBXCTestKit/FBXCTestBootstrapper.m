@@ -15,6 +15,7 @@
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestRunner.h"
 #import "FBXCTestLogger.h"
+#import "FBXCTestContext.h"
 
 @interface FBXCTestBootstrapper ()
 
@@ -54,14 +55,15 @@
     configurationFromArguments:arguments
     processUnderTestEnvironment:@{}
     workingDirectory:workingDirectory
-    reporter:nil
-    logger:self.logger
     error:&error];
   if (!configuration) {
     return [self printErrorMessage:error];
   }
+  FBFileWriter *stdOutFileWriter = [FBFileWriter writerWithFileHandle:NSFileHandle.fileHandleWithStandardOutput blocking:YES];
+  FBJSONTestReporter *reporter = [[FBJSONTestReporter new] initWithTestBundlePath:configuration.testBundlePath testType:configuration.testType logger:self.logger fileConsumer:stdOutFileWriter];
+  FBXCTestContext *context = [FBXCTestContext contextWithReporter:reporter logger:self.logger];
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration];
+  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:context];
   if (![testRunner executeTestsWithError:&error]) {
     return [self printErrorMessage:error];
   }

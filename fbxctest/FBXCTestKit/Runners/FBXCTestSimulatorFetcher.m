@@ -26,16 +26,15 @@
 
 @implementation FBXCTestSimulatorFetcher
 
-+ (instancetype)withConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error
++ (instancetype)withConfiguration:(FBXCTestConfiguration *)configuration logger:(FBXCTestLogger *)logger error:(NSError **)error
 {
   NSString *setPath = [configuration.workingDirectory stringByAppendingPathComponent:@"sim"];
-  id<FBControlCoreLogger> logger = configuration.logger;
   FBSimulatorControlConfiguration *controlConfiguration = [FBSimulatorControlConfiguration
     configurationWithDeviceSetPath:setPath
     options:FBSimulatorManagementOptionsDeleteAllOnFirstStart];
 
   NSError *innerError = nil;
-  FBSimulatorControl *simulatorControl = [FBSimulatorControl withConfiguration:controlConfiguration logger:configuration.logger error:&innerError];
+  FBSimulatorControl *simulatorControl = [FBSimulatorControl withConfiguration:controlConfiguration logger:logger error:&innerError];
   if (!simulatorControl) {
     return [FBXCTestError failWithError:innerError errorOut:error];
   }
