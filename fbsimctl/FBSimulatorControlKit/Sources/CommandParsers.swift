@@ -435,9 +435,9 @@ extension ListenInterface : Parsable {
   public static var parser: Parser<ListenInterface> {
     return Parser<ListenInterface>
       .accumulate(0, [
-        self.httpParser,
         self.stdinParser,
-        self.hidParser,
+        self.httpParser,
+        self.actionSocketParser,
       ])
   }
 
@@ -452,9 +452,9 @@ extension ListenInterface : Parsable {
       .fmap { ListenInterface(stdin: false, http: $0, hid: nil, handle: nil) }
   }
 
-  static var hidParser: Parser<ListenInterface> {
+  static var actionSocketParser: Parser<ListenInterface> {
     return Parser<ListenInterface>
-      .ofFlagWithArg("hid", portParser, "The HID Port to listen on")
+      .ofFlagWithArg("socket", portParser, "The Action Socket Port to listen on")
       .fmap { ListenInterface(stdin: false, http: nil, hid: $0, handle: nil) }
   }
 
