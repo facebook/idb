@@ -23,6 +23,7 @@
 @class FBiOSActionRouter;
 @class FBiOSTargetDiagnostics;
 @protocol FBDeviceOperator;
+@protocol FBControlCoreLogger;
 
 /**
  Uses the known values of SimDevice State, to construct an enumeration.
@@ -53,6 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
  Common Properties of Devices & Simulators.
  */
 @protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBVideoRecordingCommands, FBXCTestCommands>
+
+/**
+ The Target's Logger.
+ */
+@property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
 
 /**
  A Router for the Reciever.

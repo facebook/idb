@@ -43,9 +43,10 @@ void (*FBAMDSetLogLevel)(int32_t level);
 @implementation FBDevice
 
 @synthesize deviceOperator = _deviceOperator;
+@synthesize dvtDevice = _dvtDevice;
+@synthesize logger = _logger;
 @synthesize recordingCommand = _recordingCommand;
 @synthesize xcTestCommand = _xcTestCommand;
-@synthesize dvtDevice = _dvtDevice;
 
 #pragma mark Initializers
 

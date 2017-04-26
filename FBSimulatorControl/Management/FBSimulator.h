@@ -72,11 +72,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite, nullable) id<FBSimulatorEventSink> userEventSink;
 
 /**
- The Simulator's Logger.
- */
-@property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
-
-/**
  History of the Simulator.
  */
 @property (nonatomic, strong, readonly, nonnull) FBSimulatorHistory *history;

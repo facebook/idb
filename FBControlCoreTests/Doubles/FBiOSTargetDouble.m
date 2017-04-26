@@ -13,6 +13,7 @@
 
 @synthesize architecture;
 @synthesize deviceOperator;
+@synthesize logger;
 
 #pragma mark FBDebugDescribeable
 

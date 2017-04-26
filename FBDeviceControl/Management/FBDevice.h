@@ -31,11 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, readonly) FBDeviceSet *set;
 
 /**
- The Logger to Log events with.
- */
-@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
-
-/**
  The DVTDevice, corresponding to the reciever.
  */
 @property (nonatomic, nullable, strong, readonly) DVTiOSDevice *dvtDevice;

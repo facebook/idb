@@ -52,6 +52,7 @@
 
 @synthesize deviceOperator = _deviceOperator;
 @synthesize auxillaryDirectory = _auxillaryDirectory;
+@synthesize logger = _logger;
 
 #pragma mark Lifecycle
 
