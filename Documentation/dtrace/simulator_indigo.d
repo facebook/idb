@@ -65,8 +65,8 @@ dtrace:::BEGIN
     offsetof(IndigoDigitizerPayload, field1),
     offsetof(IndigoDigitizerPayload, field2),
     offsetof(IndigoDigitizerPayload, field3),
-    offsetof(IndigoDigitizerPayload, field4),
-    offsetof(IndigoDigitizerPayload, field5)
+    offsetof(IndigoDigitizerPayload, xRatio),
+    offsetof(IndigoDigitizerPayload, yRatio)
   );
   indigohid_registration_port = 0;
   indigohid_reply_port = 0;
