@@ -27,6 +27,7 @@
   ];
   [self assertEqualityOfCopy:values];
   [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
 }
 
 - (void)testDestination

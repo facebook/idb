@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Configuration object for the location of the Test Shims.
  */
-@interface FBXCTestShimConfiguration : NSObject <FBJSONSerializable, NSCopying>
+@interface FBXCTestShimConfiguration : NSObject <FBJSONSerializable, FBJSONDeserializable, NSCopying>
 
 
 /**

@@ -107,7 +107,7 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
 
 - (instancetype)initWithiOSSimulatorTestShim:(NSString *)iosSimulatorTestShim macTestShim:(NSString *)macTestShim macQueryShim:(NSString *)macQueryShim
 {
-  NSParameterAssert(iOSXCTestShimFileName);
+  NSParameterAssert(iosSimulatorTestShim);
   NSParameterAssert(macTestShim);
   NSParameterAssert(macQueryShim);
 
@@ -130,14 +130,63 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
   return self;
 }
 
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBXCTestShimConfiguration *)object
+{
+  if (![object isKindOfClass:self.class]) {
+    return NO;
+  }
+  return [self.iOSSimulatorOtestShimPath isEqualToString:object.iOSSimulatorOtestShimPath]
+      && [self.macOtestShimPath isEqualToString:object.macOtestShimPath]
+      && [self.macOtestQueryPath isEqualToString:object.macOtestQueryPath];
+}
+
+- (NSUInteger)hash
+{
+  return self.iOSSimulatorOtestShimPath.hash ^ self.macOtestShimPath.hash ^ self.macOtestQueryPath.hash;
+}
+
 #pragma mark JSON
+
+static NSString *const KeySimulatorTestShim = @"ios_simulator_test_shim";
+static NSString *const KeyMacTestShim = @"mac_test_shim";
+static NSString *const KeyMacQueryShim = @"mac_query_shim";
+
++ (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, NSString *> *)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSString.class]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ is not a Dictionary<String, String>", json]
+      fail:error];
+  }
+  NSString *simulatorTestShim = json[KeySimulatorTestShim];
+  if (![simulatorTestShim isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ is not a String for %@", simulatorTestShim, KeySimulatorTestShim]
+      fail:error];
+  }
+  NSString *macTestShim = json[KeyMacTestShim];
+  if (![macTestShim isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ is not a String for %@", macTestShim, KeyMacTestShim]
+      fail:error];
+  }
+  NSString *macQueryShim = json[KeyMacQueryShim];
+  if (![macQueryShim isKindOfClass:NSString.class]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ is not a String for %@", macQueryShim, KeyMacQueryShim]
+      fail:error];
+  }
+  return [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShim:simulatorTestShim macTestShim:macTestShim macQueryShim:macQueryShim];
+}
 
 - (id)jsonSerializableRepresentation
 {
   return @{
-    @"ios_simulator_test_shim" : self.iOSSimulatorOtestShimPath,
-    @"mac_test_shim" : self.macOtestShimPath,
-    @"mac_query_shim" : self.macOtestQueryPath,
+    KeySimulatorTestShim: self.iOSSimulatorOtestShimPath,
+    KeyMacTestShim: self.macOtestShimPath,
+    KeyMacQueryShim: self.macOtestQueryPath,
   };
 }
 
