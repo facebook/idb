@@ -9,6 +9,7 @@
 
 #import "FBXCTestKitFixtures.h"
 
+#import <FBControlCore/FBControlCore.h>
 #import <FBXCTestKit/FBXCTestKit.h>
 #import <XCTest/XCTest.h>
 
@@ -26,6 +27,20 @@
   ];
   [self assertEqualityOfCopy:values];
   [self assertJSONSerialization:values];
+}
+
+- (void)testDestination
+{
+  NSArray<FBXCTestDestination *> *values = @[
+    [[FBXCTestDestinationMacOSX alloc] init],
+    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil],
+    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:FBOSVersionNameiOS_10_0],
+    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone7 version:nil],
+    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:FBOSVersionNameiOS_10_3],
+  ];
+  [self assertEqualityOfCopy:values];
+  [self assertJSONSerialization:values];
+  [self assertJSONDeserialization:values];
 }
 
 @end

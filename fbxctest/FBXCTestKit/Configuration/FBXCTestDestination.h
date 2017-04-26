@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Base Destination.
  */
-@interface FBXCTestDestination : NSObject
+@interface FBXCTestDestination : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  The Path to the xctest executable.
