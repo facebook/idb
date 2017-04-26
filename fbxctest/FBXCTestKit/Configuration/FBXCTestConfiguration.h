@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
@@ -23,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Base Configuration for all tests.
  */
-@interface FBXCTestConfiguration : NSObject
+@interface FBXCTestConfiguration : NSObject <NSCopying, FBJSONSerializable>
 
 /**
  Creates and loads a configuration.
@@ -48,17 +50,46 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error;
 
+/**
+ The Destination Runtime to run against.
+ */
 @property (nonatomic, copy, readonly) FBXCTestDestination *destination;
+
+/**
+ The Shims to use for relevant test runs.
+ */
 @property (nonatomic, copy, nullable, readonly) FBXCTestShimConfiguration *shims;
 
+/**
+ The Environment Variables for the Process-Under-Test that is launched.
+ */
 @property (nonatomic, copy, readonly) NSDictionary<NSString *, NSString *> *processUnderTestEnvironment;
+
+/**
+ The Directory to use for files required during the execution of the test run.
+ */
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
+
+/**
+ The Test Bundle to Execute.
+ */
 @property (nonatomic, copy, readonly) NSString *testBundlePath;
+
+/**
+ The Type of the Test Bundle.
+ */
 @property (nonatomic, copy, readonly) NSString *testType;
 
+/**
+ YES if the test execution should pause on launch, waiting for a debugger to attach.
+ NO otherwise.
+ */
 @property (nonatomic, assign, readonly) BOOL waitForDebugger;
-@property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
 
+/**
+ The Timeout to wait for the test execution to finish.
+ */
+@property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
 
 /**
  Locates the expected Installation Root.

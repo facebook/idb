@@ -17,8 +17,9 @@
 #import "FBXCTestReporterDouble.h"
 #import "FBXCTestDestination.h"
 #import "XCTestCase+FBXCTestKitTests.h"
+#import "FBControlCoreValueTestCase.h"
 
-@interface FBXCTestConfigurationTests : XCTestCase
+@interface FBXCTestConfigurationTests : FBControlCoreValueTestCase
 
 @end
 
@@ -29,6 +30,12 @@
   NSString *testBundlePath = [self iOSUnitTestBundlePath];
   NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
   return [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
+}
+
+- (void)assertValueSemanticsOfConfiguration:(FBXCTestConfiguration *)configuration
+{
+  [self assertEqualityOfCopy:@[configuration]];
+  [self assertJSONSerialization:@[configuration]];
 }
 
 - (void)testiOSApplicationTestWithDestinationAndSDK
@@ -45,6 +52,7 @@
   XCTAssertTrue([configuration isKindOfClass:FBApplicationTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testiOSApplicationTestWithDestinationWithoutSDK
@@ -61,6 +69,7 @@
   XCTAssertTrue([configuration isKindOfClass:FBApplicationTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testiOSApplicationTestsWithSDKWithoutDestination
@@ -77,6 +86,7 @@
   XCTAssertTrue([configuration isKindOfClass:FBApplicationTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testiOSApplicationTestsWithoutRunTestsAtStart
@@ -98,6 +108,7 @@
   XCTAssertFalse([configuration isKindOfClass:FBListTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testiOSLogicTestsWithDestinationAndSDK
@@ -121,6 +132,7 @@
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testiOSLogicTestsWithDestinationWithoutSDK
@@ -144,6 +156,7 @@
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testiOSLogicTestsWithSDKWithoutDestination
@@ -167,6 +180,7 @@
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testMacLogicTests
@@ -190,6 +204,7 @@
   XCTAssertTrue([configuration isKindOfClass:FBLogicTestConfiguration.class]);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testMacLogicTestsIgnoresDestination
@@ -212,6 +227,7 @@
   XCTAssertNotNil(configuration.shims);
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testMacTestList
@@ -232,6 +248,7 @@
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 - (void)testMacTestListIgnoresDestination
@@ -252,6 +269,7 @@
   XCTAssertNotNil(configuration);
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
+  [self assertValueSemanticsOfConfiguration:configuration];
 }
 
 @end

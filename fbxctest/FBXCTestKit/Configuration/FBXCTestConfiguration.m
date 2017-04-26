@@ -310,6 +310,63 @@
   return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
 }
 
+#pragma mark NSObject
+
+- (BOOL)isEqual:(FBXCTestConfiguration *)object
+{
+  // Class must match exactly in the class-cluster
+  if (![object isMemberOfClass:self.class]) {
+    return NO;
+  }
+  return (self.destination == object.destination || [self.destination isEqual:object.destination])
+      && (self.shims == object.shims || [self.shims isEqual:object.shims])
+      && (self.processUnderTestEnvironment == object.processUnderTestEnvironment || [self.processUnderTestEnvironment isEqualToDictionary:object.processUnderTestEnvironment])
+      && (self.workingDirectory == object.workingDirectory || [self.workingDirectory isEqualToString:object.workingDirectory])
+      && (self.testBundlePath == object.testBundlePath || [self.testBundlePath isEqualToString:object.testBundlePath])
+      && (self.testType == object.testType || [self.testType isEqualToString:object.testType])
+      && (self.waitForDebugger == object.waitForDebugger)
+      && (self.testTimeout == object.testTimeout);
+}
+
+- (NSUInteger)hash
+{
+  return self.destination.hash ^ self.shims.hash ^ self.processUnderTestEnvironment.hash ^ self.workingDirectory.hash ^ self.testBundlePath.hash ^ self.testType.hash ^ ((NSUInteger) self.waitForDebugger) ^ ((NSUInteger) self.testTimeout);
+}
+
+#pragma mark JSON
+
+NSString *const KeyDestination = @"destination";
+NSString *const KeyShims = @"shims";
+NSString *const KeyEnvironment = @"environment";
+NSString *const KeyWorkingDirectory = @"working_directory";
+NSString *const KeyTestBundlePath = @"test_bundle_path";
+NSString *const KeyTestType = @"test_type";
+NSString *const KeyWaitForDebugger = @"wait_for_debugger";
+NSString *const KeyTestTimeout = @"test_timeout";
+NSString *const KeyRunnerAppPath = @"test_host_path";
+NSString *const KeyTestFilter = @"test_filter";
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    KeyDestination: self.destination.jsonSerializableRepresentation,
+    KeyShims: self.shims.jsonSerializableRepresentation ?: NSNull.null,
+    KeyEnvironment: self.processUnderTestEnvironment,
+    KeyWorkingDirectory: self.workingDirectory,
+    KeyTestBundlePath: self.testBundlePath,
+    KeyTestType: self.testType,
+    KeyWaitForDebugger: @(self.waitForDebugger),
+    KeyTestTimeout: @(self.testTimeout),
+  };
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
 @end
 
 @implementation FBListTestConfiguration
@@ -330,6 +387,15 @@
   return @"application-test";
 }
 
+#pragma mark JSON
+
+- (id)jsonSerializableRepresentation
+{
+  NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
+  json[KeyRunnerAppPath] = self.runnerAppPath;
+  return [json copy];
+}
+
 @end
 
 @implementation FBLogicTestConfiguration
@@ -339,6 +405,15 @@
 - (NSString *)testType
 {
   return @"logic-test";
+}
+
+#pragma mark JSON
+
+- (id)jsonSerializableRepresentation
+{
+  NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
+  json[KeyTestFilter] = self.testFilter ?: NSNull.null;
+  return [json copy];
 }
 
 @end
