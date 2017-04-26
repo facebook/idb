@@ -239,18 +239,21 @@ extension FBLineBuffer {
 
 @objc class ActionReaderDelegateBridge : NSObject, FBiOSActionReaderDelegate {
   let interpreter: EventInterpreter
+  let reporter: EventReporter
 
-  init(interpreter: EventInterpreter) {
+  init(interpreter: EventInterpreter, reporter: EventReporter) {
     self.interpreter = interpreter
+    self.reporter = reporter
     super.init()
   }
 
   func interpret(_ action: FBiOSTargetAction, _ eventType: EventType) -> String {
-    let subject = SimpleSubject(action.eventName, .started, ControlCoreSubject(action as! ControlCoreValue))
+    let subject = SimpleSubject(action.eventName, eventType, ControlCoreSubject(action as! ControlCoreValue))
     return self.interpret(subject)
   }
 
   func interpret(_ subject: EventReporterSubject) -> String {
+    self.reporter.report(subject)
     let lines = self.interpreter.interpret(subject)
     return lines.joined(separator: "\n") + "\n"
   }

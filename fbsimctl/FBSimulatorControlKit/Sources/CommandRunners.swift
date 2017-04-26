@@ -224,12 +224,12 @@ struct ListenRunner : Runner, ActionPerformer {
 
   func run() -> CommandResult {
     do {
-      let (interface, baseRelay, awaitable) = try self.makeBaseRelay()
-      let relay = SynchronousRelay(relay: baseRelay, reporter: self.context.reporter, awaitable: awaitable) {
-        self.context.reporter.reportSimple(.listen, .started, interface)
+      let (interface, baseRelay, reporter, awaitable) = try self.makeBaseRelay()
+      let relay = SynchronousRelay(relay: baseRelay, reporter: reporter, awaitable: awaitable) {
+        reporter.reportSimple(.listen, .started, interface)
       }
       let result = RelayRunner(relay: relay).run()
-      self.context.reporter.reportSimple(.listen, .ended, interface)
+      reporter.reportSimple(.listen, .ended, interface)
       return result
     } catch let error as CustomStringConvertible {
       return CommandResult.failure(error.description)
@@ -238,8 +238,9 @@ struct ListenRunner : Runner, ActionPerformer {
     }
   }
 
-  func makeBaseRelay() throws -> (ListenInterface, Relay, FBTerminationAwaitable?) {
+  func makeBaseRelay() throws -> (ListenInterface, Relay, EventReporter, FBTerminationAwaitable?) {
     let (interface, query) = self.context.value
+    let reporter = self.context.reporter
     let interpreter = JSONEventInterpreter(pretty: false)
     var relays: [Relay] = []
     var awaitable: FBTerminationAwaitable? = nil
@@ -252,19 +253,19 @@ struct ListenRunner : Runner, ActionPerformer {
     }
     if interface.stdin {
       let target = try self.context.querySingleSimulator(query)
-      let bridge = ActionReaderDelegateBridge(interpreter: interpreter)
+      let bridge = ActionReaderDelegateBridge(interpreter: interpreter, reporter: reporter)
       let reader = FBiOSActionReader.fileReader(for: target, delegate: bridge, read: FileHandle.standardInput, write: FileHandle.standardOutput)
       awaitable = reader
       relays.append(reader)
     }
     if let hidPort = interface.hid {
       let target = try self.context.querySingleSimulator(query)
-      let bridge = ActionReaderDelegateBridge(interpreter: interpreter)
+      let bridge = ActionReaderDelegateBridge(interpreter: interpreter, reporter: reporter)
       let reader = FBiOSActionReader.socketReader(for: target, delegate: bridge, port: hidPort)
       awaitable = reader
       relays.append(reader)
     }
-    return (interface, CompositeRelay(relays: relays), awaitable)
+    return (interface, CompositeRelay(relays: relays), reporter, awaitable)
   }
 
   func runnerContext(_ reporter: EventReporter) -> iOSRunnerContext<()> {
