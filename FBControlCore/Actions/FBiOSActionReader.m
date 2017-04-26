@@ -83,56 +83,65 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   NSError *error = nil;
   id json = [NSJSONSerialization JSONObjectWithData:line options:0 error:&error];
   if (!json) {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-      [self dispatchParseError:line error:error writeBack:writeBack];
-    });
+    [self dispatchParseError:line error:error writeBack:writeBack];
     return;
   }
 
   id<FBiOSTargetAction> action = [self.reader.router actionFromJSON:json error:&error];
   if (!action) {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-      [self dispatchParseError:line error:error writeBack:writeBack];
-    });
+    [self dispatchParseError:line error:error writeBack:writeBack];
     return;
   }
-  dispatch_sync(dispatch_get_main_queue(), ^{
-    [self dispatchAction:action writeBack:writeBack];
-  });
+  [self dispatchAction:action writeBack:writeBack];
 }
 
 - (void)dispatchAction:(id<FBiOSTargetAction>)action writeBack:(id<FBFileConsumer>)writeBack
 {
+  NSParameterAssert(NSThread.isMainThread == NO);
+
   FBiOSActionReader *reader = self.reader;
   id<FBiOSTarget> target = reader.router.target;
 
-  // Notify of Starting.
-  NSString *string = [reader.delegate reader:reader willStartPerformingAction:action onTarget:target];
-  [self reportString:string toWriteBack:writeBack];
+  // Notify Delegate of the start of the Action.
+  __block NSString *response = nil;
+  dispatch_sync(dispatch_get_main_queue(), ^{
+    response = [reader.delegate reader:reader willStartPerformingAction:action onTarget:target];
+  });
+  [self reportString:response toWriteBack:writeBack];
 
-  // Notify of Ended
-  NSError *error = nil;
-  if ([action runWithTarget:target delegate:self error:&error]) {
-    string = [reader.delegate reader:reader didProcessAction:action onTarget:target];
-  } else {
-    string = [reader.delegate reader:reader didFailToProcessAction:action onTarget:target error:error];
-  }
-  [self reportString:string toWriteBack:writeBack];
+  // Run the action, on the main queue
+  __block NSError *error = nil;
+  __block BOOL success = NO;
+  dispatch_sync(dispatch_get_main_queue(), ^{
+    success = [action runWithTarget:target delegate:self error:&error];
+  });
+
+  // Notify the delegate that the reader has finished, report the resultant string.
+  response = success
+    ? [reader.delegate reader:reader didProcessAction:action onTarget:target]
+    : [reader.delegate reader:reader didFailToProcessAction:action onTarget:target error:error];
+  [self reportString:response toWriteBack:writeBack];
 }
 
 - (void)dispatchParseError:(NSData *)lineData error:(NSError *)error writeBack:(id<FBFileConsumer>)writeBack
 {
+  NSParameterAssert(NSThread.isMainThread == NO);
+
   NSString *line = [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
-  NSString *response = [self.reader.delegate reader:self.reader failedToInterpretInput:line error:error];
+  __block NSString *response = nil;
+  dispatch_sync(dispatch_get_main_queue(), ^{
+    response = [self.reader.delegate reader:self.reader failedToInterpretInput:line error:error];
+  });
   if (!response) {
     return;
   }
-  NSData *data = [response dataUsingEncoding:NSUTF8StringEncoding];
-  [writeBack consumeData:data];
+  [self reportString:response toWriteBack:writeBack];
 }
 
 - (void)reportString:(nullable NSString *)string toWriteBack:(id<FBFileConsumer>)writeBack
 {
+  NSParameterAssert(NSThread.isMainThread == NO);
+
   if (!string) {
     return;
   }
