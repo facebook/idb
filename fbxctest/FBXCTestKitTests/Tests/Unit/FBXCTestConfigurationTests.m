@@ -36,6 +36,7 @@
 {
   [self assertEqualityOfCopy:@[configuration]];
   [self assertJSONSerialization:@[configuration]];
+  [self assertJSONDeserialization:@[configuration]];
 }
 
 - (void)testiOSApplicationTestWithDestinationAndSDK

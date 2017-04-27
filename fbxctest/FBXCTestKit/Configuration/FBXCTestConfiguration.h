@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Base Configuration for all tests.
  */
-@interface FBXCTestConfiguration : NSObject <NSCopying, FBJSONSerializable>
+@interface FBXCTestConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  Creates and loads a configuration.
