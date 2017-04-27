@@ -16,6 +16,7 @@
 #import "FBXCTestRunner.h"
 #import "FBXCTestLogger.h"
 #import "FBXCTestContext.h"
+#import "FBXCTestConfiguration+CommandLine.h"
 
 @interface FBXCTestBootstrapper ()
 

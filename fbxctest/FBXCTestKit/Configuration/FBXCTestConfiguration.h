@@ -28,27 +28,10 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBXCTestConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
- Creates and loads a configuration.
-
- @param arguments the Arguments to the fbxctest process
- @param environment environment additions for the process under test.
- @param workingDirectory the Working Directory to use.
- @param error an error out for any error that occurs
- @return a new test run configuration.
+ The Default Initializer.
+ This should not be called directly.
  */
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error;
-
-/**
- Creates and loads a configuration.
-
- @param arguments the Arguments to the fbxctest process
- @param environment environment additions for the process under test.
- @param workingDirectory the Working Directory to use.
- @Param timeout the timeout of the test.
- @param error an error out for any error that occurs
- @return a new test run configuration.
- */
-+ (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory timeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(nullable FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(nullable NSString *)runnerAppPath testFilter:(nullable NSString *)testFilter;
 
 /**
  The Destination Runtime to run against.
