@@ -48,11 +48,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)returnSimulator:(FBSimulator *)simulator error:(NSError **)error;
 
-/**
- The FBSimulatorControl Instance.
- */
-@property (nonatomic, strong, readonly) FBSimulatorControl *simulatorControl;
-
 @end
 
 NS_ASSUME_NONNULL_END

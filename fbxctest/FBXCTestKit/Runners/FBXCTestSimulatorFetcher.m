@@ -18,6 +18,7 @@
 
 @interface FBXCTestSimulatorFetcher ()
 
+@property (nonatomic, strong, readonly) FBSimulatorControl *simulatorControl;
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulatorConfiguration *simulatorConfiguration;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
