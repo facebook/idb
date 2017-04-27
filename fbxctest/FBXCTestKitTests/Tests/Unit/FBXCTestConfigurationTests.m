@@ -27,8 +27,8 @@
 
 - (NSString *)appTestArgument
 {
-  NSString *testBundlePath = [self iOSUnitTestBundlePath];
-  NSString *applicationPath = [FBXCTestKitFixtures tableSearchApplicationPath];
+  NSString *testBundlePath = self.iOSUnitTestBundlePath;
+  NSString *applicationPath = FBXCTestKitFixtures.tableSearchApplicationPath;
   return [NSString stringWithFormat:@"%@:%@", testBundlePath, applicationPath];
 }
 
@@ -53,6 +53,16 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBApplicationTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testiOSApplicationTestWithDestinationWithoutSDK
@@ -70,6 +80,16 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBApplicationTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testiOSApplicationTestsWithSDKWithoutDestination
@@ -87,6 +107,16 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBApplicationTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testiOSApplicationTestsWithoutRunTestsAtStart
@@ -109,6 +139,16 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBApplicationTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    runnerAppPath:FBXCTestKitFixtures.tableSearchApplicationPath];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testiOSLogicTestsWithDestinationAndSDK
@@ -133,6 +173,17 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBLogicTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
+    shims:configuration.shims
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    testFilter:nil];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testiOSLogicTestsWithDestinationWithoutSDK
@@ -157,6 +208,18 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBLogicTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
+    shims:configuration.shims
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    testFilter:nil];
+  XCTAssertEqualObjects(configuration, expected);
+
 }
 
 - (void)testiOSLogicTestsWithSDKWithoutDestination
@@ -181,6 +244,17 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBLogicTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]
+    shims:configuration.shims
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    testFilter:nil];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testMacLogicTests
@@ -205,6 +279,17 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBLogicTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
+    shims:configuration.shims
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    testFilter:nil];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testMacLogicTestsIgnoresDestination
@@ -228,6 +313,17 @@
   XCTAssertEqualObjects(configuration.processUnderTestEnvironment, processEnvironment);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBLogicTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
+    shims:configuration.shims
+    environment:processEnvironment
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0
+    testFilter:nil];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testMacTestList
@@ -249,6 +345,17 @@
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+
+  FBXCTestConfiguration *expected = [FBListTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
+    shims:configuration.shims
+    environment:@{}
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 - (void)testMacTestListIgnoresDestination
@@ -270,6 +377,16 @@
   XCTAssertNotNil(configuration.shims);
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
+
+  FBXCTestConfiguration *expected = [FBListTestConfiguration
+    configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
+    shims:configuration.shims
+    environment:@{}
+    workingDirectory:workingDirectory
+    testBundlePath:self.iOSUnitTestBundlePath
+    waitForDebugger:NO
+    timeout:0];
+  XCTAssertEqualObjects(configuration, expected);
 }
 
 @end

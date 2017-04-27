@@ -113,6 +113,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBListTestConfiguration : FBXCTestConfiguration
 
+/**
+ The Designated Initializer.
+ */
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout;
+
 @end
 
 /**
@@ -125,6 +130,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic, copy, readonly) NSString *runnerAppPath;
 
+/**
+ The Designated Initializer.
+ */
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath;
+
 @end
 
 /**
@@ -136,6 +146,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Filter for Logic Tests.
  */
 @property (nonatomic, copy, nullable, readonly) NSString *testFilter;
+
+/**
+ The Designated Initializer.
+ */
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(nullable NSString *)testFilter;
 
 @end
 

@@ -19,18 +19,6 @@
 #import "FBXCTestDestination.h"
 #import "FBXCTestShimConfiguration.h"
 
-@interface FBXCTestConfiguration ()
-
-@property (nonatomic, copy, readwrite) NSString *workingDirectory;
-@property (nonatomic, copy, readwrite) NSString *testBundlePath;
-@property (nonatomic, copy, readwrite) NSString *runnerAppPath;
-@property (nonatomic, copy, readwrite) NSString *testFilter;
-@property (nonatomic, assign, readwrite) BOOL waitForDebugger;
-
-@property (nonatomic, copy, nullable, readwrite) FBXCTestShimConfiguration *shims;
-
-@end
-
 @implementation FBXCTestConfiguration
 
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error
@@ -48,15 +36,19 @@
   if (!destination) {
     return nil;
   }
+  FBXCTestShimConfiguration *shims = nil;
+  NSString *testBundlePath = nil;
+  NSString *runnerAppPath = nil;
+  NSString *testFilter = nil;
+  BOOL waitForDebugger = NO;
 
-  FBXCTestConfiguration *configuration = [[configurationClass alloc] initWithDestination:destination processUnderTestEnvironment:environment timeout:timeout];
-  if (![configuration loadWithArguments:arguments workingDirectory:workingDirectory error:error]) {
+  if (![FBXCTestConfiguration loadWithArguments:arguments shimsOut:&shims testBundlePathOut:&testBundlePath runnerAppPathOut:&runnerAppPath testFilterOut:&testFilter waitForDebuggerOut:&waitForDebugger error:error]) {
     return nil;
   }
-  return configuration;
+  return [[configurationClass alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:testFilter];
 }
 
-- (instancetype)initWithDestination:(FBXCTestDestination *)destination processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment timeout:(NSTimeInterval)timeout
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testFilter:(NSString *)testFilter
 {
   self = [super init];
   if (!self) {
@@ -64,7 +56,11 @@
   }
 
   _destination = destination;
+  _shims = shims;
   _processUnderTestEnvironment = environment ?: @{};
+  _workingDirectory = workingDirectory;
+  _testBundlePath = testBundlePath;
+  _waitForDebugger = waitForDebugger;
   _testTimeout = timeout > 0 ? timeout : [self defaultTimeout];
 
   return self;
@@ -87,7 +83,7 @@
     fail:error];
 }
 
-- (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments workingDirectory:(NSString *)workingDirectory error:(NSError **)error
++ (BOOL)loadWithArguments:(NSArray<NSString *> *)arguments shimsOut:(FBXCTestShimConfiguration **)shimsOut testBundlePathOut:(NSString **)testBundlePathOut runnerAppPathOut:(NSString **)runnerAppPathOut testFilterOut:(NSString **)testFilterOut waitForDebuggerOut:(BOOL *)waitForDebuggerOut error:(NSError **)error
 {
   NSUInteger nextArgument = 0;
   NSString *testFilter = nil;
@@ -102,7 +98,7 @@
       // Ignore. This is handled by the configuration class.
       continue;
     } else if ([argument isEqualToString:@"-waitForDebugger"]) {
-      self.waitForDebugger = YES;
+      *waitForDebuggerOut = YES;
       continue;
     }
     if (nextArgument >= arguments.count) {
@@ -118,7 +114,12 @@
     } else if ([argument isEqualToString:@"-destination"]) {
       // Ignore. This is handled when extracting the destination
     } else if ([argument isEqualToString:@"-logicTest"]) {
-      [self addTestBundle:parameter runnerAppPath:nil error:error];
+      if (*testBundlePathOut != nil) {
+        return [[FBXCTestError
+          describe:@"Only a single -logicTest or -appTest argument expected"]
+          failBool:error];
+      }
+      *testBundlePathOut = parameter;
     } else if ([argument isEqualToString:@"-appTest"]) {
       NSRange colonRange = [parameter rangeOfString:@":"];
       if (colonRange.length == 0) {
@@ -127,7 +128,14 @@
       NSString *testBundlePath = [parameter substringToIndex:colonRange.location];
       NSString *testRunnerPath = [parameter substringFromIndex:colonRange.location + 1];
       NSString *testRunnerAppPath = [testRunnerPath stringByDeletingLastPathComponent];
-      [self addTestBundle:testBundlePath runnerAppPath:testRunnerAppPath error:error];
+
+      if (*testBundlePathOut != nil) {
+        return [[FBXCTestError
+          describe:@"Only a single -logicTest or -appTest argument expected"]
+          failBool:error];
+      }
+      *testBundlePathOut = testBundlePath;
+      *runnerAppPathOut = testRunnerAppPath;
       shimsRequired = NO;
     } else if ([argument isEqualToString:@"-only"]) {
       if (testFilter != nil) {
@@ -145,21 +153,22 @@
     if (!shimConfiguration) {
       return [FBXCTestError failBoolWithError:innerError errorOut:error];
     }
-    self.shims = shimConfiguration;
+    *shimsOut = shimConfiguration;
   }
   if (testFilter != nil) {
-    NSString *expectedPrefix = [self.testBundlePath stringByAppendingString:@":"];
+    NSString *expectedPrefix = [*testBundlePathOut stringByAppendingString:@":"];
     if (![testFilter hasPrefix:expectedPrefix]) {
-      return [[FBXCTestError describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, self.testBundlePath] failBool:error];
+      return [[FBXCTestError
+        describeFormat:@"Test filter '%@' does not apply to the test bundle '%@'", testFilter, *testBundlePathOut]
+        failBool:error];
     }
-    self.testFilter = [testFilter substringFromIndex:expectedPrefix.length];
+    *testFilterOut = [testFilter substringFromIndex:expectedPrefix.length];
   }
 
-  self.workingDirectory = workingDirectory;
   return YES;
 }
 
-- (BOOL)checkReporter:(NSString *)reporter error:(NSError **)error
++ (BOOL)checkReporter:(NSString *)reporter error:(NSError **)error
 {
   if (![reporter isEqualToString:@"json-stream"]) {
     return [[FBXCTestError describeFormat:@"Unsupported reporter: %@", reporter] failBool:error];
@@ -250,16 +259,6 @@
   return YES;
 }
 
-- (BOOL)addTestBundle:(NSString *)testBundlePath runnerAppPath:(NSString *)runnerAppPath error:(NSError **)error
-{
-  if (_testBundlePath != nil) {
-    return [[FBXCTestError describe:@"Only a single -logicTest or -appTest argument expected"] failBool:error];
-  }
-  _testBundlePath = testBundlePath;
-  _runnerAppPath = runnerAppPath;
-  return YES;
-}
-
 - (NSTimeInterval)defaultTimeout
 {
   return 500;
@@ -336,15 +335,19 @@
 #pragma mark JSON
 
 NSString *const KeyDestination = @"destination";
-NSString *const KeyShims = @"shims";
 NSString *const KeyEnvironment = @"environment";
-NSString *const KeyWorkingDirectory = @"working_directory";
+NSString *const KeyListTestsOnly = @"list_only";
+NSString *const KeyRunnerAppPath = @"test_host_path";
+NSString *const KeyShims = @"shims";
 NSString *const KeyTestBundlePath = @"test_bundle_path";
+NSString *const KeyTestFilter = @"test_filter";
+NSString *const KeyTestTimeout = @"test_timeout";
 NSString *const KeyTestType = @"test_type";
 NSString *const KeyWaitForDebugger = @"wait_for_debugger";
-NSString *const KeyTestTimeout = @"test_timeout";
-NSString *const KeyRunnerAppPath = @"test_host_path";
-NSString *const KeyTestFilter = @"test_filter";
+NSString *const KeyWorkingDirectory = @"working_directory";
+
+NSString *const ValueLogicTest = @"logic-test";
+NSString *const ValueApplicationTest = @"application-test";
 
 - (id)jsonSerializableRepresentation
 {
@@ -355,6 +358,7 @@ NSString *const KeyTestFilter = @"test_filter";
     KeyWorkingDirectory: self.workingDirectory,
     KeyTestBundlePath: self.testBundlePath,
     KeyTestType: self.testType,
+    KeyListTestsOnly: @NO,
     KeyWaitForDebugger: @(self.waitForDebugger),
     KeyTestTimeout: @(self.testTimeout),
   };
@@ -371,20 +375,57 @@ NSString *const KeyTestFilter = @"test_filter";
 
 @implementation FBListTestConfiguration
 
+#pragma mark Initializers
+
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout
+{
+  return [[FBListTestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:nil];
+}
+
+#pragma mark Public
+
 - (NSString *)testType
 {
-  return @"logic-test";
+  return ValueLogicTest;
+}
+
+#pragma mark JSON
+
+- (id)jsonSerializableRepresentation
+{
+  NSMutableDictionary<NSString *, id> *json = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
+  json[KeyListTestsOnly] = @YES;
+  return [json copy];
 }
 
 @end
 
 @implementation FBApplicationTestConfiguration
 
-@dynamic runnerAppPath;
+#pragma mark Initializers
+
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath
+{
+  return [[FBApplicationTestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:nil];
+}
+
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testFilter:(NSString *)testFilter
+{
+  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:testFilter];
+  if (!self) {
+    return nil;
+  }
+
+  _runnerAppPath = runnerAppPath;
+
+  return self;
+}
+
+#pragma mark Public
 
 - (NSString *)testType
 {
-  return @"application-test";
+  return ValueApplicationTest;
 }
 
 #pragma mark JSON
@@ -400,11 +441,30 @@ NSString *const KeyTestFilter = @"test_filter";
 
 @implementation FBLogicTestConfiguration
 
-@dynamic testFilter;
+#pragma mark Initializers
+
++ (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout testFilter:(NSString *)testFilter
+{
+  return [[FBLogicTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:testFilter];
+}
+
+- (instancetype)initWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout runnerAppPath:(NSString *)runnerAppPath testFilter:(NSString *)testFilter
+{
+  self = [super initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:runnerAppPath testFilter:testFilter];
+  if (!self) {
+    return nil;
+  }
+
+  _testFilter = testFilter;
+
+  return self;
+}
+
+#pragma mark Public
 
 - (NSString *)testType
 {
-  return @"logic-test";
+  return ValueLogicTest;
 }
 
 #pragma mark JSON
