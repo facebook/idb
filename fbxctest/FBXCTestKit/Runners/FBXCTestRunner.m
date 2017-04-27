@@ -38,6 +38,8 @@
 
 @implementation FBXCTestRunner
 
+#pragma mark Initializers
+
 + (instancetype)testRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   return [[self alloc] initWithConfiguration:configuration context:context];
@@ -56,6 +58,8 @@
   return self;
 }
 
+#pragma mark Public
+
 - (BOOL)executeTestsWithError:(NSError **)error
 {
   BOOL success = [self.configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTestWithError:error] : [self runMacTestWithError:error];
@@ -67,6 +71,8 @@
   }
   return YES;
 }
+
+#pragma mark Private
 
 - (BOOL)runMacTestWithError:(NSError **)error
 {
@@ -84,17 +90,13 @@
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[FBXCTestError describe:@"Listing tests is only supported for macosx tests."] failBool:error];
   }
-  FBXCTestSimulatorFetcher *simulatorFetcher = [FBXCTestSimulatorFetcher fetcherWithWorkingDirectory:self.configuration.workingDirectory logger:self.context.logger error:error];
-  if (!simulatorFetcher) {
-    return NO;
-  }
-  FBSimulator *simulator = [simulatorFetcher fetchSimulatorForConfiguration:self.configuration error:error];
+  FBSimulator *simulator = [self.context simulatorForiOSTestRun:self.configuration error:error];
   if (!simulator) {
     return NO;
   }
 
   BOOL testResult = [self runTestWithSimulator:simulator error:error];
-  [simulatorFetcher returnSimulator:simulator error:nil];
+  [self.context finishedExecutionOnSimulator:simulator];
   if (!testResult) {
     return NO;
   }

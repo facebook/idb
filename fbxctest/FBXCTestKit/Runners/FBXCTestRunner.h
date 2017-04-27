@@ -19,13 +19,17 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBXCTestRunner : NSObject
 
+#pragma mark Initializers
+
 /**
- The Default Initializer
+ The Designated Initializer
  
  @param configuration the test configuration.
  @param context the context to run with.
  */
 + (instancetype)testRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
+
+#pragma mark Public Methods
 
 /**
  Executes the Tests.

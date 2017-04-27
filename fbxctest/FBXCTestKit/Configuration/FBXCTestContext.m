@@ -9,7 +9,19 @@
 
 #import "FBXCTestContext.h"
 
+#import "FBXCTestSimulatorFetcher.h"
+#import "FBXCTestConfiguration.h"
+#import "FBXCTestLogger.h"
+
+@interface FBXCTestContext ()
+
+@property (nonatomic, strong, readwrite, nullable) FBXCTestSimulatorFetcher *simulatorFetcher;
+
+@end
+
 @implementation FBXCTestContext
+
+#pragma mark Initializers
 
 + (instancetype)contextWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger
 {
@@ -27,6 +39,25 @@
   _logger = logger;
 
   return self;
+}
+
+#pragma mark Public Methods
+
+- (nullable FBSimulator *)simulatorForiOSTestRun:(FBXCTestConfiguration *)configuration error:(NSError **)error
+{
+  if (!self.simulatorFetcher) {
+    FBXCTestSimulatorFetcher *fetcher = [FBXCTestSimulatorFetcher fetcherWithWorkingDirectory:configuration.workingDirectory logger:self.logger error:error];
+    if (!fetcher) {
+      return nil;
+    }
+    self.simulatorFetcher = fetcher;
+  }
+  return [self.simulatorFetcher fetchSimulatorForConfiguration:configuration error:error];
+}
+
+- (void)finishedExecutionOnSimulator:(FBSimulator *)simulator
+{
+  [self.simulatorFetcher returnSimulator:simulator error:nil];
 }
 
 @end
