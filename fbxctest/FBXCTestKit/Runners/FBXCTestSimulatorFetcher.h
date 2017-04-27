@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 @class FBSimulatorControl;
 @class FBXCTestConfiguration;
-@class FBXCTestLogger;
+@protocol FBControlCoreLogger;
 
 /**
  Fetches a Simulator for a Test.
@@ -24,20 +24,21 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Simulator Fetcher for the given configuration
 
- @param configuration the configuration to use.
+ @param workingDirectory the working directory.
  @param logger the logger to use.
  @param error an error out for any error that occurs.
  @return a Fetcher for the given Configuration.
  */
-+ (nullable instancetype)withConfiguration:(FBXCTestConfiguration *)configuration logger:(FBXCTestLogger *)logger error:(NSError **)error;
++ (nullable instancetype)fetcherWithWorkingDirectory:(NSString *)workingDirectory logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 
 /**
  Gets a Simulator for the configuration provided in the constructor.
 
+ @param configuration the configuration to fetch for.
  @param error an error out for any error that occurs.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)fetchSimulatorForWithError:(NSError **)error;
+- (nullable FBSimulator *)fetchSimulatorForConfiguration:(FBXCTestConfiguration *)configuration error:(NSError **)error;
 
 /**
  Return the Simulator after the Test Run is completed.

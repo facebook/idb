@@ -84,11 +84,11 @@
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[FBXCTestError describe:@"Listing tests is only supported for macosx tests."] failBool:error];
   }
-  FBXCTestSimulatorFetcher *simulatorFetcher = [FBXCTestSimulatorFetcher withConfiguration:self.configuration logger:self.context.logger error:error];
+  FBXCTestSimulatorFetcher *simulatorFetcher = [FBXCTestSimulatorFetcher fetcherWithWorkingDirectory:self.configuration.workingDirectory logger:self.context.logger error:error];
   if (!simulatorFetcher) {
     return NO;
   }
-  FBSimulator *simulator = [simulatorFetcher fetchSimulatorForWithError:error];
+  FBSimulator *simulator = [simulatorFetcher fetchSimulatorForConfiguration:self.configuration error:error];
   if (!simulator) {
     return NO;
   }
