@@ -14,6 +14,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBiOSActionRouter;
+
 @protocol FBiOSTarget;
 @protocol FBiOSTargetAction;
 @protocol FBiOSActionReaderDelegate;
@@ -29,7 +31,8 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
 @interface FBiOSActionReader : NSObject <FBTerminationAwaitable>
 
 /**
- The Designated Initializer
+ Initializes an Action Reader for a target, on a socket.
+ The default routing of the target will be used.
 
  @param target the target to run against.
  @param delegate the delegate to notify.
@@ -38,8 +41,21 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
  */
 + (instancetype)socketReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate port:(in_port_t)port;
 
+
 /**
- The Designated Initializer
+ Initializes an Action Reader for a router, on a socket.
+ The Designated Initializer.
+
+ @param router the router to use.
+ @param delegate the delegate to notify.
+ @param port the port to bind on.
+ @return a Socket Reader.
+ */
++ (instancetype)socketReaderForRouter:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate port:(in_port_t)port;
+
+/**
+ Initializes an Action Reader for a router, between file handles.
+ The default routing of the target will be used.
 
  @param target the target to run against.
  @param delegate the delegate to notify.
@@ -48,6 +64,17 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
  @return a Socket Reader.
  */
 + (instancetype)fileReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle;
+
+/**
+ Initializes an Action Reader for a router, between file handles.
+
+ @param router the router to use.
+ @param delegate the delegate to notify.
+ @param readHandle the handle to read.
+ @param writeHandle the handle to write to.
+ @return a Socket Reader.
+ */
++ (instancetype)fileReaderForRouter:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle;
 
 /**
  Create and Listen to the socket.

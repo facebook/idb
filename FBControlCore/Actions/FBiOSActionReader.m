@@ -175,13 +175,22 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 + (instancetype)socketReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate port:(in_port_t)port
 {
-  FBiOSActionRouter *router = target.router;
+  return [self socketReaderForRouter:target.router delegate:delegate port:port];
+}
+
++ (instancetype)socketReaderForRouter:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate port:(in_port_t)port
+{
   return [[FBiOSActionSocket alloc] initWithDelegate:delegate router:router port:port];
 }
 
 + (instancetype)fileReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle
 {
-  return [[FBiOSActionFileHandle alloc] initWithDelegate:delegate router:target.router readHandle:readHandle writeHandle:writeHandle];
+  return [self fileReaderForRouter:target.router delegate:delegate readHandle:readHandle writeHandle:writeHandle];
+}
+
++ (instancetype)fileReaderForRouter:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle
+{
+  return [[FBiOSActionFileHandle alloc] initWithDelegate:delegate router:router readHandle:readHandle writeHandle:writeHandle];
 }
 
 - (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate router:(FBiOSActionRouter *)router
