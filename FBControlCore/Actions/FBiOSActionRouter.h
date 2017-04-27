@@ -9,10 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetAction.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBiOSTarget;
-@protocol FBiOSTargetAction;
 
 /**
  Routes Actions to Targets.
@@ -41,6 +42,11 @@ NS_ASSUME_NONNULL_BEGIN
  The Target to Route to.
  */
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+
+/**
+ A mapping of Action Type to the Class responsible for using it.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<FBiOSTargetActionType, Class> *actionMapping;
 
 #pragma mark Serialization
 

@@ -17,12 +17,6 @@
 #import "FBTestLaunchConfiguration.h"
 #import "FBApplicationLaunchConfiguration.h"
 
-@interface FBiOSActionRouter ()
-
-@property (nonatomic, copy, readonly) NSDictionary<FBiOSTargetActionType, Class> *actionMapping;
-
-@end
-
 @implementation FBiOSActionRouter
 
 #pragma mark Initializers
