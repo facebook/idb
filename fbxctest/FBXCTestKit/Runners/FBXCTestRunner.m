@@ -82,7 +82,7 @@
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[FBListTestRunner runnerWithConfiguration:self.configuration context:self.context] listTestsWithError:error];
   }
-  return [[FBLogicTestRunner withSimulator:nil configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+  return [[FBLogicTestRunner macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
 }
 
 - (BOOL)runiOSTestWithError:(NSError **)error
@@ -107,7 +107,7 @@
 - (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   if ([self.configuration isKindOfClass:FBLogicTestConfiguration.class]) {
-    return [[FBLogicTestRunner withSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+    return [[FBLogicTestRunner iOSRunnerWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
   }
   return [[FBApplicationTestRunner withSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
 }

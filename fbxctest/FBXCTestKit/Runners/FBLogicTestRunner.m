@@ -26,43 +26,61 @@
 
 @interface FBLogicTestRunner ()
 
-@property (nonatomic, strong, nullable, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBXCTestContext *context;
 
 @end
 
+@interface FBLogicTestRunner_iOS : FBLogicTestRunner
+
+@property (nonatomic, strong, nullable, readonly) FBSimulator *simulator;
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context;
+
+@end
+
+@interface FBLogicTestRunner_macOS : FBLogicTestRunner
+
+@end
+
 @implementation FBLogicTestRunner
 
-+ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
+#pragma mark Initializers
+
++ (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration context:context];
+  return [[FBLogicTestRunner_iOS alloc] initWithSimulator:simulator configuration:configuration context:context];
 }
 
-- (instancetype)initWithSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
+{
+  return [[FBLogicTestRunner_macOS alloc] initWithConfiguration:configuration context:context];
+}
+
+- (instancetype)initWithConfiguration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _simulator = simulator;
   _configuration = configuration;
   _context = context;
 
   return self;
 }
 
+#pragma mark Public
+
 - (BOOL)runTestsWithError:(NSError **)error
 {
-  FBSimulator *simulator = self.simulator;
   id<FBXCTestReporter> reporter = self.context.reporter;
   FBXCTestLogger *logger = self.context.logger;
 
   [reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
-  NSString *otestShimPath = simulator ? self.configuration.shims.iOSSimulatorOtestShimPath : self.configuration.shims.macOtestShimPath;
+  NSString *otestShimPath = self.otestShimPath;
 
   // The fifo is used by the shim to report events from within the xctest framework.
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
@@ -102,24 +120,8 @@
   }];
   otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
 
-  FBLogicTestProcess *process = simulator
-    ? [FBLogicTestProcess
-        simulatorSpawnProcess:simulator
-        launchPath:launchPath
-        arguments:arguments
-        environment:[self.configuration buildEnvironmentWithEntries:environment]
-        waitForDebugger:self.configuration.waitForDebugger
-        stdOutReader:stdOutReader
-        stdErrReader:stdErrReader]
-    : [FBLogicTestProcess
-        taskProcessWithLaunchPath:launchPath
-        arguments:arguments
-        environment:[self.configuration buildEnvironmentWithEntries:environment]
-        waitForDebugger:self.configuration.waitForDebugger
-        stdOutReader:stdOutReader
-        stdErrReader:stdErrReader];
-
-  // Start the process
+  // Construct and start the process
+  FBLogicTestProcess *process = [self testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader];
   pid_t pid = [process startWithError:error];
   if (!pid) {
     return NO;
@@ -167,6 +169,79 @@
   [reporter didFinishExecutingTestPlan];
 
   return YES;
+}
+
+#pragma mark Private
+
+- (NSString *)otestShimPath
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+- (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+@end
+
+@implementation FBLogicTestRunner_macOS
+
+#pragma mark Private
+
+- (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
+{
+  return [FBLogicTestProcess
+    taskProcessWithLaunchPath:launchPath
+    arguments:arguments
+    environment:[self.configuration buildEnvironmentWithEntries:environment]
+    waitForDebugger:self.configuration.waitForDebugger
+    stdOutReader:stdOutReader
+    stdErrReader:stdErrReader];
+}
+
+- (NSString *)otestShimPath
+{
+  return self.configuration.shims.macOtestShimPath;
+}
+
+@end
+
+@implementation FBLogicTestRunner_iOS
+
+#pragma mark Initializers
+
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
+{
+  self = [super initWithConfiguration:configuration context:context];
+  if (!self) {
+    return nil;
+  }
+
+  _simulator = simulator;
+
+  return self;
+}
+
+#pragma mark Private
+
+- (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
+{
+  return [FBLogicTestProcess
+    simulatorSpawnProcess:self.simulator
+    launchPath:launchPath
+    arguments:arguments
+    environment:[self.configuration buildEnvironmentWithEntries:environment]
+    waitForDebugger:self.configuration.waitForDebugger
+    stdOutReader:stdOutReader
+    stdErrReader:stdErrReader];
+}
+
+- (NSString *)otestShimPath
+{
+  return self.configuration.shims.iOSSimulatorOtestShimPath;
 }
 
 @end

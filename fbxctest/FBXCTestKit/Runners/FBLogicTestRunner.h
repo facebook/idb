@@ -21,14 +21,23 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBLogicTestRunner : NSObject
 
 /**
- Creates a Runner with the Provided Parameters.
+ Creates a Logic Test Runner for iOS with the Provided Parameters.
 
- @param simulator the Simulator to run on (if an iOS Test).
+ @param simulator the Simulator to run on.
  @param configuration the Configuration to use.
  @param context the test context
  @return a new Logic Test Runner.
  */
-+ (instancetype)withSimulator:(nullable FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context;
++ (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context;
+
+/**
+ Creates a Logic Test Runner for macOS with the Provided Parameters.
+
+ @param configuration the Configuration to use.
+ @param context the test context
+ @return a new Logic Test Runner.
+ */
++ (instancetype)macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context;
 
 /**
  Run the Logic Tests.
