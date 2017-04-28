@@ -109,6 +109,7 @@
 {
   // Don't hit an assertion because we're not started.
   if (!self.writer.startedWriting) {
+    [self.logger log:@"Cannot stop recording, the writer has not started writing"];
     return YES;
   }
 
@@ -128,10 +129,12 @@
 - (void)didChangeIOSurface:(IOSurfaceRef)surface
 {
   if (!surface) {
+    [self.logger log:@"IOSurface Removed"];
     [self.writer didChangeIOSurface:NULL];
     return;
   }
   xpc_object_t xpcSurface = IOSurfaceCreateXPCObject(surface);
+  [self.logger log:@"IOSurface Changed"];
   [self.writer didChangeIOSurface:xpcSurface];
 }
 
