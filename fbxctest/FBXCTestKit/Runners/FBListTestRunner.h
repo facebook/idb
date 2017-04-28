@@ -20,12 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBListTestRunner : NSObject
 
 /**
- Create and return a new Runner for Application Tests.
+ Create and return a new Runner for listing tests on macOS.
 
  @param configuration the the configuration to use.
  @param context the test context to use.
  */
-+ (instancetype)runnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
++ (instancetype)macOSRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
 
 /**
  Lists the tests to the reporter.

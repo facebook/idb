@@ -30,7 +30,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
 @implementation FBApplicationTestRunner
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   return [[self alloc] initWithSimulator:simulator configuration:configuration context:context];
 }

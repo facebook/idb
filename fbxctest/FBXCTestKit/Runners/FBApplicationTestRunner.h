@@ -21,13 +21,13 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBApplicationTestRunner : NSObject
 
 /**
- Create and return a new Runner for Application Tests.
+ Create and return a new Runner for Application Tests on iOS.
 
  @param simulator the Simulator to use for hosting the Application.
  @param configuration the the configuration to use.
  @param context the test context.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context;
++ (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context;
 
 /**
  Run the Application Tests.

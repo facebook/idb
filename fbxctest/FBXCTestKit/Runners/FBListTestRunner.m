@@ -30,7 +30,7 @@
 
 @implementation FBListTestRunner
 
-+ (instancetype)runnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)macOSRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   return [[self alloc] initWithConfiguration:configuration context:context];
 }
