@@ -9,7 +9,8 @@
 
 #import <XCTest/XCTest.h>
 
-#import <FBXCTestKit/FBJSONTestReporter.h>
+#import <FBXCTestKit/FBXCTestKit.h>
+
 #import <FBControlCore/FBControlCore.h>
 
 @interface FBJSONTestReporterTests : XCTestCase

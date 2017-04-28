@@ -8,8 +8,11 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <FBXCTestKit/FBXCTestLogger.h>
 #import <XCTest/XCTest.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@class FBXCTestLogger;
 
 /**
  A logger for tests.
@@ -27,3 +30,5 @@
 + (BOOL)isRunningOnTravis;
 
 @end
+
+NS_ASSUME_NONNULL_END

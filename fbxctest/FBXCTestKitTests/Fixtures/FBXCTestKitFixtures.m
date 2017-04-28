@@ -10,8 +10,6 @@
 #import "FBXCTestKitFixtures.h"
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @implementation FBXCTestKitFixtures
 

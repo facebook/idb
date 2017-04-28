@@ -15,7 +15,6 @@
 #import <XCTest/XCTest.h>
 
 #import "FBXCTestReporterDouble.h"
-#import "FBXCTestDestination.h"
 #import "XCTestCase+FBXCTestKitTests.h"
 #import "FBControlCoreValueTestCase.h"
 
