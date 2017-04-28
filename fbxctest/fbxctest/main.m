@@ -9,7 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBXCTestKit/FBXCTestKit.h>
+#import "FBXCTestBootstrapper.h"
 
 int main(int argc, const char *argv[])
 {

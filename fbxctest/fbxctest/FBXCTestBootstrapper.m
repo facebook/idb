@@ -11,12 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBJSONTestReporter.h"
-#import "FBXCTestConfiguration.h"
-#import "FBXCTestRunner.h"
-#import "FBXCTestLogger.h"
-#import "FBXCTestContext.h"
-#import "FBXCTestConfiguration+CommandLine.h"
+#import <FBXCTestKit/FBXCTestKit.h>
 
 @interface FBXCTestBootstrapper ()
 
