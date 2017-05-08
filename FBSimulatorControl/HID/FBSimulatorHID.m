@@ -102,7 +102,7 @@
   handshakeHeader->msgh_remote_port = 0;
   handshakeHeader->msgh_local_port = self.registrationPort;
 
-  kern_return_t result = mach_msg(handshakeHeader, MACH_RCV_LARGE | MACH_RCV_MSG, 0x0, size, self.registrationPort, timeout, 0x0);
+  kern_return_t result = mach_msg(handshakeHeader, MACH_RCV_LARGE | MACH_RCV_MSG | MACH_RCV_TIMEOUT, 0x0, size, self.registrationPort, timeout, 0x0);
   if (result != KERN_SUCCESS) {
     free(handshakeHeader);
     return [[FBSimulatorError
