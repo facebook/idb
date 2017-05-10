@@ -65,15 +65,17 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
 {
   NSMutableArray<FBAMDevice *> *devices = [NSMutableArray array];
   CFArrayRef array = FBAMDCreateDeviceList();
-  for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
-    CFTypeRef value = CFArrayGetValueAtIndex(array, index);
-    FBAMDevice *device = [[FBAMDevice alloc] initWithAMDevice:value];
-    if (![device cacheAllValues]) {
-      continue;
+  if (array) {
+    for (NSInteger index = 0; index < CFArrayGetCount(array); index++) {
+      CFTypeRef value = CFArrayGetValueAtIndex(array, index);
+      FBAMDevice *device = [[FBAMDevice alloc] initWithAMDevice:value];
+      if (![device cacheAllValues]) {
+        continue;
+      }
+      [devices addObject:device];
     }
-    [devices addObject:device];
+    CFRelease(array);
   }
-  CFRelease(array);
   return [devices copy];
 }
 
