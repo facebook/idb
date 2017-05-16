@@ -36,6 +36,9 @@ extern void (*FBAMDSetLogLevel)(int32_t level);
 
 @property (nonatomic, assign, readonly) CFTypeRef amDevice;
 
+- (id)handleWithBlockDeviceSession:(id(^)(CFTypeRef device))operationBlock error:(NSError **)error;
+- (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END

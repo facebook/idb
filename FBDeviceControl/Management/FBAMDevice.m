@@ -110,22 +110,27 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
   return operationResult;
 }
 
+- (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error
+{
+  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    CFTypeRef test_apple_afc_conn;
+    FBAMDeviceSecureStartService(
+      device,
+      (__bridge CFStringRef _Nonnull)(service),
+      (__bridge CFDictionaryRef _Nonnull)(userInfo),
+      &test_apple_afc_conn
+    );
+    return (__bridge id)(test_apple_afc_conn);
+  } error:error]);
+}
+
 - (CFTypeRef)startTestManagerServiceWithError:(NSError **)error
 {
   NSDictionary *userInfo = @{
     @"CloseOnInvalidate" : @1,
     @"InvalidateOnDetach" : @1
   };
-  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    CFTypeRef test_apple_afc_conn;
-    FBAMDeviceSecureStartService(
-      device,
-      CFSTR("com.apple.testmanagerd.lockdown"),
-      (__bridge CFDictionaryRef _Nonnull)(userInfo),
-      &test_apple_afc_conn
-    );
-    return (__bridge id)(test_apple_afc_conn);
-  } error:error]);
+  return [self startService:@"com.apple.testmanagerd.lockdown" userInfo:userInfo error:error];
 }
 
 - (void)dealloc
