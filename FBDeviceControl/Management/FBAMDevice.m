@@ -60,6 +60,8 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
   FBAMDCreateDeviceList = (CFArrayRef(*)(void))FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
   FBAMDeviceGetName = (CFStringRef(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDeviceGetName");
   FBAMDeviceCopyValue = (CFStringRef(*)(CFTypeRef, CFStringRef, CFStringRef))FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
+  FBAMDeviceSecureTransferPath = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
+  FBAMDeviceSecureInstallApplication = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
 }
 + (NSArray<FBAMDevice *> *)allDevices
 {
@@ -95,6 +97,18 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
     return
     [[FBDeviceControlError
       describe:@"Failed to connect to device."]
+     fail:error];
+  }
+  if (FBAMDeviceIsPaired(_amDevice) != 1) {
+    return
+    [[FBDeviceControlError
+      describe:@"Device is not paired"]
+     fail:error];
+  }
+  if (FBAMDeviceValidatePairing(_amDevice) != 0) {
+    return
+    [[FBDeviceControlError
+      describe:@"Validate pairing failed"]
      fail:error];
   }
   id operationResult = nil;
@@ -144,14 +158,6 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
 {
   return
   [[self handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    if (FBAMDeviceIsPaired(device) != 1) {
-      return @NO;
-
-    }
-    if (FBAMDeviceValidatePairing(device) != 0) {
-      return @NO;
-    }
-
     self->_udid = (__bridge NSString *)(FBAMDeviceGetName(device));
     self->_deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
     self->_modelName = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));

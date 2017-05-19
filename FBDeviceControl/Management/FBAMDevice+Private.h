@@ -23,7 +23,9 @@ extern int (*FBAMDeviceStartSession)(CFTypeRef device);
 extern int (*FBAMDeviceStopSession)(CFTypeRef device);
 extern int (*FBAMDServiceConnectionGetSocket)(CFTypeRef connection);
 extern int (*FBAMDServiceConnectionInvalidate)(CFTypeRef connection);
-extern int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle);
+extern int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
+extern int (*FBAMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
+extern int (*FBAMDeviceSecureInstallApplication)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
 
 // Getting Properties of a Device.
 extern _Nullable CFStringRef (*_Nonnull FBAMDeviceGetName)(CFTypeRef device);

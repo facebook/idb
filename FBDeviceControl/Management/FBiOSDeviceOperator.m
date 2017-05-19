@@ -315,21 +315,82 @@ static NSString *const ApplicationPathKey = @"Path";
 
 #pragma mark FBApplicationCommands Implementation
 
+- (id)handleWithAFCSession:(id(^)())operationBlock error:(NSError **)error
+{
+  return [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    int afcConn;
+    int afcReturnCode = FBAMDeviceSecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
+    if (afcReturnCode != 0) {
+      return [[FBDeviceControlError
+               describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
+              fail:error];
+    }
+    id operationResult = operationBlock();
+    close(afcConn);
+    return operationResult;
+  } error: error];
+}
+
+- (BOOL)transferAppURL:(NSURL *)app_url options:(NSDictionary *)options error:(NSError **)error
+{
+  id transferReturnCode = [self handleWithAFCSession:^id() {
+    return @(FBAMDeviceSecureTransferPath(0,
+                                          self.device.amDevice.amDevice,
+                                          (__bridge CFURLRef _Nonnull)(app_url),
+                                          (__bridge CFDictionaryRef _Nonnull)(options),
+                                          NULL,
+                                          0));
+  } error:error];
+
+  if (transferReturnCode == nil) {
+    return [[FBDeviceControlError
+             describe:@"Failed to transfer path"]
+            failBool:error];
+  }
+
+  if ([transferReturnCode intValue] != 0) {
+    return [[FBDeviceControlError
+             describeFormat:@"Failed to transfer path with error code: %x", [transferReturnCode intValue]]
+            failBool:error];
+  }
+  return YES;
+}
+
+- (BOOL)secureInstallApplication:(NSURL *)app_url options:(NSDictionary *)options error:(NSError **)error
+{
+  NSNumber *install_return_code = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    return @(FBAMDeviceSecureInstallApplication(0, device, (__bridge CFURLRef _Nonnull)(app_url), (__bridge CFDictionaryRef _Nonnull)(options), NULL, 0));
+  } error: error];
+
+  if (install_return_code == nil) {
+    return
+    [[FBDeviceControlError
+      describe:@"Failed to install application"]
+     failBool:error];
+  }
+  if ([install_return_code intValue] != 0) {
+    return
+    [[FBDeviceControlError
+      describe:@"Failed to install application"]
+     failBool:error];
+  }
+  return YES;
+}
+
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
-  // Get the device here in the main thread. There is an assertion for main thread in
-  // it's initialization.
-  id device = self.device.dvtDevice;
+  NSURL *app_url = [NSURL fileURLWithPath:path isDirectory:YES];
+  NSDictionary *options = @{@"PackageType" : @"Developer"};
+  NSError *inner_error = nil;
+  if (![self transferAppURL:app_url options:options error:&inner_error] ||
+      ![self secureInstallApplication:app_url options:options error:&inner_error])
+  {
+    return [[[FBDeviceControlError
+              describeFormat:@"Failed to install application with path %@", path]
+             causedBy:inner_error]
+            failBool:error];
+  }
 
-  id object = [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return [device installApplicationSync:path options:nil];
-  }];
-  if ([object isKindOfClass:NSError.class]) {
-    if (error) {
-      *error = object;
-    }
-    return NO;
-  };
   return YES;
 }
 
