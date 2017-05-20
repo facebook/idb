@@ -1,12 +1,12 @@
 # XCTestBootstrap
-A Mac OS X library for launching XCTest & XCUITest and managing connection with testmanager daemon.
+A macOS library for launching XCTest & XCUITest and managing connection with testmanager daemon.
 
 ## Features
 - Prepares XCTest bundle.
 - Launches application and injects XCTest bundle.
 - Opens and manages connection with testmanager daemon during the test.
 - It works with iOS simulator & device tests.
-- It works with Mac OSX tests.
+- It works with macOS tests.
 
 ## Usage
 In order to use XCTestBootstrap you need to provide class that implements `<FBDeviceOperator>` supplying basic device instructions like install application, launch application etc.
