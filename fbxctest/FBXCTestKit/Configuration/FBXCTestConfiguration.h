@@ -13,12 +13,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBSimulator;
 @class FBXCTestDestination;
-@class FBXCTestLogger;
 @class FBXCTestShimConfiguration;
-
-@protocol FBControlCoreLogger;
 
 /**
  The Action Type for a Test Launch.

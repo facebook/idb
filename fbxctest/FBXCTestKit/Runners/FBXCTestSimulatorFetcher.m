@@ -12,7 +12,6 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 
 #import "FBXCTestConfiguration.h"
-#import "FBXCTestLogger.h"
 #import "FBXCTestError.h"
 #import "FBXCTestDestination.h"
 

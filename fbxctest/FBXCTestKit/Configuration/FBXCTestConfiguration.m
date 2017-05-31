@@ -13,13 +13,11 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBJSONTestReporter.h"
+#import "FBXCTestContext.h"
 #import "FBXCTestDestination.h"
 #import "FBXCTestError.h"
-#import "FBXCTestLogger.h"
 #import "FBXCTestRunner.h"
 #import "FBXCTestShimConfiguration.h"
-#import "FBXCTestContext.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
 

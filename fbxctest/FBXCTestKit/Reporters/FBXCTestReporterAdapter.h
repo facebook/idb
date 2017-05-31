@@ -9,6 +9,8 @@
 
 #import <XCTestBootstrap/FBTestManagerTestReporter.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @protocol FBXCTestReporter;
 
 @interface FBXCTestReporterAdapter : NSObject <FBTestManagerTestReporter>
@@ -16,3 +18,5 @@
 + (instancetype)adapterWithReporter:(id<FBXCTestReporter>)reporter;
 
 @end
+
+NS_ASSUME_NONNULL_END

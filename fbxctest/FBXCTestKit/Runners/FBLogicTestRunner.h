@@ -9,11 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBLogicTestConfiguration;
 @class FBSimulator;
 @class FBXCTestContext;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Runner for Logic Tests
