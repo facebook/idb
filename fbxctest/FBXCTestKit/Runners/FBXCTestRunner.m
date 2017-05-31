@@ -18,7 +18,6 @@
 
 #import "FBJSONTestReporter.h"
 #import "FBXCTestConfiguration.h"
-#import "FBXCTestError.h"
 #import "FBXCTestReporterAdapter.h"
 #import "FBXCTestLogger.h"
 #import "FBApplicationTestRunner.h"

@@ -13,11 +13,11 @@
 #import <sys/stat.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestReporter.h"
 #import "FBXCTestShimConfiguration.h"
-#import "FBXCTestError.h"
 #import "FBXCTestContext.h"
 #import "FBXCTestDestination.h"
 

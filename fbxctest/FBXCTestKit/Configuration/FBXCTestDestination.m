@@ -10,8 +10,7 @@
 #import "FBXCTestDestination.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
-
-#import "FBXCTestError.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @implementation FBXCTestDestination
 

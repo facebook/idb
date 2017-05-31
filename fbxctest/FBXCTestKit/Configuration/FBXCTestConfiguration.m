@@ -15,7 +15,6 @@
 
 #import "FBXCTestContext.h"
 #import "FBXCTestDestination.h"
-#import "FBXCTestError.h"
 #import "FBXCTestRunner.h"
 #import "FBXCTestShimConfiguration.h"
 

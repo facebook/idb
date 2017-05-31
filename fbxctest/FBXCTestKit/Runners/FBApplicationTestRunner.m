@@ -15,7 +15,6 @@
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestLogger.h"
 #import "FBXCTestReporterAdapter.h"
-#import "FBXCTestError.h"
 #import "FBXCTestContext.h"
 
 static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;

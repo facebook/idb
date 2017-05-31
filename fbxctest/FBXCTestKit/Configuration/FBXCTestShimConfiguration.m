@@ -10,8 +10,8 @@
 #import "FBXCTestShimConfiguration.h"
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestError.h"
 #import "FBXCTestConfiguration.h"
 
 static NSString *const iOSXCTestShimFileName = @"otest-shim-ios.dylib";

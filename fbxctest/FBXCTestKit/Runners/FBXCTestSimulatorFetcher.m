@@ -10,9 +10,9 @@
 #import "FBXCTestSimulatorFetcher.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestConfiguration.h"
-#import "FBXCTestError.h"
 #import "FBXCTestDestination.h"
 
 @interface FBXCTestSimulatorFetcher ()

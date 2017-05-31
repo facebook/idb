@@ -14,10 +14,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestReporter.h"
-#import "FBXCTestError.h"
 #import "FBXCTestLogger.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTestDestination.h"

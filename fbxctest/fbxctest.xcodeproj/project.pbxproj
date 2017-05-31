@@ -19,8 +19,6 @@
 		050D461B1D6072800038F72D /* FBXCTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D460F1D6072800038F72D /* FBXCTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		050D461C1D6072800038F72D /* FBXCTestReporterAdapter.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D46101D6072800038F72D /* FBXCTestReporterAdapter.h */; };
 		050D461D1D6072800038F72D /* FBXCTestReporterAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46111D6072800038F72D /* FBXCTestReporterAdapter.m */; };
-		050D461E1D6072800038F72D /* FBXCTestError.h in Headers */ = {isa = PBXBuildFile; fileRef = 050D46131D6072800038F72D /* FBXCTestError.h */; };
-		050D461F1D6072800038F72D /* FBXCTestError.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46141D6072800038F72D /* FBXCTestError.m */; };
 		050D46231D6074090038F72D /* FBXCTestKitIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */; };
 		050D46271D6074B60038F72D /* FBXCTestKitFixtures.m in Sources */ = {isa = PBXBuildFile; fileRef = 050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */; };
 		050D463C1D608AA40038F72D /* FBSimulatorControl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 050D463B1D608AA40038F72D /* FBSimulatorControl.framework */; };
@@ -106,8 +104,6 @@
 		050D460F1D6072800038F72D /* FBXCTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporter.h; sourceTree = "<group>"; };
 		050D46101D6072800038F72D /* FBXCTestReporterAdapter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterAdapter.h; sourceTree = "<group>"; };
 		050D46111D6072800038F72D /* FBXCTestReporterAdapter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterAdapter.m; sourceTree = "<group>"; };
-		050D46131D6072800038F72D /* FBXCTestError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestError.h; sourceTree = "<group>"; };
-		050D46141D6072800038F72D /* FBXCTestError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestError.m; sourceTree = "<group>"; };
 		050D46221D6074090038F72D /* FBXCTestKitIntegrationTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestKitIntegrationTests.m; sourceTree = "<group>"; };
 		050D46251D6074B60038F72D /* FBXCTestKitFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestKitFixtures.h; sourceTree = "<group>"; };
 		050D46261D6074B60038F72D /* FBXCTestKitFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestKitFixtures.m; sourceTree = "<group>"; };
@@ -233,8 +229,6 @@
 			children = (
 				AAED07A41E547804005060ED /* FBLogicTestProcess.h */,
 				AAED07A51E547804005060ED /* FBLogicTestProcess.m */,
-				050D46131D6072800038F72D /* FBXCTestError.h */,
-				050D46141D6072800038F72D /* FBXCTestError.m */,
 				AAB44FF61D62351A0059E922 /* FBXCTestLogger.h */,
 				AAB44FF71D62351A0059E922 /* FBXCTestLogger.m */,
 			);
@@ -389,7 +383,6 @@
 			files = (
 				AA9A9E491D62F235000B8180 /* FBXCTestRunner.h in Headers */,
 				AAFD567C1D95131600522DE3 /* FBXCTestConfiguration.h in Headers */,
-				050D461E1D6072800038F72D /* FBXCTestError.h in Headers */,
 				050D461C1D6072800038F72D /* FBXCTestReporterAdapter.h in Headers */,
 				AA8C727D1EB11019004320A8 /* FBXCTestConfiguration+CommandLine.h in Headers */,
 				AA2CEBB01D65C57F0051962D /* FBXCTestSimulatorFetcher.h in Headers */,
@@ -531,7 +524,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA9A9E4E1D62F251000B8180 /* FBApplicationTestRunner.m in Sources */,
-				050D461F1D6072800038F72D /* FBXCTestError.m in Sources */,
 				AAA1F54D1DDE17CA003E0359 /* FBXCTestDestination.m in Sources */,
 				AA8C727E1EB11019004320A8 /* FBXCTestConfiguration+CommandLine.m in Sources */,
 				AA9A9E4A1D62F235000B8180 /* FBXCTestRunner.m in Sources */,

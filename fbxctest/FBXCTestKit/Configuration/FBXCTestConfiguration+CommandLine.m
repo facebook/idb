@@ -9,7 +9,8 @@
 
 #import "FBXCTestConfiguration+CommandLine.h"
 
-#import "FBXCTestError.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTestDestination.h"
 
