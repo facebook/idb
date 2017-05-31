@@ -396,21 +396,25 @@ static NSString *const ApplicationPathKey = @"Path";
 
 - (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  id device = self.device.dvtDevice;
+  NSError *innerError = nil;
+  NSNumber *returnCode = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    return @(FBAMDeviceSecureUninstallApplication(0, device, (__bridge CFStringRef _Nonnull)(bundleID), 0, NULL, 0));
+  } error: &innerError];
 
-  [self fetchApplications];
-
-  id object = [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return [device uninstallApplicationWithBundleIdentifierSync:bundleID];
-  }];
-
-  if ([object isKindOfClass:NSError.class]) {
-    if (error) {
-      *error = object;
-    }
-    return NO;
-  };
-
+  if (returnCode == nil) {
+    return
+    [[[FBDeviceControlError
+       describe:@"Failed to uninstall application"]
+      causedBy:innerError]
+     failBool:error];
+  }
+  if ([returnCode intValue] != 0) {
+    return
+    [[[FBDeviceControlError
+       describeFormat:@"Failed to uninstall application with error code %x", [returnCode intValue]]
+      causedBy:innerError]
+     failBool:error];
+  }
   return YES;
 }
 
