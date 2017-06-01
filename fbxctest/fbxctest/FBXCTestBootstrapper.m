@@ -10,6 +10,7 @@
 #import "FBXCTestBootstrapper.h"
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import <FBXCTestKit/FBXCTestKit.h>
 

@@ -9,9 +9,10 @@
 
 #import "FBXCTestContext.h"
 
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBXCTestConfiguration.h"
-#import "FBXCTestLogger.h"
 
 @interface FBXCTestContext ()
 

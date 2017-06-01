@@ -45,8 +45,6 @@
 		AAB44FF31D622B6C0059E922 /* iOSUnitTestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */; };
 		AAB44FF41D622B6C0059E922 /* MacUnitTestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */; };
 		AAB44FF51D622B6C0059E922 /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF21D622B6C0059E922 /* TableSearch.app */; };
-		AAB44FF81D62351A0059E922 /* FBXCTestLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = AAB44FF61D62351A0059E922 /* FBXCTestLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AAB44FF91D62351A0059E922 /* FBXCTestLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB44FF71D62351A0059E922 /* FBXCTestLogger.m */; };
 		AAB44FFD1D6236970059E922 /* FBXCTestReporterDouble.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB44FFC1D6236970059E922 /* FBXCTestReporterDouble.m */; };
 		AADC9FF11EA9334700F21CFC /* FBXCTestContext.h in Headers */ = {isa = PBXBuildFile; fileRef = AADC9FEF1EA9334700F21CFC /* FBXCTestContext.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AADC9FF21EA9334700F21CFC /* FBXCTestContext.m in Sources */ = {isa = PBXBuildFile; fileRef = AADC9FF01EA9334700F21CFC /* FBXCTestContext.m */; };
@@ -137,8 +135,6 @@
 		AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = iOSUnitTestFixture.xctest; path = ../../../Fixtures/Binaries/iOSUnitTestFixture.xctest; sourceTree = "<group>"; };
 		AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MacUnitTestFixture.xctest; path = ../../../Fixtures/Binaries/MacUnitTestFixture.xctest; sourceTree = "<group>"; };
 		AAB44FF21D622B6C0059E922 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; name = TableSearch.app; path = ../../../Fixtures/Binaries/TableSearch.app; sourceTree = "<group>"; };
-		AAB44FF61D62351A0059E922 /* FBXCTestLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestLogger.h; sourceTree = "<group>"; };
-		AAB44FF71D62351A0059E922 /* FBXCTestLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestLogger.m; sourceTree = "<group>"; };
 		AAB44FFB1D6236970059E922 /* FBXCTestReporterDouble.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterDouble.h; sourceTree = "<group>"; };
 		AAB44FFC1D6236970059E922 /* FBXCTestReporterDouble.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterDouble.m; sourceTree = "<group>"; };
 		AADC9FEF1EA9334700F21CFC /* FBXCTestContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestContext.h; sourceTree = "<group>"; };
@@ -229,8 +225,6 @@
 			children = (
 				AAED07A41E547804005060ED /* FBLogicTestProcess.h */,
 				AAED07A51E547804005060ED /* FBLogicTestProcess.m */,
-				AAB44FF61D62351A0059E922 /* FBXCTestLogger.h */,
-				AAB44FF71D62351A0059E922 /* FBXCTestLogger.m */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -391,7 +385,6 @@
 				AAA1F54C1DDE17CA003E0359 /* FBXCTestDestination.h in Headers */,
 				AADC9FF11EA9334700F21CFC /* FBXCTestContext.h in Headers */,
 				050D45EB1D6070690038F72D /* FBXCTestKit.h in Headers */,
-				AAB44FF81D62351A0059E922 /* FBXCTestLogger.h in Headers */,
 				050D46191D6072800038F72D /* FBJSONTestReporter.h in Headers */,
 				AAFD56801D95149F00522DE3 /* FBXCTestShimConfiguration.h in Headers */,
 				AA36AD301D6C917B00156B08 /* FBLogicTestRunner.h in Headers */,
@@ -534,7 +527,6 @@
 				AADC9FF21EA9334700F21CFC /* FBXCTestContext.m in Sources */,
 				AAA563DE1DB8ACAC008ACE8B /* FBListTestRunner.m in Sources */,
 				AAFD567D1D95131600522DE3 /* FBXCTestConfiguration.m in Sources */,
-				AAB44FF91D62351A0059E922 /* FBXCTestLogger.m in Sources */,
 				050D461A1D6072800038F72D /* FBJSONTestReporter.m in Sources */,
 				050D461D1D6072800038F72D /* FBXCTestReporterAdapter.m in Sources */,
 			);
