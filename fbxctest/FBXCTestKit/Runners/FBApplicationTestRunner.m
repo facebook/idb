@@ -12,7 +12,6 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
 #import "FBXCTestContext.h"
 
 static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;

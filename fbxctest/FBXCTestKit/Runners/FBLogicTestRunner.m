@@ -16,7 +16,6 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
 #import "FBLogicTestProcess.h"
 #import "FBXCTestContext.h"
 

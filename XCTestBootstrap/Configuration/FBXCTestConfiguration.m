@@ -9,8 +9,9 @@
 
 #import "FBXCTestConfiguration.h"
 
-#import <FBControlCore/FBControlCore.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
+#import "FBXCTestDestination.h"
+#import "FBXCTestShimConfiguration.h"
+#import "XCTestBootstrapError.h"
 
 @implementation FBXCTestConfiguration
 

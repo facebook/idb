@@ -12,7 +12,6 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestSimulatorFetcher.h"
-#import "FBXCTestConfiguration.h"
 
 @interface FBXCTestContext ()
 

@@ -15,7 +15,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
 #import "FBXCTestContext.h"
 
 @interface FBListTestRunner ()

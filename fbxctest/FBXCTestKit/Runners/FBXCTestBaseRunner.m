@@ -16,7 +16,6 @@
 #import <sys/types.h>
 #import <sys/stat.h>
 
-#import "FBXCTestConfiguration.h"
 #import "FBApplicationTestRunner.h"
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBLogicTestRunner.h"

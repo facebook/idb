@@ -12,8 +12,6 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
-
 @interface FBXCTestSimulatorFetcher ()
 
 @property (nonatomic, strong, readonly) FBSimulatorControl *simulatorControl;
