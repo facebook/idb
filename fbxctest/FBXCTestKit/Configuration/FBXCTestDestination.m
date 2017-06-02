@@ -9,7 +9,6 @@
 
 #import "FBXCTestDestination.h"
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 @implementation FBXCTestDestination
@@ -116,18 +115,6 @@ static NSString *KeyPlatformMacOS = @"macos";
   _version = version;
 
   return self;
-}
-
-- (FBSimulatorConfiguration *)simulatorConfiguration
-{
-  FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration defaultConfiguration];
-  if (self.model) {
-    configuration = [configuration withDeviceModel:self.model];
-  }
-  if (self.version) {
-    configuration = [configuration withOSNamed:self.version];
-  }
-  return configuration;
 }
 
 - (NSString *)xctestPath
