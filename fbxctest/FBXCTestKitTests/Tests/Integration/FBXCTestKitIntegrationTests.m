@@ -60,7 +60,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -115,7 +115,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
@@ -140,7 +140,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -169,7 +169,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
@@ -199,7 +199,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
@@ -228,7 +228,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
@@ -257,7 +257,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
@@ -287,7 +287,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
@@ -316,7 +316,7 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
   BOOL success = [testRunner executeTestsWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);

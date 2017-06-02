@@ -15,9 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBXCTestContext;
 
 /**
- The base runner for fbxctest.
+ The base runner for fbxctest, dispatches a configuration to the appropriate runner.
  */
-@interface FBXCTestRunner : NSObject
+@interface FBXCTestBaseRunner : NSObject
 
 #pragma mark Initializers
 

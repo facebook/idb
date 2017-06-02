@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestRunner.h"
+#import "FBXCTestBaseRunner.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBControlCore/FBControlCore.h>
@@ -23,14 +23,14 @@
 #import "FBListTestRunner.h"
 #import "FBXCTestContext.h"
 
-@interface FBXCTestRunner ()
+@interface FBXCTestBaseRunner ()
 
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBXCTestContext *context;
 
 @end
 
-@implementation FBXCTestRunner
+@implementation FBXCTestBaseRunner
 
 #pragma mark Initializers
 

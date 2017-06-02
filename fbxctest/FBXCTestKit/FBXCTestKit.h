@@ -10,4 +10,4 @@
 #import <FBXCTestKit/FBXCTestConfiguration+CommandLine.h>
 #import <FBXCTestKit/FBXCTestConfiguration.h>
 #import <FBXCTestKit/FBXCTestContext.h>
-#import <FBXCTestKit/FBXCTestRunner.h>
+#import <FBXCTestKit/FBXCTestBaseRunner.h>

@@ -14,7 +14,7 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestContext.h"
-#import "FBXCTestRunner.h"
+#import "FBXCTestBaseRunner.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
 
@@ -255,7 +255,7 @@ NSString *const ValueApplicationTest = @"application-test";
   }
 
   FBXCTestContext *context = [FBXCTestContext contextWithSimulator:simulator reporter:nil logger:nil];
-  FBXCTestRunner *runner = [FBXCTestRunner testRunnerWithConfiguration:self context:context];
+  FBXCTestBaseRunner *runner = [FBXCTestBaseRunner testRunnerWithConfiguration:self context:context];
   return [runner executeTestsWithError:error];
 }
 
