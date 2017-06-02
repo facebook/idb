@@ -68,7 +68,7 @@
 
 #pragma mark Public
 
-- (BOOL)runTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
   id<FBXCTestReporter> reporter = self.context.reporter;
   FBXCTestLogger *logger = self.context.logger;

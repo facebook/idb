@@ -45,7 +45,7 @@
   return self;
 }
 
-- (BOOL)listTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
   [self.context.reporter didBeginExecutingTestPlan];
 

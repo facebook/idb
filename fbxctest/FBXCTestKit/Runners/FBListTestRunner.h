@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBXCTestKit/FBXCTestRunner.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBListTestConfiguration;
@@ -17,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Runner for Listing Tests.
  */
-@interface FBListTestRunner : NSObject
+@interface FBListTestRunner : NSObject <FBXCTestRunner>
 
 /**
  Create and return a new Runner for listing tests on macOS.
@@ -26,14 +28,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param context the test context to use.
  */
 + (instancetype)macOSRunnerWithConfiguration:(FBListTestConfiguration *)configuration context:(FBXCTestContext *)context;
-
-/**
- Lists the tests to the reporter.
-
- @param error an error out for any error that occurs.
- @return YES if successful, NO othwerwise.
- */
-- (BOOL)listTestsWithError:(NSError **)error;
 
 @end
 

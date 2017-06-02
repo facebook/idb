@@ -256,7 +256,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
   FBXCTestContext *context = [FBXCTestContext contextWithSimulator:simulator reporter:nil logger:nil];
   FBXCTestBaseRunner *runner = [FBXCTestBaseRunner testRunnerWithConfiguration:self context:context];
-  return [runner executeTestsWithError:error];
+  return [runner executeWithError:error];
 }
 
 @end

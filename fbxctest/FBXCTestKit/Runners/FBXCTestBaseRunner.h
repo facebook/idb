@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBXCTestKit/FBXCTestRunner.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBXCTestConfiguration;
@@ -17,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The base runner for fbxctest, dispatches a configuration to the appropriate runner.
  */
-@interface FBXCTestBaseRunner : NSObject
+@interface FBXCTestBaseRunner : NSObject <FBXCTestRunner>
 
 #pragma mark Initializers
 
@@ -28,16 +30,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param context the context to run with.
  */
 + (instancetype)testRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
-
-#pragma mark Public Methods
-
-/**
- Executes the Tests.
- 
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-- (BOOL)executeTestsWithError:(NSError **)error;
 
 @end
 

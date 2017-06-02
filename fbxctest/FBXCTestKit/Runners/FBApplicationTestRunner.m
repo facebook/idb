@@ -46,7 +46,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
   return self;
 }
 
-- (BOOL)runTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
   FBApplicationDescriptor *testRunnerApp = [FBApplicationDescriptor userApplicationWithPath:self.configuration.runnerAppPath error:error];
   if (!testRunnerApp) {

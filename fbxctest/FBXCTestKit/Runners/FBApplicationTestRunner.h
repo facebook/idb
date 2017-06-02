@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBXCTestKit/FBXCTestRunner.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationTestConfiguration;
@@ -18,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Runner for Application Tests.
  */
-@interface FBApplicationTestRunner : NSObject
+@interface FBApplicationTestRunner : NSObject <FBXCTestRunner>
 
 /**
  Create and return a new Runner for Application Tests on iOS.
@@ -28,14 +30,6 @@ NS_ASSUME_NONNULL_BEGIN
  @param context the test context.
  */
 + (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context;
-
-/**
- Run the Application Tests.
-
- @param error an error out for any error that occurs.
- @return YES if the test run completed. NO otherwise.
- */
-- (BOOL)runTestsWithError:(NSError **)error;
 
 @end
 

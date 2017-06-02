@@ -54,7 +54,7 @@
 
 #pragma mark Public
 
-- (BOOL)executeTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
   BOOL success = [self.configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTestWithError:error] : [self runMacTestWithError:error];
   if (!success) {
@@ -74,9 +74,9 @@
     return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
   }
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[FBListTestRunner macOSRunnerWithConfiguration:(FBListTestConfiguration *)self.configuration context:self.context] listTestsWithError:error];
+    return [[FBListTestRunner macOSRunnerWithConfiguration:(FBListTestConfiguration *)self.configuration context:self.context] executeWithError:error];
   }
-  return [[FBLogicTestRunner macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+  return [[FBLogicTestRunner macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)self.configuration context:self.context] executeWithError:error];
 }
 
 - (BOOL)runiOSTestWithError:(NSError **)error
@@ -101,9 +101,9 @@
 - (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   if ([self.configuration isKindOfClass:FBLogicTestConfiguration.class]) {
-    return [[FBLogicTestRunner iOSRunnerWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+    return [[FBLogicTestRunner iOSRunnerWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] executeWithError:error];
   }
-  return [[FBApplicationTestRunner iOSRunnerWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+  return [[FBApplicationTestRunner iOSRunnerWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration context:self.context] executeWithError:error];
 }
 
 @end

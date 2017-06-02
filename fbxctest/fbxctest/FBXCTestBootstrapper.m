@@ -61,7 +61,7 @@
   FBXCTestContext *context = [FBXCTestContext contextWithReporter:reporter logger:self.logger];
 
   FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:context];
-  if (![testRunner executeTestsWithError:&error]) {
+  if (![testRunner executeWithError:&error]) {
     return [self printErrorMessage:error];
   }
 
