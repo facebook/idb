@@ -17,7 +17,6 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestConfiguration.h"
-#import "FBXCTestReporter.h"
 #import "FBXCTestShimConfiguration.h"
 #import "FBXCTestDestination.h"
 #import "FBLogicTestProcess.h"

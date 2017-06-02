@@ -9,7 +9,7 @@
 
 #import "FBXCTestReporterAdapter.h"
 
-#import "FBXCTestReporter.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBXCTestReporterAdapter ()
 @property (nonatomic, strong) id<FBXCTestReporter> reporter;
