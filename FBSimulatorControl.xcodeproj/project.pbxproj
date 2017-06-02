@@ -381,6 +381,8 @@
 		AAE5A0871EDF918800A1A811 /* FBJSONTestReporterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE5A0861EDF918800A1A811 /* FBJSONTestReporterTests.m */; };
 		AAE5A08A1EDF919700A1A811 /* FBJSONTestReporter.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE5A0881EDF919700A1A811 /* FBJSONTestReporter.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE5A08B1EDF919700A1A811 /* FBJSONTestReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE5A0891EDF919700A1A811 /* FBJSONTestReporter.m */; };
+		AAE5A08E1EDF926100A1A811 /* FBXCTestReporterAdapter.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE5A08C1EDF926100A1A811 /* FBXCTestReporterAdapter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAE5A08F1EDF926100A1A811 /* FBXCTestReporterAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE5A08D1EDF926100A1A811 /* FBXCTestReporterAdapter.m */; };
 		AAE90BC21D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = AAE90BC01D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAE90BC31D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = AAE90BC11D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.m */; };
 		AAEA171D1E005CD7001BD35A /* CoreMediaIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AAEA171C1E005CD7001BD35A /* CoreMediaIO.framework */; };
@@ -1192,6 +1194,8 @@
 		AAE5A0861EDF918800A1A811 /* FBJSONTestReporterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBJSONTestReporterTests.m; sourceTree = "<group>"; };
 		AAE5A0881EDF919700A1A811 /* FBJSONTestReporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBJSONTestReporter.h; sourceTree = "<group>"; };
 		AAE5A0891EDF919700A1A811 /* FBJSONTestReporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBJSONTestReporter.m; sourceTree = "<group>"; };
+		AAE5A08C1EDF926100A1A811 /* FBXCTestReporterAdapter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestReporterAdapter.h; sourceTree = "<group>"; };
+		AAE5A08D1EDF926100A1A811 /* FBXCTestReporterAdapter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestReporterAdapter.m; sourceTree = "<group>"; };
 		AAE90BC01D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorControlFrameworkLoader.h; sourceTree = "<group>"; };
 		AAE90BC11D2A4578004EE9E5 /* FBSimulatorControlFrameworkLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlFrameworkLoader.m; sourceTree = "<group>"; };
 		AAEA171C1E005CD7001BD35A /* CoreMediaIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMediaIO.framework; path = System/Library/Frameworks/CoreMediaIO.framework; sourceTree = SDKROOT; };
@@ -2270,9 +2274,11 @@
 		AAE5A0831EDF90DB00A1A811 /* Reporters */ = {
 			isa = PBXGroup;
 			children = (
-				AAE5A0841EDF90DB00A1A811 /* FBXCTestReporter.h */,
 				AAE5A0881EDF919700A1A811 /* FBJSONTestReporter.h */,
 				AAE5A0891EDF919700A1A811 /* FBJSONTestReporter.m */,
+				AAE5A0841EDF90DB00A1A811 /* FBXCTestReporter.h */,
+				AAE5A08C1EDF926100A1A811 /* FBXCTestReporterAdapter.h */,
+				AAE5A08D1EDF926100A1A811 /* FBXCTestReporterAdapter.m */,
 			);
 			path = Reporters;
 			sourceTree = "<group>";
@@ -2917,6 +2923,7 @@
 				AA7FA7AE1CE0726900614A61 /* FBTestManagerProcessInteractionOperator.h in Headers */,
 				EE4F0D761C91B82700608E89 /* FBProductBundle+Private.h in Headers */,
 				EE4F0D8D1C91B82700608E89 /* XCTestBootstrapError.h in Headers */,
+				AAE5A08E1EDF926100A1A811 /* FBXCTestReporterAdapter.h in Headers */,
 				EE1277601C9338D700DE52A1 /* FBTestManager.h in Headers */,
 				AAEA64751CDB31C600194B6B /* FBTestManagerTestReporter.h in Headers */,
 				EE4F0D7B1C91B82700608E89 /* FBTestConfiguration.h in Headers */,
@@ -3475,6 +3482,7 @@
 				AAE5A08B1EDF919700A1A811 /* FBJSONTestReporter.m in Sources */,
 				EE4F0D711C91B82700608E89 /* FBApplicationDataPackage.m in Sources */,
 				EE1277611C9338D700DE52A1 /* FBTestManager.m in Sources */,
+				AAE5A08F1EDF926100A1A811 /* FBXCTestReporterAdapter.m in Sources */,
 				EE4F0D8E1C91B82700608E89 /* XCTestBootstrapError.m in Sources */,
 				AA7F12791D70679200929CD9 /* FBTestManagerResult.m in Sources */,
 				EE4F0D831C91B82700608E89 /* FBDeviceTestPreparationStrategy.m in Sources */,
