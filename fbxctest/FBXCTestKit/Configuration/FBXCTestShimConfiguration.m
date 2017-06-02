@@ -12,8 +12,6 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
-
 static NSString *const iOSXCTestShimFileName = @"otest-shim-ios.dylib";
 static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
 static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
@@ -45,7 +43,7 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
   }
 
   // Otherwise, expect it to be relative to the location of the current executable.
-  NSString *libPath = [FBXCTestConfiguration.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"];
+  NSString *libPath = [self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"];
   return [self confirmExistenceOfRequiredShimsInDirectory:libPath error:error];
 }
 
@@ -103,6 +101,19 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
   NSString *macQueryShimPath = [shimDirectory stringByAppendingPathComponent:MacQueryShimFileName];
 
   return [[self alloc] initWithiOSSimulatorTestShim:iOSTestShimPath macTestShim:macTestShimPath macQueryShim:macQueryShimPath];
+}
+
++ (NSString *)fbxctestInstallationRoot
+{
+  NSString *executablePath = NSProcessInfo.processInfo.arguments[0];
+  if (!executablePath.isAbsolutePath) {
+    executablePath = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingString:executablePath];
+  }
+  executablePath = [executablePath stringByStandardizingPath];
+  NSString *path = [[executablePath
+    stringByDeletingLastPathComponent]
+    stringByDeletingLastPathComponent];
+  return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
 }
 
 - (instancetype)initWithiOSSimulatorTestShim:(NSString *)iosSimulatorTestShim macTestShim:(NSString *)macTestShim macQueryShim:(NSString *)macQueryShim

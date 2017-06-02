@@ -74,11 +74,6 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest;
 @property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
 
 /**
- Locates the expected Installation Root.
- */
-+ (nullable NSString *)fbxctestInstallationRoot;
-
-/**
  Gets the Environment for a Subprocess.
  Will extract the environment variables from the appropriately prefixed environment variables.
  Will strip out environment variables that will confuse subprocesses if this class is called inside an 'xctest' environment.

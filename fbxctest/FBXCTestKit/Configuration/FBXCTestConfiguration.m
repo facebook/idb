@@ -79,21 +79,6 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
   return environment.copy;
 }
 
-#pragma mark Helpers
-
-+ (NSString *)fbxctestInstallationRoot
-{
-  NSString *executablePath = NSProcessInfo.processInfo.arguments[0];
-  if (!executablePath.isAbsolutePath) {
-    executablePath = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingString:executablePath];
-  }
-  executablePath = [executablePath stringByStandardizingPath];
-  NSString *path = [[executablePath
-    stringByDeletingLastPathComponent]
-    stringByDeletingLastPathComponent];
-  return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBXCTestConfiguration *)object
