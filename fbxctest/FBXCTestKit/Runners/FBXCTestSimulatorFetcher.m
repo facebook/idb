@@ -13,7 +13,6 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestConfiguration.h"
-#import "FBXCTestDestination.h"
 
 @interface FBXCTestSimulatorFetcher ()
 

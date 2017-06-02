@@ -11,8 +11,6 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestDestination.h"
-
 @implementation FBXCTestConfiguration (CommandLine)
 
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error

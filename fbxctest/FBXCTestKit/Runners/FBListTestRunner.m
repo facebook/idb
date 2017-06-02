@@ -17,7 +17,6 @@
 
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestContext.h"
-#import "FBXCTestDestination.h"
 
 @interface FBListTestRunner ()
 

@@ -22,7 +22,6 @@
 #import "FBLogicTestRunner.h"
 #import "FBListTestRunner.h"
 #import "FBXCTestContext.h"
-#import "FBXCTestDestination.h"
 
 @interface FBXCTestRunner ()
 

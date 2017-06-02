@@ -14,7 +14,6 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBXCTestContext.h"
-#import "FBXCTestDestination.h"
 #import "FBXCTestRunner.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";

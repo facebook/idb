@@ -7,18 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestKitFixtures.h"
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBXCTestKit/FBXCTestKit.h>
-#import <XCTest/XCTest.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBControlCoreValueTestCase.h"
 
-@interface FBXCTestKitValueTests : FBControlCoreValueTestCase
+@interface FBXCTestDestinationTests : FBControlCoreValueTestCase
 @end
 
-@implementation FBXCTestKitValueTests
+@implementation FBXCTestDestinationTests
 
 - (void)testDestination
 {

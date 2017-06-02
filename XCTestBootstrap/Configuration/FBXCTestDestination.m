@@ -9,7 +9,7 @@
 
 #import "FBXCTestDestination.h"
 
-#import <XCTestBootstrap/XCTestBootstrap.h>
+#import "XCTestBootstrapError.h"
 
 @implementation FBXCTestDestination
 
