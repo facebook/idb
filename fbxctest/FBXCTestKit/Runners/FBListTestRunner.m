@@ -20,19 +20,19 @@
 
 @interface FBListTestRunner ()
 
-@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBListTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBXCTestContext *context;
 
 @end
 
 @implementation FBListTestRunner
 
-+ (instancetype)macOSRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)macOSRunnerWithConfiguration:(FBListTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   return [[self alloc] initWithConfiguration:configuration context:context];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
+- (instancetype)initWithConfiguration:(FBListTestConfiguration *)configuration context:(FBXCTestContext *)context
 {
   self = [super init];
   if (!self) {

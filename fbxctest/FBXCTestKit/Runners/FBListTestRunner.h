@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBXCTestConfiguration;
+@class FBListTestConfiguration;
 @class FBXCTestContext;
 
 /**
@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the the configuration to use.
  @param context the test context to use.
  */
-+ (instancetype)macOSRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
++ (instancetype)macOSRunnerWithConfiguration:(FBListTestConfiguration *)configuration context:(FBXCTestContext *)context;
 
 /**
  Lists the tests to the reporter.
