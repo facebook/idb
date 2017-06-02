@@ -175,7 +175,8 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 + (instancetype)socketReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate port:(in_port_t)port
 {
-  return [self socketReaderForRouter:target.router delegate:delegate port:port];
+  FBiOSActionRouter *router = [FBiOSActionRouter routerForTarget:target];
+  return [self socketReaderForRouter:router delegate:delegate port:port];
 }
 
 + (instancetype)socketReaderForRouter:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate port:(in_port_t)port
@@ -185,7 +186,8 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 + (instancetype)fileReaderForTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle
 {
-  return [self fileReaderForRouter:target.router delegate:delegate readHandle:readHandle writeHandle:writeHandle];
+  FBiOSActionRouter *router = [FBiOSActionRouter routerForTarget:target];
+  return [self fileReaderForRouter:router delegate:delegate readHandle:readHandle writeHandle:writeHandle];
 }
 
 + (instancetype)fileReaderForRouter:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle

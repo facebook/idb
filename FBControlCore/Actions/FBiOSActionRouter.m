@@ -21,6 +21,14 @@
 
 #pragma mark Initializers
 
++ (instancetype)routerForTarget:(id<FBiOSTarget>)target
+{
+  NSMutableSet<Class> *classes = [NSMutableSet set];
+  [classes addObjectsFromArray:self.defaultActionClasses];
+  [classes addObjectsFromArray:target.actionClasses];
+  return [self routerForTarget:target actionClasses:classes.allObjects];
+}
+
 + (instancetype)routerForTarget:(id<FBiOSTarget>)target actionClasses:(NSArray<Class> *)actionClasses
 {
   NSDictionary<FBiOSTargetActionType, Class> *actionMapping = [self actionMappingForActionClasses:actionClasses];

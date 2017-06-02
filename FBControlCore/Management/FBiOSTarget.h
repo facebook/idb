@@ -61,9 +61,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nullable) id<FBControlCoreLogger> logger;
 
 /**
- A Router for the Reciever.
+ The Action Classes supported by the reciever.
  */
-@property (nonatomic, strong, readonly) FBiOSActionRouter *router;
+@property (nonatomic, strong, readonly) NSArray<Class> *actionClasses;
 
 /**
  The Unique Device Identifier of the iOS Target.
