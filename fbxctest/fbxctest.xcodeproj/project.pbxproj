@@ -44,6 +44,8 @@
 		AAED07A71E547804005060ED /* FBLogicTestProcess.m in Sources */ = {isa = PBXBuildFile; fileRef = AAED07A51E547804005060ED /* FBLogicTestProcess.m */; };
 		AAED07AE1E560655005060ED /* XCTestCase+FBXCTestKitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAED07AD1E560655005060ED /* XCTestCase+FBXCTestKitTests.m */; };
 		AAFCD2E91EDFA16C005F6824 /* FBXCTestRunner.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFCD2E81EDFA16C005F6824 /* FBXCTestRunner.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAFCD2EC1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFCD2EA1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.h */; };
+		AAFCD2ED1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFCD2EB1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.m */; };
 		AAFD567C1D95131600522DE3 /* FBXCTestConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAFD567D1D95131600522DE3 /* FBXCTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */; };
 /* End PBXBuildFile section */
@@ -126,6 +128,8 @@
 		AAED07AC1E560655005060ED /* XCTestCase+FBXCTestKitTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "XCTestCase+FBXCTestKitTests.h"; sourceTree = "<group>"; };
 		AAED07AD1E560655005060ED /* XCTestCase+FBXCTestKitTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "XCTestCase+FBXCTestKitTests.m"; sourceTree = "<group>"; };
 		AAFCD2E81EDFA16C005F6824 /* FBXCTestRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestRunner.h; sourceTree = "<group>"; };
+		AAFCD2EA1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBXCTestConfiguration+FBiOSTargetAction.h"; sourceTree = "<group>"; };
+		AAFCD2EB1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBXCTestConfiguration+FBiOSTargetAction.m"; sourceTree = "<group>"; };
 		AAFD567A1D95131600522DE3 /* FBXCTestConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestConfiguration.h; sourceTree = "<group>"; };
 		AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestConfiguration.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -324,6 +328,8 @@
 				AAFD567B1D95131600522DE3 /* FBXCTestConfiguration.m */,
 				AA8C727B1EB11019004320A8 /* FBXCTestConfiguration+CommandLine.h */,
 				AA8C727C1EB11019004320A8 /* FBXCTestConfiguration+CommandLine.m */,
+				AAFCD2EA1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.h */,
+				AAFCD2EB1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.m */,
 				AADC9FEF1EA9334700F21CFC /* FBXCTestContext.h */,
 				AADC9FF01EA9334700F21CFC /* FBXCTestContext.m */,
 			);
@@ -346,6 +352,7 @@
 				AADC9FF11EA9334700F21CFC /* FBXCTestContext.h in Headers */,
 				050D45EB1D6070690038F72D /* FBXCTestKit.h in Headers */,
 				AA36AD301D6C917B00156B08 /* FBLogicTestRunner.h in Headers */,
+				AAFCD2EC1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.h in Headers */,
 				AAA563DD1DB8ACAC008ACE8B /* FBListTestRunner.h in Headers */,
 				AAED07A61E547804005060ED /* FBLogicTestProcess.h in Headers */,
 			);
@@ -482,6 +489,7 @@
 				AAED07A71E547804005060ED /* FBLogicTestProcess.m in Sources */,
 				AADC9FF21EA9334700F21CFC /* FBXCTestContext.m in Sources */,
 				AAA563DE1DB8ACAC008ACE8B /* FBListTestRunner.m in Sources */,
+				AAFCD2ED1EDFB2F6005F6824 /* FBXCTestConfiguration+FBiOSTargetAction.m in Sources */,
 				AAFD567D1D95131600522DE3 /* FBXCTestConfiguration.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

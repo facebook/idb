@@ -11,6 +11,8 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
+
 @implementation FBXCTestConfiguration (CommandLine)
 
 + (nullable instancetype)configurationFromArguments:(NSArray<NSString *> *)arguments processUnderTestEnvironment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory error:(NSError **)error

@@ -10,13 +10,7 @@
 #import "FBXCTestConfiguration.h"
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
-
-#import "FBXCTestContext.h"
-#import "FBXCTestBaseRunner.h"
-
-FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
 
 @implementation FBXCTestConfiguration
 
@@ -236,27 +230,6 @@ NSString *const ValueApplicationTest = @"application-test";
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return self;
-}
-
-#pragma mark FBiOSTargetAction
-
-+ (FBiOSTargetActionType)actionType
-{
-  return FBiOSTargetActionTypeFBXCTest;
-}
-
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
-{
-  FBSimulator *simulator = (FBSimulator *) target;
-  if (![simulator isKindOfClass:FBSimulator.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Simulator, so cannot run fbxctest", simulator]
-      failBool:error];
-  }
-
-  FBXCTestContext *context = [FBXCTestContext contextWithSimulator:simulator reporter:nil logger:nil];
-  FBXCTestBaseRunner *runner = [FBXCTestBaseRunner testRunnerWithConfiguration:self context:context];
-  return [runner executeWithError:error];
 }
 
 @end

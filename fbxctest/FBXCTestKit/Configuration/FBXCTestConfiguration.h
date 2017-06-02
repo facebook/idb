@@ -17,14 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBXCTestShimConfiguration;
 
 /**
- The Action Type for a Test Launch.
- */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest;
-
-/**
  The Base Configuration for all tests.
  */
-@interface FBXCTestConfiguration : NSObject <NSCopying, FBiOSTargetAction>
+@interface FBXCTestConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  The Default Initializer.
