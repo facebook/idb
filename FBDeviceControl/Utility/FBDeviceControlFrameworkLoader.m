@@ -84,6 +84,12 @@ static BOOL hasLoadedXcodeFrameworks = NO;
     return YES;
   }
 
+  for (FBDependentDylib *dylib in FBDependentDylib.SwiftDylibs) {
+    if (![dylib loadWithLogger:logger error:error]) {
+      return NO;
+    }
+  }
+
   NSArray<FBWeakFramework *> *frameworks = FBDeviceControlFrameworkLoader.privateFrameworks;
 
   if (![FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error]) {

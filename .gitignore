@@ -48,3 +48,6 @@ fbsimctl/cli-tests/supports_metal
 
 output/
 .clang-format
+
+## AppCode
+.idea
