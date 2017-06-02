@@ -16,7 +16,6 @@
 #import "FBXCTestContext.h"
 #import "FBXCTestDestination.h"
 #import "FBXCTestRunner.h"
-#import "FBXCTestShimConfiguration.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
 

@@ -12,4 +12,3 @@
 #import <FBXCTestKit/FBXCTestContext.h>
 #import <FBXCTestKit/FBXCTestDestination.h>
 #import <FBXCTestKit/FBXCTestRunner.h>
-#import <FBXCTestKit/FBXCTestShimConfiguration.h>

@@ -11,7 +11,6 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestShimConfiguration.h"
 #import "FBXCTestDestination.h"
 
 @implementation FBXCTestConfiguration (CommandLine)

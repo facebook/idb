@@ -20,7 +20,6 @@
 #import "FBApplicationTestRunner.h"
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBLogicTestRunner.h"
-#import "FBXCTestShimConfiguration.h"
 #import "FBListTestRunner.h"
 #import "FBXCTestContext.h"
 #import "FBXCTestDestination.h"
