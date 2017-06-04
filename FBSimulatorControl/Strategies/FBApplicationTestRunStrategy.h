@@ -13,23 +13,26 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBControlCoreLogger;
+@protocol FBXCTestReporter;
+
 @class FBApplicationTestConfiguration;
 @class FBSimulator;
-@class FBXCTestContext;
 
 /**
  A Runner for Application Tests.
  */
-@interface FBApplicationTestRunner : NSObject <FBXCTestRunner>
+@interface FBApplicationTestRunStrategy : NSObject <FBXCTestRunner>
 
 /**
- Create and return a new Runner for Application Tests on iOS.
+ Create and return a new Strategy for Application Tests on iOS.
 
  @param simulator the Simulator to use for hosting the Application.
  @param configuration the the configuration to use.
- @param context the test context.
+ @param reporter the reporter to report to.
+ @param logger the logger to use.
  */
-+ (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

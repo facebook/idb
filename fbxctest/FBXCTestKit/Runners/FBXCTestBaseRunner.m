@@ -16,7 +16,6 @@
 #import <sys/types.h>
 #import <sys/stat.h>
 
-#import "FBApplicationTestRunner.h"
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBLogicTestRunner.h"
 #import "FBListTestRunner.h"
@@ -102,7 +101,7 @@
   if ([self.configuration isKindOfClass:FBLogicTestConfiguration.class]) {
     return [[FBLogicTestRunner iOSRunnerWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] executeWithError:error];
   }
-  return [[FBApplicationTestRunner iOSRunnerWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration context:self.context] executeWithError:error];
+  return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
 }
 
 @end
