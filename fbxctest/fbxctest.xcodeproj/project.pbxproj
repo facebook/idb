@@ -31,8 +31,6 @@
 		AA9738B71EE11B6C002802F1 /* FBXCTestConfiguration+FBiOSTargetAction.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9738B51EE11B6C002802F1 /* FBXCTestConfiguration+FBiOSTargetAction.m */; };
 		AA9A9E491D62F235000B8180 /* FBXCTestBaseRunner.h in Headers */ = {isa = PBXBuildFile; fileRef = AA9A9E471D62F235000B8180 /* FBXCTestBaseRunner.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA9A9E4A1D62F235000B8180 /* FBXCTestBaseRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = AA9A9E481D62F235000B8180 /* FBXCTestBaseRunner.m */; };
-		AAA563DD1DB8ACAC008ACE8B /* FBListTestRunner.h in Headers */ = {isa = PBXBuildFile; fileRef = AAA563DB1DB8ACAC008ACE8B /* FBListTestRunner.h */; };
-		AAA563DE1DB8ACAC008ACE8B /* FBListTestRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = AAA563DC1DB8ACAC008ACE8B /* FBListTestRunner.m */; };
 		AAB44FF31D622B6C0059E922 /* iOSUnitTestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */; };
 		AAB44FF41D622B6C0059E922 /* MacUnitTestFixture.xctest in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */; };
 		AAB44FF51D622B6C0059E922 /* TableSearch.app in Resources */ = {isa = PBXBuildFile; fileRef = AAB44FF21D622B6C0059E922 /* TableSearch.app */; };
@@ -108,8 +106,6 @@
 		AA9738B51EE11B6C002802F1 /* FBXCTestConfiguration+FBiOSTargetAction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBXCTestConfiguration+FBiOSTargetAction.m"; sourceTree = "<group>"; };
 		AA9A9E471D62F235000B8180 /* FBXCTestBaseRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBaseRunner.h; sourceTree = "<group>"; };
 		AA9A9E481D62F235000B8180 /* FBXCTestBaseRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBaseRunner.m; sourceTree = "<group>"; };
-		AAA563DB1DB8ACAC008ACE8B /* FBListTestRunner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBListTestRunner.h; sourceTree = "<group>"; };
-		AAA563DC1DB8ACAC008ACE8B /* FBListTestRunner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBListTestRunner.m; sourceTree = "<group>"; };
 		AAB44FF01D622B6C0059E922 /* iOSUnitTestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = iOSUnitTestFixture.xctest; path = ../../../Fixtures/Binaries/iOSUnitTestFixture.xctest; sourceTree = "<group>"; };
 		AAB44FF11D622B6C0059E922 /* MacUnitTestFixture.xctest */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MacUnitTestFixture.xctest; path = ../../../Fixtures/Binaries/MacUnitTestFixture.xctest; sourceTree = "<group>"; };
 		AAB44FF21D622B6C0059E922 /* TableSearch.app */ = {isa = PBXFileReference; lastKnownFileType = wrapper.application; name = TableSearch.app; path = ../../../Fixtures/Binaries/TableSearch.app; sourceTree = "<group>"; };
@@ -285,8 +281,6 @@
 		AA9A9E461D62F235000B8180 /* Runners */ = {
 			isa = PBXGroup;
 			children = (
-				AAA563DB1DB8ACAC008ACE8B /* FBListTestRunner.h */,
-				AAA563DC1DB8ACAC008ACE8B /* FBListTestRunner.m */,
 				AA36AD2E1D6C917B00156B08 /* FBLogicTestRunner.h */,
 				AA36AD2F1D6C917B00156B08 /* FBLogicTestRunner.m */,
 				AA9A9E471D62F235000B8180 /* FBXCTestBaseRunner.h */,
@@ -335,7 +329,6 @@
 				AADC9FF11EA9334700F21CFC /* FBXCTestContext.h in Headers */,
 				050D45EB1D6070690038F72D /* FBXCTestKit.h in Headers */,
 				AA36AD301D6C917B00156B08 /* FBLogicTestRunner.h in Headers */,
-				AAA563DD1DB8ACAC008ACE8B /* FBListTestRunner.h in Headers */,
 				AAED07A61E547804005060ED /* FBLogicTestProcess.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -469,7 +462,6 @@
 				AA2CEBB11D65C57F0051962D /* FBXCTestSimulatorFetcher.m in Sources */,
 				AAED07A71E547804005060ED /* FBLogicTestProcess.m in Sources */,
 				AADC9FF21EA9334700F21CFC /* FBXCTestContext.m in Sources */,
-				AAA563DE1DB8ACAC008ACE8B /* FBListTestRunner.m in Sources */,
 				AA9738B71EE11B6C002802F1 /* FBXCTestConfiguration+FBiOSTargetAction.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

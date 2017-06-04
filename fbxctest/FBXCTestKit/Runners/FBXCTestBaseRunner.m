@@ -18,7 +18,6 @@
 
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBLogicTestRunner.h"
-#import "FBListTestRunner.h"
 #import "FBXCTestContext.h"
 
 @interface FBXCTestBaseRunner ()
@@ -72,7 +71,7 @@
     return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
   }
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[FBListTestRunner macOSRunnerWithConfiguration:(FBListTestConfiguration *)self.configuration context:self.context] executeWithError:error];
+    return [[FBListTestStrategy macOSStrategyWithConfiguration:(FBListTestConfiguration *)self.configuration reporter:self.context.reporter] executeWithError:error];
   }
   return [[FBLogicTestRunner macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)self.configuration context:self.context] executeWithError:error];
 }
