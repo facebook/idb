@@ -71,7 +71,9 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (NSArray<Class> *)actionClasses
 {
-  return @[];
+  return @[
+    FBTestLaunchConfiguration.class,
+  ];
 }
 
 - (NSString *)udid

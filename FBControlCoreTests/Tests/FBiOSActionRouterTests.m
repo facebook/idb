@@ -27,8 +27,6 @@
   return @[
     [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"foo" succeed:NO],
     [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"bar" succeed:YES],
-    [FBTestLaunchConfiguration configurationWithTestBundlePath:@"/bar/bar"],
-    [[[[[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/aa"] withUITesting:YES] withTestHostPath:@"/baa"] withTimeout:12] withTestsToRun:[NSSet setWithArray:@[@"foo", @"bar"]]],
   ];
 }
 

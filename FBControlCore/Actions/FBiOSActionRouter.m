@@ -14,7 +14,6 @@
 #import "FBiOSTarget.h"
 #import "FBiOSTargetAction.h"
 #import "FBJSONConversion.h"
-#import "FBTestLaunchConfiguration.h"
 #import "FBApplicationLaunchConfiguration.h"
 
 @implementation FBiOSActionRouter
@@ -61,7 +60,6 @@
 + (NSArray<Class> *)defaultActionClasses
 {
   return @[
-    FBTestLaunchConfiguration.class,
     FBApplicationLaunchConfiguration.class,
   ];
 }

@@ -114,6 +114,7 @@
   return @[
     FBAgentLaunchConfiguration.class,
     FBSimulatorHIDEvent.class,
+    FBTestLaunchConfiguration.class,
   ];
 }
 

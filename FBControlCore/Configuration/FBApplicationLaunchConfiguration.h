@@ -9,9 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBiOSTargetAction.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBDebugDescribeable.h>
+#import <FBControlCore/FBProcessLaunchConfiguration.h>
 
 @class FBApplicationDescriptor;
 @class FBBinaryDescriptor;

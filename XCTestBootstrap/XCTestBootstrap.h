@@ -15,6 +15,7 @@
 #import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBTestBundle.h>
 #import <XCTestBootstrap/FBTestConfiguration.h>
+#import <XCTestBootstrap/FBTestLaunchConfiguration.h>
 #import <XCTestBootstrap/FBTestManager.h>
 #import <XCTestBootstrap/FBTestManagerAPIMediator.h>
 #import <XCTestBootstrap/FBTestManagerJUnitGenerator.h>
@@ -30,12 +31,14 @@
 #import <XCTestBootstrap/FBTestManagerTestReporterTestSuite.h>
 #import <XCTestBootstrap/FBTestReporterForwarder.h>
 #import <XCTestBootstrap/FBTestRunnerConfiguration.h>
+#import <XCTestBootstrap/FBXCTestCommands.h>
 #import <XCTestBootstrap/FBXCTestConfiguration.h>
 #import <XCTestBootstrap/FBXCTestDestination.h>
 #import <XCTestBootstrap/FBXCTestLogger.h>
 #import <XCTestBootstrap/FBXCTestManagerLoggingForwarder.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>
 #import <XCTestBootstrap/FBXCTestReporterAdapter.h>
+#import <XCTestBootstrap/FBXCTestRunner.h>
 #import <XCTestBootstrap/FBXCTestRunStrategy.h>
 #import <XCTestBootstrap/FBXCTestShimConfiguration.h>
 #import <XCTestBootstrap/XCTestBootstrapError.h>

@@ -71,7 +71,7 @@
   return NO;
 }
 
-- (nullable id<FBXCTestCommands>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
+- (nullable id<FBVideoRecordingSession>)startRecordingToFile:(NSString *)filePath error:(NSError **)error
 {
   return nil;
 }
@@ -89,16 +89,6 @@
 - (NSArray<FBApplicationDescriptor *> *)installedApplications
 {
   return nil;
-}
-
-- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
-{
-  return nil;
-}
-
-- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
-{
-  return NO;
 }
 
 @end
