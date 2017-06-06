@@ -13,6 +13,26 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ A String Enum for Test Types.
+ */
+typedef NSString *FBXCTestType NS_STRING_ENUM;
+
+/**
+ An Application Test.
+ */
+extern FBXCTestType const FBXCTestTypeApplicationTest;
+
+/**
+ A Logic Test.
+ */
+extern FBXCTestType const FBXCTestTypeLogicTest;
+
+/**
+ The Listing of Testing of tests in a bundle.
+ */
+extern FBXCTestType const FBXCTestTypeListTest;
+
 @class FBXCTestDestination;
 @class FBXCTestShimConfiguration;
 
@@ -55,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The Type of the Test Bundle.
  */
-@property (nonatomic, copy, readonly) NSString *testType;
+@property (nonatomic, copy, readonly) FBXCTestType testType;
 
 /**
  YES if the test execution should pause on launch, waiting for a debugger to attach.

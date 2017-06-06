@@ -13,6 +13,10 @@
 #import "FBXCTestShimConfiguration.h"
 #import "XCTestBootstrapError.h"
 
+FBXCTestType const FBXCTestTypeApplicationTest = @"application-test";
+FBXCTestType const FBXCTestTypeLogicTest = @"logic-test";
+FBXCTestType const FBXCTestTypeListTest = @"list-test";
+
 @implementation FBXCTestConfiguration
 
 #pragma mark Initializers
@@ -248,7 +252,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
 - (NSString *)testType
 {
-  return ValueLogicTest;
+  return FBXCTestTypeListTest;
 }
 
 #pragma mark JSON
@@ -287,7 +291,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
 - (NSString *)testType
 {
-  return ValueApplicationTest;
+  return FBXCTestTypeApplicationTest;
 }
 
 #pragma mark JSON
@@ -337,7 +341,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
 - (NSString *)testType
 {
-  return ValueLogicTest;
+  return FBXCTestTypeLogicTest;
 }
 
 #pragma mark JSON
