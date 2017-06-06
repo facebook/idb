@@ -109,6 +109,11 @@ static id<FBControlCoreLogger> logger;
   return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"8.0"]];
 }
 
++ (BOOL)isXcode9OrGreater
+{
+  return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
+}
+
 + (BOOL)supportsCustomDeviceSets
 {
   // Prior to Xcode 7, 'iOS Simulator.app' calls `+[SimDeviceSet defaultSet]` directly
