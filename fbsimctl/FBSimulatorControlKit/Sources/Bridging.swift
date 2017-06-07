@@ -268,6 +268,14 @@ extension FBLineBuffer {
     return self.interpret(subject)
   }
 
+  func reader(_ reader: FBiOSActionReader, willStartReadingUpload header: FBUploadHeader) -> String? {
+    return self.interpret(header, .started)
+  }
+
+  func reader(_ reader: FBiOSActionReader, didFinishUpload destination: FBUploadedDestination) -> String? {
+    return self.interpret(destination, .ended)
+  }
+
   func reader(_ reader: FBiOSActionReader, willStartPerforming action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {
     return self.interpret(action, .started)
   }

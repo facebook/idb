@@ -15,6 +15,7 @@
 #import "FBiOSTargetAction.h"
 #import "FBJSONConversion.h"
 #import "FBApplicationLaunchConfiguration.h"
+#import "FBUploadBuffer.h"
 
 @implementation FBiOSActionRouter
 
@@ -61,6 +62,7 @@
 {
   return @[
     FBApplicationLaunchConfiguration.class,
+    FBUploadHeader.class,
   ];
 }
 

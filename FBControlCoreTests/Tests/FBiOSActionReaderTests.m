@@ -25,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *startedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *finishedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *failedActions;
+@property (nonatomic, strong, readwrite) NSMutableArray<FBUploadedDestination *> *uploads;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *badInput;
 
 @end
@@ -40,13 +41,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setUp
 {
+  NSArray<Class> *actionClasses = [FBiOSActionRouter.defaultActionClasses arrayByAddingObject:FBiOSTargetActionDouble.class];
   self.target = [FBiOSTargetDouble new];
-  self.router = [FBiOSActionRouter routerForTarget:self.target actionClasses:@[FBiOSTargetActionDouble.class]];
+  self.target.auxillaryDirectory = NSTemporaryDirectory();
+  self.router = [FBiOSActionRouter routerForTarget:self.target actionClasses:actionClasses];
   self.pipe = NSPipe.pipe;
   self.reader = [FBiOSActionReader fileReaderForRouter:self.router delegate:self readHandle:self.pipe.fileHandleForReading writeHandle:self.pipe.fileHandleForWriting];
   self.startedActions = [NSMutableArray array];
   self.finishedActions = [NSMutableArray array];
   self.failedActions = [NSMutableArray array];
+  self.uploads = [NSMutableArray array];
   self.badInput = [NSMutableArray array];
 
   NSError *error;
@@ -88,6 +92,49 @@ NS_ASSUME_NONNULL_BEGIN
   XCTAssertTrue(succeeded);
 }
 
+- (void)testCanUploadBinary
+{
+  NSData *transmit = [@"foo bar baz" dataUsingEncoding:NSUTF8StringEncoding];
+  NSData *header = [self actionLine:[FBUploadHeader headerWithPathExtension:@"txt" size:transmit.length]];
+
+  [self.pipe.fileHandleForWriting writeData:header];
+  [self.pipe.fileHandleForWriting writeData:transmit];
+
+  BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+    return self.uploads.count == 1;
+  }];
+  XCTAssertTrue(succeeded);
+
+  NSData *fileData = [NSData dataWithContentsOfFile:self.uploads.firstObject.path];
+  XCTAssertEqualObjects(transmit, fileData);
+}
+
+- (void)testCanUploadBinaryThenRunAnAction
+{
+  NSData *transmit = [@"foo bar baz" dataUsingEncoding:NSUTF8StringEncoding];
+  NSData *header = [self actionLine:[FBUploadHeader headerWithPathExtension:@"txt" size:transmit.length]];
+  FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
+
+  [self.pipe.fileHandleForWriting writeData:header];
+  [self.pipe.fileHandleForWriting writeData:transmit];
+  [self.pipe.fileHandleForWriting writeData:[self actionLine:inputAction]];
+
+  BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+    return self.uploads.count == 1;
+  }];
+  XCTAssertTrue(succeeded);
+
+  NSData *fileData = [NSData dataWithContentsOfFile:self.uploads.firstObject.path];
+  XCTAssertEqualObjects(transmit, fileData);
+
+  succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+    return [self.startedActions containsObject:inputAction] && [self.finishedActions containsObject:inputAction];
+  }];
+  XCTAssertTrue(succeeded);
+  XCTAssertEqual(self.badInput.count, 0u);
+  XCTAssertEqual(self.failedActions.count, 0u);
+}
+
 #pragma mark Delegate
 
 - (void)readerDidFinishReading:(FBiOSActionReader *)reader
@@ -97,6 +144,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSString *)reader:(FBiOSActionReader *)reader failedToInterpretInput:(NSString *)input error:(NSError *)error
 {
   [self.badInput addObject:input];
+  return nil;
+}
+
+- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartReadingUpload:(FBUploadHeader *)header
+{
+  return nil;
+}
+
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didFinishUpload:(FBUploadedDestination *)binary
+{
+  [self.uploads addObject:binary];
   return nil;
 }
 
