@@ -9,6 +9,7 @@
 
 #import "FBiOSActionReader.h"
 
+#import "FBUploadBuffer.h"
 #import "FBFileReader.h"
 #import "FBFileWriter.h"
 #import "FBiOSActionRouter.h"
@@ -31,6 +32,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 @interface FBiOSActionReaderMediator : NSObject <FBSocketConsumer, FBiOSTargetActionDelegate>
 
 @property (nonatomic, strong, readonly) FBiOSActionReader *reader;
+@property (nonatomic, strong, readonly, nullable) FBUploadBuffer *binaryBuffer;
 @property (nonatomic, strong, readonly) FBLineBuffer *buffer;
 
 @end
