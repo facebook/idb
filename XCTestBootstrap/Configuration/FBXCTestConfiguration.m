@@ -13,7 +13,7 @@
 #import "FBXCTestShimConfiguration.h"
 #import "XCTestBootstrapError.h"
 
-FBXCTestType const FBXCTestTypeApplicationTest = @"application-test";
+FBXCTestType const FBXCTestTypeApplicationTest = FBXCTestTypeApplicationTestValue;
 FBXCTestType const FBXCTestTypeLogicTest = @"logic-test";
 FBXCTestType const FBXCTestTypeListTest = @"list-test";
 

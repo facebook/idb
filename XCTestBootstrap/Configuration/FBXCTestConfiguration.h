@@ -21,6 +21,7 @@ typedef NSString *FBXCTestType NS_STRING_ENUM;
 /**
  An Application Test.
  */
+#define FBXCTestTypeApplicationTestValue @"application-test"
 extern FBXCTestType const FBXCTestTypeApplicationTest;
 
 /**

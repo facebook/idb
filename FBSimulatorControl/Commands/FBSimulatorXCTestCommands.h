@@ -11,13 +11,15 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBApplicationLaunchConfiguration;
+@class FBApplicationTestConfiguration;
 @class FBSimulator;
 @class FBTestBundle;
 @class FBTestLaunchConfiguration;
 @protocol FBTestManagerTestReporter;
-
-NS_ASSUME_NONNULL_BEGIN
+@protocol FBXCTestReporter;
 
 /**
  Commands to perform on a Simulator, related to XCTest.
@@ -44,6 +46,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Test Operation if successful, nil otherwise.
  */
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory error:(NSError **)error;
+
+/**
+ Runs the specified Application Test.
+
+ @param configuration the configuration to use
+ @param reporter the reporter to report to.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter error:(NSError **)error;
 
 @end
 

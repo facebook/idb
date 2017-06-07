@@ -7,20 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestConfiguration+FBiOSTargetAction.h"
+#import "FBApplicationTestConfiguration+Simulator.h"
 
-#import <FBSimulatorControl/FBSimulatorControl.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
+#import "FBSimulator.h"
 
-#import "FBXCTestContext.h"
-#import "FBXCTestBaseRunner.h"
+FBiOSTargetActionType const FBiOSTargetActionTypeApplicationTest = FBXCTestTypeApplicationTestValue;
 
-@implementation FBXCTestConfiguration (FBiOSTargetAction)
-
+@implementation FBApplicationTestConfiguration (Simulator)
 
 + (FBiOSTargetActionType)actionType
 {
-  return FBiOSTargetActionTypeFBXCTest;
+  return FBiOSTargetActionTypeApplicationTest;
 }
 
 - (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
@@ -31,10 +28,14 @@
       describeFormat:@"%@ is not a Simulator, so cannot run fbxctest", simulator]
       failBool:error];
   }
+  id<FBFileConsumer> consumer = [delegate obtainConsumerForAction:self target:target];
+  FBJSONTestReporter *reporter = [[FBJSONTestReporter alloc]
+    initWithTestBundlePath:self.testBundlePath
+    testType:self.testType
+    logger:target.logger
+    fileConsumer:consumer];
 
-  FBXCTestContext *context = [FBXCTestContext contextWithSimulator:simulator reporter:nil logger:nil];
-  FBXCTestBaseRunner *runner = [FBXCTestBaseRunner testRunnerWithConfiguration:self context:context];
-  return [runner executeWithError:error];
+  return [simulator runApplicationTest:self reporter:reporter error:error];
 }
 
 @end

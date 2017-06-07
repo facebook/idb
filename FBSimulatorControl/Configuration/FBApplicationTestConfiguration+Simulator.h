@@ -16,14 +16,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Action Type for a Test Launch.
+ The Action Type for an Agent Launch.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest;
+extern FBiOSTargetActionType const FBiOSTargetActionTypeApplicationTest;
 
 /**
- Adds FBiOSTargetAction Conformance to FBXCTestConfiguration.
+ Conforms an Application Test Configuration.
  */
-@interface FBXCTestConfiguration (FBiOSTargetAction) <FBiOSTargetAction>
+@interface FBApplicationTestConfiguration (Simulator) <FBiOSTargetAction>
 
 @end
 
