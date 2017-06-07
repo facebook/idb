@@ -49,9 +49,9 @@ class SynchronousRelay : Relay {
   let relay: Relay
   let reporter: EventReporter
   let awaitable: FBTerminationAwaitable?
-  let started: (Void) -> Void
+  let started: () -> Void
 
-  init(relay: Relay, reporter: EventReporter, awaitable: FBTerminationAwaitable?, started: @escaping (Void) -> Void) {
+  init(relay: Relay, reporter: EventReporter, awaitable: FBTerminationAwaitable?, started: @escaping () -> Void) {
     self.relay = relay
     self.reporter = reporter
     self.awaitable = awaitable
