@@ -142,6 +142,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 }
 
+- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target
+{
+  return [FBFileWriter nullWriter];
+}
+
 - (void)readerDidFinishReading:(FBiOSActionReader *)reader
 {
 }

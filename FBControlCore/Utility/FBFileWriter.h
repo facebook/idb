@@ -20,6 +20,13 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBFileWriter : NSObject <FBFileConsumer>
 
 /**
+ Creates a File Writer that does not write anywhere.
+
+ @return a File Reader.
+ */
++ (instancetype)nullWriter;
+
+/**
  Creates a File Writer from a File Handle.
 
  @param fileHandle the file handle to write to. It will be closed when an EOF is sent.
