@@ -137,6 +137,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Delegate
 
+- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateTerminationHandle:(id<FBTerminationHandle>)terminationHandle
+{
+
+}
+
 - (void)readerDidFinishReading:(FBiOSActionReader *)reader
 {
 }

@@ -258,6 +258,10 @@ extension FBLineBuffer {
     return lines.joined(separator: "\n") + "\n"
   }
 
+  func action(_ action: FBiOSTargetAction, target: FBiOSTarget, didGenerate terminationHandle: FBTerminationHandle) {
+
+  }
+
   func readerDidFinishReading(_ reader: FBiOSActionReader) {
 
   }

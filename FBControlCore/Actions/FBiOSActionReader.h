@@ -99,7 +99,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
 /**
  The Delegate for the Action Reader.
  */
-@protocol FBiOSActionReaderDelegate <NSObject>
+@protocol FBiOSActionReaderDelegate <FBiOSTargetActionDelegate>
 
 /**
  Called when the Reader has finished reading.

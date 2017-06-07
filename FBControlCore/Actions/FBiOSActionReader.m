@@ -29,7 +29,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 @end
 
-@interface FBiOSActionReaderMediator : NSObject <FBSocketConsumer, FBiOSTargetActionDelegate>
+@interface FBiOSActionReaderMediator : NSObject <FBSocketConsumer>
 
 @property (nonatomic, strong, readonly) FBiOSActionReader *reader;
 @property (nonatomic, strong, readonly) FBLineBuffer *lineBuffer;
@@ -70,13 +70,6 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   }
   [self.lineBuffer appendData:data];
   [self runBufferWithWriteBack:writeBack];
-}
-
-#pragma mark FBiOSTargetActionDelegate Implementation
-
-- (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateTerminationHandle:(id<FBTerminationHandle>)terminationHandle
-{
-
 }
 
 #pragma mark Private
@@ -131,7 +124,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   __block NSError *error = nil;
   __block BOOL success = NO;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    success = [action runWithTarget:target delegate:self error:&error];
+    success = [action runWithTarget:target delegate:self.reader.delegate error:&error];
   });
 
   // Notify the delegate that the reader has finished, report the resultant string.
