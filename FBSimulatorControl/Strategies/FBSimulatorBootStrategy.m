@@ -387,21 +387,22 @@
   }
 
   // Now wait for the services.
-  NSSet<NSString *> *requiredServiceNames = [NSSet setWithArray:self.requiredLaunchdServicesToVerifyBooted];
+  NSArray<NSString *> *requiredServiceNames = self.requiredLaunchdServicesToVerifyBooted;
+  __block NSDictionary<id, NSString *> *processIdentifiers = @{};
   BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
     NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];
     if (!services) {
       return NO;
     }
-    NSSet<id> *processIdentifiers = [NSSet setWithArray:[services objectsForKeys:requiredServiceNames.allObjects notFoundMarker:NSNull.null]];
-    if ([processIdentifiers containsObject:NSNull.null]) {
+    processIdentifiers = [NSDictionary dictionaryWithObjects:requiredServiceNames forKeys:[services objectsForKeys:requiredServiceNames notFoundMarker:NSNull.null]];
+    if (processIdentifiers[NSNull.null]) {
       return NO;
     }
     return YES;
   }];
   if (!didStartAllRequiredServices) {
     return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for all required services %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredServiceNames.allObjects]]
+      describeFormat:@"Timed out waiting for service %@ to start", processIdentifiers[NSNull.null]]
       inSimulator:self.simulator]
       fail:error];
   }
