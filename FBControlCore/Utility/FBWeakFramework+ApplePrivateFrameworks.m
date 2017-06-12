@@ -9,10 +9,15 @@
 
 #import "FBWeakFramework+ApplePrivateFrameworks.h"
 
+#import "FBControlCoreGlobalConfiguration.h"
+
 @implementation FBWeakFramework (ApplePrivateFrameworks)
 
 + (nonnull instancetype)CoreSimulator
 {
+  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+    return [FBWeakFramework frameworkWithPath:@"/Library/Developer/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
+  }
   return [FBWeakFramework xcodeFrameworkWithRelativePath:@"Library/PrivateFrameworks/CoreSimulator.framework" requiredClassNames:@[@"SimDevice"]];
 }
 

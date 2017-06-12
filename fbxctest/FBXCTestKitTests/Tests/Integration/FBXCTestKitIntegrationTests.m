@@ -60,8 +60,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
@@ -115,8 +115,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
 
@@ -140,8 +140,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
@@ -169,8 +169,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
@@ -199,8 +199,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
@@ -228,8 +228,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 
@@ -257,8 +257,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleCrashingOfHostProcess"]);
@@ -287,8 +287,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertFalse(success);
   XCTAssertNotNil(error);
   XCTAssertTrue([error.description containsString:@"testPossibleStallingOfHostProcess"]);
@@ -316,8 +316,8 @@
   XCTAssertNil(error);
   XCTAssertNotNil(configuration);
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:self.context];
-  BOOL success = [testRunner executeTestsWithError:&error];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:self.context];
+  BOOL success = [testRunner executeWithError:&error];
   XCTAssertTrue(success);
   XCTAssertNil(error);
 

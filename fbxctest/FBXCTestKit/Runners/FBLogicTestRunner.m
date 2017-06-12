@@ -14,13 +14,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 #import <FBSimulatorControl/FBSimulatorControl.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
-#import "FBXCTestReporter.h"
-#import "FBXCTestError.h"
-#import "FBXCTestLogger.h"
-#import "FBXCTestShimConfiguration.h"
-#import "FBXCTestDestination.h"
 #import "FBLogicTestProcess.h"
 #import "FBXCTestContext.h"
 
@@ -72,7 +67,7 @@
 
 #pragma mark Public
 
-- (BOOL)runTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
   id<FBXCTestReporter> reporter = self.context.reporter;
   FBXCTestLogger *logger = self.context.logger;

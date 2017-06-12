@@ -307,7 +307,7 @@ static short const ZipFileMagicHeader = 0x4b50;
     withArguments:@[@"-o", @"-d", [tempDirURL path], path]]
     withAcceptableTerminationStatusCodes:[NSSet setWithObject:@0]]
     build]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout];
 
   if (task.error) {
     return [[[FBControlCoreError

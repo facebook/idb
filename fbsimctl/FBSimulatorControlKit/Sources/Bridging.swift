@@ -223,6 +223,32 @@ extension FBLineBuffer {
   }
 }
 
+@objc class WriterBridge : NSObject, FBFileConsumer {
+  let writer: Writer
+
+  init(writer: Writer) {
+    self.writer = writer
+    super.init()
+  }
+
+  func consumeData(_ data: Data) {
+    guard let string = String(data: data, encoding: String.Encoding.utf8) else {
+      return
+    }
+    self.writer.write(string)
+  }
+
+  func consumeEndOfFile() {
+
+  }
+}
+
+extension Writer {
+  var fileWriter: FBFileConsumer { get {
+    return WriterBridge(writer: self)
+  }}
+}
+
 @objc class AccumilatingActionDelegate : NSObject, FBiOSTargetActionDelegate {
   var handle: FBTerminationHandle? = nil
   let reporter: EventReporter
@@ -234,6 +260,10 @@ extension FBLineBuffer {
 
   func action(_ action: FBiOSTargetAction, target: FBiOSTarget, didGenerate terminationHandle: FBTerminationHandle) {
     self.handle = terminationHandle
+  }
+
+  func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
+    return self.reporter.writer.fileWriter
   }
 }
 
@@ -258,6 +288,14 @@ extension FBLineBuffer {
     return lines.joined(separator: "\n") + "\n"
   }
 
+  func action(_ action: FBiOSTargetAction, target: FBiOSTarget, didGenerate terminationHandle: FBTerminationHandle) {
+
+  }
+
+  func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
+    return self.reporter.writer.fileWriter
+  }
+
   func readerDidFinishReading(_ reader: FBiOSActionReader) {
 
   }
@@ -266,6 +304,14 @@ extension FBLineBuffer {
     let message = error.localizedDescription + ". input: " + input
     let subject = SimpleSubject(.failure, .discrete, message)
     return self.interpret(subject)
+  }
+
+  func reader(_ reader: FBiOSActionReader, willStartReadingUpload header: FBUploadHeader) -> String? {
+    return self.interpret(header, .started)
+  }
+
+  func reader(_ reader: FBiOSActionReader, didFinishUpload destination: FBUploadedDestination) -> String? {
+    return self.interpret(destination, .ended)
   }
 
   func reader(_ reader: FBiOSActionReader, willStartPerforming action: FBiOSTargetAction, on target: FBiOSTarget) -> String? {

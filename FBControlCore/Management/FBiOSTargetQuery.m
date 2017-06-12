@@ -415,7 +415,7 @@ static NSString *const KeyRange = @"range";
 + (NSArray<NSString *> *)stateStringsForStateIndeces:(NSIndexSet *)stateIndeces
 {
   NSMutableArray<NSString *> *stateStrings = [NSMutableArray array];
-  [stateIndeces enumerateIndexesUsingBlock:^(NSUInteger state, BOOL *_Nonnull stop) {
+  [stateIndeces enumerateIndexesUsingBlock:^(NSUInteger state, BOOL *stop) {
     NSString *string = FBSimulatorStateStringFromState(state).lowercaseString;
     [stateStrings addObject:string];
   }];

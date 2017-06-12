@@ -14,12 +14,20 @@
 #import "FBiOSTarget.h"
 #import "FBiOSTargetAction.h"
 #import "FBJSONConversion.h"
-#import "FBTestLaunchConfiguration.h"
 #import "FBApplicationLaunchConfiguration.h"
+#import "FBUploadBuffer.h"
 
 @implementation FBiOSActionRouter
 
 #pragma mark Initializers
+
++ (instancetype)routerForTarget:(id<FBiOSTarget>)target
+{
+  NSMutableSet<Class> *classes = [NSMutableSet set];
+  [classes addObjectsFromArray:self.defaultActionClasses];
+  [classes addObjectsFromArray:target.actionClasses];
+  return [self routerForTarget:target actionClasses:classes.allObjects];
+}
 
 + (instancetype)routerForTarget:(id<FBiOSTarget>)target actionClasses:(NSArray<Class> *)actionClasses
 {
@@ -53,8 +61,8 @@
 + (NSArray<Class> *)defaultActionClasses
 {
   return @[
-    FBTestLaunchConfiguration.class,
     FBApplicationLaunchConfiguration.class,
+    FBUploadHeader.class,
   ];
 }
 

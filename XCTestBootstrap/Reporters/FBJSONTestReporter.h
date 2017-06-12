@@ -8,8 +8,10 @@
  */
 
 #import <Foundation/Foundation.h>
+
 #import <FBControlCore/FBControlCore.h>
-#import <FBXCTestKit/FBXCTestReporter.h>
+
+#import <XCTestBootstrap/FBXCTestReporter.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

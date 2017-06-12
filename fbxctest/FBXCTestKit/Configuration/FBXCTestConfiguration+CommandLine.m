@@ -9,9 +9,9 @@
 
 #import "FBXCTestConfiguration+CommandLine.h"
 
-#import "FBXCTestError.h"
-#import "FBXCTestShimConfiguration.h"
-#import "FBXCTestDestination.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
+FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
 
 @implementation FBXCTestConfiguration (CommandLine)
 

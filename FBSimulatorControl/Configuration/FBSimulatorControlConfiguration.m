@@ -135,7 +135,7 @@
 
 @implementation FBSimulatorControlConfiguration (Helpers)
 
-+ (NSString *_Nonnull)defaultDeviceSetPath
++ (NSString *)defaultDeviceSetPath
 {
   Class deviceSetClass = objc_lookUpClass("SimDeviceSet");
   NSAssert(deviceSetClass, @"Expected SimDeviceSet to be loaded");

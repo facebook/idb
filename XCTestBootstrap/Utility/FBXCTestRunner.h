@@ -7,16 +7,23 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <FBControlCore/FBControlCore.h>
+#import <Foundation/Foundation.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Error Domain for FBTestErrorDomain Errors.
+ A common protocol for types of test execution.
  */
-extern NSString *const FBTestErrorDomain;
+@protocol FBXCTestRunner <NSObject>
 
 /**
- FBXCTest Errors construction.
+ Executes the Tests.
+
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
  */
-@interface FBXCTestError : FBControlCoreError
+- (BOOL)executeWithError:(NSError **)error;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -9,31 +9,27 @@
 
 #import <Foundation/Foundation.h>
 
+#import <XCTestBootstrap/FBXCTestRunner.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBXCTestConfiguration;
+@protocol FBXCTestReporter;
+
+@class FBListTestConfiguration;
 @class FBXCTestContext;
 
 /**
  A Runner for Listing Tests.
  */
-@interface FBListTestRunner : NSObject
+@interface FBListTestStrategy : NSObject <FBXCTestRunner>
 
 /**
  Create and return a new Runner for listing tests on macOS.
 
  @param configuration the the configuration to use.
- @param context the test context to use.
+ @param reporter the reporter to use.
  */
-+ (instancetype)macOSRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context;
-
-/**
- Lists the tests to the reporter.
-
- @param error an error out for any error that occurs.
- @return YES if successful, NO othwerwise.
- */
-- (BOOL)listTestsWithError:(NSError **)error;
++ (instancetype)macOSStrategyWithConfiguration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter;
 
 @end
 

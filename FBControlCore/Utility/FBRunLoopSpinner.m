@@ -20,7 +20,7 @@
 
 @implementation FBRunLoopSpinner
 
-+ (id)spinUntilBlockFinished:(id (^)())block
++ (id)spinUntilBlockFinished:(id (^)(void))block
 {
   __block volatile uint32_t didFinish = 0;
   __block id returnObject;

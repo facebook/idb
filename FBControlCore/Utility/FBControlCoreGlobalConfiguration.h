@@ -87,6 +87,11 @@ extern NSString *const FBControlCoreDebugLogging;
 @property (nonatomic, assign, readonly, class) BOOL isXcode8OrGreater;
 
 /**
+ YES if Xcode 9 or greater, NO Otherwise.
+ */
+@property (nonatomic, assign, readonly, class) BOOL isXcode9OrGreater;
+
+/**
  YES if passing a custom SimDeviceSet to the Simulator App is Supported.
  */
 @property (nonatomic, assign, readonly, class) BOOL supportsCustomDeviceSets;

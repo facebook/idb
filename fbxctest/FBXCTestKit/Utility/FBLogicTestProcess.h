@@ -11,8 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol FBFileConsumer;
 @class FBSimulator;
+@protocol FBFileConsumer;
 
 /**
  A Process wrapper for running Logic Tests.

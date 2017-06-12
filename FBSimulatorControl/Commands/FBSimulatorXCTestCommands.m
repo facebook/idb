@@ -16,6 +16,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorTestRunStrategy.h"
+#import "FBApplicationTestRunStrategy.h"
 
 @interface FBSimulatorXCTestCommands ()
 
@@ -24,6 +25,8 @@
 @end
 
 @implementation FBSimulatorXCTestCommands
+
+#pragma mark Initializers
 
 + (instancetype)commandsWithSimulator:(FBSimulator *)simulator
 {
@@ -41,6 +44,8 @@
   return self;
 }
 
+#pragma mark Public
+
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
 {
   return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:nil error:error];
@@ -50,6 +55,15 @@
 {
   return [self startTestWithLaunchConfiguration:testLaunchConfiguration reporter:reporter workingDirectory:self.simulator.auxillaryDirectory error:error];
 }
+
+- (BOOL)runApplicationTest:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter error:(NSError **)error
+{
+  return [[FBApplicationTestRunStrategy
+    strategyWithSimulator:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger]
+    executeWithError:error];
+}
+
+#pragma mark Private
 
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter workingDirectory:(nullable NSString *)workingDirectory error:(NSError **)error
 {

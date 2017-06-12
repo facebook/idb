@@ -36,6 +36,13 @@
   [self.buffer appendData:data];
 }
 
+- (nullable NSData *)consumeCurrentData
+{
+  NSData *data = [self.buffer copy];
+  self.buffer.data = NSData.data;
+  return data;
+}
+
 - (nullable NSData *)consumeLineData
 {
   if (self.buffer.length == 0) {

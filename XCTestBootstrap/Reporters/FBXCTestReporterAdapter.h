@@ -7,19 +7,16 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestError.h"
+#import <XCTestBootstrap/FBTestManagerTestReporter.h>
 
-NSString *const FBTestErrorDomain = @"com.facebook.FBTestError";
+NS_ASSUME_NONNULL_BEGIN
 
-@implementation FBXCTestError
+@protocol FBXCTestReporter;
 
-- (instancetype)init
-{
-  self = [super init];
-  if (self) {
-    [self inDomain:FBTestErrorDomain];
-  }
-  return self;
-}
+@interface FBXCTestReporterAdapter : NSObject <FBTestManagerTestReporter>
+
++ (instancetype)adapterWithReporter:(id<FBXCTestReporter>)reporter;
 
 @end
+
+NS_ASSUME_NONNULL_END

@@ -12,7 +12,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
-@class FBSimulatorControl;
 @class FBXCTestConfiguration;
 @protocol FBControlCoreLogger;
 

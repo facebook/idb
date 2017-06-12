@@ -7,35 +7,30 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBApplicationTestRunner.h"
+#import "FBApplicationTestRunStrategy.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
-#import "FBXCTestLogger.h"
-#import "FBXCTestReporterAdapter.h"
-#import "FBXCTestError.h"
-#import "FBXCTestContext.h"
-
 static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
-@interface FBApplicationTestRunner ()
+@interface FBApplicationTestRunStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBApplicationTestConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBXCTestContext *context;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 
 @end
 
-@implementation FBApplicationTestRunner
+@implementation FBApplicationTestRunStrategy
 
-+ (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration context:context];
+  return [[self alloc] initWithSimulator:simulator configuration:configuration reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration context:(FBXCTestContext *)context
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -44,21 +39,22 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
 
   _simulator = simulator;
   _configuration = configuration;
-  _context = context;
+  _reporter = reporter;
+  _logger = logger;
 
   return self;
 }
 
-- (BOOL)runTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
   FBApplicationDescriptor *testRunnerApp = [FBApplicationDescriptor userApplicationWithPath:self.configuration.runnerAppPath error:error];
   if (!testRunnerApp) {
-    [self.context.logger logFormat:@"Failed to open test runner application: %@", *error];
+    [self.logger logFormat:@"Failed to open test runner application: %@", *error];
     return NO;
   }
 
   if (![self.simulator installApplicationWithPath:testRunnerApp.path error:error]) {
-    [self.context.logger logFormat:@"Failed to install test runner application: %@", *error];
+    [self.logger logFormat:@"Failed to install test runner application: %@", *error];
     return NO;
   }
 
@@ -77,7 +73,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
     strategyWithSimulator:self.simulator
     configuration:testLaunchConfiguration
     workingDirectory:[self.configuration.workingDirectory stringByAppendingPathComponent:@"tmp"]
-    reporter:[FBXCTestReporterAdapter adapterWithReporter:self.context.reporter]];
+    reporter:[FBXCTestReporterAdapter adapterWithReporter:self.reporter]];
 
   NSError *innerError = nil;
   FBTestManager *manager = [runner connectAndStartWithError:&innerError];
@@ -94,7 +90,7 @@ static const NSTimeInterval ApplicationTestDefaultTimeout = 4000;
       failBool:error];
   }
   if (result.error) {
-    [self.context.logger logFormat:@"Failed to execute test bundle %@", result.error];
+    [self.logger logFormat:@"Failed to execute test bundle %@", result.error];
     return [XCTestBootstrapError failBoolWithError:result.error errorOut:error];
   }
   return YES;

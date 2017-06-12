@@ -14,6 +14,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBUploadHeader;
+@class FBUploadedDestination;
 @class FBiOSActionRouter;
 
 @protocol FBiOSTarget;
@@ -97,7 +99,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
 /**
  The Delegate for the Action Reader.
  */
-@protocol FBiOSActionReaderDelegate <NSObject>
+@protocol FBiOSActionReaderDelegate <FBiOSTargetActionDelegate>
 
 /**
  Called when the Reader has finished reading.
@@ -114,6 +116,24 @@ extern FBTerminationHandleType const FBTerminationHandleTypeActionReader;
  @param error the generated error.
  */
 - (nullable NSString *)reader:(FBiOSActionReader *)reader failedToInterpretInput:(NSString *)input error:(NSError *)error;
+
+/**
+ Called when the Reader failed to interpret some input.
+
+ @param reader the reader.
+ @param header the header of the file being uploaded.
+ @return the string to write back to the reader, if relevant.
+ */
+- (nullable NSString *)reader:(FBiOSActionReader *)reader willStartReadingUpload:(FBUploadHeader *)header;
+
+/**
+ Called when the Reader failed to interpret some input.
+
+ @param reader the reader.
+ @param destination the destination of the upload.
+ @return the string to write back to the reader, if relevant.
+ */
+- (nullable NSString *)reader:(FBiOSActionReader *)reader didFinishUpload:(FBUploadedDestination *)destination;
 
 /**
  Called when the Reader is about to perform an action.

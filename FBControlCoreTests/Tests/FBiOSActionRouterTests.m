@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBiOSTargetDouble.h"
+#import "FBiOSTargetActionDouble.h"
 
 @interface FBiOSActionRouterTests : XCTestCase
 
@@ -24,8 +25,8 @@
 + (NSArray<id<FBiOSTargetAction>> *)actions
 {
   return @[
-    [FBTestLaunchConfiguration configurationWithTestBundlePath:@"/bar/bar"],
-    [[[[[FBTestLaunchConfiguration configurationWithTestBundlePath:@"/aa"] withUITesting:YES] withTestHostPath:@"/baa"] withTimeout:12] withTestsToRun:[NSSet setWithArray:@[@"foo", @"bar"]]],
+    [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"foo" succeed:NO],
+    [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"bar" succeed:YES],
   ];
 }
 
@@ -38,8 +39,9 @@
 
 - (void)testCorrectlyDeflates
 {
-  FBiOSActionRouter *router = [FBiOSActionRouter routerForTarget:self.target actionClasses:FBiOSActionRouter.defaultActionClasses];
   NSArray<id<FBiOSTargetAction>> *actions = FBiOSActionRouterTests.actions;
+  NSSet<Class> *actionClasses = [NSSet setWithArray:[actions valueForKey:@"class"]];
+  FBiOSActionRouter *router = [FBiOSActionRouter routerForTarget:self.target actionClasses:actionClasses.allObjects];
   for (id<FBiOSTargetAction> action in actions) {
     NSDictionary<NSString *, id> *json = [router jsonFromAction:action];
     XCTAssertEqualObjects(json[@"action"], [action.class actionType]);
