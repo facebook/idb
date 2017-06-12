@@ -74,18 +74,21 @@ extern FBOSVersionName const FBOSVersionNameiOS_10_0;
 extern FBOSVersionName const FBOSVersionNameiOS_10_1;
 extern FBOSVersionName const FBOSVersionNameiOS_10_2;
 extern FBOSVersionName const FBOSVersionNameiOS_10_3;
+extern FBOSVersionName const FBOSVersionNameiOS_11_0;
 extern FBOSVersionName const FBOSVersionNametvOS_9_0;
 extern FBOSVersionName const FBOSVersionNametvOS_9_1;
 extern FBOSVersionName const FBOSVersionNametvOS_9_2;
 extern FBOSVersionName const FBOSVersionNametvOS_10_0;
 extern FBOSVersionName const FBOSVersionNametvOS_10_1;
 extern FBOSVersionName const FBOSVersionNametvOS_10_2;
+extern FBOSVersionName const FBOSVersionNametvOS_11_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_2_2;
 extern FBOSVersionName const FBOSVersionNamewatchOS_3_0;
 extern FBOSVersionName const FBOSVersionNamewatchOS_3_1;
 extern FBOSVersionName const FBOSVersionNamewatchOS_3_2;
+extern FBOSVersionName const FBOSVersionNamewatchOS_4_0;
 
 #pragma mark Devices
 
