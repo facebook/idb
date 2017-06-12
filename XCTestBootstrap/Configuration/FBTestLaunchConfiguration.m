@@ -11,6 +11,9 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBXCTestCommands.h"
+#import "XCTestBootstrapError.h"
+
 FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch = @"launch_xctest";
 
 @implementation FBTestLaunchConfiguration
@@ -258,12 +261,19 @@ static NSString *const KeyTimeout = @"timeout";
 
 - (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
 {
-  id<FBXCTestOperation> operation = [target startTestWithLaunchConfiguration:self error:error];
+  id<FBXCTestCommands> commands = (id<FBXCTestCommands> ) target;
+  if (![commands conformsToProtocol:@protocol(FBXCTestCommands)]) {
+    return [[FBXCTestError
+      describeFormat:@"%@ does not conform to %@", target, NSStringFromProtocol(@protocol(FBXCTestCommands))]
+      failBool:error];
+  }
+
+  id<FBXCTestOperation> operation = [commands startTestWithLaunchConfiguration:self error:error];
   if (!operation) {
     return NO;
   }
   if (self.timeout > 0) {
-    if (![target waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:self.timeout error:error]) {
+    if (![commands waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:self.timeout error:error]) {
       return NO;
     }
   }

@@ -9,19 +9,13 @@
 
 #import "FBXCTestConfiguration.h"
 
-#import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
-#import <XCTestBootstrap/XCTestBootstrap.h>
-
-#import "FBJSONTestReporter.h"
 #import "FBXCTestDestination.h"
-#import "FBXCTestError.h"
-#import "FBXCTestLogger.h"
-#import "FBXCTestRunner.h"
 #import "FBXCTestShimConfiguration.h"
-#import "FBXCTestContext.h"
+#import "XCTestBootstrapError.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
+FBXCTestType const FBXCTestTypeApplicationTest = FBXCTestTypeApplicationTestValue;
+FBXCTestType const FBXCTestTypeLogicTest = @"logic-test";
+FBXCTestType const FBXCTestTypeListTest = @"list-test";
 
 @implementation FBXCTestConfiguration
 
@@ -80,21 +74,6 @@ FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest = @"fbxctest";
     environment[childKey] = environmentOverrides[key];
   }
   return environment.copy;
-}
-
-#pragma mark Helpers
-
-+ (NSString *)fbxctestInstallationRoot
-{
-  NSString *executablePath = NSProcessInfo.processInfo.arguments[0];
-  if (!executablePath.isAbsolutePath) {
-    executablePath = [NSFileManager.defaultManager.currentDirectoryPath stringByAppendingString:executablePath];
-  }
-  executablePath = [executablePath stringByStandardizingPath];
-  NSString *path = [[executablePath
-    stringByDeletingLastPathComponent]
-    stringByDeletingLastPathComponent];
-  return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
 }
 
 #pragma mark NSObject
@@ -258,27 +237,6 @@ NSString *const ValueApplicationTest = @"application-test";
   return self;
 }
 
-#pragma mark FBiOSTargetAction
-
-+ (FBiOSTargetActionType)actionType
-{
-  return FBiOSTargetActionTypeFBXCTest;
-}
-
-- (BOOL)runWithTarget:(id<FBiOSTarget>)target delegate:(id<FBiOSTargetActionDelegate>)delegate error:(NSError **)error
-{
-  FBSimulator *simulator = (FBSimulator *) target;
-  if (![simulator isKindOfClass:FBSimulator.class]) {
-    return [[FBXCTestError
-      describeFormat:@"%@ is not a Simulator, so cannot run fbxctest", simulator]
-      failBool:error];
-  }
-
-  FBXCTestContext *context = [FBXCTestContext contextWithSimulator:simulator reporter:nil logger:nil];
-  FBXCTestRunner *runner = [FBXCTestRunner testRunnerWithConfiguration:self context:context];
-  return [runner executeTestsWithError:error];
-}
-
 @end
 
 @implementation FBListTestConfiguration
@@ -294,7 +252,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
 - (NSString *)testType
 {
-  return ValueLogicTest;
+  return FBXCTestTypeListTest;
 }
 
 #pragma mark JSON
@@ -333,7 +291,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
 - (NSString *)testType
 {
-  return ValueApplicationTest;
+  return FBXCTestTypeApplicationTest;
 }
 
 #pragma mark JSON
@@ -383,7 +341,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
 - (NSString *)testType
 {
-  return ValueLogicTest;
+  return FBXCTestTypeLogicTest;
 }
 
 #pragma mark JSON

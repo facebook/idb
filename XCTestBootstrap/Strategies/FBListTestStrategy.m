@@ -7,35 +7,29 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBListTestRunner.h"
+#import "FBListTestStrategy.h"
 
 #import <sys/types.h>
 #import <sys/stat.h>
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBXCTestConfiguration.h"
-#import "FBXCTestReporter.h"
-#import "FBXCTestShimConfiguration.h"
-#import "FBXCTestError.h"
-#import "FBXCTestContext.h"
-#import "FBXCTestDestination.h"
+@interface FBListTestStrategy ()
 
-@interface FBListTestRunner ()
-
-@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBXCTestContext *context;
+@property (nonatomic, strong, readonly) FBListTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 
 @end
 
-@implementation FBListTestRunner
+@implementation FBListTestStrategy
 
-+ (instancetype)macOSRunnerWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)macOSStrategyWithConfiguration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
 {
-  return [[self alloc] initWithConfiguration:configuration context:context];
+  return [[self alloc] initWithConfiguration:configuration reporter:reporter];
 }
 
-- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration context:(FBXCTestContext *)context
+- (instancetype)initWithConfiguration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
 {
   self = [super init];
   if (!self) {
@@ -43,14 +37,14 @@
   }
 
   _configuration = configuration;
-  _context = context;
+  _reporter = reporter;
 
   return self;
 }
 
-- (BOOL)listTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
-  [self.context.reporter didBeginExecutingTestPlan];
+  [self.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
   NSString *otestQueryPath = self.configuration.shims.macOtestQueryPath;
@@ -114,11 +108,11 @@
     }
     NSString *className = [testName substringToIndex:slashRange.location];
     NSString *methodName = [testName substringFromIndex:slashRange.location + 1];
-    [self.context.reporter testCaseDidStartForTestClass:className method:methodName];
-    [self.context.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
+    [self.reporter testCaseDidStartForTestClass:className method:methodName];
+    [self.reporter testCaseDidFinishForTestClass:className method:methodName withStatus:FBTestReportStatusPassed duration:0];
   }
 
-  [self.context.reporter didFinishExecutingTestPlan];
+  [self.reporter didFinishExecutingTestPlan];
 
   return YES;
 }

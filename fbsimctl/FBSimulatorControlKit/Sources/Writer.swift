@@ -44,4 +44,8 @@ open class FileHandleWriter : Writer {
   open static var stdErrWriter: FileHandleWriter { get {
     return FileHandleWriter(fileHandle: FileHandle.standardError)
   }}
+
+  open static var nullWriter: FileHandleWriter { get {
+    return FileHandleWriter(fileHandle: FileHandle.nullDevice)
+  }}
 }

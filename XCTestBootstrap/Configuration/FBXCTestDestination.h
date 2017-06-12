@@ -13,8 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBSimulatorConfiguration;
-
 /**
  The Base Destination.
  */
@@ -57,11 +55,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Device OS Version, if provided.
  */
 @property (nonatomic, strong, nullable, readonly) FBOSVersionName version;
-
-/**
- The Simulator Configuration.
- */
-@property (nonatomic, strong, readonly) FBSimulatorConfiguration *simulatorConfiguration;
 
 @end
 

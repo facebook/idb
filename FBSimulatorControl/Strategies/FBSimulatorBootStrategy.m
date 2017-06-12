@@ -387,21 +387,22 @@
   }
 
   // Now wait for the services.
-  NSSet<NSString *> *requiredServiceNames = [NSSet setWithArray:self.requiredLaunchdServicesToVerifyBooted];
+  NSArray<NSString *> *requiredServiceNames = self.requiredLaunchdServicesToVerifyBooted;
+  __block NSDictionary<id, NSString *> *processIdentifiers = @{};
   BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
     NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];
     if (!services) {
       return NO;
     }
-    NSSet<id> *processIdentifiers = [NSSet setWithArray:[services objectsForKeys:requiredServiceNames.allObjects notFoundMarker:NSNull.null]];
-    if ([processIdentifiers containsObject:NSNull.null]) {
+    processIdentifiers = [NSDictionary dictionaryWithObjects:requiredServiceNames forKeys:[services objectsForKeys:requiredServiceNames notFoundMarker:NSNull.null]];
+    if (processIdentifiers[NSNull.null]) {
       return NO;
     }
     return YES;
   }];
   if (!didStartAllRequiredServices) {
     return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for all required services %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredServiceNames.allObjects]]
+      describeFormat:@"Timed out waiting for service %@ to start", processIdentifiers[NSNull.null]]
       inSimulator:self.simulator]
       fail:error];
   }
@@ -422,23 +423,21 @@
 {
   FBControlCoreProductFamily family = self.simulator.productFamily;
   if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
-    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-        NSArray *xcode8Services = @[@"com.apple.backboardd",
-                                    @"com.apple.mobile.installd",
-                                    @"com.apple.SimulatorBridge",
-                                    @"com.apple.SpringBoard"];
-
-        NSDecimalNumber *simulatorVersion = self.simulator.osVersion.number;
-        NSDecimalNumber *iOS9 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
-
-        // medialibraryd does not load on simulators < iOS 9.
-        if ([simulatorVersion isGreaterThanOrEqualTo:iOS9]) {
-            NSMutableArray *mutable = [NSMutableArray arrayWithArray:xcode8Services];
-            [mutable insertObject:@"com.apple.medialibraryd" atIndex:1];
-            xcode8Services = [NSArray arrayWithArray:mutable];
-        }
-
-        return xcode8Services;
+    if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+      return @[
+        @"com.apple.backboardd",
+        @"com.apple.mobile.installd",
+        @"com.apple.CoreSimulator.bridge",
+        @"com.apple.SpringBoard",
+      ];
+    }
+    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater ) {
+      return @[
+        @"com.apple.backboardd",
+        @"com.apple.mobile.installd",
+        @"com.apple.SimulatorBridge",
+        @"com.apple.SpringBoard",
+      ];
     }
   }
   if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {

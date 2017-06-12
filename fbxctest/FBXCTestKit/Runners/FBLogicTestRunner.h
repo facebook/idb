@@ -9,16 +9,18 @@
 
 #import <Foundation/Foundation.h>
 
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBLogicTestConfiguration;
 @class FBSimulator;
 @class FBXCTestContext;
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  A Runner for Logic Tests
  */
-@interface FBLogicTestRunner : NSObject
+@interface FBLogicTestRunner : NSObject <FBXCTestRunner>
 
 /**
  Creates a Logic Test Runner for iOS with the Provided Parameters.
@@ -38,14 +40,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new Logic Test Runner.
  */
 + (instancetype)macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context;
-
-/**
- Run the Logic Tests.
-
- @param error an error out for any error that occurs.
- @return YES if the test run completed. NO otherwise.
- */
-- (BOOL)runTestsWithError:(NSError **)error;
 
 @end
 

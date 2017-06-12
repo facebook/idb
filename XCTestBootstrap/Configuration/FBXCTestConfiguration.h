@@ -13,22 +13,34 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBSimulator;
-@class FBXCTestDestination;
-@class FBXCTestLogger;
-@class FBXCTestShimConfiguration;
-
-@protocol FBControlCoreLogger;
+/**
+ A String Enum for Test Types.
+ */
+typedef NSString *FBXCTestType NS_STRING_ENUM;
 
 /**
- The Action Type for a Test Launch.
+ An Application Test.
  */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest;
+#define FBXCTestTypeApplicationTestValue @"application-test"
+extern FBXCTestType const FBXCTestTypeApplicationTest;
+
+/**
+ A Logic Test.
+ */
+extern FBXCTestType const FBXCTestTypeLogicTest;
+
+/**
+ The Listing of Testing of tests in a bundle.
+ */
+extern FBXCTestType const FBXCTestTypeListTest;
+
+@class FBXCTestDestination;
+@class FBXCTestShimConfiguration;
 
 /**
  The Base Configuration for all tests.
  */
-@interface FBXCTestConfiguration : NSObject <NSCopying, FBiOSTargetAction>
+@interface FBXCTestConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  The Default Initializer.
@@ -64,7 +76,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest;
 /**
  The Type of the Test Bundle.
  */
-@property (nonatomic, copy, readonly) NSString *testType;
+@property (nonatomic, copy, readonly) FBXCTestType testType;
 
 /**
  YES if the test execution should pause on launch, waiting for a debugger to attach.
@@ -76,11 +88,6 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeFBXCTest;
  The Timeout to wait for the test execution to finish.
  */
 @property (nonatomic, assign, readonly) NSTimeInterval testTimeout;
-
-/**
- Locates the expected Installation Root.
- */
-+ (nullable NSString *)fbxctestInstallationRoot;
 
 /**
  Gets the Environment for a Subprocess.

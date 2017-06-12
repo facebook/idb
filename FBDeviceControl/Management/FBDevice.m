@@ -31,9 +31,12 @@ int (*FBAMDeviceStartSession)(CFTypeRef device);
 int (*FBAMDeviceStopSession)(CFTypeRef device);
 int (*FBAMDServiceConnectionGetSocket)(CFTypeRef connection);
 int (*FBAMDServiceConnectionInvalidate)(CFTypeRef connection);
-int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, CFDictionaryRef userinfo, void *handle);
+int (*FBAMDeviceSecureStartService)(CFTypeRef device, CFStringRef service_name, _Nullable CFDictionaryRef userinfo, void *handle);
 _Nullable CFStringRef (*_Nonnull FBAMDeviceGetName)(CFTypeRef device);
 _Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
+int (*FBAMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
+int (*FBAMDeviceSecureInstallApplication)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3,  void *_Nullable arg4, int arg5);
+int (*FBAMDeviceSecureUninstallApplication)(int arg0, CFTypeRef arg1, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
 void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma clang diagnostic push
@@ -66,9 +69,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma mark FBiOSTarget
 
-- (FBiOSActionRouter *)router
+- (NSArray<Class> *)actionClasses
 {
-  return [FBiOSActionRouter routerForTarget:self actionClasses:FBiOSActionRouter.defaultActionClasses];
+  return @[
+    FBTestLaunchConfiguration.class,
+  ];
 }
 
 - (NSString *)udid

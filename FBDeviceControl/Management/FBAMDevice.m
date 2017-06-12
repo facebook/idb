@@ -60,6 +60,9 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
   FBAMDCreateDeviceList = (CFArrayRef(*)(void))FBGetSymbolFromHandle(handle, "AMDCreateDeviceList");
   FBAMDeviceGetName = (CFStringRef(*)(CFTypeRef))FBGetSymbolFromHandle(handle, "AMDeviceGetName");
   FBAMDeviceCopyValue = (CFStringRef(*)(CFTypeRef, CFStringRef, CFStringRef))FBGetSymbolFromHandle(handle, "AMDeviceCopyValue");
+  FBAMDeviceSecureTransferPath = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
+  FBAMDeviceSecureInstallApplication = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
+  FBAMDeviceSecureUninstallApplication = (int(*)(int, CFTypeRef, CFStringRef, int, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
 }
 + (NSArray<FBAMDevice *> *)allDevices
 {
@@ -97,6 +100,18 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
       describe:@"Failed to connect to device."]
      fail:error];
   }
+  if (FBAMDeviceIsPaired(_amDevice) != 1) {
+    return
+    [[FBDeviceControlError
+      describe:@"Device is not paired"]
+     fail:error];
+  }
+  if (FBAMDeviceValidatePairing(_amDevice) != 0) {
+    return
+    [[FBDeviceControlError
+      describe:@"Validate pairing failed"]
+     fail:error];
+  }
   id operationResult = nil;
   if (FBAMDeviceStartSession(_amDevice) == 0) {
     operationResult = operationBlock(_amDevice);
@@ -110,22 +125,27 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
   return operationResult;
 }
 
+- (CFTypeRef)startService:(NSString *)service userInfo:(NSDictionary *)userInfo error:(NSError **)error
+{
+  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^id(CFTypeRef device) {
+    CFTypeRef test_apple_afc_conn;
+    FBAMDeviceSecureStartService(
+      device,
+      (__bridge CFStringRef _Nonnull)(service),
+      (__bridge CFDictionaryRef _Nonnull)(userInfo),
+      &test_apple_afc_conn
+    );
+    return (__bridge id)(test_apple_afc_conn);
+  } error:error]);
+}
+
 - (CFTypeRef)startTestManagerServiceWithError:(NSError **)error
 {
   NSDictionary *userInfo = @{
     @"CloseOnInvalidate" : @1,
     @"InvalidateOnDetach" : @1
   };
-  return (__bridge CFTypeRef _Nonnull)([self handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    CFTypeRef test_apple_afc_conn;
-    FBAMDeviceSecureStartService(
-      device,
-      CFSTR("com.apple.testmanagerd.lockdown"),
-      (__bridge CFDictionaryRef _Nonnull)(userInfo),
-      &test_apple_afc_conn
-    );
-    return (__bridge id)(test_apple_afc_conn);
-  } error:error]);
+  return [self startService:@"com.apple.testmanagerd.lockdown" userInfo:userInfo error:error];
 }
 
 - (void)dealloc
@@ -139,14 +159,6 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
 {
   return
   [[self handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    if (FBAMDeviceIsPaired(device) != 1) {
-      return @NO;
-
-    }
-    if (FBAMDeviceValidatePairing(device) != 0) {
-      return @NO;
-    }
-
     self->_udid = (__bridge NSString *)(FBAMDeviceGetName(device));
     self->_deviceName = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("DeviceName")));
     self->_modelName = (__bridge NSString *)(FBAMDeviceCopyValue(device, NULL, CFSTR("DeviceClass")));

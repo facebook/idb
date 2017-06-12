@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestRunner.h"
+#import "FBXCTestBaseRunner.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <FBControlCore/FBControlCore.h>
@@ -16,27 +16,18 @@
 #import <sys/types.h>
 #import <sys/stat.h>
 
-#import "FBJSONTestReporter.h"
-#import "FBXCTestConfiguration.h"
-#import "FBXCTestError.h"
-#import "FBXCTestReporterAdapter.h"
-#import "FBXCTestLogger.h"
-#import "FBApplicationTestRunner.h"
 #import "FBXCTestSimulatorFetcher.h"
 #import "FBLogicTestRunner.h"
-#import "FBXCTestShimConfiguration.h"
-#import "FBListTestRunner.h"
 #import "FBXCTestContext.h"
-#import "FBXCTestDestination.h"
 
-@interface FBXCTestRunner ()
+@interface FBXCTestBaseRunner ()
 
 @property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBXCTestContext *context;
 
 @end
 
-@implementation FBXCTestRunner
+@implementation FBXCTestBaseRunner
 
 #pragma mark Initializers
 
@@ -60,7 +51,7 @@
 
 #pragma mark Public
 
-- (BOOL)executeTestsWithError:(NSError **)error
+- (BOOL)executeWithError:(NSError **)error
 {
   BOOL success = [self.configuration.destination isKindOfClass:FBXCTestDestinationiPhoneSimulator.class] ? [self runiOSTestWithError:error] : [self runMacTestWithError:error];
   if (!success) {
@@ -80,9 +71,9 @@
     return [[FBXCTestError describe:@"Application tests are not supported on OS X."] failBool:error];
   }
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[FBListTestRunner macOSRunnerWithConfiguration:self.configuration context:self.context] listTestsWithError:error];
+    return [[FBListTestStrategy macOSStrategyWithConfiguration:(FBListTestConfiguration *)self.configuration reporter:self.context.reporter] executeWithError:error];
   }
-  return [[FBLogicTestRunner macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+  return [[FBLogicTestRunner macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)self.configuration context:self.context] executeWithError:error];
 }
 
 - (BOOL)runiOSTestWithError:(NSError **)error
@@ -107,9 +98,9 @@
 - (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   if ([self.configuration isKindOfClass:FBLogicTestConfiguration.class]) {
-    return [[FBLogicTestRunner iOSRunnerWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+    return [[FBLogicTestRunner iOSRunnerWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration context:self.context] executeWithError:error];
   }
-  return [[FBApplicationTestRunner iOSRunnerWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration context:self.context] runTestsWithError:error];
+  return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
 }
 
 @end

@@ -7,11 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBXCTestKitFixtures.h"
+#import <XCTest/XCTest.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBXCTestKit/FBXCTestKit.h>
-#import <XCTest/XCTest.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import "FBControlCoreValueTestCase.h"
 
@@ -24,20 +23,6 @@
 {
   NSArray<FBXCTestShimConfiguration *> *values = @[
     [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShim:@"/ios_test.x" macTestShim:@"/mac_test.x" macQueryShim:@"/mac_query.x"],
-  ];
-  [self assertEqualityOfCopy:values];
-  [self assertJSONSerialization:values];
-  [self assertJSONDeserialization:values];
-}
-
-- (void)testDestination
-{
-  NSArray<FBXCTestDestination *> *values = @[
-    [[FBXCTestDestinationMacOSX alloc] init],
-    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil],
-    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:FBOSVersionNameiOS_10_0],
-    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone7 version:nil],
-    [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:FBOSVersionNameiOS_10_3],
   ];
   [self assertEqualityOfCopy:values];
   [self assertJSONSerialization:values];
