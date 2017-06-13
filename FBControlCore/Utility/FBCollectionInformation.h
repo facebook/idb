@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBJSONSerializable;
+
 /**
  Helpers for information about of Collections.
  */
@@ -30,6 +32,13 @@ NS_ASSUME_NONNULL_BEGIN
  @param keyPath the Key Path, to obtain a String description from.
  */
 + (NSString *)oneLineDescriptionFromArray:(NSArray *)array atKeyPath:(NSString *)keyPath;
+
+/**
+ Creates a One-Line JSON description from the object.
+
+ @param object the Object to construct a description for.
+ */
++ (NSString *)oneLineJSONDescription:(id<FBJSONSerializable>)object;
 
 /**
  Creates a One-Line Array description from the Dictionary.
