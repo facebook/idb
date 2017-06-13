@@ -199,7 +199,7 @@
 
 - (NSString *)otestShimPath
 {
-  return self.configuration.shims.macOtestShimPath;
+  return self.configuration.shims.macOSTestShimPath;
 }
 
 @end
@@ -236,7 +236,7 @@
 
 - (NSString *)otestShimPath
 {
-  return self.configuration.shims.iOSSimulatorOtestShimPath;
+  return self.configuration.shims.iOSSimulatorTestShimPath;
 }
 
 @end
