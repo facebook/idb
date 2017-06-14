@@ -88,6 +88,7 @@
   NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary dictionaryWithDictionary:@{
     @"DYLD_INSERT_LIBRARIES": otestShimPath,
     @"OTEST_SHIM_STDOUT_FILE": otestShimOutputPath,
+    @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
   }];
   [environment addEntriesFromDictionary:self.configuration.processUnderTestEnvironment];
 
