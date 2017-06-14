@@ -132,6 +132,8 @@
 		AA5639551C060005009BAFAA /* FBSimulatorControl.h in Headers */ = {isa = PBXBuildFile; fileRef = AA5639541C05FFF5009BAFAA /* FBSimulatorControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA56445E1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.h in Headers */ = {isa = PBXBuildFile; fileRef = AA56445C1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA56445F1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.m in Sources */ = {isa = PBXBuildFile; fileRef = AA56445D1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.m */; };
+		AA56EAF01EEFCA400062C2BC /* libMaculator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA56EAEE1EEFCA340062C2BC /* libMaculator.dylib */; };
+		AA56EAF11EEFCB1D0062C2BC /* libShimulator.dylib in Resources */ = {isa = PBXBuildFile; fileRef = AA017F4C1BD7784700F45E9D /* libShimulator.dylib */; };
 		AA58F88C1D95917D006F8D81 /* FBBundleDescriptor.h in Headers */ = {isa = PBXBuildFile; fileRef = AA58F88A1D95917D006F8D81 /* FBBundleDescriptor.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA58F88D1D95917D006F8D81 /* FBBundleDescriptor.m in Sources */ = {isa = PBXBuildFile; fileRef = AA58F88B1D95917D006F8D81 /* FBBundleDescriptor.m */; };
 		AA58F8921D959593006F8D81 /* FBCodesignProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = AA58F88F1D959593006F8D81 /* FBCodesignProvider.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -920,6 +922,7 @@
 		AA56445C1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorKeychainCommands.h; sourceTree = "<group>"; };
 		AA56445D1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorKeychainCommands.m; sourceTree = "<group>"; };
 		AA569FD01E576FCC009755EE /* CoreSimulator+BlockDefines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CoreSimulator+BlockDefines.h"; sourceTree = "<group>"; };
+		AA56EAEE1EEFCA340062C2BC /* libMaculator.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMaculator.dylib; sourceTree = "<group>"; };
 		AA58F88A1D95917D006F8D81 /* FBBundleDescriptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBundleDescriptor.h; sourceTree = "<group>"; };
 		AA58F88B1D95917D006F8D81 /* FBBundleDescriptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBundleDescriptor.m; sourceTree = "<group>"; };
 		AA58F88F1D959593006F8D81 /* FBCodesignProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodesignProvider.h; sourceTree = "<group>"; };
@@ -1526,6 +1529,7 @@
 			isa = PBXGroup;
 			children = (
 				AA017F4C1BD7784700F45E9D /* libShimulator.dylib */,
+				AA56EAEE1EEFCA340062C2BC /* libMaculator.dylib */,
 			);
 			path = Binaries;
 			sourceTree = "<group>";
@@ -1845,6 +1849,14 @@
 				AA9AAAEA1DE4C3F60056B127 /* FBProcessOutputConfiguration.m */,
 			);
 			path = Configuration;
+			sourceTree = "<group>";
+		};
+		AA56EADD1EEF03ED0062C2BC /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				AA7414EA1CE2555E00C9641D /* FBTestDaemonConnection.h */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		AA58F88E1D959593006F8D81 /* Codesigning */ = {
@@ -2475,6 +2487,7 @@
 				AA017F4A1BD7784700F45E9D /* Shims */,
 				B401C97968022A5500000000 /* Frameworks */,
 				B401C979C806358400000000 /* Products */,
+				AA56EADD1EEF03ED0062C2BC /* Recovered References */,
 			);
 			name = mainGroup;
 			sourceTree = "<group>";
@@ -3361,6 +3374,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA56EAF11EEFCB1D0062C2BC /* libShimulator.dylib in Resources */,
+				AA56EAF01EEFCA400062C2BC /* libMaculator.dylib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3894,6 +3909,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Shims/Binaries",
+				);
 			};
 			name = Debug;
 		};
@@ -3901,6 +3920,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Shims/Binaries",
+				);
 			};
 			name = Profile;
 		};
@@ -3908,6 +3931,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = EE4F0DDA1C91B88500608E89 /* XCTestBootstrap.xcconfig */;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Shims/Binaries",
+				);
 			};
 			name = Release;
 		};
