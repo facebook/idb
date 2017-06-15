@@ -12,6 +12,8 @@
 #import <XCTestBootstrap/FBDeviceTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBJSONTestReporter.h>
 #import <XCTestBootstrap/FBListTestStrategy.h>
+#import <XCTestBootstrap/FBLogicTestProcess.h>
+#import <XCTestBootstrap/FBMacLogicTestStrategy.h>
 #import <XCTestBootstrap/FBProductBundle.h>
 #import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBTestBundle.h>

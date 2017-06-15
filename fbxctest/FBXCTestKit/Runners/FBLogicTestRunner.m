@@ -16,7 +16,6 @@
 #import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-#import "FBLogicTestProcess.h"
 #import "FBXCTestContext.h"
 
 @interface FBLogicTestRunner ()
@@ -190,12 +189,13 @@
 - (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
 {
   return [FBLogicTestProcess
-    taskProcessWithLaunchPath:launchPath
+    processWithLaunchPath:launchPath
     arguments:arguments
     environment:[self.configuration buildEnvironmentWithEntries:environment]
     waitForDebugger:self.configuration.waitForDebugger
     stdOutReader:stdOutReader
-    stdErrReader:stdErrReader];
+    stdErrReader:stdErrReader
+    strategy:[FBMacLogicTestStrategy new]];
 }
 
 - (NSString *)otestShimPath
@@ -226,13 +226,13 @@
 - (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
 {
   return [FBLogicTestProcess
-    simulatorSpawnProcess:self.simulator
-    launchPath:launchPath
+    processWithLaunchPath:launchPath
     arguments:arguments
     environment:[self.configuration buildEnvironmentWithEntries:environment]
     waitForDebugger:self.configuration.waitForDebugger
     stdOutReader:stdOutReader
-    stdErrReader:stdErrReader];
+    stdErrReader:stdErrReader
+    strategy:[FBSimulatorLogicTestStrategy strategyWithSimulator:self.simulator]];
 }
 
 - (NSString *)otestShimPath
