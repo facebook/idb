@@ -56,6 +56,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
 @interface FBDeviceXCTestCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
+@property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 @property (nonatomic, strong, nullable, readonly) FBDeviceXCTestCommands_TestOperation *operation;
 
@@ -65,10 +66,10 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
 
 + (instancetype)commandsWithDevice:(FBDevice *)device
 {
-  return [[self alloc] initWithDevice:device];
+  return [[self alloc] initWithDevice:device workingDirectory:NSTemporaryDirectory()];
 }
 
-- (instancetype)initWithDevice:(FBDevice *)device
+- (instancetype)initWithDevice:(FBDevice *)device workingDirectory:(NSString *)workingDirectory
 {
   self = [super init];
   if (!self) {
@@ -76,6 +77,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   }
 
   _device = device;
+  _workingDirectory = workingDirectory;
   _processFetcher = [FBProcessFetcher new];
 
   return self;
@@ -114,7 +116,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   }
 
   // Create the .xctestrun file
-  NSString *filePath = [FBDeviceXCTestCommands createXCTestRunFileFromConfiguration:testLaunchConfiguration forDevice:self.device error:&innerError];
+  NSString *filePath = [self createXCTestRunFileFromConfiguration:testLaunchConfiguration error:&innerError];
   if (!filePath) {
     return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
@@ -151,13 +153,12 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   return YES;
 }
 
-+ (nullable NSString *)createXCTestRunFileFromConfiguration:(FBTestLaunchConfiguration *)configuration forDevice:(FBDevice *)device error:(NSError **)error
+- (nullable NSString *)createXCTestRunFileFromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error
 {
-  NSString *tmp = NSTemporaryDirectory();
   NSString *fileName = [NSProcessInfo.processInfo.globallyUniqueString stringByAppendingPathExtension:@"xctestrun"];
-  NSString *path = [tmp stringByAppendingPathComponent:fileName];
+  NSString *path = [self.workingDirectory stringByAppendingPathComponent:fileName];
 
-  NSDictionary *testRunProperties = [self xctestRunProperties:configuration];
+  NSDictionary *testRunProperties = [FBDeviceXCTestCommands xctestRunProperties:configuration];
   if (![testRunProperties writeToFile:path atomically:false]) {
     return [[FBDeviceControlError
       describeFormat:@"Failed to write to file %@", path]
