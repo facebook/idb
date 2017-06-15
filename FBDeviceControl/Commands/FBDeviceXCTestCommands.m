@@ -9,56 +9,18 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
 #import "FBDevice.h"
 #import "FBDeviceXCTestCommands.h"
 #import "FBDeviceControlError.h"
-
-static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_DEVICE_IDENTIFIER";
-
-@interface FBDeviceXCTestCommands_TestOperation : NSObject <FBXCTestOperation>
-
-@property (nonatomic, strong, nullable, readonly) FBTask *task;
-
-@end
-
-@implementation FBDeviceXCTestCommands_TestOperation
-
-- (instancetype)initWithTask:(FBTask *)task
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _task = task;
-
-  return self;
-}
-
-- (FBTerminationHandleType)type
-{
-  return FBTerminationHandleTypeTestOperation;
-}
-
-- (void)terminate
-{
-  [self.task terminate];
-  _task = nil;
-}
-
-- (BOOL)hasTerminated
-{
-  return self.task.hasTerminated || self.task == nil;
-}
-
-@end
 
 @interface FBDeviceXCTestCommands ()
 
 @property (nonatomic, weak, readonly) FBDevice *device;
 @property (nonatomic, copy, readonly) NSString *workingDirectory;
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-@property (nonatomic, strong, nullable, readonly) FBDeviceXCTestCommands_TestOperation *operation;
+@property (nonatomic, strong, nullable, readonly) FBXcodeBuildOperation *operation;
 
 @end
 
@@ -111,7 +73,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   }
   // Terminate the reparented xcodebuild invocations.
   NSError *innerError = nil;
-  if (![FBDeviceXCTestCommands terminateReparentedXcodeBuildProcessesForDevice:self.device processFetcher:self.processFetcher error:&innerError]) {
+  if (![FBXcodeBuildOperation terminateReparentedXcodeBuildProcessesForTarget:self.device processFetcher:self.processFetcher error:&innerError]) {
     return [FBDeviceControlError failWithError:innerError errorOut:error];
   }
 
@@ -128,9 +90,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
   }
 
   // Create the Task, wrap it and store it
-  FBTask *task = [FBDeviceXCTestCommands createTask:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath device:self.device];
-  [task startAsynchronously];
-  _operation = [[FBDeviceXCTestCommands_TestOperation alloc] initWithTask:task];
+  _operation = [FBXcodeBuildOperation operationWithTarget:self.device configuration:testLaunchConfiguration xcodeBuildPath:xcodeBuildPath testRunFilePath:filePath];
 
   return _operation;
 }
@@ -141,7 +101,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
     return YES;
   }
   NSError *innerError = nil;
-  if (![self.operation.task waitForCompletionWithTimeout:timeout error:&innerError]) {
+  if (![self.operation waitForCompletionWithTimeout:timeout error:&innerError]) {
     [self.operation terminate];
     _operation = nil;
     return [[[FBDeviceControlError
@@ -176,44 +136,6 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
       fail:error];
   }
   return path;
-}
-
-+ (FBTask *)createTask:(FBTestLaunchConfiguration *)configuraton xcodeBuildPath:(NSString *)xcodeBuildPath testRunFilePath:(NSString *)testRunFilePath device:(FBDevice *)device
-{
-
-  NSArray<NSString *> *arguments = @[
-    @"test-without-building",
-    @"-xctestrun", testRunFilePath,
-    @"-destination", [NSString stringWithFormat:@"id=%@", device.udid],
-  ];
-
-  NSMutableDictionary<NSString *, NSString *> *environment = [NSProcessInfo.processInfo.environment mutableCopy];
-  environment[XcodebuildSubprocessEnvironmentIdentifier] = device.udid;
-
-  FBTask *task = [[[[[FBTaskBuilder
-    withLaunchPath:xcodeBuildPath arguments:arguments]
-    withEnvironment:environment]
-    withStdOutToLogger:device.logger]
-    withStdErrToLogger:device.logger]
-    build];
-
-  return task;
-}
-
-+ (BOOL)terminateReparentedXcodeBuildProcessesForDevice:(FBDevice *)device processFetcher:(FBProcessFetcher *)processFetcher error:(NSError **)error
-{
-  NSArray<FBProcessInfo *> *processes = [processFetcher processesWithProcessName:@"xcodebuild"];
-  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:processFetcher logger:device.logger];
-  NSString *udid = device.udid;
-  for (FBProcessInfo *process in processes) {
-    if (![process.environment[XcodebuildSubprocessEnvironmentIdentifier] isEqualToString:udid]) {
-      continue;
-    }
-    if (![strategy killProcess:process error:error]) {
-      return NO;
-    }
-  }
-  return YES;
 }
 
 @end
