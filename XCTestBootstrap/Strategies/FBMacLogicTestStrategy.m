@@ -11,13 +11,34 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBXCTestConfiguration.h"
+#import "FBXCTestShimConfiguration.h"
+
 @interface FBMacLogicTestStrategy ()
 
+@property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
 @property (nonatomic, strong, readwrite, nullable) FBTask *task;
 
 @end
 
 @implementation FBMacLogicTestStrategy
+
++ (instancetype)strategyWithConfiguration:(FBLogicTestConfiguration *)configuration
+{
+  return [[self alloc] initWithConfiguration:configuration];
+}
+
+- (instancetype)initWithConfiguration:(FBLogicTestConfiguration *)configuration
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _configuration = configuration;
+
+  return self;
+}
 
 - (pid_t)logicTestProcess:(FBLogicTestProcess *)process startWithError:(NSError **)error
 {
@@ -66,6 +87,11 @@
     return NO;
   }
   return YES;
+}
+
+- (NSString *)shimPath
+{
+  return self.configuration.shims.macOSTestShimPath;
 }
 
 @end

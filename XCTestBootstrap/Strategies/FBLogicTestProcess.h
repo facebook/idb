@@ -43,6 +43,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)logicTestProcess:(FBLogicTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
+/**
+ The path to the Shim dylib used for reporting test output.
+ */
+@property (nonatomic, copy, readonly) NSString *shimPath;
+
 @end
 
 /**

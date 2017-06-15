@@ -24,9 +24,10 @@ NS_ASSUME_NONNULL_BEGIN
  The designated initializer.
 
  @param simulator the simulator.
+ @param configuration the configuration.
  @return a new Logic Test Strategy for Simulators.
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator;
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration;
 
 @end
 

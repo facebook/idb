@@ -14,6 +14,7 @@
 @interface FBSimulatorLogicTestStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
 
 @property (nonatomic, strong, readwrite) FBPipeReader *stdOutPipe;
 @property (nonatomic, strong, readwrite) FBPipeReader *stdErrPipe;
@@ -26,12 +27,12 @@
 
 @implementation FBSimulatorLogicTestStrategy
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator
++ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:simulator configuration:configuration];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
 {
   self = [super init];
   if (!self) {
@@ -39,6 +40,7 @@
   }
 
   _simulator = simulator;
+  _configuration = configuration;
 
   return self;
 }
@@ -113,6 +115,11 @@
     return NO;
   }
   return YES;
+}
+
+- (NSString *)shimPath
+{
+  return self.configuration.shims.iOSSimulatorTestShimPath;
 }
 
 @end

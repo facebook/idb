@@ -13,10 +13,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBLogicTestConfiguration;
+
 /**
  A Logic Test Strategy for macOS.
  */
 @interface FBMacLogicTestStrategy : NSObject <FBLogicTestStrategy>
+
++ (instancetype)strategyWithConfiguration:(FBLogicTestConfiguration *)configuration;
 
 @end
 

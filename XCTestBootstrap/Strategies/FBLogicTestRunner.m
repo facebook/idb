@@ -13,27 +13,14 @@
 #import <sys/stat.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorControl.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
-
-#import "FBXCTestContext.h"
 
 @interface FBLogicTestRunner ()
 
+@property (nonatomic, strong, readonly) id<FBLogicTestStrategy> strategy;
 @property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
-@property (nonatomic, strong, readonly) FBXCTestContext *context;
-
-@end
-
-@interface FBLogicTestRunner_iOS : FBLogicTestRunner
-
-@property (nonatomic, strong, nullable, readonly) FBSimulator *simulator;
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context;
-
-@end
-
-@interface FBLogicTestRunner_macOS : FBLogicTestRunner
+@property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -41,25 +28,22 @@
 
 #pragma mark Initializers
 
-+ (instancetype)iOSRunnerWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
++ (instancetype)runnerWithStrategy:(id<FBLogicTestStrategy>)strategy configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBLogicTestRunner_iOS alloc] initWithSimulator:simulator configuration:configuration context:context];
+  return [[FBLogicTestRunner alloc] initWithStrategy:strategy configuration:configuration reporter:reporter logger:logger];
 }
 
-+ (instancetype)macOSRunnerWithConfiguration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
-{
-  return [[FBLogicTestRunner_macOS alloc] initWithConfiguration:configuration context:context];
-}
-
-- (instancetype)initWithConfiguration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
+- (instancetype)initWithStrategy:(id<FBLogicTestStrategy>)strategy configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _strategy = strategy;
   _configuration = configuration;
-  _context = context;
+  _reporter = reporter;
+  _logger = logger;
 
   return self;
 }
@@ -68,13 +52,13 @@
 
 - (BOOL)executeWithError:(NSError **)error
 {
-  id<FBXCTestReporter> reporter = self.context.reporter;
-  FBXCTestLogger *logger = self.context.logger;
+  id<FBXCTestReporter> reporter = self.reporter;
+  FBXCTestLogger *logger = self.logger;
 
   [reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
-  NSString *otestShimPath = self.otestShimPath;
+  NSString *shimPath = self.strategy.shimPath;
 
   // The fifo is used by the shim to report events from within the xctest framework.
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
@@ -85,7 +69,7 @@
 
   // The environment requires the shim path and otest-shim path.
   NSMutableDictionary<NSString *, NSString *> *environment = [NSMutableDictionary dictionaryWithDictionary:@{
-    @"DYLD_INSERT_LIBRARIES": otestShimPath,
+    @"DYLD_INSERT_LIBRARIES": shimPath,
     @"OTEST_SHIM_STDOUT_FILE": otestShimOutputPath,
     @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
   }];
@@ -168,24 +152,6 @@
 
 #pragma mark Private
 
-- (NSString *)otestShimPath
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-@end
-
-@implementation FBLogicTestRunner_macOS
-
-#pragma mark Private
-
 - (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
 {
   return [FBLogicTestProcess
@@ -195,49 +161,7 @@
     waitForDebugger:self.configuration.waitForDebugger
     stdOutReader:stdOutReader
     stdErrReader:stdErrReader
-    strategy:[FBMacLogicTestStrategy new]];
-}
-
-- (NSString *)otestShimPath
-{
-  return self.configuration.shims.macOSTestShimPath;
-}
-
-@end
-
-@implementation FBLogicTestRunner_iOS
-
-#pragma mark Initializers
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration context:(FBXCTestContext *)context
-{
-  self = [super initWithConfiguration:configuration context:context];
-  if (!self) {
-    return nil;
-  }
-
-  _simulator = simulator;
-
-  return self;
-}
-
-#pragma mark Private
-
-- (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
-{
-  return [FBLogicTestProcess
-    processWithLaunchPath:launchPath
-    arguments:arguments
-    environment:[self.configuration buildEnvironmentWithEntries:environment]
-    waitForDebugger:self.configuration.waitForDebugger
-    stdOutReader:stdOutReader
-    stdErrReader:stdErrReader
-    strategy:[FBSimulatorLogicTestStrategy strategyWithSimulator:self.simulator]];
-}
-
-- (NSString *)otestShimPath
-{
-  return self.configuration.shims.iOSSimulatorTestShimPath;
+    strategy:self.strategy];
 }
 
 @end
