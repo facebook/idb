@@ -17,8 +17,10 @@ static NSString *const KeyMacTestShim = @"mac_test_shim";
 static NSString *const KeyMacQueryShim = @"mac_query_shim";
 
 static NSString *const iOSXCToolShimFileName = @"otest-shim-ios.dylib";
+static NSString *const shimulatorFileName = @"libShimulator.dylib";
 static NSString *const macOSXCToolShimFileName = @"otest-shim-osx.dylib";
 static NSString *const macOSXCToolQueryShimFileName = @"otest-query-lib-osx.dylib";
+static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 
 static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIMS";
 
@@ -29,9 +31,9 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
 + (NSDictionary<NSString *, NSArray<NSString *> *> *)canonicalShimNameToShimFilenames
 {
   return @{
-    KeySimulatorTestShim: @[iOSXCToolShimFileName],
-    KeyMacTestShim: @[macOSXCToolShimFileName],
-    KeyMacQueryShim: @[macOSXCToolQueryShimFileName],
+    KeySimulatorTestShim: @[shimulatorFileName, iOSXCToolShimFileName],
+    KeyMacTestShim: @[maculatorShimFileName, macOSXCToolShimFileName],
+    KeyMacQueryShim: @[maculatorShimFileName, macOSXCToolQueryShimFileName],
   };
 }
 
@@ -82,7 +84,14 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
 
   // Otherwise, expect it to be relative to the location of the current executable.
   NSString *libPath = [self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"];
-  return [self confirmExistenceOfRequiredShimsInDirectory:libPath error:error];
+  libPath = [self confirmExistenceOfRequiredShimsInDirectory:libPath error:nil];
+  if (libPath) {
+    return libPath;
+  }
+
+  // Otherwise, attempt to use the bundled shims
+  NSString *bundlePath = [[NSBundle bundleForClass:self].bundlePath stringByAppendingPathComponent:@"Resources"];
+  return [self confirmExistenceOfRequiredShimsInDirectory:bundlePath error:error];
 }
 
 + (nullable NSString *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory error:(NSError **)error
