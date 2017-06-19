@@ -9,6 +9,8 @@
 
 #import "FBSimulatorBridge.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import <CoreSimulator/SimDevice.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
@@ -27,6 +29,16 @@
 
 + (nullable instancetype)bridgeForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
+  // In Xcode 9, the SimulatorBridge is no longer automatically launched on the Simulator boot.
+  // It is manually launched by Simulator.app and takes a argument of the service-name to register.
+  // This is uniqued based on the PID of the calling process.
+  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+    return [[[FBSimulatorError
+      describe:@"Connecting a Bridge in Xcode 9 is not yet supported"]
+      inSimulator:simulator]
+      fail:error];
+  }
+
   // Connect to the expected-to-be-running CoreSimulatorBridge running inside the Simulator.
   // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over a Remote Object connection.
   NSError *innerError = nil;
