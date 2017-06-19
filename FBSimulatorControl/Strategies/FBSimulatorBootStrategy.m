@@ -166,6 +166,29 @@
 
 @end
 
+@interface FBSimulatorBootStrategy_Direct_Xcode9 : FBSimulatorBootStrategy_Direct
+
+@end
+
+@implementation FBSimulatorBootStrategy_Direct_Xcode9
+
+- (BOOL)shouldCreateFramebuffer
+{
+  // Framebuffer connection is optional on Xcode 9 so we should use the appropriate configuration.
+  return self.configuration.shouldConnectFramebuffer;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  // We currently don't have semantics for headless launches that *don't* use the death-trigger behaviour.
+  // Therefore we should keep consistency across Xcode versions and eventually add these semantics.
+  return @{
+    @"persist": @NO,
+  };
+}
+
+@end
+
 @interface FBSimulatorBootStrategy_Subprocess : FBSimulatorBootStrategy
 
 - (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error;
@@ -296,9 +319,13 @@
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   if (configuration.shouldUseDirectLaunch) {
-    return FBControlCoreGlobalConfiguration.isXcode8OrGreater
-      ? [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator]
-      : [[FBSimulatorBootStrategy_Direct_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
+    if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+      return [[FBSimulatorBootStrategy_Direct_Xcode9 alloc] initWithConfiguration:configuration simulator:simulator];
+    } else if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+      return [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator];
+    } else {
+      return [[FBSimulatorBootStrategy_Direct_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
+    }
   }
   if (configuration.shouldLaunchViaWorkspace) {
     return [[FBSimulatorBootStrategy_Workspace alloc] initWithConfiguration:configuration simulator:simulator];
