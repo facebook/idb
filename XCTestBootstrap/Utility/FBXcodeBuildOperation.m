@@ -63,7 +63,7 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
 
 #pragma mark FBXCTestOperation
 
-- (FBTerminationHandleType)type
++ (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeTestOperation;
 }

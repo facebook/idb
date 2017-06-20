@@ -27,7 +27,7 @@ typedef NSString *FBTerminationHandleType NS_EXTENSIBLE_STRING_ENUM;
 /**
  The Type of Termination Handle.
  */
-@property (nonatomic, copy, readonly) FBTerminationHandleType type;
+@property (nonatomic, copy, class, readonly) FBTerminationHandleType handleType;
 
 @end
 

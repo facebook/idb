@@ -267,7 +267,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 #pragma mark FBTerminationAwaitable
 
-- (FBTerminationHandleType)type
++ (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeActionReader;
 }

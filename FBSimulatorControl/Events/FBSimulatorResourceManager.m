@@ -37,7 +37,7 @@ FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
   [self.fileHandle closeFile];
 }
 
-- (FBTerminationHandleType)type
++ (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleFileHandle;
 }
