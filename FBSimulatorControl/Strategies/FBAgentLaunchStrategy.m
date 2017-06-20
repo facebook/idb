@@ -53,7 +53,7 @@
   return [self launchAgent:agentLaunch terminationHandler:NULL error:error];
 }
 
-- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
+- (nullable FBProcessInfo *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
   FBDiagnostic *stdOutDiagnostic = nil;
@@ -105,7 +105,7 @@
   return process;
 }
 
-- (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
+- (nullable FBProcessInfo *)launchAgentWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOut:(nullable NSFileHandle *)stdOut stdErr:(nullable NSFileHandle *)stdErr terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
 {
   NSDictionary<NSString *, id> *options = [FBAgentLaunchConfiguration
     simDeviceLaunchOptionsWithLaunchPath:launchPath
@@ -182,7 +182,7 @@
 
 #pragma mark Private
 
-- (nullable FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options terminationHandler:(nullable FBAgentLaunchHandler)terminationHandler error:(NSError **)error
+- (nullable FBProcessInfo *)spawnLongRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options terminationHandler:(nullable FBAgentTerminationHandler)terminationHandler error:(NSError **)error
 {
   return [self processInfoForProcessIdentifier:[self.simulator.device spawnWithPath:launchPath options:options terminationHandler:terminationHandler error:error] error:error];
 }
@@ -190,7 +190,7 @@
 - (pid_t)spawnShortRunningWithPath:(NSString *)launchPath options:(nullable NSDictionary<NSString *, id> *)options timeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   __block volatile uint32_t hasTerminated = 0;
-  FBAgentLaunchHandler terminationHandler = ^(int stat_loc) {
+  FBAgentTerminationHandler terminationHandler = ^(int stat_loc) {
     OSAtomicOr32Barrier(1, &hasTerminated);
   };
 

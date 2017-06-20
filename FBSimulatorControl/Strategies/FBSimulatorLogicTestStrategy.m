@@ -71,7 +71,7 @@
   }
 
   // Launch The Process
-  FBAgentLaunchHandler handler = ^(int stat_loc){
+  FBAgentTerminationHandler handler = ^(int stat_loc){
     if (WIFEXITED(stat_loc)) {
       self.exitCode = WEXITSTATUS(stat_loc);
     } else if (WIFSIGNALED(stat_loc)) {
