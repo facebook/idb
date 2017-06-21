@@ -18,8 +18,6 @@
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 #import <SimulatorBridge/SimulatorBridge.h>
 
-#import <SimulatorKit/SimDeviceFramebufferService.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBFramebuffer.h"
@@ -100,12 +98,6 @@
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return NO;
-}
-
-- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
 }
 
 - (NSDictionary<NSString *, id> *)bootOptions
