@@ -74,7 +74,7 @@
 
 - (void)testLaunchedApplicationLogs
 {
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
   FBApplicationLaunchConfiguration *appLaunch = self.tableSearchAppLaunch.injectingShimulator;
 
   NSError *error = nil;
@@ -89,7 +89,7 @@
 
 - (void)testLaunchedApplicationLogsWithDefaultOutputToFile
 {
-  FBSimulator *simulator = [self assertObtainsBootedSimulator];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:self.tableSearchApplication];
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration defaultOutputToFile];
   FBApplicationLaunchConfiguration *appLaunch = [self.tableSearchAppLaunch.injectingShimulator withOutput:output];
 
