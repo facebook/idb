@@ -9,12 +9,12 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBSimulator;
 @class FBXCTestLogger;
 @class FBXCTestConfiguration;
 @protocol FBXCTestReporter;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  Context for the Test Run.

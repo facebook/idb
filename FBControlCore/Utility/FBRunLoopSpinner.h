@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param block the block to wait for to finish.
  @return object returned by `block`
  */
-+ (nullable id)spinUntilBlockFinished:(id (^)())block;
++ (nullable id)spinUntilBlockFinished:(id (^)(void))block;
 
 /**
  Updates the message that is logged at an interval.

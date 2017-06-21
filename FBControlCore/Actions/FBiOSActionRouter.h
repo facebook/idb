@@ -24,6 +24,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Router for the given target.
+ Uses the default Action classes for the target.
+
+ @param target the target to route actions for.
+ @return a new Action Router.
+ */
++ (instancetype)routerForTarget:(id<FBiOSTarget>)target;
+
+/**
+ A Router for the given target.
+ Uses the provided Action Classes
 
  @param target the target to route actions for.
  @param actionClasses the Action Classes to use.

@@ -13,6 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBFileConsumer;
 @protocol FBiOSTarget;
 @protocol FBiOSTargetActionDelegate;
 @protocol FBTerminationHandle;
@@ -56,6 +57,15 @@ typedef NSString *FBiOSTargetActionType NS_EXTENSIBLE_STRING_ENUM;
  @param terminationHandle the generated termination handle.
  */
 - (void)action:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target didGenerateTerminationHandle:(id<FBTerminationHandle>)terminationHandle;
+
+/**
+ Provide the File Consumer for a given Action & Target.
+
+ @param action the action that the termination was generated for.
+ @param target the target the handle was generated for.
+ @return the Output File Consumer
+ */
+- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target ;
 
 @end
 

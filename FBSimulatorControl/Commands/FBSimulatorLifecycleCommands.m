@@ -13,8 +13,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import <SimulatorKit/SimDeviceFramebufferService.h>
-
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"

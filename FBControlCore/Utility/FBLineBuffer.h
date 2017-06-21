@@ -25,6 +25,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)appendData:(NSData *)data;
 
 /**
+ Consume the remainder of the buffer available, returning it as Data.
+ This will flush the buffer.
+ */
+- (nullable NSData *)consumeCurrentData;
+
+/**
  Consume a line if one is available, returning it as Data.
  This will flush the buffer of the lines that are consumed.
  */

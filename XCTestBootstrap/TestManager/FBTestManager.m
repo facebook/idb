@@ -83,7 +83,7 @@
 
 #pragma mark FBXCTestOperation
 
-- (FBTerminationHandleType)type
++ (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeTestOperation;
 }

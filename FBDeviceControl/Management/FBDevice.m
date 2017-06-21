@@ -69,9 +69,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma mark FBiOSTarget
 
-- (FBiOSActionRouter *)router
+- (NSArray<Class> *)actionClasses
 {
-  return [FBiOSActionRouter routerForTarget:self actionClasses:FBiOSActionRouter.defaultActionClasses];
+  return @[
+    FBTestLaunchConfiguration.class,
+  ];
 }
 
 - (NSString *)udid

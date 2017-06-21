@@ -18,8 +18,6 @@
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 #import <SimulatorBridge/SimulatorBridge.h>
 
-#import <SimulatorKit/SimDeviceFramebufferService.h>
-
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBFramebuffer.h"
@@ -102,12 +100,6 @@
   return NO;
 }
 
-- (SimDeviceFramebufferService *)createMainScreenService:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
 - (NSDictionary<NSString *, id> *)bootOptions
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
@@ -161,6 +153,29 @@
     @"env" : @{
       @"SIMULATOR_IS_HEADLESS" : @1,
     },
+  };
+}
+
+@end
+
+@interface FBSimulatorBootStrategy_Direct_Xcode9 : FBSimulatorBootStrategy_Direct
+
+@end
+
+@implementation FBSimulatorBootStrategy_Direct_Xcode9
+
+- (BOOL)shouldCreateFramebuffer
+{
+  // Framebuffer connection is optional on Xcode 9 so we should use the appropriate configuration.
+  return self.configuration.shouldConnectFramebuffer;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  // We currently don't have semantics for headless launches that *don't* use the death-trigger behaviour.
+  // Therefore we should keep consistency across Xcode versions and eventually add these semantics.
+  return @{
+    @"persist": @NO,
   };
 }
 
@@ -296,9 +311,13 @@
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   if (configuration.shouldUseDirectLaunch) {
-    return FBControlCoreGlobalConfiguration.isXcode8OrGreater
-      ? [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator]
-      : [[FBSimulatorBootStrategy_Direct_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
+    if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+      return [[FBSimulatorBootStrategy_Direct_Xcode9 alloc] initWithConfiguration:configuration simulator:simulator];
+    } else if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+      return [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator];
+    } else {
+      return [[FBSimulatorBootStrategy_Direct_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
+    }
   }
   if (configuration.shouldLaunchViaWorkspace) {
     return [[FBSimulatorBootStrategy_Workspace alloc] initWithConfiguration:configuration simulator:simulator];
@@ -387,21 +406,22 @@
   }
 
   // Now wait for the services.
-  NSSet<NSString *> *requiredServiceNames = [NSSet setWithArray:self.requiredLaunchdServicesToVerifyBooted];
+  NSArray<NSString *> *requiredServiceNames = self.requiredLaunchdServicesToVerifyBooted;
+  __block NSDictionary<id, NSString *> *processIdentifiers = @{};
   BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
     NSDictionary<NSString *, id> *services = [self.simulator.launchctl listServicesWithError:nil];
     if (!services) {
       return NO;
     }
-    NSSet<id> *processIdentifiers = [NSSet setWithArray:[services objectsForKeys:requiredServiceNames.allObjects notFoundMarker:NSNull.null]];
-    if ([processIdentifiers containsObject:NSNull.null]) {
+    processIdentifiers = [NSDictionary dictionaryWithObjects:requiredServiceNames forKeys:[services objectsForKeys:requiredServiceNames notFoundMarker:NSNull.null]];
+    if (processIdentifiers[NSNull.null]) {
       return NO;
     }
     return YES;
   }];
   if (!didStartAllRequiredServices) {
     return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for all required services %@ to start", [FBCollectionInformation oneLineDescriptionFromArray:requiredServiceNames.allObjects]]
+      describeFormat:@"Timed out waiting for service %@ to start", processIdentifiers[NSNull.null]]
       inSimulator:self.simulator]
       fail:error];
   }
@@ -422,23 +442,21 @@
 {
   FBControlCoreProductFamily family = self.simulator.productFamily;
   if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
-    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-        NSArray *xcode8Services = @[@"com.apple.backboardd",
-                                    @"com.apple.mobile.installd",
-                                    @"com.apple.SimulatorBridge",
-                                    @"com.apple.SpringBoard"];
-
-        NSDecimalNumber *simulatorVersion = self.simulator.osVersion.number;
-        NSDecimalNumber *iOS9 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
-
-        // medialibraryd does not load on simulators < iOS 9.
-        if ([simulatorVersion isGreaterThanOrEqualTo:iOS9]) {
-            NSMutableArray *mutable = [NSMutableArray arrayWithArray:xcode8Services];
-            [mutable insertObject:@"com.apple.medialibraryd" atIndex:1];
-            xcode8Services = [NSArray arrayWithArray:mutable];
-        }
-
-        return xcode8Services;
+    if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+      return @[
+        @"com.apple.backboardd",
+        @"com.apple.mobile.installd",
+        @"com.apple.CoreSimulator.bridge",
+        @"com.apple.SpringBoard",
+      ];
+    }
+    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater ) {
+      return @[
+        @"com.apple.backboardd",
+        @"com.apple.mobile.installd",
+        @"com.apple.SimulatorBridge",
+        @"com.apple.SpringBoard",
+      ];
     }
   }
   if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {

@@ -10,6 +10,7 @@
 #import "FBXCTestBootstrapper.h"
 
 #import <FBControlCore/FBControlCore.h>
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import <FBXCTestKit/FBXCTestKit.h>
 
@@ -59,8 +60,9 @@
   FBJSONTestReporter *reporter = [[FBJSONTestReporter new] initWithTestBundlePath:configuration.testBundlePath testType:configuration.testType logger:self.logger fileConsumer:stdOutFileWriter];
   FBXCTestContext *context = [FBXCTestContext contextWithReporter:reporter logger:self.logger];
 
-  FBXCTestRunner *testRunner = [FBXCTestRunner testRunnerWithConfiguration:configuration context:context];
-  if (![testRunner executeTestsWithError:&error]) {
+  [self.logger.info logFormat:@"Bootstrapping Test Runner with Configuration %@", [FBCollectionInformation oneLineJSONDescription:configuration]];
+  FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:context];
+  if (![testRunner executeWithError:&error]) {
     return [self printErrorMessage:error];
   }
 

@@ -17,6 +17,7 @@ public protocol EventInterpreter {
 
 public protocol EventReporter {
   var interpreter: EventInterpreter { get }
+  var writer: Writer { get }
   func report(_ subject: EventReporterSubject)
 }
 

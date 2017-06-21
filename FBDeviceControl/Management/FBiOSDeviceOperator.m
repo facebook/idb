@@ -128,10 +128,12 @@ static NSString *const ApplicationPathKey = @"Path";
 
 - (BOOL)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID error:(NSError **)error
 {
-  return
-  [[FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return @([self.device.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:error]);
+  __block NSError *innerError = nil;
+  BOOL result = [[FBRunLoopSpinner spinUntilBlockFinished:^id{
+    return @([self.device.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:&innerError]);
   }] boolValue];
+  *error = innerError;
+  return result;
 }
 
 - (BOOL)cleanApplicationStateWithBundleIdentifier:(NSString *)bundleIdentifier error:(NSError **)error
@@ -315,20 +317,23 @@ static NSString *const ApplicationPathKey = @"Path";
 
 #pragma mark FBApplicationCommands Implementation
 
-- (id)handleWithAFCSession:(id(^)())operationBlock error:(NSError **)error
+- (id)handleWithAFCSession:(id(^)(void))operationBlock error:(NSError **)error
 {
-  return [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
+  __block NSError *innerError = nil;
+  id result = [self.device.amDevice handleWithBlockDeviceSession:^(CFTypeRef device) {
     int afcConn;
     int afcReturnCode = FBAMDeviceSecureStartService(device, CFSTR("com.apple.afc"), NULL, &afcConn);
     if (afcReturnCode != 0) {
       return [[FBDeviceControlError
-               describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
-              fail:error];
+        describeFormat:@"Failed to start afc service with error code: %x", afcReturnCode]
+        fail:&innerError];
     }
     id operationResult = operationBlock();
     close(afcConn);
     return operationResult;
   } error: error];
+  *error = innerError;
+  return result;
 }
 
 - (BOOL)transferAppURL:(NSURL *)app_url options:(NSDictionary *)options error:(NSError **)error
@@ -436,9 +441,11 @@ static NSString *const ApplicationPathKey = @"Path";
   if (!PID) {
     return NO;
   }
+  __block NSError *innerError = nil;
   dispatch_async(dispatch_get_main_queue(), ^{
-    [self observeProcessWithID:PID.integerValue error:error];
+    [self observeProcessWithID:PID.integerValue error:&innerError];
   });
+  *error = innerError;
   return YES;
 }
 
@@ -478,14 +485,16 @@ static NSString *const ApplicationPathKey = @"Path";
   va_list _arguments;
   va_start(_arguments, arg);
   va_list *arguments = &_arguments;
-  return
-  [FBRunLoopSpinner spinUntilBlockFinished:^id{
+
+  __block NSError *innerError = nil;
+  id result = [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
+
     DTXChannel *channel = self.device.dvtDevice.serviceHubProcessControlChannel;
     DTXMessage *message = [[objc_lookUpClass("DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
-        *error = responseMessage.error;
+        innerError = responseMessage.error;
         return;
       }
       responseObject = responseMessage.object;
@@ -493,6 +502,8 @@ static NSString *const ApplicationPathKey = @"Path";
     return responseObject;
   }];
   va_end(_arguments);
+  *error = innerError;
+  return result;
 }
 
 @end

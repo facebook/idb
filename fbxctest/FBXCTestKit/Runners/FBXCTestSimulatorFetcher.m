@@ -10,11 +10,7 @@
 #import "FBXCTestSimulatorFetcher.h"
 
 #import <FBSimulatorControl/FBSimulatorControl.h>
-
-#import "FBXCTestConfiguration.h"
-#import "FBXCTestLogger.h"
-#import "FBXCTestError.h"
-#import "FBXCTestDestination.h"
+#import <XCTestBootstrap/XCTestBootstrap.h>
 
 @interface FBXCTestSimulatorFetcher ()
 
@@ -70,8 +66,9 @@
 
 - (nullable FBSimulator *)fetchSimulatorForLogicTest:(FBXCTestDestinationiPhoneSimulator *)destination error:(NSError **)error
 {
+  FBSimulatorConfiguration *configuration = [FBXCTestSimulatorFetcher configurationForDestination:destination];
   return [self.simulatorControl.pool
-    allocateSimulatorWithConfiguration:destination.simulatorConfiguration
+    allocateSimulatorWithConfiguration:configuration
     options:FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsDeleteOnFree
     error:error];
 }
@@ -100,6 +97,20 @@
     return NO;
   }
   return YES;
+}
+
+#pragma mark Private 
+
++ (FBSimulatorConfiguration *)configurationForDestination:(FBXCTestDestinationiPhoneSimulator *)destination
+{
+  FBSimulatorConfiguration *configuration = [FBSimulatorConfiguration defaultConfiguration];
+  if (destination.model) {
+    configuration = [configuration withDeviceModel:destination.model];
+  }
+  if (destination.version) {
+    configuration = [configuration withOSNamed:destination.version];
+  }
+  return configuration;
 }
 
 @end

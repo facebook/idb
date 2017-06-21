@@ -19,6 +19,10 @@
 
 @end
 
+@interface FBFileWriter_Null : FBFileWriter
+
+@end
+
 @interface FBFileWriter_Sync : FBFileWriter
 
 @end
@@ -32,6 +36,11 @@
 @end
 
 @implementation FBFileWriter
+
++ (instancetype)nullWriter
+{
+  return [[FBFileWriter_Null alloc] init];
+}
 
 + (instancetype)writerWithFileHandle:(NSFileHandle *)fileHandle blocking:(BOOL)blocking
 {
@@ -76,6 +85,20 @@
 - (void)consumeEndOfFile
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+@end
+
+@implementation FBFileWriter_Null
+
+- (void)consumeData:(NSData *)data
+{
+  // do nothing
+}
+
+- (void)consumeEndOfFile
+{
+  // do nothing
 }
 
 @end
