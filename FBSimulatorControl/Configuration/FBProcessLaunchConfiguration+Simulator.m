@@ -45,7 +45,8 @@
 
   [builder updateStorageDirectory:[path stringByDeletingLastPathComponent]];
 
-  if (![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
+
+  if (![NSFileManager.defaultManager fileExistsAtPath:path] && ![NSFileManager.defaultManager createFileAtPath:path contents:NSData.data attributes:nil]) {
     return [[FBSimulatorError
       describeFormat:@"Could not create '%@' at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
       failBool:error];
