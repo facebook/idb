@@ -21,10 +21,7 @@ struct Fixtures {
   }}
 
   static var binary: FBBinaryDescriptor { get {
-    let basePath: NSString = FBControlCoreGlobalConfiguration.developerDirectory as NSString
-    return try! FBBinaryDescriptor.binary(
-      withPath: basePath.appendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/sbin/launchd_sim")
-    )
+    return try! FBBinaryDescriptor.binary(withPath: "/bin/launchctl")
   }}
 
   static var photoPath: String { get {
