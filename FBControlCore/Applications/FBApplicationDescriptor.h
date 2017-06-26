@@ -31,6 +31,17 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
 @interface FBApplicationDescriptor : FBBundleDescriptor
 
 /**
+ Initializes a FBApplicationDescriptor.
+
+ @param name the name of the application
+ @param path the path of the application
+ @param bundleID the bundle id of the application
+ @param installType the InstallType of the application.
+ @returns a FBApplicationDescriptor instance.
+ */
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType;
+
+/**
  Constructs a FBApplicationDescriptor for the a User Application at the given path
 
  @param path the path of the applocation to construct.

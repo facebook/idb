@@ -39,7 +39,7 @@ static BOOL isApplicationAtPath(NSString *path)
 
 #pragma mark Initializers
 
-- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType
 {
   self = [super initWithName:name path:path bundleID:bundleID binary:binary];
   if (!self) {
