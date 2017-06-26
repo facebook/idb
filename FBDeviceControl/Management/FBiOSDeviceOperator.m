@@ -467,9 +467,10 @@ static NSString *const ApplicationPathKey = @"Path";
       continue;
     }
     FBApplicationDescriptor *appData = [FBApplicationDescriptor
-      remoteApplicationWithName:app[ApplicationNameKey]
+      applicationWithName:app[ApplicationNameKey]
       path:app[ApplicationPathKey]
-      bundleID:app[ApplicationIdentifierKey]];
+      bundleID:app[ApplicationIdentifierKey]
+      installType:FBApplicationInstallTypeUnknown];
 
     [installedApplications addObject:appData];
   }
