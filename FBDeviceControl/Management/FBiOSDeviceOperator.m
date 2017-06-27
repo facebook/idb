@@ -480,7 +480,7 @@ static NSString *const ApplicationPathKey = @"Path";
       applicationWithName:app[ApplicationNameKey]
       path:app[ApplicationPathKey]
       bundleID:app[ApplicationIdentifierKey]
-      installType:FBApplicationInstallTypeUnknown];
+      installType:[FBApplicationDescriptor installTypeFromString:app[ApplicationTypeKey]]];
 
     [installedApplications addObject:appData];
   }
