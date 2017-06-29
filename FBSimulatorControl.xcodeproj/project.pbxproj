@@ -580,10 +580,10 @@
 		F56EED941E9CC8900073C4EE /* CocoaLumberjack.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = F56EED8D1E9CC8470073C4EE /* CocoaLumberjack.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F56EED951E9CC8960073C4EE /* CocoaLumberjack.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = F56EED8D1E9CC8470073C4EE /* CocoaLumberjack.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F56EED961E9CC89C0073C4EE /* CocoaLumberjack.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = F56EED8D1E9CC8470073C4EE /* CocoaLumberjack.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		F56EED991E9CCF940073C4EE /* FBDependentDylib.h in Headers */ = {isa = PBXBuildFile; fileRef = F56EED971E9CCF940073C4EE /* FBDependentDylib.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		F56EED9A1E9CCF940073C4EE /* FBDependentDylib.m in Sources */ = {isa = PBXBuildFile; fileRef = F56EED981E9CCF940073C4EE /* FBDependentDylib.m */; };
-		F56EEDA21E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.h in Headers */ = {isa = PBXBuildFile; fileRef = F56EEDA01E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		F56EEDA31E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.m in Sources */ = {isa = PBXBuildFile; fileRef = F56EEDA11E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.m */; };
+		F5CFE3E81F051EEC003B3297 /* FBDependentDylib.h in Headers */ = {isa = PBXBuildFile; fileRef = F5CFE3E41F051EEC003B3297 /* FBDependentDylib.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F5CFE3E91F051EEC003B3297 /* FBDependentDylib.m in Sources */ = {isa = PBXBuildFile; fileRef = F5CFE3E51F051EEC003B3297 /* FBDependentDylib.m */; };
+		F5CFE3EA1F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.h in Headers */ = {isa = PBXBuildFile; fileRef = F5CFE3E61F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F5CFE3EB1F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.m in Sources */ = {isa = PBXBuildFile; fileRef = F5CFE3E71F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1545,10 +1545,10 @@
 		EEF4497B1CE0A22200300C9F /* FBXCTestBootstrapFixtures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXCTestBootstrapFixtures.h; sourceTree = "<group>"; };
 		EEF4497C1CE0A22200300C9F /* FBXCTestBootstrapFixtures.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXCTestBootstrapFixtures.m; sourceTree = "<group>"; };
 		F56EED8D1E9CC8470073C4EE /* CocoaLumberjack.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CocoaLumberjack.framework; path = Vendor/CocoaLumberjack.framework; sourceTree = "<group>"; };
-		F56EED971E9CCF940073C4EE /* FBDependentDylib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDependentDylib.h; sourceTree = "<group>"; };
-		F56EED981E9CCF940073C4EE /* FBDependentDylib.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDependentDylib.m; sourceTree = "<group>"; };
-		F56EEDA01E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDependentDylib+ApplePrivateDylibs.h"; sourceTree = "<group>"; };
-		F56EEDA11E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDependentDylib+ApplePrivateDylibs.m"; sourceTree = "<group>"; };
+		F5CFE3E41F051EEC003B3297 /* FBDependentDylib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBDependentDylib.h; sourceTree = "<group>"; };
+		F5CFE3E51F051EEC003B3297 /* FBDependentDylib.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDependentDylib.m; sourceTree = "<group>"; };
+		F5CFE3E61F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBDependentDylib+ApplePrivateDylibs.h"; sourceTree = "<group>"; };
+		F5CFE3E71F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBDependentDylib+ApplePrivateDylibs.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3009,10 +3009,10 @@
 			children = (
 				7352B4D81F44BE4100B6D0EA /* FBXcodeConfiguration.h */,
 				7352B4D91F44BE4100B6D0EA /* FBXcodeConfiguration.m */,
-				F56EEDA01E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.h */,
-				F56EEDA11E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.m */,
-				F56EED971E9CCF940073C4EE /* FBDependentDylib.h */,
-				F56EED981E9CCF940073C4EE /* FBDependentDylib.m */,
+				F5CFE3E41F051EEC003B3297 /* FBDependentDylib.h */,
+				F5CFE3E51F051EEC003B3297 /* FBDependentDylib.m */,
+				F5CFE3E61F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.h */,
+				F5CFE3E71F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.m */,
 				C0B32FC71E4E459700A48CF4 /* FBArchitecture.h */,
 				C0B32FC81E4E459700A48CF4 /* FBArchitecture.m */,
 				EEBD604B1C9062E900298A07 /* FBBinaryParser.h */,
@@ -3347,6 +3347,8 @@
 				AA58F8921D959593006F8D81 /* FBCodesignProvider.h in Headers */,
 				F56EEDA21E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.h in Headers */,
 				F56EED991E9CCF940073C4EE /* FBDependentDylib.h in Headers */,
+				F5CFE3EA1F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.h in Headers */,
+				F5CFE3E81F051EEC003B3297 /* FBDependentDylib.h in Headers */,
 				AA5CB9161E8A45200099F048 /* FBApplicationLaunchConfiguration.h in Headers */,
 				EEBD60801C9062E900298A07 /* FBControlCoreGlobalConfiguration.h in Headers */,
 			);
@@ -3931,11 +3933,11 @@
 				AA7728AF1E5238A6008FCF7C /* FBFileWriter.m in Sources */,
 				AAC706F61EFD2E4100BF8303 /* FBScale.m in Sources */,
 				AACC503D1EAA230F0034A987 /* FBBitmapStreamConfiguration.m in Sources */,
+				F5CFE3E91F051EEC003B3297 /* FBDependentDylib.m in Sources */,
 				AA6F98EC1D2B9C8E00464B0F /* FBBinaryDescriptor.m in Sources */,
 				D76C2AE51F13F2E8000EF13D /* FBJSONEnums.m in Sources */,
 				AA8E937F1E96267A0002F614 /* FBiOSActionRouter.m in Sources */,
 				EE2EC7AD1CAC3F97009A7BB1 /* FBWeakFramework.m in Sources */,
-				F56EEDA31E9CD0CA0073C4EE /* FBDependentDylib+ApplePrivateDylibs.m in Sources */,
 				AADDED331D6D87D30011EE15 /* FBServiceManagement.m in Sources */,
 				EEBD60671C9062E900298A07 /* FBProcessFetcher+Helpers.m in Sources */,
 				AA8FA1821EE637DD00FB1EA6 /* FBUploadBuffer.m in Sources */,
@@ -3954,7 +3956,7 @@
 				EEBD605E1C9062E900298A07 /* FBCrashLogInfo.m in Sources */,
 				EEBD605C1C9062E900298A07 /* FBASLParser.m in Sources */,
 				AAD0DE041CEB064200C28B58 /* FBSubstringUtilities.m in Sources */,
-				F56EED9A1E9CCF940073C4EE /* FBDependentDylib.m in Sources */,
+				F5CFE3EB1F051EEC003B3297 /* FBDependentDylib+ApplePrivateDylibs.m in Sources */,
 				AAD414AB1E4E2F3100815112 /* FBSocketReader.m in Sources */,
 				AA6D511E1E96BE68003B5582 /* FBiOSActionReader.m in Sources */,
 				AA4A7E2E1DD9F4EB001F9D8E /* FBFileReader.m in Sources */,
@@ -3988,6 +3990,7 @@
 				AA2076C01F0B7542001F180C /* FBiOSActionRouterTests.m in Sources */,
 				AA2076BE1F0B7542001F180C /* FBDiagnosticTests.m in Sources */,
 				AA9738BE1EE11CE5002802F1 /* FBiOSTargetActionDouble.m in Sources */,
+				AA2076C21F0B7542001F180C /* FBiOSTargetQueryTests.m in Sources */,
 				AAEA3A941C90B5E4004F8409 /* FBControlCoreFixtures.m in Sources */,
 				AA2076C11F0B7542001F180C /* FBiOSTargetDescriptionTests.m in Sources */,
 				AA2076D01F0B76AF001F180C /* FBFileWriterTests.m in Sources */,
