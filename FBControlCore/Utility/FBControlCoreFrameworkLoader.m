@@ -13,6 +13,15 @@
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreError.h"
 
+#include <dlfcn.h>
+
+void *FBGetSymbolFromHandle(void *handle, const char *name)
+{
+  void *function = dlsym(handle, name);
+  NSCAssert(function, @"%s could not be located", name);
+  return function;
+}
+
 @implementation FBControlCoreFrameworkLoader
 
 + (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
