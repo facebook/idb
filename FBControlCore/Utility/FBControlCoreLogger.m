@@ -335,10 +335,10 @@ const char *NewLine = "\n";
   if (NSProcessInfo.processInfo.operatingSystemVersion.minorVersion < 12) {
     return [self aslLoggerWritingToFileDescriptor:fileDescriptor withDebugLogging:debugLogging];
   }
+
   FBControlCoreLogger_ASL *aslLogger = [self aslLoggerWritingToFileDescriptor:-1 withDebugLogging:debugLogging];
   return [[FBControlCoreLogger_Composite alloc] initWithLoggers:@[
-    aslLogger,
-    [[FBControlCoreLogger_File alloc] initWithFileDescriptor:fileDescriptor],
+    aslLogger
   ]];
 }
 
