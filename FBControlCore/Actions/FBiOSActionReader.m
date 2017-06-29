@@ -20,7 +20,11 @@
 
 FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_reader";
 
-@interface FBiOSActionReaderMediator : NSObject <FBSocketConsumer>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
+
+@interface FBiOSActionReaderMediator : NSObject <FBSocketConsumer, FBiOSActionReaderDelegate>
 
 @property (nonatomic, strong, readonly) FBiOSActionReader *reader;
 @property (nonatomic, strong, readonly) FBiOSActionRouter *router;
@@ -133,7 +137,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   __block NSError *error = nil;
   __block BOOL success = NO;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    success = [action runWithTarget:target delegate:self.delegate error:&error];
+    success = [action runWithTarget:target delegate:self error:&error];
   });
 
   // Notify the delegate that the reader has finished, report the resultant string.
@@ -199,7 +203,26 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   [self.writeBack consumeData:data];
 }
 
+#pragma mark FBiOSActionReaderDelegate
+
+- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target
+{
+  return self.writeBack;
+}
+
+#pragma mark Forwarding
+
+- (id)forwardingTargetForSelector:(SEL)selector
+{
+  if ([self.delegate respondsToSelector:selector]) {
+    return self.delegate;
+  }
+  return [super forwardingTargetForSelector:selector];
+}
+
 @end
+
+#pragma clang diagnostic push
 
 @interface FBiOSActionSocket : FBiOSActionReader <FBSocketReaderDelegate>
 
