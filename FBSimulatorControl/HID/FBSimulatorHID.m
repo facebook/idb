@@ -134,9 +134,9 @@
 
 - (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
 {
-  IndigoButtonPayload payload;
+  IndigoButton payload;
   payload.eventSource = ButtonEventSourceKeyboard;
-  payload.eventClass = ButtonEventClassKeyboard;
+  payload.eventTarget = ButtonEventTargetKeyboard;
   payload.keyCode = keycode;
   payload.field5 = 0x000000cc;
 
@@ -154,8 +154,8 @@
 
 - (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
 {
-  IndigoButtonPayload payload;
-  payload.eventClass = ButtonEventClassHardware;
+  IndigoButton payload;
+  payload.eventTarget = ButtonEventTargetHardware;
 
   // Set the Event Source
   switch (button) {
@@ -192,7 +192,7 @@
   CGPoint point = [self screenRatioFromPoint:CGPointMake(x, y)];
 
   // Set the Common Values between down-and-up.
-  IndigoDigitizerPayload payload;
+  IndigoTouch payload;
   payload.field1 = 0x00400002;
   payload.field2 = 0x1;
   payload.field3 = 0x3;
@@ -226,7 +226,7 @@
 
 #pragma mark Private
 
-- (BOOL)sendDigitizerPayload:(IndigoDigitizerPayload *)payload error:(NSError **)error
+- (BOOL)sendDigitizerPayload:(IndigoTouch *)payload error:(NSError **)error
 {
   // Sizes for the payload.
   // The size should be 0x140/320.
@@ -242,9 +242,9 @@
   message->inner.timestamp = mach_absolute_time();
 
   // Copy in the Digitizer Payload from the caller.
-  void *destination = &(message->inner.unionPayload.buttonPayload);
+  void *destination = &(message->inner.unionPayload.button);
   void *source = payload;
-  memcpy(destination, source, sizeof(IndigoDigitizerPayload));
+  memcpy(destination, source, sizeof(IndigoTouch));
 
   // Duplicate the First IndigoInner Payload.
   // Also need to set the bits at (0x30 + 0x90) to 0x1.
@@ -260,8 +260,8 @@
   memcpy(destination, source, stride);
 
   // Adjust the second payload slightly.
-  second->unionPayload.digitizerPayload.field1 = 0x00000001;
-  second->unionPayload.digitizerPayload.field2 = 0x00000002;
+  second->unionPayload.touch.field1 = 0x00000001;
+  second->unionPayload.touch.field2 = 0x00000002;
 
   // Send the message, the cleanup.
   BOOL result = [self sendIndigoMessage:message size:size error:error];
@@ -269,7 +269,7 @@
   return result;
 }
 
-- (BOOL)sendButtonEventWithPayload:(IndigoButtonPayload *)payload error:(NSError **)error
+- (BOOL)sendButtonEventWithPayload:(IndigoButton *)payload error:(NSError **)error
 {
   // The home button should have a size of 0x140/320
   mach_msg_size_t messageSize = sizeof(IndigoMessage) + sizeof(IndigoInner);
@@ -282,9 +282,9 @@
   message->inner.timestamp = mach_absolute_time();
 
   // Copy the contents of the payload.
-  void *destination = &message->inner.unionPayload.buttonPayload;
+  void *destination = &message->inner.unionPayload.button;
   void *source = (void *) payload;
-  memcpy(destination, source, sizeof(IndigoButtonPayload));
+  memcpy(destination, source, sizeof(IndigoButton));
 
   BOOL result = [self sendIndigoMessage:message size:messageSize error:error];
   free(message);
