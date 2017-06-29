@@ -20,18 +20,11 @@
 
 FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_reader";
 
-@interface FBiOSActionReader ()
-
-@property (nonatomic, strong, nullable, readwrite) id<FBiOSActionReaderDelegate> delegate;
-@property (nonatomic, strong, readonly) FBiOSActionRouter *router;
-
-- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate router:(FBiOSActionRouter *)router;
-
-@end
-
 @interface FBiOSActionReaderMediator : NSObject <FBSocketConsumer>
 
 @property (nonatomic, strong, readonly) FBiOSActionReader *reader;
+@property (nonatomic, strong, readonly) FBiOSActionRouter *router;
+@property (nonatomic, strong, readonly) id<FBiOSActionReaderDelegate> delegate;
 @property (nonatomic, strong, readonly) id<FBFileConsumer> writeBack;
 @property (nonatomic, strong, readonly) FBLineBuffer *lineBuffer;
 @property (nonatomic, strong, readwrite, nullable) FBUploadBuffer *uploadBuffer;
@@ -40,7 +33,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 @implementation FBiOSActionReaderMediator
 
-- (instancetype)initWithReader:(FBiOSActionReader *)reader writeBack:(id<FBFileConsumer>)writeBack
+- (instancetype)initWithReader:(FBiOSActionReader *)reader router:(FBiOSActionRouter *)router delegate:(id<FBiOSActionReaderDelegate>)delegate writeBack:(id<FBFileConsumer>)writeBack
 {
   self = [super init];
   if (!self) {
@@ -48,6 +41,8 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   }
 
   _reader = reader;
+  _router = router;
+  _delegate = delegate;
   _writeBack = writeBack;
   _lineBuffer = [FBLineBuffer new];
   _uploadBuffer = nil;
@@ -108,7 +103,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
     return;
   }
 
-  id<FBiOSTargetAction> action = [self.reader.router actionFromJSON:json error:&error];
+  id<FBiOSTargetAction> action = [self.router actionFromJSON:json error:&error];
   if (!action) {
     [self dispatchParseError:line error:error];
     return;
@@ -125,12 +120,12 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   NSParameterAssert(NSThread.isMainThread == NO);
 
   FBiOSActionReader *reader = self.reader;
-  id<FBiOSTarget> target = reader.router.target;
+  id<FBiOSTarget> target = self.router.target;
 
   // Notify Delegate of the start of the Action.
   __block NSString *response = nil;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    response = [reader.delegate reader:reader willStartPerformingAction:action onTarget:target];
+    response = [self.delegate reader:reader willStartPerformingAction:action onTarget:target];
   });
   [self reportString:response];
 
@@ -138,13 +133,13 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   __block NSError *error = nil;
   __block BOOL success = NO;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    success = [action runWithTarget:target delegate:self.reader.delegate error:&error];
+    success = [action runWithTarget:target delegate:self.delegate error:&error];
   });
 
   // Notify the delegate that the reader has finished, report the resultant string.
   response = success
-    ? [reader.delegate reader:reader didProcessAction:action onTarget:target]
-    : [reader.delegate reader:reader didFailToProcessAction:action onTarget:target error:error];
+    ? [self.delegate reader:reader didProcessAction:action onTarget:target]
+    : [self.delegate reader:reader didFailToProcessAction:action onTarget:target error:error];
   [self reportString:response];
 }
 
@@ -153,10 +148,10 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   NSParameterAssert(NSThread.isMainThread == NO);
   NSParameterAssert(self.uploadBuffer == nil);
 
-  self.uploadBuffer = [FBUploadBuffer bufferWithHeader:header workingDirectory:self.reader.router.target.auxillaryDirectory];
+  self.uploadBuffer = [FBUploadBuffer bufferWithHeader:header workingDirectory:self.router.target.auxillaryDirectory];
   __block NSString *response = nil;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    response = [self.reader.delegate reader:self.reader willStartReadingUpload:header];
+    response = [self.delegate reader:self.reader willStartReadingUpload:header];
   });
   [self reportString:response];
 
@@ -173,7 +168,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   self.uploadBuffer = nil;
   __block NSString *response = nil;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    [self.reader.delegate reader:self.reader didFinishUpload:destination];
+    [self.delegate reader:self.reader didFinishUpload:destination];
   });
   [self reportString:response];
 }
@@ -185,7 +180,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   NSString *line = [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
   __block NSString *response = nil;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    response = [self.reader.delegate reader:self.reader failedToInterpretInput:line error:error];
+    response = [self.delegate reader:self.reader failedToInterpretInput:line error:error];
   });
   if (!response) {
     return;
@@ -221,6 +216,15 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 @property (nonatomic, strong, nullable, readwrite) FBFileWriter *writer;
 
 - (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate router:(FBiOSActionRouter *)router readHandle:(NSFileHandle *)readHandle writeHandle:(NSFileHandle *)writeHandle;
+
+@end
+
+@interface FBiOSActionReader ()
+
+@property (nonatomic, strong, nullable, readwrite) id<FBiOSActionReaderDelegate> delegate;
+@property (nonatomic, strong, readonly) FBiOSActionRouter *router;
+
+- (instancetype)initWithDelegate:(id<FBiOSActionReaderDelegate>)delegate router:(FBiOSActionRouter *)router;
 
 @end
 
@@ -332,7 +336,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 - (id<FBSocketConsumer>)consumerWithClientAddress:(struct in6_addr)clientAddress
 {
-  return [[FBiOSActionReaderMediator alloc] initWithReader:self writeBack:FBFileWriter.nullWriter];
+  return [[FBiOSActionReaderMediator alloc] initWithReader:self router:self.router delegate:self.delegate writeBack:FBFileWriter.nullWriter];
 }
 
 @end
@@ -350,7 +354,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
   _reader = [FBFileReader readerWithFileHandle:readHandle consumer:self];
   _writer = [FBFileWriter writerWithFileHandle:writeHandle blocking:YES];
-  _mediator = [[FBiOSActionReaderMediator alloc] initWithReader:self writeBack:self.writer];
+  _mediator = [[FBiOSActionReaderMediator alloc] initWithReader:self router:self.router delegate:self.delegate writeBack:self.writer];
 
   return self;
 }
