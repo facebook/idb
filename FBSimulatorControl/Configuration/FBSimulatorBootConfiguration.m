@@ -199,46 +199,6 @@ static NSString *const KeyFramebuffer = @"framebuffer";
 
 #pragma mark Scale
 
-+ (instancetype)scale25Percent
-{
-  return [self.defaultConfiguration scale25Percent];
-}
-
-- (instancetype)scale25Percent
-{
-  return [self withScale:FBSimulatorScale25];
-}
-
-+ (instancetype)scale50Percent
-{
-  return [self.defaultConfiguration scale50Percent];
-}
-
-- (instancetype)scale50Percent
-{
-  return [self withScale:FBSimulatorScale50];
-}
-
-+ (instancetype)scale75Percent
-{
-  return [self.defaultConfiguration scale75Percent];
-}
-
-- (instancetype)scale75Percent
-{
-  return [self withScale:FBSimulatorScale75];
-}
-
-+ (instancetype)scale100Percent
-{
-  return [self.defaultConfiguration scale25Percent];
-}
-
-- (instancetype)scale100Percent
-{
-  return [self withScale:FBSimulatorScale100];
-}
-
 + (instancetype)withScale:(FBSimulatorScale)scale
 {
   return [self.defaultConfiguration withScale:scale];

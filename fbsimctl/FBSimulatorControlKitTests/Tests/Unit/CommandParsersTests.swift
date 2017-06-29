@@ -80,7 +80,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--scale=50"],
-      FBSimulatorBootConfiguration.default().scale50Percent()
+      FBSimulatorBootConfiguration.default().withScale(.scale50)
     )
   }
 
@@ -120,7 +120,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       ["--locale", "en_GB", "--scale=75", "--direct-launch", "--connect-bridge"],
       FBSimulatorBootConfiguration.default()
         .withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "en_GB")))
-        .scale75Percent()
+        .withScale(.scale75)
         .withOptions([.enableDirectLaunch, .connectBridge, .awaitServices])
         .withFramebuffer(FBFramebufferConfiguration.default())
     )
@@ -188,10 +188,10 @@ let invalidQueries: [[String]] = [
 let validActions: [([String], Action)] = [
   (["approve", "com.foo.bar", "com.bing.bong"], .approve(["com.foo.bar", "com.bing.bong"])),
   (["approve", Fixtures.application.path], .approve([Fixtures.application.bundleID])),
-  (["boot", "--locale", "en_US", "--scale=75"], .boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_US") as Locale)).scale75Percent())),
+  (["boot", "--locale", "en_US", "--scale=75"], .boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_US") as Locale)).withScale(.scale75))),
   (["boot", "--locale", "fr_FR"], .boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR"))))),
-  (["boot", "--scale=50"], .boot(FBSimulatorBootConfiguration.default().scale50Percent())),
-  (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], .boot(FBSimulatorBootConfiguration.default().scale25Percent().withOptions([.connectBridge, .useNSWorkspace, .awaitServices]))),
+  (["boot", "--scale=50"], .boot(FBSimulatorBootConfiguration.default().withScale(.scale50))),
+  (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], .boot(FBSimulatorBootConfiguration.default().withScale(.scale25).withOptions([.connectBridge, .useNSWorkspace, .awaitServices]))),
   (["boot"], .boot(FBSimulatorBootConfiguration.default())),
   (["clear_keychain", "com.foo.bar"], .clearKeychain("com.foo.bar")),
   (["clear_keychain"], .clearKeychain(nil)),

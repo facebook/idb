@@ -85,10 +85,10 @@
     [[[FBSimulatorBootConfiguration
       withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
       withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
-      scale75Percent],
+      withScale:FBSimulatorScale75],
     [[FBSimulatorBootConfiguration
       withOptions:FBSimulatorBootOptionsUseNSWorkspace]
-      scale25Percent]
+      withScale:FBSimulatorScale25]
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];
@@ -106,7 +106,7 @@
   XCTAssertNil(launchConfiguration.scale);
   XCTAssertNil(launchConfiguration.scale);
 
-  launchConfiguration = [launchConfiguration scale75Percent];
+  launchConfiguration = [launchConfiguration withScale:FBSimulatorScale75];
   XCTAssertEqualObjects(launchConfiguration.scale, FBSimulatorScale75);
   XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale75);
   XCTAssertNotEqualObjects(launchConfiguration.scale, FBSimulatorScale50);

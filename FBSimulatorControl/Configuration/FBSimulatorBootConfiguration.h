@@ -75,30 +75,6 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 #pragma mark Device Scale
 
 /**
- Launch at 25% Scale.
- */
-+ (instancetype)scale25Percent;
-- (instancetype)scale25Percent;
-
-/**
- Launch at 50% Scale.
- */
-+ (instancetype)scale50Percent;
-- (instancetype)scale50Percent;
-
-/**
- Launch at 75% Scale.
- */
-+ (instancetype)scale75Percent;
-- (instancetype)scale75Percent;
-
-/**
- Launch at 100% Scale.
- */
-+ (instancetype)scale100Percent;
-- (instancetype)scale100Percent;
-
-/**
  Returns a new Configuration with the Scale Applied.
  */
 + (instancetype)withScale:(nullable FBSimulatorScale)scale;
