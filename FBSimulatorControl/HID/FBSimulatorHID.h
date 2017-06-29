@@ -40,6 +40,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
  */
 @interface FBSimulatorHID : NSObject <FBDebugDescribeable, FBJSONSerializable>
 
+#pragma mark Initializers
+
 /**
  Creates and returns a FBSimulatorHID Instance for the provided Simulator.
  Will fail if a HID Port could not be registered for the provided Simulator.
@@ -50,6 +52,8 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
  @return a FBSimulatorHID if successful, nil otherwise.
  */
 + (instancetype)hidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error;
+
+#pragma mark Lifecycle
 
 /**
  Obtains the Reply Port for the Simulator.
