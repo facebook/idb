@@ -13,6 +13,11 @@
 
 @protocol SimDisplayIOSurfaceRenderable <FoundationXPCProtocolProxyable>
 
-@property (readonly, nullable, nonatomic) xpc_object_t ioSurface;
+/**
+ In Xcode 8, this is an xpc_object_t
+ In Xcode 9, this is an IOSurfaceRef.
+ Consumers should take this into account.
+ */
+@property (readonly, nullable, nonatomic) id ioSurface;
 
 @end

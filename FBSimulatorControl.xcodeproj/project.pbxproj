@@ -933,6 +933,7 @@
 		AA56445D1E5F6ED0006C1077 /* FBSimulatorKeychainCommands.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorKeychainCommands.m; sourceTree = "<group>"; };
 		AA569FD01E576FCC009755EE /* CoreSimulator+BlockDefines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CoreSimulator+BlockDefines.h"; sourceTree = "<group>"; };
 		AA56EAEE1EEFCA340062C2BC /* libMaculator.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMaculator.dylib; sourceTree = "<group>"; };
+		AA57AD5A1EFC238A00A5154D /* SimDeviceIO+Removed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimDeviceIO+Removed.h"; sourceTree = "<group>"; };
 		AA58F88A1D95917D006F8D81 /* FBBundleDescriptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBBundleDescriptor.h; sourceTree = "<group>"; };
 		AA58F88B1D95917D006F8D81 /* FBBundleDescriptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBBundleDescriptor.m; sourceTree = "<group>"; };
 		AA58F88F1D959593006F8D81 /* FBCodesignProvider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBCodesignProvider.h; sourceTree = "<group>"; };
@@ -1705,6 +1706,7 @@
 				AA386D281E44F04F005C6118 /* SimDevice+Removed.h */,
 				AA386D291E44F04F005C6118 /* SimDeviceBootInfo.h */,
 				AA386D2A1E44F04F005C6118 /* SimDeviceIO.h */,
+				AA57AD5A1EFC238A00A5154D /* SimDeviceIO+Removed.h */,
 				AA386D2B1E44F04F005C6118 /* SimDeviceIOClient.h */,
 				AA386D2C1E44F04F005C6118 /* SimDeviceIOInterface-Protocol.h */,
 				AA386D2D1E44F04F005C6118 /* SimDeviceIOLoadedBundle.h */,

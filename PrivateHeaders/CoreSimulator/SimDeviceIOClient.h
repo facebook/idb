@@ -24,9 +24,7 @@
 @property (nonatomic, copy) NSArray *deviceIOPorts;
 
 - (void)updateIOPorts;
-- (void)detachConsumerUUID:(id)arg1 fromPort:(id)arg2;
 - (void)detachConsumer:(id)arg1 fromPort:(id)arg2;
-- (void)attachConsumer:(id)arg1 toPort:(id)arg2;
 - (id)ioPorts;
 - (void)dealloc;
 - (id)initWithDevice:(id)arg1;

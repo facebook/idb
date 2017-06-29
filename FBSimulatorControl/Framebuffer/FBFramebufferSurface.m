@@ -9,6 +9,7 @@
 
 #import "FBFramebufferSurface.h"
 
+#import <CoreSimulator/SimDeviceIO+Removed.h>
 #import <CoreSimulator/SimDeviceIOClient.h>
 
 #import <xpc/xpc.h>
@@ -28,6 +29,27 @@
 #import <SimulatorKit/SimDeviceIOPortInterface-Protocol.h>
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
+
+static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
+{
+  // Return the Surface Immediately, if one is immediately available.
+  if (!unknown) {
+    return nil;
+  }
+  // If the object returns an
+  if (CFGetTypeID((__bridge CFTypeRef)(unknown)) == IOSurfaceGetTypeID()) {
+    return (__bridge IOSurfaceRef)(unknown);
+  }
+
+  // We need to convert the surface, treat it as an xpc_object_t
+  xpc_object_t xpcObject = unknown;
+  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(xpcObject);
+  if (!surface) {
+    return nil;
+  }
+  CFAutorelease(surface);
+  return surface;
+}
 
 @interface FBFramebufferSurface_IOClient_Forwarder : NSObject <SimDisplayDamageRectangleDelegate, SimDisplayIOSurfaceRenderableDelegate, SimDeviceIOPortConsumer>
 
@@ -53,14 +75,16 @@
   return self;
 }
 
-- (void)didChangeIOSurface:(nullable xpc_object_t)xpcSurface
+- (void)didChangeIOSurface:(nullable id)unknown
 {
-  if (!xpcSurface) {
+  IOSurfaceRef surface = extractSurfaceFromUnknown(unknown);
+  if (!surface) {
     [self.consumer didChangeIOSurface:NULL];
     return;
   }
-  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(xpcSurface);
+  // Ensure the Surface is retained as it is delivered asynchronously.
   id<FBFramebufferSurfaceConsumer> consumer = self.consumer;
+  CFRetain(surface);
   dispatch_async(self.consumerQueue, ^{
     [consumer didChangeIOSurface:surface];
     CFRelease(surface);
@@ -232,17 +256,15 @@
   [self.forwarders setObject:forwarder forKey:consumer];
 
   // Register the consumer.
-  [self.ioClient attachConsumer:forwarder toPort:self.port];
-
-  // Return the Surface Immediately, if one is immediately available.
-  xpc_object_t xpcSurface = self.surface.ioSurface;
-  if (!xpcSurface) {
-    return nil;
+  if ([self.ioClient respondsToSelector:@selector(attachConsumer:withUUID:toPort:errorQueue:errorHandler:)]) {
+    [self.ioClient attachConsumer:forwarder withUUID:forwarder.consumerUUID toPort:self.port errorQueue:queue errorHandler:^(NSError *error){}];
+  } else if ([self.ioClient respondsToSelector:@selector(attachConsumer:toPort:)]) {
+    [self.ioClient attachConsumer:forwarder toPort:self.port];
+  } else {
+    NSAssert(NO, @"IOClient %@ does not respond to any known attachment selectors", self.ioClient);
   }
-  // We need to convert the surface.
-  IOSurfaceRef surface = IOSurfaceLookupFromXPCObject(xpcSurface);
-  CFAutorelease(surface);
-  return surface;
+
+  return extractSurfaceFromUnknown(self.surface.ioSurface);
 }
 
 - (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer

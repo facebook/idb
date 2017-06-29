@@ -14,7 +14,7 @@
 
 @protocol SimDeviceIOProtocol <NSObject>
 - (void)detachConsumer:(NSObject<SimDeviceIOPortConsumer> *)arg1 fromPort:(NSObject<SimDeviceIOPortInterface> *)arg2;
-- (void)attachConsumer:(NSObject<SimDeviceIOPortConsumer> *)arg1 toPort:(NSObject<SimDeviceIOPortInterface> *)arg2;
+- (void)attachConsumer:(NSObject<SimDeviceIOPortConsumer> *)arg1 withUUID:(id)arg2 toPort:(NSObject<SimDeviceIOPortInterface> *)arg3 errorQueue:(dispatch_queue_t)arg4 errorHandler:(id)arg5;
 - (NSArray<SimDeviceIOPortInterface> *)ioPorts;
 - (NSObject<SimDeviceIOPortInterface> *)ioPortForUUID:(NSUUID *)arg1;
 @end
