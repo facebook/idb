@@ -96,7 +96,6 @@ public enum Action {
   case setLocation(Double,Double)
   case shutdown
   case stream(FBBitmapStreamConfiguration, FileOutput)
-  case tap(Double, Double)
   case terminate(String)
   case uninstall(String)
   case upload([FBDiagnostic])
@@ -391,8 +390,6 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.stream(let leftConfiguration, let leftOutput), .stream(let rightConfiguration, let rightOutput)):
     return leftConfiguration == rightConfiguration && leftOutput == rightOutput
-  case (.tap(let leftX, let leftY), .tap(let rightX, let rightY)):
-    return leftX == rightX && leftY == rightY
   case (.terminate(let leftBundleID), .terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.uninstall(let leftBundleID), .uninstall(let rightBundleID)):
@@ -455,8 +452,6 @@ extension Action {
       return (.shutdown, nil)
     case .stream:
       return (.stream, nil)
-    case .tap:
-      return (.tap, nil)
     case .terminate(let bundleID):
       return (.terminate, bundleID)
     case .uninstall(let bundleID):

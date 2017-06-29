@@ -741,9 +741,8 @@ extension Action : Parsable {
         EventName.tap.rawValue,
         coordParser
       )
-      .fmap { (x, y) in
-        Action.tap(x, y)
-      }
+      .fmap(FBSimulatorHIDEvent.tapAt)
+      .fmap(Action.core)
   }
 
   static var serviceInfoParser: Parser<Action> {
