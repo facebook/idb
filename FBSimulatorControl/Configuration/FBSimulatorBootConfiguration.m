@@ -9,7 +9,6 @@
 
 #import "FBSimulatorBootConfiguration.h"
 
-#import "FBSimulatorScale.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
@@ -37,7 +36,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeBoot = @"boot";
   return [self initWithOptions:FBSimulatorBootOptionsAwaitServices scale:nil localizationOverride:nil framebuffer:nil];
 }
 
-- (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(FBSimulatorScale)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
+- (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(FBScale)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
 {
   self = [super init];
   if (!self) {
@@ -135,7 +134,7 @@ static NSString *const KeyFramebuffer = @"framebuffer";
 
 + (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
-  FBSimulatorScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
+  FBScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
   if (![scale isKindOfClass:NSString.class]) {
     return [[FBSimulatorError
       describeFormat:@"%@ is not a String %@", scale, KeyScale]
@@ -199,12 +198,12 @@ static NSString *const KeyFramebuffer = @"framebuffer";
 
 #pragma mark Scale
 
-+ (instancetype)withScale:(FBSimulatorScale)scale
++ (instancetype)withScale:(FBScale)scale
 {
   return [self.defaultConfiguration withScale:scale];
 }
 
-- (instancetype)withScale:(FBSimulatorScale)scale
+- (instancetype)withScale:(FBScale)scale
 {
   if (!scale) {
     return self;

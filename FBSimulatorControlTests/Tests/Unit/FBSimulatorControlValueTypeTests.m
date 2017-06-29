@@ -85,10 +85,10 @@
     [[[FBSimulatorBootConfiguration
       withLocalizationOverride:[FBLocalizationOverride withLocale:[NSLocale localeWithLocaleIdentifier:@"en_US"]]]
       withOptions:FBSimulatorBootOptionsEnableDirectLaunch]
-      withScale:FBSimulatorScale75],
+      withScale:FBScale75],
     [[FBSimulatorBootConfiguration
       withOptions:FBSimulatorBootOptionsUseNSWorkspace]
-      withScale:FBSimulatorScale25]
+      withScale:FBScale25]
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];
@@ -106,11 +106,11 @@
   XCTAssertNil(launchConfiguration.scale);
   XCTAssertNil(launchConfiguration.scale);
 
-  launchConfiguration = [launchConfiguration withScale:FBSimulatorScale75];
-  XCTAssertEqualObjects(launchConfiguration.scale, FBSimulatorScale75);
-  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale75);
-  XCTAssertNotEqualObjects(launchConfiguration.scale, FBSimulatorScale50);
-  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBSimulatorScale50);
+  launchConfiguration = [launchConfiguration withScale:FBScale75];
+  XCTAssertEqualObjects(launchConfiguration.scale, FBScale75);
+  XCTAssertEqualObjects(launchConfiguration.framebuffer.scale, FBScale75);
+  XCTAssertNotEqualObjects(launchConfiguration.scale, FBScale50);
+  XCTAssertNotEqualObjects(launchConfiguration.framebuffer.scale, FBScale50);
 }
 
 - (void)testEncoderConfigurations
@@ -131,8 +131,8 @@
 {
   NSArray<FBFramebufferConfiguration *> *values = @[
     FBFramebufferConfiguration.defaultConfiguration,
-    [FBFramebufferConfiguration configurationWithScale:FBSimulatorScale25 encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:@"/img.png"],
-    [FBFramebufferConfiguration configurationWithScale:FBSimulatorScale75 encoder:FBVideoEncoderConfiguration.prudentConfiguration imagePath:@"/img.png"],
+    [FBFramebufferConfiguration configurationWithScale:FBScale25 encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:@"/img.png"],
+    [FBFramebufferConfiguration configurationWithScale:FBScale75 encoder:FBVideoEncoderConfiguration.prudentConfiguration imagePath:@"/img.png"],
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];

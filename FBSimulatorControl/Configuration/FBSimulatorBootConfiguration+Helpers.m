@@ -19,7 +19,6 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
-#import "FBSimulatorScale.h"
 
 @implementation FBSimulatorBootConfiguration (Helpers)
 

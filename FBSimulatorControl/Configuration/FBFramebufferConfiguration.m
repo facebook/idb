@@ -11,7 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulatorScale.h"
 #import "FBVideoEncoderConfiguration.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
@@ -24,7 +23,7 @@
   return [NSHomeDirectory() stringByAppendingString:@"image.png"];
 }
 
-+ (instancetype)configurationWithScale:(nullable FBSimulatorScale)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
++ (instancetype)configurationWithScale:(nullable FBScale)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
 {
   return [[self alloc] initWithScale:scale encoder:encoder imagePath:imagePath];
 }
@@ -39,7 +38,7 @@
   return [self initWithScale:nil encoder:FBVideoEncoderConfiguration.defaultConfiguration imagePath:FBFramebufferConfiguration.defaultImagePath];
 }
 
-- (instancetype)initWithScale:(nullable FBSimulatorScale)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
+- (instancetype)initWithScale:(nullable FBScale)scale encoder:(FBVideoEncoderConfiguration *)encoder imagePath:(NSString *)imagePath
 {
   self = [super init];
   if (!self) {
@@ -123,7 +122,7 @@ static NSString *KeyImagePath = @"image_path";
       describeFormat:@"%@ is not a Dictionary<String, Any>", json]
       fail:error];
   }
-  FBSimulatorScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
+  FBScale scale = [FBCollectionOperations nullableValueForDictionary:json key:KeyScale];
   if (scale && ![scale isKindOfClass:NSString.class]) {
     return [[FBSimulatorError
       describeFormat:@"%@ is not a String for %@", scale, KeyScale]
@@ -166,12 +165,12 @@ static NSString *KeyImagePath = @"image_path";
 
 #pragma mark Scale
 
-+ (instancetype)withScale:(nullable FBSimulatorScale)scale
++ (instancetype)withScale:(nullable FBScale)scale
 {
   return [self.new withScale:scale];
 }
 
-- (instancetype)withScale:(nullable FBSimulatorScale)scale
+- (instancetype)withScale:(nullable FBScale)scale
 {
   return [[self.class alloc] initWithScale:scale encoder:self.encoder imagePath:self.imagePath];
 }

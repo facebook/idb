@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorScale.h"
+#import "FBScale.h"
 
-FBSimulatorScale const FBSimulatorScale25 = @"0.25";
-FBSimulatorScale const FBSimulatorScale50 = @"0.50";
-FBSimulatorScale const FBSimulatorScale75 = @"0.75";
-FBSimulatorScale const FBSimulatorScale100 = @"1.00";
+FBScale const FBScale25 = @"0.25";
+FBScale const FBScale50 = @"0.50";
+FBScale const FBScale75 = @"0.75";
+FBScale const FBScale100 = @"1.00";

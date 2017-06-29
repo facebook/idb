@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
-#import <FBSimulatorControl/FBSimulatorScale.h>
 
 @class FBFramebufferConfiguration;
 
@@ -49,7 +48,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 /**
  The Scale of the Framebuffer.
  */
-@property (nonatomic, nullable, copy, readonly) FBSimulatorScale scale;
+@property (nonatomic, nullable, copy, readonly) FBScale scale;
 
 /**
  Configuration for the Framebuffer.
@@ -77,8 +76,8 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 /**
  Returns a new Configuration with the Scale Applied.
  */
-+ (instancetype)withScale:(nullable FBSimulatorScale)scale;
-- (instancetype)withScale:(nullable FBSimulatorScale)scale;
++ (instancetype)withScale:(nullable FBScale)scale;
+- (instancetype)withScale:(nullable FBScale)scale;
 
 #pragma mark Locale
 

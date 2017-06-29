@@ -1021,15 +1021,15 @@ struct FBSimulatorBootConfigurationParser {
       .ofFlagWithArg("locale", Parser<Locale>.ofLocale, "")
   }
 
-  static var scaleParser: Parser<FBSimulatorScale> {
-    let subparsers: [Parser<FBSimulatorScale>] = [
-      Parser<FBSimulatorScale>
+  static var scaleParser: Parser<FBScale> {
+    let subparsers: [Parser<FBScale>] = [
+      Parser<FBScale>
         .ofFlag("scale=25", .scale25, ""),
-      Parser<FBSimulatorScale>
+      Parser<FBScale>
         .ofFlag("scale=50", .scale50, ""),
-      Parser<FBSimulatorScale>
+      Parser<FBScale>
         .ofFlag("scale=75", .scale75, ""),
-      Parser<FBSimulatorScale>
+      Parser<FBScale>
         .ofFlag("scale=100", .scale100, "")
     ]
 
