@@ -34,11 +34,12 @@ static const DDLogLevel ddLogLevel = DDLogLevelInfo;
                         applicationDataPath:(NSString *)applicationDataPath
                     testLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration;
 {
-  DDLogInfo(@"Creating %@ for %@", NSStringFromClass(self.class), @{
-                                                                @"applicationPath" : applicationPath,
-                                                                @"applicationDataPath" : applicationDataPath,
-                                                                @"testLaunchConfiguration" : testLaunchConfiguration
-                                                                });
+  DDLogInfo(@"Creating %@ for %@", NSStringFromClass(self.class),
+  @{
+    @"applicationPath" :  applicationPath ?: [NSNull null],
+    @"applicationDataPath" : applicationDataPath ?: [NSNull null],
+    @"testLaunchConfiguration" : testLaunchConfiguration ?: [NSNull null]
+    });
   return
   [self strategyWithApplicationPath:applicationPath
                 applicationDataPath:applicationDataPath
