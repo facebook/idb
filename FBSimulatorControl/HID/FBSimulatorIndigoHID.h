@@ -41,6 +41,16 @@ typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
 + (instancetype)defaultHID;
 
 /**
+ The SimulatorKit Implementation.
+ */
++ (instancetype)simulatorKit;
+
+/**
+ The internal Implementation.
+ */
++ (instancetype)reimplemented;
+
+/**
  A Keyboard Event.
 
  @param direction the direction of the event.

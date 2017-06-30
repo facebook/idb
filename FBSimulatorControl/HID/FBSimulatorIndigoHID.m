@@ -16,6 +16,17 @@
 #import <mach/mach_time.h>
 
 #include <dlfcn.h>
+#include <malloc/malloc.h>
+
+#import "FBSimulatorControlFrameworkLoader.h"
+
+@interface FBSimulatorIndigoHID_SimulatorKit : FBSimulatorIndigoHID
+
+@end
+
+@interface FBSimulatorIndigoHID_Reimplemented : FBSimulatorIndigoHID
+
+@end
 
 @implementation FBSimulatorIndigoHID
 
@@ -23,7 +34,20 @@
 
 + (instancetype)defaultHID
 {
-  return [self new];
+  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+    return [self simulatorKit];
+  }
+  return [self reimplemented];
+}
+
++ (instancetype)simulatorKit
+{
+  return [FBSimulatorIndigoHID_SimulatorKit new];
+}
+
++ (instancetype)reimplemented
+{
+  return [FBSimulatorIndigoHID_Reimplemented new];
 }
 
 #pragma mark Public
@@ -55,8 +79,177 @@
 
 + (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
 {
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
++ (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
++ (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
++ (unsigned int)eventSourceForButton:(FBSimulatorHIDButton)button
+{
+  switch (button) {
+    case FBSimulatorHIDButtonApplePay:
+      return ButtonEventSourceApplePay;
+    case FBSimulatorHIDButtonHomeButton:
+      return ButtonEventSourceHomeButton;
+    case FBSimulatorHIDButtonLock:
+      return ButtonEventSourceLock;
+    case FBSimulatorHIDButtonSideButton:
+      return ButtonEventSourceSideButton;
+    case FBSimulatorHIDButtonSiri:
+      return ButtonEventSourceSiri;
+  }
+  NSAssert(NO, @"Button Code %lul is not known", (unsigned long)button);
+}
+
++ (unsigned int)eventTypeForDirection:(FBSimulatorHIDDirection)direction
+{
+  switch (direction) {
+    case FBSimulatorHIDDirectionDown:
+      return ButtonEventTypeDown;
+    case FBSimulatorHIDDirectionUp:
+      return  ButtonEventTypeUp;
+  }
+  NSAssert(NO, @"Direction Code %lul is not known", (unsigned long)direction);
+}
+
++ (CGPoint)screenRatioFromPoint:(CGPoint)point screenSize:(CGSize)screenSize
+{
+  return CGPointMake(
+    point.x / screenSize.width,
+    point.y / screenSize.height
+  );
+}
+
++ (IndigoMessage *)touchMessageWithPayload:(IndigoTouch *)payload messageSizeOut:(size_t *)messageSizeOut
+{
+  // Sizes for the payload.
+  // The size should be 320/0x140
+  size_t messageSize = sizeof(IndigoMessage) + sizeof(IndigoInner);
+  if (messageSizeOut) {
+    *messageSizeOut = messageSize;
+  }
+  // The stride should be 0x90
+  size_t stride = sizeof(IndigoInner);
+
+  // Create and set the common values
+  IndigoMessage *message = calloc(0x1, messageSize);
+  message->innerSize = sizeof(IndigoInner);
+  message->eventType = IndigoEventTypeTouch;
+  message->inner.field1 = 0x0000000b;
+  message->inner.timestamp = mach_absolute_time();
+
+  // Copy in the Digitizer Payload from the caller.
+  void *destination = &(message->inner.unionPayload.button);
+  void *source = payload;
+  memcpy(destination, source, sizeof(IndigoTouch));
+
+  // Duplicate the First IndigoInner Payload.
+  // Also need to set the bits at (0x30 + 0x90) to 0x1.
+  // On 32-Bit Archs this is equivalent this is done with a long to stomp over both fields:
+  // uintptr_t mem = (uintptr_t) message;
+  // mem += 0xc0;
+  // int64_t *val = (int64_t *)mem;
+  // *val = 0x200000001;
+  source = &(message->inner);
+  destination = source;
+  destination += stride;
+  IndigoInner *second = (IndigoInner *) destination;
+  memcpy(destination, source, stride);
+
+  // Adjust the second payload slightly.
+  second->unionPayload.touch.field1 = 0x00000001;
+  second->unionPayload.touch.field2 = 0x00000002;
+
+  return message;
+}
+
+@end
+
+@implementation FBSimulatorIndigoHID_SimulatorKit
+
+IndigoMessage *(*IndigoHIDMessageForButton)(int keyCode, int op, int target);
+IndigoMessage *(*IndigoHIDMessageForKeyboardArbitrary)(int keyCode, int op);
+IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *point1, int target, int eventType, BOOL something);
+
+#pragma mark Initializers
+
+- (instancetype)init
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    [FBSimulatorIndigoHID_SimulatorKit loadAllSymbols];
+  });
+
+  return self;
+}
+
++ (void)loadAllSymbols
+{
+  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
+  NSBundle *frameworkBundle = [NSBundle bundleWithIdentifier:@"com.apple.SimulatorKit"];
+  NSAssert(frameworkBundle, @"Framework com.apple.SimulatorKit should be loaded");
+  NSString *imagePath = [frameworkBundle pathForResource:@"SimulatorKit" ofType:@""];
+  void *handle = dlopen(imagePath.UTF8String, RTLD_NOW);
+  IndigoHIDMessageForButton = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForButton");
+  IndigoHIDMessageForKeyboardArbitrary = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForKeyboardArbitrary");
+  IndigoHIDMessageForMouseNSEvent = FBGetSymbolFromHandle(handle, "IndigoHIDMessageForMouseNSEvent");
+}
+
+#pragma mark Event Generation
+
++ (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
+{
+  IndigoMessage *message = IndigoHIDMessageForKeyboardArbitrary((int) keycode, direction);
+  if (messageSizeOut) {
+    *messageSizeOut = malloc_size(message);
+  }
+  return message;
+}
+
++ (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
+{
+  IndigoMessage *message = IndigoHIDMessageForButton((int) [self eventSourceForButton:button], direction, ButtonEventTargetHardware);
+  if (messageSizeOut) {
+    *messageSizeOut = malloc_size(message);
+  }
+  return message;
+}
+
++ (IndigoMessage *)touchMessageWithPoint:(CGPoint)point direction:(FBSimulatorHIDDirection)direction messageSizeOut:(size_t *)messageSizeOut
+{
+  IndigoMessage *message = IndigoHIDMessageForMouseNSEvent(&point, 0x0, 0x32, (int) [self eventTypeForDirection:direction], 0x0);
+  message->inner.unionPayload.touch.xRatio = point.x;
+  message->inner.unionPayload.touch.yRatio = point.y;
+  return [self touchMessageWithPayload:&(message->inner.unionPayload.touch) messageSizeOut:messageSizeOut];
+}
+
+@end
+
+@implementation FBSimulatorIndigoHID_Reimplemented
+
+#pragma mark Event Generation
+
++ (IndigoMessage *)keyboardMessageWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode messageSizeOut:(size_t *)messageSizeOut
+{
   IndigoButton payload;
   payload.eventSource = ButtonEventSourceKeyboard;
+  payload.eventType = [self eventTypeForDirection:direction];
   payload.eventTarget = ButtonEventTargetKeyboard;
   payload.keyCode = keycode;
   payload.field5 = 0x000000cc;
@@ -76,34 +269,12 @@
 + (IndigoMessage *)buttonMessageWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button messageSizeOut:(size_t *)messageSizeOut
 {
   IndigoButton payload;
+  payload.keyCode = 0;
+  payload.field5 = 0;
+  payload.eventSource = [self eventSourceForButton:button];
+  payload.eventType = [self eventTypeForDirection:direction];
   payload.eventTarget = ButtonEventTargetHardware;
 
-  // Set the Event Source
-  switch (button) {
-    case  FBSimulatorHIDButtonApplePay:
-      payload.eventSource = ButtonEventSourceApplePay;
-      break;
-    case FBSimulatorHIDButtonHomeButton:
-      payload.eventSource = ButtonEventSourceHomeButton;
-      break;
-    case FBSimulatorHIDButtonLock:
-      payload.eventSource = ButtonEventSourceLock;
-      break;
-    case FBSimulatorHIDButtonSideButton:
-      payload.eventSource = ButtonEventSourceSideButton;
-      break;
-    case FBSimulatorHIDButtonSiri:
-      payload.eventSource = ButtonEventSourceSiri;
-      break;
-  }
-  // Then Up/Down.
-  switch (direction) {
-    case FBSimulatorHIDDirectionDown:
-      payload.eventType = ButtonEventTypeDown;
-      break;
-    case FBSimulatorHIDDirectionUp:
-      payload.eventType = ButtonEventTypeUp;
-  }
   return [self buttonMessageWithPayload:&payload messageSizeOut:messageSizeOut];
 }
 
@@ -172,57 +343,6 @@
   void *source = (void *) payload;
   memcpy(destination, source, sizeof(IndigoButton));
   return message;
-}
-
-+ (IndigoMessage *)touchMessageWithPayload:(IndigoTouch *)payload messageSizeOut:(size_t *)messageSizeOut
-{
-  // Sizes for the payload.
-  // The size should be 320/0x140
-  size_t messageSize = sizeof(IndigoMessage) + sizeof(IndigoInner);
-  if (messageSizeOut) {
-    *messageSizeOut = messageSize;
-  }
-  // The stride should be 0x90
-  size_t stride = sizeof(IndigoInner);
-
-  // Create and set the common values
-  IndigoMessage *message = calloc(0x1, messageSize);
-  message->innerSize = sizeof(IndigoInner);
-  message->eventType = IndigoEventTypeTouch;
-  message->inner.field1 = 0x0000000b;
-  message->inner.timestamp = mach_absolute_time();
-
-  // Copy in the Digitizer Payload from the caller.
-  void *destination = &(message->inner.unionPayload.button);
-  void *source = payload;
-  memcpy(destination, source, sizeof(IndigoTouch));
-
-  // Duplicate the First IndigoInner Payload.
-  // Also need to set the bits at (0x30 + 0x90) to 0x1.
-  // On 32-Bit Archs this is equivalent this is done with a long to stomp over both fields:
-  // uintptr_t mem = (uintptr_t) message;
-  // mem += 0xc0;
-  // int64_t *val = (int64_t *)mem;
-  // *val = 0x200000001;
-  source = &(message->inner);
-  destination = source;
-  destination += stride;
-  IndigoInner *second = (IndigoInner *) destination;
-  memcpy(destination, source, stride);
-
-  // Adjust the second payload slightly.
-  second->unionPayload.touch.field1 = 0x00000001;
-  second->unionPayload.touch.field2 = 0x00000002;
-
-  return message;
-}
-
-+ (CGPoint)screenRatioFromPoint:(CGPoint)point screenSize:(CGSize)screenSize
-{
-  return CGPointMake(
-    point.x / screenSize.width,
-    point.y / screenSize.height
-  );
 }
 
 @end
