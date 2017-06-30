@@ -452,6 +452,8 @@
 		AAF737011D871DED007F53A1 /* FBFramebufferConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF736FF1D871DED007F53A1 /* FBFramebufferConfiguration.m */; };
 		AAF7B0D91DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AAF7B0D71DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AAF7B0DA1DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AAF7B0D81DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m */; };
+		AAFB6AE31F02D79700CE82DE /* FBSimulatorIndigoHID.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFB6AE11F02D79700CE82DE /* FBSimulatorIndigoHID.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AAFB6AE41F02D79700CE82DE /* FBSimulatorIndigoHID.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFB6AE21F02D79700CE82DE /* FBSimulatorIndigoHID.m */; };
 		AAFCE9EB1DAD5650008090B6 /* FBTaskTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFCE9EA1DAD5650008090B6 /* FBTaskTests.m */; };
 		AAFE93B61CE4954500A50F76 /* FBSimulatorEraseStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AAFE93B41CE4954500A50F76 /* FBSimulatorEraseStrategy.h */; };
 		AAFE93B71CE4954500A50F76 /* FBSimulatorEraseStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AAFE93B51CE4954500A50F76 /* FBSimulatorEraseStrategy.m */; };
@@ -1300,6 +1302,8 @@
 		AAF7B0D71DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorShutdownStrategy.h; sourceTree = "<group>"; };
 		AAF7B0D81DDB1CD60079ED11 /* FBSimulatorShutdownStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorShutdownStrategy.m; sourceTree = "<group>"; };
 		AAFAC45E1CF36E530029F19A /* FBDeviceSet+Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FBDeviceSet+Private.h"; sourceTree = "<group>"; };
+		AAFB6AE11F02D79700CE82DE /* FBSimulatorIndigoHID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorIndigoHID.h; sourceTree = "<group>"; };
+		AAFB6AE21F02D79700CE82DE /* FBSimulatorIndigoHID.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorIndigoHID.m; sourceTree = "<group>"; };
 		AAFCE9EA1DAD5650008090B6 /* FBTaskTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTaskTests.m; sourceTree = "<group>"; };
 		AAFE93B41CE4954500A50F76 /* FBSimulatorEraseStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorEraseStrategy.h; sourceTree = "<group>"; };
 		AAFE93B51CE4954500A50F76 /* FBSimulatorEraseStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorEraseStrategy.m; sourceTree = "<group>"; };
@@ -1598,6 +1602,8 @@
 				AA1554951E4BA043001933F9 /* FBSimulatorHID.m */,
 				AA1554981E4BA0A1001933F9 /* FBSimulatorHIDEvent.h */,
 				AA1554991E4BA0A1001933F9 /* FBSimulatorHIDEvent.m */,
+				AAFB6AE11F02D79700CE82DE /* FBSimulatorIndigoHID.h */,
+				AAFB6AE21F02D79700CE82DE /* FBSimulatorIndigoHID.m */,
 			);
 			path = HID;
 			sourceTree = "<group>";
@@ -2955,6 +2961,7 @@
 				AAAB13281C74EC0300F3B083 /* FBSimulatorSet.h in Headers */,
 				AA5639551C060005009BAFAA /* FBSimulatorControl.h in Headers */,
 				AA2F45C21D6ED47B00365A2C /* FBSimulatorServiceContext.h in Headers */,
+				AAFB6AE31F02D79700CE82DE /* FBSimulatorIndigoHID.h in Headers */,
 				AA9517571C15F54600A89CAD /* FBSimulatorResourceManager.h in Headers */,
 				AA1554961E4BA043001933F9 /* FBSimulatorHID.h in Headers */,
 				AA4242FD1C529366008ABD80 /* FBSimulatorVideo.h in Headers */,
@@ -3490,6 +3497,7 @@
 				AA1B5D921CF6DD800073A203 /* FBSimulatorDeletionStrategy.m in Sources */,
 				AAAB13291C74EC0300F3B083 /* FBSimulatorSet.m in Sources */,
 				AAF737011D871DED007F53A1 /* FBFramebufferConfiguration.m in Sources */,
+				AAFB6AE41F02D79700CE82DE /* FBSimulatorIndigoHID.m in Sources */,
 				AA9517C31C15F60B00A89CAD /* FBCompositeSimulatorEventSink.m in Sources */,
 				AAABD8E21E450CF400C007C2 /* FBSurfaceImageGenerator.m in Sources */,
 				AAD51EA41C3AEFEA00A763D0 /* FBSimulatorBootConfiguration+Helpers.m in Sources */,

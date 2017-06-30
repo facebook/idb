@@ -24,6 +24,7 @@
 
 @interface FBSimulatorHID ()
 
+@property (nonatomic, strong, readonly) FBSimulatorIndigoHID *indigo;
 @property (nonatomic, assign, readonly) CGSize mainScreenSize;
 @property (nonatomic, assign, readwrite) mach_port_t registrationPort;
 @property (nonatomic, assign, readwrite) mach_port_t replyPort;
@@ -67,18 +68,19 @@
   }
 
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  return [[FBSimulatorHID alloc] initWithRegistrationPort:registrationPort mainScreenSize:mainScreenSize];
+  return [[FBSimulatorHID alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize egistrationPort:registrationPort];
 }
 
-- (instancetype)initWithRegistrationPort:(mach_port_t)registrationPort mainScreenSize:(CGSize)mainScreenSize
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize egistrationPort:(mach_port_t)registrationPort
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _registrationPort = registrationPort;
+  _indigo = indigo;
   _mainScreenSize = mainScreenSize;
+  _registrationPort = registrationPort;
   _replyPort = 0;
 
   return self;
@@ -134,194 +136,36 @@
   [self disconnect];
 }
 
-#pragma mark Event Generation
-
-+ (IndigoMessage *)keyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode
-{
-  IndigoButton payload;
-  payload.eventSource = ButtonEventSourceKeyboard;
-  payload.eventTarget = ButtonEventTargetKeyboard;
-  payload.keyCode = keycode;
-  payload.field5 = 0x000000cc;
-
-  // Then Up/Down.
-  switch (direction) {
-    case FBSimulatorHIDDirectionDown:
-      payload.eventType = ButtonEventTypeDown;
-      break;
-    case FBSimulatorHIDDirectionUp:
-      payload.eventType = ButtonEventTypeUp;
-      break;
-  }
-  return [self buttonEventWithPayload:&payload];
-}
-
-+ (IndigoMessage *)buttonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button
-{
-  IndigoButton payload;
-  payload.eventTarget = ButtonEventTargetHardware;
-
-  // Set the Event Source
-  switch (button) {
-    case  FBSimulatorHIDButtonApplePay:
-      payload.eventSource = ButtonEventSourceApplePay;
-      break;
-    case FBSimulatorHIDButtonHomeButton:
-      payload.eventSource = ButtonEventSourceHomeButton;
-      break;
-    case FBSimulatorHIDButtonLock:
-      payload.eventSource = ButtonEventSourceLock;
-      break;
-    case FBSimulatorHIDButtonSideButton:
-      payload.eventSource = ButtonEventSourceSideButton;
-      break;
-    case FBSimulatorHIDButtonSiri:
-      payload.eventSource = ButtonEventSourceSiri;
-      break;
-  }
-  // Then Up/Down.
-  switch (direction) {
-    case FBSimulatorHIDDirectionDown:
-      payload.eventType = ButtonEventTypeDown;
-      break;
-    case FBSimulatorHIDDirectionUp:
-      payload.eventType = ButtonEventTypeUp;
-  }
-  return [self buttonEventWithPayload:&payload];
-}
-
-+ (IndigoMessage *)touchWithScreenSize:(CGSize)screenSize direction:(FBSimulatorHIDDirection)direction x:(double)x y:(double)y
-{
-  // Convert Screen Offset to Ratio for Indigo.
-  CGPoint point = [self screenRatioFromPoint:CGPointMake(x, y) screenSize:screenSize];
-
-  // Set the Common Values between down-and-up.
-  IndigoTouch payload;
-  payload.field1 = 0x00400002;
-  payload.field2 = 0x1;
-  payload.field3 = 0x3;
-
-  // Points are the ratio between the top-left and bottom right.
-  payload.xRatio = point.x;
-  payload.yRatio = point.y;
-
-  // Setting the Values Signifying touch-down.
-  switch (direction) {
-    case FBSimulatorHIDDirectionDown:
-      payload.field9 = 0x1;
-      payload.field10 = 0x1;
-      break;
-    case FBSimulatorHIDDirectionUp:
-      payload.field9 = 0x0;
-      payload.field10 = 0x0;
-      break;
-    default:
-      break;
-  }
-
-  // Setting some other fields
-  payload.field11 = 0x32;
-  payload.field12 = 0x1;
-  payload.field13 = 0x2;
-
-  return [self touchMessageWithPayload:&payload];
-}
-
-// Message Size is 0x140/320
-static mach_msg_size_t IndigoMessageSize = sizeof(IndigoMessage) + sizeof(IndigoInner);
-
-+ (IndigoMessage *)buttonEventWithPayload:(IndigoButton *)payload
-{
-  IndigoMessage *message = calloc(0x1, IndigoMessageSize);
-
-  // Set the down payload of the message.
-  message->innerSize = sizeof(IndigoInner);
-  message->eventType = IndigoEventTypeButton;
-  message->inner.field1 = 0x2;
-  message->inner.timestamp = mach_absolute_time();
-
-  // Copy the contents of the payload.
-  void *destination = &message->inner.unionPayload.button;
-  void *source = (void *) payload;
-  memcpy(destination, source, sizeof(IndigoButton));
-  return message;
-}
-
-+ (IndigoMessage *)touchMessageWithPayload:(IndigoTouch *)payload
-{
-  // Sizes for the payload.
-  // The stride should be 0x90
-  size_t stride = sizeof(IndigoInner);
-
-  // Create and set the common values
-  IndigoMessage *message = calloc(0x1, IndigoMessageSize);
-  message->innerSize = sizeof(IndigoInner);
-  message->eventType = IndigoEventTypeTouch;
-  message->inner.field1 = 0x0000000b;
-  message->inner.timestamp = mach_absolute_time();
-
-  // Copy in the Digitizer Payload from the caller.
-  void *destination = &(message->inner.unionPayload.button);
-  void *source = payload;
-  memcpy(destination, source, sizeof(IndigoTouch));
-
-  // Duplicate the First IndigoInner Payload.
-  // Also need to set the bits at (0x30 + 0x90) to 0x1.
-  // On 32-Bit Archs this is equivalent this is done with a long to stomp over both fields:
-  // uintptr_t mem = (uintptr_t) message;
-  // mem += 0xc0;
-  // int64_t *val = (int64_t *)mem;
-  // *val = 0x200000001;
-  source = &(message->inner);
-  destination = source;
-  destination += stride;
-  IndigoInner *second = (IndigoInner *) destination;
-  memcpy(destination, source, stride);
-
-  // Adjust the second payload slightly.
-  second->unionPayload.touch.field1 = 0x00000001;
-  second->unionPayload.touch.field2 = 0x00000002;
-
-  return message;
-}
-
-+ (CGPoint)screenRatioFromPoint:(CGPoint)point screenSize:(CGSize)screenSize
-{
-  return CGPointMake(
-    point.x / screenSize.width,
-    point.y / screenSize.height
-  );
-}
-
 #pragma mark HID Manipulation
 
 - (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
 {
-  IndigoMessage *message = [self.class keyboardEventWithDirection:direction keyCode:keycode];
-  return [self sendIndigoMessage:message size:IndigoMessageSize freeWhenDone:YES error:error];
+  return [self sendIndigoMessageData:[self.indigo keyboardWithDirection:direction keyCode:keycode] error:error];
 }
 
 - (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
 {
-  IndigoMessage *message = [self.class buttonEventWithDirection:direction button:button];
-  return [self sendIndigoMessage:message size:IndigoMessageSize freeWhenDone:YES error:error];
+  return [self sendIndigoMessageData:[self.indigo buttonWithDirection:direction button:button] error:error];
 }
 
 - (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error
 {
-  IndigoMessage *message = [self.class touchWithScreenSize:self.mainScreenSize direction:type x:x y:y];
-  return [self sendIndigoMessage:message size:IndigoMessageSize freeWhenDone:YES error:error];
+  return [self sendIndigoMessageData:[self.indigo touchScreenSize:self.mainScreenSize direction:type x:x y:y] error:error];
 }
 
 #pragma mark Private
 
-- (BOOL)sendIndigoMessage:(IndigoMessage *)message size:(mach_msg_size_t)size freeWhenDone:(BOOL)freeWhenDone error:(NSError **)error
+- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
 {
   if (self.replyPort == 0) {
     return [[FBSimulatorError
       describe:@"The Reply Port has not been obtained yet. Call -connect: first"]
       failBool:error];
   }
+
+  // Extract the message
+  IndigoMessage *message = (IndigoMessage *) data.bytes;
+  mach_msg_size_t size = (mach_msg_size_t) data.length;
 
   // Set the header of the message
   message->header.msgh_bits = 0x13;
@@ -332,10 +176,6 @@ static mach_msg_size_t IndigoMessageSize = sizeof(IndigoMessage) + sizeof(Indigo
   message->header.msgh_id = 0;
 
   mach_msg_return_t result = mach_msg_send((mach_msg_header_t *) message);
-  if (freeWhenDone) {
-    free(message);
-    message = NULL;
-  }
   if (result != ERR_SUCCESS) {
     return [[FBSimulatorError
       describeFormat:@"The mach_msg_send failed with error %d", result]

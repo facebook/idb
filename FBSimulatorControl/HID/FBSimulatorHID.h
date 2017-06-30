@@ -11,28 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <FBSimulatorControl/FBSimulatorIndigoHID.h>
+
 @class FBSimulator;
 
 NS_ASSUME_NONNULL_BEGIN
-
-/**
- An Enumeration for the Direction of the Event.
- */
-typedef NS_ENUM(NSUInteger, FBSimulatorHIDDirection) {
-  FBSimulatorHIDDirectionDown = 1,
-  FBSimulatorHIDDirectionUp = 2,
-};
-
-/**
- An Enumeration Representing a button press.
- */
-typedef NS_ENUM(NSUInteger, FBSimulatorHIDButton) {
-  FBSimulatorHIDButtonApplePay = 1,
-  FBSimulatorHIDButtonHomeButton = 2,
-  FBSimulatorHIDButtonLock = 3,
-  FBSimulatorHIDButtonSideButton = 4,
-  FBSimulatorHIDButtonSiri = 5,
-};
 
 /**
  A Wrapper around the mach_port_t that is created in the booting of a Simulator.
