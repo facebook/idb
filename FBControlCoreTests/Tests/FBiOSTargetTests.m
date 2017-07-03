@@ -25,6 +25,7 @@
   return @[
     FBDeviceModeliPhone4s,
     FBDeviceModeliPhone5,
+    FBDeviceModeliPhone5c,
     FBDeviceModeliPhone5s,
     FBDeviceModeliPhone6,
     FBDeviceModeliPhone6Plus,

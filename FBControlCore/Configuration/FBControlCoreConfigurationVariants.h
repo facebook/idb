@@ -32,6 +32,7 @@ typedef NSString *FBDeviceModel NS_STRING_ENUM;
 
 extern FBDeviceModel const FBDeviceModeliPhone4s;
 extern FBDeviceModel const FBDeviceModeliPhone5;
+extern FBDeviceModel const FBDeviceModeliPhone5c;
 extern FBDeviceModel const FBDeviceModeliPhone5s;
 extern FBDeviceModel const FBDeviceModeliPhone6;
 extern FBDeviceModel const FBDeviceModeliPhone6Plus;
