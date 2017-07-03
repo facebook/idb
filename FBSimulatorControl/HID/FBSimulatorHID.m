@@ -9,12 +9,16 @@
 
 #import "FBSimulatorHID.h"
 
+#import <objc/runtime.h>
+
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceType.h>
 
 #import <CoreGraphics/CoreGraphics.h>
 
 #import <SimulatorApp/Indigo.h>
+
+#import <SimulatorKit/SimDeviceLegacyClient.h>
 
 #import <mach/mach.h>
 #import <mach/mach_time.h>
@@ -26,8 +30,23 @@
 
 @property (nonatomic, strong, readonly) FBSimulatorIndigoHID *indigo;
 @property (nonatomic, assign, readonly) CGSize mainScreenSize;
+
+@end
+
+@interface FBSimulatorHID_Reimplemented : FBSimulatorHID
+
 @property (nonatomic, assign, readwrite) mach_port_t registrationPort;
 @property (nonatomic, assign, readwrite) mach_port_t replyPort;
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize registrationPort:(mach_port_t)registrationPort;
+
+@end
+
+@interface FBSimulatorHID_SimulatorKit : FBSimulatorHID
+
+@property (nonatomic, strong, nullable, readonly) SimDeviceLegacyClient *client;
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize client:(SimDeviceLegacyClient *)client;
 
 @end
 
@@ -35,8 +54,40 @@
 
 #pragma mark Initializers
 
+static const char*SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient";
+
 + (instancetype)hidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
+  Class clientClass = objc_lookUpClass(SimulatorHIDClientClassName);
+  if (clientClass) {
+    return [self simulatorKitHidPortForSimulator:simulator clientClass:clientClass error:error];
+  }
+  return [self reimplementedHidPortForSimulator:simulator error:error];
+}
+
++ (instancetype)simulatorKitHidPortForSimulator:(FBSimulator *)simulator clientClass:(Class)clientClass error:(NSError **)error
+{
+  NSError *innerError = nil;
+  SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&innerError];
+  if (!client) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]
+      causedBy:innerError]
+      fail:error];
+  }
+  CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
+  return [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize client:client];
+}
+
++ (instancetype)reimplementedHidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  // We have to create this before boot, return early if this isn't true.
+  if (simulator.state != FBSimulatorStateShutdown) {
+    return [[FBSimulatorError
+     describeFormat:@"Simulator must be shut down to create a HID port is %@", simulator.stateString]
+     fail:error];
+  }
+
   // As with the 'PurpleFBServer', a 'IndigoHIDRegistrationPort' is needed in order for the synthesis of touch events to work appropriately.
   // If this is not set you will see the following logger message in the System log upon booting the simulator
   // 'backboardd[10667]: BKHID: Unable to open Indigo HID system'
@@ -68,10 +119,10 @@
   }
 
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  return [[FBSimulatorHID alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize egistrationPort:registrationPort];
+  return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize registrationPort:registrationPort];
 }
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize egistrationPort:(mach_port_t)registrationPort
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize
 {
   self = [super init];
   if (!self) {
@@ -80,10 +131,109 @@
 
   _indigo = indigo;
   _mainScreenSize = mainScreenSize;
+
+  return self;
+}
+
+#pragma mark Lifecycle
+
+- (BOOL)connect:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
+}
+
+- (void)disconnect
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (void)dealloc
+{
+  [self disconnect];
+}
+
+#pragma mark FBDebugDescribeable
+
+- (NSString *)description
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark FBJSONSerializable
+
+- (id)jsonSerializableRepresentation
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark HID Manipulation
+
+- (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
+{
+  return [self sendIndigoMessageData:[self.indigo keyboardWithDirection:direction keyCode:keycode] error:error];
+}
+
+- (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
+{
+  return [self sendIndigoMessageData:[self.indigo buttonWithDirection:direction button:button] error:error];
+}
+
+- (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error
+{
+  return [self sendIndigoMessageData:[self.indigo touchScreenSize:self.mainScreenSize direction:type x:x y:y] error:error];
+}
+
+#pragma mark Private
+
+- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
+}
+
+@end
+
+@implementation FBSimulatorHID_Reimplemented
+
+#pragma mark Initializers
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize registrationPort:(mach_port_t)registrationPort
+{
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
+  if (!self) {
+    return nil;
+  }
+
   _registrationPort = registrationPort;
   _replyPort = 0;
 
   return self;
+}
+
+#pragma mark FBDebugDescribeable
+
+- (NSString *)description
+{
+  if (self.registrationPort == 0) {
+    return @"Indigo HID Port: Unregistered";
+  }
+  if (self.replyPort == 0) {
+    return [NSString stringWithFormat:@"Indigo HID Port: Registered %d but no reply port", self.registrationPort];
+  }
+  return [NSString stringWithFormat:@"Indigo HID Port: Registration Port %u, reply port %d", self.registrationPort, self.replyPort];
+}
+
+#pragma mark FBJSONSerializable
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    @"registration_port" : (self.registrationPort == 0 ? NSNull.null : @(self.registrationPort)),
+    @"reply_port" : (self.replyPort == 0 ? NSNull.null : @(self.replyPort)),
+  };
 }
 
 #pragma mark Lifecycle
@@ -136,23 +286,6 @@
   [self disconnect];
 }
 
-#pragma mark HID Manipulation
-
-- (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
-{
-  return [self sendIndigoMessageData:[self.indigo keyboardWithDirection:direction keyCode:keycode] error:error];
-}
-
-- (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
-{
-  return [self sendIndigoMessageData:[self.indigo buttonWithDirection:direction button:button] error:error];
-}
-
-- (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error
-{
-  return [self sendIndigoMessageData:[self.indigo touchScreenSize:self.mainScreenSize direction:type x:x y:y] error:error];
-}
-
 #pragma mark Private
 
 - (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
@@ -184,37 +317,46 @@
   return YES;
 }
 
-#pragma mark FBDebugDescribeable
+@end
 
-- (NSString *)description
+@implementation FBSimulatorHID_SimulatorKit
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize client:(SimDeviceLegacyClient *)client
 {
-  if (self.registrationPort == 0) {
-    return @"Indigo HID Port: Unregistered";
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
+  if (!self) {
+    return nil;
   }
-  if (self.replyPort == 0) {
-    return [NSString stringWithFormat:@"Indigo HID Port: Registered %d but no reply port", self.registrationPort];
-  }
-  return [NSString stringWithFormat:@"Indigo HID Port: Registration Port %u, reply port %d", self.registrationPort, self.replyPort];
+
+  _client = client;
+
+  return self;
 }
 
-- (NSString *)shortDescription
+#pragma mark Lifecycle
+
+- (BOOL)connect:(NSError **)error
 {
-  return self.description;
+  return YES;
 }
 
-- (NSString *)debugDescription
+- (void)disconnect
 {
-  return self.description;
+  _client = nil;
 }
 
-#pragma mark FBJSONSerializable
+#pragma mark Private
 
-- (id)jsonSerializableRepresentation
+- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
 {
-  return @{
-    @"registration_port" : (self.registrationPort == 0 ? NSNull.null : @(self.registrationPort)),
-    @"reply_port" : (self.replyPort == 0 ? NSNull.null : @(self.replyPort)),
-  };
+  // The event is delivered asynchronously.
+  // Therefore copy the message and let the client manage the lifecycle of it.
+  size_t size = (mach_msg_size_t) data.length;
+  IndigoMessage *message = malloc(size);
+  memcpy(message, data.bytes, size);
+
+  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:dispatch_get_main_queue() completion:^(id _){}];
+  return YES;
 }
 
 @end

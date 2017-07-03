@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  A Wrapper around the mach_port_t that is created in the booting of a Simulator.
  The IndigoHIDRegistrationPort is essential for backboard, otherwise UI events aren't synthesized properly.
  */
-@interface FBSimulatorHID : NSObject <FBDebugDescribeable, FBJSONSerializable>
+@interface FBSimulatorHID : NSObject <FBJSONSerializable>
 
 #pragma mark Initializers
 

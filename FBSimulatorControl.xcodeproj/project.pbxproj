@@ -1049,6 +1049,7 @@
 		AA7728AC1E5238A6008FCF7C /* FBFileWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFileWriter.h; sourceTree = "<group>"; };
 		AA7728AD1E5238A6008FCF7C /* FBFileWriter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFileWriter.m; sourceTree = "<group>"; };
 		AA789C241F0526B900BC86BD /* FBFileWriterTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FBFileWriterTests.m; sourceTree = "<group>"; };
+		AA789C261F064A1000BC86BD /* SimDeviceLegacyClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimDeviceLegacyClient.h; sourceTree = "<group>"; };
 		AA78DCD81C5005D2006FAB41 /* FBSimulatorLaunchCtl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorLaunchCtl.h; sourceTree = "<group>"; };
 		AA78DCD91C5005D2006FAB41 /* FBSimulatorLaunchCtl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorLaunchCtl.m; sourceTree = "<group>"; };
 		AA791B9F1C6364F500AE49EB /* FBSimulatorConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorConnection.h; sourceTree = "<group>"; };
@@ -1666,6 +1667,7 @@
 				AA386D761E44F3EA005C6118 /* SimDeviceIOPortDescriptorState-Protocol.h */,
 				AA386D771E44F3EA005C6118 /* SimDeviceIOPortInterface-Protocol.h */,
 				AA386D781E44F3EA005C6118 /* SimDeviceIOProtocol-Protocol.h */,
+				AA789C261F064A1000BC86BD /* SimDeviceLegacyClient.h */,
 				AA386D791E44F3EA005C6118 /* SimDeviceMenu.h */,
 				AA386D7A1E44F3EA005C6118 /* SimDeviceMenuItemPair.h */,
 				AA386D7B1E44F3EA005C6118 /* SimDeviceNotifier-Protocol.h */,
