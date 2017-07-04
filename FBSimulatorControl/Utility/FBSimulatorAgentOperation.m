@@ -73,6 +73,8 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 {
   _handler = nil;
   [self.simulator.eventSink agentDidTerminate:self statLoc:stat_loc];
+  [self.stdOutHandle closeFile];
+  [self.stdErrHandle closeFile];
 }
 
 #pragma mark FBTerminationAwaitable

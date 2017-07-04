@@ -153,7 +153,7 @@
 
 - (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self processTerminated:agentProcess];
+  [self processTerminated:operation.process];
   [self updateProcess:operation.process withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(statLoc)];
 }
 
