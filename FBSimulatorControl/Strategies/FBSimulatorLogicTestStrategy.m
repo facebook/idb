@@ -10,6 +10,7 @@
 #import "FBSimulatorLogicTestStrategy.h"
 
 #import "FBAgentLaunchStrategy.h"
+#import "FBSimulatorAgentOperation.h"
 
 @interface FBSimulatorLogicTestStrategy ()
 

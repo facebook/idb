@@ -25,6 +25,7 @@
 #import <FBSimulatorControl/FBSimulator+Private.h>
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorAgentCommands.h>
+#import <FBSimulatorControl/FBSimulatorAgentOperation.h>
 #import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorBitmapStream.h>
 #import <FBSimulatorControl/FBSimulatorBootConfiguration+Helpers.h>

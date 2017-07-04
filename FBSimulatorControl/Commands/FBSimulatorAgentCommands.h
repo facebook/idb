@@ -9,8 +9,9 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 @class FBAgentLaunchConfiguration;
-@class FBBinaryDescriptor;
 @class FBSimulator;
 
 NS_ASSUME_NONNULL_BEGIN
