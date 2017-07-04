@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBSimulatorAgentOperation.h"
+
 FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
 
 @interface FBTerminationHandle_NSFileHandle : NSObject <FBTerminationHandle>
@@ -103,9 +105,9 @@ FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
   [self terminateAllHandles];
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
-  [self addHandlesForProcess:agentProcess stdOut:stdOut stdErr:stdErr];
+  [self addHandlesForProcess:operation.process stdOut:operation.stdOutHandle stdErr:operation.stdErrHandle];
 }
 
 - (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected

@@ -115,7 +115,7 @@
   }
 
   [operation processDidLaunch:process];
-  [simulator.eventSink agentDidLaunch:agentLaunch didStart:process stdOut:stdOutHandle stdErr:stdErrHandle];
+  [simulator.eventSink agentDidLaunch:operation];
   return operation;
 }
 
