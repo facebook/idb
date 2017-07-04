@@ -29,7 +29,7 @@ FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch = @"agentlaunch";
       failBool:error];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [simulator launchAgent:self error:error];
+  return [simulator launchAgent:self error:error] != nil;
 }
 
 @end

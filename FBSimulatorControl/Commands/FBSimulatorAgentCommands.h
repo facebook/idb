@@ -11,10 +11,11 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBAgentLaunchConfiguration;
 @class FBSimulator;
-
-NS_ASSUME_NONNULL_BEGIN
+@class FBSimulatorAgentOperation;
 
 /**
  Commands relating to the launching of Agents on a Simulator.
@@ -28,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out, for any error that occurs.
  @return YES if the command succeeds, NO otherwise,
  */
-- (BOOL)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
+- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error;
 
 @end
 
