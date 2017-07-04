@@ -84,10 +84,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Event of the termination of an agent.
 
- @param agentProcess the process that was terminated.
- @param expected whether the termination was expected or not.
+ @param operation the Terminated. Agent Operation.
+ @param statLoc the termination status. Documented in waitpid(2).
  */
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected;
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc;
 
 /**
  Event for the launch of an Application.

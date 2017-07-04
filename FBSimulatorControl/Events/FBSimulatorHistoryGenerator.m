@@ -151,10 +151,10 @@
   [self processLaunched:operation.process withConfiguration:operation.configuration];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
   [self processTerminated:agentProcess];
-  [self updateProcess:agentProcess withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
+  [self updateProcess:operation.process withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(statLoc)];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager

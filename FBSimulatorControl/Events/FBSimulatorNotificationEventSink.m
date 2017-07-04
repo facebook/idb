@@ -103,11 +103,11 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
   }];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
   [self materializeNotification:FBSimulatorNotificationNameAgentProcessDidTerminate userInfo:@{
-    FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
-    FBSimulatorNotificationUserInfoKeyProcess : agentProcess
+    FBSimulatorNotificationUserInfoKeyExpectedTermination : @([FBSimulatorAgentOperation isExpectedTerminationForStatLoc:statLoc]),
+    FBSimulatorNotificationUserInfoKeyProcess : operation.process,
   }];
 }
 

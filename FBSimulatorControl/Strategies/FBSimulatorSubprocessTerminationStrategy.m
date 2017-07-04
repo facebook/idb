@@ -64,8 +64,6 @@
   FBProcessLaunchConfiguration *configuration = self.simulator.history.processLaunchConfigurations[process];
   if ([configuration isKindOfClass:FBApplicationLaunchConfiguration.class]) {
     [self.simulator.eventSink applicationDidTerminate:process expected:YES];
-  } else if ([configuration isKindOfClass:FBAgentLaunchConfiguration.class]) {
-    [self.simulator.eventSink agentDidTerminate:process expected:YES];
   }
 
   // Get the Service Name and then stop using the Service Name.

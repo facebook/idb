@@ -46,9 +46,9 @@
   [self.eventSink agentDidLaunch:operation];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self.eventSink agentDidTerminate:agentProcess expected:expected];
+  [self.eventSink agentDidTerminate:operation statLoc:statLoc];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess

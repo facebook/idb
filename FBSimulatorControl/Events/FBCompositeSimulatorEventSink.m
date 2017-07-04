@@ -83,10 +83,10 @@
   }
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)processInfo expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink agentDidTerminate:processInfo expected:expected];
+    [sink agentDidTerminate:operation statLoc:statLoc];
   }
 }
 

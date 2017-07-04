@@ -59,12 +59,20 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
   _process = process;
 }
 
++ (BOOL)isExpectedTerminationForStatLoc:(int)statLoc
+{
+  if (WIFEXITED(statLoc)) {
+    return WEXITSTATUS(statLoc) == 0;
+  }
+  return NO;
+}
+
 #pragma mark Private
 
 - (void)performTeardown:(int)stat_loc
 {
   _handler = nil;
-  [self.simulator.eventSink agentDidTerminate:self.process expected:NO];
+  [self.simulator.eventSink agentDidTerminate:self statLoc:stat_loc];
 }
 
 #pragma mark FBTerminationAwaitable

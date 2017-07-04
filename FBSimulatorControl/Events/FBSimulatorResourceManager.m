@@ -110,9 +110,9 @@ FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
   [self addHandlesForProcess:operation.process stdOut:operation.stdOutHandle stdErr:operation.stdErrHandle];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self terminateHandlesAssociatedWithProcess:agentProcess];
+  [self terminateHandlesAssociatedWithProcess:operation.process];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess

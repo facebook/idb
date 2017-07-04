@@ -31,6 +31,14 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
 @interface FBSimulatorAgentOperation : NSObject <FBTerminationAwaitable>
 
 /**
+ Extracts termination information for the provided process.
+
+ @param statLoc the value from waitpid(2).
+ @return YES if the termination is expected. NO otherwise.
+ */
++ (BOOL)isExpectedTerminationForStatLoc:(int)statLoc;
+
+/**
  The Configuration Launched with.
  */
 @property (nonatomic, copy, readonly) FBAgentLaunchConfiguration *configuration;

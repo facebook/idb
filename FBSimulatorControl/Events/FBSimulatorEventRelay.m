@@ -147,20 +147,16 @@
   }
 
   [self.knownLaunchedProcesses addObject:agentProcess];
-  [self createNotifierForProcess:agentProcess withHandler:^(FBSimulatorEventRelay *relay) {
-    [relay agentDidTerminate:agentProcess expected:NO];
-  }];
   [self.sink agentDidLaunch:operation];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  if (![self.knownLaunchedProcesses containsObject:agentProcess]) {
+  if (![self.knownLaunchedProcesses containsObject:operation.process]) {
     return;
   }
 
-  [self unregisterNotifierForProcess:agentProcess];
-  [self.sink agentDidTerminate:agentProcess expected:expected];
+  [self.sink agentDidTerminate:operation statLoc:statLoc];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess

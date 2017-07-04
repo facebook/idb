@@ -264,7 +264,7 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
 
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
 
 }
