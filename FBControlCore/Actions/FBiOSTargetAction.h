@@ -65,7 +65,7 @@ typedef NSString *FBiOSTargetActionType NS_EXTENSIBLE_STRING_ENUM;
  @param target the target the handle was generated for.
  @return the Output File Consumer
  */
-- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target ;
+- (id<FBFileConsumer>)obtainConsumerForAction:(id<FBiOSTargetAction>)action target:(id<FBiOSTarget>)target;
 
 @end
 

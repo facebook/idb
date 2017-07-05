@@ -113,6 +113,7 @@
 {
   return @[
     FBAgentLaunchConfiguration.class,
+    FBLogTailConfiguration.class,
     FBSimulatorHIDEvent.class,
     FBTestLaunchConfiguration.class,
   ];
