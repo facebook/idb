@@ -11,43 +11,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
-
-@interface FBTerminationHandle_NSFileHandle : NSObject <FBTerminationHandle>
-
-@property (nonatomic, strong, readonly, nonnull) NSFileHandle *fileHandle;
-
-@end
-
-@implementation FBTerminationHandle_NSFileHandle
-
-- (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _fileHandle = fileHandle;
-  return self;
-}
-
-- (void)terminate
-{
-  [self.fileHandle closeFile];
-}
-
-- (FBTerminationHandleType)type
-{
-  return FBTerminationHandleFileHandle;
-}
-
-@end
-
 @interface FBSimulatorResourceManager ()
-@property (nonatomic, strong, readonly, nonnull) NSMutableSet<FBTestManager *> *mutableTestManagers;
-@property (nonatomic, strong, readonly, nonnull) NSMutableDictionary<FBProcessInfo *, NSMutableArray<id<FBTerminationHandle>> *> *processToHandles;
-@property (nonatomic, strong, readonly, nonnull) NSMutableArray<id<FBTerminationHandle>> *simulatorTerminationHandles;
+
+@property (nonatomic, strong, readonly) NSMutableSet<FBTestManager *> *mutableTestManagers;
+@property (nonatomic, strong, readonly) NSMutableArray<id<FBTerminationHandle>> *simulatorTerminationHandles;
 
 @end
 
@@ -60,9 +27,9 @@ FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
     return nil;
   }
 
-  _processToHandles = [NSMutableDictionary dictionary];
   _simulatorTerminationHandles = [NSMutableArray array];
   _mutableTestManagers = [NSMutableSet set];
+
   return self;
 }
 
@@ -103,14 +70,13 @@ FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
   [self terminateAllHandles];
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
-  [self addHandlesForProcess:agentProcess stdOut:stdOut stdErr:stdErr];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self terminateHandlesAssociatedWithProcess:agentProcess];
+
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
@@ -150,39 +116,8 @@ FBTerminationHandleType const FBTerminationHandleFileHandle = @"FileHandle";
 
 #pragma mark Private
 
-- (void)addHandlesForProcess:(FBProcessInfo *)process stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
-{
-  if (stdOut) {
-    [self addTerminationHandle:[[FBTerminationHandle_NSFileHandle alloc] initWithFileHandle:stdOut] forProcess:process];
-  }
-  if (stdErr) {
-    [self addTerminationHandle:[[FBTerminationHandle_NSFileHandle alloc] initWithFileHandle:stdErr] forProcess:process];
-  }
-}
-
-- (void)addTerminationHandle:(id<FBTerminationHandle>)handle forProcess:(FBProcessInfo *)processInfo
-{
-  NSMutableArray *handles = self.processToHandles[processInfo];
-  if (!handles) {
-    handles = [NSMutableArray array];
-    self.processToHandles[processInfo] = handles;
-  }
-  [handles addObject:handle];
-}
-
-- (void)terminateHandlesAssociatedWithProcess:(FBProcessInfo *)processInfo
-{
-  NSArray *handles = self.processToHandles[processInfo];
-  [handles makeObjectsPerformSelector:@selector(terminate)];
-  [self.processToHandles removeObjectForKey:processInfo];
-}
-
 - (void)terminateAllHandles
 {
-  for (FBProcessInfo *processInfo in self.processToHandles) {
-    [self terminateHandlesAssociatedWithProcess:processInfo];
-  }
-  [self.processToHandles removeAllObjects];
   [self.simulatorTerminationHandles makeObjectsPerformSelector:@selector(terminate)];
   [self.simulatorTerminationHandles removeAllObjects];
   [self.mutableTestManagers removeAllObjects];

@@ -9,12 +9,16 @@
 
 #import "FBSimulatorHID.h"
 
+#import <objc/runtime.h>
+
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceType.h>
 
 #import <CoreGraphics/CoreGraphics.h>
 
 #import <SimulatorApp/Indigo.h>
+
+#import <SimulatorKit/SimDeviceLegacyClient.h>
 
 #import <mach/mach.h>
 #import <mach/mach_time.h>
@@ -24,16 +28,66 @@
 
 @interface FBSimulatorHID ()
 
+@property (nonatomic, strong, readonly) FBSimulatorIndigoHID *indigo;
 @property (nonatomic, assign, readonly) CGSize mainScreenSize;
+
+@end
+
+@interface FBSimulatorHID_Reimplemented : FBSimulatorHID
+
 @property (nonatomic, assign, readwrite) mach_port_t registrationPort;
 @property (nonatomic, assign, readwrite) mach_port_t replyPort;
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize registrationPort:(mach_port_t)registrationPort;
+
+@end
+
+@interface FBSimulatorHID_SimulatorKit : FBSimulatorHID
+
+@property (nonatomic, strong, nullable, readonly) SimDeviceLegacyClient *client;
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize client:(SimDeviceLegacyClient *)client;
 
 @end
 
 @implementation FBSimulatorHID
 
+#pragma mark Initializers
+
+static const char*SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient";
+
 + (instancetype)hidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
+  Class clientClass = objc_lookUpClass(SimulatorHIDClientClassName);
+  if (clientClass) {
+    return [self simulatorKitHidPortForSimulator:simulator clientClass:clientClass error:error];
+  }
+  return [self reimplementedHidPortForSimulator:simulator error:error];
+}
+
++ (instancetype)simulatorKitHidPortForSimulator:(FBSimulator *)simulator clientClass:(Class)clientClass error:(NSError **)error
+{
+  NSError *innerError = nil;
+  SimDeviceLegacyClient *client = [[clientClass alloc] initWithDevice:simulator.device error:&innerError];
+  if (!client) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not create instance of %@", NSStringFromClass(clientClass)]
+      causedBy:innerError]
+      fail:error];
+  }
+  CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
+  return [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize client:client];
+}
+
++ (instancetype)reimplementedHidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  // We have to create this before boot, return early if this isn't true.
+  if (simulator.state != FBSimulatorStateShutdown) {
+    return [[FBSimulatorError
+     describeFormat:@"Simulator must be shut down to create a HID port is %@", simulator.stateString]
+     fail:error];
+  }
+
   // As with the 'PurpleFBServer', a 'IndigoHIDRegistrationPort' is needed in order for the synthesis of touch events to work appropriately.
   // If this is not set you will see the following logger message in the System log upon booting the simulator
   // 'backboardd[10667]: BKHID: Unable to open Indigo HID system'
@@ -65,22 +119,124 @@
   }
 
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  return [[FBSimulatorHID alloc] initWithRegistrationPort:registrationPort mainScreenSize:mainScreenSize];
+  return [[FBSimulatorHID_Reimplemented alloc] initWithIndigo:FBSimulatorIndigoHID.reimplemented mainScreenSize:mainScreenSize registrationPort:registrationPort];
 }
 
-- (instancetype)initWithRegistrationPort:(mach_port_t)registrationPort mainScreenSize:(CGSize)mainScreenSize
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _registrationPort = registrationPort;
+  _indigo = indigo;
   _mainScreenSize = mainScreenSize;
+
+  return self;
+}
+
+#pragma mark Lifecycle
+
+- (BOOL)connect:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
+}
+
+- (void)disconnect
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+- (void)dealloc
+{
+  [self disconnect];
+}
+
+#pragma mark FBDebugDescribeable
+
+- (NSString *)description
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark FBJSONSerializable
+
+- (id)jsonSerializableRepresentation
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return nil;
+}
+
+#pragma mark HID Manipulation
+
+- (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
+{
+  return [self sendIndigoMessageData:[self.indigo keyboardWithDirection:direction keyCode:keycode] error:error];
+}
+
+- (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
+{
+  return [self sendIndigoMessageData:[self.indigo buttonWithDirection:direction button:button] error:error];
+}
+
+- (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error
+{
+  return [self sendIndigoMessageData:[self.indigo touchScreenSize:self.mainScreenSize direction:type x:x y:y] error:error];
+}
+
+#pragma mark Private
+
+- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
+{
+  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  return NO;
+}
+
+@end
+
+@implementation FBSimulatorHID_Reimplemented
+
+#pragma mark Initializers
+
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize registrationPort:(mach_port_t)registrationPort
+{
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
+  if (!self) {
+    return nil;
+  }
+
+  _registrationPort = registrationPort;
   _replyPort = 0;
 
   return self;
 }
+
+#pragma mark FBDebugDescribeable
+
+- (NSString *)description
+{
+  if (self.registrationPort == 0) {
+    return @"Indigo HID Port: Unregistered";
+  }
+  if (self.replyPort == 0) {
+    return [NSString stringWithFormat:@"Indigo HID Port: Registered %d but no reply port", self.registrationPort];
+  }
+  return [NSString stringWithFormat:@"Indigo HID Port: Registration Port %u, reply port %d", self.registrationPort, self.replyPort];
+}
+
+#pragma mark FBJSONSerializable
+
+- (id)jsonSerializableRepresentation
+{
+  return @{
+    @"registration_port" : (self.registrationPort == 0 ? NSNull.null : @(self.registrationPort)),
+    @"reply_port" : (self.replyPort == 0 ? NSNull.null : @(self.replyPort)),
+  };
+}
+
+#pragma mark Lifecycle
 
 - (BOOL)connect:(NSError **)error
 {
@@ -130,174 +286,19 @@
   [self disconnect];
 }
 
-#pragma mark HID Manipulation
-
-- (BOOL)sendKeyboardEventWithDirection:(FBSimulatorHIDDirection)direction keyCode:(unsigned int)keycode error:(NSError **)error
-{
-  IndigoButtonPayload payload;
-  payload.eventSource = ButtonEventSourceKeyboard;
-  payload.eventClass = ButtonEventClassKeyboard;
-  payload.keyCode = keycode;
-  payload.field5 = 0x000000cc;
-
-  // Then Up/Down.
-  switch (direction) {
-    case FBSimulatorHIDDirectionDown:
-      payload.eventType = ButtonEventTypeDown;
-      break;
-    case FBSimulatorHIDDirectionUp:
-      payload.eventType = ButtonEventTypeUp;
-      break;
-  }
-  return [self sendButtonEventWithPayload:&payload error:error];
-}
-
-- (BOOL)sendButtonEventWithDirection:(FBSimulatorHIDDirection)direction button:(FBSimulatorHIDButton)button error:(NSError **)error
-{
-  IndigoButtonPayload payload;
-  payload.eventClass = ButtonEventClassHardware;
-
-  // Set the Event Source
-  switch (button) {
-    case  FBSimulatorHIDButtonApplePay:
-      payload.eventSource = ButtonEventSourceApplePay;
-      break;
-    case FBSimulatorHIDButtonHomeButton:
-      payload.eventSource = ButtonEventSourceHomeButton;
-      break;
-    case FBSimulatorHIDButtonLock:
-      payload.eventSource = ButtonEventSourceLock;
-      break;
-    case FBSimulatorHIDButtonSideButton:
-      payload.eventSource = ButtonEventSourceSideButton;
-      break;
-    case FBSimulatorHIDButtonSiri:
-      payload.eventSource = ButtonEventSourceSiri;
-      break;
-  }
-  // Then Up/Down.
-  switch (direction) {
-    case FBSimulatorHIDDirectionDown:
-      payload.eventType = ButtonEventTypeDown;
-      break;
-    case FBSimulatorHIDDirectionUp:
-      payload.eventType = ButtonEventTypeUp;
-  }
-  return [self sendButtonEventWithPayload:&payload error:error];
-}
-
-- (BOOL)sendTouchWithType:(FBSimulatorHIDDirection)type x:(double)x y:(double)y error:(NSError **)error
-{
-  // Convert Screen Offset to Ratio for Indigo.
-  CGPoint point = [self screenRatioFromPoint:CGPointMake(x, y)];
-
-  // Set the Common Values between down-and-up.
-  IndigoDigitizerPayload payload;
-  payload.field1 = 0x00400002;
-  payload.field2 = 0x1;
-  payload.field3 = 0x3;
-
-  // Points are the ratio between the top-left and bottom right.
-  payload.xRatio = point.x;
-  payload.yRatio = point.y;
-
-  // Setting the Values Signifying touch-down.
-  switch (type) {
-    case FBSimulatorHIDDirectionDown:
-      payload.field9 = 0x1;
-      payload.field10 = 0x1;
-      break;
-    case FBSimulatorHIDDirectionUp:
-      payload.field9 = 0x0;
-      payload.field10 = 0x0;
-      break;
-    default:
-      break;
-  }
-
-  // Setting some other fields
-  payload.field11 = 0x32;
-  payload.field12 = 0x1;
-  payload.field13 = 0x2;
-
-  // Send the Value
-  return [self sendDigitizerPayload:&payload error:error];
-}
-
 #pragma mark Private
 
-- (BOOL)sendDigitizerPayload:(IndigoDigitizerPayload *)payload error:(NSError **)error
-{
-  // Sizes for the payload.
-  // The size should be 0x140/320.
-  // The stride should be 0x90
-  mach_msg_size_t size = sizeof(IndigoMessage) + sizeof(IndigoInner);
-  size_t stride = sizeof(IndigoInner);
-
-  // Create and set the common values
-  IndigoMessage *message = calloc(0x1, size);
-  message->innerSize = sizeof(IndigoInner);
-  message->eventType = IndigoEventTypeTouch;
-  message->inner.field1 = 0x0000000b;
-  message->inner.timestamp = mach_absolute_time();
-
-  // Copy in the Digitizer Payload from the caller.
-  void *destination = &(message->inner.unionPayload.buttonPayload);
-  void *source = payload;
-  memcpy(destination, source, sizeof(IndigoDigitizerPayload));
-
-  // Duplicate the First IndigoInner Payload.
-  // Also need to set the bits at (0x30 + 0x90) to 0x1.
-  // On 32-Bit Archs this is equivalent this is done with a long to stomp over both fields:
-  // uintptr_t mem = (uintptr_t) message;
-  // mem += 0xc0;
-  // int64_t *val = (int64_t *)mem;
-  // *val = 0x200000001;
-  source = &(message->inner);
-  destination = source;
-  destination += stride;
-  IndigoInner *second = (IndigoInner *) destination;
-  memcpy(destination, source, stride);
-
-  // Adjust the second payload slightly.
-  second->unionPayload.digitizerPayload.field1 = 0x00000001;
-  second->unionPayload.digitizerPayload.field2 = 0x00000002;
-
-  // Send the message, the cleanup.
-  BOOL result = [self sendIndigoMessage:message size:size error:error];
-  free(message);
-  return result;
-}
-
-- (BOOL)sendButtonEventWithPayload:(IndigoButtonPayload *)payload error:(NSError **)error
-{
-  // The home button should have a size of 0x140/320
-  mach_msg_size_t messageSize = sizeof(IndigoMessage) + sizeof(IndigoInner);
-  IndigoMessage *message = calloc(0x1, messageSize);
-
-  // Set the down payload of the message.
-  message->innerSize = sizeof(IndigoInner);
-  message->eventType = IndigoEventTypeButton;
-  message->inner.field1 = 0x2;
-  message->inner.timestamp = mach_absolute_time();
-
-  // Copy the contents of the payload.
-  void *destination = &message->inner.unionPayload.buttonPayload;
-  void *source = (void *) payload;
-  memcpy(destination, source, sizeof(IndigoButtonPayload));
-
-  BOOL result = [self sendIndigoMessage:message size:messageSize error:error];
-  free(message);
-  return result;
-}
-
-- (BOOL)sendIndigoMessage:(IndigoMessage *)message size:(mach_msg_size_t)size error:(NSError **)error
+- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
 {
   if (self.replyPort == 0) {
     return [[FBSimulatorError
       describe:@"The Reply Port has not been obtained yet. Call -connect: first"]
       failBool:error];
   }
+
+  // Extract the message
+  IndigoMessage *message = (IndigoMessage *) data.bytes;
+  mach_msg_size_t size = (mach_msg_size_t) data.length;
 
   // Set the header of the message
   message->header.msgh_bits = 0x13;
@@ -316,45 +317,46 @@
   return YES;
 }
 
-- (CGPoint)screenRatioFromPoint:(CGPoint)point
-{
-  return CGPointMake(
-    point.x / self.mainScreenSize.width,
-    point.y / self.mainScreenSize.height
-  );
-}
+@end
 
-#pragma mark FBDebugDescribeable
+@implementation FBSimulatorHID_SimulatorKit
 
-- (NSString *)description
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize client:(SimDeviceLegacyClient *)client
 {
-  if (self.registrationPort == 0) {
-    return @"Indigo HID Port: Unregistered";
+  self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
+  if (!self) {
+    return nil;
   }
-  if (self.replyPort == 0) {
-    return [NSString stringWithFormat:@"Indigo HID Port: Registered %d but no reply port", self.registrationPort];
-  }
-  return [NSString stringWithFormat:@"Indigo HID Port: Registration Port %u, reply port %d", self.registrationPort, self.replyPort];
+
+  _client = client;
+
+  return self;
 }
 
-- (NSString *)shortDescription
+#pragma mark Lifecycle
+
+- (BOOL)connect:(NSError **)error
 {
-  return self.description;
+  return YES;
 }
 
-- (NSString *)debugDescription
+- (void)disconnect
 {
-  return self.description;
+  _client = nil;
 }
 
-#pragma mark FBJSONSerializable
+#pragma mark Private
 
-- (id)jsonSerializableRepresentation
+- (BOOL)sendIndigoMessageData:(NSData *)data error:(NSError **)error
 {
-  return @{
-    @"registration_port" : (self.registrationPort == 0 ? NSNull.null : @(self.registrationPort)),
-    @"reply_port" : (self.replyPort == 0 ? NSNull.null : @(self.replyPort)),
-  };
+  // The event is delivered asynchronously.
+  // Therefore copy the message and let the client manage the lifecycle of it.
+  size_t size = (mach_msg_size_t) data.length;
+  IndigoMessage *message = malloc(size);
+  memcpy(message, data.bytes, size);
+
+  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:dispatch_get_main_queue() completion:^(id _){}];
+  return YES;
 }
 
 @end

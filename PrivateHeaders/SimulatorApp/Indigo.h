@@ -18,6 +18,7 @@
 
 /**
  A Quad that is sent via Indigo.
+ This is equivalent to NSEdgeInsets, but packed.
  */
 typedef struct {
   double field1; // 0x0
@@ -57,10 +58,10 @@ typedef struct {
   double field16; // 0x20 + 0x10 + 0x58 = 0x88
   double field17; // 0x20 + 0x10 + 0x60 = 0x90
   double field18; // 0x20 + 0x10 + 0x68 = 0x98
-} IndigoDigitizerPayload;
+} IndigoTouch;
 
 /**
- An unknown Indigo Payload.
+ The Indigo Payload for a wheel event.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
@@ -68,18 +69,18 @@ typedef struct {
   double field3; // 0x20 + 0x10 + 0xc = 0x3c
   double field4; // 0x20 + 0x10 + 0xc = 0x44
   unsigned int field5; // 0x20 + 0x10 + 0xc = 0x4c
-} IndigoUnknownPayload2;
+} IndigoWheel;
 
 /**
- The Indigo Payload for a Key event.
+ The Indigo Payload for a button event.
  */
 typedef struct {
   unsigned int eventSource; // 0x20 + 0x10 + 0x0 = 0x30
   unsigned int eventType; // 0x20 + 0x10 + 0x4 = 0x34.
-  unsigned int eventClass; // 0x20 + 0x10 + 0x8 = 0x38
+  unsigned int eventTarget; // 0x20 + 0x10 + 0x8 = 0x38
   unsigned int keyCode; // 0x20 + 0x10 + 0xc = 0x3c
   unsigned int field5; // 0x20 + 0x10 + 0x10 = 0x40
-} IndigoButtonPayload;
+} IndigoButton;
 
 #define ButtonEventSourceApplePay 0x1f4
 #define ButtonEventSourceHomeButton 0x0
@@ -88,8 +89,8 @@ typedef struct {
 #define ButtonEventSourceSideButton 0xbb8
 #define ButtonEventSourceSiri 0x400002
 
-#define ButtonEventClassHardware 0x33
-#define ButtonEventClassKeyboard 0x64
+#define ButtonEventTargetHardware 0x33
+#define ButtonEventTargetKeyboard 0x64
 
 /**
  These are Derived from NSEventTypeKeyDown & NSEventTypeKeyUp.
@@ -99,40 +100,40 @@ typedef struct {
 #define ButtonEventTypeUp 0x2
 
 /**
- An unknown Indigo Payload.
+ An Indigo Payload for the accelerometer.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
   unsigned char field2[40]; // 0x20 + 0x10 + 0x4 = 0x34
-} IndigoUnknownPayload4;
+} IndigoAccelerometer;
 
 /**
- An unknown Indigo Payload.
+ An Indigo Payload for force touch.
  */
 typedef struct {
   unsigned int field1; // 0x20 + 0x10 + 0x0 = 0x30
   double field2; // 0x20 + 0x10 + 0x4 = 0x34
   unsigned int field3; // 0x20 + 0x10 + 0xc = 0x3c
   double field4; // 0x20 + 0x10 + 0x10 = 0x40
-} IndigoUnknownPayload5;
+} IndigoForce;
 
 /**
- An unknown Indigo Payload.
+ An Indigo Payload for a Game Controller.
  */
 typedef struct {
-  IndigoQuad field1; // 0x20 + 0x10 + 0x0 = 0x30
-  IndigoQuad field2; // 0x20 + 0x10 + 0x20 = 0x50
-  IndigoQuad field3; // 0x20 + 0x10 + 0x40 = 0x70
-  IndigoQuad field4; // 0x20 + 0x10 + 0x60 = 0x90
-} IndigoUnknownPayload6;
+  IndigoQuad dpad; // 0x20 + 0x10 + 0x0 = 0x30
+  IndigoQuad face; // 0x20 + 0x10 + 0x20 = 0x50
+  IndigoQuad shoulder; // 0x20 + 0x10 + 0x40 = 0x70
+  IndigoQuad joystick; // 0x20 + 0x10 + 0x60 = 0x90
+} IndigoGameController;
 
 typedef union {
-  IndigoDigitizerPayload digitizerPayload;
-  IndigoUnknownPayload2 field2;
-  IndigoButtonPayload buttonPayload;
-  IndigoUnknownPayload4 field4;
-  IndigoUnknownPayload5 field5;
-  IndigoUnknownPayload6 field6;
+  IndigoTouch touch;
+  IndigoWheel wheel;
+  IndigoButton button;
+  IndigoAccelerometer accelerometer;
+  IndigoForce force;
+  IndigoGameController gameController;
 } IndigoUnion;
 
 /**

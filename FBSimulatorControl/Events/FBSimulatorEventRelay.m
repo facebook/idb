@@ -16,6 +16,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBCoreSimulatorNotifier.h"
+#import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorProcessFetcher.h"
 
@@ -137,28 +138,25 @@
   [self.sink simulatorDidTerminate:launchdProcess expected:expected];
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
   // De-duplicate known-launched agents.
+  FBProcessInfo *agentProcess = operation.process;
   if ([self.knownLaunchedProcesses containsObject:agentProcess]) {
     return;
   }
 
   [self.knownLaunchedProcesses addObject:agentProcess];
-  [self createNotifierForProcess:agentProcess withHandler:^(FBSimulatorEventRelay *relay) {
-    [relay agentDidTerminate:agentProcess expected:NO];
-  }];
-  [self.sink agentDidLaunch:launchConfig didStart:agentProcess stdOut:stdOut stdErr:stdErr];
+  [self.sink agentDidLaunch:operation];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  if (![self.knownLaunchedProcesses containsObject:agentProcess]) {
+  if (![self.knownLaunchedProcesses containsObject:operation.process]) {
     return;
   }
 
-  [self unregisterNotifierForProcess:agentProcess];
-  [self.sink agentDidTerminate:agentProcess expected:expected];
+  [self.sink agentDidTerminate:operation statLoc:statLoc];
 }
 
 - (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess

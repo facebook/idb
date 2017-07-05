@@ -15,7 +15,6 @@
 #import <FBControlCore/FBASLParser.h>
 #import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
-#import <FBControlCore/FBUploadBuffer.h>
 #import <FBControlCore/FBBinaryParser.h>
 #import <FBControlCore/FBBitmapStream.h>
 #import <FBControlCore/FBBitmapStreamConfiguration.h>
@@ -52,7 +51,9 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBLineBuffer.h>
 #import <FBControlCore/FBLocalizationOverride.h>
+#import <FBControlCore/FBLogCommands.h>
 #import <FBControlCore/FBLogSearch.h>
+#import <FBControlCore/FBLogTailConfiguration.h>
 #import <FBControlCore/FBPipeReader.h>
 #import <FBControlCore/FBProcessFetcher+Helpers.h>
 #import <FBControlCore/FBProcessFetcher.h>
@@ -62,13 +63,16 @@
 #import <FBControlCore/FBProcessOutputConfiguration.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
 #import <FBControlCore/FBRunLoopSpinner.h>
+#import <FBControlCore/FBScale.h>
 #import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSocketReader.h>
 #import <FBControlCore/FBSubstringUtilities.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTerminationHandle.h>
+#import <FBControlCore/FBUploadBuffer.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>
+

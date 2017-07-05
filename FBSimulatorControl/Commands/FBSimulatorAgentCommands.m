@@ -46,36 +46,10 @@
   return self;
 }
 
-- (BOOL)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
+- (nullable FBSimulatorAgentOperation *)launchAgent:(FBAgentLaunchConfiguration *)agentLaunch error:(NSError **)error
 {
   NSParameterAssert(agentLaunch);
-  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch error:error] != nil;
-}
-
-- (BOOL)killAgent:(FBBinaryDescriptor *)agent error:(NSError **)error
-{
-  NSParameterAssert(agent);
-
-  FBProcessInfo *process = [[[self.simulator
-    launchdSimSubprocesses]
-    filteredArrayUsingPredicate:[FBProcessFetcher processesForBinary:agent]]
-    firstObject];
-
-  if (!process) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not find an active process for %@", agent]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  FBProcessTerminationStrategy *strategy = [FBProcessTerminationStrategy strategyWithProcessFetcher:self.simulator.processFetcher.processFetcher logger:self.simulator.logger];
-  if (![strategy killProcess:process error:error]) {
-    return [[[FBSimulatorError
-      describeFormat:@"SIGKILL of Agent %@ of PID %d failed", agent, process.processIdentifier]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  [self.simulator.eventSink agentDidTerminate:process expected:YES];
-  return YES;
+  return [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator] launchAgent:agentLaunch error:error];
 }
 
 @end

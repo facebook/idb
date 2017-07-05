@@ -76,17 +76,17 @@
   }
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink agentDidLaunch:launchConfig didStart:agentProcess stdOut:stdOut stdErr:stdErr];
+    [sink agentDidLaunch:operation];
   }
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)processInfo expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
   for (id<FBSimulatorEventSink> sink in self.sinks) {
-    [sink agentDidTerminate:processInfo expected:expected];
+    [sink agentDidTerminate:operation statLoc:statLoc];
   }
 }
 

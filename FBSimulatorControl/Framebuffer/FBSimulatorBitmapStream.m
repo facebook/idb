@@ -156,7 +156,13 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
   if ([self.surface.attachedConsumers containsObject:self]) {
     return;
   }
-  [self.surface attachConsumer:self onQueue:self.writeQueue];
+  // If we have a surface now, we can start rendering, so mount the surface.
+  IOSurfaceRef surface = [self.surface attachConsumer:self onQueue:self.writeQueue];
+  if (surface) {
+    dispatch_async(self.writeQueue, ^{
+      [self didChangeIOSurface:surface];
+    });
+  }
 }
 
 #pragma mark FBFramebufferSurfaceConsumer
@@ -169,6 +175,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 - (void)didChangeIOSurface:(nullable IOSurfaceRef)surface
 {
   [self mountSurface:surface error:nil];
+  [self pushFrame];
 }
 
 - (void)didReceiveDamageRect:(CGRect)rect
@@ -232,7 +239,7 @@ static NSDictionary<NSString *, id> *FBBitmapStreamPixelBufferAttributesFromPixe
 
 #pragma mark FBTerminationHandle
 
-- (FBTerminationHandleType)type
++ (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeVideoStreaming;
 }

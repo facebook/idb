@@ -9,6 +9,8 @@
 
 #import "FBSimulatorNotificationEventSink.h"
 
+#import "FBSimulatorAgentOperation.h"
+
 FBSimulatorNotificationName const FBSimulatorNotificationNameDidLaunch = @"FBSimulatorNotificationNameDidLaunch";
 FBSimulatorNotificationName const FBSimulatorNotificationNameDidTerminate = @"FBSimulatorNotificationNameDidTerminate";
 FBSimulatorNotificationName const FBSimulatorNotificationNameSimulatorApplicationDidLaunch = @"FBSimulatorNotificationNameSimulatorApplicationDidLaunch";
@@ -94,18 +96,18 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
   }];
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
   [self materializeNotification:FBSimulatorNotificationNameAgentProcessDidLaunch userInfo:@{
-    FBSimulatorNotificationUserInfoKeyProcess : agentProcess
+    FBSimulatorNotificationUserInfoKeyProcess : operation.process,
   }];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
   [self materializeNotification:FBSimulatorNotificationNameAgentProcessDidTerminate userInfo:@{
-    FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
-    FBSimulatorNotificationUserInfoKeyProcess : agentProcess
+    FBSimulatorNotificationUserInfoKeyExpectedTermination : @([FBSimulatorAgentOperation isExpectedTerminationForStatLoc:statLoc]),
+    FBSimulatorNotificationUserInfoKeyProcess : operation.process,
   }];
 }
 

@@ -47,7 +47,7 @@
   [self.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
-  NSString *otestQueryPath = self.configuration.shims.macOtestQueryPath;
+  NSString *otestQueryPath = self.configuration.shims.macOSQueryShimPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
 
   if (mkfifo([otestQueryOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {

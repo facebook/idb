@@ -10,6 +10,8 @@
 #import "FBAMDevice.h"
 #import "FBAMDevice+Private.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #include <dlfcn.h>
 
 #import "FBDeviceControlError.h"
@@ -28,13 +30,6 @@ typedef struct afc_connection {
   void *afc_lock;                 /* 36 */
   unsigned int context;           /* 40 */
 } __attribute__ ((packed)) afc_connection;
-
-static void *FBGetSymbolFromHandle(void *handle, const char *name)
-{
-  void *function = dlsym(handle, name);
-  NSCAssert(function, @"%s could not be located", name);
-  return function;
-}
 
 @implementation FBAMDevice
 
@@ -63,6 +58,7 @@ static void *FBGetSymbolFromHandle(void *handle, const char *name)
   FBAMDeviceSecureTransferPath = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
   FBAMDeviceSecureInstallApplication = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
   FBAMDeviceSecureUninstallApplication = (int(*)(int, CFTypeRef, CFStringRef, int, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
+  FBAMDeviceLookupApplications = (int(*)(CFTypeRef, int, CFDictionaryRef*))FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
 }
 + (NSArray<FBAMDevice *> *)allDevices
 {

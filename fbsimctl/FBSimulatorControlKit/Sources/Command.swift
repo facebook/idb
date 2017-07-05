@@ -96,7 +96,6 @@ public enum Action {
   case setLocation(Double,Double)
   case shutdown
   case stream(FBBitmapStreamConfiguration, FileOutput)
-  case tap(Double, Double)
   case terminate(String)
   case uninstall(String)
   case upload([FBDiagnostic])
@@ -234,7 +233,7 @@ extension ListenInterface : EventReporterSubject {
     }
     var handleValue = JSON.null
     if let handle = self.handle {
-      handleValue = JSON.string(handle.type.rawValue)
+      handleValue = JSON.string(type(of: handle).handleType.rawValue)
     }
 
     return JSON.dictionary([
@@ -263,7 +262,7 @@ extension ListenInterface : EventReporterSubject {
     }
     description += " stdin: \(self.stdin)"
     if let handle = self.handle {
-      description += " due to \(handle.type.rawValue)"
+      description += " due to \(type(of: handle).handleType.rawValue)"
     }
     return description
   }}
@@ -272,7 +271,10 @@ extension ListenInterface : EventReporterSubject {
     if !self.isEmptyListen {
       return nil
     }
-    return self.handle?.type.listenDescription
+    guard  let handle = self.handle else {
+      return nil
+    }
+    return type(of: handle).handleType.listenDescription
   }}
 
   var isEmptyListen: Bool { get {
@@ -388,8 +390,6 @@ public func == (left: Action, right: Action) -> Bool {
     return true
   case (.stream(let leftConfiguration, let leftOutput), .stream(let rightConfiguration, let rightOutput)):
     return leftConfiguration == rightConfiguration && leftOutput == rightOutput
-  case (.tap(let leftX, let leftY), .tap(let rightX, let rightY)):
-    return leftX == rightX && leftY == rightY
   case (.terminate(let leftBundleID), .terminate(let rightBundleID)):
     return leftBundleID == rightBundleID
   case (.uninstall(let leftBundleID), .uninstall(let rightBundleID)):
@@ -452,8 +452,6 @@ extension Action {
       return (.shutdown, nil)
     case .stream:
       return (.stream, nil)
-    case .tap:
-      return (.tap, nil)
     case .terminate(let bundleID):
       return (.terminate, bundleID)
     case .uninstall(let bundleID):

@@ -12,26 +12,66 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-static NSString *const iOSXCTestShimFileName = @"otest-shim-ios.dylib";
-static NSString *const MacXCTestShimFileName = @"otest-shim-osx.dylib";
-static NSString *const MacQueryShimFileName = @"otest-query-lib-osx.dylib";
+static NSString *const KeySimulatorTestShim = @"ios_simulator_test_shim";
+static NSString *const KeyMacTestShim = @"mac_test_shim";
+static NSString *const KeyMacQueryShim = @"mac_query_shim";
+
+static NSString *const iOSXCToolShimFileName = @"otest-shim-ios.dylib";
+static NSString *const shimulatorFileName = @"libShimulator.dylib";
+static NSString *const macOSXCToolShimFileName = @"otest-shim-osx.dylib";
+static NSString *const macOSXCToolQueryShimFileName = @"otest-query-lib-osx.dylib";
+static NSString *const maculatorShimFileName = @"libMaculator.dylib";
+
 static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIMS";
 
 @implementation FBXCTestShimConfiguration
 
 #pragma mark Initializers
 
-+ (NSDictionary<NSString *, NSNumber *> *)shimFilenamesToCodesigningRequired
++ (NSDictionary<NSString *, NSArray<NSString *> *> *)canonicalShimNameToShimFilenames
 {
-  NSMutableDictionary<NSString *, NSNumber *> *shims = [NSMutableDictionary dictionaryWithDictionary:@{
-    iOSXCTestShimFileName : @NO,
-    MacXCTestShimFileName : @NO,
-    MacQueryShimFileName : @NO,
-  }];
-  if (NSProcessInfo.processInfo.environment[ConfirmShimsAreSignedEnv].boolValue && FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-    shims[iOSXCTestShimFileName] = @YES;
+  return @{
+    KeySimulatorTestShim: @[shimulatorFileName, iOSXCToolShimFileName],
+    KeyMacTestShim: @[maculatorShimFileName, macOSXCToolShimFileName],
+    KeyMacQueryShim: @[maculatorShimFileName, macOSXCToolQueryShimFileName],
+  };
+}
+
++ (NSDictionary<NSString *, NSNumber *> *)canonicalShimNameToCodesigningRequired
+{
+  return @{
+    KeySimulatorTestShim: @(NSProcessInfo.processInfo.environment[ConfirmShimsAreSignedEnv].boolValue && FBControlCoreGlobalConfiguration.isXcode8OrGreater),
+    KeyMacQueryShim: @NO,
+    KeyMacTestShim: @NO,
+  };
+}
+
++ (NSString *)pathForCanonicallyNamedShim:(NSString *)canonicalName inDirectory:(NSString *)directory error:(NSError **)error
+{
+  NSArray<NSString *> *filenames = self.canonicalShimNameToShimFilenames[canonicalName];
+  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
+  BOOL signingRequired = self.canonicalShimNameToCodesigningRequired[canonicalName].boolValue;
+
+  for (NSString *filename in filenames) {
+    NSString *shimPath = [directory stringByAppendingPathComponent:filename];
+    if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
+      continue;
+    }
+    if (!signingRequired) {
+      return shimPath;
+    }
+    NSError *innerError = nil;
+    if (![codesign cdHashForBundleAtPath:shimPath error:&innerError]) {
+      return [[[FBXCTestError
+        describeFormat:@"Shim at path %@ was required to be signed, but it was not", shimPath]
+        causedBy:innerError]
+        fail:error];
+    }
+    return shimPath;
   }
-  return [shims copy];
+  return [[FBXCTestError
+    describeFormat:@"Expected any of '%@' to exist in %@, but none were there", [FBCollectionInformation oneLineDescriptionFromArray:filenames], directory]
+    fail:error];
 }
 
 + (nullable NSString *)findShimDirectoryWithError:(NSError **)error
@@ -44,7 +84,14 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
 
   // Otherwise, expect it to be relative to the location of the current executable.
   NSString *libPath = [self.fbxctestInstallationRoot stringByAppendingPathComponent:@"lib"];
-  return [self confirmExistenceOfRequiredShimsInDirectory:libPath error:error];
+  libPath = [self confirmExistenceOfRequiredShimsInDirectory:libPath error:nil];
+  if (libPath) {
+    return libPath;
+  }
+
+  // Otherwise, attempt to use the bundled shims
+  NSString *bundlePath = [[NSBundle bundleForClass:self].bundlePath stringByAppendingPathComponent:@"Resources"];
+  return [self confirmExistenceOfRequiredShimsInDirectory:bundlePath error:error];
 }
 
 + (nullable NSString *)confirmExistenceOfRequiredShimsInDirectory:(NSString *)directory error:(NSError **)error
@@ -54,26 +101,9 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
       describeFormat:@"A shim directory was expected at '%@', but it was not there", directory]
       fail:error];
   }
-
-  NSDictionary<NSString *, NSNumber *> *shims = self.shimFilenamesToCodesigningRequired;
-
-  id<FBCodesignProvider> codesign = FBCodesignProvider.codeSignCommandWithAdHocIdentity;
-  for (NSString *filename in shims) {
-    NSString *shimPath = [directory stringByAppendingPathComponent:iOSXCTestShimFileName];
-    if (![NSFileManager.defaultManager fileExistsAtPath:shimPath]) {
-      return [[FBXCTestError
-        describeFormat:@"The iOS xctest Simulator Shim was expected at the location '%@', but it was not there", shimPath]
-        fail:error];
-    }
-    if (!shims[filename].boolValue) {
-      continue;
-    }
-    NSError *innerError = nil;
-    if (![codesign cdHashForBundleAtPath:shimPath error:&innerError]) {
-      return [[[FBXCTestError
-        describeFormat:@"Shim at path %@ was required to be signed, but it was not", shimPath]
-        causedBy:innerError]
-        fail:error];
+  for (NSString *canonicalName in self.canonicalShimNameToShimFilenames.allKeys) {
+    if (![self pathForCanonicallyNamedShim:canonicalName inDirectory:directory error:error]) {
+      return nil;
     }
   }
   return directory;
@@ -91,16 +121,23 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
 
 + (nullable instancetype)shimConfigurationWithDirectory:(NSString *)directory error:(NSError **)error
 {
-  NSError *innerError = nil;
   NSString *shimDirectory = [self confirmExistenceOfRequiredShimsInDirectory:directory error:error];
   if (!shimDirectory) {
-    return [FBXCTestError failWithError:innerError errorOut:error];
+    return nil;
   }
-  NSString *iOSTestShimPath = [shimDirectory stringByAppendingPathComponent:iOSXCTestShimFileName];
-  NSString *macTestShimPath = [shimDirectory stringByAppendingPathComponent:MacXCTestShimFileName];
-  NSString *macQueryShimPath = [shimDirectory stringByAppendingPathComponent:MacQueryShimFileName];
-
-  return [[self alloc] initWithiOSSimulatorTestShim:iOSTestShimPath macTestShim:macTestShimPath macQueryShim:macQueryShimPath];
+  NSString *iOSTestShimPath = [self pathForCanonicallyNamedShim:KeySimulatorTestShim inDirectory:shimDirectory error:error];
+  if (!iOSTestShimPath) {
+    return nil;
+  }
+  NSString *macTestShimPath = [self pathForCanonicallyNamedShim:KeyMacTestShim inDirectory:shimDirectory error:error];
+  if (!macTestShimPath) {
+    return nil;
+  }
+  NSString *macOSQueryShimPath = [self pathForCanonicallyNamedShim:KeyMacQueryShim inDirectory:shimDirectory error:error];
+  if (!macOSQueryShimPath) {
+    return nil;
+  }
+  return [[self alloc] initWithiOSSimulatorTestShimPath:iOSTestShimPath macOSTestShimPath:macTestShimPath macOSQueryShimPath:macOSQueryShimPath];
 }
 
 + (NSString *)fbxctestInstallationRoot
@@ -116,20 +153,20 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
   return [NSFileManager.defaultManager fileExistsAtPath:path] ? path : nil;
 }
 
-- (instancetype)initWithiOSSimulatorTestShim:(NSString *)iosSimulatorTestShim macTestShim:(NSString *)macTestShim macQueryShim:(NSString *)macQueryShim
+- (instancetype)initWithiOSSimulatorTestShimPath:(NSString *)iosSimulatorTestShim macOSTestShimPath:(NSString *)macOSTestShimPath macOSQueryShimPath:(NSString *)macOSQueryShimPath
 {
   NSParameterAssert(iosSimulatorTestShim);
-  NSParameterAssert(macTestShim);
-  NSParameterAssert(macQueryShim);
+  NSParameterAssert(macOSTestShimPath);
+  NSParameterAssert(macOSQueryShimPath);
 
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _iOSSimulatorOtestShimPath = iosSimulatorTestShim;
-  _macOtestShimPath = macTestShim;
-  _macOtestQueryPath = macQueryShim;
+  _iOSSimulatorTestShimPath = iosSimulatorTestShim;
+  _macOSTestShimPath = macOSTestShimPath;
+  _macOSQueryShimPath = macOSQueryShimPath;
 
   return self;
 }
@@ -148,21 +185,17 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
   if (![object isKindOfClass:self.class]) {
     return NO;
   }
-  return [self.iOSSimulatorOtestShimPath isEqualToString:object.iOSSimulatorOtestShimPath]
-      && [self.macOtestShimPath isEqualToString:object.macOtestShimPath]
-      && [self.macOtestQueryPath isEqualToString:object.macOtestQueryPath];
+  return [self.iOSSimulatorTestShimPath isEqualToString:object.iOSSimulatorTestShimPath]
+      && [self.macOSTestShimPath isEqualToString:object.macOSTestShimPath]
+      && [self.macOSQueryShimPath isEqualToString:object.macOSQueryShimPath];
 }
 
 - (NSUInteger)hash
 {
-  return self.iOSSimulatorOtestShimPath.hash ^ self.macOtestShimPath.hash ^ self.macOtestQueryPath.hash;
+  return self.iOSSimulatorTestShimPath.hash ^ self.macOSTestShimPath.hash ^ self.macOSQueryShimPath.hash;
 }
 
 #pragma mark JSON
-
-static NSString *const KeySimulatorTestShim = @"ios_simulator_test_shim";
-static NSString *const KeyMacTestShim = @"mac_test_shim";
-static NSString *const KeyMacQueryShim = @"mac_query_shim";
 
 + (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, NSString *> *)json error:(NSError **)error
 {
@@ -183,21 +216,21 @@ static NSString *const KeyMacQueryShim = @"mac_query_shim";
       describeFormat:@"%@ is not a String for %@", macTestShim, KeyMacTestShim]
       fail:error];
   }
-  NSString *macQueryShim = json[KeyMacQueryShim];
-  if (![macQueryShim isKindOfClass:NSString.class]) {
+  NSString *macOSQueryShimPath = json[KeyMacQueryShim];
+  if (![macOSQueryShimPath isKindOfClass:NSString.class]) {
     return [[FBXCTestError
-      describeFormat:@"%@ is not a String for %@", macQueryShim, KeyMacQueryShim]
+      describeFormat:@"%@ is not a String for %@", macOSQueryShimPath, KeyMacQueryShim]
       fail:error];
   }
-  return [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShim:simulatorTestShim macTestShim:macTestShim macQueryShim:macQueryShim];
+  return [[FBXCTestShimConfiguration alloc] initWithiOSSimulatorTestShimPath:simulatorTestShim macOSTestShimPath:macTestShim macOSQueryShimPath:macOSQueryShimPath];
 }
 
 - (id)jsonSerializableRepresentation
 {
   return @{
-    KeySimulatorTestShim: self.iOSSimulatorOtestShimPath,
-    KeyMacTestShim: self.macOtestShimPath,
-    KeyMacQueryShim: self.macOtestQueryPath,
+    KeySimulatorTestShim: self.iOSSimulatorTestShimPath,
+    KeyMacTestShim: self.macOSTestShimPath,
+    KeyMacQueryShim: self.macOSQueryShimPath,
   };
 }
 

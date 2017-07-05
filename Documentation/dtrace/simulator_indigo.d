@@ -22,12 +22,12 @@ dtrace:::BEGIN
   );
   printf(
     "\nu1=%d u2=%d u3=%d u4=%d u5=%d u6=%d",
-    sizeof(IndigoDigitizerPayload),
-    sizeof(IndigoUnknownPayload2),
-    sizeof(IndigoButtonPayload),
-    sizeof(IndigoUnknownPayload4),
-    sizeof(IndigoUnknownPayload5),
-    sizeof(IndigoUnknownPayload6)
+    sizeof(IndigoTouch),
+    sizeof(IndigoWheel),
+    sizeof(IndigoButton),
+    sizeof(IndigoAccelerometer),
+    sizeof(IndigoForce),
+    sizeof(IndigoGameController)
   );
   printf(
     "\nHeader Offsets %x %x %x %x %x %x",
@@ -54,19 +54,19 @@ dtrace:::BEGIN
   );
   printf(
     "\nKeypress Offsets %x %x %x %x %x",
-    offsetof(IndigoButtonPayload, eventSource),
-    offsetof(IndigoButtonPayload, eventType),
-    offsetof(IndigoButtonPayload, eventClass),
-    offsetof(IndigoButtonPayload, keyCode),
-    offsetof(IndigoButtonPayload, field5)
+    offsetof(IndigoButton, eventSource),
+    offsetof(IndigoButton, eventType),
+    offsetof(IndigoButton, eventClass),
+    offsetof(IndigoButton, keyCode),
+    offsetof(IndigoButton, field5)
   );
   printf(
     "\nDigitizer Offsets %x %x %x %x %x",
-    offsetof(IndigoDigitizerPayload, field1),
-    offsetof(IndigoDigitizerPayload, field2),
-    offsetof(IndigoDigitizerPayload, field3),
-    offsetof(IndigoDigitizerPayload, xRatio),
-    offsetof(IndigoDigitizerPayload, yRatio)
+    offsetof(IndigoTouch, field1),
+    offsetof(IndigoTouch, field2),
+    offsetof(IndigoTouch, field3),
+    offsetof(IndigoTouch, xRatio),
+    offsetof(IndigoTouch, yRatio)
   );
   indigohid_registration_port = 0;
   indigohid_reply_port = 0;

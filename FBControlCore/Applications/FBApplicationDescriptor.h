@@ -21,7 +21,6 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
   FBApplicationInstallTypeSystem = 1, /** The Application Type is part of the Operating System */
   FBApplicationInstallTypeUser = 2, /** The Application Type is installable by the User */
   FBApplicationInstallTypeMac = 3, /** The Application Type is part of macOS */
-  FBApplicationInstallTypeRemote = 4, /** The Application Type is remote */
 };
 
 @class FBBinaryDescriptor;
@@ -30,6 +29,17 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
  A Bundle Descriptor specialized to Applications
  */
 @interface FBApplicationDescriptor : FBBundleDescriptor
+
+/**
+ Initializes a FBApplicationDescriptor.
+
+ @param name the name of the application
+ @param path the path of the application
+ @param bundleID the bundle id of the application
+ @param installType the InstallType of the application.
+ @returns a FBApplicationDescriptor instance.
+ */
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType;
 
 /**
  Constructs a FBApplicationDescriptor for the a User Application at the given path
@@ -41,14 +51,15 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
 + (nullable instancetype)userApplicationWithPath:(NSString *)path error:(NSError **)error;
 
 /**
- Constructs a FBApplicationDescriptor for the a Remote Application.
+ Constructs a FBApplicationDescriptor for the an Application.
 
  @param name the name of the application
  @param path the path of the application
  @param bundleID the bundle id of the application
+ @param installType the install type of the application
  @returns a FBApplicationDescriptor instance.
  */
-+ (instancetype)remoteApplicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID;
++ (instancetype)applicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID installType:(FBApplicationInstallType)installType;
 
 /**
  Constructs a FBApplicationDescriptor for the Application at the given path.

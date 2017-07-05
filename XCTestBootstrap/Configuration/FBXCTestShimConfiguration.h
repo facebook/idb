@@ -18,7 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBXCTestShimConfiguration : NSObject <FBJSONSerializable, FBJSONDeserializable, NSCopying>
 
-
 /**
  Constructs a Shim Configuration from the default base directory.
 
@@ -40,10 +39,10 @@ NS_ASSUME_NONNULL_BEGIN
  The Designated Intializer.
 
  @param iosSimulatorTestShim The Path to he iOS Simulator Test Shim.
- @param macTestShim The Path to the Mac Test Shim.
- @param macQueryShim The Path to the Mac Query Shim.
+ @param macOSTestShimPath The Path to the Mac Test Shim.
+ @param macOSQueryShimPath The Path to the Mac Query Shim.
  */
-- (instancetype)initWithiOSSimulatorTestShim:(NSString *)iosSimulatorTestShim macTestShim:(NSString *)macTestShim macQueryShim:(NSString *)macQueryShim;
+- (instancetype)initWithiOSSimulatorTestShimPath:(NSString *)iosSimulatorTestShim macOSTestShimPath:(NSString *)macOSTestShimPath macOSQueryShimPath:(NSString *)macOSQueryShimPath;
 
 #pragma mark Helpers
 
@@ -61,17 +60,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The location of the shim used to run iOS Simulator Logic Tests.
  */
-@property (nonatomic, copy, readonly) NSString *iOSSimulatorOtestShimPath;
+@property (nonatomic, copy, readonly) NSString *iOSSimulatorTestShimPath;
 
 /**
  The location of the shim used to run Mac Logic Tests.
  */
-@property (nonatomic, copy, readonly) NSString *macOtestShimPath;
+@property (nonatomic, copy, readonly) NSString *macOSTestShimPath;
 
 /**
  The location of the shim used to query Mac Tests.
  */
-@property (nonatomic, copy, readonly) NSString *macOtestQueryPath;
+@property (nonatomic, copy, readonly) NSString *macOSQueryShimPath;
 
 @end
 

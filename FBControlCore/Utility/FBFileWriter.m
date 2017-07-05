@@ -13,7 +13,7 @@
 
 @interface FBFileWriter ()
 
-@property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
+@property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle;
 
@@ -107,14 +107,13 @@
 
 - (void)consumeData:(NSData *)data
 {
-  NSFileHandle *fileHandle = self.fileHandle;
-  [fileHandle writeData:data];
+  [self.fileHandle writeData:data];
 }
 
 - (void)consumeEndOfFile
 {
-  NSFileHandle *fileHandle = self.fileHandle;
-  [fileHandle closeFile];
+  [self.fileHandle closeFile];
+  self.fileHandle = nil;
 }
 
 @end
@@ -137,17 +136,16 @@
 
 - (void)consumeData:(NSData *)data
 {
-  NSFileHandle *fileHandle = self.fileHandle;
   dispatch_async(self.writeQueue, ^{
-    [fileHandle writeData:data];
+    [self.fileHandle writeData:data];
   });
 }
 
 - (void)consumeEndOfFile
 {
-  NSFileHandle *fileHandle = self.fileHandle;
   dispatch_async(self.writeQueue, ^{
-    [fileHandle closeFile];
+    [self.fileHandle closeFile];
+    self.fileHandle = nil;
   });
 }
 

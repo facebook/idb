@@ -39,7 +39,7 @@ static BOOL isApplicationAtPath(NSString *path)
 
 #pragma mark Initializers
 
-- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType
+- (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType
 {
   self = [super initWithName:name path:path bundleID:bundleID binary:binary];
   if (!self) {
@@ -67,9 +67,9 @@ static BOOL isApplicationAtPath(NSString *path)
   return [self applicationWithPath:path installType:FBApplicationInstallTypeUser error:error];
 }
 
-+ (instancetype)remoteApplicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID
++ (instancetype)applicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID installType:(FBApplicationInstallType)installType
 {
-  return [[FBApplicationDescriptor alloc] initWithName:name path:path bundleID:bundleID binary:nil installType:FBApplicationInstallTypeRemote];
+  return [[FBApplicationDescriptor alloc] initWithName:name path:path bundleID:bundleID binary:nil installType:installType];
 }
 
 + (nullable instancetype)applicationWithPath:(NSString *)path installTypeString:(nullable NSString *)installTypeString error:(NSError **)error
@@ -96,7 +96,6 @@ static BOOL isApplicationAtPath(NSString *path)
 static NSString *const FBApplicationInstallTypeStringUser = @"user";
 static NSString *const FBApplicationInstallTypeStringSystem = @"system";
 static NSString *const FBApplicationInstallTypeStringMac = @"mac";
-static NSString *const FBApplicationInstallTypeStringRemote = @"remote";
 static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
 
 + (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType
@@ -108,8 +107,6 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
       return FBApplicationInstallTypeStringSystem;
     case FBApplicationInstallTypeMac:
       return FBApplicationInstallTypeStringMac;
-    case FBApplicationInstallTypeRemote:
-      return FBApplicationInstallTypeStringRemote;
     default:
       return FBApplicationInstallTypeStringUnknown;
   }
@@ -129,9 +126,6 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
   }
   if ([installTypeString isEqualToString:FBApplicationInstallTypeStringMac]) {
     return FBApplicationInstallTypeMac;
-  }
-  if ([installTypeString isEqualToString:FBApplicationInstallTypeStringRemote]) {
-    return FBApplicationInstallTypeRemote;
   }
   return FBApplicationInstallTypeUnknown;
 }

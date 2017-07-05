@@ -60,6 +60,7 @@
   FBJSONTestReporter *reporter = [[FBJSONTestReporter new] initWithTestBundlePath:configuration.testBundlePath testType:configuration.testType logger:self.logger fileConsumer:stdOutFileWriter];
   FBXCTestContext *context = [FBXCTestContext contextWithReporter:reporter logger:self.logger];
 
+  [self.logger.info logFormat:@"Bootstrapping Test Runner with Configuration %@", [FBCollectionInformation oneLineJSONDescription:configuration]];
   FBXCTestBaseRunner *testRunner = [FBXCTestBaseRunner testRunnerWithConfiguration:configuration context:context];
   if (![testRunner executeWithError:&error]) {
     return [self printErrorMessage:error];

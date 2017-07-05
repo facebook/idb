@@ -51,6 +51,7 @@
     _completionQueue = nil;
     return NO;
   }
+  [self.consumer writeBackAvailable:self.writer];
   return YES;
 }
 
@@ -58,11 +59,12 @@
 
 - (void)consumeData:(NSData *)data
 {
-  [self.consumer consumeData:data writeBack:self.writer];
+  [self.consumer consumeData:data];
 }
 
 - (void)consumeEndOfFile
 {
+  [self.consumer consumeEndOfFile];
   [self.writer consumeEndOfFile];
   dispatch_async(self.completionQueue, self.completionHandler);
   _completionHandler = nil;

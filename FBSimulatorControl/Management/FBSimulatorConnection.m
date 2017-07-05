@@ -17,8 +17,6 @@
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
 #import <SimulatorBridge/SimulatorBridge.h>
 
-#import <SimulatorKit/SimDeviceFramebufferService.h>
-
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBSimulator+Helpers.h"
@@ -113,12 +111,13 @@
 
 - (nullable FBSimulatorHID *)connectToHID:(NSError **)error
 {
-  if (self.hid) {
-    return [self.hid connect:error] ? self.hid : nil;
+  if (!self.hid) {
+    self.hid = [FBSimulatorHID hidPortForSimulator:self.simulator error:error];
+    if (!self.hid) {
+      return nil;
+    }
   }
-  return [[FBSimulatorError
-    describe:@"Could not connect to HID, it must be provided on launch"]
-    fail:error];
+  return [self.hid connect:error] ? self.hid : nil;
 }
 
 - (BOOL)terminateWithTimeout:(NSTimeInterval)timeout

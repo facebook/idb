@@ -13,11 +13,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef NSString *FBSimulatorScale NS_STRING_ENUM;
+typedef NSString *FBScale NS_STRING_ENUM;
 
-extern FBSimulatorScale const FBSimulatorScale25;
-extern FBSimulatorScale const FBSimulatorScale50;
-extern FBSimulatorScale const FBSimulatorScale75;
-extern FBSimulatorScale const FBSimulatorScale100;
+extern FBScale const FBScale25;
+extern FBScale const FBScale50;
+extern FBScale const FBScale75;
+extern FBScale const FBScale100;
 
 NS_ASSUME_NONNULL_END

@@ -112,11 +112,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .shutdown, ControlCoreSubject(simulator)) {
         try simulator.set!.kill(simulator)
       }
-    case .tap(let x, let y):
-      return iOSTargetRunner.simple(reporter, .tap, ControlCoreSubject(simulator)) {
-        let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
-        try event.perform(on: simulator.connect().connectToHID())
-      }
     case .setLocation(let latitude, let longitude):
       return iOSTargetRunner.simple(reporter, .setLocation, ControlCoreSubject(simulator)) {
         try simulator.setLocation(latitude, longitude: longitude)

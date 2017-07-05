@@ -357,7 +357,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   [self terminateWithErrorMessage:nil];
 }
 
-- (FBTerminationHandleType)type
++ (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeTask;
 }

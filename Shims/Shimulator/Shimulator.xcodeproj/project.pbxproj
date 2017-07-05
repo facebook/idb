@@ -8,15 +8,31 @@
 
 /* Begin PBXBuildFile section */
 		AA017F491BD777B600F45E9D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = AA017F481BD777B600F45E9D /* main.m */; };
+		AA56EAEB1EEF089A0062C2BC /* XCTestShim.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB07DEE1E8EC07000897C94 /* XCTestShim.m */; };
+		AAB07DEF1E8EC07000897C94 /* XCTestShim.m in Sources */ = {isa = PBXBuildFile; fileRef = AAB07DEE1E8EC07000897C94 /* XCTestShim.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		AA017F411BD7776B00F45E9D /* libShimulator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libShimulator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA017F481BD777B600F45E9D /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		AA56EAE21EEF08720062C2BC /* libMaculator.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMaculator.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shimulator.xcconfig; sourceTree = "<group>"; };
+		AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Maculator.xcconfig; sourceTree = "<group>"; };
+		AAB07DEE1E8EC07000897C94 /* XCTestShim.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XCTestShim.m; sourceTree = "<group>"; };
+		AAB07DF01E8EC0F400897C94 /* dyld-interposing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "dyld-interposing.h"; sourceTree = "<group>"; };
+		AAB07DF11E8EC14D00897C94 /* XCTestPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCTestPrivate.h; sourceTree = "<group>"; };
+		AAB07DF21E8EC1D200897C94 /* ReporterEvents.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ReporterEvents.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AA017F3E1BD7776B00F45E9D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA56EADF1EEF08720062C2BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -29,7 +45,13 @@
 		AA017F381BD7776B00F45E9D = {
 			isa = PBXGroup;
 			children = (
+				AAB07DF01E8EC0F400897C94 /* dyld-interposing.h */,
+				AAB07DF21E8EC1D200897C94 /* ReporterEvents.h */,
+				AAB07DF11E8EC14D00897C94 /* XCTestPrivate.h */,
 				AA017F481BD777B600F45E9D /* main.m */,
+				AAB07DEE1E8EC07000897C94 /* XCTestShim.m */,
+				AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */,
+				AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */,
 				AA017F421BD7776B00F45E9D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -38,6 +60,7 @@
 			isa = PBXGroup;
 			children = (
 				AA017F411BD7776B00F45E9D /* libShimulator.dylib */,
+				AA56EAE21EEF08720062C2BC /* libMaculator.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -46,6 +69,13 @@
 
 /* Begin PBXHeadersBuildPhase section */
 		AA017F3F1BD7776B00F45E9D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA56EAE01EEF08720062C2BC /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -72,6 +102,23 @@
 			productReference = AA017F411BD7776B00F45E9D /* libShimulator.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
+		AA56EAE11EEF08720062C2BC /* Maculator */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA56EAEA1EEF08720062C2BC /* Build configuration list for PBXNativeTarget "Maculator" */;
+			buildPhases = (
+				AA56EADE1EEF08720062C2BC /* Sources */,
+				AA56EADF1EEF08720062C2BC /* Frameworks */,
+				AA56EAE01EEF08720062C2BC /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Maculator;
+			productName = Maculator;
+			productReference = AA56EAE21EEF08720062C2BC /* libMaculator.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -83,6 +130,9 @@
 				TargetAttributes = {
 					AA017F401BD7776B00F45E9D = {
 						CreatedOnToolsVersion = 7.0.1;
+					};
+					AA56EAE11EEF08720062C2BC = {
+						CreatedOnToolsVersion = 9.0;
 					};
 				};
 			};
@@ -99,6 +149,7 @@
 			projectRoot = "";
 			targets = (
 				AA017F401BD7776B00F45E9D /* Shimulator */,
+				AA56EAE11EEF08720062C2BC /* Maculator */,
 			);
 		};
 /* End PBXProject section */
@@ -109,6 +160,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA017F491BD777B600F45E9D /* main.m in Sources */,
+				AAB07DEF1E8EC07000897C94 /* XCTestShim.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA56EADE1EEF08720062C2BC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA56EAEB1EEF089A0062C2BC /* XCTestShim.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,98 +178,42 @@
 		AA017F431BD7776B00F45E9D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				SDKROOT = iphoneos;
 			};
 			name = Debug;
 		};
 		AA017F441BD7776B00F45E9D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				SDKROOT = iphoneos;
 			};
 			name = Release;
 		};
 		AA017F461BD7776B00F45E9D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */;
 			buildSettings = {
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		AA017F471BD7776B00F45E9D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA56EAEC1EEFC5270062C2BC /* Shimulator.xcconfig */;
 			buildSettings = {
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		AA56EAE81EEF08720062C2BC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		AA56EAE91EEF08720062C2BC /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AA56EAED1EEFC6090062C2BC /* Maculator.xcconfig */;
+			buildSettings = {
 			};
 			name = Release;
 		};
@@ -230,6 +234,15 @@
 			buildConfigurations = (
 				AA017F461BD7776B00F45E9D /* Debug */,
 				AA017F471BD7776B00F45E9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA56EAEA1EEF08720062C2BC /* Build configuration list for PBXNativeTarget "Maculator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA56EAE81EEF08720062C2BC /* Debug */,
+				AA56EAE91EEF08720062C2BC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

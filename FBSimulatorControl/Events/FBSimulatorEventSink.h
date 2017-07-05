@@ -9,20 +9,19 @@
 
 #import <FBSimulatorControl/FBSimulator.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBAgentLaunchConfiguration;
 @class FBApplicationDescriptor ;
 @class FBApplicationLaunchConfiguration;
 @class FBDiagnostic;
 @class FBProcessInfo;
 @class FBSimulator;
-@class FBSimulatorApplication;
-@class FBSimulatorBridge;
+@class FBSimulatorAgentOperation;
 @class FBSimulatorConnection;
 @class FBTestManager;
 @protocol FBTerminationHandle;
 @protocol FBJSONSerializable;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A reciever of Simulator Events
@@ -78,20 +77,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Event for the launch of an Agent.
 
- @param launchConfig the Agent Launch Configuration that was used to launch the Agentagent.
- @param agentProcess the resulting Process Info from the launch.
- @param stdOut the stdout file handle of the launched agent, may be nil.
- @param stdErr the stderr file handle of the launched agent, may be nil.
+ @param operation the Launched Agent Operation.
  */
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr;
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation;
 
 /**
  Event of the termination of an agent.
 
- @param agentProcess the process that was terminated.
- @param expected whether the termination was expected or not.
+ @param operation the Terminated. Agent Operation.
+ @param statLoc the termination status. Documented in waitpid(2).
  */
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected;
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc;
 
 /**
  Event for the launch of an Application.

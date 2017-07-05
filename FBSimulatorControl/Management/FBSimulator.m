@@ -35,6 +35,7 @@
 #import "FBSimulatorHIDEvent.h"
 #import "FBSimulatorHistoryGenerator.h"
 #import "FBSimulatorLifecycleCommands.h"
+#import "FBSimulatorLogCommands.h"
 #import "FBSimulatorLoggingEventSink.h"
 #import "FBSimulatorNotificationEventSink.h"
 #import "FBSimulatorPool.h"
@@ -81,7 +82,6 @@
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;
-  _commandResponders = [FBSimulator commandRespondersForSimulator:self];
 
   return self;
 }
@@ -113,6 +113,7 @@
 {
   return @[
     FBAgentLaunchConfiguration.class,
+    FBLogTailConfiguration.class,
     FBSimulatorHIDEvent.class,
     FBTestLaunchConfiguration.class,
   ];
@@ -286,26 +287,32 @@
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  for (id target in self.commandResponders) {
-    if ([target respondsToSelector:selector]) {
-      return target;
+  for (Class class in FBSimulator.commandResponders) {
+    if ([class instancesRespondToSelector:selector]) {
+      return [class commandsWithSimulator:self];
     }
   }
-  return nil;
+  return [super forwardingTargetForSelector:selector];
 }
 
-+ (NSArray *)commandRespondersForSimulator:(FBSimulator *)simulator
++ (NSArray<Class> *)commandResponders
 {
-  return @[
-    [FBSimulatorAgentCommands commandsWithSimulator:simulator],
-    [FBSimulatorApplicationCommands commandsWithSimulator:simulator],
-    [FBSimulatorBridgeCommands commandsWithSimulator:simulator],
-    [FBSimulatorKeychainCommands commandsWithSimulator:simulator],
-    [FBSimulatorLifecycleCommands commandsWithSimulator:simulator],
-    [FBSimulatorSettingsCommands commandWithSimulator:simulator],
-    [FBSimulatorVideoRecordingCommands commandsWithSimulator:simulator],
-    [FBSimulatorXCTestCommands commandsWithSimulator:simulator],
-  ];
+  static dispatch_once_t onceToken;
+  static NSArray<Class> *commandClasses;
+  dispatch_once(&onceToken, ^{
+    commandClasses = @[
+      FBSimulatorAgentCommands.class,
+      FBSimulatorApplicationCommands.class,
+      FBSimulatorBridgeCommands.class,
+      FBSimulatorKeychainCommands.class,
+      FBSimulatorLifecycleCommands.class,
+      FBSimulatorLogCommands.class,
+      FBSimulatorSettingsCommands.class,
+      FBSimulatorVideoRecordingCommands.class,
+      FBSimulatorXCTestCommands.class,
+    ];
+  });
+  return commandClasses;
 }
 
 #pragma mark Private

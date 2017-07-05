@@ -12,6 +12,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
+#import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorHistory+Private.h"
 #import "FBSimulatorHistory+Queries.h"
 
@@ -145,15 +146,15 @@
 {
 }
 
-- (void)agentDidLaunch:(FBAgentLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)agentProcess stdOut:(NSFileHandle *)stdOut stdErr:(NSFileHandle *)stdErr
+- (void)agentDidLaunch:(FBSimulatorAgentOperation *)operation
 {
-  [self processLaunched:agentProcess withConfiguration:launchConfig];
+  [self processLaunched:operation.process withConfiguration:operation.configuration];
 }
 
-- (void)agentDidTerminate:(FBProcessInfo *)agentProcess expected:(BOOL)expected
+- (void)agentDidTerminate:(FBSimulatorAgentOperation *)operation statLoc:(int)statLoc
 {
-  [self processTerminated:agentProcess];
-  [self updateProcess:agentProcess withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(expected)];
+  [self processTerminated:operation.process];
+  [self updateProcess:operation.process withMetadataNamed:FBSimulatorHistoryDiagnosticNameTerminationStatus value:@(statLoc)];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager

@@ -434,7 +434,8 @@ class HttpRelay : Relay {
     return ActionRoute.post(.tap) { json in
       let x = try json.getValue("x").getNumber().doubleValue
       let y = try json.getValue("y").getNumber().doubleValue
-      return Action.tap(x, y)
+      let event = FBSimulatorHIDEvent.tapAt(x: x, y: y)
+      return Action.core(event)
     }
   }}
 
