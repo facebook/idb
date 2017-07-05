@@ -14,6 +14,9 @@
 #import "FBSimulatorError.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+
 FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch = @"agentlaunch";
 
 @implementation FBAgentLaunchConfiguration (Simulator)
@@ -40,43 +43,58 @@ FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch = @"agentlaunch";
 
 - (BOOL)createOutputForSimulator:(FBSimulator *)simulator stdOutOut:(FBProcessOutput **)stdOutOut stdErrOut:(FBProcessOutput **)stdErrOut error:(NSError **)error
 {
-  FBDiagnostic *stdOutDiagnostic = nil;
-  FBDiagnostic *stdErrDiagnostic = nil;
-  NSFileHandle *stdOutHandle = nil;
-  NSFileHandle *stdErrHandle = nil;
+  FBProcessOutput *stdOut = nil;
+  FBProcessOutput *stdErr = nil;
+  if (![self createOutputForSimulator:simulator outputOut:&stdOut selector:@selector(stdOut) error:error]) {
+    return NO;
+  }
+  if (stdOutOut && stdOut) {
+    *stdOutOut = stdOut;
+  }
+  if (![self createOutputForSimulator:simulator outputOut:&stdErr selector:@selector(stdErr) error:error]) {
+    return NO;
+  }
+  if (stdErrOut && stdErr) {
+    *stdErrOut = stdErr;
+  }
+  return YES;
+}
 
-  // Create the File Handles, based on the configuration for the AgentLaunch.
-  if (![self createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:error]) {
+#pragma mark Private
+
+- (BOOL)createOutputForSimulator:(FBSimulator *)simulator outputOut:(FBProcessOutput **)outputOut selector:(SEL)selector error:(NSError **)error
+{
+  FBDiagnostic *diagnostic = nil;
+  if (![self createDiagnosticForSelector:selector simulator:simulator diagnosticOut:&diagnostic error:error]) {
     return NO;
   }
-  if (stdOutDiagnostic) {
-    NSString *path = stdOutDiagnostic.asPath;
-    stdOutHandle = [NSFileHandle fileHandleForWritingAtPath:path];
-    if (!stdOutHandle) {
+  if (diagnostic) {
+    NSString *path = diagnostic.asPath;
+    NSFileHandle *handle = [NSFileHandle fileHandleForWritingAtPath:path];
+    if (!handle) {
       return [[FBSimulatorError
-        describeFormat:@"Could not file handle for stdout at path '%@' for config '%@'", path, self]
+        describeFormat:@"Could not file handle for %@ at path '%@' for config '%@'", NSStringFromSelector(selector), path, self]
         failBool:error];
     }
-    if (stdErrOut) {
-      *stdErrOut = [FBProcessOutput outputForFileHandle:stdErrHandle diagnostic:stdOutDiagnostic];
+    if (outputOut) {
+      *outputOut = [FBProcessOutput outputForFileHandle:handle diagnostic:diagnostic];
     }
+    return YES;
   }
-  if (![self createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:error]) {
+  id<FBFileConsumer> consumer = [self.output performSelector:selector];
+  if (![consumer conformsToProtocol:@protocol(FBFileConsumer)]) {
+    return YES;
+  }
+  FBProcessOutput *output = [FBProcessOutput outputWithConsumer:consumer error:error];
+  if (!output) {
     return NO;
   }
-  if (stdErrDiagnostic) {
-    NSString *path = stdErrDiagnostic.asPath;
-    stdErrHandle = [NSFileHandle fileHandleForWritingAtPath:path];
-    if (!stdOutHandle) {
-      return [[FBSimulatorError
-        describeFormat:@"Could not file handle for stderr at path '%@' for config '%@'", path, self]
-        failBool:error];
-    }
-    if (stdOutOut) {
-      *stdOutOut = [FBProcessOutput outputForFileHandle:stdOutHandle diagnostic:stdOutDiagnostic];
-    }
+  if (outputOut) {
+    *outputOut = output;
   }
   return YES;
 }
 
 @end
+
+#pragma clang diagnostic pop

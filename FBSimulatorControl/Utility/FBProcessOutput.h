@@ -31,6 +31,11 @@ extern FBTerminationHandleType const FBTerminationHandleTypeProcessOutput;
 + (instancetype)outputForFileHandle:(NSFileHandle *)fileHandle diagnostic:(FBDiagnostic *)diagnostic;
 
 /**
+ An Output Container for a File Consumer.
+ */
++ (nullable instancetype)outputWithConsumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
+
+/**
  The File Handle.
  */
 @property (nonatomic, strong, readonly) NSFileHandle *fileHandle;
@@ -38,7 +43,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeProcessOutput;
 /**
  The Diagnostic.
  */
-@property (nonatomic, strong, readonly) FBDiagnostic *diagnostic;
+@property (nonatomic, strong, nullable, readonly) FBDiagnostic *diagnostic;
 
 @end
 

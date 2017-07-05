@@ -40,6 +40,17 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)createStdErrDiagnosticForSimulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic *_Nullable* _Nullable)diagnosticOut error:(NSError **)error;
 
+/**
+ Creates a FBDiagnostic for the location of the selector, if applicable.
+
+ @param selector the selector to apply.
+ @param simulator the simulator to create the diagnostic for.
+ @param diagnosticOut an outparam for the diagnostic.
+ @param error an error out for any error that occurs.
+ @return a diagnostic if applicable, nil otherwise.
+ */
+- (BOOL)createDiagnosticForSelector:(SEL)selector simulator:(FBSimulator *)simulator diagnosticOut:(FBDiagnostic *_Nullable*_Nullable)diagnosticOut error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
