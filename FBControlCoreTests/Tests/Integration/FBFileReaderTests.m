@@ -1,0 +1,49 @@
+/**
+ * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+#import <XCTest/XCTest.h>
+
+#import <FBControlCore/FBControlCore.h>
+
+@interface FBFileReaderTests : XCTestCase
+
+@end
+
+@implementation FBFileReaderTests
+
+- (void)testConsumesData
+{
+  // Setup
+  NSPipe *pipe = NSPipe.pipe;
+  FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
+  FBFileReader *writer = [FBFileReader readerWithFileHandle:pipe.fileHandleForReading consumer:consumer];
+
+  // Start reading
+  NSError *error = nil;
+  BOOL success = [writer startReadingWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  // Write some data and confirm that it is as expected.
+  NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
+  [pipe.fileHandleForWriting writeData:expected];
+  [pipe.fileHandleForWriting closeFile];
+  success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+    return [expected isEqualToData:consumer.data];
+  }];
+  XCTAssertTrue(success);
+
+  // Stop reading
+  success = [writer stopReadingWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+}
+
+@end
+
