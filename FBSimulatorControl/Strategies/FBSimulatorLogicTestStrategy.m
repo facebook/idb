@@ -9,6 +9,8 @@
 
 #import "FBSimulatorLogicTestStrategy.h"
 
+#import <FBControlCore/FBControlCore.h>
+
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulatorAgentOperation.h"
 
@@ -17,11 +19,8 @@
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
 
-@property (nonatomic, strong, readwrite) FBPipeReader *stdOutPipe;
-@property (nonatomic, strong, readwrite) FBPipeReader *stdErrPipe;
-@property (nonatomic, strong, readwrite) FBProcessInfo *process;
+@property (nonatomic, strong, readwrite) FBSimulatorAgentOperation *operation;
 
-@property (atomic, assign, readwrite) BOOL hasTerminated;
 @property (atomic, assign, readwrite) int exitCode;
 
 @end
@@ -48,28 +47,23 @@
 
 - (pid_t)logicTestProcess:(FBLogicTestProcess *)process startWithError:(NSError **)error
 {
-  // Create the Pipes
-  self.stdOutPipe = [FBPipeReader pipeReaderWithConsumer:process.stdOutReader];
-  self.stdErrPipe = [FBPipeReader pipeReaderWithConsumer:process.stdErrReader];
-  NSError *innerError = nil;
-
-  // Start Reading the Stdout
-  if (![self.stdOutPipe startReadingWithError:&innerError]) {
-    [[[FBXCTestError
-      describeFormat:@"Failed to read the stdout of Logic Test Process %@", process.launchPath]
-      causedBy:innerError]
-      fail:error];
+  FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
+    configurationWithStdOut:process.stdOutReader
+    stdErr:process.stdErrReader
+    error:error];
+  if (!output) {
+    return -1;
+  }
+  FBBinaryDescriptor *binary = [FBBinaryDescriptor binaryWithPath:process.launchPath error:error];
+  if (!binary) {
     return -1;
   }
 
-  // Start Reading the Stderr
-  if (![self.stdErrPipe startReadingWithError:&innerError]) {
-    [[[FBXCTestError
-      describeFormat:@"Failed to read the stdout of Logic Test Process %@", process.launchPath]
-      causedBy:innerError]
-      fail:error];
-    return -1;
-  }
+  FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
+   configurationWithBinary:binary
+   arguments:process.arguments
+   environment:process.environment
+   output:output];
 
   // Launch The Process
   FBAgentTerminationHandler handler = ^(int stat_loc){
@@ -78,18 +72,14 @@
     } else if (WIFSIGNALED(stat_loc)) {
       self.exitCode = WTERMSIG(stat_loc);
     }
-    self.hasTerminated = YES;
   };
-  self.process = [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
-    launchAgentWithLaunchPath:process.launchPath
-    arguments:process.arguments
-    environment:process.environment
-    waitForDebugger:process.waitForDebugger
-    stdOut:self.stdOutPipe.pipe.fileHandleForWriting
-    stdErr:self.stdErrPipe.pipe.fileHandleForWriting
+
+  NSError *innerError = nil;
+  self.operation = [[FBAgentLaunchStrategy strategyWithSimulator:self.simulator]
+    launchAgent:configuration
     terminationHandler:handler
     error:&innerError];
-  if (!self.process) {
+  if (!self.operation) {
     [[[FBXCTestError
       describeFormat:@"Failed to launch Logic Test Process %@", process.launchPath]
       causedBy:innerError]
@@ -97,7 +87,7 @@
     return -1;
   }
 
-  return self.process.processIdentifier;
+  return self.operation.process.processIdentifier;
 }
 
 - (void)terminateLogicTestProcess:(FBLogicTestProcess *)process
@@ -108,11 +98,11 @@
 - (BOOL)logicTestProcess:(FBLogicTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   BOOL waitSuccessful = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return self.hasTerminated;
+    return self.operation.hasTerminated;
   }];
 
   // Check that we exited normally
-  if (![process processDidTerminateNormallyWithProcessIdentifier:self.process.processIdentifier didTimeout:(waitSuccessful == NO) exitCode:self.exitCode error:error]) {
+  if (![process processDidTerminateNormallyWithProcessIdentifier:self.operation.process.processIdentifier didTimeout:(waitSuccessful == NO) exitCode:self.exitCode error:error]) {
     return NO;
   }
   return YES;
