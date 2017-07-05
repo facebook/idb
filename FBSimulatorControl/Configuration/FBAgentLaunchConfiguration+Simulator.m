@@ -10,11 +10,15 @@
 #import "FBAgentLaunchConfiguration+Simulator.h"
 
 #import "FBSimulator.h"
+#import "FBProcessOutput.h"
 #import "FBSimulatorError.h"
+#import "FBProcessLaunchConfiguration+Simulator.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch = @"agentlaunch";
 
 @implementation FBAgentLaunchConfiguration (Simulator)
+
+#pragma mark FBiOSTargetAction
 
 + (FBiOSTargetActionType)actionType
 {
@@ -30,6 +34,49 @@ FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch = @"agentlaunch";
   }
   FBSimulator *simulator = (FBSimulator *) target;
   return [simulator launchAgent:self error:error] != nil;
+}
+
+#pragma mark Public
+
+- (BOOL)createOutputForSimulator:(FBSimulator *)simulator stdOutOut:(FBProcessOutput **)stdOutOut stdErrOut:(FBProcessOutput **)stdErrOut error:(NSError **)error
+{
+  FBDiagnostic *stdOutDiagnostic = nil;
+  FBDiagnostic *stdErrDiagnostic = nil;
+  NSFileHandle *stdOutHandle = nil;
+  NSFileHandle *stdErrHandle = nil;
+
+  // Create the File Handles, based on the configuration for the AgentLaunch.
+  if (![self createStdOutDiagnosticForSimulator:simulator diagnosticOut:&stdOutDiagnostic error:error]) {
+    return NO;
+  }
+  if (stdOutDiagnostic) {
+    NSString *path = stdOutDiagnostic.asPath;
+    stdOutHandle = [NSFileHandle fileHandleForWritingAtPath:path];
+    if (!stdOutHandle) {
+      return [[FBSimulatorError
+        describeFormat:@"Could not file handle for stdout at path '%@' for config '%@'", path, self]
+        failBool:error];
+    }
+    if (stdErrOut) {
+      *stdErrOut = [FBProcessOutput outputForFileHandle:stdErrHandle diagnostic:stdOutDiagnostic];
+    }
+  }
+  if (![self createStdErrDiagnosticForSimulator:simulator diagnosticOut:&stdErrDiagnostic error:error]) {
+    return NO;
+  }
+  if (stdErrDiagnostic) {
+    NSString *path = stdErrDiagnostic.asPath;
+    stdErrHandle = [NSFileHandle fileHandleForWritingAtPath:path];
+    if (!stdOutHandle) {
+      return [[FBSimulatorError
+        describeFormat:@"Could not file handle for stderr at path '%@' for config '%@'", path, self]
+        failBool:error];
+    }
+    if (stdOutOut) {
+      *stdOutOut = [FBProcessOutput outputForFileHandle:stdOutHandle diagnostic:stdOutDiagnostic];
+    }
+  }
+  return YES;
 }
 
 @end

@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
 @class FBProcessInfo;
+@class FBProcessOutput;
 
 /**
  The Termination Handle Type for an Agent.
@@ -46,12 +47,12 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
 /**
  The stdout File Handle.
  */
-@property (nonatomic, strong, nullable, readonly) NSFileHandle *stdOutHandle;
+@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdOut;
 
 /**
  The stderr File Handle.
  */
-@property (nonatomic, strong, nullable, readonly) NSFileHandle *stdErrHandle;
+@property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdErr;
 
 /**
  The Launched Process Info.
@@ -75,11 +76,11 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
 
  @param simulator the Simulator the Agent is launched in.
  @param configuration the configuration the process was launched with.
- @param stdOutHandle the File Handle of the Stdout.
- @param stdErrHandle the File Handle of the Stderr.
+ @param stdOut the Stdout output.
+ @param stdErr the Stderr output.
  @param handler the handler continuation.
  */
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOutHandle:(nullable NSFileHandle *)stdOutHandle stdErrHandle:(nullable NSFileHandle *)stdErrHandle handler:(nullable FBAgentTerminationHandler)handler;
++ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr handler:(nullable FBAgentTerminationHandler)handler;
 
 /**
  Called internally by the framework when the owning process has been launched.

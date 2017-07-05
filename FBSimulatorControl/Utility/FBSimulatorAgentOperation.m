@@ -11,6 +11,7 @@
 
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
+#import "FBProcessOutput.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"
 
@@ -26,12 +27,12 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 
 #pragma mark Initializers
 
-+ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOutHandle:(nullable NSFileHandle *)stdOutHandle stdErrHandle:(nullable NSFileHandle *)stdErrHandle handler:(nullable FBAgentTerminationHandler)handler
++ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr handler:(nullable FBAgentTerminationHandler)handler
 {
-  return [[self alloc] initWithSimulator:simulator configuration:configuration stdOutHandle:stdOutHandle stdErrHandle:stdErrHandle handler:handler];
+  return [[self alloc] initWithSimulator:simulator configuration:configuration stdOut:stdOut stdErr:stdErr handler:handler];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOutHandle:(nullable NSFileHandle *)stdOutHandle stdErrHandle:(nullable NSFileHandle *)stdErrHandle handler:(nullable FBAgentTerminationHandler)handler
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBAgentLaunchConfiguration *)configuration stdOut:(nullable FBProcessOutput *)stdOut stdErr:(nullable FBProcessOutput *)stdErr handler:(nullable FBAgentTerminationHandler)handler
 {
   self = [super init];
   if (!self) {
@@ -40,8 +41,8 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 
   _simulator = simulator;
   _configuration = configuration;
-  _stdOutHandle = stdOutHandle;
-  _stdErrHandle = stdErrHandle;
+  _stdOut = stdOut;
+  _stdErr = stdErr;
   __weak typeof(self) weakSelf = self;
   _handler = ^(int stat_loc) {
     if (handler) {
@@ -73,8 +74,8 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 {
   _handler = nil;
   [self.simulator.eventSink agentDidTerminate:self statLoc:stat_loc];
-  [self.stdOutHandle closeFile];
-  [self.stdErrHandle closeFile];
+  [self.stdOut terminate];
+  [self.stdErr terminate];
 }
 
 #pragma mark FBTerminationAwaitable
