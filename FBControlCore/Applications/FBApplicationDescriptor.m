@@ -236,7 +236,7 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
 + (NSString *)infoPlistPathForAppAtPath:(NSString *)appPath
 {
   NSArray *paths = @[
-    [appPath stringByAppendingPathComponent:@"info.plist"],
+    [appPath stringByAppendingPathComponent:@"Info.plist"],
     [[appPath stringByAppendingPathComponent:@"Contents"] stringByAppendingPathComponent:@"Info.plist"]
   ];
 
