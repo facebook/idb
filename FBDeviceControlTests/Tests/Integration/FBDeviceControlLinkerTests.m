@@ -27,10 +27,6 @@
   if (!NSProcessInfo.processInfo.environment[FBControlCoreDebugLogging]) {
     setenv(FBControlCoreDebugLogging.UTF8String, "NO", 1);
   }
-}
-
-- (void)testLinksPrivateFrameworks
-{
   [FBDeviceControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
   [FBDeviceControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
 }
