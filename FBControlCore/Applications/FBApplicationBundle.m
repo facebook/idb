@@ -123,7 +123,7 @@ static BOOL isApplicationAtPath(NSString *path)
 + (NSString *)infoPlistPathForAppAtPath:(NSString *)appPath
 {
   NSArray *paths = @[
-    [appPath stringByAppendingPathComponent:@"info.plist"],
+    [appPath stringByAppendingPathComponent:@"Info.plist"],
     [[appPath stringByAppendingPathComponent:@"Contents"] stringByAppendingPathComponent:@"Info.plist"]
   ];
 
