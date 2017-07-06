@@ -78,6 +78,11 @@ FBXCTestType const FBXCTestTypeListTest = @"list-test";
 
 #pragma mark NSObject
 
+- (NSString *)description
+{
+  return [self.jsonSerializableRepresentation description];
+}
+
 - (BOOL)isEqual:(FBXCTestConfiguration *)object
 {
   // Class must match exactly in the class-cluster
@@ -112,9 +117,6 @@ NSString *const KeyTestTimeout = @"test_timeout";
 NSString *const KeyTestType = @"test_type";
 NSString *const KeyWaitForDebugger = @"wait_for_debugger";
 NSString *const KeyWorkingDirectory = @"working_directory";
-
-NSString *const ValueLogicTest = @"logic-test";
-NSString *const ValueApplicationTest = @"application-test";
 
 - (id)jsonSerializableRepresentation
 {
@@ -204,9 +206,11 @@ NSString *const ValueApplicationTest = @"application-test";
     }
   }
   Class clusterClass = nil;
-  if ([testType isEqualToString:ValueLogicTest]) {
+  if ([testType isEqualToString:FBXCTestTypeListTest]) {
+    clusterClass = FBListTestConfiguration.class;
+  } else if ([testType isEqualToString:FBXCTestTypeLogicTest]) {
     clusterClass = listTestsOnly.boolValue ? FBListTestConfiguration.class : FBLogicTestConfiguration.class;
-  } else if ([testType isEqualToString:ValueApplicationTest]) {
+  } else if ([testType isEqualToString:FBXCTestTypeApplicationTest]) {
     clusterClass = FBApplicationTestConfiguration.class;
   } else {
     return [[FBControlCoreError
@@ -245,7 +249,7 @@ NSString *const ValueApplicationTest = @"application-test";
 
 + (instancetype)configurationWithDestination:(FBXCTestDestination *)destination shims:(FBXCTestShimConfiguration *)shims environment:(NSDictionary<NSString *, NSString *> *)environment workingDirectory:(NSString *)workingDirectory testBundlePath:(NSString *)testBundlePath waitForDebugger:(BOOL)waitForDebugger timeout:(NSTimeInterval)timeout
 {
-  return [[FBListTestConfiguration alloc] initWithDestination:destination shims:nil environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:nil];
+  return [[FBListTestConfiguration alloc] initWithDestination:destination shims:shims environment:environment workingDirectory:workingDirectory testBundlePath:testBundlePath waitForDebugger:waitForDebugger timeout:timeout runnerAppPath:nil testFilter:nil];
 }
 
 #pragma mark Public

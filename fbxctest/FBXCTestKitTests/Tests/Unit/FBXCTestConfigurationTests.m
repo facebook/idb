@@ -141,7 +141,7 @@
   [self assertValueSemanticsOfConfiguration:configuration];
 
   FBXCTestConfiguration *expected = [FBApplicationTestConfiguration
-    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:FBDeviceModeliPhone6 version:nil]
+    configurationWithDestination:[[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:nil version:nil]
     environment:processEnvironment
     workingDirectory:workingDirectory
     testBundlePath:self.iOSUnitTestBundlePath
@@ -285,7 +285,7 @@
     shims:configuration.shims
     environment:processEnvironment
     workingDirectory:workingDirectory
-    testBundlePath:self.iOSUnitTestBundlePath
+    testBundlePath:testBundlePath
     waitForDebugger:NO
     timeout:0
     testFilter:nil];
@@ -319,7 +319,7 @@
     shims:configuration.shims
     environment:processEnvironment
     workingDirectory:workingDirectory
-    testBundlePath:self.iOSUnitTestBundlePath
+    testBundlePath:testBundlePath
     waitForDebugger:NO
     timeout:0
     testFilter:nil];
@@ -346,13 +346,12 @@
   XCTAssertTrue([configuration.destination isKindOfClass:FBXCTestDestinationMacOSX.class]);
   [self assertValueSemanticsOfConfiguration:configuration];
 
-
   FBXCTestConfiguration *expected = [FBListTestConfiguration
     configurationWithDestination:[[FBXCTestDestinationMacOSX alloc] init]
     shims:configuration.shims
     environment:@{}
     workingDirectory:workingDirectory
-    testBundlePath:self.iOSUnitTestBundlePath
+    testBundlePath:testBundlePath
     waitForDebugger:NO
     timeout:0];
   XCTAssertEqualObjects(configuration, expected);
@@ -383,7 +382,7 @@
     shims:configuration.shims
     environment:@{}
     workingDirectory:workingDirectory
-    testBundlePath:self.iOSUnitTestBundlePath
+    testBundlePath:testBundlePath
     waitForDebugger:NO
     timeout:0];
   XCTAssertEqualObjects(configuration, expected);
