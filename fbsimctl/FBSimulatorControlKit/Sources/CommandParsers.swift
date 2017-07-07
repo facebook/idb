@@ -526,6 +526,7 @@ extension Action : Parsable {
         self.shutdownParser,
         self.streamParser,
         self.tapParser,
+        self.tailParser,
         self.terminateParser,
         self.uninstallParser,
         self.uploadParser,
@@ -776,6 +777,16 @@ extension Action : Parsable {
         FileOutput.parser
       )
       .fmap(Action.stream)
+  }
+
+  static var tailParser: Parser<Action> {
+    return Parser
+      .ofCommandWithArg(
+        EventName.logTail.rawValue,
+        FBProcessLaunchConfigurationParsers.argumentParser
+      )
+      .fmap(FBLogTailConfiguration.init)
+      .fmap(Action.core)
   }
 
   static var terminateParser: Parser<Action> {

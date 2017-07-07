@@ -233,6 +233,8 @@ let validActions: [([String], Action)] = [
   (["listen", "--http", "43", "--stdin"], .listen(ListenInterface(stdin: true, http: 43, hid: nil, handle: nil))),
   (["listen", "--http", "43", "--socket", "44"], .listen(ListenInterface(stdin: false, http: 43, hid: 44, handle: nil))),
   (["listen"], .listen(ListenInterface(stdin: false, http: nil, hid: nil, handle: nil))),
+  (["logtail"], .logTail(FBLogTailConfiguration(arguments: []))),
+  (["logtail", "some", "--other", "args"], .logTail(FBLogTailConfiguration(arguments: ["some", "--other", "args"]))),
   (["open", "aoo://bar/baz"], .open(URL(string: "aoo://bar/baz")!)),
   (["open", "http://facebook.com"], .open(URL(string: "http://facebook.com")!)),
   (["record", "start"], .record(.start(nil))),

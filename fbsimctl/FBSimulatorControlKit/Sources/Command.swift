@@ -120,6 +120,10 @@ public enum Action {
   static func launchXCTest(_ testLaunch: FBTestLaunchConfiguration) -> Action {
     return self.core(testLaunch.withUITesting(true))
   }
+
+  static func logTail(_ configuration: FBLogTailConfiguration) -> Action {
+    return self.core(configuration)
+  }
 }
 
 /**
