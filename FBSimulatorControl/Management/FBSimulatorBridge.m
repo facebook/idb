@@ -157,22 +157,6 @@
   [self.bridge setLocationWithLatitude:latitude andLongitude:longitude];
 }
 
-- (BOOL)tapX:(double)x y:(double)y error:(NSError **)error
-{
-  NSDictionary *elementDictionary = [self.bridge accessibilityElementForPoint:x andY:y displayId:0];
-  if (!elementDictionary) {
-    return [[FBSimulatorError
-      describeFormat:@"Could not find element at (%f, %f)", x, y]
-      failBool:error];
-  }
-  if (![self.bridge performPressAction:elementDictionary]) {
-    return [[FBSimulatorError
-      describeFormat:@"Could not Press Element with description %@", elementDictionary]
-      failBool:error];
-  }
-  return YES;
-}
-
 - (pid_t)launch:(FBApplicationLaunchConfiguration *)configuration stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
 {
   NSDictionary<NSString *, id> *result = [self.bridge

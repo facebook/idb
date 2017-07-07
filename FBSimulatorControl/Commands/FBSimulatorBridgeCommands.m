@@ -42,15 +42,6 @@
   return self;
 }
 
-- (BOOL)tap:(double)x y:(double)y error:(NSError **)error
-{
-  FBSimulatorBridge *bridge = [[self.simulator connectWithError:error] connectToBridge:error];
-  if (!bridge) {
-    return NO;
-  }
-  return [bridge tapX:x y:y error:error];
-}
-
 - (BOOL)setLocation:(double)latitude longitude:(double)longitude error:(NSError **)error
 {
   FBSimulatorBridge *bridge = [[self.simulator connectWithError:error] connectToBridge:error];
