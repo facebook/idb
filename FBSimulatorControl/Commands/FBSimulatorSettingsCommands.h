@@ -83,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param simulator the Simulator to operate on.
  @return a strategy for the provided Simulator.
  */
-+ (instancetype)commandWithSimulator:(FBSimulator *)simulator;
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

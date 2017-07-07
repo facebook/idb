@@ -12,21 +12,15 @@
 #import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
-
-@class FBSimulator;
+/**
+ The Action Type for an Agent Launch.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeAcessibilityFetch;
 
 /**
- An implementation of Log Commands for Simulators.
+ An action for fetching accessibility.
  */
-@interface FBSimulatorLogCommands : NSObject <FBLogCommands>
-
-/**
- The Designated Initializer.
-
- @param simulator the Simulator.
- @return a new Commands Instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
+@interface FBAccessibilityFetch : NSObject <FBiOSTargetAction>
 
 @end
 

@@ -26,7 +26,7 @@
 
 @implementation FBSimulatorSettingsCommands
 
-+ (instancetype)commandWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
 {
   return [[self alloc] initWithSimulator:simulator];
 }

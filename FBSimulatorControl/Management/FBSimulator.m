@@ -18,6 +18,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBAccessibilityFetch.h"
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
 #import "FBSimulator+Helpers.h"
@@ -112,6 +113,7 @@
 - (NSArray<Class> *)actionClasses
 {
   return @[
+    FBAccessibilityFetch.class,
     FBAgentLaunchConfiguration.class,
     FBLogTailConfiguration.class,
     FBSimulatorHIDEvent.class,
