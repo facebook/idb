@@ -152,6 +152,12 @@
 
 #pragma mark Interacting with the Simulator
 
+- (NSArray<NSDictionary<NSString *, id> *> *)accessibilityElements
+{
+  id elements = [self.bridge accessibilityElementsWithDisplayId:0];
+  return [FBSimulatorBridge jsonSerializableAccessibility:elements] ?: @[];
+}
+
 - (void)setLocationWithLatitude:(double)latitude longitude:(double)longitude
 {
   [self.bridge setLocationWithLatitude:latitude andLongitude:longitude];
@@ -179,6 +185,26 @@
   }
 
   return processIdentifier;
+}
+
+#pragma mark Private
+
++ (NSArray<NSDictionary<NSString *, id> *> *)jsonSerializableAccessibility:(NSArray *)data
+{
+  NSMutableArray<NSDictionary<NSString *, id> *> *array = [NSMutableArray array];
+  for (NSDictionary<NSString *, id> *oldItem in data) {
+    NSMutableDictionary<NSString *, id> *item = [NSMutableDictionary dictionary];
+    for (NSString *key in oldItem.allKeys) {
+      id value = oldItem[key];
+      if ([value isKindOfClass:NSString.class] || [value isKindOfClass:NSNumber.class]) {
+        item[key] = oldItem[key];
+      } else if ([value isKindOfClass:NSValue.class]) {
+        item[key] = NSStringFromRect([value rectValue]);
+      }
+    }
+    [array addObject:[item copy]];
+  }
+  return [array copy];
 }
 
 #pragma mark FBDebugDescribable
