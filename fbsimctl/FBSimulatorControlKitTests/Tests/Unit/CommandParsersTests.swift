@@ -186,6 +186,7 @@ let invalidQueries: [[String]] = [
 ]
 
 let validActions: [([String], Action)] = [
+  (["accessibility_fetch"], .core(FBAccessibilityFetch())),
   (["approve", "com.foo.bar", "com.bing.bong"], .approve(["com.foo.bar", "com.bing.bong"])),
   (["approve", Fixtures.application.path], .approve([Fixtures.application.bundleID])),
   (["boot", "--locale", "en_US", "--scale=75"], .boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_US") as Locale)).withScale(.scale75))),
