@@ -18,34 +18,91 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+#import "FBSimulatorAgentOperation.h"
 
 @interface FBSimulatorBridge ()
 
-@property (nonatomic, strong, readwrite) SimulatorBridge *bridge;
+@property (nonatomic, strong, nullable, readwrite) SimulatorBridge *bridge;
+@property (nonatomic, strong, nullable, readwrite) FBSimulatorAgentOperation *operation;
 
 @end
 
 @implementation FBSimulatorBridge
 
+#pragma mark Initializers
+
++ (nullable FBBinaryDescriptor *)simulatorBridgeBinaryWithError:(NSError **)error
+{
+  FBApplicationDescriptor *simulatorApp = [FBApplicationDescriptor xcodeSimulator];
+  NSString *path = [simulatorApp.path stringByAppendingPathComponent:@"Contents/Resources/Platforms/iphoneos/usr/libexec/SimulatorBridge"];
+  return [FBBinaryDescriptor binaryWithPath:path error:error];
+}
+
 + (nullable instancetype)bridgeForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  // In Xcode 9, the SimulatorBridge is no longer automatically launched on the Simulator boot.
-  // It is manually launched by Simulator.app and takes a argument of the service-name to register.
-  // This is uniqued based on the PID of the calling process.
-  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
-    return [[[FBSimulatorError
-      describe:@"Connecting a Bridge in Xcode 9 is not yet supported"]
-      inSimulator:simulator]
+  // Connect to the expected-to-be-running CoreSimulatorBridge running inside the Simulator.
+  // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over a Remote Object connection.
+  FBSimulatorAgentOperation *operation = nil;
+  NSString *portName = [self portNameForSimulator:simulator operationOut:&operation error:error];
+  if (!portName) {
+    return nil;
+  }
+  // Get the Bridge
+  SimulatorBridge *bridge = [self bridgeForSimulator:simulator portName:portName operation:operation error:error];
+  if (!bridge) {
+    return nil;
+  }
+
+  // Load Accessibility, return early if this fails
+  [bridge enableAccessibility];
+  if (![bridge accessibilityEnabled]) {
+    return [[FBSimulatorError
+      describeFormat:@"Could not enable accessibility for bridge '%@'", bridge]
       fail:error];
   }
 
-  // Connect to the expected-to-be-running CoreSimulatorBridge running inside the Simulator.
-  // This mimics the behaviour of Simulator.app, which just looks up the service then connects to the distant object over a Remote Object connection.
-  NSError *innerError = nil;
-  mach_port_t bridgePort = [simulator.device lookup:@"com.apple.iphonesimulator.bridge" error:&innerError];
+  return [[FBSimulatorBridge alloc] initWithBridge:bridge operation:operation];
+}
+
++ (nullable NSString *)portNameForSimulator:(FBSimulator *)simulator operationOut:(FBSimulatorAgentOperation **)operationOut error:(NSError **)error
+{
+  NSString *portName = @"com.apple.iphonesimulator.bridge";
+  if (!FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+    return portName;
+  }
+  FBBinaryDescriptor *bridgeBinary = [self simulatorBridgeBinaryWithError:error];
+  if (!bridgeBinary) {
+    return nil;
+  }
+  portName = [portName stringByAppendingFormat:@".%d", getpid()];
+  FBAgentLaunchConfiguration *config = [FBAgentLaunchConfiguration
+    configurationWithBinary:bridgeBinary
+    arguments:@[portName]
+    environment:@{}
+    output:FBProcessOutputConfiguration.outputToDevNull];
+  FBSimulatorAgentOperation *operation = [simulator launchAgent:config error:error];
+  if (!operation) {
+    return nil;
+  }
+  if (operationOut) {
+    *operationOut = operation;
+  }
+  return portName;
+}
+
++ (SimulatorBridge *)bridgeForSimulator:(FBSimulator *)simulator portName:(NSString *)portName operation:(FBSimulatorAgentOperation *)operation error:(NSError **)error
+{
+  __block NSError *innerError;
+  __block mach_port_t bridgePort = [simulator.device lookup:portName error:&innerError];
+  if (!bridgePort && operation) {
+    [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+      bridgePort = [simulator.device lookup:portName error:&innerError];
+      return bridgePort != 0;
+    }];
+  }
   if (bridgePort == 0) {
     return [[[FBSimulatorError
-      describe:@"Could not lookup mach port for 'com.apple.iphonesimulator.bridge'"]
+      describeFormat:@"Could not lookup mach port for '%@'", portName]
       inSimulator:simulator]
       fail:error];
   }
@@ -55,23 +112,14 @@
 
   if (![bridgeDistantObject respondsToSelector:@selector(setLocationScenarioWithPath:)]) {
     return [[FBSimulatorError
-      describeFormat:@"Distant Object '%@' for 'com.apple.iphonesimulator.bridge' at isn't a SimulatorBridge", bridgeDistantObject]
+      describeFormat:@"Distant Object '%@' for '%@' at isn't a SimulatorBridge", portName, bridgeDistantObject]
       fail:error];
   }
 
-  // Load Accessibility, return early if this fails
-  SimulatorBridge *bridge = (SimulatorBridge *) bridgeDistantObject;
-  [bridge enableAccessibility];
-  if (![bridge accessibilityEnabled]) {
-    return [[FBSimulatorError
-      describeFormat:@"Could not enable accessibility for bridge '%@'", bridge]
-      fail:error];
-  }
-
-  return [[FBSimulatorBridge alloc] initWithBridge:bridge];
+  return (SimulatorBridge *) bridgeDistantObject;
 }
 
-- (instancetype)initWithBridge:(id)bridge
+- (instancetype)initWithBridge:(SimulatorBridge *)bridge operation:(FBSimulatorAgentOperation *)operation
 {
   self = [super init];
   if (!self) {
@@ -79,9 +127,12 @@
   }
 
   _bridge = bridge;
+  _operation = operation;
 
   return self;
 }
+
+#pragma mark Lifecycle
 
 - (void)disconnect
 {
@@ -93,6 +144,10 @@
   NSDistantObject *distantObject = (NSDistantObject *) self.bridge;
   self.bridge = nil;
   [[distantObject connectionForProxy] invalidate];
+
+  // Dispose of the operation
+  [self.operation terminate];
+  self.operation = nil;
 }
 
 #pragma mark Interacting with the Simulator
