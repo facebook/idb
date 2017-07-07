@@ -101,7 +101,7 @@
   }
 
   // Prepare test runner
-  FBProductBundle *application = [iosTarget.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:error];
+  FBProductBundle *application = [iosTarget.deviceOperator applicationBundleWithBundleID:self.testLaunchConfiguration.applicationLaunchConfiguration.bundleID error:&innerError];
   if (!application) {
     return [[[XCTestBootstrapError
       describe:@"Failed to prepare test runner"]

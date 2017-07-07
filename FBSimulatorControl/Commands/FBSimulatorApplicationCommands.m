@@ -298,11 +298,22 @@
 
 #pragma mark Private
 
+static NSSet<NSString *> *requiredAppInfoKeys(void)
+{
+  static NSSet<NSString *> *requiredAppInfoKeys = nil;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    requiredAppInfoKeys = [NSSet setWithObjects:ApplicationPathKey, ApplicationTypeKey, nil];
+  });
+  return requiredAppInfoKeys;
+}
+
 - (nullable NSDictionary<NSString *, id> *)appInfo:(NSString *)bundleID error:(NSError **)error
 {
   NSError *innerError = nil;
   NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&innerError];
-  if (!appInfo) {
+  NSSet<NSString *> *actualAppInfoKeys = [NSSet setWithArray:appInfo.allKeys];
+  if (!appInfo || ![requiredAppInfoKeys() isSubsetOfSet:actualAppInfoKeys]) {
     NSDictionary *installedApps = [self.simulator.device installedAppsWithError:nil];
     return [[[[[FBSimulatorError
       describeFormat:@"Application with bundle ID '%@' is not installed", bundleID]
