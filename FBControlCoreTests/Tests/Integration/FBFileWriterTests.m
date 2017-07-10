@@ -42,7 +42,10 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  FBFileWriter *writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting];
+  NSError *error = nil;
+  FBFileWriter *writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:&error];
+  XCTAssertNil(error);
+  XCTAssertNotNil(writer);
 
   // Write some data and confirm that it is as expected.
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];

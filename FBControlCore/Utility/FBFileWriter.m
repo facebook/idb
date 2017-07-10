@@ -31,7 +31,12 @@
 
 @property (nonatomic, strong, readonly) dispatch_queue_t writeQueue;
 
+@property (nonatomic, strong, readwrite) dispatch_io_t io;
+@property (nonatomic, assign, readwrite) int errorCode;
+
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle writeQueue:(dispatch_queue_t)writeQueue;
+
+- (BOOL)startReadingWithError:(NSError **)error;
 
 @end
 
@@ -63,10 +68,14 @@
   return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
 }
 
-+ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle
++ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error
 {
   dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);
-  return [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+  FBFileWriter_Async *writer = [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+  if (![writer startReadingWithError:error]) {
+    return nil;
+  }
+  return writer;
 }
 
 + (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
@@ -84,7 +93,7 @@
   if (!fileHandle) {
     return nil;
   }
-  return [FBFileWriter asyncWriterWithFileHandle:fileHandle];
+  return [FBFileWriter asyncWriterWithFileHandle:fileHandle error:error];
 }
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle
@@ -109,6 +118,14 @@
 - (void)consumeEndOfFile
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+}
+
+#pragma mark NSObject
+
+- (void)dealloc
+{
+  // Cleans up resources. Calling consumeEndOfFile should no-op after the first call.
+  [self consumeEndOfFile];
 }
 
 @end
@@ -156,20 +173,57 @@
   return self;
 }
 
-#pragma mark FBFileConsumer Implementation
+#pragma mark Lifecycle
+
+- (BOOL)startReadingWithError:(NSError **)error
+{
+  NSParameterAssert(self.io == NULL);
+  NSFileHandle *fileHandle = self.fileHandle;
+
+  // If there is an error creating the IO Object, the errorCode will be delivered asynchronously.
+  self.io = dispatch_io_create(DISPATCH_IO_STREAM, fileHandle.fileDescriptor, self.writeQueue, ^(int errorCode) {
+    self.errorCode = errorCode;
+  });
+  if (!self.io) {
+    return [[FBControlCoreError
+      describeFormat:@"A IO Channel could not be created for fd %d", fileHandle.fileDescriptor]
+      failBool:error];
+  }
+
+  // Report partial results with as little as 1 byte read.
+  dispatch_io_set_low_water(self.io, 1);
+  return YES;
+}
 
 - (void)consumeData:(NSData *)data
 {
-  dispatch_async(self.writeQueue, ^{
-    [self.fileHandle writeData:data];
+  if (!self.io) {
+    return;
+  }
+
+  dispatch_data_t dispatchData = dispatch_data_create(data.bytes, data.length, self.writeQueue, ^{
+    // Retain the data, so that it isn't released and the buffer freed before it is used in dispatch_io_write.
+    (void) data;
   });
+  dispatch_io_write(self.io, 0, dispatchData, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 
 - (void)consumeEndOfFile
 {
-  dispatch_async(self.writeQueue, ^{
-    [self.fileHandle closeFile];
-    self.fileHandle = nil;
+  if (!self.io) {
+    return;
+  }
+
+  // Remove resources form self to be closed in the io barrier.
+  NSFileHandle *fileHandle = self.fileHandle;
+  self.fileHandle = nil;
+  dispatch_io_t io = self.io;
+  self.io = nil;
+
+  // Wait for all io operations to stop with a barrier, then close the io channel
+  dispatch_io_barrier(io, ^{
+    dispatch_io_close(io, DISPATCH_IO_STOP);
+    [fileHandle closeFile];
   });
 }
 

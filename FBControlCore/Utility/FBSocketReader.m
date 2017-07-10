@@ -18,11 +18,14 @@
 
 @interface FBSocketReader_Connection : NSObject <FBFileConsumer>
 
-@property (nonatomic, strong, readonly) FBFileReader *reader;
-@property (nonatomic, strong, readonly) FBFileWriter *writer;
 @property (nonatomic, strong, readonly) id<FBSocketConsumer> consumer;
-@property (nonatomic, strong, readonly) dispatch_queue_t completionQueue;
-@property (nonatomic, strong, readonly) void (^completionHandler)(void);
+
+@property (nonatomic, strong, nullable, readonly) NSFileHandle *fileHandle;
+@property (nonatomic, strong, nullable, readonly) FBFileReader *reader;
+@property (nonatomic, strong, nullable, readonly) FBFileWriter *writer;
+
+@property (nonatomic, strong, nullable, readonly) dispatch_queue_t completionQueue;
+@property (nonatomic, strong, nullable, readonly) void (^completionHandler)(void);
 
 @end
 
@@ -35,9 +38,8 @@
     return nil;
   }
 
+  _fileHandle = fileHandle;
   _consumer = consumer;
-  _writer = [FBFileWriter asyncWriterWithFileHandle:fileHandle];
-  _reader = [FBFileReader readerWithFileHandle:fileHandle consumer:self];
   _completionQueue = completionQueue;
   _completionHandler = completionHandler;
 
@@ -46,13 +48,25 @@
 
 - (BOOL)startConsumingWithError:(NSError **)error
 {
+  _writer = [FBFileWriter asyncWriterWithFileHandle:self.fileHandle error:error];
+  if (!_writer) {
+    [self teardown];
+    return NO;
+  }
+  _reader = [FBFileReader readerWithFileHandle:self.fileHandle consumer:self];
+
   if (![self.reader startReadingWithError:error]) {
-    _completionHandler = nil;
-    _completionQueue = nil;
+    [self teardown];
     return NO;
   }
   [self.consumer writeBackAvailable:self.writer];
   return YES;
+}
+
+- (void)teardown
+{
+  _completionHandler = nil;
+  _completionQueue = nil;
 }
 
 #pragma mark FBFileConsumer Implementation
@@ -67,9 +81,9 @@
   [self.consumer consumeEndOfFile];
   [self.writer consumeEndOfFile];
   dispatch_async(self.completionQueue, self.completionHandler);
-  _completionHandler = nil;
-  _completionQueue = nil;
+  [self teardown];
 }
+
 
 @end
 

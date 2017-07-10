@@ -40,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param fileHandle the file handle to write to. It will be closed when an EOF is sent.
  @return a File Reader.
  */
-+ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle;
++ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle error:(NSError **)error;
 
 /**
  Creates a Blocking File Writer from a File Path
