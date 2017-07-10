@@ -33,6 +33,10 @@ extern int (*FBAMDeviceLookupApplications)(CFTypeRef arg0, int arg1, CFDictionar
 extern _Nullable CFStringRef (*_Nonnull FBAMDeviceGetName)(CFTypeRef device);
 extern _Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullable CFStringRef domain, CFStringRef name);
 
+// Installing provisioning profiles
+extern int (*FBAMDeviceInstallProvisioningProfile)(CFTypeRef device, CFTypeRef profile, void *_Nullable handle);
+extern _Nullable CFTypeRef (*_Nonnull FBMISProfileCreateWithFile)(int arg0, CFStringRef profilePath);
+
 // Debugging
 extern void (*FBAMDSetLogLevel)(int32_t level);
 

@@ -145,6 +145,43 @@
   return productBundle;
 }
 
+- (BOOL)DVTinstallProvisioningProfileAtPath:(NSString *)path error:(NSError **)error
+{
+  __block NSError *innerError = nil;
+  BOOL result = [[FBRunLoopSpinner spinUntilBlockFinished:^id{
+    NSURL *url = [NSURL fileURLWithPath:path];
+    return @([self.device.dvtDevice installProvisioningProfileAtURL:url error:&innerError]);
+  }] boolValue];
+
+  if (*error) { *error = innerError; }
+  return result;
+}
+
+- (BOOL)AMDinstallProvisioningProfileAtPath:(NSString *)path error:(NSError **)error
+{
+  NSNumber *returnCode = [self.device.amDevice handleWithBlockDeviceSession:^id (CFTypeRef device) {
+    NSURL *url = [NSURL fileURLWithPath:path];
+    NSString *encoded = [NSString stringWithUTF8String:[url fileSystemRepresentation]];
+    CFStringRef stringRef = (__bridge CFStringRef)encoded;
+    CFTypeRef profile = FBMISProfileCreateWithFile(0, stringRef);
+    return @(FBAMDeviceInstallProvisioningProfile(device, profile, 0));
+  } error:error];
+
+  if (!returnCode) {
+    [[FBDeviceControlError
+      describe:@"Failed to install application"]
+     failBool:error];
+  }
+
+  if ([returnCode intValue] != 0) {
+    [[FBDeviceControlError
+      describe:@"Failed to install application"]
+     failBool:error];
+  }
+
+  return YES;
+}
+
 - (BOOL)uploadApplicationDataAtPath:(NSString *)path bundleID:(NSString *)bundleID error:(NSError **)error
 {
   __block NSError *innerError = nil;
