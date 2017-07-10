@@ -152,8 +152,8 @@ NSString *const FBSimulatorHistoryDiagnosticNameTerminationStatus = @"terminatio
   if (to.simulatorState != from.simulatorState) {
     [string appendFormat:
       @"Simulator State from %@ to %@ | ",
-      [FBSimulator stateStringFromSimulatorState:from.simulatorState],
-      [FBSimulator stateStringFromSimulatorState:to.simulatorState]
+      FBSimulatorStateStringFromState(from.simulatorState),
+      FBSimulatorStateStringFromState(to.simulatorState)
     ];
   }
   if (![to.mutableLaunchedProcesses isEqualToOrderedSet:from.mutableLaunchedProcesses]) {

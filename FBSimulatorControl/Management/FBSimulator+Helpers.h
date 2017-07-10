@@ -42,22 +42,6 @@ static NSString *const ApplicationPathKey = @"Path";
 #pragma mark Methods
 
 /**
- Convenience method for obtaining SimulatorState from a String.
-
- @param stateString the State String to convert from
- @return an Enumerated State for the String.
- */
-+ (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString;
-
-/**
- Convenience method for obtaining a description of Simulator State
-
- @param state the Enumerated State to convert from.
- @return a String Representation of the Simulator State.
- */
-+ (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state;
-
-/**
  Synchronously waits on the provided state.
 
  @param state the state to wait on

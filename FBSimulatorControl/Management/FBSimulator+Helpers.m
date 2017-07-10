@@ -49,16 +49,6 @@
 
 #pragma mark Methods
 
-+ (FBSimulatorState)simulatorStateFromStateString:(NSString *)stateString
-{
-  return FBSimulatorStateFromStateString(stateString);
-}
-
-+ (NSString *)stateStringFromSimulatorState:(FBSimulatorState)state
-{
-  return FBSimulatorStateStringFromState(state);
-}
-
 - (BOOL)waitOnState:(FBSimulatorState)state
 {
   return [self waitOnState:state timeout:FBControlCoreGlobalConfiguration.regularTimeout];
@@ -75,7 +65,7 @@
 {
   if (![self waitOnState:state]) {
     return [[[FBSimulatorError
-      describeFormat:@"Simulator was not in expected %@ state, got %@", [FBSimulator stateStringFromSimulatorState:state], self.stateString]
+      describeFormat:@"Simulator was not in expected %@ state, got %@", FBSimulatorStateStringFromState(state), self.stateString]
       inSimulator:self]
       failBool:error];
   }

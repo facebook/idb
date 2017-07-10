@@ -195,7 +195,7 @@
 
 - (NSString *)stateString
 {
-  return [FBSimulator stateStringFromSimulatorState:self.state];
+  return FBSimulatorStateStringFromState(self.state);
 }
 
 - (NSString *)dataDirectory

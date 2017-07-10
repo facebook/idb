@@ -91,7 +91,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A string representation of the Simulator State.
  */
-@property (nonatomic, copy, readonly, nonnull) NSString *stateString;
+@property (nonatomic, copy, readonly, nonnull) FBSimulatorStateString stateString;
 
 /**
  The Directory that Contains the Simulator's Data

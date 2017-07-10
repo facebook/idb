@@ -37,9 +37,9 @@
   return _dataPath;
 }
 
-- (NSString *)stateString
+- (FBSimulatorStateString)stateString
 {
-  return [FBSimulator stateStringFromSimulatorState:(FBSimulatorState)self.state];
+  return FBSimulatorStateStringFromState(self.state);
 }
 
 @end

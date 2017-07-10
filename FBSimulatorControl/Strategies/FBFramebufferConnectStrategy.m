@@ -132,7 +132,7 @@
 {
   if (simulator.state != FBSimulatorStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot connect Framebuffer unless shutdown, actual state %@", [FBSimulator stateStringFromSimulatorState:simulator.state]]
+      describeFormat:@"Cannot connect Framebuffer unless shutdown, actual state %@", simulator.stateString]
       failBool:error];
   }
   return YES;
@@ -186,7 +186,7 @@
 {
   if (simulator.state != FBSimulatorStateShutdown && simulator.state != FBSimulatorStateBooted) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot connect Framebuffer unless shutdown or booted, actual state %@", [FBSimulator stateStringFromSimulatorState:simulator.state]]
+      describeFormat:@"Cannot connect Framebuffer unless shutdown or booted, actual state %@", simulator.stateString]
       failBool:error];
   }
   return YES;

@@ -12,7 +12,7 @@ import FBSimulatorControl
 
 extension FBSimulatorState {
   public var description: String { get {
-    return FBSimulator.stateString(from: self)
+    return FBSimulatorStateStringFromState(self).rawValue
   }}
 }
 

@@ -111,7 +111,7 @@
 
 - (void)didChangeState:(FBSimulatorState)state
 {
-  [self.logger logFormat:@"Did Change State => %@", [FBSimulator stateStringFromSimulatorState:state]];
+  [self.logger logFormat:@"Did Change State => %@", FBSimulatorStateStringFromState(state)];
 }
 
 - (void)terminationHandleAvailable:(id<FBTerminationHandle>)terminationHandle

@@ -101,7 +101,7 @@
   FBSimulatorState state = simulator.state;
   if (state != FBSimulatorStateBooted && state != FBSimulatorStateShutdown) {
     return [[FBSimulatorError
-      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", [FBSimulator stateStringFromSimulatorState:state], [FBSimulator stateStringFromSimulatorState:FBSimulatorStateShutdown], [FBSimulator stateStringFromSimulatorState:FBSimulatorStateBooted]]
+      describeFormat:@"Cannot amend a plist when the Simulator state is %@, should be %@ or %@", FBSimulatorStateStringFromState(state), FBSimulatorStateStringShutdown, FBSimulatorStateStringBooted]
       failBool:error];
   }
   // Stop the service, if booted.
