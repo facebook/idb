@@ -16,6 +16,8 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBDeviceType;
 @class FBOSVersion;
 @class FBProcessInfo;
@@ -47,7 +49,16 @@ typedef NS_OPTIONS(NSUInteger, FBiOSTargetType) {
   FBiOSTargetTypeAll = FBiOSTargetTypeSimulator | FBiOSTargetTypeDevice,
 };
 
-NS_ASSUME_NONNULL_BEGIN
+/**
+ String Representations of Simulator State.
+ */
+typedef NSString *FBSimulatorStateString NS_STRING_ENUM;
+extern FBSimulatorStateString const FBSimulatorStateStringCreating;
+extern FBSimulatorStateString const FBSimulatorStateStringShutdown;
+extern FBSimulatorStateString const FBSimulatorStateStringBooting;
+extern FBSimulatorStateString const FBSimulatorStateStringBooted;
+extern FBSimulatorStateString const FBSimulatorStateStringShuttingDown;
+extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
 
 /**
  Common Properties of Devices & Simulators.
@@ -136,12 +147,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The canonical string representation of the state enum.
  */
-extern NSString *FBSimulatorStateStringFromState(FBSimulatorState state);
+extern FBSimulatorStateString FBSimulatorStateStringFromState(FBSimulatorState state);
 
 /**
  The canonical enum representation of the state string.
  */
-extern FBSimulatorState FBSimulatorStateFromStateString(NSString *stateString);
+extern FBSimulatorState FBSimulatorStateFromStateString(FBSimulatorStateString stateString);
 
 /**
  The canonical string representations of the target type Option Set.
