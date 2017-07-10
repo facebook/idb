@@ -14,9 +14,9 @@ extension FileOutput {
   func makeWriter() throws -> FBFileWriter {
     switch self {
     case .path(let path):
-      return try FBFileWriter(forFilePath: path, blocking: true)
+      return try FBFileWriter.syncWriter(forFilePath: path)
     case .standardOut:
-      return FBFileWriter(fileHandle: FileHandle.standardOutput, blocking: true)
+      return FBFileWriter.syncWriter(with: FileHandle.standardOutput)
     }
   }
 }

@@ -37,21 +37,9 @@
 
 @implementation FBFileWriter
 
-+ (instancetype)nullWriter
-{
-  return [[FBFileWriter_Null alloc] init];
-}
+#pragma mark Initializers
 
-+ (instancetype)writerWithFileHandle:(NSFileHandle *)fileHandle blocking:(BOOL)blocking
-{
-  if (blocking) {
-    return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
-  }
-  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);
-  return [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
-}
-
-+ (nullable instancetype)writerForFilePath:(NSString *)filePath blocking:(BOOL)blocking error:(NSError **)error
++ (nullable NSFileHandle *)fileHandleForPath:(NSString *)filePath error:(NSError **)error
 {
   if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
     [[NSData data] writeToFile:filePath atomically:YES];
@@ -62,7 +50,41 @@
       describeFormat:@"A file handle for path %@ could not be opened", filePath]
       fail:error];
   }
-  return [FBFileWriter writerWithFileHandle:fileHandle blocking:blocking];
+  return fileHandle;
+}
+
++ (instancetype)nullWriter
+{
+  return [[FBFileWriter_Null alloc] init];
+}
+
++ (instancetype)syncWriterWithFileHandle:(NSFileHandle *)fileHandle
+{
+  return [[FBFileWriter_Sync alloc] initWithFileHandle:fileHandle];
+}
+
++ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle
+{
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbcontrolcore.fbfilewriter", DISPATCH_QUEUE_SERIAL);
+  return [[FBFileWriter_Async alloc] initWithFileHandle:fileHandle writeQueue:queue];
+}
+
++ (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error
+{
+  NSFileHandle *fileHandle = [self fileHandleForPath:filePath error:error];
+  if (!fileHandle) {
+    return nil;
+  }
+  return [FBFileWriter syncWriterWithFileHandle:fileHandle];
+}
+
++ (nullable instancetype)asyncWriterForFilePath:(NSString *)filePath error:(NSError **)error
+{
+  NSFileHandle *fileHandle = [self fileHandleForPath:filePath error:error];
+  if (!fileHandle) {
+    return nil;
+  }
+  return [FBFileWriter asyncWriterWithFileHandle:fileHandle];
 }
 
 - (instancetype)initWithFileHandle:(NSFileHandle *)fileHandle
@@ -76,6 +98,8 @@
 
   return self;
 }
+
+#pragma mark Public Methods
 
 - (void)consumeData:(NSData *)data
 {

@@ -376,7 +376,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   }
 
   _reader = [FBFileReader readerWithFileHandle:readHandle consumer:self];
-  _writer = [FBFileWriter writerWithFileHandle:writeHandle blocking:YES];
+  _writer = [FBFileWriter syncWriterWithFileHandle:writeHandle];
   _mediator = [[FBiOSActionReaderMediator alloc] initWithReader:self router:self.router delegate:self.delegate writeBack:self.writer];
 
   return self;

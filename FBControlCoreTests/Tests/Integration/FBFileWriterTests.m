@@ -21,7 +21,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  FBFileWriter *writer = [FBFileWriter writerWithFileHandle:pipe.fileHandleForWriting blocking:YES];
+  FBFileWriter *writer = [FBFileWriter syncWriterWithFileHandle:pipe.fileHandleForWriting];
 
   // Write some data and confirm that it is as expected.
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
@@ -42,7 +42,7 @@
 {
   // Setup
   NSPipe *pipe = NSPipe.pipe;
-  FBFileWriter *writer = [FBFileWriter writerWithFileHandle:pipe.fileHandleForWriting blocking:NO];
+  FBFileWriter *writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting];
 
   // Write some data and confirm that it is as expected.
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];

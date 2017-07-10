@@ -56,7 +56,7 @@
   if (!configuration) {
     return [self printErrorMessage:error];
   }
-  FBFileWriter *stdOutFileWriter = [FBFileWriter writerWithFileHandle:NSFileHandle.fileHandleWithStandardOutput blocking:YES];
+  FBFileWriter *stdOutFileWriter = [FBFileWriter syncWriterWithFileHandle:NSFileHandle.fileHandleWithStandardOutput];
   FBJSONTestReporter *reporter = [[FBJSONTestReporter new] initWithTestBundlePath:configuration.testBundlePath testType:configuration.testType logger:self.logger fileConsumer:stdOutFileWriter];
   FBXCTestContext *context = [FBXCTestContext contextWithReporter:reporter logger:self.logger];
 

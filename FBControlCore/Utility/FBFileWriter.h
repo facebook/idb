@@ -27,23 +27,38 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)nullWriter;
 
 /**
- Creates a File Writer from a File Handle.
+ Creates a Blocking Writer from a File Handle.
 
  @param fileHandle the file handle to write to. It will be closed when an EOF is sent.
- @param blocking YES if the writer should block on the calling thread when writing, NO otherwise.
  @return a File Reader.
  */
-+ (instancetype)writerWithFileHandle:(NSFileHandle *)fileHandle blocking:(BOOL)blocking;
++ (instancetype)syncWriterWithFileHandle:(NSFileHandle *)fileHandle;
 
 /**
- Creates a File Writer from a File Path
+ Creates a Non-Blocking Writer from a File Handle.
+
+ @param fileHandle the file handle to write to. It will be closed when an EOF is sent.
+ @return a File Reader.
+ */
++ (instancetype)asyncWriterWithFileHandle:(NSFileHandle *)fileHandle;
+
+/**
+ Creates a Blocking File Writer from a File Path
 
  @param filePath the file handle to write to from. It will be closed when an EOF is sent.
- @param blocking YES if the writer should block on the calling thread when writing, NO otherwise.
  @param error an error out for any error that occurs.
  @return a File Reader on success, nil otherwise.
  */
-+ (nullable instancetype)writerForFilePath:(NSString *)filePath blocking:(BOOL)blocking error:(NSError **)error;
++ (nullable instancetype)syncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
+
+/**
+ Creates a Non-Blocking File Writer from a File Path
+
+ @param filePath the file handle to write to from. It will be closed when an EOF is sent.
+ @param error an error out for any error that occurs.
+ @return a File Reader on success, nil otherwise.
+ */
++ (nullable instancetype)asyncWriterForFilePath:(NSString *)filePath error:(NSError **)error;
 
 @end
 

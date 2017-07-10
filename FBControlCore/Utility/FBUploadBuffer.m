@@ -272,7 +272,7 @@ static size_t ToFileThreshold = 2 * 1024 * 1024;
 
   if (header.size > ToFileThreshold) {
     NSError *error = nil;
-    FBFileWriter *writer = [FBFileWriter writerForFilePath:filePath blocking:YES error:&error];
+    FBFileWriter *writer = [FBFileWriter syncWriterForFilePath:filePath error:&error];
     NSAssert(writer, @"Could not create writer %@", error);
     return [[FBUploadBuffer_ToFile alloc] initWithHeader:header filePath:filePath writer:writer];
   }
