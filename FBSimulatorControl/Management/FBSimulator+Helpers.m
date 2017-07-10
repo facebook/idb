@@ -33,11 +33,6 @@
   return [FBSimulatorLaunchCtl withSimulator:self];
 }
 
-- (NSString *)deviceSetPath
-{
-  return self.set.deviceSet.setPath;
-}
-
 - (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
 {
   FBProcessInfo *launchdSim = self.launchdProcess;

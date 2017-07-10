@@ -29,11 +29,6 @@ static NSString *const ApplicationPathKey = @"Path";
  */
 @property (nonatomic, strong, readonly) FBSimulatorLaunchCtl *launchctl;
 
-/**
- The DeviceSetPath of the Simulator.
- */
-@property (nonatomic, nullable, copy, readonly) NSString *deviceSetPath;
-
 /*
  Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
  */
