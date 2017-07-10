@@ -172,7 +172,7 @@
   FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
 
   NSError *error = nil;
-  BOOL success = [simulator relaunchLastLaunchedApplicationWithError:&error];
+  BOOL success = [simulator launchOrRelaunchApplication:applicationLaunchConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

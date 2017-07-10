@@ -201,54 +201,6 @@
   return YES;
 }
 
-- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error
-{
-  // Obtain Application Launch info for the last launch.
-  FBSimulator *simulator = self.simulator;
-  FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
-  if (!process) {
-    return [[[FBSimulatorError
-      describe:@"Cannot re-launch an find the last-launched process"]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
-  // Obtain the Launch Config for the process.
-  FBApplicationLaunchConfiguration *launchConfig = (FBApplicationLaunchConfiguration *) simulator.history.processLaunchConfigurations[process];
-  if (!process) {
-    return [[[FBSimulatorError
-      describe:@"Cannot re-launch an Application until one has been launched; there's no prior process launch config"]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-
-  return [self launchOrRelaunchApplication:launchConfig error:error];
-}
-
-- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error
-{
-  // Obtain Application Launch info for the last launch.
-  FBSimulator *simulator = self.simulator;
-  FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
-  if (!process) {
-    return [[[FBSimulatorError
-      describe:@"Cannot re-launch an find the last-launched process"]
-      inSimulator:simulator]
-      failBool:error];
-  }
-
-  // Kill the Application Process
-  NSError *innerError = nil;
-  if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:error]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to terminate app %@", process.shortDescription]
-      causedBy:innerError]
-      inSimulator:simulator]
-      failBool:error];
-  }
-  return YES;
-}
-
 @end
 
 @implementation FBApplicationLaunchStrategy_Bridge

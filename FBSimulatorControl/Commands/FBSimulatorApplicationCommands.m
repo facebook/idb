@@ -199,20 +199,6 @@
   return [self killApplicationWithBundleID:application.bundleID error:error];
 }
 
-- (BOOL)relaunchLastLaunchedApplicationWithError:(NSError **)error
-{
-  return [[FBApplicationLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    relaunchLastLaunchedApplicationWithError:error];
-}
-
-- (BOOL)terminateLastLaunchedApplicationWithError:(NSError **)error
-{
-  return [[FBApplicationLaunchStrategy
-    strategyWithSimulator:self.simulator]
-    terminateLastLaunchedApplicationWithError:error];
-}
-
 #pragma mark Querying Application State
 
 - (nullable FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
