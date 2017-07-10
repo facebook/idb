@@ -21,12 +21,25 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite) FBiOSTargetDouble *target;
 @property (nonatomic, strong, readwrite) FBiOSActionRouter *router;
 @property (nonatomic, strong, readwrite) FBiOSActionReader *reader;
-@property (nonatomic, strong, readwrite) NSPipe *pipe;
+@property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
+
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *startedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *finishedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<id<FBiOSTargetAction>> *failedActions;
 @property (nonatomic, strong, readwrite) NSMutableArray<FBUploadedDestination *> *uploads;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *badInput;
+
+@end
+
+@interface FBiOSActionReaderSocketTests : FBiOSActionReaderTests <FBSocketConsumer>
+
+@property (nonatomic, strong, readwrite) FBSocketWriter *writer;
+
+@end
+
+@interface FBiOSActionReaderFileTests : FBiOSActionReaderTests
+
+@property (nonatomic, strong, readwrite) NSPipe *pipe;
 
 @end
 
@@ -41,28 +54,37 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setUp
 {
+  [super setUp];
   NSArray<Class> *actionClasses = [FBiOSActionRouter.defaultActionClasses arrayByAddingObject:FBiOSTargetActionDouble.class];
   self.target = [FBiOSTargetDouble new];
   self.target.auxillaryDirectory = NSTemporaryDirectory();
   self.router = [FBiOSActionRouter routerForTarget:self.target actionClasses:actionClasses];
-  self.pipe = NSPipe.pipe;
-  self.reader = [FBiOSActionReader fileReaderForRouter:self.router delegate:self readHandle:self.pipe.fileHandleForReading writeHandle:self.pipe.fileHandleForWriting];
   self.startedActions = [NSMutableArray array];
   self.finishedActions = [NSMutableArray array];
   self.failedActions = [NSMutableArray array];
   self.uploads = [NSMutableArray array];
   self.badInput = [NSMutableArray array];
+}
+
+- (void)tearDown
+{
+  [super tearDown];
 
   NSError *error;
-  BOOL success = [self.reader startListeningWithError:&error];
+  BOOL success = [self.reader stopListeningWithError:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
+}
+
++ (XCTestSuite *)defaultTestSuite
+{
+  return [XCTestSuite testSuiteWithName:@"Ignoring Base Class"];
 }
 
 - (void)testPassingAction
 {
   FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
-  [self.pipe.fileHandleForWriting writeData:[self actionLine:inputAction]];
+  [self.consumer consumeData:[self actionLine:inputAction]];
 
   BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
     return [self.startedActions containsObject:inputAction] && [self.finishedActions containsObject:inputAction];
@@ -73,7 +95,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)testFailingAction
 {
   FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:NO];
-  [self.pipe.fileHandleForWriting writeData:[self actionLine:inputAction]];
+  [self.consumer consumeData:[self actionLine:inputAction]];
 
   BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
     return [self.startedActions containsObject:inputAction] && [self.failedActions containsObject:inputAction];
@@ -84,7 +106,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)testInterpretedInputWithGarbageInput
 {
   NSData *data = [@"asdaad asasd asda d\n" dataUsingEncoding:NSUTF8StringEncoding];
-  [self.pipe.fileHandleForWriting writeData:data];
+  [self.consumer consumeData:data];
 
   BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
     return self.badInput.count == 1;
@@ -97,8 +119,8 @@ NS_ASSUME_NONNULL_BEGIN
   NSData *transmit = [@"foo bar baz" dataUsingEncoding:NSUTF8StringEncoding];
   NSData *header = [self actionLine:[FBUploadHeader headerWithPathExtension:@"txt" size:transmit.length]];
 
-  [self.pipe.fileHandleForWriting writeData:header];
-  [self.pipe.fileHandleForWriting writeData:transmit];
+  [self.consumer consumeData:header];
+  [self.consumer consumeData:transmit];
 
   BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
     return self.uploads.count == 1;
@@ -115,9 +137,9 @@ NS_ASSUME_NONNULL_BEGIN
   NSData *header = [self actionLine:[FBUploadHeader headerWithPathExtension:@"txt" size:transmit.length]];
   FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
 
-  [self.pipe.fileHandleForWriting writeData:header];
-  [self.pipe.fileHandleForWriting writeData:transmit];
-  [self.pipe.fileHandleForWriting writeData:[self actionLine:inputAction]];
+  [self.consumer consumeData:header];
+  [self.consumer consumeData:transmit];
+  [self.consumer consumeData:[self actionLine:inputAction]];
 
   BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
     return self.uploads.count == 1;
@@ -184,6 +206,85 @@ NS_ASSUME_NONNULL_BEGIN
 {
   [self.failedActions addObject:action];
   return nil;
+}
+
+@end
+
+@implementation FBiOSActionReaderFileTests
+
+- (void)setUp
+{
+  [super setUp];
+
+  self.pipe = NSPipe.pipe;
+  self.reader = [FBiOSActionReader fileReaderForRouter:self.router delegate:self readHandle:self.pipe.fileHandleForReading writeHandle:self.pipe.fileHandleForWriting];
+  self.consumer = [FBFileWriter syncWriterWithFileHandle:self.pipe.fileHandleForWriting];
+
+  NSError *error;
+  BOOL success = [self.reader startListeningWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+}
+
++ (XCTestSuite *)defaultTestSuite
+{
+  return [XCTestSuite testSuiteForTestCaseClass:self.class];
+}
+
+@end
+
+@implementation FBiOSActionReaderSocketTests
+
+- (void)setUp
+{
+  [super setUp];
+
+  self.reader = [FBiOSActionReader socketReaderForRouter:self.router delegate:self port:FBiOSActionReaderSocketTests.readerPort];
+  self.writer = [FBSocketWriter writerForHost:@"localhost" port:FBiOSActionReaderSocketTests.readerPort consumer:self];
+
+  NSError *error;
+  BOOL success = [self.reader startListeningWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+
+  success = [self.writer startWritingWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+}
+
+- (void)tearDown
+{
+  [super tearDown];
+
+  NSError *error;
+  BOOL success = [self.writer stopWritingWithError:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(success);
+}
+
++ (in_port_t)readerPort
+{
+  return 4232;
+}
+
++ (XCTestSuite *)defaultTestSuite
+{
+  return [XCTestSuite testSuiteForTestCaseClass:self.class];
+}
+
+- (void)writeBackAvailable:(id<FBFileConsumer>)writeBack
+{
+  self.consumer = writeBack;
+}
+
+- (void)consumeData:(NSData *)data
+{
+
+}
+
+- (void)consumeEndOfFile
+{
+  self.consumer = nil;
 }
 
 @end
