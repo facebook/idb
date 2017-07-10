@@ -213,7 +213,7 @@ static const char*SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHID
   return self;
 }
 
-#pragma mark FBDebugDescribeable
+#pragma mark NSObject
 
 - (NSString *)description
 {
@@ -321,6 +321,8 @@ static const char*SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHID
 
 @implementation FBSimulatorHID_SimulatorKit
 
+#pragma mark Initializers
+
 - (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize client:(SimDeviceLegacyClient *)client
 {
   self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
@@ -331,6 +333,20 @@ static const char*SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHID
   _client = client;
 
   return self;
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"SimulatorKit HID %@", self.client];
+}
+
+#pragma mark FBJSONSerializable
+
+- (id)jsonSerializableRepresentation
+{
+  return @{};
 }
 
 #pragma mark Lifecycle
