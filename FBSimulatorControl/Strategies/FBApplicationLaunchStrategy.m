@@ -22,10 +22,7 @@
 #import "FBSimulatorDiagnostics.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
-#import "FBSimulatorHistory+Queries.h"
-#import "FBSimulatorHistory.h"
 #import "FBSimulatorDiagnostics.h"
-#import "FBSimulatorHistory+Queries.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
@@ -85,11 +82,11 @@
       fail:error];
   }
 
-  // This check confirms that if there's a currently running process for the given Bundle ID it doesn't match one that has been recently launched.
+  // This check confirms that if there's a currently running process for the given Bundle ID.
   // Since the Background Modes of a Simulator can cause an Application to be launched independently of our usage of CoreSimulator,
   // it's possible that application processes will come to life before `launchApplication` is called, if it has been previously killed.
   FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
-  if (process && [simulator.history.launchedApplicationProcesses containsObject:process]) {
+  if (process) {
     return [[[[FBSimulatorError
       describeFormat:@"App %@ can't be launched as is running (%@)", appLaunch.bundleID, process.shortDescription]
       causedBy:innerError]
