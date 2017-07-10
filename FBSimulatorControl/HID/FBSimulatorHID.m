@@ -54,7 +54,7 @@
 
 #pragma mark Initializers
 
-static const char*SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient";
+static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHIDClient";
 
 + (instancetype)hidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {

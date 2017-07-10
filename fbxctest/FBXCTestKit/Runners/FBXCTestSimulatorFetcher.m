@@ -99,7 +99,7 @@
   return YES;
 }
 
-#pragma mark Private 
+#pragma mark Private
 
 + (FBSimulatorConfiguration *)configurationForDestination:(FBXCTestDestinationiPhoneSimulator *)destination
 {

@@ -472,7 +472,7 @@ static NSString *const ApplicationPathKey = @"Path";
 {
   NSMutableArray<FBApplicationDescriptor *> *installedApplications = [[NSMutableArray alloc] init];
 
-  for(NSDictionary *app in [self installedApplicationsData]) {
+  for (NSDictionary *app in [self installedApplicationsData]) {
     if (app == nil) {
       continue;
     }

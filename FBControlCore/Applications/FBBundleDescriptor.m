@@ -161,7 +161,7 @@
       fail:error];
   }
 
-  if(![fileManager copyItemAtPath:self.path toPath:targetBundlePath error:&innerError]) {
+  if (![fileManager copyItemAtPath:self.path toPath:targetBundlePath error:&innerError]) {
     return [[[FBControlCoreError
       describeFormat:@"Could not move from '%@' to '%@'", self.path, targetBundlePath]
       causedBy:innerError]

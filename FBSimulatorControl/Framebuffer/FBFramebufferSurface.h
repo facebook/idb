@@ -11,8 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SimDeviceIOClient;
 @class SimDeviceFramebufferService;
+@class SimDeviceIOClient;
 @protocol SimDisplayDamageRectangleDelegate;
 @protocol SimDisplayIOSurfaceRenderableDelegate;
 @protocol SimDeviceIOPortConsumer;
@@ -24,14 +24,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Called when an IOSurface becomes available or invalid
- 
+
  @param surface the surface, or NULL if a surface is not available/becomes unavailable
  */
 - (void)didChangeIOSurface:(nullable IOSurfaceRef)surface;
 
 /**
  When a Damage Rect becomes available.
- 
+
  @param rect the damage rectangle.
  */
 - (void)didReceiveDamageRect:(CGRect)rect;

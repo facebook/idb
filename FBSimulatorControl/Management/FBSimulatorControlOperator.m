@@ -116,7 +116,7 @@
   }
 
   NSString *testManagerSocketString = [self testManagerDaemonSocketPathWithLogger:logger];
-  if(testManagerSocketString.length == 0) {
+  if (testManagerSocketString.length == 0) {
     [[[FBSimulatorError
        describe:@"Failed to retrieve testmanagerd socket path"]
       logger:logger]
@@ -124,7 +124,7 @@
     return -1;
   }
 
-  if(![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
+  if (![[NSFileManager new] fileExistsAtPath:testManagerSocketString]) {
     [[[FBSimulatorError
        describeFormat:@"Simulator indicated unix domain socket for testmanagerd at path %@, but no file was found at that path.", testManagerSocketString]
       logger:logger]
@@ -133,7 +133,7 @@
   }
 
   const char *testManagerSocketPath = testManagerSocketString.UTF8String;
-  if(strlen(testManagerSocketPath) >= 0x68) {
+  if (strlen(testManagerSocketPath) >= 0x68) {
     [[[FBSimulatorError
        describeFormat:@"Unix domain socket path for simulator testmanagerd service '%s' is too big to fit in sockaddr_un.sun_path", testManagerSocketPath]
       logger:logger]

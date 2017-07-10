@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Query that matches the given Names.
- 
+
  @param names the names to match against.
  @return a new Target Query.
  */

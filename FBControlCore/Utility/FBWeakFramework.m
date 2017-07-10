@@ -159,7 +159,7 @@
   // Load required frameworks
   for (FBWeakFramework *requredFramework in self.requiredFrameworks) {
     NSError *innerError = nil;
-    if(![requredFramework loadWithLogger:logger error:&innerError]) {
+    if (![requredFramework loadWithLogger:logger error:&innerError]) {
       return [FBControlCoreError failBoolWithError:innerError errorOut:error];
     }
   }

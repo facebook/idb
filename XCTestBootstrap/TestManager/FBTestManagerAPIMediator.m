@@ -209,7 +209,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  if(![self.processDelegate testManagerMediator:self launchApplication:launch atPath:path error:&error]) {
+  if (![self.processDelegate testManagerMediator:self launchApplication:launch atPath:path error:&error]) {
     [receipt invokeCompletionWithReturnValue:nil error:error];
   }
   else {

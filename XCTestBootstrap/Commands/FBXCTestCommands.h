@@ -33,7 +33,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
 @protocol FBXCTestCommands <NSObject>
 
 /**
- Bootstraps a test run using a Test Launch Configuration. 
+ Bootstraps a test run using a Test Launch Configuration.
  It will use the iOS Targets's auxillaryDirectory as a working directory.
 
  @param testLaunchConfiguration the configuration used for the test launch.
