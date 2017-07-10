@@ -94,6 +94,7 @@
 @property (nonatomic, strong, readonly) dispatch_queue_t acceptQueue;
 @property (nonatomic, strong, readonly) NSMutableDictionary<NSNumber *, FBSocketReader_Connection *> *connections;
 
+@property (nonatomic, strong, readwrite) NSFileHandle *socketHandle;
 @property (nonatomic, strong, readwrite) dispatch_source_t acceptSource;
 
 @end
@@ -139,6 +140,8 @@
   }
   dispatch_source_cancel(self.acceptSource);
   self.acceptSource = nil;
+  [self.socketHandle closeFile];
+  self.socketHandle = nil;
   return YES;
 }
 
@@ -185,7 +188,11 @@
   dispatch_source_set_event_handler(self.acceptSource, ^{
     [weakSelf accept:socketHandle error:nil];
   });
+  dispatch_source_set_cancel_handler(self.acceptSource, ^{
+    close(socketHandle);
+  });
   // Start reading socket.
+  self.socketHandle = [[NSFileHandle alloc] initWithFileDescriptor:socketHandle closeOnDealloc:YES];
   dispatch_resume(self.acceptSource);
   return YES;
 }
