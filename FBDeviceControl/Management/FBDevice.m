@@ -38,7 +38,7 @@ _Nullable CFStringRef (*_Nonnull FBAMDeviceCopyValue)(CFTypeRef device, _Nullabl
 int (*FBAMDeviceSecureTransferPath)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3, void *_Nullable arg4, int arg5);
 int (*FBAMDeviceSecureInstallApplication)(int arg0, CFTypeRef arg1, CFURLRef arg2, CFDictionaryRef arg3,  void *_Nullable arg4, int arg5);
 int (*FBAMDeviceSecureUninstallApplication)(int arg0, CFTypeRef arg1, CFStringRef arg2, int arg3, void *_Nullable arg4, int arg5);
-int (*FBAMDeviceLookupApplications)(CFTypeRef arg0, int arg1, CFDictionaryRef *arg2);
+int (*FBAMDeviceLookupApplications)(CFTypeRef arg0, CFDictionaryRef arg1, CFDictionaryRef *arg2);
 int (*FBAMDeviceInstallProvisioningProfile)(CFTypeRef device, CFTypeRef profile, void *_Nullable handle);
 _Nullable CFTypeRef (*_Nonnull FBMISProfileCreateWithFile)(int arg0, CFStringRef profilePath);
 

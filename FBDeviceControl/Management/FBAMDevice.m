@@ -58,7 +58,7 @@ typedef struct afc_connection {
   FBAMDeviceSecureTransferPath = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureTransferPath");
   FBAMDeviceSecureInstallApplication = (int(*)(int, CFTypeRef, CFURLRef, CFDictionaryRef, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureInstallApplication");
   FBAMDeviceSecureUninstallApplication = (int(*)(int, CFTypeRef, CFStringRef, int, void *, int))FBGetSymbolFromHandle(handle, "AMDeviceSecureUninstallApplication");
-  FBAMDeviceLookupApplications = (int(*)(CFTypeRef, int, CFDictionaryRef*))FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
+  FBAMDeviceLookupApplications = (int(*)(CFTypeRef, CFDictionaryRef, CFDictionaryRef*))FBGetSymbolFromHandle(handle, "AMDeviceLookupApplications");
   FBAMDeviceInstallProvisioningProfile = (int (*)(CFTypeRef, CFTypeRef, void *))FBGetSymbolFromHandle(handle, "AMDeviceInstallProvisioningProfile");
   FBMISProfileCreateWithFile = (CFTypeRef(*)(int, CFStringRef))FBGetSymbolFromHandle(handle, "MISProfileCreateWithFile");
 }
