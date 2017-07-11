@@ -17,8 +17,6 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch = @"agentlaunch";
-
 @implementation FBAgentLaunchConfiguration (Simulator)
 
 #pragma mark FBiOSTargetAction

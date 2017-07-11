@@ -15,10 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
 
-/**
- The Action Type for a Test Launch.
- */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
+
 
 /**
  A Value object with the information required to launch a XCTest.

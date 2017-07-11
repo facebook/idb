@@ -24,6 +24,21 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NSString *FBiOSTargetActionType NS_EXTENSIBLE_STRING_ENUM;
 
 /**
+ The Action Type for an Application Launch.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch;
+
+/**
+ The Action Type for an Agent Launch.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch;
+
+/**
+ The Action Type for a Test Launch.
+ */
+extern FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch;
+
+/**
  A Protocol that defines a fully serializable action that can be performed on an FBiOSTarget Instance.
  */
 @protocol FBiOSTargetAction <NSObject, FBJSONSerializable, FBJSONDeserializable>

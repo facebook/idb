@@ -21,11 +21,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Action Type for an Application Launch.
- */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch;
-
-/**
  A Value object with the information required to launch an Application.
  */
 @interface FBApplicationLaunchConfiguration : FBProcessLaunchConfiguration <FBiOSTargetAction>

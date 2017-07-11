@@ -12,8 +12,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-FBiOSTargetActionType const FBiOSTargetActionTypeApplicationLaunch = @"applaunch";
-
 static NSString *const KeyBundleID = @"bundle_id";
 static NSString *const KeyBundleName = @"bundle_name";
 static NSString *const KeyWaitForDebugger = @"wait_for_debugger";

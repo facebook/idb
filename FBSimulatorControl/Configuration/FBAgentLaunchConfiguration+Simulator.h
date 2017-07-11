@@ -17,11 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
- The Action Type for an Agent Launch.
- */
-extern FBiOSTargetActionType const FBiOSTargetActionTypeAgentLaunch;
-
-/**
  FBSimulatorControl extensions to FBAgentLaunchConfiguration.
  */
 @interface FBAgentLaunchConfiguration (Simulator) <FBiOSTargetAction>

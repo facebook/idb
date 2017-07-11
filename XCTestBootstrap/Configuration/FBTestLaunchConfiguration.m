@@ -14,8 +14,6 @@
 #import "FBXCTestCommands.h"
 #import "XCTestBootstrapError.h"
 
-FBiOSTargetActionType const FBiOSTargetActionTypeTestLaunch = @"launch_xctest";
-
 @implementation FBTestLaunchConfiguration
 
 - (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip
