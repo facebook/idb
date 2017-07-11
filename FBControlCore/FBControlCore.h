@@ -69,6 +69,7 @@
 #import <FBControlCore/FBSocketReader.h>
 #import <FBControlCore/FBSocketWriter.h>
 #import <FBControlCore/FBSubstringUtilities.h>
+#import <FBControlCore/FBSubject.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTerminationHandle.h>
