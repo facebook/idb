@@ -135,6 +135,12 @@
   return [xcodeVersion compare:xcode83] == NSOrderedAscending;
 }
 
++ (BOOL)xcodeVersionIsAtLeast90:(NSDecimalNumber *)xcodeVersion
+{
+  NSDecimalNumber *xcode90 = [NSDecimalNumber decimalNumberWithString:@"9.0"];
+  return [xcodeVersion compare:xcode90] != NSOrderedAscending;
+}
+
 + (NSArray<FBWeakFramework *> *)privateFrameworkForMacOSVersion:(NSOperatingSystemVersion)macOSVersion
                                                    xcodeVersion:(NSDecimalNumber *)xcodeVersion {
   NSArray<FBWeakFramework *> *frameworks = @[
@@ -169,6 +175,13 @@
   if ([FBDeviceControlFrameworkLoader xcodeVersionIsLessThan83:xcodeVersion]) {
     NSMutableArray *mutable = [NSMutableArray arrayWithArray:frameworks];
     [mutable addObject:FBWeakFramework.DVTFoundation];
+    frameworks = [NSArray arrayWithArray:mutable];
+  }
+
+  if ([FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast90:xcodeVersion]) {
+    NSMutableArray *mutable = [NSMutableArray arrayWithArray:frameworks];
+    [mutable addObject:FBWeakFramework.DebugHierarchyFoundation];
+    [mutable addObject:FBWeakFramework.DebugHierarchyKit];
     frameworks = [NSArray arrayWithArray:mutable];
   }
 

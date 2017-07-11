@@ -30,6 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)IDESourceEditor;
 + (instancetype)DFRSupportKit;
 + (instancetype)DVTKit;
++ (instancetype)DebugHierarchyFoundation;
++ (instancetype)DebugHierarchyKit;
 
 /**
  XCTest framework for MacOSX

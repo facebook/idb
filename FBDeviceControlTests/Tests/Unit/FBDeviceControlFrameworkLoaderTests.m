@@ -14,7 +14,9 @@
 @interface FBDeviceControlFrameworkLoader ()
 
 + (BOOL)macOSVersionIsAtLeastSierra:(NSOperatingSystemVersion)macOSVersion;
-+ (BOOL)xcodeVersionIsAtLeast81:(NSDecimalNumber *)xcodeVersion; + (BOOL)xcodeVersionIsLessThan83:(NSDecimalNumber *)xcodeVersion;
++ (BOOL)xcodeVersionIsAtLeast81:(NSDecimalNumber *)xcodeVersion;
++ (BOOL)xcodeVersionIsLessThan83:(NSDecimalNumber *)xcodeVersion;
++ (BOOL)xcodeVersionIsAtLeast90:(NSDecimalNumber *)xcodeVersion;
 + (NSArray<FBWeakFramework *> *)privateFrameworks;
 + (NSArray<FBWeakFramework *> *)privateFrameworkForMacOSVersion:(NSOperatingSystemVersion)macOSVersion
                                                    xcodeVersion:(NSDecimalNumber *)xcodeVersion;
@@ -90,6 +92,31 @@
   version = [NSDecimalNumber decimalNumberWithString:@"9.0"];
   XCTAssertFalse([FBDeviceControlFrameworkLoader xcodeVersionIsLessThan83:version],
                  @"Expect Xcode 9.0 not to be less than 8.3");
+}
+
+- (void)testXcodeVersionIsAtLeast90
+{
+  NSDecimalNumber *version;
+
+  version = [NSDecimalNumber decimalNumberWithString:@"7.3.1"];
+  XCTAssertFalse([FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast90:version],
+                 @"Expect Xcode 7.3.1 not to be at least 9.0");
+
+  version = [NSDecimalNumber decimalNumberWithString:@"8.3.3"];
+  XCTAssertFalse([FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast90:version],
+                 @"Expect Xcode 8.3.3 not to be at least 9.0");
+
+  version = [NSDecimalNumber decimalNumberWithString:@"9.0"];
+  XCTAssertTrue([FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast90:version],
+                @"Expect Xcode 9.0 be at least 9.0");
+
+  version = [NSDecimalNumber decimalNumberWithString:@"9.1"];
+  XCTAssertTrue([FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast90:version],
+                @"Expect Xcode 9.1 be at least 9.0");
+
+  version = [NSDecimalNumber decimalNumberWithString:@"10.0"];
+  XCTAssertTrue([FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast90:version],
+                @"Expect Xcode 10.0 be at least 9.0");
 }
 
 - (void)testPrivateFrameworks
@@ -189,8 +216,8 @@
   frameworks = [FBDeviceControlFrameworkLoader privateFrameworkForMacOSVersion:sierra
                                                                   xcodeVersion:xcodeVersion];
 
-  XCTAssertTrue(frameworks.count == 8,
-                @"Expected exactly 8 frameworks for Sierra for Xcode >= 9.0;"
+  XCTAssertTrue(frameworks.count == 10,
+                @"Expected exactly 10 frameworks for Sierra for Xcode >= 9.0;"
                 "found %@", @(frameworks.count));
 }
 
