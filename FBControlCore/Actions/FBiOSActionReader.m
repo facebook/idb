@@ -172,7 +172,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   self.uploadBuffer = nil;
   __block NSString *response = nil;
   dispatch_sync(dispatch_get_main_queue(), ^{
-    [self.delegate reader:self.reader didFinishUpload:destination];
+    response = [self.delegate reader:self.reader didFinishUpload:destination];
   });
   [self reportString:response];
 }

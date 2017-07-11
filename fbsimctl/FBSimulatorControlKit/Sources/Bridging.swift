@@ -267,6 +267,9 @@ extension Writer {
   }
 }
 
+
+// Currently the protocol methods that return interpreted strings from this class are never called
+// Instead its wrapped in a FBReportingiOSActionReaderDelegate which handles the reporting
 @objc class ActionReaderDelegateBridge : NSObject, FBiOSActionReaderDelegate {
   let interpreter: EventInterpreter
   let reporter: EventReporter

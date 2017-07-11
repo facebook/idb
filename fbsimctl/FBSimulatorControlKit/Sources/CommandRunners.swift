@@ -241,7 +241,8 @@ struct ListenRunner : Runner, ActionPerformer {
   func makeBaseRelay() throws -> (ListenInterface, Relay, EventReporter, FBTerminationAwaitable?) {
     let (interface, query) = self.context.value
     let reporter = self.context.reporter
-    let interpreter = JSONEventInterpreter(pretty: false)
+    let interpreter = FBJSONEventInterpreter(prettyFormatting: false)
+    let swiftInterpreter = JSONEventInterpreter(pretty: false)
     var relays: [Relay] = []
     var awaitable: FBTerminationAwaitable? = nil
 
@@ -253,15 +254,17 @@ struct ListenRunner : Runner, ActionPerformer {
     }
     if interface.stdin {
       let target = try self.context.querySingleSimulator(query)
-      let bridge = ActionReaderDelegateBridge(interpreter: interpreter, reporter: reporter)
-      let reader = FBiOSActionReader.fileReader(for: target, delegate: bridge, read: FileHandle.standardInput, write: FileHandle.standardOutput)
+      let bridge = ActionReaderDelegateBridge(interpreter: swiftInterpreter, reporter: reporter)
+      let reportingBridge = FBReportingiOSActionReaderDelegate(delegate: bridge, interpreter: interpreter)
+      let reader = FBiOSActionReader.fileReader(for: target, delegate: reportingBridge, read: FileHandle.standardInput, write: FileHandle.standardOutput)
       awaitable = reader
       relays.append(reader)
     }
     if let hidPort = interface.hid {
       let target = try self.context.querySingleSimulator(query)
-      let bridge = ActionReaderDelegateBridge(interpreter: interpreter, reporter: reporter)
-      let reader = FBiOSActionReader.socketReader(for: target, delegate: bridge, port: hidPort)
+      let bridge = ActionReaderDelegateBridge(interpreter: swiftInterpreter, reporter: reporter)
+      let reportingBridge = FBReportingiOSActionReaderDelegate(delegate: bridge, interpreter: interpreter)
+      let reader = FBiOSActionReader.socketReader(for: target, delegate: reportingBridge, port: hidPort)
       awaitable = reader
       relays.append(reader)
     }
