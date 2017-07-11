@@ -64,6 +64,7 @@
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBProcessOutputConfiguration.h>
 #import <FBControlCore/FBProcessTerminationStrategy.h>
+#import <FBControlCore/FBReportingiOSActionReaderDelegate.h>
 #import <FBControlCore/FBRunLoopSpinner.h>
 #import <FBControlCore/FBScale.h>
 #import <FBControlCore/FBServiceManagement.h>
