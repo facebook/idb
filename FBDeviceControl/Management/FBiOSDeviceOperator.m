@@ -399,8 +399,9 @@
 
   __block CFDictionaryRef cf_apps;
 
+  CFDictionaryRef attrs = (__bridge CFDictionaryRef)[FBiOSDeviceOperator applicationReturnAttributesDictionary];
   NSNumber *return_code = [self.device.amDevice handleWithBlockDeviceSession:^id(CFTypeRef device) {
-    return @(FBAMDeviceLookupApplications(device, 0, &cf_apps));
+    return @(FBAMDeviceLookupApplications(device, attrs, &cf_apps));
   } error: nil];
 
   NSDictionary *apps = CFBridgingRelease(cf_apps);
