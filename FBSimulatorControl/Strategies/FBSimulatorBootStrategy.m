@@ -70,14 +70,30 @@
 
 @end
 
+@interface FBSimulatorApplicationLaunchStrategy : NSObject
+
+@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) id<FBSimulatorApplicationProcessLauncher> launcher;
+
+@end
+
+@interface FBCoreSimulatorBootStrategy : NSObject
+
+@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) id<FBCoreSimulatorBootOptions> options;
+
+@end
+
 @interface FBSimulatorBootStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBSimulatorApplicationLaunchStrategy *applicationStrategy;
+@property (nonatomic, strong, readonly) FBCoreSimulatorBootStrategy *coreSimulatorStrategy;
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
-
-- (FBSimulatorConnection *)performBootWithError:(NSError **)error;
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator applicationStrategy:(FBSimulatorApplicationLaunchStrategy *)applicationStrategy coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy;
 
 @end
 
@@ -181,23 +197,17 @@
 
 @end
 
-@interface FBSimulatorBootStrategy_Direct : FBSimulatorBootStrategy
-
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator options:(id<FBCoreSimulatorBootOptions>)options;
-
-@property (nonatomic, strong, readonly) id<FBCoreSimulatorBootOptions> options;
-
-@end
-
-@implementation FBSimulatorBootStrategy_Direct
+@implementation FBCoreSimulatorBootStrategy
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator options:(id<FBCoreSimulatorBootOptions>)options
 {
-  self = [super initWithConfiguration:configuration simulator:simulator];
+  self = [super init];
   if (!self) {
     return nil;
   }
 
+  _configuration = configuration;
+  _simulator = simulator;
   _options = options;
 
   return self;
@@ -205,6 +215,11 @@
 
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
+  // Only Boot with CoreSimulator when told to do so. Return early if not.
+  if (!self.shouldBootWithCoreSimulator) {
+    return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:nil hid:nil];
+  }
+
   // Create the Framebuffer (if required to do so).
   NSError *innerError = nil;
   FBFramebuffer *framebuffer = nil;
@@ -241,6 +256,11 @@
   }
 
   return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
+}
+
+- (BOOL)shouldBootWithCoreSimulator
+{
+  return self.configuration.shouldUseDirectLaunch;
 }
 
 @end
@@ -305,28 +325,30 @@
 }
 @end
 
-@interface FBSimulatorBootStrategy_Subprocess : FBSimulatorBootStrategy
 
-@property (nonatomic, strong, readonly) id<FBSimulatorApplicationProcessLauncher> launcher;
-
-@end
-
-@implementation FBSimulatorBootStrategy_Subprocess
+@implementation FBSimulatorApplicationLaunchStrategy
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator launcher:(id<FBSimulatorApplicationProcessLauncher>)launcher
 {
-  self = [super initWithConfiguration:configuration simulator:simulator];
+  self = [super init];
   if (!self) {
     return nil;
   }
 
+  _configuration = configuration;
+  _simulator = simulator;
   _launcher = launcher;
 
   return self;
 }
 
-- (FBSimulatorConnection *)performBootWithError:(NSError **)error
+- (BOOL)launchSimulatorApplicationWithError:(NSError **)error
 {
+  // Return early if we shouldn't launch the Application
+  if (!self.shouldLaunchSimulatorApplication) {
+    return YES;
+  }
+
   // Fetch the Boot Arguments & Environment
   NSError *innerError = nil;
   NSArray *arguments = [self.configuration xcodeSimulatorApplicationArgumentsForSimulator:self.simulator error:&innerError];
@@ -334,7 +356,7 @@
     return [[[FBSimulatorError
       describeFormat:@"Failed to create boot args for Configuration %@", self.configuration]
       causedBy:innerError]
-      fail:error];
+      failBool:error];
   }
   // Add the UDID marker to the subprocess environment, so that it can be queried in any process.
   NSDictionary *environment = @{
@@ -343,16 +365,15 @@
 
   // Launch the Simulator.app Process.
   if (![self.launcher launchSimulatorProcessWithArguments:arguments environment:environment error:&innerError]) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
-  // Expect the state of the simulator to be updated.
-  BOOL didBoot = [self.simulator waitOnState:FBSimulatorStateBooted];
-  if (!didBoot) {
+  // Confirm that the Simulator is Booted.
+  if (![self.simulator waitOnState:FBSimulatorStateBooted]) {
     return [[[FBSimulatorError
       describeFormat:@"Timed out waiting for device to be Booted, got %@", self.simulator.device.stateString]
       inSimulator:self.simulator]
-      fail:error];
+      failBool:error];
   }
 
   // Expect the launch info for the process to exist.
@@ -361,11 +382,16 @@
     return [[[FBSimulatorError
       describe:@"Could not obtain process info for container application"]
       inSimulator:self.simulator]
-      fail:error];
+      failBool:error];
   }
   [self.simulator.eventSink containerApplicationDidLaunch:containerApplication];
 
-  return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:nil hid:nil];
+  return YES;
+}
+
+- (BOOL)shouldLaunchSimulatorApplication
+{
+  return !self.configuration.shouldUseDirectLaunch;
 }
 
 @end
@@ -374,12 +400,11 @@
 
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
-  if (configuration.shouldUseDirectLaunch) {
-    id<FBCoreSimulatorBootOptions> options = [self coreSimulatorBootOptionsWithConfiguration:configuration];
-    return [[FBSimulatorBootStrategy_Direct alloc] initWithConfiguration:configuration simulator:simulator options:options];
-  }
+  id<FBCoreSimulatorBootOptions> options = [self coreSimulatorBootOptionsWithConfiguration:configuration];
+  FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator options:options];
   id<FBSimulatorApplicationProcessLauncher> launcher = [self applicationProcessLauncherWithConfiguration:configuration];
-  return [[FBSimulatorBootStrategy_Subprocess alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher];
+  FBSimulatorApplicationLaunchStrategy *applicationStrategy = [[FBSimulatorApplicationLaunchStrategy alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher];
+  return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator applicationStrategy:applicationStrategy coreSimulatorStrategy:coreSimulatorStrategy];
 }
 
 + (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptionsWithConfiguration:(FBSimulatorBootConfiguration *)configuration
@@ -400,7 +425,7 @@
     : [FBSimulatorApplicationProcessLauncher_Task new];
 }
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator applicationStrategy:(FBSimulatorApplicationLaunchStrategy *)applicationStrategy coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
 {
   self = [super init];
   if (!self) {
@@ -409,6 +434,8 @@
 
   _configuration = configuration;
   _simulator = simulator;
+  _applicationStrategy = applicationStrategy;
+  _coreSimulatorStrategy = coreSimulatorStrategy;
 
   return self;
 }
@@ -426,14 +453,19 @@
       failBool:error];
   }
 
-  // Perform the boot
-  NSError *innerError = nil;
-  FBSimulatorConnection *connection = [self performBootWithError:&innerError];
+  // Boot via CoreSimulator.
+  FBSimulatorConnection *connection = [self.coreSimulatorStrategy performBootWithError:error];
   if (!connection) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+    return NO;
+  }
+
+  // Launch the SimulatorApp Application.
+  if (![self.applicationStrategy launchSimulatorApplicationWithError:error]) {
+    return NO;
   }
 
   // Fail when the bridge could not be connected.
+  NSError *innerError = nil;
   if (self.configuration.shouldConnectBridge) {
     FBSimulatorBridge *bridge = [connection connectToBridge:&innerError];
     if (!bridge) {
@@ -455,12 +487,6 @@
   [self.simulator.eventSink connectionDidConnect:connection];
 
   return YES;
-}
-
-- (FBSimulatorConnection *)performBootWithError:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
 }
 
 - (FBProcessInfo *)launchdSimPresentWithAllRequiredServices:(NSError **)error
