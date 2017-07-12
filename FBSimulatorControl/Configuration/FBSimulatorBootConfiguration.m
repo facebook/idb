@@ -287,7 +287,7 @@ static NSString *const BootOptionStringUseNSWorkspace = @"Use NSWorkspace";
       failBool:error];
   }
   FBSimulator *simulator = (FBSimulator *) target;
-  return [simulator bootSimulator:self error:error];
+  return [simulator boot:self error:error];
 }
 
 @end

@@ -28,8 +28,8 @@
     NSLog(@"Skipping running -[%@ %@] since Metal is not supported on this Hardware", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
-  FBSimulatorBootConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
-  if (launchConfiguration.shouldUseDirectLaunch) {
+  FBSimulatorBootConfiguration *bootConfiguration = self.simulatorLaunchConfiguration;
+  if (bootConfiguration.shouldUseDirectLaunch) {
     NSLog(@"Skipping running -[%@ %@] since the Simulator will be launched directly", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
@@ -38,7 +38,7 @@
     return;
   }
 
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:launchConfiguration];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:bootConfiguration];
   [self assertSimulator:simulator launchesApplication:self.safariApplication withApplicationLaunchConfiguration:self.safariAppLaunch];
   NSError *error = nil;
   id<FBVideoRecordingSession> session = [simulator startRecordingToFile:nil error:&error];

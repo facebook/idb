@@ -20,7 +20,7 @@
 - (void)assertShutdownSimulatorAndTerminateSession:(FBSimulator *)simulator
 {
   NSError *error = nil;
-  BOOL success = [simulator shutdownSimulatorWithError:&error];
+  BOOL success = [simulator shutdownWithError:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
@@ -105,7 +105,7 @@
 
 - (nullable FBSimulator *)assertObtainsBootedSimulator
 {
-  return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration launchConfiguration:self.simulatorLaunchConfiguration];
+  return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:self.simulatorLaunchConfiguration];
 }
 
 - (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application
@@ -121,7 +121,7 @@
   return simulator;
 }
 
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration launchConfiguration:(FBSimulatorBootConfiguration *)launchConfiguration
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration bootConfiguration:(FBSimulatorBootConfiguration *)bootConfiguration
 {
   FBSimulator *simulator = [self assertObtainsSimulatorWithConfiguration:configuration];
   if (!simulator) {
@@ -130,10 +130,10 @@
   [self.assert consumeAllNotifications];
 
   NSError *error = nil;
-  BOOL success = [simulator bootSimulator:launchConfiguration error:&error];
+  BOOL success = [simulator boot:bootConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  [self.assert bootingNotificationsFired:launchConfiguration];
+  [self.assert bootingNotificationsFired:bootConfiguration];
   [self.assert consumeAllNotifications];
   return simulator;
 }
@@ -160,15 +160,15 @@
   return simulator;
 }
 
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration launchConfiguration:simulatorLaunchConfiguration];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:simulatorConfiguration bootConfiguration:bootConfiguration];
   return [self assertSimulator:simulator launchesApplication:application withApplicationLaunchConfiguration:applicationLaunchConfiguration];
 }
 
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)simulatorLaunchConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
-  FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration launches:simulatorLaunchConfiguration thenLaunchesApplication:application  withApplicationLaunchConfiguration:applicationLaunchConfiguration];
+  FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration launches:bootConfiguration thenLaunchesApplication:application withApplicationLaunchConfiguration:applicationLaunchConfiguration];
   FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
 
   NSError *error = nil;

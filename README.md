@@ -80,7 +80,7 @@ print("Using \(simulator)")
 // If it is booted, keep it booted, otherwise boot it.
 if (simulator.state != .booted) {
   print("Booting Simulator \(simulator)")
-  try simulator.bootSimulator()
+  try simulator.boot()
 }
 
 // List the Installed Apps and get the first installed app

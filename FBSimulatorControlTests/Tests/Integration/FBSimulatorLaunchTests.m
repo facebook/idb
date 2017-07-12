@@ -42,7 +42,7 @@
 - (void)testLaunchesSingleSimulator:(FBSimulatorConfiguration *)configuration
 {
   FBSimulatorBootConfiguration *launchConfiguration = self.simulatorLaunchConfiguration;
-  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration launchConfiguration:self.simulatorLaunchConfiguration];
+  FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:configuration bootConfiguration:self.simulatorLaunchConfiguration];
   if (!simulator) {
     return;
   }
@@ -110,13 +110,13 @@
   XCTAssertEqual(([[NSSet setWithArray:@[simulator1.udid, simulator2.udid, simulator3.udid]] count]), 3u);
 
   NSError *error = nil;
-  BOOL success = [simulator1 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  BOOL success = [simulator1 boot:self.simulatorLaunchConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  success = [simulator2 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  success = [simulator2 boot:self.simulatorLaunchConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
-  success = [simulator3 bootSimulator:self.simulatorLaunchConfiguration error:&error];
+  success = [simulator3 boot:self.simulatorLaunchConfiguration error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
 

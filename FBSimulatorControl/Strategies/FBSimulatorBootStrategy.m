@@ -338,7 +338,7 @@
   return self;
 }
 
-- (BOOL)boot:(NSError **)error
+- (BOOL)bootWithError:(NSError **)error
 {
   // Return early depending on Simulator state.
   if (self.simulator.state == FBSimulatorStateBooted) {

@@ -57,19 +57,19 @@
 
 #pragma mark Boot/Shutdown
 
-- (BOOL)bootSimulatorWithError:(NSError **)error
+- (BOOL)bootWithError:(NSError **)error
 {
-  return [self bootSimulator:FBSimulatorBootConfiguration.defaultConfiguration error:error];
+  return [self boot:FBSimulatorBootConfiguration.defaultConfiguration error:error];
 }
 
-- (BOOL)bootSimulator:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error
+- (BOOL)boot:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error
 {
   return [[FBSimulatorBootStrategy
     strategyWithConfiguration:configuration simulator:self.simulator]
-    boot:error];
+    bootWithError:error];
 }
 
-- (BOOL)shutdownSimulatorWithError:(NSError **)error
+- (BOOL)shutdownWithError:(NSError **)error
 {
   return [self.simulator.set killSimulator:self.simulator error:error];
 }

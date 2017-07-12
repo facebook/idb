@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
-- (BOOL)bootSimulatorWithError:(NSError **)error;
+- (BOOL)bootWithError:(NSError **)error;
 
 /**
  Boots the Simulator with the default Simulator Launch Configuration.
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
-- (BOOL)bootSimulator:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error;
+- (BOOL)boot:(FBSimulatorBootConfiguration *)configuration error:(NSError **)error;
 
 /**
  Shuts the Simulator down.
@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the reciever, for chaining.
  */
-- (BOOL)shutdownSimulatorWithError:(NSError **)error;
+- (BOOL)shutdownWithError:(NSError **)error;
 
 #pragma mark Connection
 
