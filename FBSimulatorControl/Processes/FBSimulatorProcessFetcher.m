@@ -69,6 +69,16 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
   return [dictionary copy];
 }
 
+- (NSDictionary<id, FBProcessInfo *> *)simulatorApplicationProcessesByDeviceSetPath
+{
+  NSMutableDictionary<id, FBProcessInfo *> *dictionary = [NSMutableDictionary dictionary];
+  for (FBProcessInfo *processInfo in self.simulatorApplicationProcesses) {
+    id deviceSetPath = [FBSimulatorProcessFetcher deviceSetPathForApplicationProcess:processInfo] ?: NSNull.null;
+    dictionary[deviceSetPath] = processInfo;
+  }
+  return [dictionary copy];
+}
+
 - (nullable FBProcessInfo *)simulatorApplicationProcessForSimDevice:(SimDevice *)simDevice
 {
   return [self simulatorApplicationProcessesByUDIDs:@[simDevice.UDID.UUIDString] unclaimed:nil][simDevice.UDID.UUIDString];
@@ -225,6 +235,11 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
 + (nullable NSString *)udidForSimulatorApplicationProcess:(FBProcessInfo *)process
 {
   return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID];
+}
+
++ (nullable NSString *)deviceSetPathForApplicationProcess:(FBProcessInfo *)process
+{
+  return process.environment[FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath];
 }
 
 + (NSCharacterSet *)launchdSimEnvironmentVariableUDIDSplitCharacterSet

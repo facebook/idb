@@ -63,6 +63,12 @@ extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath
 - (NSDictionary<NSString *, FBProcessInfo *> *)simulatorApplicationProcessesByUDIDs:(NSArray<NSString *> *)udids unclaimed:(NSArray<FBProcessInfo *> *_Nullable * _Nullable)unclaimedOut;
 
 /**
+ Fetches a Dictionary, mapping Device Set Path to Simulator Application Process.
+ If no Device Set Path defined, NSNull will be the key.
+ */
+- (NSDictionary<id, FBProcessInfo *> *)simulatorApplicationProcessesByDeviceSetPath;
+
+/**
  Fetches the Process Info for a given Simulator.
 
  @param simDevice the Simulator to fetch Process Info for.
