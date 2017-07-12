@@ -13,6 +13,7 @@
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDevice+Removed.h>
+#import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
 
 #import <SimulatorBridge/SimulatorBridge-Protocol.h>
@@ -31,6 +32,7 @@
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHID.h"
+#import "FBSimulatorSet.h"
 #import "FBSimulatorBootConfiguration+Helpers.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorLaunchCtl.h"
@@ -360,7 +362,8 @@
   }
   // Add the UDID marker to the subprocess environment, so that it can be queried in any process.
   NSDictionary *environment = @{
-    FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID : self.simulator.udid
+    FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID : self.simulator.udid,
+    FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath : self.simulator.set.deviceSet.setPath,
   };
 
   // Launch the Simulator.app Process.

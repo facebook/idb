@@ -25,6 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
 extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID;
 
 /**
+ An Environment Variable that is inserted into Simulator.app processes launched by FBSimulatorControl.
+ This makes the process of determining launched Simulator.app processes far simpler
+ as otherwise it is difficult to determine the UDID corresponding to a Simulator.app based on information
+ available to external processes.
+ */
+extern NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath;
+
+/**
  A class for obtaining information about Simulators that FBSimulatorControl cares about.
  */
 @interface FBSimulatorProcessFetcher : NSObject

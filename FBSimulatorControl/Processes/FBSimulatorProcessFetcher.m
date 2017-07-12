@@ -19,6 +19,7 @@
 #import "FBSimulatorControlConfiguration.h"
 
 NSString *const FBSimulatorControlSimulatorLaunchEnvironmentSimulatorUDID = @"FBSIMULATORCONTROL_SIM_UDID";
+NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FBSIMULATORCONTROL_SIM_SET_PATH";
 
 @implementation FBSimulatorProcessFetcher
 
