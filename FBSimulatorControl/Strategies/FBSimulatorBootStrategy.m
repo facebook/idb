@@ -87,6 +87,15 @@
  */
 - (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error;
 
+/**
+ Determines whether the Simulator Application should be launched.
+
+ @param configuration the configuration to use.
+ @param simulator the Simulator.
+ @preturn YES if the SimulatorApp should be launched, NO otherwise.
+ */
+- (BOOL)shouldLaunchSimulatorApplication:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
+
 @end
 
 @interface FBSimulatorApplicationLaunchStrategy : NSObject
@@ -208,10 +217,11 @@
 
 - (NSDictionary<NSString *, id> *)bootOptions
 {
-  // We currently don't have semantics for headless launches that *don't* use the death-trigger behaviour.
-  // Therefore we should keep consistency across Xcode versions and eventually add these semantics.
+  // If we are launching with the Simulator App, we want to persist the Simulator.
+  // This effectively "Passes Ownership" to the Simulator App.
   return @{
-    @"persist": @NO,
+    @"persist": @(!self.configuration.shouldUseDirectLaunch),
+    @"env" : @{}
   };
 }
 
@@ -280,6 +290,11 @@
 
 - (BOOL)shouldBootWithCoreSimulator
 {
+  // Always boot with CoreSimulator on Xcode 9
+  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+    return YES;
+  }
+  // Otherwise obey the direct launch config.
   return self.configuration.shouldUseDirectLaunch;
 }
 
@@ -379,12 +394,58 @@
   return [arguments copy];
 }
 
+- (BOOL)shouldLaunchSimulatorApplication:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
+{
+  // Only launch Simulator App if not using CoreSimulator to launch.
+  return !configuration.shouldUseDirectLaunch;
+}
+
 - (NSString *)lastScaleCommandLineSwitchForSimulator:(FBSimulator *)simulator
 {
   return [NSString stringWithFormat:@"-SimulatorWindowLastScale-%@", simulator.device.deviceTypeIdentifier];
 }
 
 @end
+
+@interface FBSimulatorApplicationLaunchOptions_Xcode9 : NSObject <FBSimulatorApplicationLaunchOptions>
+
+@end
+
+@implementation FBSimulatorApplicationLaunchOptions_Xcode9
+
+- (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  NSString *setPath = simulator.set.deviceSet.setPath;
+  return @[
+    @"--args",
+    @"-DeviceSetPath", setPath, // Always pass the Device Set Path
+    @"-DetatchOnAppQuit", @"1", // Shutdown Sims on Quitting the App, just like in < Xcode 9
+    @"-DetachOnWindowClose", @"1",  // Same as closing the window
+    @"-AttachBootedOnStart", @"1",  // Always attach to running sims, so that they have an open window.
+    @"-StartLastDeviceOnLaunch", @"0", // *never* let SimulatorApp boot on our behalf.
+ ];
+}
+
+- (BOOL)shouldLaunchSimulatorApplication:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
+{
+  // With Xcode 9 Direct-Launch Only, don't boot a Simulator App.
+  if (configuration.shouldUseDirectLaunch) {
+    return NO;
+  }
+  // Find a Simulator App for the current set if one exists, if it does exist then don't launch one.
+  NSString *setPath = simulator.set.deviceSet.setPath;
+  FBProcessInfo *applicationProcess = simulator.processFetcher.simulatorApplicationProcessesByDeviceSetPath[setPath];
+  if (applicationProcess) {
+    [simulator.logger logFormat:@"Existing Simulator Application %@ found, not re-launching one for this device set", applicationProcess];
+    return NO;
+  }
+  // Otherwise we should launch one
+  [simulator.logger logFormat:@"No Simulator Application found for device set '%@', launching a Simulator App for %@", setPath, simulator];
+  return YES;
+}
+
+@end
+
 
 @implementation FBSimulatorApplicationLaunchStrategy
 
@@ -406,7 +467,7 @@
 - (BOOL)launchSimulatorApplicationWithError:(NSError **)error
 {
   // Return early if we shouldn't launch the Application
-  if (!self.shouldLaunchSimulatorApplication) {
+  if (![self.options shouldLaunchSimulatorApplication:self.configuration simulator:self.simulator]) {
     return YES;
   }
 
@@ -451,11 +512,6 @@
   return YES;
 }
 
-- (BOOL)shouldLaunchSimulatorApplication
-{
-  return !self.configuration.shouldUseDirectLaunch;
-}
-
 @end
 
 @implementation FBSimulatorBootStrategy
@@ -490,7 +546,9 @@
 
 + (id<FBSimulatorApplicationLaunchOptions>)applicationLaunchOptions
 {
-  return [FBSimulatorApplicationLaunchOptions_Xcode7 new];
+  return FBControlCoreGlobalConfiguration.isXcode9OrGreater
+    ? [FBSimulatorApplicationLaunchOptions_Xcode9 new]
+    : [FBSimulatorApplicationLaunchOptions_Xcode7 new];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator applicationStrategy:(FBSimulatorApplicationLaunchStrategy *)applicationStrategy coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy
