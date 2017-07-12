@@ -53,6 +53,23 @@
 
 @end
 
+/**
+ Provides an implementation of Launching a Simulator Application.
+ */
+@protocol FBSimulatorApplicationProcessLauncher <NSObject>
+
+/**
+ Launches the SimulatorApp Process.
+
+ @param arguments the SimulatorApp process arguments.
+ @param environment the environment for the process.
+ @param error an error out for any error that occurs.
+ @return YES if successful, NO otherwise.
+ */
+- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error;
+
+@end
+
 @interface FBSimulatorBootStrategy ()
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
@@ -228,14 +245,85 @@
 
 @end
 
+@interface FBSimulatorApplicationProcessLauncher_Task : NSObject <FBSimulatorApplicationProcessLauncher>
+@end
+
+@interface FBSimulatorApplicationProcessLauncher_Workspace : NSObject <FBSimulatorApplicationProcessLauncher>
+@end
+
+@implementation FBSimulatorApplicationProcessLauncher_Task
+
+- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
+{
+  // Construct and start the task.
+  FBTask *task = [[[[[FBTaskBuilder
+    withLaunchPath:FBApplicationDescriptor.xcodeSimulator.binary.path]
+    withArguments:arguments]
+    withEnvironmentAdditions:environment]
+    build]
+    startAsynchronously];
+
+
+  // Expect no immediate error.
+  if (task.error) {
+    return [[[FBSimulatorError
+      describe:@"Failed to Launch Simulator Process"]
+      causedBy:task.error]
+      failBool:error];
+  }
+  return YES;
+}
+
+@end
+
+@implementation FBSimulatorApplicationProcessLauncher_Workspace
+
+- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
+{
+  // The NSWorkspace API allows for arguments & environment to be provided to the launched application
+  // Additionally, multiple Apps of the same application can be launched with the NSWorkspaceLaunchNewInstance option.
+  NSURL *applicationURL = [NSURL fileURLWithPath:FBApplicationDescriptor.xcodeSimulator.path];
+  NSDictionary *appLaunchConfiguration = @{
+    NSWorkspaceLaunchConfigurationArguments : arguments,
+    NSWorkspaceLaunchConfigurationEnvironment : environment,
+  };
+
+  NSError *innerError = nil;
+  NSRunningApplication *application = [NSWorkspace.sharedWorkspace
+    launchApplicationAtURL:applicationURL
+    options:NSWorkspaceLaunchDefault | NSWorkspaceLaunchNewInstance | NSWorkspaceLaunchWithoutActivation
+    configuration:appLaunchConfiguration
+    error:&innerError];
+
+  if (!application) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to launch simulator application %@ with configuration %@", applicationURL, appLaunchConfiguration]
+      causedBy:innerError]
+      failBool:error];
+  }
+  return YES;
+}
+@end
 
 @interface FBSimulatorBootStrategy_Subprocess : FBSimulatorBootStrategy
 
-- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error;
+@property (nonatomic, strong, readonly) id<FBSimulatorApplicationProcessLauncher> launcher;
 
 @end
 
 @implementation FBSimulatorBootStrategy_Subprocess
+
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator launcher:(id<FBSimulatorApplicationProcessLauncher>)launcher
+{
+  self = [super initWithConfiguration:configuration simulator:simulator];
+  if (!self) {
+    return nil;
+  }
+
+  _launcher = launcher;
+
+  return self;
+}
 
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
@@ -254,7 +342,7 @@
   };
 
   // Launch the Simulator.app Process.
-  if (![self launchSimulatorProcessWithArguments:arguments environment:environment error:&innerError]) {
+  if (![self.launcher launchSimulatorProcessWithArguments:arguments environment:environment error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
@@ -280,78 +368,6 @@
   return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:nil hid:nil];
 }
 
-- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
-}
-
-@end
-
-@interface FBSimulatorBootStrategy_Task : FBSimulatorBootStrategy_Subprocess
-
-@end
-
-@implementation FBSimulatorBootStrategy_Task
-
-- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
-{
-  // Construct and start the task.
-  FBTask *task = [[[[[FBTaskBuilder
-    withLaunchPath:FBApplicationDescriptor.xcodeSimulator.binary.path]
-    withArguments:arguments]
-    withEnvironmentAdditions:environment]
-    build]
-    startAsynchronously];
-
-  [self.simulator.eventSink terminationHandleAvailable:task];
-
-  // Expect no immediate error.
-  if (task.error) {
-    return [[[[FBSimulatorError
-      describe:@"Failed to Launch Simulator Process"]
-      causedBy:task.error]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  return YES;
-}
-
-@end
-
-@interface FBSimulatorBootStrategy_Workspace : FBSimulatorBootStrategy_Subprocess
-
-@end
-
-@implementation FBSimulatorBootStrategy_Workspace
-
-- (BOOL)launchSimulatorProcessWithArguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment error:(NSError **)error
-{
-  // The NSWorkspace API allows for arguments & environment to be provided to the launched application
-  // Additionally, multiple Apps of the same application can be launched with the NSWorkspaceLaunchNewInstance option.
-  NSURL *applicationURL = [NSURL fileURLWithPath:FBApplicationDescriptor.xcodeSimulator.path];
-  NSDictionary *appLaunchConfiguration = @{
-    NSWorkspaceLaunchConfigurationArguments : arguments,
-    NSWorkspaceLaunchConfigurationEnvironment : environment,
-  };
-
-  NSError *innerError = nil;
-  NSRunningApplication *application = [NSWorkspace.sharedWorkspace
-    launchApplicationAtURL:applicationURL
-    options:NSWorkspaceLaunchDefault | NSWorkspaceLaunchNewInstance | NSWorkspaceLaunchWithoutActivation
-    configuration:appLaunchConfiguration
-    error:&innerError];
-
-  if (!application) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to launch simulator application %@ with configuration %@", applicationURL, appLaunchConfiguration]
-      inSimulator:self.simulator]
-      causedBy:innerError]
-      failBool:error];
-  }
-  return YES;
-}
-
 @end
 
 @implementation FBSimulatorBootStrategy
@@ -362,10 +378,8 @@
     id<FBCoreSimulatorBootOptions> options = [self coreSimulatorBootOptionsWithConfiguration:configuration];
     return [[FBSimulatorBootStrategy_Direct alloc] initWithConfiguration:configuration simulator:simulator options:options];
   }
-  if (configuration.shouldLaunchViaWorkspace) {
-    return [[FBSimulatorBootStrategy_Workspace alloc] initWithConfiguration:configuration simulator:simulator];
-  }
-  return [[FBSimulatorBootStrategy_Task alloc] initWithConfiguration:configuration simulator:simulator];
+  id<FBSimulatorApplicationProcessLauncher> launcher = [self applicationProcessLauncherWithConfiguration:configuration];
+  return [[FBSimulatorBootStrategy_Subprocess alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher];
 }
 
 + (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptionsWithConfiguration:(FBSimulatorBootConfiguration *)configuration
@@ -377,6 +391,13 @@
   } else {
     return [FBCoreSimulatorBootOptions_Xcode7 new];
   }
+}
+
++ (id<FBSimulatorApplicationProcessLauncher>)applicationProcessLauncherWithConfiguration:(FBSimulatorBootConfiguration *)configuration
+{
+  return configuration.shouldLaunchViaWorkspace
+    ? [FBSimulatorApplicationProcessLauncher_Workspace new]
+    : [FBSimulatorApplicationProcessLauncher_Task new];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
