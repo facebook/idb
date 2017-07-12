@@ -72,11 +72,29 @@
 
 @end
 
+/**
+ Provides Launch Options to a Simulator.
+ */
+@protocol FBSimulatorApplicationLaunchOptions <NSObject>
+
+/**
+ Creates and returns the arguments to pass to Xcode's Simulator.app for the reciever's configuration.
+
+ @param configuration the configuration to base off.
+ @param simulator the Simulator construct boot args for.
+ @param error an error out for any error that occurs.
+ @return an NSArray<NSString> of boot arguments, or nil if an error occurred.
+ */
+- (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error;
+
+@end
+
 @interface FBSimulatorApplicationLaunchStrategy : NSObject
 
 @property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 @property (nonatomic, strong, readonly) id<FBSimulatorApplicationProcessLauncher> launcher;
+@property (nonatomic, strong, readonly) id<FBSimulatorApplicationLaunchOptions> options;
 
 @end
 
@@ -325,12 +343,52 @@
   }
   return YES;
 }
+
 @end
 
+@interface FBSimulatorApplicationLaunchOptions_Xcode7 : NSObject <FBSimulatorApplicationLaunchOptions>
+@end
+
+@implementation FBSimulatorApplicationLaunchOptions_Xcode7
+
+- (NSArray<NSString *> *)xcodeSimulatorApplicationArguments:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator error:(NSError **)error
+{
+  // These arguments are based on the NSUserDefaults that are serialized for the Simulator.app.
+  // These can be seen with `defaults read com.apple.iphonesimulator` and has default location of ~/Library/Preferences/com.apple.iphonesimulator.plist
+  // NSUserDefaults for any application can be overriden in the NSArgumentDomain:
+  // https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/UserDefaults/AboutPreferenceDomains/AboutPreferenceDomains.html#//apple_ref/doc/uid/10000059i-CH2-96930
+  NSMutableArray<NSString *> *arguments = [NSMutableArray arrayWithArray:@[
+    @"--args",
+    @"-CurrentDeviceUDID", simulator.udid,
+    @"-ConnectHardwareKeyboard", @"0",
+  ]];
+  FBScale scale = configuration.scale;
+  if (scale) {
+    [arguments addObjectsFromArray:@[
+      [self lastScaleCommandLineSwitchForSimulator:simulator], scale,
+    ]];
+  }
+
+  NSString *setPath = simulator.set.deviceSet.setPath;
+  if (setPath) {
+    if (!FBControlCoreGlobalConfiguration.supportsCustomDeviceSets) {
+      return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] fail:error];
+    }
+    [arguments addObjectsFromArray:@[@"-DeviceSetPath", setPath]];
+  }
+  return [arguments copy];
+}
+
+- (NSString *)lastScaleCommandLineSwitchForSimulator:(FBSimulator *)simulator
+{
+  return [NSString stringWithFormat:@"-SimulatorWindowLastScale-%@", simulator.device.deviceTypeIdentifier];
+}
+
+@end
 
 @implementation FBSimulatorApplicationLaunchStrategy
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator launcher:(id<FBSimulatorApplicationProcessLauncher>)launcher
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator launcher:(id<FBSimulatorApplicationProcessLauncher>)launcher options:(id<FBSimulatorApplicationLaunchOptions>)options
 {
   self = [super init];
   if (!self) {
@@ -340,6 +398,7 @@
   _configuration = configuration;
   _simulator = simulator;
   _launcher = launcher;
+  _options = options;
 
   return self;
 }
@@ -353,7 +412,7 @@
 
   // Fetch the Boot Arguments & Environment
   NSError *innerError = nil;
-  NSArray *arguments = [self.configuration xcodeSimulatorApplicationArgumentsForSimulator:self.simulator error:&innerError];
+  NSArray *arguments = [self.options xcodeSimulatorApplicationArguments:self.configuration simulator:self.simulator error:&innerError];
   if (!arguments) {
     return [[[FBSimulatorError
       describeFormat:@"Failed to create boot args for Configuration %@", self.configuration]
@@ -403,10 +462,11 @@
 
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
-  id<FBCoreSimulatorBootOptions> options = [self coreSimulatorBootOptionsWithConfiguration:configuration];
-  FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator options:options];
+  id<FBCoreSimulatorBootOptions> coreSimulatorOptions = [self coreSimulatorBootOptionsWithConfiguration:configuration];
+  FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator options:coreSimulatorOptions];
   id<FBSimulatorApplicationProcessLauncher> launcher = [self applicationProcessLauncherWithConfiguration:configuration];
-  FBSimulatorApplicationLaunchStrategy *applicationStrategy = [[FBSimulatorApplicationLaunchStrategy alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher];
+  id<FBSimulatorApplicationLaunchOptions> applicationOptions = [self applicationLaunchOptions];
+  FBSimulatorApplicationLaunchStrategy *applicationStrategy = [[FBSimulatorApplicationLaunchStrategy alloc] initWithConfiguration:configuration simulator:simulator launcher:launcher options:applicationOptions];
   return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator applicationStrategy:applicationStrategy coreSimulatorStrategy:coreSimulatorStrategy];
 }
 
@@ -426,6 +486,11 @@
   return configuration.shouldLaunchViaWorkspace
     ? [FBSimulatorApplicationProcessLauncher_Workspace new]
     : [FBSimulatorApplicationProcessLauncher_Task new];
+}
+
++ (id<FBSimulatorApplicationLaunchOptions>)applicationLaunchOptions
+{
+  return [FBSimulatorApplicationLaunchOptions_Xcode7 new];
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator applicationStrategy:(FBSimulatorApplicationLaunchStrategy *)applicationStrategy coreSimulatorStrategy:(FBCoreSimulatorBootStrategy *)coreSimulatorStrategy

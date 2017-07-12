@@ -18,15 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface FBSimulatorBootConfiguration (Helpers)
 
 /**
- Creates and returns the arguments to pass to Xcode's Simulator.app for the reciever's configuration.
-
- @param simulator the Simulator construct boot args for.
- @param error an error out for any error that occurs.
- @return an NSArray<NSString> of boot arguments, or nil if an error occurred.
- */
- - (NSArray<NSString *> *)xcodeSimulatorApplicationArgumentsForSimulator:(FBSimulator *)simulator error:(NSError **)error;
-
-/**
  Whether the reciever represents a configuration that should call SimDevice booting directly.
  */
 - (BOOL)shouldUseDirectLaunch;
