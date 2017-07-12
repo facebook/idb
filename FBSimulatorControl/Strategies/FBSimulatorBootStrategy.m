@@ -36,30 +36,162 @@
 #import "FBSimulatorLaunchCtl.h"
 #import "FBSimulatorProcessFetcher.h"
 
+/**
+ Provides relevant options to CoreSimulator for Booting.
+ */
+@protocol FBCoreSimulatorBootOptions <NSObject>
+
+/**
+ YES if the Framebuffer should be created, NO otherwise.
+ */
+- (BOOL)shouldCreateFramebuffer;
+
+/**
+ The Options to provide to the CoreSimulator API.
+ */
+- (NSDictionary<NSString *, id> *)bootOptions;
+
+@end
+
 @interface FBSimulatorBootStrategy ()
 
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorBootConfiguration *configuration;
-@property (nonatomic, strong, readonly, nonnull) FBSimulator *simulator;
+@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBSimulator *simulator;
+
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator;
 
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error;
 
 @end
 
+@interface FBCoreSimulatorBootOptions_Xcode7 : NSObject <FBCoreSimulatorBootOptions>
+@end
+
+@interface FBCoreSimulatorBootOptions_Xcode8 : NSObject <FBCoreSimulatorBootOptions>
+
+@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
+
+@end
+
+@interface FBCoreSimulatorBootOptions_Xcode9 : NSObject <FBCoreSimulatorBootOptions>
+
+@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
+
+@end
+
+@implementation FBCoreSimulatorBootOptions_Xcode7
+
+- (BOOL)shouldCreateFramebuffer
+{
+  // A Framebuffer is required in Xcode 7 currently, otherwise any interface that uses the Mach Interface for 'Host Support' will fail/hang.
+  return YES;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
+  // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
+  // Prior to Xcode 6 it was possible to shim into the Simulator process but codesigning now prevents this https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f
+
+  return @{
+    @"register-head-services" : @YES,
+  };
+}
+
+@end
+
+@implementation FBCoreSimulatorBootOptions_Xcode8
+
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _configuration = configuration;
+
+  return self;
+}
+
+- (BOOL)shouldCreateFramebuffer
+{
+  // Framebuffer connection is optional on Xcode 8 so we should use the appropriate configuration.
+  return self.configuration.shouldConnectFramebuffer;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  // Since Xcode 8 Beta 5, 'simctl' uses the 'SIMULATOR_IS_HEADLESS' argument.
+  return @{
+    @"register-head-services" : @YES,
+    @"env" : @{
+      @"SIMULATOR_IS_HEADLESS" : @1,
+    },
+  };
+}
+
+@end
+
+@implementation FBCoreSimulatorBootOptions_Xcode9
+
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _configuration = configuration;
+
+  return self;
+}
+
+- (BOOL)shouldCreateFramebuffer
+{
+  // Framebuffer connection is optional on Xcode 9 so we should use the appropriate configuration.
+  return self.configuration.shouldConnectFramebuffer;
+}
+
+- (NSDictionary<NSString *, id> *)bootOptions
+{
+  // We currently don't have semantics for headless launches that *don't* use the death-trigger behaviour.
+  // Therefore we should keep consistency across Xcode versions and eventually add these semantics.
+  return @{
+    @"persist": @NO,
+  };
+}
+
+@end
+
 @interface FBSimulatorBootStrategy_Direct : FBSimulatorBootStrategy
 
-- (BOOL)shouldCreateFramebuffer;
-- (NSDictionary<NSString *, id> *)bootOptions;
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator options:(id<FBCoreSimulatorBootOptions>)options;
+
+@property (nonatomic, strong, readonly) id<FBCoreSimulatorBootOptions> options;
 
 @end
 
 @implementation FBSimulatorBootStrategy_Direct
+
+- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator options:(id<FBCoreSimulatorBootOptions>)options
+{
+  self = [super initWithConfiguration:configuration simulator:simulator];
+  if (!self) {
+    return nil;
+  }
+
+  _options = options;
+
+  return self;
+}
 
 - (FBSimulatorConnection *)performBootWithError:(NSError **)error
 {
   // Create the Framebuffer (if required to do so).
   NSError *innerError = nil;
   FBFramebuffer *framebuffer = nil;
-  if (self.shouldCreateFramebuffer) {
+  if (self.options.shouldCreateFramebuffer) {
     FBFramebufferConfiguration *configuration = [self.configuration.framebuffer inSimulator:self.simulator];
     if (!configuration) {
       configuration = FBFramebufferConfiguration.defaultConfiguration;
@@ -82,7 +214,7 @@
 
   // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
   // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-  NSDictionary<NSString *, id> *options = self.bootOptions;
+  NSDictionary<NSString *, id> *options = self.options.bootOptions;
   if (![self.simulator.device bootWithOptions:options error:&innerError]) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to boot Simulator with options %@", options]
@@ -94,92 +226,8 @@
   return [[FBSimulatorConnection alloc] initWithSimulator:self.simulator framebuffer:framebuffer hid:hid];
 }
 
-- (BOOL)shouldCreateFramebuffer
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
-}
-
-- (NSDictionary<NSString *, id> *)bootOptions
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
 @end
 
-@interface FBSimulatorBootStrategy_Direct_Xcode7 : FBSimulatorBootStrategy_Direct
-
-@end
-
-@implementation FBSimulatorBootStrategy_Direct_Xcode7
-
-- (BOOL)shouldCreateFramebuffer
-{
-  // A Framebuffer is required in Xcode 7 currently, otherwise any interface that uses the Mach Interface for 'Host Support' will fail/hang.
-  return YES;
-}
-
-- (NSDictionary<NSString *, id> *)bootOptions
-{
-  // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
-  // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
-  // Prior to Xcode 6 it was possible to shim into the Simulator process but codesigning now prevents this https://gist.github.com/lawrencelomax/27bdc4e8a433a601008f
-
-  return @{
-    @"register-head-services" : @YES,
-  };
-}
-
-@end
-
-@interface FBSimulatorBootStrategy_Direct_Xcode8 : FBSimulatorBootStrategy_Direct
-
-@end
-
-@implementation FBSimulatorBootStrategy_Direct_Xcode8
-
-- (BOOL)shouldCreateFramebuffer
-{
-  // Framebuffer connection is optional on Xcode 8 so we should use the appropriate configuration.
-  return self.configuration.shouldConnectFramebuffer;
-}
-
-- (NSDictionary<NSString *, id> *)bootOptions
-{
-  // Since Xcode 8 Beta 5, 'simctl' uses the 'SIMULATOR_IS_HEADLESS' argument.
-  return @{
-    @"register-head-services" : @YES,
-    @"env" : @{
-      @"SIMULATOR_IS_HEADLESS" : @1,
-    },
-  };
-}
-
-@end
-
-@interface FBSimulatorBootStrategy_Direct_Xcode9 : FBSimulatorBootStrategy_Direct
-
-@end
-
-@implementation FBSimulatorBootStrategy_Direct_Xcode9
-
-- (BOOL)shouldCreateFramebuffer
-{
-  // Framebuffer connection is optional on Xcode 9 so we should use the appropriate configuration.
-  return self.configuration.shouldConnectFramebuffer;
-}
-
-- (NSDictionary<NSString *, id> *)bootOptions
-{
-  // We currently don't have semantics for headless launches that *don't* use the death-trigger behaviour.
-  // Therefore we should keep consistency across Xcode versions and eventually add these semantics.
-  return @{
-    @"persist": @NO,
-  };
-}
-
-@end
 
 @interface FBSimulatorBootStrategy_Subprocess : FBSimulatorBootStrategy
 
@@ -311,18 +359,24 @@
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
   if (configuration.shouldUseDirectLaunch) {
-    if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
-      return [[FBSimulatorBootStrategy_Direct_Xcode9 alloc] initWithConfiguration:configuration simulator:simulator];
-    } else if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-      return [[FBSimulatorBootStrategy_Direct_Xcode8 alloc] initWithConfiguration:configuration simulator:simulator];
-    } else {
-      return [[FBSimulatorBootStrategy_Direct_Xcode7 alloc] initWithConfiguration:configuration simulator:simulator];
-    }
+    id<FBCoreSimulatorBootOptions> options = [self coreSimulatorBootOptionsWithConfiguration:configuration];
+    return [[FBSimulatorBootStrategy_Direct alloc] initWithConfiguration:configuration simulator:simulator options:options];
   }
   if (configuration.shouldLaunchViaWorkspace) {
     return [[FBSimulatorBootStrategy_Workspace alloc] initWithConfiguration:configuration simulator:simulator];
   }
   return [[FBSimulatorBootStrategy_Task alloc] initWithConfiguration:configuration simulator:simulator];
+}
+
++ (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptionsWithConfiguration:(FBSimulatorBootConfiguration *)configuration
+{
+  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+    return [[FBCoreSimulatorBootOptions_Xcode9 alloc] initWithConfiguration:configuration];
+  } else if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    return [[FBCoreSimulatorBootOptions_Xcode8 alloc] initWithConfiguration:configuration];
+  } else {
+    return [FBCoreSimulatorBootOptions_Xcode7 new];
+  }
 }
 
 - (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
