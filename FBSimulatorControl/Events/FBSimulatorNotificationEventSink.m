@@ -9,6 +9,7 @@
 
 #import "FBSimulatorNotificationEventSink.h"
 
+#import "FBSimulatorApplicationOperation.h"
 #import "FBSimulatorAgentOperation.h"
 
 FBSimulatorNotificationName const FBSimulatorNotificationNameDidLaunch = @"FBSimulatorNotificationNameDidLaunch";
@@ -111,19 +112,19 @@ NSString *const FBSimulatorNotificationUserInfoKeyWaitingForDebugger = @"waiting
   }];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch userInfo:@{
-    FBSimulatorNotificationUserInfoKeyProcess : applicationProcess,
-    FBSimulatorNotificationUserInfoKeyWaitingForDebugger : @(launchConfig.waitForDebugger),
+    FBSimulatorNotificationUserInfoKeyProcess : operation.process,
+    FBSimulatorNotificationUserInfoKeyWaitingForDebugger : @(operation.configuration.waitForDebugger),
   }];
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
   [self materializeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate userInfo:@{
     FBSimulatorNotificationUserInfoKeyExpectedTermination : @(expected),
-    FBSimulatorNotificationUserInfoKeyProcess : applicationProcess
+    FBSimulatorNotificationUserInfoKeyProcess : operation.process,
   }];
 }
 

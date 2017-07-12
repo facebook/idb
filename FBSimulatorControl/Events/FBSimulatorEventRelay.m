@@ -19,6 +19,7 @@
 #import "FBSimulatorAgentOperation.h"
 #import "FBSimulatorConnection.h"
 #import "FBSimulatorProcessFetcher.h"
+#import "FBSimulatorApplicationOperation.h"
 
 @interface FBSimulatorEventRelay ()
 
@@ -159,29 +160,31 @@
   [self.sink agentDidTerminate:operation statLoc:statLoc];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
   // De-duplicate known-launched applications.
+  FBProcessInfo *applicationProcess = operation.process;
   if ([self.knownLaunchedProcesses containsObject:applicationProcess]) {
     return;
   }
 
   [self.knownLaunchedProcesses addObject:applicationProcess];
   [self createNotifierForProcess:applicationProcess withHandler:^(FBSimulatorEventRelay *relay) {
-    [relay applicationDidTerminate:applicationProcess expected:NO];
+    [relay applicationDidTerminate:operation expected:NO];
   }];
-  [self.sink applicationDidLaunch:launchConfig didStart:applicationProcess];
+  [self.sink applicationDidLaunch:operation];
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
+  FBProcessInfo *applicationProcess = operation.process;
   if (![self.knownLaunchedProcesses containsObject:applicationProcess]) {
     return;
   }
 
   [self.knownLaunchedProcesses removeObject:applicationProcess];
   [self unregisterNotifierForProcess:applicationProcess];
-  [self.sink applicationDidTerminate:applicationProcess expected:expected];
+  [self.sink applicationDidTerminate:operation expected:expected];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager

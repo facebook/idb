@@ -11,8 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBAgentLaunchConfiguration;
-@class FBApplicationDescriptor ;
+@class FBSimulatorApplicationOperation;
 @class FBApplicationLaunchConfiguration;
 @class FBDiagnostic;
 @class FBProcessInfo;
@@ -92,18 +91,17 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Event for the launch of an Application.
 
- @param launchConfig the Application Launch Configuration that was used to launch the Application.
- @param applicationProcess the resulting Process Info from the launch.
+ @param operation the Application Operation.
  */
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess;
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation;
 
 /**
  Event for the termination of an Application.
 
- @param applicationProcess the process that was terminated.
+ @param operation the Application Operation.
  @param expected whether the termination was expected or not.
  */
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected;
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected;
 
 /**
  Event for connection of test manager daemon

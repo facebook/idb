@@ -14,6 +14,7 @@
 #import <CoreSimulator/SimDevice.h>
 
 #import "FBApplicationLaunchStrategy.h"
+#import "FBSimulatorApplicationOperation.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
@@ -123,7 +124,8 @@
       inSimulator:simulator]
       fail:error];
   }
-  [simulator.eventSink applicationDidLaunch:appLaunch didStart:process];
+  FBSimulatorApplicationOperation *operation = [FBSimulatorApplicationOperation operationWithConfiguration:appLaunch process:process];
+  [simulator.eventSink applicationDidLaunch:operation];
 
   // Report the diagnostics to the event sink.
   if (stdOutDiagnostic) {

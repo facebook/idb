@@ -14,6 +14,7 @@
 #import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorAgentOperation.h"
+#import "FBSimulatorApplicationOperation.h"
 
 @interface FBSimulatorLoggingEventSink ()
 
@@ -84,14 +85,14 @@
   [self.logger logFormat:@"Agent Did Terminate => Value %d %@", statLoc, operation.process.shortDescription];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
-  [self.logger logFormat:@"Application Did Launch => %@", applicationProcess.shortDescription];
+  [self.logger logFormat:@"Application Did Launch => %@", operation.process.shortDescription];
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
-  [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, applicationProcess.shortDescription];
+  [self.logger logFormat:@"Application Did Terminate => Expected %d %@", expected, operation.process.shortDescription];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager

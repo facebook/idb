@@ -51,14 +51,14 @@
   [self.eventSink agentDidTerminate:operation statLoc:statLoc];
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
-  [self.eventSink applicationDidLaunch:launchConfig didStart:applicationProcess];
+  [self.eventSink applicationDidLaunch:operation];
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
-  [self.eventSink applicationDidTerminate:applicationProcess expected:expected];
+  [self.eventSink applicationDidTerminate:operation expected:expected];
 }
 
 - (void)testmanagerDidConnect:(FBTestManager *)testManager

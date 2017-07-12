@@ -1,4 +1,4 @@
-/**
+ /**
  * Copyright (c) 2015-present, Facebook, Inc.
  * All rights reserved.
  *
@@ -79,12 +79,12 @@
 
 }
 
-- (void)applicationDidLaunch:(FBApplicationLaunchConfiguration *)launchConfig didStart:(FBProcessInfo *)applicationProcess
+- (void)applicationDidLaunch:(FBSimulatorApplicationOperation *)operation
 {
 
 }
 
-- (void)applicationDidTerminate:(FBProcessInfo *)applicationProcess expected:(BOOL)expected
+- (void)applicationDidTerminate:(FBSimulatorApplicationOperation *)operation expected:(BOOL)expected
 {
 
 }

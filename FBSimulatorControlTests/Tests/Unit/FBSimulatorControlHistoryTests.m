@@ -38,15 +38,4 @@
   self.generator = nil;
 }
 
-- (void)testHistoryCanBeArchived
-{
-  [self.generator applicationDidLaunch:self.appLaunch2 didStart:self.processInfo2];
-  [self.generator applicationDidLaunch:self.appLaunch1 didStart:self.processInfo1];
-
-  NSData *data = [NSKeyedArchiver archivedDataWithRootObject:self.generator.history];
-  FBSimulatorHistory *history = [NSKeyedUnarchiver unarchiveObjectWithData:data];
-
-  XCTAssertEqualObjects(history.lastLaunchedApplicationProcess, self.processInfo1);
-}
-
 @end

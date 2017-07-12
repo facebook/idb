@@ -67,15 +67,15 @@ open class SimulatorReporter : NSObject, FBSimulatorEventSink, iOSReporter {
     self.reportValue(.terminate, .discrete, operation.process!)
   }
 
-  open func applicationDidLaunch(_ launchConfig: FBApplicationLaunchConfiguration, didStart applicationProcess: FBProcessInfo) {
-    self.reportValue(.launch, .discrete, applicationProcess)
-    if launchConfig.waitForDebugger {
-      self.reporter.logInfo("Application launched. To debug, run lldb -p \(applicationProcess.processIdentifier).")
+  public func applicationDidLaunch(_ operation: FBSimulatorApplicationOperation) {
+    self.reportValue(.launch, .discrete, operation.process)
+    if operation.configuration.waitForDebugger {
+      self.reporter.logInfo("Application launched. To debug, run lldb -p \(operation.process.processIdentifier).")
     }
   }
 
-  open func applicationDidTerminate(_ applicationProcess: FBProcessInfo, expected: Bool) {
-    self.reportValue(.terminate, .discrete, applicationProcess)
+  open func applicationDidTerminate(_ operation: FBSimulatorApplicationOperation, expected: Bool) {
+    self.reportValue(.terminate, .discrete, operation.process)
   }
 
   open func diagnosticAvailable(_ log: FBDiagnostic) {

@@ -57,15 +57,6 @@
       failBool:error];
   }
 
-  // Notify the eventSink of the process getting killed, before it is killed.
-  // This is done to prevent being marked as an unexpected termination when the
-  // detecting of the process getting killed kicks in.
-  // If there is no record of this process, no notification is sent.
-  FBProcessLaunchConfiguration *configuration = self.simulator.history.processLaunchConfigurations[process];
-  if ([configuration isKindOfClass:FBApplicationLaunchConfiguration.class]) {
-    [self.simulator.eventSink applicationDidTerminate:process expected:YES];
-  }
-
   // Get the Service Name and then stop using the Service Name.
   NSError *innerError = nil;
   NSString *serviceName = [self.simulator.launchctl serviceNameForProcess:process error:&innerError];
