@@ -190,7 +190,7 @@
   NSParameterAssert(appLaunch);
   return [[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
-    launchOrRelaunchApplication:appLaunch error:error];
+    launchOrRelaunchApplication:appLaunch error:error] != nil;
 }
 
 - (BOOL)terminateApplication:(FBApplicationDescriptor *)application error:(NSError **)error

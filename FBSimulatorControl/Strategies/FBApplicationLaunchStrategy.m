@@ -70,7 +70,7 @@
 
 #pragma mark Public
 
-- (FBProcessInfo *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
+- (nullable FBSimulatorApplicationOperation *)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
 {
   FBSimulator *simulator = self.simulator;
   NSError *innerError = nil;
@@ -135,7 +135,33 @@
     [simulator.eventSink diagnosticAvailable:stdErrDiagnostic];
   }
 
-  return process;
+  return operation;
+}
+
+- (nullable FBSimulatorApplicationOperation *)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
+{
+  NSParameterAssert(appLaunch);
+
+  // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
+  FBSimulator *simulator = self.simulator;
+  NSError *innerError = nil;
+  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  if (process) {
+    if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:error]) {
+      return [FBSimulatorError failWithError:innerError errorOut:error];
+    }
+  }
+
+  // Perform the launch usin the launch config
+  FBSimulatorApplicationOperation *operation = [self launchApplication:appLaunch error:&innerError];
+  if (!operation) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to re-launch %@", appLaunch]
+      inSimulator:simulator]
+      causedBy:innerError]
+      fail:error];
+  }
+  return operation;
 }
 
 - (pid_t)launchApplication:(FBApplicationLaunchConfiguration *)appLaunch stdOutPath:(NSString *)stdOutPath stdErrPath:(NSString *)stdErrPath error:(NSError **)error
@@ -170,31 +196,6 @@
       describeFormat:@"Failed to uninstall '%@'", bundleID]
       causedBy:innerError]
       inSimulator:simulator]
-      failBool:error];
-  }
-  return YES;
-}
-
-- (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
-{
-  NSParameterAssert(appLaunch);
-
-  // Kill the Application if it exists. Don't bother killing the process if it doesn't exist
-  FBSimulator *simulator = self.simulator;
-  NSError *innerError = nil;
-  FBProcessInfo *process = [simulator runningApplicationWithBundleID:appLaunch.bundleID error:&innerError];
-  if (process) {
-    if (![[FBSimulatorSubprocessTerminationStrategy strategyWithSimulator:simulator] terminate:process error:error]) {
-      return [FBSimulatorError failBoolWithError:innerError errorOut:error];
-    }
-  }
-
-  // Perform the launch usin the launch config
-  if (![self launchApplication:appLaunch error:&innerError]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to re-launch %@", appLaunch]
-      inSimulator:simulator]
-      causedBy:innerError]
       failBool:error];
   }
   return YES;
