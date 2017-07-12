@@ -15,7 +15,6 @@
 
 #import "FBApplicationLaunchStrategy.h"
 #import "FBSimulatorApplicationOperation.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"

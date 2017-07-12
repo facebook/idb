@@ -14,14 +14,15 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBApplicationLaunchStrategy.h"
-#import "FBSimulator+Helpers.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
+
+static NSString *const ApplicationTypeKey = @"ApplicationType";
+static NSString *const ApplicationPathKey = @"Path";
 
 @interface FBSimulatorApplicationCommands ()
 

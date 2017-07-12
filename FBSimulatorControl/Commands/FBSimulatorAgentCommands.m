@@ -13,7 +13,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulator.h"

@@ -13,7 +13,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorError.h"

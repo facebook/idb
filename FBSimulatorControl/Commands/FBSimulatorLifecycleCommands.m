@@ -11,9 +11,8 @@
 
 #import <CoreSimulator/SimDevice.h>
 
-#import <FBControlCore/FBControlCore.h>
+#import <AppKit/AppKit.h>
 
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorBootStrategy.h"
@@ -72,6 +71,64 @@
 - (BOOL)shutdownWithError:(NSError **)error
 {
   return [self.simulator.set killSimulator:self.simulator error:error];
+}
+
+#pragma mark Erase
+
+- (BOOL)freeFromPoolWithError:(NSError **)error
+{
+  if (!self.simulator.pool) {
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as there is no pool associated" errorOut:error];
+  }
+  if (!self.simulator.isAllocated) {
+    return [FBSimulatorError failBoolWithErrorMessage:@"Cannot free from pool as this Simulator has not been allocated" errorOut:error];
+  }
+  return [self.simulator.pool freeSimulator:self.simulator error:error];
+}
+
+- (BOOL)eraseWithError:(NSError **)error
+{
+  return [self.simulator.set eraseSimulator:self.simulator error:error];
+}
+
+#pragma mark States
+
+- (BOOL)waitOnState:(FBSimulatorState)state
+{
+  return [self waitOnState:state timeout:FBControlCoreGlobalConfiguration.regularTimeout];
+}
+
+- (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout
+{
+  FBSimulator *simulator = self.simulator;
+  return [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
+    return simulator.state == state;
+  }];
+}
+
+- (BOOL)waitOnState:(FBSimulatorState)state error:(NSError **)error
+{
+  if (![self waitOnState:state]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Simulator was not in expected %@ state, got %@", FBSimulatorStateStringFromState(self.simulator.state), self.simulator.stateString]
+      inSimulator:self.simulator]
+      failBool:error];
+  }
+  return YES;
+}
+
+#pragma mark Focus
+
+- (BOOL)focusWithError:(NSError **)error
+{
+  NSArray *apps = NSWorkspace.sharedWorkspace.runningApplications;
+  NSPredicate *matchingPid = [NSPredicate predicateWithFormat:@"processIdentifier = %@", @(self.simulator.containerApplication.processIdentifier)];
+  NSRunningApplication *app = [apps filteredArrayUsingPredicate:matchingPid].firstObject;
+  if (!app) {
+    return [[FBSimulatorError describeFormat:@"Simulator application for %@ is not running", self.simulator.udid] failBool:error];
+  }
+
+  return [app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
 }
 
 #pragma mark Connection

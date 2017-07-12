@@ -15,7 +15,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAgentLaunchStrategy.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorProcessFetcher.h"

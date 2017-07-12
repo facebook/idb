@@ -24,7 +24,6 @@
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBFramebufferConnectStrategy.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorBridge.h"

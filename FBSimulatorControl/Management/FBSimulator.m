@@ -21,7 +21,6 @@
 #import "FBAccessibilityFetch.h"
 #import "FBCompositeSimulatorEventSink.h"
 #import "FBMutableSimulatorEventSink.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulatorAgentCommands.h"
 #import "FBSimulatorApplicationCommands.h"
 #import "FBSimulatorBridgeCommands.h"

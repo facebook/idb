@@ -14,7 +14,6 @@
 
 #import "FBCoreSimulatorNotifier.h"
 #import "FBCoreSimulatorTerminationStrategy.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorConfiguration+CoreSimulator.h"
 #import "FBSimulatorConfiguration.h"

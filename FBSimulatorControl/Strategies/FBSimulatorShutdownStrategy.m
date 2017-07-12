@@ -14,7 +14,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
@@ -70,7 +69,7 @@
   if (simulator.state == FBSimulatorStateCreating) {
     // Await the Simulator to be shutdown.
     [logger.debug logFormat:@"Simulator %@ is Creating, waiting for state to change to Shutdown", simulator.udid];
-    if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
+    if (![simulator waitOnState:FBSimulatorStateShutdown error:&innerError]) {
 
       // Erase using the SimDevice directly to prevent infinite recursion.
       [logger.debug logFormat:@"Simulator %@ is stuck in Creating: erasing now", simulator.udid];
@@ -84,7 +83,7 @@
       }
 
       // If a device has been erased, we should wait for it to actually be shutdown. Ff it can't be, fail
-      if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
+      if (![simulator waitOnState:FBSimulatorStateShutdown error:&innerError]) {
         return [[[[[FBSimulatorError
           describe:@"Failed trying to wait for a 'Creating' simulator to be shutdown after being erased"]
           causedBy:innerError]
@@ -111,7 +110,7 @@
   }
 
   [logger.debug logFormat:@"Confirming Simulator %@ is shutdown", simulator.udid];
-  if (![simulator waitOnState:FBSimulatorStateShutdown withError:&innerError]) {
+  if (![simulator waitOnState:FBSimulatorStateShutdown error:&innerError]) {
     return [[[[[FBSimulatorError
       describe:@"Failed to wait for simulator preparation to shutdown device"]
       causedBy:innerError]

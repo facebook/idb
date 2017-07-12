@@ -14,7 +14,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBSimulator+Helpers.h"
 #import "FBSimulator.h"
 #import "FBSimulatorHistory+Queries.h"
 

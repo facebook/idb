@@ -10,7 +10,6 @@
 #import "FBSimulatorKeychainCommands.h"
 
 #import "FBSimulator.h"
-#import "FBSimulator+Helpers.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 
