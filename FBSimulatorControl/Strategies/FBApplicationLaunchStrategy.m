@@ -124,7 +124,7 @@
       inSimulator:simulator]
       fail:error];
   }
-  FBSimulatorApplicationOperation *operation = [FBSimulatorApplicationOperation operationWithConfiguration:appLaunch process:process];
+  FBSimulatorApplicationOperation *operation = [FBSimulatorApplicationOperation operationWithSimulator:simulator configuration:appLaunch process:process];
   [simulator.eventSink applicationDidLaunch:operation];
 
   // Report the diagnostics to the event sink.

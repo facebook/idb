@@ -9,8 +9,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBSimulator;
 @class FBProcessInfo;
 @class FBApplicationLaunchConfiguration;
 
@@ -25,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the configuration launched with.
  @param process launched Application process info.
  */
-+ (instancetype)operationWithConfiguration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process;
++ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process;
 
 /**
  The Configuration Launched with.

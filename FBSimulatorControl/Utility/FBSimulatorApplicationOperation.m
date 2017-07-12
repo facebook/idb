@@ -9,24 +9,49 @@
 
 #import "FBSimulatorApplicationOperation.h"
 
+#import "FBSimulatorEventSink.h"
+
+@interface FBSimulatorApplicationOperation ()
+
+@property (nonatomic, weak, nullable, readonly) FBSimulator *simulator;
+@property (nonatomic, strong, nullable, readwrite) FBDispatchSourceNotifier *notifier;
+
+@end
+
 @implementation FBSimulatorApplicationOperation
 
-+ (instancetype)operationWithConfiguration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process
+#pragma mark Initializers
+
++ (instancetype)operationWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process
 {
-  return [[self alloc] initWithConfiguration:configuration process:process];
+  FBSimulatorApplicationOperation *operation = [[self alloc] initWithSimulator:simulator configuration:configuration process:process];
+  [operation createNotifier];
+  return operation;
 }
 
-- (instancetype)initWithConfiguration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBApplicationLaunchConfiguration *)configuration process:(FBProcessInfo *)process
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _simulator = simulator;
   _configuration = configuration;
   _process = process;
 
   return self;
+}
+
+#pragma mark
+
+- (void)createNotifier
+{
+  __weak typeof(self) weakSelf = self;
+  self.notifier = [FBDispatchSourceNotifier processTerminationNotifierForProcessIdentifier:self.process.processIdentifier handler:^(FBDispatchSourceNotifier *_) {
+    [weakSelf.simulator.eventSink applicationDidTerminate:self expected:NO];
+    weakSelf.notifier = nil;
+  }];
 }
 
 @end

@@ -34,7 +34,6 @@
 @property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) SimDevice *simDevice;
 
-@property (nonatomic, strong, readonly) NSMutableDictionary *processTerminationNotifiers;
 @property (nonatomic, strong, readwrite) FBCoreSimulatorNotifier *stateChangeNotifier;
 
 @end
@@ -52,7 +51,6 @@
   _simDevice = simDevice;
   _processFetcher = processFetcher;
 
-  _processTerminationNotifiers = [NSMutableDictionary dictionary];
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
 
@@ -169,9 +167,6 @@
   }
 
   [self.knownLaunchedProcesses addObject:applicationProcess];
-  [self createNotifierForProcess:applicationProcess withHandler:^(FBSimulatorEventRelay *relay) {
-    [relay applicationDidTerminate:operation expected:NO];
-  }];
   [self.sink applicationDidLaunch:operation];
 }
 
@@ -183,7 +178,6 @@
   }
 
   [self.knownLaunchedProcesses removeObject:applicationProcess];
-  [self unregisterNotifierForProcess:applicationProcess];
   [self.sink applicationDidTerminate:operation expected:expected];
 }
 
@@ -227,31 +221,8 @@
 
 #pragma mark Process Termination
 
-- (void)createNotifierForProcess:(FBProcessInfo *)process withHandler:( void(^)(FBSimulatorEventRelay *relay) )handler
-{
-  NSParameterAssert(self.processTerminationNotifiers[process] == nil);
-
-  __weak typeof(self) weakSelf = self;
-  FBDispatchSourceNotifier *notifier = [FBDispatchSourceNotifier processTerminationNotifierForProcessIdentifier:process.processIdentifier handler:^(FBDispatchSourceNotifier *_) {
-    handler(weakSelf);
-  }];
-  self.processTerminationNotifiers[process] = notifier;
-}
-
-- (void)unregisterNotifierForProcess:(FBProcessInfo *)process
-{
-  FBDispatchSourceNotifier *notifier = self.processTerminationNotifiers[process];
-  if (!notifier) {
-    return;
-  }
-  [notifier terminate];
-  [self.processTerminationNotifiers removeObjectForKey:process];
-}
-
 - (void)unregisterAllNotifiers
 {
-  [self.processTerminationNotifiers.allValues makeObjectsPerformSelector:@selector(terminate)];
-  [self.processTerminationNotifiers removeAllObjects];
   [self.stateChangeNotifier terminate];
   self.stateChangeNotifier = nil;
 }
