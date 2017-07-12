@@ -31,9 +31,11 @@ FBiOSTargetActionType const FBiOSTargetActionTypeBoot = @"boot";
   return configuration;
 }
 
+static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsAwaitServices | FBSimulatorBootOptionsUseNSWorkspace;
+
 - (instancetype)init
 {
-  return [self initWithOptions:FBSimulatorBootOptionsAwaitServices scale:nil localizationOverride:nil framebuffer:nil];
+  return [self initWithOptions:DefaultBootOptions scale:nil localizationOverride:nil framebuffer:nil];
 }
 
 - (instancetype)initWithOptions:(FBSimulatorBootOptions)options scale:(FBScale)scale localizationOverride:(FBLocalizationOverride *)localizationOverride framebuffer:(FBFramebufferConfiguration *)framebuffer
