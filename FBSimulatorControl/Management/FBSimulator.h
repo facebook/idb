@@ -14,13 +14,14 @@
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
 #import <FBSimulatorControl/FBSimulatorAgentCommands.h>
+#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
 #import <FBSimulatorControl/FBSimulatorBridgeCommands.h>
 #import <FBSimulatorControl/FBSimulatorKeychainCommands.h>
-#import <FBSimulatorControl/FBSimulatorApplicationCommands.h>
-#import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
-#import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
+#import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
+#import <FBSimulatorControl/FBSimulatorSettingsCommands.h>
 #import <FBSimulatorControl/FBSimulatorVideoRecordingCommands.h>
+#import <FBSimulatorControl/FBSimulatorXCTestCommands.h>
 
 @protocol FBSimulatorEventSink;
 @protocol FBControlCoreLogger;
@@ -39,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Defines the High-Level Properties and Methods that exist on any Simulator returned from `FBSimulatorPool`.
  */
-@interface FBSimulator : NSObject <FBiOSTarget, FBLogCommands, FBXCTestCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorXCTestCommands, FBSimulatorLifecycleCommands>
+@interface FBSimulator : NSObject <FBiOSTarget, FBLogCommands, FBXCTestCommands, FBSimulatorAgentCommands, FBSimulatorApplicationCommands, FBSimulatorBridgeCommands, FBSimulatorKeychainCommands, FBSimulatorSettingsCommands, FBSimulatorXCTestCommands, FBSimulatorLifecycleCommands, FBSimulatorLaunchCtlCommands>
 
 /**
  The Underlying SimDevice.

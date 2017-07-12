@@ -15,7 +15,7 @@
 #import "FBSimulator.h"
 #import "FBSimulator+Helpers.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBAgentLaunchStrategy.h"
 
 @interface FBDefaultsModificationStrategy ()
@@ -106,7 +106,7 @@
   }
   // Stop the service, if booted.
   if (state == FBSimulatorStateBooted) {
-    if (![simulator.launchctl stopServiceWithName:serviceName error:error]) {
+    if (![simulator stopServiceWithName:serviceName error:error]) {
       return NO;
     }
   }
@@ -117,7 +117,7 @@
   }
   // Re-start the Service if booted.
   if (state == FBSimulatorStateBooted) {
-    if (![simulator.launchctl startServiceWithName:serviceName error:error]) {
+    if (![simulator startServiceWithName:serviceName error:error]) {
       return NO;
     }
   }

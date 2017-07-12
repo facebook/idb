@@ -307,6 +307,7 @@
       FBSimulatorApplicationCommands.class,
       FBSimulatorBridgeCommands.class,
       FBSimulatorKeychainCommands.class,
+      FBSimulatorLaunchCtlCommands.class,
       FBSimulatorLifecycleCommands.class,
       FBSimulatorLogCommands.class,
       FBSimulatorSettingsCommands.class,

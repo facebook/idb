@@ -22,18 +22,6 @@ static NSString *const ApplicationPathKey = @"Path";
  */
 @interface FBSimulator (Helpers)
 
-#pragma mark Properties
-
-/**
- Creates a FBSimulatorLaunchCtl for the Simulator.
- */
-@property (nonatomic, strong, readonly) FBSimulatorLaunchCtl *launchctl;
-
-/*
- Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
- */
-@property (nonatomic, copy, readonly) NSArray<FBProcessInfo *> *launchdSimSubprocesses;
-
 #pragma mark Methods
 
 /**

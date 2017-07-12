@@ -15,26 +15,23 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An Interface to a Simulator's launchctl.
+ Protocol for interacting with a Simulator's launchctl
  */
-@interface FBSimulatorLaunchCtl : NSObject
+@protocol FBSimulatorLaunchCtlCommands
 
-#pragma mark Intializers
+#pragma mark Processes
 
-/**
- Creates a FBSimulatorLaunchCtl instance for the provided Simulator
-
- @param simulator the Simulator to create a launchctl wrapper for.
- @return a new FBSimulatorLaunchCtl instance.
+/*
+ Fetches an NSArray<FBProcessInfo *> of the subprocesses of the launchd_sim.
  */
-+ (instancetype)withSimulator:(FBSimulator *)simulator;
+- (NSArray<FBProcessInfo *> *)launchdSimSubprocesses;
 
 #pragma mark Querying Services
 
 /**
  Finds the Service Name for a provided process.
  Will fail if there is no process matching the Process Info found.
-
+q
  @param process the process to obtain the name for.
  @param error an error for any error that occurs.
  @return the Service Name of the Stopped process, or nil if the process does not exist.
@@ -90,6 +87,23 @@ NS_ASSUME_NONNULL_BEGIN
  @return the Service Name of the Stopped process, or nil if the process does not exist.
  */
 - (nullable NSString *)startServiceWithName:(NSString *)serviceName error:(NSError **)error;
+
+@end
+
+/**
+ An Interface to a Simulator's launchctl.
+ */
+@interface FBSimulatorLaunchCtlCommands : NSObject <FBSimulatorLaunchCtlCommands>
+
+#pragma mark Intializers
+
+/**
+ Creates a FBSimulatorLaunchCtl instance for the provided Simulator
+
+ @param simulator the Simulator to create a launchctl wrapper for.
+ @return a new FBSimulatorLaunchCtl instance.
+ */
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

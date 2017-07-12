@@ -152,7 +152,7 @@ private struct ServiceInfoRunner : Runner {
 
   func run() -> CommandResult {
     var pid: pid_t = 0
-    guard let _ = try? self.reporter.simulator.launchctl.serviceName(forBundleID: self.identifier, processIdentifierOut: &pid) else {
+    guard let _ = try? self.reporter.simulator.serviceName(forBundleID: self.identifier, processIdentifierOut: &pid) else {
       return .failure("Could not get service for name \(identifier)")
     }
     guard let processInfo = self.reporter.simulator.processFetcher.processFetcher.processInfo(for: pid) else {

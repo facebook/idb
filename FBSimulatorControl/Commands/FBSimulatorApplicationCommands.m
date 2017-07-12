@@ -19,7 +19,7 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
@@ -270,7 +270,7 @@
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
   pid_t processIdentifier = 0;
-  if (![self.simulator.launchctl serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:&innerError]) {
+  if (![self.simulator serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
   FBProcessInfo *processInfo = [self.simulator.processFetcher.processFetcher processInfoFor:processIdentifier];

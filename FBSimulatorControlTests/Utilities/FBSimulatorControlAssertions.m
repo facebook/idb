@@ -69,7 +69,7 @@
   FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
   XCTAssertTrue(process.processIdentifier);
   NSError *error = nil;
-  BOOL isRunning = [simulator.launchctl processIsRunningOnSimulator:process error:nil];
+  BOOL isRunning = [simulator processIsRunningOnSimulator:process error:nil];
   XCTAssertTrue(isRunning);
   XCTAssertNil(error);
 }

@@ -17,7 +17,7 @@
 #import "FBSimulator+Private.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorHistory+Queries.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSet.h"
@@ -25,22 +25,6 @@
 #import <AppKit/AppKit.h>
 
 @implementation FBSimulator (Helpers)
-
-#pragma mark Properties
-
-- (FBSimulatorLaunchCtl *)launchctl
-{
-  return [FBSimulatorLaunchCtl withSimulator:self];
-}
-
-- (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
-{
-  FBProcessInfo *launchdSim = self.launchdProcess;
-  if (!launchdSim) {
-    return @[];
-  }
-  return [self.processFetcher.processFetcher subprocessesOf:launchdSim.processIdentifier];
-}
 
 #pragma mark Methods
 

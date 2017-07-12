@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
@@ -21,7 +21,7 @@
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorError.h"
 
-@interface FBSimulatorLaunchCtl ()
+@interface FBSimulatorLaunchCtlCommands ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
 
@@ -29,7 +29,7 @@
 
 @end
 
-@interface FBSimulatorLaunchCtl_Real : FBSimulatorLaunchCtl
+@interface FBSimulatorLaunchCtlCommands_Real : FBSimulatorLaunchCtlCommands
 
 @property (nonatomic, copy, readonly) FBBinaryDescriptor *launchCtlBinary;
 
@@ -37,7 +37,7 @@
 
 @end
 
-@interface FBSimulatorLaunchCtl_Polyfilled : FBSimulatorLaunchCtl
+@interface FBSimulatorLaunchCtlCommands_Polyfilled : FBSimulatorLaunchCtlCommands
 
 @property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
 
@@ -45,7 +45,7 @@
 
 @end
 
-@implementation FBSimulatorLaunchCtl
+@implementation FBSimulatorLaunchCtlCommands
 
 #pragma mark Initializers
 
@@ -58,13 +58,13 @@
   return [FBBinaryDescriptor binaryWithPath:path error:&error];
 }
 
-+ (instancetype)withSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
 {
   FBBinaryDescriptor *launchCtlBinary = [self launchCtlBinaryForSimulator:simulator];
   if (launchCtlBinary) {
-    return [[FBSimulatorLaunchCtl_Real alloc] initWithSimulator:simulator launchCtlBinary:launchCtlBinary];
+    return [[FBSimulatorLaunchCtlCommands_Real alloc] initWithSimulator:simulator launchCtlBinary:launchCtlBinary];
   }
-  return [[FBSimulatorLaunchCtl_Polyfilled alloc] initWithSimulator:simulator processFetcher:simulator.processFetcher.processFetcher];
+  return [[FBSimulatorLaunchCtlCommands_Polyfilled alloc] initWithSimulator:simulator processFetcher:simulator.processFetcher.processFetcher];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator
@@ -77,6 +77,17 @@
   _simulator = simulator;
 
   return self;
+}
+
+#pragma mark Processes
+
+- (NSArray<FBProcessInfo *> *)launchdSimSubprocesses
+{
+  FBProcessInfo *launchdSim = self.simulator.launchdProcess;
+  if (!launchdSim) {
+    return @[];
+  }
+  return [self.simulator.processFetcher.processFetcher subprocessesOf:launchdSim.processIdentifier];
 }
 
 #pragma mark Querying Services
@@ -126,7 +137,7 @@
 
 @end
 
-@implementation FBSimulatorLaunchCtl_Real
+@implementation FBSimulatorLaunchCtlCommands_Real
 
 #pragma mark Initializers
 
@@ -267,7 +278,7 @@
 
 @end
 
-@implementation FBSimulatorLaunchCtl_Polyfilled
+@implementation FBSimulatorLaunchCtlCommands_Polyfilled
 
 #pragma mark Initializers
 

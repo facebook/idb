@@ -56,7 +56,7 @@
 #import <FBSimulatorControl/FBSimulatorHistoryGenerator.h>
 #import <FBSimulatorControl/FBSimulatorImage.h>
 #import <FBSimulatorControl/FBSimulatorIndigoHID.h>
-#import <FBSimulatorControl/FBSimulatorLaunchCtl.h>
+#import <FBSimulatorControl/FBSimulatorLaunchCtlCommands.h>
 #import <FBSimulatorControl/FBSimulatorLifecycleCommands.h>
 #import <FBSimulatorControl/FBSimulatorLoggingEventSink.h>
 #import <FBSimulatorControl/FBSimulatorLogicTestStrategy.h>

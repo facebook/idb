@@ -14,7 +14,7 @@
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator+Helpers.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorHistory.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
@@ -59,7 +59,7 @@
 
   // Get the Service Name and then stop using the Service Name.
   NSError *innerError = nil;
-  NSString *serviceName = [self.simulator.launchctl serviceNameForProcess:process error:&innerError];
+  NSString *serviceName = [self.simulator serviceNameForProcess:process error:&innerError];
   if (!serviceName) {
     return [[FBSimulatorError
       describeFormat:@"Could not Obtain the Service Name for %@", process.shortDescription]
@@ -67,7 +67,7 @@
   }
 
   [self.simulator.logger.debug logFormat:@"Stopping Service '%@'", serviceName];
-  if (![self.simulator.launchctl stopServiceWithName:serviceName error:&innerError]) {
+  if (![self.simulator stopServiceWithName:serviceName error:&innerError]) {
     return [[FBSimulatorError
       describeFormat:@"Failed to stop service '%@'", serviceName]
       failBool:error];

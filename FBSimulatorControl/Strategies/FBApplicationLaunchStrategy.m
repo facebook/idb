@@ -27,7 +27,7 @@
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
-#import "FBSimulatorLaunchCtl.h"
+#import "FBSimulatorLaunchCtlCommands.h"
 
 @interface FBApplicationLaunchStrategy ()
 

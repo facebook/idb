@@ -223,7 +223,7 @@
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   pid_t processIdentifier = 0;
-  NSString *serviceName = [self.simulator.launchctl serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:error];
+  NSString *serviceName = [self.simulator serviceNameForBundleID:bundleID processIdentifierOut:&processIdentifier error:error];
   if (!serviceName) {
     return -1;
   }
