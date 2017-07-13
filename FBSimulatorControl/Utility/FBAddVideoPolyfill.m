@@ -13,7 +13,6 @@
 
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorHistory+Queries.h"
 
 @interface FBAddVideoPolyfill ()
 
@@ -103,7 +102,7 @@
     previousCount:dcimPaths.count
     error:error];
 
-  FBProcessInfo *photosAppProcess = simulator.history.lastLaunchedApplicationProcess;
+  FBProcessInfo *photosAppProcess = [simulator runningApplicationWithBundleID:@"com.apple.mobileslideshow" error:&innerError];
   if (![photosAppProcess.processName isEqualToString:@"MobileSlideshow"]) {
     return [[[FBSimulatorError
       describe:@"Couldn't find MobileSlideShow process after uploading video"]
