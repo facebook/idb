@@ -56,6 +56,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 @property (atomic, nullable, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
 @property (atomic, nullable, strong, readwrite) DTXConnection *testBundleConnection;
 @property (atomic, nullable, strong, readwrite) NSDate *lastCrashCheckDate;
+@property (atomic, nullable, strong, readwrite) NSDate *applicationLaunchDate;
 
 @end
 
@@ -105,6 +106,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
   _state = FBTestBundleConnectionStateNotConnected;
   _lastCrashCheckDate = NSDate.distantPast;
+  _applicationLaunchDate = NSDate.date;
 
   return self;
 }
@@ -351,7 +353,10 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   }
   // It make some time for the diagnostic to appear.
   FBDiagnostic *diagnostic = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^ FBDiagnostic * {
-    return [self.deviceOperator attemptToFindCrashLogForProcess:self.context.testRunnerPID bundleID:self.context.testRunnerBundleID];
+    return [self.deviceOperator
+      attemptToFindCrashLogForProcess:self.context.testRunnerPID
+      bundleID:self.context.testRunnerBundleID
+      sinceDate:self.applicationLaunchDate];
   }];
   if (!diagnostic.hasLogContent) {
     XCTestBootstrapError *error = [[XCTestBootstrapError

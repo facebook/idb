@@ -69,14 +69,19 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
 
 #pragma mark Crash Log Diagnostics
 
-- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withProcessType:(FBCrashLogInfoProcessType)processType;
+- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withProcessType:(FBCrashLogInfoProcessType)processType
 {
-  return [FBConcurrentCollectionOperations
-    filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:date]
-    predicate:[FBSimulatorDiagnostics predicateForProcessType:processType]
-    map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
-      return [logInfo toDiagnostic:self.baseLogBuilder];
-    }];
+  NSPredicate *predicate = [FBSimulatorDiagnostics predicateForProcessType:processType];
+  return [self subprocessCrashesAfterDate:date withPredicate:predicate];
+}
+
+- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date processsIdentifier:(pid_t)processIdentifier processType:(FBCrashLogInfoProcessType)processType
+{
+  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[
+    [FBSimulatorDiagnostics predicateForProcessType:processType],
+    [FBSimulatorDiagnostics predicateForProcessIdentifier:processIdentifier],
+  ]];
+  return [self subprocessCrashesAfterDate:date withPredicate:predicate];
 }
 
 - (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunch
@@ -89,6 +94,16 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
 {
   NSPredicate *predicate = [FBCrashLogInfo predicateForCrashLogsWithProcessID:processIdentifier];
   return [self userLaunchedProcessCrashesSinceLastLaunchWithPredicate:predicate];
+}
+
+- (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withPredicate:(NSPredicate *)predicate
+{
+  return [FBConcurrentCollectionOperations
+    filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:date]
+    predicate:predicate
+    map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
+      return [logInfo toDiagnostic:self.baseLogBuilder];
+    }];
 }
 
 #pragma mark Standard Diagnostics
@@ -388,6 +403,13 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
   return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, NSDictionary *_) {
     FBCrashLogInfoProcessType current = crashLog.processType;
     return (processType & current) == current;
+  }];
+}
+
++ (NSPredicate *)predicateForProcessIdentifier:(pid_t)processIdentifier
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, NSDictionary *_) {
+    return processIdentifier == crashLog.processIdentifier;
   }];
 }
 

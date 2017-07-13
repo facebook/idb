@@ -235,9 +235,9 @@
   return processIdentifier;
 }
 
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date
 {
-  return [[self.simulator.simulatorDiagnostics userLaunchedProcessCrashesSinceLastLaunchWithProcessIdentifier:pid] firstObject];
+  return [[self.simulator.simulatorDiagnostics subprocessCrashesAfterDate:date processsIdentifier:pid processType:FBCrashLogInfoProcessTypeApplication] firstObject];
 }
 
 #pragma mark - Unsupported FBDeviceOperator protocol method

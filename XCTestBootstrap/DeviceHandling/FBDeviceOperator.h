@@ -74,9 +74,10 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param pid the Process ID of the potentially-crashed Application Process.
  @param bundleID the Bundle ID of the potentially-crashed Application Process.
+ @param date the date to search for logs since.
  @return a Crash Log Info for the provided Bundle ID, nil otherwise.
  */
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID;
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date;
 
 /**
  Removes apllication with given bundleID and it's data

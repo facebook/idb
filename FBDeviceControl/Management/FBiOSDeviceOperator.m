@@ -273,7 +273,7 @@ static NSString *const ApplicationPathKey = @"Path";
    intValue];
 }
 
-- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID
+- (nullable FBDiagnostic *)attemptToFindCrashLogForProcess:(pid_t)pid bundleID:(NSString *)bundleID sinceDate:(NSDate *)date
 {
   return nil;
 }
