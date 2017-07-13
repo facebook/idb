@@ -94,7 +94,12 @@
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
+  return [FBApplicationLaunchConfiguration
+    configurationWithApplication:application
+    arguments:@[]
+    environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
+    waitForDebugger:NO
+    output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
@@ -103,7 +108,12 @@
   if (!application) {
     return nil;
   }
-  return [FBApplicationLaunchConfiguration configurationWithApplication:application arguments:@[] environment:@{} waitForDebugger:NO output:FBProcessOutputConfiguration.outputToDevNull];
+  return [FBApplicationLaunchConfiguration
+    configurationWithApplication:application
+    arguments:@[]
+    environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
+    waitForDebugger:NO
+    output:FBProcessOutputConfiguration.outputToDevNull];
 }
 
 - (FBAgentLaunchConfiguration *)agentLaunch1
@@ -113,53 +123,6 @@
     arguments:@[@"BINGBONG"]
     environment:@{@"FIB" : @"BLE"}
     output:FBProcessOutputConfiguration.outputToDevNull];
-}
-
-- (FBApplicationLaunchConfiguration *)appLaunch1
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.tableSearchApplication
-    arguments:@[@"LAUNCH1"]
-    environment:@{@"FOO" : @"BAR"}
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
-}
-
-- (FBApplicationLaunchConfiguration *)appLaunch2
-{
-  return [FBApplicationLaunchConfiguration
-    configurationWithApplication:self.safariApplication
-    arguments:@[@"LAUNCH2"]
-    environment:@{@"BING" : @"BONG"}
-    waitForDebugger:NO
-    output:FBProcessOutputConfiguration.outputToDevNull];
-}
-
-- (FBProcessInfo *)processInfo1
-{
-  return [[FBProcessInfo alloc]
-    initWithProcessIdentifier:42
-    launchPath:self.tableSearchApplication.binary.path
-    arguments:self.appLaunch1.arguments
-    environment:self.appLaunch1.environment];
-}
-
-- (FBProcessInfo *)processInfo2
-{
-  return [[FBProcessInfo alloc]
-    initWithProcessIdentifier:20
-    launchPath:self.safariApplication.binary.path
-    arguments:self.appLaunch2.arguments
-    environment:self.appLaunch2.environment];
-}
-
-- (FBProcessInfo *)processInfo2a
-{
-  return [[FBProcessInfo alloc]
-    initWithProcessIdentifier:30
-    launchPath:self.safariApplication.binary.path
-    arguments:self.appLaunch2.arguments
-    environment:self.appLaunch2.environment];
 }
 
 - (nullable NSString *)iOSUnitTestBundlePath

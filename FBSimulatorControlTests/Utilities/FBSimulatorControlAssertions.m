@@ -64,14 +64,12 @@
 
 #pragma mark Processes
 
-- (void)assertLastLaunchedApplicationIsRunning:(FBSimulator *)simulator
+- (void)assertSimulator:(FBSimulator *)simulator isRunningApplicationFromConfiguration:(FBApplicationLaunchConfiguration *)launchConfiguration
 {
-  FBProcessInfo *process = simulator.history.lastLaunchedApplicationProcess;
-  XCTAssertTrue(process.processIdentifier);
   NSError *error = nil;
-  BOOL isRunning = [simulator processIsRunningOnSimulator:process error:nil];
-  XCTAssertTrue(isRunning);
+  FBProcessInfo *process = [simulator runningApplicationWithBundleID:launchConfiguration.bundleID error:&error];
   XCTAssertNil(error);
+  XCTAssertNotNil(process);
 }
 
 #pragma mark Private
@@ -148,7 +146,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  [self assertLastLaunchedApplicationIsRunning:simulator];
+  [self assertSimulator:simulator isRunningApplicationFromConfiguration:applicationLaunchConfiguration];
 
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
@@ -169,7 +167,7 @@
 - (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
 {
   FBSimulator *simulator = [self assertSimulatorWithConfiguration:simulatorConfiguration launches:bootConfiguration thenLaunchesApplication:application withApplicationLaunchConfiguration:applicationLaunchConfiguration];
-  FBProcessInfo *firstLaunch = simulator.history.lastLaunchedApplicationProcess;
+  FBProcessInfo *firstLaunch = [simulator runningApplicationWithBundleID:application.bundleID error:nil];
 
   NSError *error = nil;
   BOOL success = [simulator launchOrRelaunchApplication:applicationLaunchConfiguration error:&error];
@@ -179,7 +177,7 @@
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidTerminate];
   [self.assert consumeNotification:FBSimulatorNotificationNameApplicationProcessDidLaunch];
   [self.assert noNotificationsToConsume];
-  FBProcessInfo *secondLaunch = simulator.history.lastLaunchedApplicationProcess;
+  FBProcessInfo *secondLaunch = [simulator runningApplicationWithBundleID:application.bundleID error:nil];
 
   XCTAssertNotEqualObjects(firstLaunch, secondLaunch);
 

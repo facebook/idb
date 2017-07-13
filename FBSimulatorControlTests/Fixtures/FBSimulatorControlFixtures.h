@@ -84,31 +84,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBAgentLaunchConfiguration *)agentLaunch1;
 
 /**
- An App Launch Config. Not to be used to launch applications for real.
- */
-- (FBApplicationLaunchConfiguration *)appLaunch1;
-
-/**
- Another App Launch Config. Not to be used to launch applications for real.
- */
-- (FBApplicationLaunchConfiguration *)appLaunch2;
-
-/**
- A Process Info. Does not represent a real process.
- */
-- (FBProcessInfo *)processInfo1;
-
-/**
- Another Process Info. Does not represent a real process.
- */
-- (FBProcessInfo *)processInfo2;
-
-/**
- Another Process Info, like 'processInfo2a' but with a different pid. Does not represent a real process.
- */
-- (FBProcessInfo *)processInfo2a;
-
-/**
  An iOS Unit Test XCTest Target.
  Will check that the bundle is codesigned, and sign it if is not.
 

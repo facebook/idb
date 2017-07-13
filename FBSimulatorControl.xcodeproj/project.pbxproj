@@ -126,8 +126,6 @@
 		AA3FD04D1C876E4F001093CA /* FBSimulatorLaunchTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3FD03D1C876E4F001093CA /* FBSimulatorLaunchTests.m */; };
 		AA3FD04E1C876E4F001093CA /* FBSimulatorPoolTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3FD03E1C876E4F001093CA /* FBSimulatorPoolTests.m */; };
 		AA3FD04F1C876E4F001093CA /* FBSimulatorSetTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3FD03F1C876E4F001093CA /* FBSimulatorSetTests.m */; };
-		AA3FD0561C876E4F001093CA /* FBSimulatorControlHistoryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3FD0471C876E4F001093CA /* FBSimulatorControlHistoryTests.m */; };
-		AA3FD0571C876E4F001093CA /* FBSimulatorHistoryGeneratorTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3FD0481C876E4F001093CA /* FBSimulatorHistoryGeneratorTests.m */; };
 		AA3FD05E1C882685001093CA /* FBSimulatorControlValueTypeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = AA3FD05D1C882685001093CA /* FBSimulatorControlValueTypeTests.m */; };
 		AA4242ED1C528338008ABD80 /* FBFramebuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4242E21C528338008ABD80 /* FBFramebuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA4242EE1C528338008ABD80 /* FBFramebuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4242E31C528338008ABD80 /* FBFramebuffer.m */; };
@@ -938,8 +936,6 @@
 		AA3FD03D1C876E4F001093CA /* FBSimulatorLaunchTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorLaunchTests.m; sourceTree = "<group>"; };
 		AA3FD03E1C876E4F001093CA /* FBSimulatorPoolTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorPoolTests.m; sourceTree = "<group>"; };
 		AA3FD03F1C876E4F001093CA /* FBSimulatorSetTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorSetTests.m; sourceTree = "<group>"; };
-		AA3FD0471C876E4F001093CA /* FBSimulatorControlHistoryTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlHistoryTests.m; sourceTree = "<group>"; };
-		AA3FD0481C876E4F001093CA /* FBSimulatorHistoryGeneratorTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorHistoryGeneratorTests.m; sourceTree = "<group>"; };
 		AA3FD05D1C882685001093CA /* FBSimulatorControlValueTypeTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorControlValueTypeTests.m; sourceTree = "<group>"; };
 		AA4242E21C528338008ABD80 /* FBFramebuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBFramebuffer.h; sourceTree = "<group>"; };
 		AA4242E31C528338008ABD80 /* FBFramebuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBFramebuffer.m; sourceTree = "<group>"; };
@@ -1875,9 +1871,7 @@
 			children = (
 				AAF49AB51D2C2B2C00C71E10 /* FBSimulatorApplicationDescriptorTests.m */,
 				AA7219F31D82973E002668BF /* FBSimulatorConfigurationTests.m */,
-				AA3FD0471C876E4F001093CA /* FBSimulatorControlHistoryTests.m */,
 				AA3FD05D1C882685001093CA /* FBSimulatorControlValueTypeTests.m */,
-				AA3FD0481C876E4F001093CA /* FBSimulatorHistoryGeneratorTests.m */,
 			);
 			path = Unit;
 			sourceTree = "<group>";
@@ -3681,7 +3675,6 @@
 				AAAA67C61BC4FED200075197 /* FBSimulatorControlFixtures.m in Sources */,
 				AA3FD04A1C876E4F001093CA /* FBSimulatorAutomaticUpdatingTests.m in Sources */,
 				AA1D55591CD2755D00B84404 /* FBSimulatorTestInjectionTests.m in Sources */,
-				AA3FD0571C876E4F001093CA /* FBSimulatorHistoryGeneratorTests.m in Sources */,
 				AA3FD04C1C876E4F001093CA /* FBSimulatorMediaUploadTests.m in Sources */,
 				AA19DA861C7740BB009BB89B /* FBSimulatorPoolTestCase.m in Sources */,
 				AAF0DADA1CBCD4C5005429D3 /* FBSimulatorSetQueryingTests.m in Sources */,
@@ -3690,7 +3683,6 @@
 				AA5A73941D886C8F00833013 /* FBSimulatorFramebufferTests.m in Sources */,
 				AA3230CB1BDA387700C5BA01 /* FBSimulatorControlAssertions.m in Sources */,
 				AA3FD04B1C876E4F001093CA /* FBSimulatorDiagnosticsTests.m in Sources */,
-				AA3FD0561C876E4F001093CA /* FBSimulatorControlHistoryTests.m in Sources */,
 				AAB4AC271BBBC6880046F6A1 /* FBSimulatorControlTestCase.m in Sources */,
 				AAF49AB61D2C2B2C00C71E10 /* FBSimulatorApplicationDescriptorTests.m in Sources */,
 				AA3FD04E1C876E4F001093CA /* FBSimulatorPoolTests.m in Sources */,

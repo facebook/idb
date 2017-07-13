@@ -53,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Assertion failure if there isn't a last launched application or launchctl isn't aware of the process.
  */
-- (void)assertLastLaunchedApplicationIsRunning:(FBSimulator *)simulator;
+- (void)assertSimulator:(FBSimulator *)simulator isRunningApplicationFromConfiguration:(FBApplicationLaunchConfiguration *)launchConfiguration;
 
 @end
 

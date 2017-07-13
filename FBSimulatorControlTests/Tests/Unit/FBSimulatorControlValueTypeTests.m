@@ -24,8 +24,8 @@
 - (void)testAppLaunchConfigurations
 {
   NSArray<FBApplicationLaunchConfiguration *> *values = @[
-    self.appLaunch1,
-    self.appLaunch2,
+    self.safariAppLaunch,
+    self.tableSearchAppLaunch,
   ];
   [self assertEqualityOfCopy:values];
   [self assertUnarchiving:values];

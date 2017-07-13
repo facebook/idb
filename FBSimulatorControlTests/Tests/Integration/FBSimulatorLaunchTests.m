@@ -48,9 +48,6 @@
   }
 
   [self assertSimulatorBooted:simulator];
-  XCTAssertEqual(simulator.history.launchedAgentProcesses.count, 0u);
-  XCTAssertEqual(simulator.history.launchedApplicationProcesses.count, 0u);
-
   [self assertShutdownSimulatorAndTerminateSession:simulator];
   [self.assert shutdownNotificationsFired:launchConfiguration];
 }
@@ -122,8 +119,6 @@
 
   NSArray *simulators = @[simulator1, simulator2, simulator3];
   for (FBSimulator *simulator in simulators) {
-    XCTAssertEqual(simulator.history.launchedAgentProcesses.count, 0u);
-    XCTAssertEqual(simulator.history.launchedApplicationProcesses.count, 0u);
     [self assertSimulatorBooted:simulator];
   }
 
@@ -167,7 +162,7 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  [self assertLastLaunchedApplicationIsRunning:simulator];
+  [self assertSimulator:simulator isRunningApplicationFromConfiguration:launch];
 
   success = [simulator uninstallApplicationWithBundleID:application.bundleID error:&error];
   XCTAssertNil(error);
