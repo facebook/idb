@@ -204,7 +204,6 @@
   BOOL shutdown = (options & FBSimulatorAllocationOptionsShutdownOnAllocate) == FBSimulatorAllocationOptionsShutdownOnAllocate;
   BOOL erase = (options & FBSimulatorAllocationOptionsEraseOnAllocate) == FBSimulatorAllocationOptionsEraseOnAllocate;
   BOOL reuse = (options & FBSimulatorAllocationOptionsReuse) == FBSimulatorAllocationOptionsReuse;
-  BOOL enablePersistence = (options & FBSimulatorAllocationOptionsPersistHistory) == FBSimulatorAllocationOptionsPersistHistory;
 
   // Shutdown first.
   if (shutdown || erase) {
@@ -235,9 +234,6 @@
       return [FBSimulatorError failBoolWithError:innerError errorOut:error];
     }
   }
-
-  // Enable/Disable Persistence
-  simulator.historyGenerator.peristenceEnabled = enablePersistence;
 
   return YES;
 }

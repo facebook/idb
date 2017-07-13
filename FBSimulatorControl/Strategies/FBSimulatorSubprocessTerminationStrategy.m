@@ -14,7 +14,6 @@
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorLaunchCtlCommands.h"
-#import "FBSimulatorHistory.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorProcessFetcher.h"

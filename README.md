@@ -12,7 +12,6 @@ A Mac OS X library for managing, booting and interacting with multiple iOS Simul
 - 'Direct Launch' supports video recording, screenshot fetching & interfacing with the `SimulatorBridge`.
 - 'Diagnostic' API for fetching System, App & Crash logs as well as Screenshots & Video.
 - An 'Event Bus' that exposes the details of a Simulator's lifecycle including Applications, Agents & the Simulator itself.
-- Persistent and Queryable history of all events in Simulator's lifecycle.
 - `NSNotification`s interface for the 'Event Bus'.
 - Stateless by Default: Knowledge the current state of Simulators can be re-built when `FBSimulatorControl` is launched.
 - BFFs with [`WebDriverAgent`](https://github.com/facebook/webdriveragent).

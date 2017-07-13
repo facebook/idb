@@ -33,7 +33,6 @@
 #import "FBSimulatorEventRelay.h"
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHIDEvent.h"
-#import "FBSimulatorHistoryGenerator.h"
 #import "FBSimulatorLifecycleCommands.h"
 #import "FBSimulatorLogCommands.h"
 #import "FBSimulatorLoggingEventSink.h"
@@ -88,17 +87,15 @@
 
 - (instancetype)attachEventSinkCompositionWithLaunchdSimProcess:(nullable FBProcessInfo *)launchdSimProcess containerApplicationProcess:(nullable FBProcessInfo *)containerApplicationProcess
 {
-  FBSimulatorHistoryGenerator *historyGenerator = [FBSimulatorHistoryGenerator forSimulator:self];
   FBSimulatorNotificationNameEventSink *notificationSink = [FBSimulatorNotificationNameEventSink withSimulator:self];
   FBSimulatorLoggingEventSink *loggingSink = [FBSimulatorLoggingEventSink withSimulator:self logger:self.logger];
   FBMutableSimulatorEventSink *mutableSink = [FBMutableSimulatorEventSink new];
   FBSimulatorDiagnostics *diagnosticsSink = [FBSimulatorDiagnostics withSimulator:self];
   FBSimulatorResourceManager *resourceSink = [FBSimulatorResourceManager new];
 
-  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[historyGenerator, notificationSink, loggingSink, diagnosticsSink, mutableSink, resourceSink]];
+  FBCompositeSimulatorEventSink *compositeSink = [FBCompositeSimulatorEventSink withSinks:@[notificationSink, loggingSink, diagnosticsSink, mutableSink, resourceSink]];
   FBSimulatorEventRelay *relay = [[FBSimulatorEventRelay alloc] initWithSimDevice:self.device launchdProcess:launchdSimProcess containerApplication:containerApplicationProcess processFetcher:self.processFetcher sink:compositeSink];
 
-  _historyGenerator = historyGenerator;
   _eventRelay = relay;
   _mutableSink = mutableSink;
   _simulatorDiagnostics = diagnosticsSink;
@@ -223,11 +220,6 @@
 - (FBProcessInfo *)containerApplication
 {
   return self.eventRelay.containerApplication;
-}
-
-- (FBSimulatorHistory *)history
-{
-  return self.historyGenerator.history;
 }
 
 - (id<FBSimulatorEventSink>)eventSink

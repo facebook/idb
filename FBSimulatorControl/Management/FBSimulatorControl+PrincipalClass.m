@@ -22,7 +22,6 @@
 #import "FBSimulatorServiceContext.h"
 #import "FBSimulatorControlConfiguration.h"
 #import "FBSimulatorError.h"
-#import "FBSimulatorHistory.h"
 #import "FBSimulatorPool.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorControlFrameworkLoader.h"

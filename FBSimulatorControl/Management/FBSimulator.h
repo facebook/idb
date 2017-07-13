@@ -30,7 +30,6 @@
 @class FBProcessInfo;
 @class FBSimulatorConfiguration;
 @class FBSimulatorDiagnostics;
-@class FBSimulatorHistory;
 @class FBSimulatorPool;
 @class FBSimulatorSet;
 @class SimDevice;
@@ -73,11 +72,6 @@ NS_ASSUME_NONNULL_BEGIN
  Events should be sent to `eventSink` and not this property; events will propogate here automatically.
  */
 @property (nonatomic, strong, readwrite, nullable) id<FBSimulatorEventSink> userEventSink;
-
-/**
- History of the Simulator.
- */
-@property (nonatomic, strong, readonly, nonnull) FBSimulatorHistory *history;
 
 /**
  The State of the allocated Simulator.
