@@ -15,7 +15,6 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
-#import "FBSimulatorHistory+Queries.h"
 
 NSString *const FBDiagnosticNameSyslog = @"system_log";
 NSString *const FBDiagnosticNameCoreSimulator = @"coresimulator";
@@ -82,18 +81,6 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
     [FBSimulatorDiagnostics predicateForProcessIdentifier:processIdentifier],
   ]];
   return [self subprocessCrashesAfterDate:date withPredicate:predicate];
-}
-
-- (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunch
-{
-  NSPredicate *predicate = [FBSimulatorDiagnostics predicateForUserLaunchedProcessesInHistory:self.simulator.history];
-  return [self userLaunchedProcessCrashesSinceLastLaunchWithPredicate:predicate];
-}
-
-- (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunchWithProcessIdentifier:(pid_t)processIdentifier
-{
-  NSPredicate *predicate = [FBCrashLogInfo predicateForCrashLogsWithProcessID:processIdentifier];
-  return [self userLaunchedProcessCrashesSinceLastLaunchWithPredicate:predicate];
 }
 
 - (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date withPredicate:(NSPredicate *)predicate
@@ -184,27 +171,6 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
   return [FBSimulatorDiagnostics diagnosticsForSubpathsOf:self.stdOutErrContainersPath];
 }
 
-- (NSDictionary<FBProcessInfo *, FBDiagnostic *> *)launchedProcessLogs
-{
-  NSString *aslPath = self.aslPath;
-  if (!aslPath) {
-    return @{};
-  }
-
-  FBASLParser *aslParser = [FBASLParser parserForPath:aslPath];
-  if (!aslParser) {
-    return @{};
-  }
-
-  NSArray *launchedProcesses = self.simulator.history.allUserLaunchedProcesses;
-  NSMutableDictionary *logs = [NSMutableDictionary dictionary];
-  for (FBProcessInfo *launchedProcess in launchedProcesses) {
-    logs[launchedProcess] = [aslParser diagnosticForProcessInfo:launchedProcess logBuilder:self.baseLogBuilder];
-  }
-
-  return [logs copy];
-}
-
 - (NSArray<FBDiagnostic *> *)diagnosticsForApplicationWithBundleID:(nullable NSString *)bundleID withFilenames:(NSArray<NSString *> *)filenames fallbackToGlobalSearch:(BOOL)globalFallback
 {
   NSString *directory = nil;
@@ -230,7 +196,6 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
     self.video,
     self.screenshot
   ]];
-  [logs addObjectsFromArray:[self userLaunchedProcessCrashesSinceLastLaunch]];
   [logs addObjectsFromArray:self.eventLogs.allValues];
   [logs addObjectsFromArray:self.stdOutErrDiagnostics];
   return [logs filteredArrayUsingPredicate:FBSimulatorDiagnostics.predicateForHasContent];
@@ -365,37 +330,6 @@ NSString *const FBDiagnosticNameScreenshot = @"screenshot";
   }];
 
   return [[FBCrashLogInfo crashInfoAfterDate:date] filteredArrayUsingPredicate:parentProcessPredicate];
-}
-
-- (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunchWithPredicate:(NSPredicate *)predicate
-{
-  // Going from state transition to 'Booted' can be after the crash report is written for an
-  // Process that instacrashes around the same time the simulator is booted.
-  // Instead, use the 'Booting' state, which will be before any Process could have been launched.
-  NSDate *lastLaunchDate = [[[self.simulator.history
-    lastChangeOfState:FBSimulatorStateBooted]
-    lastChangeOfState:FBSimulatorStateBooting]
-    timestamp];
-
-  // If we don't have the last launch date, we can't reliably predict which processes are interesting.
-  if (!lastLaunchDate) {
-    return @[];
-  }
-
-  return [FBConcurrentCollectionOperations
-    filterMap:[self launchdSimSubprocessCrashesPathsAfterDate:lastLaunchDate]
-    predicate:predicate
-    map:^ FBDiagnostic * (FBCrashLogInfo *logInfo) {
-      return [logInfo toDiagnostic:self.baseLogBuilder];
-    }];
-}
-
-+ (NSPredicate *)predicateForUserLaunchedProcessesInHistory:(FBSimulatorHistory *)history
-{
-  NSSet *pidSet = [NSSet setWithArray:[history.allUserLaunchedProcesses valueForKey:@"processIdentifier"]];
-  return [NSPredicate predicateWithBlock:^ BOOL (FBCrashLogInfo *crashLog, NSDictionary *_) {
-    return [pidSet containsObject:@(crashLog.processIdentifier)];
-  }];
 }
 
 + (NSPredicate *)predicateForProcessType:(FBCrashLogInfoProcessType)processType

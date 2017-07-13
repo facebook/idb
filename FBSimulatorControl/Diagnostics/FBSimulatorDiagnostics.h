@@ -84,20 +84,6 @@ extern FBDiagnosticName const FBDiagnosticNameScreenshot;
  */
 - (NSArray<FBDiagnostic *> *)subprocessCrashesAfterDate:(NSDate *)date processsIdentifier:(pid_t)processIdentifier processType:(FBCrashLogInfoProcessType)processType;
 
-/**
- Crashes that occured in the Simulator since the last booting of the Simulator.
-
- @return an NSArray<FBDiagnostic *> of crashes that occured for user processes since the last boot.
- */
-- (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunch;
-
-/**
- Crashes that occured in the Simulator since the last booting of the Simulator.
-
- @return an NSArray<FBDiagnostic *> of crashes that occured for user processes since the last boot.
- */
-- (NSArray<FBDiagnostic *> *)userLaunchedProcessCrashesSinceLastLaunchWithProcessIdentifier:(pid_t)processIdentifier;
-
 #pragma mark Standard Diagnostics
 
 /**
@@ -134,13 +120,6 @@ extern FBDiagnosticName const FBDiagnosticNameScreenshot;
  An Array of all non-empty stderr and stdout logs for launched processes.
  */
 - (NSArray<FBDiagnostic *> *)stdOutErrDiagnostics;
-
-/**
- The System Log, filtered and bucketed for each process that was launched by the user.
-
- @return an NSDictionary<FBProcessInfo *, FBDiagnostic> of the logs, filtered by launched process.
- */
-- (NSDictionary<FBProcessInfo *, FBDiagnostic *> *)launchedProcessLogs;
 
 /**
  Fetches Diagnostics inside Application Containers.
