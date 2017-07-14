@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Concrete value wrapper around a Application artifact.
  */
-@interface FBBundleDescriptor : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
+@interface FBBundleDescriptor : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 #pragma mark Initializers
 

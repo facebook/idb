@@ -21,7 +21,7 @@ extern NSString *const FBProcessOutputToFileDefaultLocation;
 /**
  The Output Configuration for a Process.
  */
-@interface FBProcessOutputConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBProcessOutputConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  The Designated Initializer

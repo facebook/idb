@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Value object with the information required to create a Simulator Pool.
  */
-@interface FBSimulatorControlConfiguration : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBDebugDescribeable>
+@interface FBSimulatorControlConfiguration : NSObject <NSCopying, FBJSONSerializable, FBDebugDescribeable>
 
 /**
  Creates and returns a new Configuration with the provided parameters.

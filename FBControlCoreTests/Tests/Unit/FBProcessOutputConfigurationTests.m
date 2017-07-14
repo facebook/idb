@@ -35,7 +35,6 @@
 {
   NSArray<FBProcessOutputConfiguration *> *configurations = FBProcessOutputConfigurationTests.configurations;
   [self assertEqualityOfCopy:configurations];
-  [self assertUnarchiving:configurations];
   [self assertJSONSerialization:configurations];
   [self assertJSONDeserialization:configurations];
 }

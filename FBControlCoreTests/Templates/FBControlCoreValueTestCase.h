@@ -22,11 +22,6 @@
 - (void)assertEqualityOfCopy:(NSArray<NSObject *> *)values;
 
 /**
- Asserts that values archive and unarchive to the same value.
- */
-- (void)assertUnarchiving:(NSArray<id<NSCoding>> *)values;
-
-/**
  Asserts that values can be JSON Serialized
  */
 - (void)assertJSONSerialization:(NSArray<id<FBJSONSerializable>> *)values;

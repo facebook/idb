@@ -90,33 +90,6 @@
          (self.fileType == configuration.fileType || [self.fileType isEqualToString:configuration.fileType]);
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)decoder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _options = [[decoder decodeObjectOfClass:NSNumber.class forKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
-  _timescale = [decoder decodeInt32ForKey:NSStringFromSelector(@selector(timescale))];
-  _roundingMethod = [[decoder decodeObjectOfClass:NSNumber.class forKey:NSStringFromSelector(@selector(roundingMethod))] unsignedIntValue];
-  _filePath = [decoder decodeObjectOfClass:NSString.class forKey:NSStringFromSelector(@selector(filePath))];
-  _fileType = [decoder decodeObjectOfClass:NSString.class forKey:NSStringFromSelector(@selector(fileType))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
-  [coder encodeInt32:self.timescale forKey:NSStringFromSelector(@selector(timescale))];
-  [coder encodeObject:@(self.roundingMethod) forKey:NSStringFromSelector(@selector(roundingMethod))];
-  [coder encodeObject:self.filePath forKey:NSStringFromSelector(@selector(filePath))];
-  [coder encodeObject:self.fileType forKey:NSStringFromSelector(@selector(fileType))];
-}
-
 #pragma mark FBJSONSerializable
 
 static NSString *const KeyOptions = @"options";

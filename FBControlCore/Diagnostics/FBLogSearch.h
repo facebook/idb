@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Predicate for finding substrings in text.
  */
-@interface FBLogSearchPredicate : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBLogSearchPredicate : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  A predicate that will match a line containing one of the substrings.

@@ -75,27 +75,6 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
   return self;
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _stdOut = [coder decodeObjectForKey:NSStringFromSelector(@selector(stdOut))];
-  _stdErr = [coder decodeObjectForKey:NSStringFromSelector(@selector(stdErr))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.stdOut forKey:NSStringFromSelector(@selector(stdOut))];
-  [coder encodeObject:self.stdErr forKey:NSStringFromSelector(@selector(stdErr))];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash

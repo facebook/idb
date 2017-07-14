@@ -40,7 +40,6 @@
 {
   NSArray *values = @[self.photoDiagnostic, self.simulatorSystemLog, self.treeJSONDiagnostic];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }

@@ -85,7 +85,6 @@
   ];
 
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }

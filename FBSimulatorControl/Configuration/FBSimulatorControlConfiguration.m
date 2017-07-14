@@ -63,27 +63,6 @@
     options:self.options];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _deviceSetPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(deviceSetPath))];
-  _options = [[coder decodeObjectForKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.deviceSetPath forKey:NSStringFromSelector(@selector(deviceSetPath))];
-  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash

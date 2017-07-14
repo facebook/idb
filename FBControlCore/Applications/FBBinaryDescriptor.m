@@ -49,29 +49,6 @@
   return [[FBBinaryDescriptor alloc] initWithName:self.name path:self.path architectures:self.architectures];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _name = [coder decodeObjectForKey:NSStringFromSelector(@selector(name))];
-  _path = [coder decodeObjectForKey:NSStringFromSelector(@selector(path))];
-  _architectures = [coder decodeObjectForKey:NSStringFromSelector(@selector(architectures))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.name forKey:NSStringFromSelector(@selector(name))];
-  [coder encodeObject:self.path forKey:NSStringFromSelector(@selector(path))];
-  [coder encodeObject:self.architectures forKey:NSStringFromSelector(@selector(architectures))];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBBinaryDescriptor *)object

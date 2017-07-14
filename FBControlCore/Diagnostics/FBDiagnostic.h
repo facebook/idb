@@ -23,7 +23,7 @@ typedef NSString *FBDiagnosticName NS_EXTENSIBLE_STRING_ENUM;
  Defines the content & metadata of a log.
  Lazily converts between the backing store data formats.
  */
-@interface FBDiagnostic : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBDiagnostic : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  The name of the Log for uniquely identifying the log.

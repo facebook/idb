@@ -22,15 +22,6 @@
   }
 }
 
-- (void)assertUnarchiving:(NSArray<id<NSCoding>> *)values
-{
-  for (id value in values) {
-    NSData *valueData = [NSKeyedArchiver archivedDataWithRootObject:value];
-    id valueUnarchived = [NSKeyedUnarchiver unarchiveObjectWithData:valueData];
-    XCTAssertEqualObjects(value, valueUnarchived);
-  }
-}
-
 - (void)assertJSONSerialization:(NSArray<id<FBJSONSerializable>> *)values
 {
   for (id value in values) {

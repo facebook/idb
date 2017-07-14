@@ -27,7 +27,6 @@
     [FBLogSearchPredicate regex:@"layer position \\d+ \\d+ bounds \\d+ \\d+ \\d+ \\d+"]
   ];
   [self assertEqualityOfCopy:values];
-  [self assertUnarchiving:values];
   [self assertJSONSerialization:values];
   [self assertJSONDeserialization:values];
 }
@@ -166,7 +165,6 @@
 {
   NSArray *batches = self.batches;
   [self assertEqualityOfCopy:batches];
-  [self assertUnarchiving:batches];
   [self assertJSONSerialization:batches];
   [self assertJSONDeserialization:batches];
 }
@@ -176,7 +174,6 @@
   for (FBBatchLogSearch *batch in self.batches) {
     FBBatchLogSearchResult *result = [batch search:self.diagnostics];
     [self assertEqualityOfCopy:@[result]];
-    [self assertUnarchiving:@[result]];
     [self assertJSONSerialization:@[result]];
     [self assertJSONDeserialization:@[result]];
   }

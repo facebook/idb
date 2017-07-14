@@ -113,33 +113,6 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
   return [NSString stringWithFormat:@"Model '%@'", self.model];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _model = [coder decodeObjectForKey:NSStringFromSelector(@selector(model))];
-  _productTypes = [coder decodeObjectForKey:NSStringFromSelector(@selector(productTypes))];
-  _deviceArchitecture = [coder decodeObjectForKey:NSStringFromSelector(@selector(deviceArchitecture))];
-  _simulatorArchitecture = [coder decodeObjectForKey:NSStringFromSelector(@selector(deviceArchitecture))];
-  _family = (FBControlCoreProductFamily) [[coder decodeObjectForKey:NSStringFromSelector(@selector(family))] unsignedIntegerValue];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.model forKey:NSStringFromSelector(@selector(model))];
-  [coder encodeObject:self.productTypes forKey:NSStringFromSelector(@selector(productTypes))];
-  [coder encodeObject:self.deviceArchitecture forKey:NSStringFromSelector(@selector(deviceArchitecture))];
-  [coder encodeObject:self.simulatorArchitecture forKey:NSStringFromSelector(@selector(simulatorArchitecture))];
-  [coder encodeObject:@(self.family) forKey:NSStringFromSelector(@selector(family))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -203,27 +176,6 @@ FBOSVersionName const FBOSVersionNamewatchOS_4_0 = @"watchOS 4.0";
   _families = families;
 
   return self;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _name = [coder decodeObjectForKey:NSStringFromSelector(@selector(name))];
-  _families = [coder decodeObjectForKey:NSStringFromSelector(@selector(families))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.name forKey:NSStringFromSelector(@selector(name))];
-  [coder encodeObject:self.families forKey:NSStringFromSelector(@selector(families))];
 }
 
 #pragma mark NSObject

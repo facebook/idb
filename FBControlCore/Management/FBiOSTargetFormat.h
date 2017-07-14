@@ -60,7 +60,7 @@ extern FBiOSTargetFormatKey const FBiOSTargetFormatContainerApplicationProcessId
 /**
  A Format Specifier for Describing an iOS Device/Simulator Target.
  */
-@interface FBiOSTargetFormat : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable>
+@interface FBiOSTargetFormat : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  Creates and returns a new Target Format.

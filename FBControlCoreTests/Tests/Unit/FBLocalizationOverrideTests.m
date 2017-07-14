@@ -27,7 +27,6 @@
   ];
 
   [self assertEqualityOfCopy:overrides];
-  [self assertUnarchiving:overrides];
   [self assertJSONSerialization:overrides];
   [self assertJSONDeserialization:overrides];
 }

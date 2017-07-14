@@ -52,19 +52,6 @@
   return [self.mapping.allValues valueForKeyPath:@"@unionOfArrays.self"];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  id mapping = [coder decodeObjectForKey:NSStringFromSelector(@selector(mapping))];
-  return [self initWithMapping:mapping];
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.mapping forKey:NSStringFromSelector(@selector(mapping))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -205,27 +192,6 @@ static NSString *const KeyMapping = @"mapping";
   _options = options;
 
   return self;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _mapping = [coder decodeObjectForKey:KeyMapping];
-  _options = (NSUInteger) [coder decodeIntegerForKey:NSStringFromSelector(@selector(options))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.mapping forKey:KeyMapping];
-  [coder encodeInteger:(NSInteger)self.options forKey:NSStringFromSelector(@selector(options))];
 }
 
 #pragma mark NSCopying

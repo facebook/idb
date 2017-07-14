@@ -84,26 +84,6 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
   return [[self.class alloc] initWithNames:self.names];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _names = [coder decodeObjectForKey:NSStringFromSelector(@selector(names))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.names forKey:NSStringFromSelector(@selector(names))];
-}
-
 #pragma mark JSON
 
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
@@ -169,28 +149,6 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc] initWithBundleID:self.bundleID filenames:self.filenames];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
-  _filenames = [coder decodeObjectForKey:NSStringFromSelector(@selector(filenames))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
-  [coder encodeObject:self.filenames forKey:NSStringFromSelector(@selector(filenames))];
 }
 
 #pragma mark JSON
@@ -265,28 +223,6 @@ static NSString *const FBDiagnosticQueryTypeNamed = @"named";
 - (instancetype)copyWithZone:(NSZone *)zone
 {
   return [[self.class alloc] initWithProcessType:self.processType since:self.date];
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _processType = [[coder decodeObjectForKey:NSStringFromSelector(@selector(processType))] unsignedIntegerValue];
-  _date = [coder decodeObjectForKey:NSStringFromSelector(@selector(date))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-  [coder encodeObject:@(self.processType) forKey:NSStringFromSelector(@selector(processType))];
-  [coder encodeObject:self.date forKey:NSStringFromSelector(@selector(date))];
 }
 
 #pragma mark JSON
@@ -404,23 +340,6 @@ static NSString *const FBDiagnosticQueryCrashesSystem = @"system";
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [self init];
-  if (!self) {
-    return nil;
-  }
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-
 }
 
 #pragma mark JSON

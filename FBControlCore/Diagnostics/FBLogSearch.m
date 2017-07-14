@@ -53,25 +53,6 @@ static NSString *const KeyRegex = @"regex";
   return [line substringWithRange:result.range];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _regularExpression = [coder decodeObjectForKey:NSStringFromSelector(@selector(regularExpression))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.regularExpression forKey:NSStringFromSelector(@selector(regularExpression))];
-}
-
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone
@@ -142,25 +123,6 @@ static NSString *const KeyRegex = @"regex";
     return needle;
   }
   return nil;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _substrings = [coder decodeObjectForKey:NSStringFromSelector(@selector(substrings))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.substrings forKey:NSStringFromSelector(@selector(substrings))];
 }
 
 #pragma mark NSCopying
@@ -247,21 +209,6 @@ static NSString *const KeyRegex = @"regex";
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
 }
 
 #pragma mark NSCopying

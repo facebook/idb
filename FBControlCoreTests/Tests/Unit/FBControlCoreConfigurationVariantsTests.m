@@ -33,14 +33,12 @@
 {
   NSArray<FBDeviceType *> *configurations = FBControlCoreConfigurationVariantsTests.deviceTypeConfigurations;
   [self assertEqualityOfCopy:configurations];
-  [self assertUnarchiving:configurations];
 }
 
 - (void)testOSVersions
 {
   NSArray<FBOSVersion *> *configurations = FBControlCoreConfigurationVariantsTests.osVersionConfigurations;
   [self assertEqualityOfCopy:configurations];
-  [self assertUnarchiving:configurations];
 }
 
 @end

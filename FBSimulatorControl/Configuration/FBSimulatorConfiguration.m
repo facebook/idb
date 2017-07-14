@@ -76,23 +76,6 @@
     auxillaryDirectory:self.auxillaryDirectory];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  FBDeviceType *device = [coder decodeObjectForKey:NSStringFromSelector(@selector(device))];
-  FBOSVersion *os = [coder decodeObjectForKey:NSStringFromSelector(@selector(os))];
-  NSString *auxillaryDirectory = [coder decodeObjectForKey:NSStringFromSelector(@selector(auxillaryDirectory))];
-  return [self initWithNamedDevice:device os:os auxillaryDirectory:auxillaryDirectory];
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.device forKey:NSStringFromSelector(@selector(device))];
-  [coder encodeObject:self.os forKey:NSStringFromSelector(@selector(os))];
-  [coder encodeObject:self.auxillaryDirectory forKey:NSStringFromSelector(@selector(auxillaryDirectory))];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash

@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Configuration Value for a Framebuffer.
  */
-@interface FBFramebufferConfiguration : NSObject <NSCoding, NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBFramebufferConfiguration : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  The Scale of the Framebuffer.

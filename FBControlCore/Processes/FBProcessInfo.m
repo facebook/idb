@@ -93,31 +93,6 @@
   return [[self.class alloc] initWithProcessIdentifier:self.processIdentifier launchPath:self.launchPath arguments:self.arguments environment:self.environment];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _processIdentifier = [coder decodeInt32ForKey:NSStringFromSelector(@selector(processIdentifier))];
-  _launchPath = [coder decodeObjectForKey:NSStringFromSelector(@selector(launchPath))];
-  _arguments = [coder decodeObjectForKey:NSStringFromSelector(@selector(arguments))];
-  _environment = [coder decodeObjectForKey:NSStringFromSelector(@selector(environment))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeInt32:self.processIdentifier forKey:NSStringFromSelector(@selector(processIdentifier))];
-  [coder encodeObject:self.launchPath forKey:NSStringFromSelector(@selector(launchPath))];
-  [coder encodeObject:self.arguments forKey:NSStringFromSelector(@selector(arguments))];
-  [coder encodeObject:self.environment forKey:NSStringFromSelector(@selector(environment))];
-}
-
 #pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation

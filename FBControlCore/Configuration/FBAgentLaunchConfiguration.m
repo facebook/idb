@@ -95,27 +95,6 @@ static NSString *const KeyBinary = @"binary";
     output:self.output];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _agentBinary = [coder decodeObjectForKey:NSStringFromSelector(@selector(agentBinary))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-
-  [coder encodeObject:self.agentBinary forKey:NSStringFromSelector(@selector(agentBinary))];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash

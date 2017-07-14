@@ -53,30 +53,6 @@
     binary:self.binary];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  NSString *name = [coder decodeObjectForKey:NSStringFromSelector(@selector(name))];
-  NSString *path = [coder decodeObjectForKey:NSStringFromSelector(@selector(path))];
-  NSString *bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
-  FBBinaryDescriptor *binary = [coder decodeObjectForKey:NSStringFromSelector(@selector(binary))];
-
-  return [[self.class alloc]
-    initWithName:name
-    path:path
-    bundleID:bundleID
-    binary:binary];
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.name forKey:NSStringFromSelector(@selector(name))];
-  [coder encodeObject:self.path forKey:NSStringFromSelector(@selector(path))];
-  [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
-  [coder encodeObject:self.binary forKey:NSStringFromSelector(@selector(binary))];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBBundleDescriptor *)object

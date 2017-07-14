@@ -77,29 +77,6 @@
          (self.imagePath == configuration.imagePath || [self.imagePath isEqual:configuration.imagePath]);
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)decoder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _scale = [decoder decodeObjectForKey:NSStringFromSelector(@selector(scale))];
-  _encoder = [decoder decodeObjectForKey:NSStringFromSelector(@selector(encoder))];
-  _imagePath = [decoder decodeObjectForKey:NSStringFromSelector(@selector(imagePath))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.scale forKey:NSStringFromSelector(@selector(scale))];
-  [coder encodeObject:self.encoder forKey:NSStringFromSelector(@selector(encoder))];
-  [coder encodeObject:self.imagePath forKey:NSStringFromSelector(@selector(imagePath))];
-}
-
 #pragma mark FBJSONSerializable
 
 static NSString *KeyScale = @"scale";

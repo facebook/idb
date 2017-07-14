@@ -58,29 +58,6 @@ static NSString *const KeyOutput = @"output";
   return nil;
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _arguments = [coder decodeObjectForKey:NSStringFromSelector(@selector(arguments))];
-  _environment = [coder decodeObjectForKey:NSStringFromSelector(@selector(environment))];
-  _output = [coder decodeObjectForKey:NSStringFromSelector(@selector(output))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.arguments forKey:NSStringFromSelector(@selector(arguments))];
-  [coder encodeObject:self.environment forKey:NSStringFromSelector(@selector(environment))];
-  [coder encodeObject:self.output forKey:NSStringFromSelector(@selector(output))];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash

@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Concrete value wrapper around a binary artifact.
  */
-@interface FBBinaryDescriptor : NSObject <NSCopying, NSCoding, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBBinaryDescriptor : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
 
 /**
  The Designated Initializer.

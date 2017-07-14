@@ -60,31 +60,6 @@ static FBSimulatorBootOptions const DefaultBootOptions = FBSimulatorBootOptionsA
   return [[self.class alloc] initWithOptions:self.options scale:self.scale localizationOverride:self.localizationOverride framebuffer:self.framebuffer];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _options = [[coder decodeObjectForKey:NSStringFromSelector(@selector(options))] unsignedIntegerValue];
-  _scale = [coder decodeObjectForKey:NSStringFromSelector(@selector(scale))];
-  _localizationOverride = [coder decodeObjectForKey:NSStringFromSelector(@selector(localizationOverride))];
-  _framebuffer = [coder decodeObjectForKey:NSStringFromSelector(@selector(framebuffer))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:@(self.options) forKey:NSStringFromSelector(@selector(options))];
-  [coder encodeObject:self.scale forKey:NSStringFromSelector(@selector(scale))];
-  [coder encodeObject:self.localizationOverride forKey:NSStringFromSelector(@selector(localizationOverride))];
-  [coder encodeObject:self.framebuffer forKey:NSStringFromSelector(@selector(framebuffer))];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBSimulatorBootConfiguration *)configuration

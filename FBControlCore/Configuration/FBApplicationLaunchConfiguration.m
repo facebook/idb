@@ -116,31 +116,6 @@ static NSString *const KeyWaitForDebugger = @"wait_for_debugger";
     output:self.output];
 }
 
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  self = [super initWithCoder:coder];
-  if (!self) {
-    return nil;
-  }
-
-  _bundleID = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleID))];
-  _bundleName = [coder decodeObjectForKey:NSStringFromSelector(@selector(bundleName))];
-  _waitForDebugger = [coder decodeBoolForKey:NSStringFromSelector(@selector(waitForDebugger))];
-
-  return self;
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [super encodeWithCoder:coder];
-
-  [coder encodeObject:self.bundleID forKey:NSStringFromSelector(@selector(bundleID))];
-  [coder encodeObject:self.bundleName forKey:NSStringFromSelector(@selector(bundleName))];
-  [coder encodeBool:self.waitForDebugger forKey:NSStringFromSelector(@selector(waitForDebugger))];
-}
-
 #pragma mark NSObject
 
 - (NSUInteger)hash

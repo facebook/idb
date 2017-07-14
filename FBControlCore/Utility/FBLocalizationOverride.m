@@ -27,6 +27,8 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
 
 @implementation FBLocalizationOverride
 
+#pragma mark Initializers
+
 + (instancetype)withLocale:(NSLocale *)locale
 {
   return [[FBLocalizationOverride alloc] initWithLocale:locale keyboards:@[ @"en_US@hw=US;sw=QWERTY" ] enableKeyboardExpansion:YES];
@@ -44,23 +46,6 @@ static NSString *const KeyboardsExpandedKey = @"AppleKeyboardsExpanded";
   _enableKeyboardExpansion = enableKeyboardExpansion;
 
   return self;
-}
-
-#pragma mark NSCoding
-
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-  NSLocale *locale = [coder decodeObjectForKey:NSStringFromSelector(@selector(locale))];
-  NSArray<NSString *> *keyboards = [coder decodeObjectForKey:NSStringFromSelector(@selector(keyboards))];
-  BOOL enableKeyboardExpansion = [coder decodeBoolForKey:NSStringFromSelector(@selector(enableKeyboardExpansion))];
-  return [self initWithLocale:locale keyboards:keyboards enableKeyboardExpansion:enableKeyboardExpansion];
-}
-
-- (void)encodeWithCoder:(NSCoder *)coder
-{
-  [coder encodeObject:self.locale forKey:NSStringFromSelector(@selector(locale))];
-  [coder encodeObject:self.keyboards forKey:NSStringFromSelector(@selector(keyboards))];
-  [coder encodeBool:self.enableKeyboardExpansion forKey:NSStringFromSelector(@selector(enableKeyboardExpansion))];
 }
 
 #pragma mark FBJSONConversion

@@ -32,7 +32,6 @@
 {
   NSArray<FBApplicationLaunchConfiguration *> *configurations = FBProcessLaunchConfigurationTests.appLaunchConfigurations;
   [self assertEqualityOfCopy:configurations];
-  [self assertUnarchiving:configurations];
   [self assertJSONSerialization:configurations];
   [self assertJSONDeserialization:configurations];
 }
