@@ -32,19 +32,6 @@
   return self;
 }
 
-+ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
-{
-  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSArray.class]) {
-    return [[FBControlCoreError describe:@"%@ is not an NSDictionary<NSString, NSArray>"] fail:error];
-  }
-  for (NSArray *results in json.allValues) {
-    if (![FBCollectionInformation isArrayHeterogeneous:results withClass:NSString.class]) {
-      return [[FBControlCoreError describe:@"%@ is not an NSArray<NSString>"] fail:error];
-    }
-  }
-  return [[self alloc] initWithMapping:json];
-}
-
 #pragma mark Public Methods
 
 - (NSArray<NSString *> *)allMatches
@@ -59,31 +46,24 @@
   return [[FBBatchLogSearchResult alloc] initWithMapping:self.mapping];
 }
 
-#pragma mark FBJSONSerializationDescribeable Implementation
+#pragma mark JSON Conversion
+
++ (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
+{
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSArray.class]) {
+    return [[FBControlCoreError describe:@"%@ is not an NSDictionary<NSString, NSArray>"] fail:error];
+  }
+  for (NSArray *results in json.allValues) {
+    if (![FBCollectionInformation isArrayHeterogeneous:results withClass:NSString.class]) {
+      return [[FBControlCoreError describe:@"%@ is not an NSArray<NSString>"] fail:error];
+    }
+  }
+  return [[self alloc] initWithMapping:json];
+}
 
 - (id)jsonSerializableRepresentation
 {
   return self.mapping;
-}
-
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)description
-{
-  return self.shortDescription;
-}
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Batch Search Result: %@",
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
-  ];
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
 }
 
 #pragma mark NSObject
@@ -100,6 +80,14 @@
 - (NSUInteger)hash
 {
   return self.mapping.hash;
+}
+
+- (NSString *)shortDescription
+{
+  return [NSString stringWithFormat:
+    @"Batch Search Result: %@",
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
+  ];
 }
 
 @end
@@ -133,6 +121,28 @@ static NSString *const KeyMapping = @"mapping";
   return [[FBBatchLogSearch alloc] initWithMapping:mapping options:options];
 }
 
+- (instancetype)initWithMapping:(NSDictionary *)mapping options:(FBBatchLogSearchOptions)options
+{
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _mapping = mapping;
+  _options = options;
+
+  return self;
+}
+
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
+{
+  return self;
+}
+
+#pragma mark JSON Conversion
+
 + (instancetype)inflateFromJSON:(NSDictionary *)json error:(NSError **)error
 {
   if (![json isKindOfClass:NSDictionary.class]) {
@@ -147,8 +157,8 @@ static NSString *const KeyMapping = @"mapping";
   NSNumber *first = json[KeyFirst] ?: @NO;
   if (![lines isKindOfClass:NSNumber.class]) {
     return [[FBControlCoreError
-    describeFormat:@"%@ is not a number for '%@'", lines, KeyFirst]
-    fail:error];
+      describeFormat:@"%@ is not a number for '%@'", lines, KeyFirst]
+      fail:error];
   }
   FBBatchLogSearchOptions options = 0;
   if (lines.boolValue) {
@@ -181,28 +191,6 @@ static NSString *const KeyMapping = @"mapping";
   return [self withMapping:[predicateMapping copy] options:options error:error];
 }
 
-- (instancetype)initWithMapping:(NSDictionary *)mapping options:(FBBatchLogSearchOptions)options
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _mapping = mapping;
-  _options = options;
-
-  return self;
-}
-
-#pragma mark NSCopying
-
-- (instancetype)copyWithZone:(NSZone *)zone
-{
-  return self;
-}
-
-#pragma mark FBJSONSerializationDescribeable Implementation
-
 - (id)jsonSerializableRepresentation
 {
   NSMutableDictionary *mappingDictionary = [NSMutableDictionary dictionary];
@@ -216,26 +204,6 @@ static NSString *const KeyMapping = @"mapping";
     KeyFirst: @(first),
     KeyMapping: [mappingDictionary copy],
   };
-}
-
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)description
-{
-  return self.shortDescription;
-}
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Batch Search: %@",
-    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
-  ];
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
 }
 
 #pragma mark NSObject
@@ -252,6 +220,14 @@ static NSString *const KeyMapping = @"mapping";
 - (NSUInteger)hash
 {
   return (NSUInteger) self.options ^ self.mapping.hash;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Batch Search: %@",
+    [FBCollectionInformation oneLineDescriptionFromDictionary:self.mapping]
+  ];
 }
 
 #pragma mark Public API

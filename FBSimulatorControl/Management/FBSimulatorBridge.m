@@ -207,7 +207,7 @@
   return [array copy];
 }
 
-#pragma mark FBDebugDescribable
+#pragma mark NSObject
 
 - (NSString *)description
 {
@@ -215,16 +215,6 @@
     return @"Simulator Bridge: Connected";
   }
   return @"Simulator Bridge: Disconnected";
-}
-
-- (NSString *)shortDescription
-{
-  return self.description;
-}
-
-- (NSString *)debugDescription
-{
-  return self.description;
 }
 
 #pragma mark FBJSONSerialization

@@ -125,19 +125,9 @@ static NSString *KeyImagePath = @"image_path";
   return [NSString stringWithFormat:
     @"Scale %@ | Encoder %@ | Image Path %@",
     self.scale,
-    self.encoder.shortDescription,
+    self.encoder.description,
     self.imagePath
   ];
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
-}
-
-- (NSString *)description
-{
-  return self.shortDescription;
 }
 
 #pragma mark Scale

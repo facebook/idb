@@ -90,7 +90,19 @@
          (self.fileType == configuration.fileType || [self.fileType isEqualToString:configuration.fileType]);
 }
 
-#pragma mark FBJSONSerializable
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Options %@ | Timescale %d | Rounding Method %d | File Path %@ | File Type %@",
+    [FBVideoEncoderConfiguration stringsFromVideoOptions:self.options],
+    self.timescale,
+    self.roundingMethod,
+    self.filePath,
+    self.fileType
+  ];
+}
+
+#pragma mark JSON Conversion
 
 static NSString *const KeyOptions = @"options";
 static NSString *const KeyTimescale = @"timescale";
@@ -155,30 +167,6 @@ static NSString *const KeyFileType = @"file_type";
     roundingMethod:roundingMethodNumber.unsignedIntValue
     filePath:filePath
     fileType:fileType];
-}
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:
-    @"Options %@ | Timescale %d | Rounding Method %d | File Path %@ | File Type %@",
-    [FBVideoEncoderConfiguration stringsFromVideoOptions:self.options],
-    self.timescale,
-    self.roundingMethod,
-    self.filePath,
-    self.fileType
-  ];
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
-}
-
-- (NSString *)description
-{
-  return self.shortDescription;
 }
 
 #pragma mark Autorecord

@@ -9,7 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBJSONConversion.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -19,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Predicate for finding substrings in text.
  */
-@interface FBLogSearchPredicate : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBLogSearchPredicate : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  A predicate that will match a line containing one of the substrings.

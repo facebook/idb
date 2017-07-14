@@ -153,7 +153,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   [self disconnect];
 }
 
-#pragma mark FBDebugDescribeable
+#pragma mark NSObject
 
 - (NSString *)description
 {

@@ -11,7 +11,6 @@
 
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBDebugDescribeable.h>
 
 @class FBApplicationDescriptor;
 @class FBBinaryDescriptor;

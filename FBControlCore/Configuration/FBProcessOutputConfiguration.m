@@ -90,18 +90,6 @@ NSString *const FBProcessOutputToFileDefaultLocation = @"FBProcessOutputToFileDe
   return [self.stdOut isEqual:object.stdOut] && [self.stdErr isEqual:object.stdErr];
 }
 
-#pragma mark FBDebugDescribeable
-
-- (NSString *)shortDescription
-{
-  return self.description;
-}
-
-- (NSString *)debugDescription
-{
-  return self.description;
-}
-
 - (NSString *)description
 {
   return [NSString stringWithFormat:@"StdOut %@ | StdErr %@", self.stdOut, self.stdErr];

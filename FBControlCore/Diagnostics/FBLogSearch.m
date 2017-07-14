@@ -69,13 +69,6 @@ static NSString *const KeyRegex = @"regex";
   };
 }
 
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:@"Of Regex: %@", self.regularExpression.pattern];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBLogSearchPredicate_Regex *)object
@@ -90,6 +83,11 @@ static NSString *const KeyRegex = @"regex";
 - (NSUInteger)hash
 {
   return self.regularExpression.hash;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Of Regex: %@", self.regularExpression.pattern];
 }
 
 @end
@@ -141,13 +139,6 @@ static NSString *const KeyRegex = @"regex";
   };
 }
 
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)shortDescription
-{
-  return [NSString stringWithFormat:@"Of Substrings: %@", [FBCollectionInformation oneLineDescriptionFromArray:self.substrings]];
-}
-
 #pragma mark NSObject
 
 - (BOOL)isEqual:(FBLogSearchPredicate_Substrings *)object
@@ -162,6 +153,11 @@ static NSString *const KeyRegex = @"regex";
 - (NSUInteger)hash
 {
   return self.substrings.hash;
+}
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"Of Substrings: %@", [FBCollectionInformation oneLineDescriptionFromArray:self.substrings]];
 }
 
 @end
@@ -225,24 +221,6 @@ static NSString *const KeyRegex = @"regex";
 {
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
   return nil;
-}
-
-#pragma mark FBDebugDescribeable Implementation
-
-- (NSString *)description
-{
-  return self.shortDescription;
-}
-
-- (NSString *)shortDescription
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (NSString *)debugDescription
-{
-  return self.shortDescription;
 }
 
 @end

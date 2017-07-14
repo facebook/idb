@@ -10,14 +10,13 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBJSONConversion.h>
-#import <FBControlCore/FBDebugDescribeable.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  Concrete value wrapper around a binary artifact.
  */
-@interface FBBinaryDescriptor : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable, FBDebugDescribeable>
+@interface FBBinaryDescriptor : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
 /**
  The Designated Initializer.

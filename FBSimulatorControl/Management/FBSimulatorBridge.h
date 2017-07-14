@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Wraps the 'SimulatorBridge' Connection and Protocol
  */
-@interface FBSimulatorBridge : NSObject <FBDebugDescribeable, FBJSONSerializable>
+@interface FBSimulatorBridge : NSObject <FBJSONSerializable>
 
 #pragma mark Initializers
 

@@ -66,7 +66,17 @@
   return self.name.hash | self.path.hash | self.architectures.hash;
 }
 
-#pragma mark - FBJSONDeserializable
+- (NSString *)description
+{
+  return [NSString stringWithFormat:
+    @"Name: %@ | Path: %@ | Architectures: %@",
+    self.name,
+    self.path,
+    [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
+  ];
+}
+
+#pragma mark JSON Conversion
 
 + (FBBinaryDescriptor *)inflateFromJSON:(id)json error:(NSError **)error
 {
@@ -84,30 +94,6 @@
   }
   return binary;
 }
-
-#pragma mark FBDebugDescribeable
-
-- (NSString *)description
-{
-  return [NSString stringWithFormat:
-    @"Name: %@ | Path: %@ | Architectures: %@",
-    self.name,
-    self.path,
-    [FBCollectionInformation oneLineDescriptionFromArray:self.architectures.allObjects]
-  ];
-}
-
-- (NSString *)shortDescription
-{
-  return [self description];
-}
-
-- (NSString *)debugDescription
-{
-  return [self description];
-}
-
-#pragma mark FBJSONSerializable
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
