@@ -18,6 +18,11 @@
 #import "FBTask.h"
 #import "FBTaskBuilder.h"
 
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser = @"user";
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem = @"system";
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac = @"mac";
+FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown = @"unknown";
+
 static BOOL deleteDirectory(NSURL *path)
 {
   if (path == nil) {
@@ -93,12 +98,7 @@ static BOOL isApplicationAtPath(NSString *path)
 
 #pragma mark Install Type
 
-static NSString *const FBApplicationInstallTypeStringUser = @"user";
-static NSString *const FBApplicationInstallTypeStringSystem = @"system";
-static NSString *const FBApplicationInstallTypeStringMac = @"mac";
-static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
-
-+ (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType
++ (FBApplicationInstallTypeString)stringFromApplicationInstallType:(FBApplicationInstallType)installType
 {
   switch (installType) {
     case FBApplicationInstallTypeUser:
@@ -112,7 +112,7 @@ static NSString *const FBApplicationInstallTypeStringUnknown = @"unknown";
   }
 }
 
-+ (FBApplicationInstallType)installTypeFromString:(nullable NSString *)installTypeString
++ (FBApplicationInstallType)installTypeFromString:(nullable FBApplicationInstallTypeString)installTypeString
 {
   if (!installTypeString) {
     return FBApplicationInstallTypeUnknown;

@@ -23,6 +23,15 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
   FBApplicationInstallTypeMac = 3, /** The Application Type is part of macOS */
 };
 
+/**
+ String Representations of the Installed Type.
+ */
+typedef NSString *FBApplicationInstallTypeString NS_STRING_ENUM;
+extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown;
+extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem;
+extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser;
+extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac;
+
 @class FBBinaryDescriptor;
 
 /**
@@ -106,14 +115,14 @@ typedef NS_ENUM(NSUInteger, FBApplicationInstallType) {
 /**
  Returns a String Represnting the Application Install Type.
  */
-+ (NSString *)stringFromApplicationInstallType:(FBApplicationInstallType)installType;
++ (FBApplicationInstallTypeString)stringFromApplicationInstallType:(FBApplicationInstallType)installType;
 
 /**
  Returns the FBApplicationInstallType from the string representation.
 
  @param installTypeString install type as a string
  */
-+ (FBApplicationInstallType)installTypeFromString:(nullable NSString *)installTypeString;
++ (FBApplicationInstallType)installTypeFromString:(nullable FBApplicationInstallTypeString)installTypeString;
 
 /**
  Finds or Extracts an Application if it is determined to be an IPA.
