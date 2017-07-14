@@ -65,9 +65,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
- Fetches a list of the installed applications in json serializable representation.
+ Fetches a list of the Installed Applications.
+ The returned FBApplicationDescriptor object is fully JSON Serializable.
+
+ @param error an error out for any error that occurs
+ @return the Applications if successful, nil otherwise.
  */
-- (NSArray<FBApplicationDescriptor *> *)installedApplications;
+- (nullable NSArray<FBApplicationDescriptor *> *)installedApplicationsWithError:(NSError **)error;
 
 @end
 

@@ -126,7 +126,7 @@ static NSString *const ApplicationPathKey = @"Path";
   return YES;
 }
 
-- (NSArray<FBApplicationDescriptor *> *)installedApplications
+- (nullable NSArray<FBApplicationDescriptor *> *)installedApplicationsWithError:(NSError **)error
 {
   NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
   for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {

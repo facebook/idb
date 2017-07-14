@@ -468,7 +468,7 @@ static NSString *const ApplicationPathKey = @"Path";
   return [self killProcessWithID:PID error:error];
 }
 
-- (NSArray<FBApplicationDescriptor *> *)installedApplications
+- (nullable NSArray<FBApplicationDescriptor *> *)installedApplicationsWithError:(NSError **)error
 {
   NSMutableArray<FBApplicationDescriptor *> *installedApplications = [[NSMutableArray alloc] init];
 
