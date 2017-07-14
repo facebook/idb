@@ -57,11 +57,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FBTestLaunchConfiguration *)testLaunch;
 
 /**
- An Application for the built in Mobile Safari.
- */
-- (FBApplicationDescriptor *)safariApplication;
-
-/**
  An App Launch for the built in Mobile Safari.
  */
 - (FBApplicationLaunchConfiguration *)safariAppLaunch;

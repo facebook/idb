@@ -102,47 +102,49 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable FBSimulator *)assertObtainsBootedSimulatorWithConfiguration:(FBSimulatorConfiguration *)configuration bootConfiguration:(FBSimulatorBootConfiguration *)bootConfiguration;
 
 /**
- An Assertion for:
- - Installing the Application (if relevant).
- - Launching the Application with the given configuration.
+ An Assertion for Installing the Application.
 
  @param simulator the booted Simulator.
  @param application the Application to install.
- @param applicationLaunchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationDescriptor *)application;
+
+/**
+ An Assertion for Launching the Application with the given configuration.
+
+ @param simulator the booted Simulator.
+ @param configuration the Application to then launch.
+ @return a Simulator if successful, nil otherwise.
+ */
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launches:(FBApplicationLaunchConfiguration *)configuration;
 
 /**
  An Assertion for:
  - Obtaining a Simulator with a given configuration.
- - Launching it with the launch configuration.
- - Installing the Application (if relevant).
+ - Booting it with the Boot Configuration
  - Launching the Application with the given configuration.
 
  @param simulatorConfiguration the Configuration of the Simulator to launch.
- @param bootConfiguration the Launch Configuration for the Simulator.
- @param application the Application to install.
- @param applicationLaunchConfiguration the Application to then launch.
+ @param bootConfiguration the Boot Configuration for the Simulator.
+ @param launchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration launches:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration;
 
 /**
  An Assertion for:
  - Obtaining a Simulator with a given configuration.
- - Launching it with the launch configuration.
- - Installing the Application (if relevant).
- - Launching the Aplication with the given configuration.
+ - Booting it with the Boot Configuration
+ - Launching the Application with the given configuration.
  - Relaunching the same Application.
 
  @param simulatorConfiguration the Configuration of the Simulator to launch.
- @param bootConfiguration the Launch Configuration for the Simulator.
- @param application the Application to install.
- @param applicationLaunchConfiguration the Application to then launch.
+ @param bootConfiguration the Boot Configuration for the Simulator.
+ @param launchConfiguration the Application to then launch.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration relaunches:(FBSimulatorBootConfiguration *)bootConfiguration thenLaunchesApplication:(FBApplicationDescriptor *)application withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration;
+- (nullable FBSimulator *)assertSimulatorWithConfiguration:(FBSimulatorConfiguration *)simulatorConfiguration boots:(FBSimulatorBootConfiguration *)bootConfiguration launchesThenRelaunchesApplication:(FBApplicationLaunchConfiguration *)launchConfiguration;
 
 @end
 

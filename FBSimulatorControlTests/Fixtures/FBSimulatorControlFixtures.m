@@ -79,14 +79,8 @@
   return value;
 }
 
-- (FBApplicationDescriptor *)safariApplication
-{
-  NSError *error = nil;
-  FBApplicationDescriptor *application = [FBApplicationDescriptor systemApplicationNamed:@"MobileSafari" error:&error];
-  XCTAssertNil(error);
-  XCTAssertNotNil(application, @"Could not fetch MobileSafari");
-  return application;
-}
+static NSString *const MobileSafariBundleName = @"MobileSafari";
+static NSString *const MobileSafariBundleIdentifier = @"com.apple.mobilesafari";
 
 - (FBApplicationLaunchConfiguration *)tableSearchAppLaunch
 {
@@ -104,12 +98,9 @@
 
 - (FBApplicationLaunchConfiguration *)safariAppLaunch
 {
-  FBApplicationDescriptor *application = self.safariApplication;
-  if (!application) {
-    return nil;
-  }
   return [FBApplicationLaunchConfiguration
-    configurationWithApplication:application
+    configurationWithBundleID:MobileSafariBundleIdentifier
+    bundleName:MobileSafariBundleName
     arguments:@[]
     environment:@{@"FROM" : @"FBSIMULATORCONTROL"}
     waitForDebugger:NO
@@ -119,7 +110,7 @@
 - (FBAgentLaunchConfiguration *)agentLaunch1
 {
   return [FBAgentLaunchConfiguration
-    configurationWithBinary:self.safariApplication.binary
+    configurationWithBinary:[FBBinaryDescriptor binaryWithPath:NSProcessInfo.processInfo.arguments[0] error:nil]
     arguments:@[@"BINGBONG"]
     environment:@{@"FIB" : @"BLE"}
     output:FBProcessOutputConfiguration.outputToDevNull];

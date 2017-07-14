@@ -12,8 +12,9 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulatorControlFixtures.h"
+#import "FBSimulatorControlAssertions.h"
 
-@interface FBSimulatorApplicationDescriptorTests : XCTestCase
+@interface FBSimulatorApplicationDescriptorTests : FBSimulatorControlTestCase
 
 @end
 

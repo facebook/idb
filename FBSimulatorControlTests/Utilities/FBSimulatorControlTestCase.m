@@ -116,7 +116,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   return nil;
 }
 
-+ (FBSimulatorBootConfiguration *)defaultLaunchConfiguration
++ (FBSimulatorBootConfiguration *)defaultBootConfiguration
 {
   return [[FBSimulatorBootConfiguration
     withOptions:self.launchOptions]
@@ -131,7 +131,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   self.managementOptions = FBSimulatorManagementOptionsKillSpuriousSimulatorsOnFirstStart | FBSimulatorManagementOptionsIgnoreSpuriousKillFail;
   self.allocationOptions = FBSimulatorAllocationOptionsReuse | FBSimulatorAllocationOptionsCreate | FBSimulatorAllocationOptionsEraseOnAllocate;
   self.simulatorConfiguration = [FBSimulatorConfiguration withDeviceModel:FBDeviceModeliPhoneSE];
-  self.simulatorLaunchConfiguration = FBSimulatorControlTestCase.defaultLaunchConfiguration;
+  self.bootConfiguration = FBSimulatorControlTestCase.defaultBootConfiguration;
   self.deviceSetPath = FBSimulatorControlTestCase.defaultDeviceSetPath;
 }
 
