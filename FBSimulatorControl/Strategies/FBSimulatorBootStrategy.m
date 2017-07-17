@@ -21,6 +21,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBApplicationDescriptor+Simulator.h"
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBFramebufferConnectStrategy.h"

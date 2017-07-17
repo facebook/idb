@@ -11,6 +11,8 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import <FBSimulatorControl/FBSimulatorControl.h>
+
 #import "FBSimulatorControlFixtures.h"
 #import "FBSimulatorControlAssertions.h"
 

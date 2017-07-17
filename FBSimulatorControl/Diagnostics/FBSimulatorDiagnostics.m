@@ -15,6 +15,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBSimulator.h"
+#import "FBProcessLaunchConfiguration+Simulator.h"
 
 NSString *const FBDiagnosticNameSyslog = @"system_log";
 NSString *const FBDiagnosticNameCoreSimulator = @"coresimulator";

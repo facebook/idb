@@ -17,6 +17,7 @@
 #import <SimulatorBridge/SimulatorBridge.h>
 
 #import "FBSimulator.h"
+#import "FBApplicationDescriptor+Simulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorAgentOperation.h"
 

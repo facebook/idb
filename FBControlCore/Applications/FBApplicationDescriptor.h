@@ -91,23 +91,6 @@ extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac;
 + (nullable instancetype)applicationWithPath:(NSString *)path installTypeString:(nullable NSString *)installTypeString error:(NSError **)error;
 
 /**
- Returns the FBApplicationDescriptor for the current version of Xcode's Simulator.app.
- Will assert if the FBApplicationDescriptor instance could not be constructed.
-
- @return A FBApplicationDescriptor instance for the Simulator.app.
- */
-+ (instancetype)xcodeSimulator;
-
-/**
- Returns the System Application with the provided name.
-
- @param appName the System Application to fetch.
- @param error any error that occurred in fetching the application.
- @returns FBApplicationDescriptor instance if one could for the given name could be found, nil otherwise.
- */
-+ (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error;
-
-/**
  The Install Type of the Application.
  */
 @property (nonatomic, assign, readonly) FBApplicationInstallType installType;

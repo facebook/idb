@@ -83,19 +83,6 @@ static BOOL isApplicationAtPath(NSString *path)
   return [self applicationWithPath:path installType:installType error:error];
 }
 
-+ (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
-{
-  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] installType:FBApplicationInstallTypeSystem error:error];
-}
-
-+ (instancetype)xcodeSimulator;
-{
-  NSError *error = nil;
-  FBApplicationDescriptor *application = [self applicationWithPath:self.pathForSimulatorApplication installType:FBApplicationInstallTypeMac error:&error];
-  NSAssert(application, @"Expected to be able to build an Application, got an error %@", application);
-  return application;
-}
-
 #pragma mark Install Type
 
 + (FBApplicationInstallTypeString)stringFromApplicationInstallType:(FBApplicationInstallType)installType
@@ -141,24 +128,6 @@ static BOOL isApplicationAtPath(NSString *path)
 
 #pragma mark Private
 
-+ (NSString *)pathForSimulatorApplication
-{
-  NSString *simulatorBinaryName = [FBControlCoreGlobalConfiguration.iosSDKVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]]
-    ? @"Simulator"
-    : @"iOS Simulator";
-
-  return [[FBControlCoreGlobalConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"Applications"]
-    stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.app", simulatorBinaryName]];
-}
-
-+ (NSString *)pathForSystemApplicationNamed:(NSString *)name
-{
-  return [[[FBControlCoreGlobalConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"]
-    stringByAppendingPathComponent:name]
-    stringByAppendingPathExtension:@"app"];
-}
 
 + (instancetype)createApplicationWithPath:(NSString *)path installType:(FBApplicationInstallType)installType error:(NSError **)error;
 {

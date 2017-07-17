@@ -11,8 +11,10 @@
 
 #import <FBControlCore/FBControlCore.h>
 
+#import "FBApplicationDescriptor+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
+#import "FBProcessLaunchConfiguration+Simulator.h"
 
 @interface FBAddVideoPolyfill ()
 
