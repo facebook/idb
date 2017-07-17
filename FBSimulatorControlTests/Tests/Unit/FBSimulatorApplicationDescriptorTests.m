@@ -24,9 +24,10 @@
 
 - (void)testCanFetchSimulatorApplications
 {
-  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"MobileSafari" error:nil]);
-  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Camera" error:nil]);
-  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Maps" error:nil]);
+  FBSimulator *simulator = [self assertObtainsSimulator];
+  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"MobileSafari" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Camera" simulator:simulator error:nil]);
+  XCTAssertNotNil([FBApplicationDescriptor systemApplicationNamed:@"Maps" simulator:simulator error:nil]);
 }
 
 - (void)testCreatesSampleApplication

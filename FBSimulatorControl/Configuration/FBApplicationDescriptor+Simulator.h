@@ -30,10 +30,11 @@ NS_ASSUME_NONNULL_BEGIN
  Returns the System Application with the provided name.
 
  @param appName the System Application to fetch.
+ @param simulator the Simulator to fetch for.
  @param error any error that occurred in fetching the application.
  @returns FBApplicationDescriptor instance if one could for the given name could be found, nil otherwise.
  */
-+ (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error;
++ (nullable instancetype)systemApplicationNamed:(NSString *)appName simulator:(FBSimulator *)simulator error:(NSError **)error;
 
 @end
 

@@ -9,13 +9,18 @@
 
 #import "FBApplicationDescriptor+Simulator.h"
 
+#import <CoreSimulator/SimDevice.h>
+#import <CoreSimulator/SimRuntime.h>
+
+#import "FBSimulator+Private.h"
+
 @implementation FBApplicationDescriptor (Simulator)
 
 #pragma mark Private
 
-+ (nullable instancetype)systemApplicationNamed:(NSString *)appName error:(NSError **)error
++ (nullable instancetype)systemApplicationNamed:(NSString *)appName simulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName] installType:FBApplicationInstallTypeSystem error:error];
+  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName simulator:simulator] installType:FBApplicationInstallTypeSystem error:error];
 }
 
 + (instancetype)xcodeSimulator;
@@ -28,10 +33,11 @@
 
 #pragma mark Private
 
-+ (NSString *)pathForSystemApplicationNamed:(NSString *)name
++ (NSString *)pathForSystemApplicationNamed:(NSString *)name simulator:(FBSimulator *)simulator
 {
-  return [[[FBControlCoreGlobalConfiguration.developerDirectory
-    stringByAppendingPathComponent:@"/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"]
+  NSString *runtimeRoot = simulator.device.runtime.root;
+  return [[[runtimeRoot
+    stringByAppendingPathComponent:@"Applications"]
     stringByAppendingPathComponent:name]
     stringByAppendingPathExtension:@"app"];
 }

@@ -76,7 +76,7 @@
   NSString *joinedPaths = [videoPaths componentsJoinedByString:@":"];
 
   NSError *innerError = nil;
-  FBApplicationDescriptor *photosApp = [FBApplicationDescriptor systemApplicationNamed:@"MobileSlideShow" error:&innerError];
+  FBApplicationDescriptor *photosApp = [FBApplicationDescriptor systemApplicationNamed:@"MobileSlideShow" simulator:simulator error:&innerError];
   if (!photosApp) {
     return [[[FBSimulatorError
       describe:@"Could not get the MobileSlideShow App"]
