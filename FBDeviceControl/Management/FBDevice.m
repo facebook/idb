@@ -49,8 +49,6 @@ void (*FBAMDSetLogLevel)(int32_t level);
 @synthesize deviceOperator = _deviceOperator;
 @synthesize dvtDevice = _dvtDevice;
 @synthesize logger = _logger;
-@synthesize recordingCommand = _recordingCommand;
-@synthesize xcTestCommand = _xcTestCommand;
 
 #pragma mark Initializers
 
@@ -64,6 +62,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   _set = set;
   _amDevice = amDevice;
   _logger = [logger withPrefix:[NSString stringWithFormat:@"%@: ", amDevice.udid]];
+  _commands = [NSMutableDictionary dictionary];
 
   return self;
 }
@@ -199,35 +198,42 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma mark Forwarding
 
++ (NSArray<Class> *)commandResponders
+{
+  static dispatch_once_t onceToken;
+  static NSArray<Class> *commandClasses;
+  dispatch_once(&onceToken, ^{
+    commandClasses = @[
+      FBDeviceVideoRecordingCommands.class,
+      FBDeviceXCTestCommands.class,
+    ];
+  });
+  return commandClasses;
+}
+
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  // Try the Recording Command first, constructing a DeviceOperator is expensive.
-  if ([FBDeviceVideoRecordingCommands instancesRespondToSelector:selector]) {
-    return self.recordingCommand;
+  // If we have a command instance, use it.
+  for (id command in self.commands.allKeys) {
+    if ([command respondsToSelector:selector]) {
+      return command;
+    }
   }
-  if ([FBDeviceXCTestCommands instancesRespondToSelector:selector]) {
-    return self.xcTestCommand;
-  }
+  // Then find if there is a non-instantiated class for doing this.
+  for (Class class in FBDevice.commandResponders) {
+    if (![class instancesRespondToSelector:selector]) {
+      continue;
+    }
+    id command = [class commandsWithDevice:self];
+    self.commands[NSStringFromClass(class)] = command;
+    return command;
+ }
+  // Otherwise try the operator
   if ([FBiOSDeviceOperator instancesRespondToSelector:selector]) {
     return self.deviceOperator;
   }
+  // Nothing left.
   return [super forwardingTargetForSelector:selector];
-}
-
-- (FBDeviceVideoRecordingCommands *)recordingCommand
-{
-  if (!_recordingCommand) {
-    _recordingCommand = [FBDeviceVideoRecordingCommands commandsWithDevice:self];
-  }
-  return _recordingCommand;
-}
-
-- (id<FBXCTestCommands>)xcTestCommand
-{
-  if (!_xcTestCommand) {
-    _xcTestCommand = [FBDeviceXCTestCommands commandsWithDevice:self];
-  }
-  return _xcTestCommand;
 }
 
 @end

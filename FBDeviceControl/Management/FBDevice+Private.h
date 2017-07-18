@@ -19,9 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface FBDevice ()
 
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id> *commands;
 @property (nonatomic, strong, readonly) FBAMDevice *amDevice;
-@property (nonatomic, strong, readonly) FBDeviceVideoRecordingCommands *recordingCommand;
-@property (nonatomic, strong, readonly) FBDeviceXCTestCommands *xcTestCommand;
 
 - (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;
 
