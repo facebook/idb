@@ -72,6 +72,7 @@
     @"DYLD_INSERT_LIBRARIES": shimPath,
     @"OTEST_SHIM_STDOUT_FILE": otestShimOutputPath,
     @"TEST_SHIM_BUNDLE_PATH": self.configuration.testBundlePath,
+    @"FB_TEST_TIMEOUT": @(self.configuration.testTimeout).stringValue,
   }];
   [environment addEntriesFromDictionary:self.configuration.processUnderTestEnvironment];
 
