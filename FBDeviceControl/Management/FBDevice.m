@@ -17,6 +17,7 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBiOSDeviceOperator.h"
+#import "FBDeviceApplicationCommands.h"
 #import "FBDeviceVideoRecordingCommands.h"
 #import "FBDeviceXCTestCommands.h"
 #import "FBDeviceSet+Private.h"
@@ -204,6 +205,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   static NSArray<Class> *commandClasses;
   dispatch_once(&onceToken, ^{
     commandClasses = @[
+      FBDeviceApplicationCommands.class,
       FBDeviceVideoRecordingCommands.class,
       FBDeviceXCTestCommands.class,
     ];
