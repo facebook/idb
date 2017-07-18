@@ -223,32 +223,6 @@ extension FBLineBuffer {
   }
 }
 
-@objc class WriterBridge : NSObject, FBFileConsumer {
-  let writer: Writer
-
-  init(writer: Writer) {
-    self.writer = writer
-    super.init()
-  }
-
-  func consumeData(_ data: Data) {
-    guard let string = String(data: data, encoding: String.Encoding.utf8) else {
-      return
-    }
-    self.writer.write(string)
-  }
-
-  func consumeEndOfFile() {
-
-  }
-}
-
-extension Writer {
-  var fileWriter: FBFileConsumer { get {
-    return WriterBridge(writer: self)
-  }}
-}
-
 @objc class AccumilatingActionDelegate : NSObject, FBiOSTargetActionDelegate {
   var handle: FBTerminationHandle? = nil
   let reporter: EventReporter
@@ -263,7 +237,7 @@ extension Writer {
   }
 
   func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
-    return self.reporter.writer.fileWriter
+    return self.reporter.writer
   }
 }
 
@@ -296,7 +270,7 @@ extension Writer {
   }
 
   func obtainConsumer(for action: FBiOSTargetAction, target: FBiOSTarget) -> FBFileConsumer {
-    return self.reporter.writer.fileWriter
+    return self.reporter.writer
   }
 
   func readerDidFinishReading(_ reader: FBiOSActionReader) {
@@ -369,3 +343,30 @@ extension FBTestLaunchConfiguration : EnvironmentAdditive {
     return self.withApplicationLaunchConfiguration(appLaunchConf.withEnvironmentAdditions(environmentAdditions))
   }
 }
+
+
+public typealias Writer = FBFileConsumer
+public extension Writer {
+  func write(_ string: String) {
+    var output = string
+    if (output.characters.last != "\n") {
+      output.append("\n" as Character)
+    }
+    guard let data = output.data(using: String.Encoding.utf8) else {
+      return
+    }
+    self.consumeData(data)
+  }
+}
+
+public typealias FileHandleWriter = FBFileWriter
+public extension FileHandleWriter {
+  static var stdOutWriter: FileHandleWriter { get {
+    return FileHandleWriter.syncWriter(with: FileHandle.standardOutput)
+  }}
+
+  static var stdErrWriter: FileHandleWriter { get {
+    return FileHandleWriter.syncWriter(with: FileHandle.standardError)
+  }}
+}
+
