@@ -19,12 +19,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBFileWriter : NSObject <FBFileConsumer>
 
+#pragma mark Initializers
+
 /**
  Creates a File Writer that does not write anywhere.
 
  @return a File Reader.
  */
-+ (instancetype)nullWriter;
+@property (nonatomic, strong, readonly, class) FBFileWriter *nullWriter;
 
 /**
  Creates a Blocking Writer from a File Handle.
