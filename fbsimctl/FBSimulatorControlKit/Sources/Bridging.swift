@@ -370,3 +370,4 @@ public extension FileHandleWriter {
   }}
 }
 
+public typealias EventType = FBEventType
