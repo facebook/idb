@@ -77,12 +77,12 @@ struct JSONEventInterpreter : EventInterpreter {
   public func interpret(_ subject: EventReporterSubject) -> [String] {
     return subject.subSubjects.flatMap { item in
       let json = item.jsonDescription
-      guard let _ = try? json.getValue(JSONKeys.EventName.rawValue).getString() else {
-        assertionFailure("\(json) does not have a \(JSONKeys.EventName.rawValue)")
+      guard let _ = try? json.getValue(JSONKeys.eventName.rawValue).getString() else {
+        assertionFailure("\(json) does not have a \(JSONKeys.eventName.rawValue)")
         return nil
       }
-      guard let _ = try? json.getValue(JSONKeys.EventType.rawValue).getString() else {
-        assertionFailure("\(json) does not have a \(JSONKeys.EventType.rawValue)")
+      guard let _ = try? json.getValue(JSONKeys.eventType.rawValue).getString() else {
+        assertionFailure("\(json) does not have a \(JSONKeys.eventType.rawValue)")
         return nil
       }
       do {

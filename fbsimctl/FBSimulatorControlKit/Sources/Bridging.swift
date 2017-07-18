@@ -371,3 +371,5 @@ public extension FileHandleWriter {
 }
 
 public typealias EventType = FBEventType
+
+public typealias JSONKeys = FBJSONKey

@@ -9,15 +9,6 @@
 
 import Foundation
 
-public enum JSONKeys : String {
-  case EventName = "event_name"
-  case EventType = "event_type"
-  case Level = "level"
-  case Subject = "subject"
-  case Target = "target"
-  case Timestamp = "timestamp"
-}
-
 public protocol EventReporterSubject : CustomStringConvertible {
   var jsonDescription: JSON { get }
   var subSubjects: [EventReporterSubject] { get }
@@ -55,10 +46,10 @@ struct SimpleSubject : EventReporterSubject {
 
   var jsonDescription: JSON { get {
     return JSON.dictionary([
-      JSONKeys.EventName.rawValue : JSON.string(self.eventName.rawValue),
-      JSONKeys.EventType.rawValue : JSON.string(self.eventType.rawValue),
-      JSONKeys.Subject.rawValue : self.subject.jsonDescription,
-      JSONKeys.Timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
+      JSONKeys.eventName.rawValue : JSON.string(self.eventName.rawValue),
+      JSONKeys.eventType.rawValue : JSON.string(self.eventType.rawValue),
+      JSONKeys.subject.rawValue : self.subject.jsonDescription,
+      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
     ])
   }}
 
@@ -126,11 +117,11 @@ struct iOSTargetWithSubject : EventReporterSubject {
 
   var jsonDescription: JSON { get {
     return JSON.dictionary([
-      JSONKeys.EventName.rawValue : JSON.string(self.eventName.rawValue),
-      JSONKeys.EventType.rawValue : JSON.string(self.eventType.rawValue),
-      JSONKeys.Target.rawValue : self.targetSubject.jsonDescription,
-      JSONKeys.Subject.rawValue : self.subject.jsonDescription,
-      JSONKeys.Timestamp.rawValue : JSON.number(NSNumber(value: round(self.timestamp.timeIntervalSince1970) as Double)),
+      JSONKeys.eventName.rawValue : JSON.string(self.eventName.rawValue),
+      JSONKeys.eventType.rawValue : JSON.string(self.eventType.rawValue),
+      JSONKeys.target.rawValue : self.targetSubject.jsonDescription,
+      JSONKeys.subject.rawValue : self.subject.jsonDescription,
+      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(self.timestamp.timeIntervalSince1970) as Double)),
     ])
   }}
 
@@ -150,11 +141,11 @@ struct LogSubject : EventReporterSubject {
 
   var jsonDescription: JSON { get {
     return JSON.dictionary([
-      JSONKeys.EventName.rawValue : JSON.string(EventName.log.rawValue),
-      JSONKeys.EventType.rawValue : JSON.string(EventType.discrete.rawValue),
-      JSONKeys.Level.rawValue : JSON.string(self.levelString),
-      JSONKeys.Subject.rawValue : JSON.string(self.logString),
-      JSONKeys.Timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
+      JSONKeys.eventName.rawValue : JSON.string(EventName.log.rawValue),
+      JSONKeys.eventType.rawValue : JSON.string(EventType.discrete.rawValue),
+      JSONKeys.level.rawValue : JSON.string(self.levelString),
+      JSONKeys.subject.rawValue : JSON.string(self.logString),
+      JSONKeys.timestamp.rawValue : JSON.number(NSNumber(value: round(Date().timeIntervalSince1970) as Double)),
     ])
   }}
 
