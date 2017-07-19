@@ -112,6 +112,13 @@
   NSString *IDEBundleInjectionFrameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework"];
 
+  NSString *developerLibraryPath = [FBControlCoreGlobalConfiguration.developerDirectory
+    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
+  NSArray<NSString *> *XCTestFrameworksPaths = @[
+    [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],
+    [developerLibraryPath stringByAppendingPathComponent:@"PrivateFrameworks"],
+  ];
+
   FBProductBundle *IDEBundleInjectionFramework = [[[FBProductBundleBuilder builder]
     withBundlePath:IDEBundleInjectionFrameworkPath]
     buildWithError:&innerError];
@@ -122,12 +129,13 @@
       fail:error];
   }
 
-  return [[[[[[[FBTestRunnerConfigurationBuilder builder]
+  return [[[[[[[[FBTestRunnerConfigurationBuilder builder]
     withSessionIdentifer:sessionIdentifier]
     withTestRunnerApplication:application]
     withIDEBundleInjectionFramework:IDEBundleInjectionFramework]
     withWebDriverAgentTestBundle:testBundle]
     withTestConfigurationPath:testBundle.configuration.path]
+    withFrameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]]
     build];
 }
 
