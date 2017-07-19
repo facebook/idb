@@ -117,6 +117,13 @@
 
 - (void)consumeEndOfFile
 {
+  [self consumeEndOfFileClosingFileHandle:YES];
+}
+
+#pragma mark Private
+
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
+{
   NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
 }
 
@@ -124,8 +131,8 @@
 
 - (void)dealloc
 {
-  // Cleans up resources. Calling consumeEndOfFile should no-op after the first call.
-  [self consumeEndOfFile];
+  // Cleans up resources, but don't force-close the file handle.
+  [self consumeEndOfFileClosingFileHandle:NO];
 }
 
 @end
@@ -137,7 +144,7 @@
   // do nothing
 }
 
-- (void)consumeEndOfFile
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
 {
   // do nothing
 }
@@ -151,9 +158,11 @@
   [self.fileHandle writeData:data];
 }
 
-- (void)consumeEndOfFile
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
 {
-  [self.fileHandle closeFile];
+  if (close) {
+    [self.fileHandle closeFile];
+  }
   self.fileHandle = nil;
 }
 
@@ -208,7 +217,7 @@
   dispatch_io_write(self.io, 0, dispatchData, self.writeQueue, ^(bool done, dispatch_data_t remainder, int error) {});
 }
 
-- (void)consumeEndOfFile
+- (void)consumeEndOfFileClosingFileHandle:(BOOL)close
 {
   if (!self.io) {
     return;
@@ -223,7 +232,9 @@
   // Wait for all io operations to stop with a barrier, then close the io channel
   dispatch_io_barrier(io, ^{
     dispatch_io_close(io, DISPATCH_IO_STOP);
-    [fileHandle closeFile];
+    if (close) {
+      [fileHandle closeFile];
+    }
   });
 }
 
