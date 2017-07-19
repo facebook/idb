@@ -47,8 +47,6 @@
 
 static NSString *const ApplicationNameKey = @"CFBundleName";
 static NSString *const ApplicationIdentifierKey = @"CFBundleIdentifier";
-static NSString *const ApplicationTypeKey = @"ApplicationType";
-static NSString *const ApplicationPathKey = @"Path";
 
 @interface FBiOSDeviceOperator ()
 
@@ -372,9 +370,9 @@ static NSString *const ApplicationPathKey = @"Path";
     }
     FBApplicationDescriptor *appData = [FBApplicationDescriptor
       applicationWithName:app[ApplicationNameKey]
-      path:app[ApplicationPathKey]
+      path:app[FBApplicationInstallInfoKeyPath]
       bundleID:app[ApplicationIdentifierKey]
-      installType:[FBApplicationDescriptor installTypeFromString:app[ApplicationTypeKey]]];
+      installType:[FBApplicationDescriptor installTypeFromString:app[FBApplicationInstallInfoKeyApplicationType]]];
 
     [installedApplications addObject:appData];
   }

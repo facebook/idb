@@ -21,9 +21,6 @@
 #import "FBSimulatorProcessFetcher.h"
 #import "FBSimulatorSubprocessTerminationStrategy.h"
 
-static NSString *const ApplicationTypeKey = @"ApplicationType";
-static NSString *const ApplicationPathKey = @"Path";
-
 @interface FBSimulatorApplicationCommands ()
 
 @property (nonatomic, weak, readonly) FBSimulator *simulator;
@@ -130,7 +127,7 @@ static NSString *const ApplicationPathKey = @"Path";
 {
   NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
   for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
-    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[ApplicationPathKey] installTypeString:appInfo[ApplicationTypeKey] error:nil];
+    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[FBApplicationInstallInfoKeyPath] installTypeString:appInfo[FBApplicationInstallInfoKeyApplicationType] error:nil];
     if (!application) {
       continue;
     }
@@ -211,8 +208,8 @@ static NSString *const ApplicationPathKey = @"Path";
   if (!appInfo) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
-  NSString *appPath = appInfo[ApplicationPathKey];
-  NSString *typeString = appInfo[ApplicationTypeKey];
+  NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
+  NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
   FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appPath installTypeString:typeString error:&innerError];
   if (!application) {
     return [[[[FBSimulatorError
@@ -234,7 +231,7 @@ static NSString *const ApplicationPathKey = @"Path";
     return [FBSimulatorError failBoolWithError:innerError errorOut:error];
   }
 
-  return [appInfo[ApplicationTypeKey] isEqualToString:@"System"];
+  return [appInfo[FBApplicationInstallInfoKeyApplicationType] isEqualToString:@"System"];
 }
 
 - (nullable NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -290,7 +287,7 @@ static NSSet<NSString *> *requiredAppInfoKeys(void)
   static NSSet<NSString *> *requiredAppInfoKeys = nil;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    requiredAppInfoKeys = [NSSet setWithObjects:ApplicationPathKey, ApplicationTypeKey, nil];
+    requiredAppInfoKeys = [NSSet setWithObjects:FBApplicationInstallInfoKeyPath, FBApplicationInstallInfoKeyApplicationType, nil];
   });
   return requiredAppInfoKeys;
 }

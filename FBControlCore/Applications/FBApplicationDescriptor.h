@@ -32,6 +32,13 @@ extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem
 extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringUser;
 extern FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac;
 
+/**
+ Keys from UserInfo about Applications
+ */
+typedef NSString *FBApplicationInstallInfoKey NS_EXTENSIBLE_STRING_ENUM;
+extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyApplicationType;
+extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath;
+
 @class FBBinaryDescriptor;
 
 /**

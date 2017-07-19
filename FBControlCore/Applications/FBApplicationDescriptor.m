@@ -23,6 +23,9 @@ FBApplicationInstallTypeString const FBApplicationInstallTypeStringSystem = @"sy
 FBApplicationInstallTypeString const FBApplicationInstallTypeStringMac = @"mac";
 FBApplicationInstallTypeString const FBApplicationInstallTypeStringUnknown = @"unknown";
 
+FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyApplicationType = @"ApplicationType";
+FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath = @"Path";
+
 static BOOL deleteDirectory(NSURL *path)
 {
   if (path == nil) {
