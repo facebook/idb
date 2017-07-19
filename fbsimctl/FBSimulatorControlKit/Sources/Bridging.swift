@@ -197,32 +197,6 @@ extension HttpRequest {
   }
 }
 
-struct LineBufferDataIterator : IteratorProtocol {
-  let lineBuffer: FBLineBuffer
-
-  mutating func next() -> Data? {
-    return self.lineBuffer.consumeLineData()
-  }
-}
-
-struct LineBufferStringIterator : IteratorProtocol {
-  let lineBuffer: FBLineBuffer
-
-  mutating func next() -> String? {
-    return self.lineBuffer.consumeLineString()
-  }
-}
-
-extension FBLineBuffer {
-  func dataIterator() -> LineBufferDataIterator {
-    return LineBufferDataIterator(lineBuffer: self)
-  }
-
-  func stringIterator() -> LineBufferStringIterator {
-    return LineBufferStringIterator(lineBuffer: self)
-  }
-}
-
 @objc class AccumilatingActionDelegate : NSObject, FBiOSTargetActionDelegate {
   var handle: FBTerminationHandle? = nil
   let reporter: EventReporter
