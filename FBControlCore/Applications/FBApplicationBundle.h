@@ -44,56 +44,56 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyPath;
 /**
  A Bundle Descriptor specialized to Applications
  */
-@interface FBApplicationDescriptor : FBBundleDescriptor
+@interface FBApplicationBundle : FBBundleDescriptor
 
 /**
- Initializes a FBApplicationDescriptor.
+ Initializes a FBApplicationBundle.
 
  @param name the name of the application
  @param path the path of the application
  @param bundleID the bundle id of the application
  @param installType the InstallType of the application.
- @returns a FBApplicationDescriptor instance.
+ @returns a FBApplicationBundle instance.
  */
 - (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary installType:(FBApplicationInstallType)installType;
 
 /**
- Constructs a FBApplicationDescriptor for the a User Application at the given path
+ Constructs a FBApplicationBundle for the a User Application at the given path
 
  @param path the path of the applocation to construct.
  @param error an error out.
- @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
+ @returns a FBApplicationBundle instance if one could be constructed, nil otherwise.
  */
 + (nullable instancetype)userApplicationWithPath:(NSString *)path error:(NSError **)error;
 
 /**
- Constructs a FBApplicationDescriptor for the an Application.
+ Constructs a FBApplicationBundle for the an Application.
 
  @param name the name of the application
  @param path the path of the application
  @param bundleID the bundle id of the application
  @param installType the install type of the application
- @returns a FBApplicationDescriptor instance.
+ @returns a FBApplicationBundle instance.
  */
 + (instancetype)applicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID installType:(FBApplicationInstallType)installType;
 
 /**
- Constructs a FBApplicationDescriptor for the Application at the given path.
+ Constructs a FBApplicationBundle for the Application at the given path.
 
  @param path the path of the applocation to construct.
  @param installType the InstallType of the application.
  @param error an error out.
- @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
+ @returns a FBApplicationBundle instance if one could be constructed, nil otherwise.
  */
 + (nullable instancetype)applicationWithPath:(NSString *)path installType:(FBApplicationInstallType)installType error:(NSError **)error;
 
 /**
- Constructs a FBApplicationDescriptor for the Application at the given path.
+ Constructs a FBApplicationBundle for the Application at the given path.
 
  @param path the path of the applocation to construct.
  @param installTypeString a string representation of the InstallType of the application.
  @param error an error out.
- @returns a FBApplicationDescriptor instance if one could be constructed, nil otherwise.
+ @returns a FBApplicationBundle instance if one could be constructed, nil otherwise.
  */
 + (nullable instancetype)applicationWithPath:(NSString *)path installTypeString:(nullable NSString *)installTypeString error:(NSError **)error;
 

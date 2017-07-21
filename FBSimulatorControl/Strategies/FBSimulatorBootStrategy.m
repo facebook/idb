@@ -21,7 +21,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBApplicationDescriptor+Simulator.h"
+#import "FBApplicationBundle+Simulator.h"
 #import "FBFramebuffer.h"
 #import "FBFramebufferConfiguration.h"
 #import "FBFramebufferConnectStrategy.h"
@@ -312,7 +312,7 @@
 {
   // Construct and start the task.
   FBTask *task = [[[[[FBTaskBuilder
-    withLaunchPath:FBApplicationDescriptor.xcodeSimulator.binary.path]
+    withLaunchPath:FBApplicationBundle.xcodeSimulator.binary.path]
     withArguments:arguments]
     withEnvironmentAdditions:environment]
     build]
@@ -337,7 +337,7 @@
 {
   // The NSWorkspace API allows for arguments & environment to be provided to the launched application
   // Additionally, multiple Apps of the same application can be launched with the NSWorkspaceLaunchNewInstance option.
-  NSURL *applicationURL = [NSURL fileURLWithPath:FBApplicationDescriptor.xcodeSimulator.path];
+  NSURL *applicationURL = [NSURL fileURLWithPath:FBApplicationBundle.xcodeSimulator.path];
   NSDictionary *appLaunchConfiguration = @{
     NSWorkspaceLaunchConfigurationArguments : arguments,
     NSWorkspaceLaunchConfigurationEnvironment : environment,

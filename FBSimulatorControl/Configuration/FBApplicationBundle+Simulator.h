@@ -16,13 +16,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Applications related to FBSimulatorControl.
  */
-@interface FBApplicationDescriptor (Simulator)
+@interface FBApplicationBundle (Simulator)
 
 /**
- Returns the FBApplicationDescriptor for the current version of Xcode's Simulator.app.
- Will assert if the FBApplicationDescriptor instance could not be constructed.
+ Returns the FBApplicationBundle for the current version of Xcode's Simulator.app.
+ Will assert if the FBApplicationBundle instance could not be constructed.
 
- @return A FBApplicationDescriptor instance for the Simulator.app.
+ @return A FBApplicationBundle instance for the Simulator.app.
  */
 + (instancetype)xcodeSimulator;
 
@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param appName the System Application to fetch.
  @param simulator the Simulator to fetch for.
  @param error any error that occurred in fetching the application.
- @returns FBApplicationDescriptor instance if one could for the given name could be found, nil otherwise.
+ @returns FBApplicationBundle instance if one could for the given name could be found, nil otherwise.
  */
 + (nullable instancetype)systemApplicationNamed:(NSString *)appName simulator:(FBSimulator *)simulator error:(NSError **)error;
 

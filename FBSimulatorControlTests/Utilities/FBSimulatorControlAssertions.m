@@ -106,7 +106,7 @@
   return [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:self.bootConfiguration];
 }
 
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationBundle *)application
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulator];
   if (!simulator) {
@@ -136,7 +136,7 @@
   return simulator;
 }
 
-- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationDescriptor *)application
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationBundle *)application
 {
   NSError *error = nil;
   BOOL success = [simulator installApplicationWithPath:application.path error:&error];

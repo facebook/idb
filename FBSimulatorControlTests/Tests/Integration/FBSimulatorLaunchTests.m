@@ -37,7 +37,7 @@
     launchesThenRelaunchesApplication:appLaunch];
 }
 
-- (FBSimulator *)doTestApplication:(FBApplicationDescriptor *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
+- (FBSimulator *)doTestApplication:(FBApplicationBundle *)application launches:(FBApplicationLaunchConfiguration *)appLaunch
 {
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithConfiguration:self.simulatorConfiguration bootConfiguration:self.bootConfiguration];
   [self assertSimulator:simulator installs:application];
@@ -153,7 +153,7 @@
 
 - (void)testCanUninstallApplication
 {
-  FBApplicationDescriptor *application = self.tableSearchApplication;
+  FBApplicationBundle *application = self.tableSearchApplication;
   FBApplicationLaunchConfiguration *launch = self.tableSearchAppLaunch;
   FBSimulator *simulator = [self assertObtainsBootedSimulatorWithInstalledApplication:application];
 

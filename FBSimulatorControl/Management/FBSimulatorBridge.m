@@ -17,7 +17,7 @@
 #import <SimulatorBridge/SimulatorBridge.h>
 
 #import "FBSimulator.h"
-#import "FBApplicationDescriptor+Simulator.h"
+#import "FBApplicationBundle+Simulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorAgentOperation.h"
 
@@ -34,7 +34,7 @@
 
 + (nullable FBBinaryDescriptor *)simulatorBridgeBinaryWithError:(NSError **)error
 {
-  FBApplicationDescriptor *simulatorApp = [FBApplicationDescriptor xcodeSimulator];
+  FBApplicationBundle *simulatorApp = [FBApplicationBundle xcodeSimulator];
   NSString *path = [simulatorApp.path stringByAppendingPathComponent:@"Contents/Resources/Platforms/iphoneos/usr/libexec/SimulatorBridge"];
   return [FBBinaryDescriptor binaryWithPath:path error:error];
 }

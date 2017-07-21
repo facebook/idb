@@ -12,7 +12,7 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 
-@class FBApplicationDescriptor;
+@class FBApplicationBundle;
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
 

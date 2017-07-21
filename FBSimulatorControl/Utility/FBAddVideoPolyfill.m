@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBApplicationDescriptor+Simulator.h"
+#import "FBApplicationBundle+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
@@ -76,7 +76,7 @@
   NSString *joinedPaths = [videoPaths componentsJoinedByString:@":"];
 
   NSError *innerError = nil;
-  FBApplicationDescriptor *photosApp = [FBApplicationDescriptor systemApplicationNamed:@"MobileSlideShow" simulator:simulator error:&innerError];
+  FBApplicationBundle *photosApp = [FBApplicationBundle systemApplicationNamed:@"MobileSlideShow" simulator:simulator error:&innerError];
   if (!photosApp) {
     return [[[FBSimulatorError
       describe:@"Could not get the MobileSlideShow App"]

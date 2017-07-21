@@ -7,14 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBApplicationDescriptor+Simulator.h"
+#import "FBApplicationBundle+Simulator.h"
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimRuntime.h>
 
 #import "FBSimulator+Private.h"
 
-@implementation FBApplicationDescriptor (Simulator)
+@implementation FBApplicationBundle (Simulator)
 
 #pragma mark Private
 
@@ -26,7 +26,7 @@
 + (instancetype)xcodeSimulator;
 {
   NSError *error = nil;
-  FBApplicationDescriptor *application = [self applicationWithPath:self.pathForSimulatorApplication installType:FBApplicationInstallTypeMac error:&error];
+  FBApplicationBundle *application = [self applicationWithPath:self.pathForSimulatorApplication installType:FBApplicationInstallTypeMac error:&error];
   NSAssert(application, @"Expected to be able to build an Application, got an error %@", application);
   return application;
 }

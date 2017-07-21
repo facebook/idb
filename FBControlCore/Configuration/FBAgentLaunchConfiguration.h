@@ -12,7 +12,7 @@
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 #import <FBControlCore/FBJSONConversion.h>
 
-@class FBApplicationDescriptor;
+@class FBApplicationBundle;
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
 

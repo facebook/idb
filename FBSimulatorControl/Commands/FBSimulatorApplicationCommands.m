@@ -51,7 +51,7 @@
 {
   NSURL *tempDirURL = nil;
 
-  NSString *appPath = [FBApplicationDescriptor findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:error];
+  NSString *appPath = [FBApplicationBundle findOrExtractApplicationAtPath:path extractPathOut:&tempDirURL error:error];
   if (appPath == nil) {
     return NO;
   }
@@ -123,11 +123,11 @@
   return YES;
 }
 
-- (nullable NSArray<FBApplicationDescriptor *> *)installedApplicationsWithError:(NSError **)error
+- (nullable NSArray<FBApplicationBundle *> *)installedApplicationsWithError:(NSError **)error
 {
-  NSMutableArray<FBApplicationDescriptor *> *applications = [NSMutableArray array];
+  NSMutableArray<FBApplicationBundle *> *applications = [NSMutableArray array];
   for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
-    FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appInfo[FBApplicationInstallInfoKeyPath] installTypeString:appInfo[FBApplicationInstallInfoKeyApplicationType] error:nil];
+    FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:appInfo[FBApplicationInstallInfoKeyPath] installTypeString:appInfo[FBApplicationInstallInfoKeyApplicationType] error:nil];
     if (!application) {
       continue;
     }
@@ -140,7 +140,7 @@
 {
   NSError *innerError = nil;
 
-  FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:path error:&innerError];
+  FBApplicationBundle *application = [FBApplicationBundle userApplicationWithPath:path error:&innerError];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]
@@ -191,7 +191,7 @@
     launchOrRelaunchApplication:appLaunch error:error] != nil;
 }
 
-- (BOOL)terminateApplication:(FBApplicationDescriptor *)application error:(NSError **)error
+- (BOOL)terminateApplication:(FBApplicationBundle *)application error:(NSError **)error
 {
   NSParameterAssert(application);
   return [self killApplicationWithBundleID:application.bundleID error:error];
@@ -199,7 +199,7 @@
 
 #pragma mark Querying Application State
 
-- (nullable FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (nullable FBApplicationBundle *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSParameterAssert(bundleID);
 
@@ -210,7 +210,7 @@
   }
   NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
   NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
-  FBApplicationDescriptor *application = [FBApplicationDescriptor applicationWithPath:appPath installTypeString:typeString error:&innerError];
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:appPath installTypeString:typeString error:&innerError];
   if (!application) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to get App Path of %@ at %@", bundleID, appPath]
@@ -263,7 +263,7 @@
   NSParameterAssert(bundleID);
 
   NSError *innerError = nil;
-  FBApplicationDescriptor *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
+  FBApplicationBundle *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
   if (!application) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }

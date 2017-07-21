@@ -34,7 +34,7 @@ struct iOSActionProvider {
       return DiagnosticsRunner(reporter, query, query, format)
     case .install(let appPath, let codeSign):
       return iOSTargetRunner.simple(reporter, .install, ControlCoreSubject(appPath as NSString)) {
-        let (extractedAppPath, cleanupDirectory) = try FBApplicationDescriptor.findOrExtract(atPath: appPath)
+        let (extractedAppPath, cleanupDirectory) = try FBApplicationBundle.findOrExtract(atPath: appPath)
         if codeSign {
           try FBCodesignProvider.codeSignCommandWithAdHocIdentity().recursivelySignBundle(atPath: extractedAppPath)
         }
@@ -52,7 +52,7 @@ struct iOSActionProvider {
     case .listApps:
       return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let applications = try target.installedApplications()
-        let subject = ControlCoreSubject(applications.map { $0.jsonSerializableRepresentation() } as NSArray)
+        let subject = ControlCoreSubject(applications.map { $0.jsonSerializableRepresentation } as NSArray)
         reporter.reporter.reportSimple(.listApps, .discrete, subject)
       }
     case .record(let record):

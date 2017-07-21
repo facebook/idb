@@ -60,7 +60,7 @@
     approveLocationServicesForBundleIDs:bundleIDs error:error];
 }
 
-- (BOOL)authorizeLocationSettingForApplication:(FBApplicationDescriptor *)application error:(NSError **)error
+- (BOOL)authorizeLocationSettingForApplication:(FBApplicationBundle *)application error:(NSError **)error
 {
   NSParameterAssert(application);
   return [self authorizeLocationSettings:@[application.bundleID] error:error];

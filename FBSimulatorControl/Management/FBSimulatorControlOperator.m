@@ -46,7 +46,7 @@
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
-  FBApplicationDescriptor *application = [FBApplicationDescriptor userApplicationWithPath:path error:error];
+  FBApplicationBundle *application = [FBApplicationBundle userApplicationWithPath:path error:error];
   if (![self.simulator installApplicationWithPath:application.path error:error]) {
     return NO;
   }
@@ -182,7 +182,7 @@
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBApplicationDescriptor *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBApplicationBundle *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!application) {
     return nil;
   }
@@ -197,7 +197,7 @@
 
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment waitForDebugger:(BOOL)waitForDebugger error:(NSError **)error
 {
-  FBApplicationDescriptor *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBApplicationBundle *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!app) {
     return NO;
   }

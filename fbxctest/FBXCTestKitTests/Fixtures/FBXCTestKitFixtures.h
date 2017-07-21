@@ -13,8 +13,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationDescriptor;
-
 /**
  Static Fixtures for FBXCTestKitTests
  */

@@ -11,7 +11,7 @@
 #import <FBSimulatorControl/FBAddVideoPolyfill.h>
 #import <FBSimulatorControl/FBAgentLaunchConfiguration+Simulator.h>
 #import <FBSimulatorControl/FBAgentLaunchStrategy.h>
-#import <FBSimulatorControl/FBApplicationDescriptor+Simulator.h>
+#import <FBSimulatorControl/FBApplicationBundle+Simulator.h>
 #import <FBSimulatorControl/FBApplicationLaunchStrategy.h>
 #import <FBSimulatorControl/FBApplicationTestRunStrategy.h>
 #import <FBSimulatorControl/FBCompositeSimulatorEventSink.h>

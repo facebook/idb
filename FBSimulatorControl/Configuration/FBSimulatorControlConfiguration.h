@@ -11,7 +11,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-@class FBApplicationDescriptor ;
+@class FBApplicationBundle ;
 
 /**
  Options that apply to each FBSimulatorControl instance.

@@ -170,10 +170,10 @@ extension IndividualCreationConfiguration {
   }}
 }
 
-extension FBApplicationDescriptor {
+extension FBApplicationBundle {
   static func findOrExtract(atPath: String) throws -> (String, URL?) {
     var url: NSURL? = nil
-    let result = try FBApplicationDescriptor.findOrExtractApplication(atPath: atPath, extractPathOut: &url)
+    let result = try FBApplicationBundle.findOrExtractApplication(atPath: atPath, extractPathOut: &url)
     return (result, url as URL?)
   }
 }

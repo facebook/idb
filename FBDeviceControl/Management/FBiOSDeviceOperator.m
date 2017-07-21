@@ -360,19 +360,19 @@ static NSString *const ApplicationIdentifierKey = @"CFBundleIdentifier";
   return [self killProcessWithID:PID error:error];
 }
 
-- (nullable NSArray<FBApplicationDescriptor *> *)installedApplicationsWithError:(NSError **)error
+- (nullable NSArray<FBApplicationBundle *> *)installedApplicationsWithError:(NSError **)error
 {
-  NSMutableArray<FBApplicationDescriptor *> *installedApplications = [[NSMutableArray alloc] init];
+  NSMutableArray<FBApplicationBundle *> *installedApplications = [[NSMutableArray alloc] init];
 
   for (NSDictionary *app in [self installedApplicationsData]) {
     if (app == nil) {
       continue;
     }
-    FBApplicationDescriptor *appData = [FBApplicationDescriptor
+    FBApplicationBundle *appData = [FBApplicationBundle
       applicationWithName:app[ApplicationNameKey]
       path:app[FBApplicationInstallInfoKeyPath]
       bundleID:app[ApplicationIdentifierKey]
-      installType:[FBApplicationDescriptor installTypeFromString:app[FBApplicationInstallInfoKeyApplicationType]]];
+      installType:[FBApplicationBundle installTypeFromString:app[FBApplicationInstallInfoKeyApplicationType]]];
 
     [installedApplications addObject:appData];
   }

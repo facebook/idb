@@ -51,18 +51,18 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if the command succeeds, NO otherwise,
  */
-- (BOOL)terminateApplication:(FBApplicationDescriptor *)application error:(NSError **)error;
+- (BOOL)terminateApplication:(FBApplicationBundle *)application error:(NSError **)error;
 
 #pragma mark Querying Application State
 
 /**
- Fetches the FBApplicationDescriptor instance by Bundle ID, on the Simulator.
+ Fetches the FBApplicationBundle instance by Bundle ID, on the Simulator.
 
  @param bundleID the Bundle ID to fetch an installed application for.
  @param error an error out for any error that occurs.
- @return a FBApplicationDescriptor instance if one could be obtained, nil otherwise.
+ @return a FBApplicationBundle instance if one could be obtained, nil otherwise.
  */
-- (nullable FBApplicationDescriptor *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBApplicationBundle *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Determines whether a provided Bundle ID represents a System Application

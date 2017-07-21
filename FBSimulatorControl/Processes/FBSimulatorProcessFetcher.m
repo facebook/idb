@@ -15,7 +15,7 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBApplicationDescriptor+Simulator.h"
+#import "FBApplicationBundle+Simulator.h"
 #import "FBSimulator.h"
 #import "FBSimulatorControlConfiguration.h"
 
@@ -155,7 +155,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
 + (NSPredicate *)simulatorProcessesWithCorrectLaunchPath
 {
   return [NSPredicate predicateWithBlock:^ BOOL (FBProcessInfo *process, NSDictionary *_) {
-    return [process.launchPath isEqualToString:FBApplicationDescriptor .xcodeSimulator.binary.path];
+    return [process.launchPath isEqualToString:FBApplicationBundle.xcodeSimulator.binary.path];
   }];
 }
 

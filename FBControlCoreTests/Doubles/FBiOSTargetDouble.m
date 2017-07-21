@@ -86,7 +86,7 @@
   return NO;
 }
 
-- (NSArray<FBApplicationDescriptor *> *)installedApplicationsWithError:(NSError **)error
+- (NSArray<FBApplicationBundle *> *)installedApplicationsWithError:(NSError **)error
 {
   return nil;
 }

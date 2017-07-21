@@ -90,7 +90,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param application the Application to install.
  @return a Simulator if succesful, nil otherwise.
  */
-- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationDescriptor *)application;
+- (nullable FBSimulator *)assertObtainsBootedSimulatorWithInstalledApplication:(FBApplicationBundle *)application;
 
 /**
  Asserts that a booted Simulator with the provided configurations can be obtained.
@@ -108,7 +108,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param application the Application to install.
  @return a Simulator if successful, nil otherwise.
  */
-- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationDescriptor *)application;
+- (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator installs:(FBApplicationBundle *)application;
 
 /**
  An Assertion for Launching the Application with the given configuration.

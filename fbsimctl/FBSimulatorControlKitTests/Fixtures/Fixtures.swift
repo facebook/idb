@@ -16,8 +16,8 @@ import FBSimulatorControl
 }
 
 struct Fixtures {
-  static var application: FBApplicationDescriptor { get {
-    return FBApplicationDescriptor.xcodeSimulator()
+  static var application: FBApplicationBundle { get {
+    return FBApplicationBundle.xcodeSimulator()
   }}
 
   static var binary: FBBinaryDescriptor { get {

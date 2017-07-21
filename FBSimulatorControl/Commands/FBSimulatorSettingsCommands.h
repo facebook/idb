@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationDescriptor;
+@class FBApplicationBundle;
 @class FBLocalizationOverride;
 @class FBSimulator;
 @class FBSimulatorBootConfiguration;
@@ -46,7 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if the command succeeds, NO otherwise,
  */
-- (BOOL)authorizeLocationSettingForApplication:(FBApplicationDescriptor *)application error:(NSError **)error;
+- (BOOL)authorizeLocationSettingForApplication:(FBApplicationBundle *)application error:(NSError **)error;
 
 /**
  Overrides the default SpringBoard watchdog timer for the applications. You can use this to give your application more

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBApplicationDescriptor.h"
+#import "FBApplicationBundle.h"
 
 #import "FBBinaryDescriptor.h"
 #import "FBBinaryParser.h"
@@ -43,7 +43,7 @@ static BOOL isApplicationAtPath(NSString *path)
     && isDirectory;
 }
 
-@implementation FBApplicationDescriptor
+@implementation FBApplicationBundle
 
 #pragma mark Initializers
 
@@ -63,7 +63,7 @@ static BOOL isApplicationAtPath(NSString *path)
 + (nullable instancetype)applicationWithPath:(NSString *)path installType:(FBApplicationInstallType)installType error:(NSError **)error
 {
   NSError *innerError = nil;
-  FBApplicationDescriptor *application = [FBApplicationDescriptor createApplicationWithPath:path installType:installType error:&innerError];
+  FBApplicationBundle *application = [FBApplicationBundle createApplicationWithPath:path installType:installType error:&innerError];
   if (!application) {
     return [FBControlCoreError failWithError:innerError errorOut:error];
   }
@@ -77,12 +77,12 @@ static BOOL isApplicationAtPath(NSString *path)
 
 + (instancetype)applicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID installType:(FBApplicationInstallType)installType
 {
-  return [[FBApplicationDescriptor alloc] initWithName:name path:path bundleID:bundleID binary:nil installType:installType];
+  return [[FBApplicationBundle alloc] initWithName:name path:path bundleID:bundleID binary:nil installType:installType];
 }
 
 + (nullable instancetype)applicationWithPath:(NSString *)path installTypeString:(nullable NSString *)installTypeString error:(NSError **)error
 {
-  FBApplicationInstallType installType = [FBApplicationDescriptor installTypeFromString:installTypeString];
+  FBApplicationInstallType installType = [FBApplicationBundle installTypeFromString:installTypeString];
   return [self applicationWithPath:path installType:installType error:error];
 }
 
@@ -125,7 +125,7 @@ static BOOL isApplicationAtPath(NSString *path)
 - (id)jsonSerializableRepresentation
 {
   NSMutableDictionary<NSString *, id> *parent = [NSMutableDictionary dictionaryWithDictionary:[super jsonSerializableRepresentation]];
-  parent[@"install_type"] = [FBApplicationDescriptor stringFromApplicationInstallType:self.installType];
+  parent[@"install_type"] = [FBApplicationBundle stringFromApplicationInstallType:self.installType];
   return [parent copy];
 }
 
@@ -151,7 +151,7 @@ static BOOL isApplicationAtPath(NSString *path)
     return [[[FBControlCoreError describeFormat:@"Could not obtain binary for app at path %@", path] causedBy:innerError] fail:error];
   }
 
-  return [[FBApplicationDescriptor alloc] initWithName:appName path:path bundleID:bundleID binary:binary installType:installType];
+  return [[FBApplicationBundle alloc] initWithName:appName path:path bundleID:bundleID binary:binary installType:installType];
 }
 
 + (FBBinaryDescriptor *)binaryForApplicationPath:(NSString *)applicationPath error:(NSError **)error
@@ -250,7 +250,7 @@ static short const ZipFileMagicHeader = 0x4b50;
     return path;
   }
   // The other case is that this is an IPA, check it is before extacting.
-  if (![FBApplicationDescriptor isIPAAtPath:path error:error]) {
+  if (![FBApplicationBundle isIPAAtPath:path error:error]) {
     return [[FBControlCoreError
       describeFormat:@"File at path %@ is neither an IPA not a .app", path]
       fail:error];

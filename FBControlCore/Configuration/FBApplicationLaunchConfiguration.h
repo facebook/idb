@@ -13,7 +13,7 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBProcessLaunchConfiguration.h>
 
-@class FBApplicationDescriptor;
+@class FBApplicationBundle;
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
 
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param output the output configuration for the launched process.
  @returns a new Configuration Object with the arguments applied.
  */
-+ (instancetype)configurationWithApplication:(FBApplicationDescriptor *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
++ (instancetype)configurationWithApplication:(FBApplicationBundle *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
 
 /**
  Creates and returns a new Configuration with the provided parameters.
