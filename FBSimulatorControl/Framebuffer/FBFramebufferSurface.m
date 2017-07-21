@@ -255,16 +255,19 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   forwarder = [[FBFramebufferSurface_IOClient_Forwarder alloc] initWithConsumer:consumer consumerQueue:queue];
   [self.forwarders setObject:forwarder forKey:consumer];
 
+  // Extract the IOSurface if one does not exist.
+  IOSurfaceRef surface = extractSurfaceFromUnknown(self.surface.ioSurface);
+
   // Register the consumer.
   if ([self.ioClient respondsToSelector:@selector(attachConsumer:withUUID:toPort:errorQueue:errorHandler:)]) {
     [self.ioClient attachConsumer:forwarder withUUID:forwarder.consumerUUID toPort:self.port errorQueue:queue errorHandler:^(NSError *error){}];
   } else if ([self.ioClient respondsToSelector:@selector(attachConsumer:toPort:)]) {
     [self.ioClient attachConsumer:forwarder toPort:self.port];
-  } else {
-    NSAssert(NO, @"IOClient %@ does not respond to any known attachment selectors", self.ioClient);
+  } else if (!surface) {
+    NSAssert(NO, @"IOClient %@ does not respond to any known attachment selectors and none could be obtained from the client", self.ioClient);
   }
 
-  return extractSurfaceFromUnknown(self.surface.ioSurface);
+  return surface;
 }
 
 - (void)detachConsumer:(id<FBFramebufferSurfaceConsumer>)consumer
