@@ -16,10 +16,7 @@ static NSString *const KeySimulatorTestShim = @"ios_simulator_test_shim";
 static NSString *const KeyMacTestShim = @"mac_test_shim";
 static NSString *const KeyMacQueryShim = @"mac_query_shim";
 
-static NSString *const iOSXCToolShimFileName = @"otest-shim-ios.dylib";
 static NSString *const shimulatorFileName = @"libShimulator.dylib";
-static NSString *const macOSXCToolShimFileName = @"otest-shim-osx.dylib";
-static NSString *const macOSXCToolQueryShimFileName = @"otest-query-lib-osx.dylib";
 static NSString *const maculatorShimFileName = @"libMaculator.dylib";
 
 static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIMS";
@@ -31,9 +28,9 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
 + (NSDictionary<NSString *, NSArray<NSString *> *> *)canonicalShimNameToShimFilenames
 {
   return @{
-    KeySimulatorTestShim: @[shimulatorFileName, iOSXCToolShimFileName],
-    KeyMacTestShim: @[maculatorShimFileName, macOSXCToolShimFileName],
-    KeyMacQueryShim: @[maculatorShimFileName, macOSXCToolQueryShimFileName],
+    KeySimulatorTestShim: @[shimulatorFileName],
+    KeyMacTestShim: @[maculatorShimFileName],
+    KeyMacQueryShim: @[maculatorShimFileName],
   };
 }
 
