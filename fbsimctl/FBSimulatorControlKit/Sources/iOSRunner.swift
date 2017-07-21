@@ -52,7 +52,7 @@ struct iOSActionProvider {
     case .listApps:
       return iOSTargetRunner.simple(reporter, nil, ControlCoreSubject(target as! ControlCoreValue)) {
         let applications = try target.installedApplications()
-        let subject = ControlCoreSubject(applications.map(FBApplicationDescriptor.jsonSerializableRepresentation) as NSArray)
+        let subject = ControlCoreSubject(applications.map { $0.jsonSerializableRepresentation() } as NSArray)
         reporter.reporter.reportSimple(.listApps, .discrete, subject)
       }
     case .record(let record):

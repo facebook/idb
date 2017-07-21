@@ -55,7 +55,7 @@ struct SimpleSubject : EventReporterSubject {
 
   var shortDescription: String { get {
     switch self.eventType {
-    case .discrete:
+    case EventType.discrete:
       return self.subject.description
     default:
       return "\(self.eventName.rawValue) \(self.eventType.rawValue): \(self.subject.description)"
@@ -127,7 +127,7 @@ struct iOSTargetWithSubject : EventReporterSubject {
 
   var description: String { get {
     switch self.eventType {
-    case .discrete:
+    case EventType.discrete:
       return "\(self.targetSubject): \(self.eventName.rawValue): \(self.subject.description)"
     default:
       return ""
