@@ -142,6 +142,7 @@
   BOOL success = [simulator installApplicationWithPath:application.path error:&error];
   XCTAssertNil(error);
   XCTAssertTrue(success);
+  return simulator;
 }
 
 - (nullable FBSimulator *)assertSimulator:(FBSimulator *)simulator launches:(FBApplicationLaunchConfiguration *)configuration
