@@ -62,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return a FBApplicationBundle instance if one could be obtained, nil otherwise.
  */
-- (nullable FBApplicationBundle *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 
 /**
  Determines whether a provided Bundle ID represents a System Application

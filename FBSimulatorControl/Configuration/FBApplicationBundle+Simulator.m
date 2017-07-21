@@ -20,13 +20,13 @@
 
 + (nullable instancetype)systemApplicationNamed:(NSString *)appName simulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName simulator:simulator] installType:FBApplicationInstallTypeSystem error:error];
+  return [self applicationWithPath:[self pathForSystemApplicationNamed:appName simulator:simulator] error:error];
 }
 
 + (instancetype)xcodeSimulator;
 {
   NSError *error = nil;
-  FBApplicationBundle *application = [self applicationWithPath:self.pathForSimulatorApplication installType:FBApplicationInstallTypeMac error:&error];
+  FBApplicationBundle *application = [self applicationWithPath:self.pathForSimulatorApplication error:&error];
   NSAssert(application, @"Expected to be able to build an Application, got an error %@", application);
   return application;
 }

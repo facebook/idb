@@ -45,9 +45,6 @@
 - (NSString *)executableName;
 @end
 
-static NSString *const ApplicationNameKey = @"CFBundleName";
-static NSString *const ApplicationIdentifierKey = @"CFBundleIdentifier";
-
 @interface FBiOSDeviceOperator ()
 
 @property (nonatomic, strong, readonly) FBDevice *device;
@@ -360,21 +357,23 @@ static NSString *const ApplicationIdentifierKey = @"CFBundleIdentifier";
   return [self killProcessWithID:PID error:error];
 }
 
-- (nullable NSArray<FBApplicationBundle *> *)installedApplicationsWithError:(NSError **)error
+- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
 {
-  NSMutableArray<FBApplicationBundle *> *installedApplications = [[NSMutableArray alloc] init];
+  NSMutableArray<FBInstalledApplication *> *installedApplications = [[NSMutableArray alloc] init];
 
   for (NSDictionary *app in [self installedApplicationsData]) {
     if (app == nil) {
       continue;
     }
-    FBApplicationBundle *appData = [FBApplicationBundle
-      applicationWithName:app[ApplicationNameKey]
+    FBApplicationBundle *bundle = [FBApplicationBundle
+      applicationWithName:app[FBApplicationInstallInfoKeyBundleName]
       path:app[FBApplicationInstallInfoKeyPath]
-      bundleID:app[ApplicationIdentifierKey]
-      installType:[FBApplicationBundle installTypeFromString:app[FBApplicationInstallInfoKeyApplicationType]]];
+      bundleID:app[FBApplicationInstallInfoKeyBundleIdentifier]];
+    FBInstalledApplication *application = [FBInstalledApplication
+      installedApplicationWithBundle:bundle
+      installType:[FBInstalledApplication installTypeFromString:FBApplicationInstallInfoKeyApplicationType]];
 
-    [installedApplications addObject:appData];
+    [installedApplications addObject:application];
   }
 
   return [installedApplications copy];

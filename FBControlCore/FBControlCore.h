@@ -8,8 +8,8 @@
  */
 
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
-#import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationBundle.h>
+#import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBASLParser.h>
@@ -41,6 +41,7 @@
 #import <FBControlCore/FBFileManager.h>
 #import <FBControlCore/FBFileReader.h>
 #import <FBControlCore/FBFileWriter.h>
+#import <FBControlCore/FBInstalledApplication.h>
 #import <FBControlCore/FBiOSActionReader.h>
 #import <FBControlCore/FBiOSActionRouter.h>
 #import <FBControlCore/FBiOSTarget.h>
@@ -69,8 +70,8 @@
 #import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSocketReader.h>
 #import <FBControlCore/FBSocketWriter.h>
-#import <FBControlCore/FBSubstringUtilities.h>
 #import <FBControlCore/FBSubject.h>
+#import <FBControlCore/FBSubstringUtilities.h>
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTerminationHandle.h>

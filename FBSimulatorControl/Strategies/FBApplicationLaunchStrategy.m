@@ -73,7 +73,7 @@
 {
   FBSimulator *simulator = self.simulator;
   NSError *innerError = nil;
-  FBApplicationBundle *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
+  FBInstalledApplication *application = [simulator installedApplicationWithBundleID:appLaunch.bundleID error:&innerError];
   if (!application) {
     return [[[[FBSimulatorError
       describeFormat:@"App %@ can't be launched as it isn't installed", appLaunch.bundleID]

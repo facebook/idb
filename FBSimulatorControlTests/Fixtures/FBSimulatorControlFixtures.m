@@ -20,7 +20,7 @@
 + (FBApplicationBundle *)tableSearchApplicationWithError:(NSError **)error
 {
   NSString *path = [[NSBundle bundleForClass:self] pathForResource:@"TableSearch" ofType:@"app"];
-  return [FBApplicationBundle userApplicationWithPath:path error:error];
+  return [FBApplicationBundle applicationWithPath:path error:error];
 }
 
 + (NSString *)photo0Path

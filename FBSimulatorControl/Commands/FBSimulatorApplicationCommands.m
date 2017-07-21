@@ -123,14 +123,20 @@
   return YES;
 }
 
-- (nullable NSArray<FBApplicationBundle *> *)installedApplicationsWithError:(NSError **)error
+- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error
 {
-  NSMutableArray<FBApplicationBundle *> *applications = [NSMutableArray array];
+  NSMutableArray<FBInstalledApplication *> *applications = [NSMutableArray array];
   for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
-    FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:appInfo[FBApplicationInstallInfoKeyPath] installTypeString:appInfo[FBApplicationInstallInfoKeyApplicationType] error:nil];
-    if (!application) {
+    FBApplicationBundle *bundle = [FBApplicationBundle
+      applicationWithPath:appInfo[FBApplicationInstallInfoKeyPath]
+      error:nil];
+    if (!bundle) {
       continue;
     }
+    FBInstalledApplication *application = [FBInstalledApplication
+      installedApplicationWithBundle:bundle
+      installType:[FBInstalledApplication installTypeFromString:appInfo[FBApplicationInstallInfoKeyApplicationType]]];
+
     [applications addObject:application];
   }
   return [applications copy];
@@ -140,7 +146,7 @@
 {
   NSError *innerError = nil;
 
-  FBApplicationBundle *application = [FBApplicationBundle userApplicationWithPath:path error:&innerError];
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&innerError];
   if (!application) {
     return [[[FBSimulatorError
       describeFormat:@"Could not determine Application information for path %@", path]
@@ -199,7 +205,7 @@
 
 #pragma mark Querying Application State
 
-- (nullable FBApplicationBundle *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+- (nullable FBInstalledApplication *)installedApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   NSParameterAssert(bundleID);
 
@@ -208,9 +214,17 @@
   if (!appInfo) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
+  NSString *appName = appInfo[FBApplicationInstallInfoKeyBundleName];
   NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
   NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
-  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:appPath installTypeString:typeString error:&innerError];
+
+  FBApplicationBundle *bundle = [FBApplicationBundle
+    applicationWithName:appName
+    path:appPath
+    bundleID:bundleID];
+  FBInstalledApplication *application = [FBInstalledApplication
+    installedApplicationWithBundle:bundle
+    installType:[FBInstalledApplication installTypeFromString:typeString]];
   if (!application) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to get App Path of %@ at %@", bundleID, appPath]
@@ -263,7 +277,7 @@
   NSParameterAssert(bundleID);
 
   NSError *innerError = nil;
-  FBApplicationBundle *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
+  FBInstalledApplication *application = [self installedApplicationWithBundleID:bundleID error:&innerError];
   if (!application) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
@@ -287,7 +301,7 @@ static NSSet<NSString *> *requiredAppInfoKeys(void)
   static NSSet<NSString *> *requiredAppInfoKeys = nil;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    requiredAppInfoKeys = [NSSet setWithObjects:FBApplicationInstallInfoKeyPath, FBApplicationInstallInfoKeyApplicationType, nil];
+    requiredAppInfoKeys = [NSSet setWithObjects:FBApplicationInstallInfoKeyPath, FBApplicationInstallInfoKeyApplicationType, FBApplicationInstallInfoKeyBundleName, nil];
   });
   return requiredAppInfoKeys;
 }
@@ -297,6 +311,7 @@ static NSSet<NSString *> *requiredAppInfoKeys(void)
   NSError *innerError = nil;
   NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&innerError];
   NSSet<NSString *> *actualAppInfoKeys = [NSSet setWithArray:appInfo.allKeys];
+  [self.simulator.logger log:appInfo.description];
   if (!appInfo || ![requiredAppInfoKeys() isSubsetOfSet:actualAppInfoKeys]) {
     NSDictionary *installedApps = [self.simulator.device installedAppsWithError:nil];
     return [[[[[FBSimulatorError

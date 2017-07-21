@@ -12,11 +12,10 @@
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBDebugDescribeable.h>
 
-@class FBApplicationBundle;
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBBinaryDescriptor;
 @class FBProcessOutputConfiguration;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  An abstract value object for launching both agents and applications

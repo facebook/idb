@@ -214,7 +214,11 @@ class WebserverSimulatorTestCase(FBSimctlTestCase):
             self.assertEqual(response.get('status'), 'success')
         events = self.fbsimctl.run([simulator.get_udid(), 'list_apps'])
         event = events.matching('list_apps', 'discrete')[0]
-        bundle_ids = [entry.get('bundle_id') for entry in event.get('subject')]
+        bundle_ids = [
+            entry.get('bundle').get('bundle_id')
+            for entry
+            in event.get('subject')
+        ]
         return self.assertIn(Fixtures.APP_BUNDLE_ID, bundle_ids)
 
     def testDiagnosticSearch(self):
@@ -345,7 +349,11 @@ class SingleSimulatorTestCase(FBSimctlTestCase):
         self.assertEventSuccesful([udid, 'install', path], 'install')
         events = self.fbsimctl.run([udid, 'list_apps'])
         event = events.matching('list_apps', 'discrete')[0]
-        bundle_ids = [entry.get('bundle_id') for entry in event.get('subject')]
+        bundle_ids = [
+            entry.get('bundle').get('bundle_id')
+            for entry
+            in event.get('subject')
+        ]
         return self.assertIn(bundle_id, bundle_ids)
 
     def testInstallsUserApplication(self):

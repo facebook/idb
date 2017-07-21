@@ -11,8 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBApplicationBundle;
 @class FBApplicationLaunchConfiguration;
+@class FBInstalledApplication;
 
 /**
  Defines an interface for interacting with iOS Applications.
@@ -71,7 +71,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs
  @return the Applications if successful, nil otherwise.
  */
-- (nullable NSArray<FBApplicationBundle *> *)installedApplicationsWithError:(NSError **)error;
+- (nullable NSArray<FBInstalledApplication *> *)installedApplicationsWithError:(NSError **)error;
 
 @end
 

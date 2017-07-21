@@ -46,7 +46,7 @@
 
 - (BOOL)installApplicationWithPath:(NSString *)path error:(NSError **)error
 {
-  FBApplicationBundle *application = [FBApplicationBundle userApplicationWithPath:path error:error];
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:error];
   if (![self.simulator installApplicationWithPath:application.path error:error]) {
     return NO;
   }
@@ -182,14 +182,14 @@
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  FBApplicationBundle *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *application = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!application) {
     return nil;
   }
 
   FBProductBundle *productBundle =
   [[[FBProductBundleBuilder builder]
-    withBundlePath:application.path]
+    withBundlePath:application.bundle.path]
    buildWithError:error];
 
   return productBundle;
@@ -197,13 +197,13 @@
 
 - (BOOL)launchApplicationWithBundleID:(NSString *)bundleID arguments:(NSArray *)arguments environment:(NSDictionary *)environment waitForDebugger:(BOOL)waitForDebugger error:(NSError **)error
 {
-  FBApplicationBundle *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
+  FBInstalledApplication *app = [self.simulator installedApplicationWithBundleID:bundleID error:error];
   if (!app) {
     return NO;
   }
 
   FBApplicationLaunchConfiguration *configuration = [FBApplicationLaunchConfiguration
-    configurationWithApplication:app
+    configurationWithApplication:app.bundle
     arguments:arguments
     environment:environment
     waitForDebugger:waitForDebugger
