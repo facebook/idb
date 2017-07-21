@@ -97,11 +97,13 @@
       failBool:error];
   }
 
-  NSArray<NSString *> *testNames = [NSJSONSerialization JSONObjectWithData:consumer.data options:0 error:error];
-  if (testNames == nil) {
-    return NO;
-  }
+  NSString *output = [[NSString alloc] initWithData:consumer.data encoding:NSUTF8StringEncoding];
+  NSArray<NSString *> *testNames = [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
   for (NSString *testName in testNames) {
+    if (testName.length == 0) {
+      // Ignore empty lines
+      continue;
+    }
     NSRange slashRange = [testName rangeOfString:@"/"];
     if (slashRange.length == 0) {
       return [[FBXCTestError describeFormat:@"Received unexpected test name from xctool: %@", testName] failBool:error];

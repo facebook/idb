@@ -816,21 +816,18 @@ static void queryTestBundlePath(NSString *testBundlePath)
   id allTestsSuite = [testSuiteClass performSelector:@selector(allTests)];
   NSCAssert(allTestsSuite, @"Should have gotten a test suite from allTests");
 
-  NSArray *fullTestNames = testNamesFromSuite(allTestsSuite);
-  NSMutableArray *testNames = [NSMutableArray array];
-
-  for (NSString *fullTestName in fullTestNames) {
+  NSArray<NSString *> *fullTestNames = [testNamesFromSuite(allTestsSuite) sortedArrayUsingSelector:@selector(compare:)];
+  for (NSUInteger index = 0; index < fullTestNames.count; index++) {
+    NSString *fullTestName = fullTestNames[index];
     NSString *className = nil;
     NSString *methodName = nil;
     ParseClassAndMethodFromTestName(&className, &methodName, fullTestName);
-
-    [testNames addObject:[NSString stringWithFormat:@"%@/%@", className, methodName]];
+    NSString *line = index == 0
+      ? [NSString stringWithFormat:@"%@/%@", className, methodName]
+      : [NSString stringWithFormat:@"\n%@/%@", className, methodName];
+    NSData *output = [line dataUsingEncoding:NSUTF8StringEncoding];
+    [fileHandle writeData:output];
   }
-
-  [testNames sortUsingSelector:@selector(compare:)];
-
-  NSData *json = [NSJSONSerialization dataWithJSONObject:testNames options:0 error:nil];
-  [fileHandle writeData:json];
   exit(kSuccess);
 }
 
