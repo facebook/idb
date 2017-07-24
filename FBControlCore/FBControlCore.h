@@ -69,6 +69,7 @@
 #import <FBControlCore/FBScale.h>
 #import <FBControlCore/FBServiceManagement.h>
 #import <FBControlCore/FBSocketReader.h>
+#import <FBControlCore/FBSocketServer.h>
 #import <FBControlCore/FBSocketWriter.h>
 #import <FBControlCore/FBSubject.h>
 #import <FBControlCore/FBSubstringUtilities.h>
