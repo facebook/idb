@@ -80,4 +80,5 @@
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
+#import <FBControlCore/FBXcodeDirectory.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>

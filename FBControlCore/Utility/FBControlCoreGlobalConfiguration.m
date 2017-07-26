@@ -13,6 +13,7 @@
 
 #import "FBControlCoreLogger.h"
 #import "FBTaskBuilder.h"
+#import "FBXcodeDirectory.h"
 
 NSString *const FBControlCoreStderrLogging = @"FBCONTROLCORE_LOGGING";
 NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
@@ -205,13 +206,9 @@ static id<FBControlCoreLogger> logger;
 
 + (NSString *)findXcodeDeveloperDirectoryOrAssert
 {
-  FBTask *task = [[FBTaskBuilder
-    taskWithLaunchPath:@"/usr/bin/xcode-select" arguments:@[@"--print-path"]]
-    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout];
-  NSString *directory = [task stdOut];
-  NSAssert(directory, @"Xcode Path could not be determined from `xcode-select`: %@", task.error);
-  directory = [directory stringByResolvingSymlinksInPath];
-  NSAssert([NSFileManager.defaultManager fileExistsAtPath:directory], @"No Xcode Directory at: %@", directory);
+  NSError *error = nil;
+  NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine xcodePathWithError:&error];
+  NSAssert(directory, error.description);
   return directory;
 }
 
