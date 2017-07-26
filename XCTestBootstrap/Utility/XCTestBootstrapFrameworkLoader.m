@@ -9,35 +9,21 @@
 
 #import "XCTestBootstrapFrameworkLoader.h"
 
-static BOOL hasLoadedFrameworks = NO;
-
 @implementation XCTestBootstrapFrameworkLoader
 
-#pragma mark Private
+#pragma mark Initializers
 
-+ (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
++ (instancetype)allDependentFrameworks
 {
-  if (hasLoadedFrameworks) {
-    return YES;
-  }
-  if (![super loadPrivateFrameworks:logger error:error]) {
-    return NO;
-  }
-
-  NSArray<FBWeakFramework *> *frameworks = @[
-    FBWeakFramework.DTXConnectionServices,
-    FBWeakFramework.XCTest
-  ];
-  BOOL success = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
-  if (success) {
-    hasLoadedFrameworks = YES;
-  }
-  return success;
-}
-
-+ (NSString *)loadingFrameworkName
-{
-  return @"XCTestBootstrap";
+  static dispatch_once_t onceToken;
+  static XCTestBootstrapFrameworkLoader *loader;
+  dispatch_once(&onceToken, ^{
+    loader = [XCTestBootstrapFrameworkLoader loaderWithName:@"XCTestBootstrap" frameworks:@[
+      FBWeakFramework.DTXConnectionServices,
+      FBWeakFramework.XCTest,
+    ]];
+  });
+  return loader;
 }
 
 @end

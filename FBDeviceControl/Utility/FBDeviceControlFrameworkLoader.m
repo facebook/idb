@@ -23,81 +23,43 @@
 #import "FBDeviceControlError.h"
 #import "FBAMDevice.h"
 
-static BOOL hasLoadedEssentialFrameworks = NO;
-static BOOL hasLoadedXcodeFrameworks = NO;
+@interface FBDeviceControlFrameworkLoader_Essential : FBDeviceControlFrameworkLoader
+
+@end
+
+@interface FBDeviceControlFrameworkLoader_Xcode : FBDeviceControlFrameworkLoader
+
+@end
 
 @implementation FBDeviceControlFrameworkLoader
 
-#pragma mark - Public
+#pragma mark Initializers
 
-#pragma mark Essential Frameworks
-
-+ (void)initializeEssentialFrameworks
++ (instancetype)essentialFrameworks
 {
-  NSError *error = nil;
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  BOOL success = [self loadEssentialFrameworks:logger error:&error];
-  if (success) {
-    return;
-  }
-  [logger.error logFormat:@"Failed to load the Essential frameworks for FBDeviceControl with error %@", error];
-  abort();
+  static dispatch_once_t onceToken;
+  static FBDeviceControlFrameworkLoader *loader;
+  dispatch_once(&onceToken, ^{
+    loader = [FBDeviceControlFrameworkLoader_Essential loaderWithName:@"FBDeviceControl" frameworks:@[
+      FBWeakFramework.MobileDevice,
+    ]];
+  });
+  return loader;
 }
 
-+ (BOOL)loadEssentialFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  if (hasLoadedEssentialFrameworks) {
-    return YES;
-  }
+#pragma mark Initializers
 
-  NSArray<FBWeakFramework *> *frameworks = @[
-    FBWeakFramework.MobileDevice,
-  ];
-  BOOL result = [FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error];
-  if (result) {
-    [FBAMDevice loadFBAMDeviceSymbols];
-    hasLoadedEssentialFrameworks = YES;
-  }
-  if (result && FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
-    [FBAMDevice enableDebugLogging];
-  }
-  return result;
++ (instancetype)xcodeFrameworks
+{
+  static dispatch_once_t onceToken;
+  static FBDeviceControlFrameworkLoader *loader;
+  dispatch_once(&onceToken, ^{
+    loader = [FBDeviceControlFrameworkLoader_Xcode loaderWithName:@"FBSimulatorControl" frameworks:FBDeviceControlFrameworkLoader.privateFrameworks];
+  });
+  return loader;
 }
 
-#pragma mark Xcode Frameworks
-
-+ (void)initializeXCodeFrameworks
-{
-  NSError *error = nil;
-  id<FBControlCoreLogger> logger = FBControlCoreGlobalConfiguration.defaultLogger;
-  BOOL success = [self loadXcodeFrameworks:logger error:&error];
-  if (success) {
-    return;
-  }
-  [logger.error logFormat:@"Failed to load the Xcode frameworks for FBDeviceControl with error %@", error];
-  abort();
-}
-
-+ (BOOL)loadXcodeFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error
-{
-  if (hasLoadedXcodeFrameworks) {
-    return YES;
-  }
-
-  NSArray<FBWeakFramework *> *frameworks = FBDeviceControlFrameworkLoader.privateFrameworks;
-
-  if (![FBWeakFrameworkLoader loadPrivateFrameworks:frameworks logger:logger error:error]) {
-    return NO;
-  }
-  if (![self confirmExistenceOfClasses:logger error:error]) {
-    return NO;
-  }
-  if (![self initializePrincipalClasses:logger error:error]) {
-    return NO;
-  }
-  hasLoadedXcodeFrameworks = YES;
-  return YES;
-}
+#pragma mark Private
 
 + (BOOL)confirmExistenceOfClasses:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
@@ -137,7 +99,7 @@ static BOOL hasLoadedXcodeFrameworks = NO;
     return [[[FBDeviceControlError describe:@"Platform 'com.apple.platform.iphoneos' hasn't been initialized yet"] causedBy:innerError] failBool:error];
   }
   if (![objc_lookUpClass("DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.Mac"]) {
-     return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.Mac' hasn't been initialized yet"] causedBy:innerError] failBool:error];
+    return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.Mac' hasn't been initialized yet"] causedBy:innerError] failBool:error];
   }
   if (![objc_lookUpClass("DVTDeviceType") deviceTypeWithIdentifier:@"Xcode.DeviceType.iPhone"]) {
     return [[[FBDeviceControlError describe:@"Device Type 'Xcode.DeviceType.iPhone' hasn't been initialized yet"] causedBy:innerError] failBool:error];
@@ -169,16 +131,15 @@ static BOOL hasLoadedXcodeFrameworks = NO;
 
 + (NSArray<FBWeakFramework *> *)privateFrameworkForMacOSVersion:(NSOperatingSystemVersion)macOSVersion
                                                    xcodeVersion:(NSDecimalNumber *)xcodeVersion {
-  NSArray<FBWeakFramework *> *frameworks =
-          @[
-                  FBWeakFramework.DTXConnectionServices,
-                  FBWeakFramework.DVTFoundation,
-                  FBWeakFramework.IDEFoundation,
-                  FBWeakFramework.IDEiOSSupportCore,
-                  FBWeakFramework.IBAutolayoutFoundation,
-                  FBWeakFramework.IDEKit,
-                  FBWeakFramework.IDESourceEditor
-          ];
+  NSArray<FBWeakFramework *> *frameworks = @[
+    FBWeakFramework.DTXConnectionServices,
+    FBWeakFramework.DVTFoundation,
+    FBWeakFramework.IDEFoundation,
+    FBWeakFramework.IDEiOSSupportCore,
+    FBWeakFramework.IBAutolayoutFoundation,
+    FBWeakFramework.IDEKit,
+    FBWeakFramework.IDESourceEditor
+  ];
   if ([FBDeviceControlFrameworkLoader macOSVersionIsAtLeastSierra:macOSVersion] &&
       [FBDeviceControlFrameworkLoader xcodeVersionIsAtLeast81:xcodeVersion]) {
     /*
@@ -207,7 +168,51 @@ static BOOL hasLoadedXcodeFrameworks = NO;
   NSOperatingSystemVersion macOSVersion = NSProcessInfo.processInfo.operatingSystemVersion;
 
   return [FBDeviceControlFrameworkLoader privateFrameworkForMacOSVersion:macOSVersion
-                                                                  xcodeVersion:xcodeVersion];
+                                                            xcodeVersion:xcodeVersion];
+}
+
+
+@end
+
+@implementation FBDeviceControlFrameworkLoader_Essential
+
+- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  if (self.hasLoadedFrameworks) {
+    return YES;
+  }
+  BOOL result = [super loadPrivateFrameworks:logger error:error];
+  if (result) {
+    [FBAMDevice loadFBAMDeviceSymbols];
+  }
+  if (result && FBControlCoreGlobalConfiguration.debugLoggingEnabled) {
+    [FBAMDevice enableDebugLogging];
+  }
+  return result;
+}
+
+@end
+
+@implementation FBDeviceControlFrameworkLoader_Xcode
+
+#pragma mark Xcode Frameworks
+
+- (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error
+{
+  if (self.hasLoadedFrameworks) {
+    return YES;
+  }
+  BOOL result = [super loadPrivateFrameworks:logger error:error];
+  if (!result) {
+    return NO;
+  }
+  if (![FBDeviceControlFrameworkLoader confirmExistenceOfClasses:logger error:error]) {
+    return NO;
+  }
+  if (![FBDeviceControlFrameworkLoader initializePrincipalClasses:logger error:error]) {
+    return NO;
+  }
+  return YES;
 }
 
 @end

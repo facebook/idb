@@ -21,7 +21,7 @@
 
 + (void)initialize
 {
-  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader.allDependentFrameworks loadPrivateFrameworksOrAbort];
 }
 
 #pragma mark Initializers

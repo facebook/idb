@@ -9,55 +9,28 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FBControlCoreLogger;
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@protocol FBControlCoreLogger;
 
 /**
  Loads Frameworks that FBDeviceControl depends on.
  */
-@interface FBDeviceControlFrameworkLoader : NSObject
+@interface FBDeviceControlFrameworkLoader : FBControlCoreFrameworkLoader
 
-#pragma mark Essential Frameworks
-
-/**
- Loads the Private Frameworks that are essential for the basic operation of FBDeviceControl.
- Aborts if the loading fails.
- */
-+ (void)initializeEssentialFrameworks;
+#pragma mark Initializers
 
 /**
- Loads the Relevant Private Frameworks for ensuring the essential operation of FBDeviceControl.
-
- @param logger the logger to log to for Framework Loading activity.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
+ The Essential FBDeviceControl Frameworks.
  */
-+ (BOOL)loadEssentialFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error;
-
-#pragma mark Xcode Frameworks
+@property (nonatomic, strong, class, readonly) FBDeviceControlFrameworkLoader *essentialFrameworks;
 
 /**
- Loads the Private Frameworks that are necessary for the interaction of XCTest Targets with FBDeviceControl.
- Aborts if the loading fails.
+ The Essential FBDeviceControl Frameworks.
  */
-+ (void)initializeXCodeFrameworks;
-
-/**
- Loads the Relevant Private Frameworks that are necessary for the interaction of XCTest Targets with FBDeviceControl.
-
- @param logger the logger to log to for Framework Loading activity.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise.
- */
-+ (BOOL)loadXcodeFrameworks:(id<FBControlCoreLogger>)logger error:(NSError **)error;
-
-#pragma mark Verbose Logging
-
-/**
- Raises the Log Level to debug for DVT relevant Private Frameworks.
- */
-+ (void)enableDVTDebugLogging;
+@property (nonatomic, strong, class, readonly) FBDeviceControlFrameworkLoader *xcodeFrameworks;
 
 @end
 

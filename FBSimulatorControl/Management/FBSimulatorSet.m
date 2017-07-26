@@ -38,7 +38,7 @@
 
 + (void)initialize
 {
-  [FBSimulatorControlFrameworkLoader loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader.allDependentFrameworks loadPrivateFrameworksOrAbort];
 }
 
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error

@@ -42,7 +42,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
 
 + (void)initialize
 {
-  [FBDeviceControlFrameworkLoader initializeEssentialFrameworks];
+  [FBDeviceControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
 - (void)primeDeviceManager
@@ -52,7 +52,7 @@ static const NSTimeInterval FBDeviceSetDeviceManagerTickleTime = 2;
     // It seems that searching for a device that does not exist will cause all available devices/simulators etc. to be cached.
     // There's probably a better way of fetching all the available devices, but this appears to work well enough.
     // This means that all the cached available devices can then be found.
-    [FBDeviceControlFrameworkLoader initializeXCodeFrameworks];
+    [FBDeviceControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
 
     DVTDeviceManager *deviceManager = [objc_lookUpClass("DVTDeviceManager") defaultDeviceManager];
     [self.logger.debug logFormat:@"Quering device manager for %f seconds to cache devices", FBDeviceSetDeviceManagerTickleTime];

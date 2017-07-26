@@ -18,6 +18,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorControlFrameworkLoader : FBControlCoreFrameworkLoader
 
+/**
+ All of the Frameworks for FBSimulatorControl.
+ */
+@property (nonatomic, strong, class, readonly) FBSimulatorControlFrameworkLoader *allDependentFrameworks;
+
 @end
 
 NS_ASSUME_NONNULL_END

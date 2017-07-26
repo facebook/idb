@@ -61,7 +61,7 @@
   NSError *innerError = nil;
   FBSimulator *simulator = self.simulator;
 
-  if (![XCTestBootstrapFrameworkLoader loadPrivateFrameworks:simulator.logger error:&innerError]) {
+  if (![XCTestBootstrapFrameworkLoader.allDependentFrameworks loadPrivateFrameworks:simulator.logger error:&innerError]) {
     return [FBSimulatorError failWithError:innerError errorOut:error];
   }
 
