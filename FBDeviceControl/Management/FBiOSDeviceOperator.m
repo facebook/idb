@@ -366,8 +366,8 @@
       continue;
     }
     FBApplicationBundle *bundle = [FBApplicationBundle
-      applicationWithName:app[FBApplicationInstallInfoKeyBundleName]
-      path:app[FBApplicationInstallInfoKeyPath]
+      applicationWithName:[app valueForKey:FBApplicationInstallInfoKeyBundleName] ?: @""
+      path:[app valueForKey:FBApplicationInstallInfoKeyPath] ?: @""
       bundleID:app[FBApplicationInstallInfoKeyBundleIdentifier]];
     FBInstalledApplication *application = [FBInstalledApplication
       installedApplicationWithBundle:bundle
