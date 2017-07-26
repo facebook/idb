@@ -72,7 +72,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--locale", "fr_FR"],
-      FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR")))
+      FBSimulatorBootConfiguration.default.withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR")))
     )
   }
 
@@ -80,7 +80,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--scale=50"],
-      FBSimulatorBootConfiguration.default().withScale(.scale50)
+      FBSimulatorBootConfiguration.default.withScale(.scale50)
     )
   }
 
@@ -89,8 +89,8 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       FBSimulatorBootConfigurationParser.parser,
       ["--connect-bridge"],
       FBSimulatorBootConfiguration
-        .default()
-        .withOptions([.connectBridge, .awaitServices])
+        .default
+        .withOptions([.connectBridge, .awaitServices, .useNSWorkspace])
     )
   }
 
@@ -99,7 +99,7 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       FBSimulatorBootConfigurationParser.parser,
       ["--use-nsworkspace"],
       FBSimulatorBootConfiguration
-        .default()
+        .default
         .withOptions([.useNSWorkspace, .awaitServices])
     )
   }
@@ -108,8 +108,8 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--direct-launch"],
-      FBSimulatorBootConfiguration.default()
-        .withOptions([.enableDirectLaunch, .awaitServices])
+      FBSimulatorBootConfiguration.default
+        .withOptions([.enableDirectLaunch, .awaitServices, .useNSWorkspace])
         .withFramebuffer(FBFramebufferConfiguration.default())
     )
   }
@@ -118,10 +118,10 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
     self.assertParses(
       FBSimulatorBootConfigurationParser.parser,
       ["--locale", "en_GB", "--scale=75", "--direct-launch", "--connect-bridge"],
-      FBSimulatorBootConfiguration.default()
+      FBSimulatorBootConfiguration.default
         .withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "en_GB")))
         .withScale(.scale75)
-        .withOptions([.enableDirectLaunch, .connectBridge, .awaitServices])
+        .withOptions([.enableDirectLaunch, .connectBridge, .awaitServices, .useNSWorkspace])
         .withFramebuffer(FBFramebufferConfiguration.default())
     )
   }
@@ -189,11 +189,11 @@ let validActions: [([String], Action)] = [
   (["accessibility_fetch"], .core(FBAccessibilityFetch())),
   (["approve", "com.foo.bar", "com.bing.bong"], .approve(["com.foo.bar", "com.bing.bong"])),
   (["approve", Fixtures.application.path], .approve([Fixtures.application.bundleID])),
-  (["boot", "--locale", "en_US", "--scale=75"], .boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_US") as Locale)).withScale(.scale75))),
-  (["boot", "--locale", "fr_FR"], .boot(FBSimulatorBootConfiguration.default().withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR"))))),
-  (["boot", "--scale=50"], .boot(FBSimulatorBootConfiguration.default().withScale(.scale50))),
-  (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], .boot(FBSimulatorBootConfiguration.default().withScale(.scale25).withOptions([.connectBridge, .useNSWorkspace, .awaitServices]))),
-  (["boot"], .boot(FBSimulatorBootConfiguration.default())),
+  (["boot", "--locale", "en_US", "--scale=75"], .boot(FBSimulatorBootConfiguration.default.withLocalizationOverride(FBLocalizationOverride.withLocale(NSLocale(localeIdentifier: "en_US") as Locale)).withScale(.scale75))),
+  (["boot", "--locale", "fr_FR"], .boot(FBSimulatorBootConfiguration.default.withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "fr_FR"))))),
+  (["boot", "--scale=50"], .boot(FBSimulatorBootConfiguration.default.withScale(.scale50))),
+  (["boot", "--scale=25", "--connect-bridge", "--use-nsworkspace"], .boot(FBSimulatorBootConfiguration.default.withScale(.scale25).withOptions([.connectBridge, .useNSWorkspace, .awaitServices]))),
+  (["boot"], .boot(FBSimulatorBootConfiguration.default)),
   (["clear_keychain", "com.foo.bar"], .clearKeychain("com.foo.bar")),
   (["clear_keychain"], .clearKeychain(nil)),
   (["config"], .config),
@@ -314,7 +314,7 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["boot"], ["listen", "--http", "1000"], ["shutdown"],
     ]
-    let actions: [Action] = [.list, .boot(FBSimulatorBootConfiguration.default()), .listen(ListenInterface(stdin: false, http: 1000, hid: nil, handle: nil)), .shutdown]
+    let actions: [Action] = [.list, .boot(FBSimulatorBootConfiguration.default), .listen(ListenInterface(stdin: false, http: 1000, hid: nil, handle: nil)), .shutdown]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
   }
 
@@ -322,8 +322,8 @@ class CommandParserTests : XCTestCase {
     let compoundComponents = [
       ["list"], ["create", "iPhone 6"], ["boot", "--direct-launch"], ["listen", "--http", "8090"], ["shutdown"], ["diagnose"],
     ]
-    let launchConfiguration = FBSimulatorBootConfiguration.default()
-      .withOptions([.enableDirectLaunch, .awaitServices])
+    let launchConfiguration = FBSimulatorBootConfiguration.default
+      .withOptions([.enableDirectLaunch, .awaitServices, .useNSWorkspace])
       .withFramebuffer(FBFramebufferConfiguration.default())
     let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [.list, .create(CreationSpecification.iPhone6Configuration), .boot(launchConfiguration), .listen(ListenInterface(stdin: false, http: 8090, hid: nil, handle: nil)), .shutdown, diagnoseAction]

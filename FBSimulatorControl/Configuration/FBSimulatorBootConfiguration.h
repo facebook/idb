@@ -61,7 +61,7 @@ extern FBiOSTargetActionType const FBiOSTargetActionTypeBoot;
 /**
  The Default Configuration.
  */
-+ (instancetype)defaultConfiguration;
+@property (nonatomic, strong, class, readonly) FBSimulatorBootConfiguration *defaultConfiguration;
 
 #pragma mark Launch Options
 
