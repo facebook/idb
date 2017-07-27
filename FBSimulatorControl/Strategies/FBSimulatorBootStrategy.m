@@ -46,12 +46,12 @@
 /**
  YES if the Framebuffer should be created, NO otherwise.
  */
-- (BOOL)shouldCreateFramebuffer;
+- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration;
 
 /**
  The Options to provide to the CoreSimulator API.
  */
-- (NSDictionary<NSString *, id> *)bootOptions;
+- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration;
 
 @end
 
@@ -130,26 +130,20 @@
 @end
 
 @interface FBCoreSimulatorBootOptions_Xcode8 : NSObject <FBCoreSimulatorBootOptions>
-
-@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
-
 @end
 
 @interface FBCoreSimulatorBootOptions_Xcode9 : NSObject <FBCoreSimulatorBootOptions>
-
-@property (nonatomic, strong, readonly) FBSimulatorBootConfiguration *configuration;
-
 @end
 
 @implementation FBCoreSimulatorBootOptions_Xcode7
 
-- (BOOL)shouldCreateFramebuffer
+- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration
 {
   // A Framebuffer is required in Xcode 7 currently, otherwise any interface that uses the Mach Interface for 'Host Support' will fail/hang.
   return YES;
 }
 
-- (NSDictionary<NSString *, id> *)bootOptions
+- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
 {
   // The 'register-head-services' option will attach the existing 'frameBufferService' when the Simulator is booted.
   // Simulator.app behaves similarly, except we can't peek at the Framebuffer as it is in a protected process since Xcode 7.
@@ -164,25 +158,13 @@
 
 @implementation FBCoreSimulatorBootOptions_Xcode8
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _configuration = configuration;
-
-  return self;
-}
-
-- (BOOL)shouldCreateFramebuffer
+- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration
 {
   // Framebuffer connection is optional on Xcode 8 so we should use the appropriate configuration.
-  return self.configuration.shouldConnectFramebuffer;
+  return configuration.shouldConnectFramebuffer;
 }
 
-- (NSDictionary<NSString *, id> *)bootOptions
+- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
 {
   // Since Xcode 8 Beta 5, 'simctl' uses the 'SIMULATOR_IS_HEADLESS' argument.
   return @{
@@ -197,30 +179,18 @@
 
 @implementation FBCoreSimulatorBootOptions_Xcode9
 
-- (instancetype)initWithConfiguration:(FBSimulatorBootConfiguration *)configuration
-{
-  self = [super init];
-  if (!self) {
-    return nil;
-  }
-
-  _configuration = configuration;
-
-  return self;
-}
-
-- (BOOL)shouldCreateFramebuffer
+- (BOOL)shouldCreateFramebuffer:(FBSimulatorBootConfiguration *)configuration
 {
   // Framebuffer connection is optional on Xcode 9 so we should use the appropriate configuration.
-  return self.configuration.shouldConnectFramebuffer;
+  return configuration.shouldConnectFramebuffer;
 }
 
-- (NSDictionary<NSString *, id> *)bootOptions
+- (NSDictionary<NSString *, id> *)bootOptions:(FBSimulatorBootConfiguration *)configuration
 {
   // If we are launching with the Simulator App, we want to persist the Simulator.
   // This effectively "Passes Ownership" to the Simulator App.
   return @{
-    @"persist": @(!self.configuration.shouldUseDirectLaunch),
+    @"persist": @(!configuration.shouldUseDirectLaunch),
     @"env" : @{}
   };
 }
@@ -253,7 +223,7 @@
   // Create the Framebuffer (if required to do so).
   NSError *innerError = nil;
   FBFramebuffer *framebuffer = nil;
-  if (self.options.shouldCreateFramebuffer) {
+  if ([self.options shouldCreateFramebuffer:self.configuration]) {
     FBFramebufferConfiguration *configuration = [self.configuration.framebuffer inSimulator:self.simulator];
     if (!configuration) {
       configuration = FBFramebufferConfiguration.defaultConfiguration;
@@ -276,7 +246,7 @@
 
   // Booting is simpler than the Simulator.app launch process since the caller calls CoreSimulator Framework directly.
   // Just pass in the options to ensure that the framebuffer service is registered when the Simulator is booted.
-  NSDictionary<NSString *, id> *options = self.options.bootOptions;
+  NSDictionary<NSString *, id> *options = [self.options bootOptions:self.configuration];
   if (![self.simulator.device bootWithOptions:options error:&innerError]) {
     return [[[[FBSimulatorError
       describeFormat:@"Failed to boot Simulator with options %@", options]
@@ -518,7 +488,7 @@
 
 + (instancetype)strategyWithConfiguration:(FBSimulatorBootConfiguration *)configuration simulator:(FBSimulator *)simulator
 {
-  id<FBCoreSimulatorBootOptions> coreSimulatorOptions = [self coreSimulatorBootOptionsWithConfiguration:configuration];
+  id<FBCoreSimulatorBootOptions> coreSimulatorOptions = [self coreSimulatorBootOptions];
   FBCoreSimulatorBootStrategy *coreSimulatorStrategy = [[FBCoreSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator options:coreSimulatorOptions];
   id<FBSimulatorApplicationProcessLauncher> launcher = [self applicationProcessLauncherWithConfiguration:configuration];
   id<FBSimulatorApplicationLaunchOptions> applicationOptions = [self applicationLaunchOptions];
@@ -526,12 +496,12 @@
   return [[FBSimulatorBootStrategy alloc] initWithConfiguration:configuration simulator:simulator applicationStrategy:applicationStrategy coreSimulatorStrategy:coreSimulatorStrategy];
 }
 
-+ (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptionsWithConfiguration:(FBSimulatorBootConfiguration *)configuration
++ (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptions
 {
   if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
-    return [[FBCoreSimulatorBootOptions_Xcode9 alloc] initWithConfiguration:configuration];
+    return [FBCoreSimulatorBootOptions_Xcode9 new];
   } else if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-    return [[FBCoreSimulatorBootOptions_Xcode8 alloc] initWithConfiguration:configuration];
+    return [FBCoreSimulatorBootOptions_Xcode8 new];
   } else {
     return [FBCoreSimulatorBootOptions_Xcode7 new];
   }
