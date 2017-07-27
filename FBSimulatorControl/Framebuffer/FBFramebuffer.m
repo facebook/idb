@@ -41,6 +41,7 @@
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorError.h"
 #import "FBVideoEncoderConfiguration.h"
+#import "FBSimulatorControlFrameworkLoader.h"
 
 @interface FBFramebuffer ()
 
@@ -67,6 +68,11 @@
 @synthesize video = _video;
 
 #pragma mark Initializers
+
++ (void)initialize
+{
+  [FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
+}
 
 + (dispatch_queue_t)createClientQueue
 {

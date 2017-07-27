@@ -42,7 +42,7 @@ static NSString *const RecordVideoEnvKey = @"FBSIMULATORCONTROL_RECORD_VIDEO";
   }
 
   [FBControlCoreGlobalConfiguration.defaultLogger logFormat:@"Current Configuration => %@", FBControlCoreGlobalConfiguration.description];
-  [FBSimulatorControlFrameworkLoader.allDependentFrameworks loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
 #pragma mark Property Overrides

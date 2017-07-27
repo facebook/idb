@@ -14,7 +14,7 @@ import FBDeviceControl
 extension Configuration {
   func buildSimulatorControl() throws -> FBSimulatorControl {
     let logger = FBControlCoreGlobalConfiguration.defaultLogger
-    try FBSimulatorControlFrameworkLoader.allDependentFrameworks.loadPrivateFrameworks(logger)
+    try FBSimulatorControlFrameworkLoader.essentialFrameworks.loadPrivateFrameworks(logger)
     let controlConfiguration = FBSimulatorControlConfiguration(deviceSetPath: self.deviceSetPath, options: self.managementOptions)
     return try FBSimulatorControl.withConfiguration(controlConfiguration, logger: logger)
   }

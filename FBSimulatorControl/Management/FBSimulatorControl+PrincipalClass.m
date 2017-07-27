@@ -32,7 +32,7 @@
 
 + (void)initialize
 {
-  [FBSimulatorControlFrameworkLoader.allDependentFrameworks loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader.essentialFrameworks loadPrivateFrameworksOrAbort];
 }
 
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error

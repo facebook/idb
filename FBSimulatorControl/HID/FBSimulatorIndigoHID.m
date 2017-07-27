@@ -201,7 +201,7 @@ IndigoMessage *(*IndigoHIDMessageForMouseNSEvent)(CGPoint *point0, CGPoint *poin
 
 + (void)loadAllSymbols
 {
-  [FBSimulatorControlFrameworkLoader.allDependentFrameworks loadPrivateFrameworksOrAbort];
+  [FBSimulatorControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
   NSBundle *frameworkBundle = [NSBundle bundleWithIdentifier:@"com.apple.SimulatorKit"];
   NSAssert(frameworkBundle, @"Framework com.apple.SimulatorKit should be loaded");
   NSString *imagePath = [frameworkBundle pathForResource:@"SimulatorKit" ofType:@""];
