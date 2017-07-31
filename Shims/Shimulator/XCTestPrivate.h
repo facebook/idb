@@ -97,6 +97,7 @@ struct __va_list_tag {
 - (void)recordFailureInTest:(id)arg1 withDescription:(id)arg2 inFile:(id)arg3 atLine:(NSUInteger)arg4 expected:(BOOL)arg5;
 - (NSUInteger)unexpectedExceptionCount;
 - (NSUInteger)failureCount;
+- (NSString *)nameForLegacyLogging;
 - (void)stop;
 - (void)start;
 

@@ -164,24 +164,23 @@ static void ProcessTestSuite(id testSuite)
   NSMutableSet *classesToSwizzle = [NSMutableSet set];
 
   for (id test in TestsFromSuite(testSuite)) {
-    NSString *description = [test performSelector:@selector(description)];
-    [seenCounts addObject:description];
+    NSString *testName = [test respondsToSelector:@selector(nameForLegacyLogging)]
+      ? [test nameForLegacyLogging]
+      : [test description];
 
-    NSUInteger seenCount = [seenCounts countForObject:description];
-
-    NSString *newDescription = nil;
+    [seenCounts addObject:testName];
+    NSUInteger seenCount = [seenCounts countForObject:testName];
 
     if (seenCount > 1) {
       // It's a duplicate - we need to override the name.
-      newDescription = TestNameWithCount(description, seenCount);
-    } else {
-      newDescription = description;
+      testName = TestNameWithCount(testName, seenCount);
     }
-
-    objc_setAssociatedObject(test,
-                             &TestDescriptionKey,
-                             newDescription,
-                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(
+      test,
+      &TestDescriptionKey,
+      testName,
+      OBJC_ASSOCIATION_RETAIN_NONATOMIC
+    );
     [classesToSwizzle addObject:[test class]];
   }
 
