@@ -34,6 +34,7 @@
 #import "FBSimulatorHID.h"
 #import "FBSimulatorSet.h"
 #import "FBSimulatorBootConfiguration.h"
+#import "FBSimulatorBootVerificationStrategy.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
 
@@ -638,72 +639,10 @@
   }
 
   // Now wait for the services.
-  NSArray<NSString *> *requiredServiceNames = self.requiredLaunchdServicesToVerifyBooted;
-  __block NSDictionary<id, NSString *> *processIdentifiers = @{};
-  BOOL didStartAllRequiredServices = [NSRunLoop.mainRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.slowTimeout untilTrue:^ BOOL {
-    NSDictionary<NSString *, id> *services = [self.simulator listServicesWithError:nil];
-    if (!services) {
-      return NO;
-    }
-    processIdentifiers = [NSDictionary dictionaryWithObjects:requiredServiceNames forKeys:[services objectsForKeys:requiredServiceNames notFoundMarker:NSNull.null]];
-    if (processIdentifiers[NSNull.null]) {
-      return NO;
-    }
-    return YES;
-  }];
-  if (!didStartAllRequiredServices) {
-    return [[[FBSimulatorError
-      describeFormat:@"Timed out waiting for service %@ to start", processIdentifiers[NSNull.null]]
-      inSimulator:self.simulator]
-      fail:error];
+  if (![[FBSimulatorBootVerificationStrategy strategyWithSimulator:self.simulator] verifySimulatorIsBooted:error]) {
+    return nil;
   }
-
   return launchdProcess;
-}
-
-/*
- A Set of launchd_sim service names that are used to determine whether relevant System daemons are available after booting.
-
- There is a period of time between when CoreSimulator says that the Simulator is 'Booted'
- and when it is stable enough state to launch Applications/Daemons, these Service Names
- represent the Services that are known to signify readyness.
-
- @return the required Service Names.
- */
-- (NSArray<NSString *> *)requiredLaunchdServicesToVerifyBooted
-{
-  FBControlCoreProductFamily family = self.simulator.productFamily;
-  if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
-    if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
-      return @[
-        @"com.apple.backboardd",
-        @"com.apple.mobile.installd",
-        @"com.apple.CoreSimulator.bridge",
-        @"com.apple.SpringBoard",
-      ];
-    }
-    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater ) {
-      return @[
-        @"com.apple.backboardd",
-        @"com.apple.mobile.installd",
-        @"com.apple.SimulatorBridge",
-        @"com.apple.SpringBoard",
-      ];
-    }
-  }
-  if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {
-    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
-      return @[
-        @"com.apple.mobileassetd",
-        @"com.apple.nsurlsessiond",
-      ];
-    }
-    return @[
-      @"com.apple.mobileassetd",
-      @"com.apple.networkd",
-    ];
-  }
-  return @[];
 }
 
 @end
