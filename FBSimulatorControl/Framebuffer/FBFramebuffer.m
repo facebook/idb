@@ -14,7 +14,7 @@
 
 #import <objc/runtime.h>
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 

@@ -10,11 +10,11 @@
 #import "FBSimulator.h"
 #import "FBSimulator+Private.h"
 
-#import <Cocoa/Cocoa.h>
-
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceSet.h>
 #import <CoreSimulator/SimDeviceType.h>
+
+#import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBControlCore.h>
 

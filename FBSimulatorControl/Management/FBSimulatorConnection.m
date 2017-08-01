@@ -9,7 +9,7 @@
 
 #import "FBSimulatorConnection.h"
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 #import <CoreSimulator/SimDevice.h>
 #import <CoreSimulator/SimDeviceType.h>

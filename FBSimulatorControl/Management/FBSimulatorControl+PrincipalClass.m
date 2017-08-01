@@ -11,7 +11,7 @@
 
 #import <objc/runtime.h>
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 #import <CoreSimulator/SimServiceContext.h>
 #import <CoreSimulator/SimDeviceSet.h>

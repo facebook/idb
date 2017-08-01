@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
 @class NSArray, NSBundle, NSDictionary, NSString;
@@ -68,4 +69,3 @@
 - (id)initWithPath:(id)arg1;
 
 @end
-

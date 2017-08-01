@@ -183,7 +183,7 @@
     datePredicate = [NSPredicate predicateWithBlock:^ BOOL (NSString *fileName, NSDictionary *_) {
       NSString *path = [basePath stringByAppendingPathComponent:fileName];
       NSDictionary *attributes = [fileManager attributesOfItemAtPath:path error:nil];
-      return [attributes.fileModificationDate isGreaterThanOrEqualTo:date];
+      return [attributes.fileModificationDate compare:date] != NSOrderedAscending;
     }];
   }
   return [NSCompoundPredicate andPredicateWithSubpredicates:@[

@@ -9,7 +9,7 @@
 
 #import "FBWeakFramework.h"
 
-#import <Foundation/FoundationErrors.h>
+#import <Foundation/Foundation.h>
 
 #import "FBControlCoreError.h"
 #import "FBControlCoreGlobalConfiguration.h"

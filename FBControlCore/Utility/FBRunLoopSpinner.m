@@ -9,6 +9,9 @@
 
 #import "FBRunLoopSpinner.h"
 
+#import <libkern/OSAtomic.h>
+#import <objc/runtime.h>
+
 #import "FBControlCoreError.h"
 
 @interface FBRunLoopSpinner ()
