@@ -371,7 +371,8 @@
       bundleID:app[FBApplicationInstallInfoKeyBundleIdentifier]];
     FBInstalledApplication *application = [FBInstalledApplication
       installedApplicationWithBundle:bundle
-      installType:[FBInstalledApplication installTypeFromString:FBApplicationInstallInfoKeyApplicationType]];
+      installType:[FBInstalledApplication installTypeFromString:
+                   [app valueForKey:FBApplicationInstallInfoKeyApplicationType] ?: @""]];
 
     [installedApplications addObject:application];
   }
