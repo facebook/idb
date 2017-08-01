@@ -33,10 +33,45 @@
 #import "FBSimulatorEventSink.h"
 #import "FBSimulatorHID.h"
 #import "FBSimulatorSet.h"
-#import "FBSimulatorBootConfiguration+Helpers.h"
 #import "FBSimulatorBootConfiguration.h"
 #import "FBSimulatorLaunchCtlCommands.h"
 #import "FBSimulatorProcessFetcher.h"
+
+@interface FBSimulatorBootConfiguration (FBSimulatorBootStrategy)
+
+@end
+
+@implementation FBSimulatorBootConfiguration (FBSimulatorBootStrategy)
+
+- (BOOL)shouldUseDirectLaunch
+{
+  return (self.options & FBSimulatorBootOptionsEnableDirectLaunch) == FBSimulatorBootOptionsEnableDirectLaunch;
+}
+
+- (BOOL)shouldConnectFramebuffer
+{
+  return self.framebuffer != nil;
+}
+
+- (BOOL)shouldLaunchViaWorkspace
+{
+  return (self.options & FBSimulatorBootOptionsUseNSWorkspace) == FBSimulatorBootOptionsUseNSWorkspace;
+}
+
+- (BOOL)shouldConnectBridge
+{
+  // If the option is flagged it should be used.
+  if ((self.options & FBSimulatorBootOptionsConnectBridge) == FBSimulatorBootOptionsConnectBridge) {
+    return YES;
+  }
+  // In some versions of Xcode 8, it was possible that a direct launch without a bridge could mean applications would not launch.
+  if (!FBControlCoreGlobalConfiguration.isXcode9OrGreater && self.shouldUseDirectLaunch) {
+    return YES;
+  }
+  return NO;
+}
+
+@end
 
 /**
  Provides relevant options to CoreSimulator for Booting.

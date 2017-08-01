@@ -371,11 +371,11 @@
 + (NSArray<NSString *> *)expectedBootNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
   NSMutableArray<NSString *> *notificationNames = [NSMutableArray array];
-  if (configuration.shouldConnectBridge) {
+  if ((configuration.options & FBSimulatorBootOptionsConnectBridge) != 0) {
     [notificationNames addObject:FBSimulatorNotificationNameConnectionDidConnect];
   }
   [notificationNames addObject:FBSimulatorNotificationNameDidLaunch];
-  if (!configuration.shouldUseDirectLaunch) {
+  if ((configuration.options & FBSimulatorBootOptionsEnableDirectLaunch) == 0) {
     [notificationNames addObject:FBSimulatorNotificationNameSimulatorApplicationDidLaunch];
   }
   return [notificationNames copy];
@@ -383,7 +383,7 @@
 
 + (NSArray<NSString *> *)expectedShutdownNotificationNamesForConfiguration:(FBSimulatorBootConfiguration *)configuration
 {
-  if (configuration.shouldUseDirectLaunch) {
+  if ((configuration.options & FBSimulatorBootOptionsEnableDirectLaunch) != 0) {
     return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect];
   }
   return @[FBSimulatorNotificationNameDidTerminate, FBSimulatorNotificationNameConnectionDidDisconnect, FBSimulatorNotificationNameSimulatorApplicationDidTerminate];
