@@ -10,6 +10,7 @@
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationBundle.h>
 #import <FBControlCore/FBApplicationCommands.h>
+#import <FBControlCore/FBApplicationDataCommands.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
 #import <FBControlCore/FBASLParser.h>
