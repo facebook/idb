@@ -43,6 +43,7 @@
 #import "FBSimulatorSettingsCommands.h"
 #import "FBSimulatorVideoRecordingCommands.h"
 #import "FBSimulatorXCTestCommands.h"
+#import "FBSimulatorApplicationDataCommands.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -296,6 +297,7 @@
     commandClasses = @[
       FBSimulatorAgentCommands.class,
       FBSimulatorApplicationCommands.class,
+      FBSimulatorApplicationDataCommands.class,
       FBSimulatorBridgeCommands.class,
       FBSimulatorKeychainCommands.class,
       FBSimulatorLaunchCtlCommands.class,
