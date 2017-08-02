@@ -127,16 +127,10 @@
 {
   NSMutableArray<FBInstalledApplication *> *applications = [NSMutableArray array];
   for (NSDictionary *appInfo in [[self.simulator.device installedAppsWithError:nil] allValues]) {
-    FBApplicationBundle *bundle = [FBApplicationBundle
-      applicationWithPath:appInfo[FBApplicationInstallInfoKeyPath]
-      error:nil];
-    if (!bundle) {
+    FBInstalledApplication *application = [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:nil];
+    if (!application) {
       continue;
     }
-    FBInstalledApplication *application = [FBInstalledApplication
-      installedApplicationWithBundle:bundle
-      installType:[FBInstalledApplication installTypeFromString:appInfo[FBApplicationInstallInfoKeyApplicationType]]];
-
     [applications addObject:application];
   }
   return [applications copy];
@@ -209,43 +203,21 @@
 {
   NSParameterAssert(bundleID);
 
-  NSError *innerError = nil;
-  NSDictionary *appInfo = [self appInfo:bundleID error:&innerError];
+  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:error];
   if (!appInfo) {
-    return [FBSimulatorError failWithError:innerError errorOut:error];
+    return nil;
   }
-  NSString *appName = appInfo[FBApplicationInstallInfoKeyBundleName];
-  NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
-  NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
-
-  FBApplicationBundle *bundle = [FBApplicationBundle
-    applicationWithName:appName
-    path:appPath
-    bundleID:bundleID];
-  FBInstalledApplication *application = [FBInstalledApplication
-    installedApplicationWithBundle:bundle
-    installType:[FBInstalledApplication installTypeFromString:typeString]];
-  if (!application) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to get App Path of %@ at %@", bundleID, appPath]
-      inSimulator:self.simulator]
-      causedBy:innerError]
-      fail:error];
-  }
-  return application;
+  return [FBSimulatorApplicationCommands installedApplicationFromInfo:appInfo error:error];
 }
 
 - (BOOL)isSystemApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  NSParameterAssert(bundleID);
-
-  NSError *innerError = nil;
-  NSDictionary *appInfo = [self appInfo:bundleID error:&innerError];
-  if (!appInfo) {
-    return [FBSimulatorError failBoolWithError:innerError errorOut:error];
+  FBInstalledApplication *application = [self installedApplicationWithBundleID:bundleID error:error];
+  if (!application) {
+    return NO;
   }
 
-  return [appInfo[FBApplicationInstallInfoKeyApplicationType] isEqualToString:@"System"];
+  return application.installType == FBApplicationInstallTypeSystem;
 }
 
 - (nullable NSString *)homeDirectoryOfApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -296,32 +268,41 @@
 
 #pragma mark Private
 
-static NSSet<NSString *> *requiredAppInfoKeys(void)
++ (FBInstalledApplication *)installedApplicationFromInfo:(NSDictionary<NSString *, id> *)appInfo error:(NSError **)error
 {
-  static NSSet<NSString *> *requiredAppInfoKeys = nil;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    requiredAppInfoKeys = [NSSet setWithObjects:FBApplicationInstallInfoKeyPath, FBApplicationInstallInfoKeyApplicationType, FBApplicationInstallInfoKeyBundleName, nil];
-  });
-  return requiredAppInfoKeys;
-}
-
-- (nullable NSDictionary<NSString *, id> *)appInfo:(NSString *)bundleID error:(NSError **)error
-{
-  NSError *innerError = nil;
-  NSDictionary *appInfo = [self.simulator.device propertiesOfApplication:bundleID error:&innerError];
-  NSSet<NSString *> *actualAppInfoKeys = [NSSet setWithArray:appInfo.allKeys];
-  [self.simulator.logger log:appInfo.description];
-  if (!appInfo || ![requiredAppInfoKeys() isSubsetOfSet:actualAppInfoKeys]) {
-    NSDictionary *installedApps = [self.simulator.device installedAppsWithError:nil];
-    return [[[[[FBSimulatorError
-      describeFormat:@"Application with bundle ID '%@' is not installed", bundleID]
-      extraInfo:@"installed_apps" value:installedApps.allKeys]
-      inSimulator:self.simulator]
-      causedBy:innerError]
+  NSString *appName = appInfo[FBApplicationInstallInfoKeyBundleName];
+  if (![appName isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Bundle Name %@ is not a String for %@ in %@", appName, FBApplicationInstallInfoKeyBundleName, appInfo]
       fail:error];
   }
-  return appInfo;
+  NSString *bundleIdentifier = appInfo[FBApplicationInstallInfoKeyBundleIdentifier];
+  if (![bundleIdentifier isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Bundle Identifier %@ is not a String for %@ in %@", bundleIdentifier, FBApplicationInstallInfoKeyBundleIdentifier, appInfo]
+      fail:error];
+  }
+  NSString *appPath = appInfo[FBApplicationInstallInfoKeyPath];
+  if (![appPath isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"App Path %@ is not a String for %@ in %@", appPath, FBApplicationInstallInfoKeyPath, appInfo]
+      fail:error];
+  }
+  NSString *typeString = appInfo[FBApplicationInstallInfoKeyApplicationType];
+  if (![typeString isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Install Type %@ is not a String for %@ in %@", typeString, FBApplicationInstallInfoKeyApplicationType, appInfo]
+      fail:error];
+  }
+
+
+  FBApplicationBundle *bundle = [FBApplicationBundle
+    applicationWithName:appName
+    path:appPath
+    bundleID:bundleIdentifier];
+  return [FBInstalledApplication
+    installedApplicationWithBundle:bundle
+    installType:[FBInstalledApplication installTypeFromString:typeString]];
 }
 
 @end
