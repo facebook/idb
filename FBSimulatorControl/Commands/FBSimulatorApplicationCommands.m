@@ -268,6 +268,8 @@
 
 #pragma mark Private
 
+static NSString *const KeyDataContainer = @"DataContainer";
+
 + (FBInstalledApplication *)installedApplicationFromInfo:(NSDictionary<NSString *, id> *)appInfo error:(NSError **)error
 {
   NSString *appName = appInfo[FBApplicationInstallInfoKeyBundleName];
@@ -294,7 +296,12 @@
       describeFormat:@"Install Type %@ is not a String for %@ in %@", typeString, FBApplicationInstallInfoKeyApplicationType, appInfo]
       fail:error];
   }
-
+  NSURL *dataContainer = appInfo[KeyDataContainer];
+  if (![dataContainer isKindOfClass:NSURL.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"Data Container %@ is not a String for %@ in %@", dataContainer, KeyDataContainer, appInfo]
+      fail:error];
+  }
 
   FBApplicationBundle *bundle = [FBApplicationBundle
     applicationWithName:appName
@@ -302,7 +309,8 @@
     bundleID:bundleIdentifier];
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
-    installType:[FBInstalledApplication installTypeFromString:typeString]];
+    installType:[FBInstalledApplication installTypeFromString:typeString]
+    dataContainer:dataContainer.path];
 }
 
 @end

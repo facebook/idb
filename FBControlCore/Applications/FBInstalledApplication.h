@@ -60,6 +60,16 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdenti
  */
 + (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType;
 
+/**
+ The Designated Initializer.
+
+ @param bundle the Application Bundle.
+ @param installType the Install Type.
+ @param dataContainer the Data Container Path.
+ @return a new Installed Application Instance.
+ */
++ (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType dataContainer:(nullable NSString *)dataContainer;
+
 #pragma mark Properties
 
 /**
@@ -71,6 +81,11 @@ extern FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdenti
  The Install Type of the Application.
  */
 @property (nonatomic, assign, readonly) FBApplicationInstallType installType;
+
+/**
+ The Install Type of the Application.
+ */
+@property (nonatomic, assign, nullable, readonly) NSString *dataContainer;
 
 #pragma mark Install Type
 

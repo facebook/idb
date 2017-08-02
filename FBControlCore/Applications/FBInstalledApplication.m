@@ -27,10 +27,15 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier = 
 
 + (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType
 {
-  return [[self alloc] initWithBundle:bundle installType:installType];
+  return [self installedApplicationWithBundle:bundle installType:installType dataContainer:nil];
 }
 
-- (instancetype)initWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType
++ (instancetype)installedApplicationWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
+{
+  return [[self alloc] initWithBundle:bundle installType:installType dataContainer:dataContainer];
+}
+
+- (instancetype)initWithBundle:(FBApplicationBundle *)bundle installType:(FBApplicationInstallType)installType dataContainer:(NSString *)dataContainer
 {
   self = [super init];
   if (!self) {
@@ -39,6 +44,7 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier = 
 
   _bundle = bundle;
   _installType = installType;
+  _dataContainer = dataContainer;
 
   return self;
 }
@@ -56,15 +62,17 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier = 
     return NO;
   }
   return [self.bundle isEqual:object.bundle]
-      && self.installType == object.installType;
+      && self.installType == object.installType
+      && (self.dataContainer == object.dataContainer || [self.dataContainer isEqualToString:object.dataContainer]);
 }
 
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Bundle %@ | Install Type %@",
+    @"Bundle %@ | Install Type %@ | Container %@",
     self.bundle.description,
-    [FBInstalledApplication stringFromApplicationInstallType:self.installType]
+    [FBInstalledApplication stringFromApplicationInstallType:self.installType],
+    self.dataContainer
   ];
 }
 
@@ -79,12 +87,14 @@ FBApplicationInstallInfoKey const FBApplicationInstallInfoKeyBundleIdentifier = 
 
 static NSString *const KeyBundle = @"bundle";
 static NSString *const KeyInstallType = @"install_type";
+static NSString *const KeyDataContainer = @"data_container";
 
 - (id)jsonSerializableRepresentation
 {
   return @{
     KeyBundle: self.bundle.jsonSerializableRepresentation,
     KeyInstallType: [FBInstalledApplication stringFromApplicationInstallType:self.installType],
+    KeyDataContainer: self.dataContainer ?: NSNull.null,
   };
 }
 
