@@ -84,7 +84,9 @@ static BOOL isApplicationAtPath(NSString *path)
 
 + (NSString *)appNameForPath:(NSString *)appPath
 {
-  return [[appPath lastPathComponent] stringByDeletingPathExtension];
+  NSDictionary *infoPlist = [NSDictionary dictionaryWithContentsOfFile:[self infoPlistPathForAppAtPath:appPath]];
+  NSString *bundleName = infoPlist[@"CFBundleName"];
+  return bundleName ?: appPath.lastPathComponent.stringByDeletingPathExtension;
 }
 
 + (NSString *)binaryNameForAppAtPath:(NSString *)appPath
