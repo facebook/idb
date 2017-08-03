@@ -146,14 +146,13 @@
     stringByReplacingOccurrencesOfString:dataPackage.bundlePath
     withString:dataPackage.bundlePathOnDevice];
 
-  return [[[[[[[[FBTestRunnerConfigurationBuilder builder]
-    withSessionIdentifer:dataPackage.testConfiguration.sessionIdentifier]
-    withTestRunnerApplication:remoteTestRunner]
-    withIDEBundleInjectionFramework:remoteIDEBundleInjectionFramework]
-    withWebDriverAgentTestBundle:testBundle]
-    withTestConfigurationPath:remoteTestConfigurationPath]
-    withFrameworkSearchPath:dataPackage.bundlePathOnDevice]
-    build];
+  return [FBTestRunnerConfiguration
+   configurationWithSessionIdentifier:dataPackage.testConfiguration.sessionIdentifier
+   hostApplication:remoteTestRunner
+   ideInjectionFramework:remoteIDEBundleInjectionFramework
+   testBundle:testBundle
+   testConfigurationPath:remoteTestConfigurationPath
+   frameworkSearchPath:dataPackage.bundlePathOnDevice];
 }
 
 @end

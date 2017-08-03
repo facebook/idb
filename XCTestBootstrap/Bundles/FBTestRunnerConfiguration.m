@@ -14,109 +14,74 @@
 #import "FBTestBundle.h"
 #import "FBTestConfiguration.h"
 
-@interface FBTestRunnerConfiguration ()
-@property (nonatomic, copy) NSUUID *sessionIdentifier;
-@property (nonatomic, strong) FBProductBundle *testRunner;
-@property (nonatomic, copy) NSArray *launchArguments;
-@property (nonatomic, copy) NSDictionary *launchEnvironment;
-@end
-
 @implementation FBTestRunnerConfiguration
-@end
 
+#pragma mark Initializers
 
-@interface FBTestRunnerConfigurationBuilder ()
-@property (nonatomic, copy) NSUUID *sessionIdentifier;
-@property (nonatomic, copy) NSString *testConfigurationPath;
-@property (nonatomic, copy) NSString *frameworkSearchPath;
-@property (nonatomic, strong) FBProductBundle *testRunner;
-@property (nonatomic, strong) FBProductBundle *IDEBundleInjectionFramework;
-@property (nonatomic, strong) FBTestBundle *webDriverAgentTestBundle;
-@end
-
-@implementation FBTestRunnerConfigurationBuilder
-
-+ (instancetype)builder
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier hostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
 {
-  return [self.class new];
+  NSParameterAssert(sessionIdentifier);
+  NSParameterAssert(hostApplication);
+  NSParameterAssert(testConfigurationPath);
+  NSParameterAssert(ideInjectionFramework);
+  NSParameterAssert(testBundle);
+
+  NSArray<NSString *> *launchArguments = [self launchArguments];
+  NSDictionary<NSString *, NSString *> *launchEnvironment = [self
+    launchEnvironmentWithHostApplication:hostApplication
+    ideInjectionFramework:ideInjectionFramework
+    testBundle:testBundle
+    testConfigurationPath:testConfigurationPath
+    frameworkSearchPath:frameworkSearchPath];
+
+  return [[self alloc] initWithSessionIdentifier:sessionIdentifier testRunner:hostApplication launchArguments:launchArguments launchEnvironment:launchEnvironment];
 }
 
-- (instancetype)withTestRunnerApplication:(FBProductBundle *)testRunnerApplication
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier testRunner:(FBProductBundle *)testRunner launchArguments:(NSArray<NSString *> *)launchArguments launchEnvironment:(NSDictionary<NSString *, NSString *> *)launchEnvironment
 {
-  self.testRunner = testRunnerApplication;
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
+  _sessionIdentifier = sessionIdentifier;
+  _testRunner = testRunner;
+  _launchArguments = launchArguments;
+  _launchEnvironment = launchEnvironment;
+
   return self;
 }
 
-- (instancetype)withTestConfigurationPath:(NSString *)testConfigurationPath
+#pragma mark NSCopying
+
+- (instancetype)copyWithZone:(NSZone *)zone
 {
-  self.testConfigurationPath = testConfigurationPath;
   return self;
 }
 
+#pragma mark Private
 
-- (instancetype)withFrameworkSearchPath:(NSString *)frameworkSearchPath
++ (NSArray<NSString *> *)launchArguments
 {
-  self.frameworkSearchPath = frameworkSearchPath;
-  return self;
-}
-
-- (instancetype)withSessionIdentifer:(NSUUID *)sessionIdentifier
-{
-  self.sessionIdentifier = sessionIdentifier;
-  return self;
-}
-
-- (instancetype)withIDEBundleInjectionFramework:(FBProductBundle *)IDEBundleInjectionFramework
-{
-  self.IDEBundleInjectionFramework = IDEBundleInjectionFramework;
-  return self;
-}
-
-- (instancetype)withWebDriverAgentTestBundle:(FBTestBundle *)webDriverAgentTestBundle
-{
-  self.webDriverAgentTestBundle = webDriverAgentTestBundle;
-  return self;
-}
-
-- (FBTestRunnerConfiguration *)build
-{
-  NSAssert(self.sessionIdentifier, @"sessionIdentifier is required to create data package");
-  NSAssert(self.testRunner, @"testRunnerApplication is required to create data package");
-  NSAssert(self.testConfigurationPath, @"testConfigurationPath is required to create data package");
-  NSAssert(self.IDEBundleInjectionFramework, @"IDEBundleInjectionFramework is required to create data package");
-  NSAssert(self.webDriverAgentTestBundle, @"webDriverAgentTestBundle is required to create data package");
-
-  FBTestRunnerConfiguration *config = [FBTestRunnerConfiguration new];
-  config.sessionIdentifier = self.sessionIdentifier;
-  config.testRunner = self.testRunner;
-  config.launchArguments = [self buildAttributes];
-  config.launchEnvironment = [self buildEnvironment];
-  return config;
-}
-
-- (NSArray *)buildAttributes
-{
-  return
-  @[
+  return @[
     @"-NSTreatUnknownArgumentsAsOpen", @"NO",
     @"-ApplePersistenceIgnoreState", @"YES"
   ];
 }
 
-- (NSDictionary *)buildEnvironment
++ (NSDictionary *)launchEnvironmentWithHostApplication:(FBProductBundle *)hostApplication ideInjectionFramework:(FBProductBundle *)ideInjectionFramework testBundle:(FBTestBundle *)testBundle testConfigurationPath:(NSString *)testConfigurationPath frameworkSearchPath:(NSString *)frameworkSearchPath
 {
-  return
-  @{
-    @"AppTargetLocation" : self.testRunner.binaryPath,
-    @"DYLD_INSERT_LIBRARIES" : self.IDEBundleInjectionFramework.binaryPath,
-    @"DYLD_FRAMEWORK_PATH" : self.frameworkSearchPath ?: @"",
-    @"DYLD_LIBRARY_PATH" : self.frameworkSearchPath ?: @"",
+  return @{
+    @"AppTargetLocation" : hostApplication.binaryPath,
+    @"DYLD_INSERT_LIBRARIES" : ideInjectionFramework.binaryPath,
+    @"DYLD_FRAMEWORK_PATH" : frameworkSearchPath ?: @"",
+    @"DYLD_LIBRARY_PATH" : frameworkSearchPath ?: @"",
     @"OBJC_DISABLE_GC" : @"YES",
-    @"TestBundleLocation" : self.webDriverAgentTestBundle.path,
-    @"XCInjectBundle" : self.webDriverAgentTestBundle.path,
-    @"XCInjectBundleInto" : self.testRunner.binaryPath,
+    @"TestBundleLocation" : testBundle.path,
+    @"XCInjectBundle" : testBundle.path,
+    @"XCInjectBundleInto" : hostApplication.binaryPath,
     @"XCODE_DBG_XPC_EXCLUSIONS" : @"com.apple.dt.xctestSymbolicator",
-    @"XCTestConfigurationFilePath" : self.testConfigurationPath,
+    @"XCTestConfigurationFilePath" : testConfigurationPath,
   };
 }
 

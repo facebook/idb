@@ -129,14 +129,13 @@
       fail:error];
   }
 
-  return [[[[[[[[FBTestRunnerConfigurationBuilder builder]
-    withSessionIdentifer:sessionIdentifier]
-    withTestRunnerApplication:application]
-    withIDEBundleInjectionFramework:IDEBundleInjectionFramework]
-    withWebDriverAgentTestBundle:testBundle]
-    withTestConfigurationPath:testBundle.configuration.path]
-    withFrameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]]
-    build];
+  return [FBTestRunnerConfiguration
+    configurationWithSessionIdentifier:sessionIdentifier
+    hostApplication:application
+    ideInjectionFramework:IDEBundleInjectionFramework
+    testBundle:testBundle
+    testConfigurationPath:testBundle.configuration.path
+    frameworkSearchPath:[XCTestFrameworksPaths componentsJoinedByString:@":"]];
 }
 
 @end
