@@ -158,27 +158,25 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @end
 
-@interface FBTaskProcess : NSObject
+@protocol FBTaskProcess <NSObject>
 
 @property (nonatomic, assign, readonly) int terminationStatus;
 @property (nonatomic, assign, readonly) BOOL isRunning;
 
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler;
+- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler;
 - (void)mountStandardOut:(id)stdOut;
 - (void)mountStandardErr:(id)stdOut;
 - (void)terminate;
 
 @end
 
-@interface FBTaskProcess_NSTask : FBTaskProcess
+@interface FBTaskProcess_NSTask : NSObject <FBTaskProcess>
 
 @property (nonatomic, strong, readwrite) NSTask *task;
 
-- (instancetype)initWithTask:(NSTask *)task;
-
 @end
 
-@implementation FBTaskProcess
+@implementation FBTaskProcess_NSTask
 
 + (instancetype)fromConfiguration:(FBTaskConfiguration *)configuration
 {
@@ -186,45 +184,8 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   task.environment = configuration.environment;
   task.launchPath = configuration.launchPath;
   task.arguments = configuration.arguments;
-  return [[FBTaskProcess_NSTask alloc] initWithTask:task];
+  return [[self alloc] initWithTask:task];
 }
-
-- (BOOL)isRunning
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return NO;
-}
-
-- (int)terminationStatus
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return 0;
-}
-
-- (void)mountStandardOut:(id)stdOut
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (void)mountStandardErr:(id)stdOut
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (void)terminate
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
-
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return 0;
-}
-
-@end
-
-@implementation FBTaskProcess_NSTask
 
 - (instancetype)initWithTask:(NSTask *)task
 {
@@ -262,7 +223,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   self.task.standardError = stdErr;
 }
 
-- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(FBTaskProcess *))terminationHandler
+- (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler
 {
   self.task.terminationHandler = ^(NSTask *_) {
     [self terminate];
@@ -285,7 +246,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
-@property (nonatomic, strong, nullable, readwrite) FBTaskProcess *process;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
 @property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdErrSlot;
 @property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
@@ -328,13 +289,13 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
 {
-  FBTaskProcess *task = [FBTaskProcess fromConfiguration:configuration];
+  id<FBTaskProcess> task = [FBTaskProcess_NSTask fromConfiguration:configuration];
   FBTaskOutput *stdOut = [self createTaskOutput:configuration.stdOut];
   FBTaskOutput *stdErr = [self createTaskOutput:configuration.stdErr];
   return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
 }
 
-- (instancetype)initWithProcess:(FBTaskProcess *)process stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -470,7 +431,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   }
   [self.process mountStandardErr:stdErr];
 
-  pid_t pid = [self.process launchWithError:&error terminationHandler:^(FBTaskProcess *_) {
+  pid_t pid = [self.process launchWithError:&error terminationHandler:^(id<FBTaskProcess>_) {
     [self terminateWithErrorMessage:nil];
   }];
   if (pid < 1) {
