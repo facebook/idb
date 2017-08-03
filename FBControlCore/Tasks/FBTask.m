@@ -22,7 +22,7 @@
 NSString *const FBTaskErrorDomain = @"com.facebook.FBControlCore.task";
 FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
-@interface FBTaskOutput : NSObject
+@protocol FBTaskOutput <NSObject>
 
 - (NSString *)contents;
 - (id)attachWithError:(NSError **)error;
@@ -30,14 +30,14 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @end
 
-@interface FBTaskOutput_File : FBTaskOutput
+@interface FBTaskOutput_File : NSObject <FBTaskOutput>
 
 @property (nonatomic, copy, nullable, readonly) NSString *filePath;
 @property (nonatomic, strong, nullable, readwrite) NSFileHandle *fileHandle;
 
 @end
 
-@interface FBTaskOutput_Consumer : FBTaskOutput
+@interface FBTaskOutput_Consumer : NSObject <FBTaskOutput>
 
 @property (nonatomic, strong, nullable, readwrite) FBPipeReader *reader;
 @property (nonatomic, strong, nullable, readwrite) FBAccumilatingFileConsumer *dataConsumer;
@@ -47,28 +47,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @interface FBTaskConfiguration (FBTaskOutput)
 
-- (FBTaskOutput *)createTaskOutput;
-
-@end
-
-@implementation FBTaskOutput
-
-- (NSString *)contents
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (id)attachWithError:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (void)teardownResources
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-}
+- (id<FBTaskOutput>)createTaskOutput;
 
 @end
 
@@ -247,8 +226,8 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 @property (nonatomic, copy, readonly) NSSet<NSNumber *> *acceptableStatusCodes;
 
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
-@property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdOutSlot;
-@property (nonatomic, strong, nullable, readwrite) FBTaskOutput *stdErrSlot;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdOutSlot;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdErrSlot;
 @property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
 
 @property (atomic, assign, readwrite) pid_t processIdentifier;
@@ -262,7 +241,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 #pragma mark Initializers
 
-+ (FBTaskOutput *)createTaskOutput:(id)output
++ (id<FBTaskOutput>)createTaskOutput:(id)output
 {
   if ([output isKindOfClass:NSString.class]) {
      return [[FBTaskOutput_File alloc] initWithPath:output];
@@ -290,12 +269,12 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
 {
   id<FBTaskProcess> task = [FBTaskProcess_NSTask fromConfiguration:configuration];
-  FBTaskOutput *stdOut = [self createTaskOutput:configuration.stdOut];
-  FBTaskOutput *stdErr = [self createTaskOutput:configuration.stdErr];
+  id<FBTaskOutput> stdOut = [self createTaskOutput:configuration.stdOut];
+  id<FBTaskOutput> stdErr = [self createTaskOutput:configuration.stdErr];
   return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(FBTaskOutput *)stdOut stdErr:(FBTaskOutput *)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
