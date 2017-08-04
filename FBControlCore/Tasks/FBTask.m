@@ -24,7 +24,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @protocol FBTaskOutput <NSObject>
 
-- (NSString *)contents;
+- (id)contents;
 - (id)attachWithError:(NSError **)error;
 - (void)teardownResources;
 
@@ -40,20 +40,29 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 @interface FBTaskOutput_Consumer : NSObject <FBTaskOutput>
 
 @property (nonatomic, strong, nullable, readwrite) FBPipeReader *reader;
-@property (nonatomic, strong, nullable, readwrite) FBAccumilatingFileConsumer *dataConsumer;
 @property (nonatomic, strong, nullable, readwrite) id<FBFileConsumer> consumer;
 
 @end
 
-@interface FBTaskConfiguration (FBTaskOutput)
+@interface FBTaskOutput_Logger : FBTaskOutput_Consumer
 
-- (id<FBTaskOutput>)createTaskOutput;
+@property (nonatomic, strong, readwrite) id<FBControlCoreLogger> logger;
+
+@end
+
+@interface FBTaskOutput_Data : FBTaskOutput_Consumer
+
+@property (nonatomic, strong, readonly) FBAccumilatingFileConsumer *dataConsumer;
+
+@end
+
+@interface FBTaskOutput_String : FBTaskOutput_Data
 
 @end
 
 @implementation FBTaskOutput_Consumer
 
-- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer dataConsumer:(FBAccumilatingFileConsumer *)dataConsumer
+- (instancetype)initWithConsumer:(id<FBFileConsumer>)consumer
 {
   self = [super init];
   if (!self) {
@@ -61,16 +70,13 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   }
 
   _consumer = consumer;
-  _dataConsumer = dataConsumer;
 
   return self;
 }
 
-- (NSString *)contents
+- (id)contents
 {
-  return [[[NSString alloc]
-    initWithData:self.dataConsumer.data encoding:NSUTF8StringEncoding]
-    stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+  return self.consumer;
 }
 
 - (id)attachWithError:(NSError **)error
@@ -92,6 +98,29 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @end
 
+@implementation FBTaskOutput_Logger
+
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
+{
+  id<FBFileConsumer> consumer = [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
+    [logger log:line];
+  }];
+  self = [super initWithConsumer:consumer];
+  if (!self) {
+    return nil;
+  }
+
+  _logger = logger;
+  return self;
+}
+
+- (id<FBControlCoreLogger>)contents
+{
+  return self.logger;
+}
+
+@end
+
 @implementation FBTaskOutput_File
 
 - (instancetype)initWithPath:(NSString *)filePath
@@ -107,9 +136,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 - (NSString *)contents
 {
-  @synchronized(self) {
-    return [NSString stringWithContentsOfFile:self.filePath usedEncoding:nil error:nil];
-  }
+  return self.filePath;
 }
 
 - (id)attachWithError:(NSError **)error
@@ -133,6 +160,47 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 {
   [self.fileHandle closeFile];
   self.fileHandle = nil;
+}
+
+@end
+
+@implementation FBTaskOutput_Data
+
+- (instancetype)initWithMutableData:(NSMutableData *)mutableData
+{
+  FBAccumilatingFileConsumer *consumer = [[FBAccumilatingFileConsumer alloc] initWithMutableData:mutableData];
+  self = [super initWithConsumer:consumer];
+  if (!self) {
+    return nil;
+  }
+
+  _dataConsumer = consumer;
+
+  return self;
+}
+
+- (NSData *)contents
+{
+  return self.dataConsumer.data;
+}
+
+@end
+
+@implementation FBTaskOutput_String
+
+- (NSString *)contents
+{
+  NSData *data = self.dataConsumer.data;
+  // Strip newline from the end of the buffer.
+  if (data.length) {
+    char lastByte = 0;
+    NSRange range = NSMakeRange(data.length - 1, 1);
+    [data getBytes:&lastByte range:range];
+    if (lastByte == '\n') {
+      data = [data subdataWithRange:NSMakeRange(0, data.length - 1)];
+    }
+  }
+  return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
 @end
@@ -243,27 +311,26 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 + (id<FBTaskOutput>)createTaskOutput:(id)output
 {
-  if ([output isKindOfClass:NSString.class]) {
-     return [[FBTaskOutput_File alloc] initWithPath:output];
+  if (!output) {
+    return nil;
   }
-  id<FBFileConsumer> consumer = nil;
-  NSMutableData *data = [NSMutableData data];
+  if ([output isKindOfClass:NSURL.class]) {
+     return [[FBTaskOutput_File alloc] initWithPath:[output path]];
+  }
   if ([output conformsToProtocol:@protocol(FBFileConsumer)]) {
-    consumer = output;
+    return [[FBTaskOutput_Consumer alloc] initWithConsumer:output];
   }
-  else if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
-    id<FBControlCoreLogger> logger = output;
-    consumer = [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
-      [logger log:line];
-    }];
+  if ([output conformsToProtocol:@protocol(FBControlCoreLogger)]) {
+    return [[FBTaskOutput_Logger alloc] initWithLogger:output];
   }
-  else {
-    NSAssert([output isKindOfClass:NSMutableData.class], @"Unexpected output type %@", output);
-    data = output;
+  if ([output isKindOfClass:NSData.class]) {
+    return [[FBTaskOutput_Data alloc] initWithMutableData:NSMutableData.data];
   }
-  FBAccumilatingFileConsumer *dataConsumer = [[FBAccumilatingFileConsumer alloc] initWithMutableData:data];
-  consumer = consumer ? [FBCompositeFileConsumer consumerWithConsumers:@[consumer, dataConsumer]] : dataConsumer;
-  return [[FBTaskOutput_Consumer alloc] initWithConsumer:consumer dataConsumer:dataConsumer];
+  if ([output isKindOfClass:NSString.class]) {
+    return [[FBTaskOutput_String alloc] initWithMutableData:NSMutableData.data];
+  }
+  NSAssert(NO, @"Unexpected output type %@", output);
+  return nil;
 }
 
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
@@ -346,12 +413,12 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 #pragma mark Accessors
 
-- (NSString *)stdOut
+- (nullable id)stdOut
 {
   return [self.stdOutSlot contents];
 }
 
-- (NSString *)stdErr
+- (nullable id)stdErr
 {
   return [self.stdErrSlot contents];
 }
@@ -398,17 +465,23 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   self.terminationHandler = handler;
 
   NSError *error = nil;
-  id stdOut = [self.stdOutSlot attachWithError:&error];
-  if (!stdOut) {
-    return [self terminateWithErrorMessage:error.description];
+  id<FBTaskOutput> slot = self.stdOutSlot;
+  if (slot) {
+    id stdOut = [slot attachWithError:&error];
+    if (!stdOut) {
+      return [self terminateWithErrorMessage:error.description];
+    }
+    [self.process mountStandardOut:stdOut];
   }
-  [self.process mountStandardOut:stdOut];
 
-  id stdErr = [self.stdErrSlot attachWithError:&error];
-  if (!stdErr) {
-    return [self terminateWithErrorMessage:error.description];
+  slot = self.stdErrSlot;
+  if (slot) {
+    id stdErr = [slot attachWithError:&error];
+    if (!stdErr) {
+      return [self terminateWithErrorMessage:error.description];
+    }
+    [self.process mountStandardErr:stdErr];
   }
-  [self.process mountStandardErr:stdErr];
 
   pid_t pid = [self.process launchWithError:&error terminationHandler:^(id<FBTaskProcess>_) {
     [self terminateWithErrorMessage:nil];

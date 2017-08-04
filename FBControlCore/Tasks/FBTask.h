@@ -86,13 +86,15 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTask;
 
 /**
  Returns a copy of the current state of stdout. May be called from any thread.
+ The types of these values are defined in FBTaskConfiguration.
  */
-- (nullable NSString *)stdOut;
+- (nullable id)stdOut;
 
 /**
- Returns a copy of the current state of stderr. May be called from any thread.
+ Returns the stdout of the process:
+ The types of these values are defined in FBTaskConfiguration.
  */
-- (nullable NSString *)stdErr;
+- (nullable id)stdErr;
 
 /**
  Returns the Error associated with the task (if any). May be called from any thread.

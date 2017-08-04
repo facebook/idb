@@ -39,8 +39,8 @@
   _arguments = @[];
   _environment = FBTaskBuilder.defaultEnvironmentForSubprocess;
   _acceptableStatusCodes = [NSSet setWithObject:@0];
-  _stdOut = [NSMutableData data];
-  _stdErr = [NSMutableData data];
+  _stdOut = [NSString string];
+  _stdErr = [NSString string];
 
   return self;
 }
@@ -89,29 +89,41 @@
   return [self withEnvironment:[dictionary copy]];
 }
 
-- (instancetype)withStdOutInMemory
+- (instancetype)withStdOutInMemoryAsData
 {
-  self.stdOut = [NSMutableData data];
+  self.stdOut = [NSData data];
   return self;
 }
 
-- (instancetype)withStdErrInMemory
+- (instancetype)withStdErrInMemoryAsData
 {
-  self.stdErr = [NSMutableData data];
+  self.stdErr = [NSData data];
+  return self;
+}
+
+- (instancetype)withStdOutInMemoryAsString
+{
+  self.stdOut = [NSString string];
+  return self;
+}
+
+- (instancetype)withStdErrInMemoryAsString
+{
+  self.stdErr = [NSString string];
   return self;
 }
 
 - (instancetype)withStdOutPath:(NSString *)stdOutPath
 {
   NSParameterAssert(stdOutPath);
-  self.stdOut = stdOutPath;
+  self.stdOut = [NSURL fileURLWithPath:stdOutPath];
   return self;
 }
 
 - (instancetype)withStdErrPath:(NSString *)stdErrPath
 {
   NSParameterAssert(stdErrPath);
-  self.stdErr = stdErrPath;
+  self.stdErr = [NSURL fileURLWithPath:stdErrPath];
   return self;
 }
 

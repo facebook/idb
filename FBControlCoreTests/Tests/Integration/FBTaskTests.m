@@ -86,6 +86,7 @@
     build]
     startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
+  XCTAssertTrue([task.stdOut conformsToProtocol:@protocol(FBFileConsumer)]);
   XCTAssertTrue(task.hasTerminated);
   XCTAssertNil(task.error);
   XCTAssertGreaterThan(task.processIdentifier, 1);
@@ -94,7 +95,7 @@
   XCTAssertEqualObjects(lines[0], @"0   CoreFoundation                      0x0138ba14 __exceptionPreprocess + 180");
 }
 
-- (void)testLoggerKeepsOutput
+- (void)testLogger
 {
   NSString *bundlePath = [[NSBundle bundleForClass:self.class] bundlePath];
 
@@ -106,7 +107,24 @@
     startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
 
   XCTAssertNil(task.error);
-  XCTAssertTrue([task.stdOut containsString:@"directory"]);
+  XCTAssertTrue([task.stdOut isKindOfClass:FBControlCoreLoggerDouble.class]);
+  XCTAssertTrue([task.stdErr isKindOfClass:FBControlCoreLoggerDouble.class]);
+}
+
+- (void)testDevNull
+{
+  NSString *bundlePath = [[NSBundle bundleForClass:self.class] bundlePath];
+
+  FBTask *task = [[[[[FBTaskBuilder
+    withLaunchPath:@"/usr/bin/file" arguments:@[bundlePath]]
+    withStdOutToDevNull]
+    withStdErrToDevNull]
+    build]
+    startSynchronouslyWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
+
+  XCTAssertNil(task.error);
+  XCTAssertNil(task.stdOut);
+  XCTAssertNil(task.stdErr);
 }
 
 - (void)testUpdatesStateWithAsynchronousTermination

@@ -71,18 +71,32 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withEnvironmentAdditions:(NSDictionary<NSString *, NSString *> *)environment;
 
 /**
- Reads stdout into memory.
+ Reads stdout into memory, as a Data.
 
  @return the reciever, for chaining.
  */
-- (instancetype)withStdOutInMemory;
+- (instancetype)withStdOutInMemoryAsData;
 
 /**
- Reads stderr into memory.
+ Reads stderr into memory, as a Data.
 
  @return the reciever, for chaining.
  */
-- (instancetype)withStdErrInMemory;
+- (instancetype)withStdErrInMemoryAsData;
+
+/**
+ Reads stdout into memory, as a String.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdOutInMemoryAsString;
+
+/**
+ Reads stderr into memory, as a String.
+
+ @return the reciever, for chaining.
+ */
+- (instancetype)withStdErrInMemoryAsString;
 
 /**
  Assigns a path to write stdout to.
