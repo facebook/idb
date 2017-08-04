@@ -23,6 +23,7 @@
 @property (nonatomic, copy, readwrite) NSSet<NSNumber *> *acceptableStatusCodes;
 @property (nonatomic, strong, nullable, readwrite) id stdOut;
 @property (nonatomic, strong, nullable, readwrite) id stdErr;
+@property (nonatomic, assign, readwrite) BOOL connectStdIn;
 
 @end
 
@@ -41,6 +42,7 @@
   _acceptableStatusCodes = [NSSet setWithObject:@0];
   _stdOut = [NSString string];
   _stdErr = [NSString string];
+  _connectStdIn = NO;
 
   return self;
 }
@@ -173,6 +175,12 @@
   return self;
 }
 
+- (instancetype)withStdInConnected
+{
+  self.connectStdIn = YES;
+  return self;
+}
+
 - (instancetype)withAcceptableTerminationStatusCodes:(NSSet<NSNumber *> *)statusCodes
 {
   NSParameterAssert(statusCodes);
@@ -193,7 +201,8 @@
     environment:self.environment
     acceptableStatusCodes:self.acceptableStatusCodes
     stdOut:self.stdOut
-    stdErr:self.stdErr];
+    stdErr:self.stdErr
+    connectStdIn:self.connectStdIn];
 }
 
 #pragma mark - Private

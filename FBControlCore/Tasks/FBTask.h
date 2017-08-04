@@ -13,6 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBFileConsumer;
 @class FBTaskConfiguration;
 
 /**
@@ -95,6 +96,14 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTask;
  The types of these values are defined in FBTaskConfiguration.
  */
 - (nullable id)stdErr;
+
+/**
+ Returns a consumer for the stdin.
+ This will only exist if:
+ - The Task is Configured to do so.
+ - The Task is running.
+ */
+- (nullable id<FBFileConsumer>)stdIn;
 
 /**
  Returns the Error associated with the task (if any). May be called from any thread.

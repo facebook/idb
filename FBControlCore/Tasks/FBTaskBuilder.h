@@ -177,6 +177,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)withStdErrToLogger:(id<FBControlCoreLogger>)logger;
 
 /**
+ Creates a File Consumer for stdin.
+
+ @return the reciver, for chaining.
+ */
+- (instancetype)withStdInConnected;
+
+/**
  The Set of Return Codes that are considered non-erroneous.
 
  @param statusCodes the non-erroneous stats codes.

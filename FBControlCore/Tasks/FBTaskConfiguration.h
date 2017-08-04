@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Task Configuration with the provided parameters.
  */
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable id)stdOut stdErr:(nullable id)stdErr;
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes stdOut:(nullable id)stdOut stdErr:(nullable id)stdErr connectStdIn:(BOOL)connectStdIn;
 
 /**
  The Launch Path of the Process to launch.
@@ -60,6 +60,12 @@ NS_ASSUME_NONNULL_BEGIN
  - If is a FBFileConsumer then stderr data will be forwarded to it.
  */
 @property (nonatomic, strong, nullable, readonly) id stdErr;
+
+/**
+ Where to get stdin from:
+ - If is a FBFileConsumer then input data will be forwarded.
+ */
+@property (nonatomic, assign, readonly) BOOL connectStdIn;
 
 @end
 

@@ -9,12 +9,13 @@
 
 #import "FBTask.h"
 
-#import "FBRunLoopSpinner.h"
-#import "FBTaskConfiguration.h"
 #import "FBControlCoreError.h"
 #import "FBControlCoreLogger.h"
 #import "FBFileConsumer.h"
+#import "FBFileWriter.h"
 #import "FBPipeReader.h"
+#import "FBRunLoopSpinner.h"
+#import "FBTaskConfiguration.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -57,6 +58,13 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 @end
 
 @interface FBTaskOutput_String : FBTaskOutput_Data
+
+@end
+
+@interface FBTaskInput_Consumer : NSObject <FBTaskOutput, FBFileConsumer>
+
+@property (nonatomic, strong, nullable, readonly) NSPipe *pipe;
+@property (nonatomic, strong, nullable, readonly) id<FBFileConsumer> writer;
 
 @end
 
@@ -205,6 +213,44 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 @end
 
+@implementation FBTaskInput_Consumer
+
+- (id)contents
+{
+  return self.pipe ? self : nil;
+}
+
+- (id)attachWithError:(NSError **)error
+{
+  NSPipe *pipe = [NSPipe pipe];
+  id<FBFileConsumer> writer = [FBFileWriter asyncWriterWithFileHandle:pipe.fileHandleForWriting error:error];
+  if (!writer) {
+    return nil;
+  }
+  _pipe = pipe;
+  _writer = writer;
+  return pipe;
+}
+
+- (void)teardownResources
+{
+  _pipe = nil;
+  _writer = nil;
+}
+
+- (void)consumeData:(NSData *)data
+{
+  [self.writer consumeData:data];
+}
+
+- (void)consumeEndOfFile
+{
+  [self.writer consumeEndOfFile];
+  [self teardownResources];
+}
+
+@end
+
 @protocol FBTaskProcess <NSObject>
 
 @property (nonatomic, assign, readonly) int terminationStatus;
@@ -212,7 +258,8 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 - (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler;
 - (void)mountStandardOut:(id)stdOut;
-- (void)mountStandardErr:(id)stdOut;
+- (void)mountStandardErr:(id)stdErr;
+- (void)mountStandardIn:(id)stdIn;
 - (void)terminate;
 
 @end
@@ -270,6 +317,11 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   self.task.standardError = stdErr;
 }
 
+- (void)mountStandardIn:(id)stdIn
+{
+  self.task.standardInput = stdIn;
+}
+
 - (pid_t)launchWithError:(NSError **)error terminationHandler:(void(^)(id<FBTaskProcess>))terminationHandler
 {
   self.task.terminationHandler = ^(NSTask *_) {
@@ -296,6 +348,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskProcess> process;
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdOutSlot;
 @property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdErrSlot;
+@property (nonatomic, strong, nullable, readwrite) id<FBTaskOutput> stdInSlot;
 @property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
 
 @property (atomic, assign, readwrite) pid_t processIdentifier;
@@ -333,15 +386,24 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   return nil;
 }
 
++ (id<FBTaskOutput>)createTaskInput:(BOOL)connectStdIn
+{
+  if (!connectStdIn) {
+    return nil;
+  }
+  return [FBTaskInput_Consumer new];
+}
+
 + (instancetype)taskWithConfiguration:(FBTaskConfiguration *)configuration
 {
   id<FBTaskProcess> task = [FBTaskProcess_NSTask fromConfiguration:configuration];
   id<FBTaskOutput> stdOut = [self createTaskOutput:configuration.stdOut];
   id<FBTaskOutput> stdErr = [self createTaskOutput:configuration.stdErr];
-  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
+  id<FBTaskOutput> stdIn = [self createTaskInput:configuration.connectStdIn];
+  return [[self alloc] initWithProcess:task stdOut:stdOut stdErr:stdErr stdIn:stdIn acceptableStatusCodes:configuration.acceptableStatusCodes configurationDescription:configuration.description];
 }
 
-- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
+- (instancetype)initWithProcess:(id<FBTaskProcess>)process stdOut:(id<FBTaskOutput>)stdOut stdErr:(id<FBTaskOutput>)stdErr stdIn:(id<FBTaskOutput>)stdIn acceptableStatusCodes:(NSSet<NSNumber *> *)acceptableStatusCodes configurationDescription:(NSString *)configurationDescription
 {
   self = [super init];
   if (!self) {
@@ -352,6 +414,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   _acceptableStatusCodes = acceptableStatusCodes;
   _stdOutSlot = stdOut;
   _stdErrSlot = stdErr;
+  _stdInSlot = stdIn;
   _configurationDescription = configurationDescription;
 
   return self;
@@ -423,6 +486,11 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   return [self.stdErrSlot contents];
 }
 
+- (nullable id)stdIn
+{
+  return [self.stdInSlot contents];
+}
+
 - (nullable NSError *)error
 {
   if (!self.emittedError) {
@@ -483,6 +551,15 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
     [self.process mountStandardErr:stdErr];
   }
 
+  slot = self.stdInSlot;
+  if (slot) {
+    id stdIn = [slot attachWithError:&error];
+    if (!stdIn) {
+      return [self terminateWithErrorMessage:error.description];
+    }
+    [self.process mountStandardIn:stdIn];
+  }
+
   pid_t pid = [self.process launchWithError:&error terminationHandler:^(id<FBTaskProcess>_) {
     [self terminateWithErrorMessage:nil];
   }];
@@ -523,6 +600,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 {
   [self.stdOutSlot teardownResources];
   [self.stdErrSlot teardownResources];
+  [self.stdInSlot teardownResources];
 }
 
 - (void)completeTermination

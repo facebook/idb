@@ -204,4 +204,28 @@
   XCTAssertNotNil(task.error);
 }
 
+- (void)testInputReading
+{
+  NSData *expected = [@"FOO BAR BAZ" dataUsingEncoding:NSUTF8StringEncoding];
+
+  FBTask *task = [[[[[[FBTaskBuilder
+    withLaunchPath:@"/bin/cat" arguments:@[]]
+    withStdInConnected]
+    withStdOutInMemoryAsData]
+    withStdErrToDevNull]
+    build]
+    startAsynchronously];
+
+  XCTAssertTrue([task.stdIn conformsToProtocol:@protocol(FBFileConsumer)]);
+  [task.stdIn consumeData:expected];
+  [task.stdIn consumeEndOfFile];
+
+  NSError *error = nil;
+  BOOL waitSuccess = [task waitForCompletionWithTimeout:2 error:&error];
+  XCTAssertNil(error);
+  XCTAssertTrue(waitSuccess);
+
+  XCTAssertEqualObjects(expected, task.stdOut);
+}
+
 @end
