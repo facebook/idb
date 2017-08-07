@@ -297,9 +297,9 @@ static NSString *const KeyDataContainer = @"DataContainer";
       fail:error];
   }
   NSURL *dataContainer = appInfo[KeyDataContainer];
-  if (![dataContainer isKindOfClass:NSURL.class]) {
+  if (dataContainer && ![dataContainer isKindOfClass:NSURL.class]) {
     return [[FBControlCoreError
-      describeFormat:@"Data Container %@ is not a String for %@ in %@", dataContainer, KeyDataContainer, appInfo]
+      describeFormat:@"Data Container %@ is not a NSURL for %@ in %@", dataContainer, KeyDataContainer, appInfo]
       fail:error];
   }
 
