@@ -23,24 +23,9 @@
 @interface FBSimulatorLaunchCtlCommands ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator;
-
-@end
-
-@interface FBSimulatorLaunchCtlCommands_Real : FBSimulatorLaunchCtlCommands
-
-@property (nonatomic, copy, readonly) FBBinaryDescriptor *launchCtlBinary;
+@property (nonatomic, strong, readonly) FBBinaryDescriptor *launchCtlBinary;
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator launchCtlBinary:(FBBinaryDescriptor *)launchCtlBinary;
-
-@end
-
-@interface FBSimulatorLaunchCtlCommands_Polyfilled : FBSimulatorLaunchCtlCommands
-
-@property (nonatomic, strong, readonly) FBProcessFetcher *processFetcher;
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator processFetcher:(FBProcessFetcher *)processFetcher;
 
 @end
 
@@ -48,25 +33,23 @@
 
 #pragma mark Initializers
 
-+ (FBBinaryDescriptor *)launchCtlBinaryForSimulator:(FBSimulator *)simulator
++ (FBBinaryDescriptor *)launchCtlBinaryForSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   NSString *path = [[simulator.device.runtime.root
     stringByAppendingPathComponent:@"bin"]
     stringByAppendingPathComponent:@"launchctl"];
-  NSError *error = nil;
-  return [FBBinaryDescriptor binaryWithPath:path error:&error];
+  return [FBBinaryDescriptor binaryWithPath:path error:error];
 }
 
 + (instancetype)commandsWithSimulator:(FBSimulator *)simulator
 {
-  FBBinaryDescriptor *launchCtlBinary = [self launchCtlBinaryForSimulator:simulator];
-  if (launchCtlBinary) {
-    return [[FBSimulatorLaunchCtlCommands_Real alloc] initWithSimulator:simulator launchCtlBinary:launchCtlBinary];
-  }
-  return [[FBSimulatorLaunchCtlCommands_Polyfilled alloc] initWithSimulator:simulator processFetcher:simulator.processFetcher.processFetcher];
+  NSError *error = nil;
+  FBBinaryDescriptor *launchCtlBinary = [self launchCtlBinaryForSimulator:simulator error:&error];
+  NSAssert(launchCtlBinary, @"Could not find path for launchctl binary with error %@", error);
+  return [[FBSimulatorLaunchCtlCommands alloc] initWithSimulator:simulator launchCtlBinary:launchCtlBinary];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator
+- (instancetype)initWithSimulator:(FBSimulator *)simulator launchCtlBinary:(FBBinaryDescriptor *)launchCtlBinary
 {
   self = [super init];
   if (!self) {
@@ -74,6 +57,7 @@
   }
 
   _simulator = simulator;
+  _launchCtlBinary = launchCtlBinary;
 
   return self;
 }
@@ -104,52 +88,6 @@
 - (BOOL)processIsRunningOnSimulator:(FBProcessInfo *)process error:(NSError **)error
 {
   return [self serviceNameForProcess:process error:error] != nil;
-}
-
-- (nullable NSDictionary<NSString *, id> *)listServicesWithError:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-#pragma mark Manipulating Services
-
-- (nullable NSString *)stopServiceWithName:(NSString *)serviceName error:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-- (nullable NSString *)startServiceWithName:(NSString *)serviceName error:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-#pragma mark Private
-
-- (nullable NSString *)serviceNameForSubstring:(NSString *)substring processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
-{
-  NSAssert(NO, @"-[%@ %@] is abstract and should be overridden", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
-  return nil;
-}
-
-@end
-
-@implementation FBSimulatorLaunchCtlCommands_Real
-
-#pragma mark Initializers
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator launchCtlBinary:(FBBinaryDescriptor *)launchCtlBinary
-{
-  self = [super initWithSimulator:simulator];
-  if (!self) {
-    return nil;
-  }
-
-  _launchCtlBinary = launchCtlBinary;
-
-  return self;
 }
 
 #pragma mark Public
@@ -273,42 +211,6 @@
   return [[FBAgentLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchConsumingStdout:launchConfiguration error:error];
-}
-
-@end
-
-@implementation FBSimulatorLaunchCtlCommands_Polyfilled
-
-#pragma mark Initializers
-
-- (instancetype)initWithSimulator:(FBSimulator *)simulator processFetcher:(FBProcessFetcher *)processFetcher
-{
-  self = [super initWithSimulator:simulator];
-  if (!self) {
-    return nil;
-  }
-
-  _processFetcher = processFetcher;
-
-  return self;
-}
-
-#pragma mark Private
-
-- (nullable NSString *)serviceNameForSubstring:(NSString *)substring processIdentifierOut:(pid_t *)processIdentifierOut error:(NSError **)error
-{
-  NSArray<FBProcessInfo *> *processes = self.simulator.launchdSimSubprocesses;
-  for (FBProcessInfo *processInfo in processes) {
-    NSString *serviceName = processInfo.environment[@"XPC_SERVICE_NAME"];
-    if (![serviceName containsString:substring]) {
-      continue;
-    }
-    if (processIdentifierOut) {
-      *processIdentifierOut = processInfo.processIdentifier;
-    }
-    return serviceName;
-  }
-  return nil;
 }
 
 @end
