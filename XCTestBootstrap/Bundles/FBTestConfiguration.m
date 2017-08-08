@@ -15,113 +15,52 @@
 
 #import <objc/runtime.h>
 
-@interface FBTestConfiguration ()
-@property (nonatomic, copy) NSUUID *sessionIdentifier;
-@property (nonatomic, copy) NSString *moduleName;
-@property (nonatomic, copy) NSString *testBundlePath;
-@property (nonatomic, copy) NSString *path;
-@property (nonatomic, assign) BOOL shouldInitializeForUITesting;
-@end
-
 @implementation FBTestConfiguration
-@end
 
-
-@interface FBTestConfigurationBuilder ()
-@property (nonatomic, strong) id<FBFileManager> fileManager;
-@property (nonatomic, copy) NSUUID *sessionIdentifier;
-@property (nonatomic, copy) NSString *moduleName;
-@property (nonatomic, copy) NSString *testBundlePath;
-@property (nonatomic, copy) NSString *savePath;
-@property (nonatomic, copy) NSSet<NSString *> *testsToRun;
-@property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
-@property (nonatomic, assign) BOOL shouldInitializeForUITesting;
-@end
-
-@implementation FBTestConfigurationBuilder
-
-+ (instancetype)builder
++ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip savePath:(NSString *)savePath error:(NSError **)error
 {
-  return [self.class builderWithFileManager:[NSFileManager defaultManager]];
+  XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
+  testConfiguration.sessionIdentifier = sessionIdentifier;
+  testConfiguration.testBundleURL = (testBundlePath ? [NSURL fileURLWithPath:testBundlePath] : nil);
+  testConfiguration.treatMissingBaselinesAsFailures = NO;
+  testConfiguration.productModuleName = moduleName;
+  testConfiguration.reportResultsToIDE = YES;
+  testConfiguration.pathToXcodeReportingSocket = nil;
+  testConfiguration.testsMustRunOnMainThread = uiTesting;
+  testConfiguration.initializeForUITesting = uiTesting;
+  testConfiguration.testsToRun = testsToRun;
+  testConfiguration.testsToSkip = testsToSkip;
+  NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
+  if (![fileManager writeData:data toFile:savePath options:NSDataWritingAtomic error:error]) {
+    return nil;
+  }
+  return [self configurationWithSessionIdentifier:sessionIdentifier moduleName:moduleName testBundlePath:testBundlePath path:savePath uiTesting:uiTesting];
 }
 
-+ (instancetype)builderWithFileManager:(id<FBFileManager>)fileManager
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
 {
-  FBTestConfigurationBuilder *builder = [self.class new];
-  builder.fileManager = fileManager;
-  return builder;
+  return [[self alloc]
+    initWithSessionIdentifier:sessionIdentifier
+    moduleName:moduleName
+    testBundlePath:testBundlePath
+    path:path
+    uiTesting:uiTesting];
 }
 
-- (instancetype)withSessionIdentifier:(NSUUID *)sessionIdentifier
+- (instancetype)initWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting
 {
-  self.sessionIdentifier = sessionIdentifier;
-  return self;
-}
-
-- (instancetype)withModuleName:(NSString *)moduleName
-{
-  self.moduleName = moduleName;
-  return self;
-}
-
-- (instancetype)withTestBundlePath:(NSString *)testBundlePath
-{
-  self.testBundlePath = testBundlePath;
-  return self;
-}
-
-- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting
-{
-  self.shouldInitializeForUITesting = shouldInitializeForUITesting;
-  return self;
-}
-
-- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun
-{
-  self.testsToRun = testsToRun;
-  return self;
-}
-
-- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
-{
-  self.testsToSkip = testsToSkip;
-  return self;
-}
-
-- (instancetype)saveAs:(NSString *)savePath
-{
-  self.savePath = savePath;
-  return self;
-}
-
-- (FBTestConfiguration *)buildWithError:(NSError **)error
-{
-  if (self.savePath) {
-    NSAssert(self.fileManager, @"fileManager is required to save test configuration");
-    XCTestConfiguration *testConfiguration = [objc_lookUpClass("XCTestConfiguration") new];
-    testConfiguration.sessionIdentifier = self.sessionIdentifier;
-    testConfiguration.testBundleURL = (self.testBundlePath ? [NSURL fileURLWithPath:self.testBundlePath] : nil);
-    testConfiguration.treatMissingBaselinesAsFailures = NO;
-    testConfiguration.productModuleName = self.moduleName;
-    testConfiguration.reportResultsToIDE = YES;
-    testConfiguration.pathToXcodeReportingSocket = nil;
-    testConfiguration.testsMustRunOnMainThread = self.shouldInitializeForUITesting;
-    testConfiguration.initializeForUITesting = self.shouldInitializeForUITesting;
-    testConfiguration.testsToRun = self.testsToRun;
-    testConfiguration.testsToSkip = self.testsToSkip;
-    NSData *data = [NSKeyedArchiver archivedDataWithRootObject:testConfiguration];
-    if (![self.fileManager writeData:data toFile:self.savePath options:NSDataWritingAtomic error:error]) {
-      return nil;
-    }
+  self = [super init];
+  if (!self) {
+    return nil;
   }
 
-  FBTestConfiguration *configuration = [FBTestConfiguration new];
-  configuration.sessionIdentifier = self.sessionIdentifier;
-  configuration.testBundlePath = self.testBundlePath;
-  configuration.moduleName = self.moduleName;
-  configuration.path = self.savePath;
-  configuration.shouldInitializeForUITesting = self.shouldInitializeForUITesting;
-  return configuration;
+  _sessionIdentifier = sessionIdentifier;
+  _moduleName = moduleName;
+  _testBundlePath = testBundlePath;
+  _path = path;
+  _shouldInitializeForUITesting = uiTesting;
+
+  return self;
 }
 
 @end

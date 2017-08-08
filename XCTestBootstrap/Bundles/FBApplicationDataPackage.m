@@ -129,19 +129,21 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
     return nil;
   }
   NSError *innerError;
-  package.testConfiguration =
-  [[[[[[[FBTestConfigurationBuilder builderWithFileManager:self.fileManager]
-        withModuleName:self.testBundle.name]
-       withSessionIdentifier:self.testBundle.configuration.sessionIdentifier]
-      withTestBundlePath:deviceTestBundlePath]
-     withUITesting:self.testBundle.configuration.shouldInitializeForUITesting]
-    saveAs:[localTestPlanDirPath stringByAppendingPathComponent:testConfigurationFileName]]
-   buildWithError:&innerError];
+  package.testConfiguration = [FBTestConfiguration
+   configurationWithFileManager:self.fileManager
+   sessionIdentifier:self.testBundle.configuration.sessionIdentifier\
+   moduleName:self.testBundle.name
+   testBundlePath:deviceTestBundlePath
+   uiTesting:self.testBundle.configuration.shouldInitializeForUITesting
+   testsToRun:nil
+   testsToSkip:nil
+   savePath:[localTestPlanDirPath stringByAppendingPathComponent:testConfigurationFileName]
+   error:&innerError];
   if (!package.testConfiguration) {
-    return
-    [[[XCTestBootstrapError describe:@"Failed to generate test configuration"]
+    return [[[XCTestBootstrapError
+      describe:@"Failed to generate test configuration"]
       causedBy:innerError]
-     fail:error];
+      fail:error];
   }
 
   package.testBundle =

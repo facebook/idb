@@ -9,12 +9,39 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @protocol FBFileManager;
 
 /**
  Represents XCTestConfiguration class used by Apple to configure tests (aka .xctestconfiguration)
  */
 @interface FBTestConfiguration : NSObject
+
+/**
+ Creates a Test Configuration.
+
+ @param fileManager the file manager to use.
+ @param sessionIdentifier the session identifier.
+ @param moduleName name the test module name.
+ @param testBundlePath the full path to the test bundle.
+ @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
+ @param testsToRun the tests to run.
+ @param testsToSkip the tests to skip.
+ @param savePath the path to save the configuration to.
+ @param error an error out for any error that occurs.
+ */
++ (nullable instancetype)configurationWithFileManager:(id<FBFileManager>)fileManager sessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath uiTesting:(BOOL)uiTesting testsToRun:(nullable NSSet<NSString *> *)testsToRun testsToSkip:(nullable NSSet<NSString *> *)testsToSkip savePath:(NSString *)savePath error:(NSError **)error;
+
+/**
+ Creates a Test Configuration.
+
+ @param sessionIdentifier the session identifier.
+ @param moduleName name the test module name.
+ @param testBundlePath the full path to the test bundle.
+ @param uiTesting YES if to initialize the Test Configuraiton for UI Testing, NO otherwise.
+ */
++ (instancetype)configurationWithSessionIdentifier:(NSUUID *)sessionIdentifier moduleName:(NSString *)moduleName testBundlePath:(NSString *)testBundlePath path:(NSString *)path uiTesting:(BOOL)uiTesting;
 
 /**
  The session identifier
@@ -43,74 +70,4 @@
 
 @end
 
-/**
- Creates FBTestConfiguration by:
- - creating object with requested values
- - saving it, if saveAs is set
- */
-@interface FBTestConfigurationBuilder : NSObject
-
-/**
- @return builder that uses [NSFileManager defaultManager] as file manager
- */
-+ (instancetype)builder;
-
-/**
- @param fileManager a file manager used with builder
- @return builder
- */
-+ (instancetype)builderWithFileManager:(id<FBFileManager>)fileManager;
-
-/**
- @param sessionIdentifier test session identifer
- @return builder
- */
-- (instancetype)withSessionIdentifier:(NSUUID *)sessionIdentifier;
-
-/**
- @param moduleName test module name
- @return builder
- */
-- (instancetype)withModuleName:(NSString *)moduleName;
-
-/**
- @param testBundlePath path to test bundle
- @return builder
- */
-- (instancetype)withTestBundlePath:(NSString *)testBundlePath;
-
-/**
- @param shouldInitializeForUITesting determines whether should initialize for UITesting
- @return builder
- */
-- (instancetype)withUITesting:(BOOL)shouldInitializeForUITesting;
-
-/**
- Adds tests to run.
-
- @param testsToRun tests to run
- @return builder
- */
-- (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun;
-
-/**
- Adds tests to skip.
-
- @param testsToSkip tests to skip
- @return builder
- */
-- (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip;
-
-/**
- @param savePath is set, builder will save file at given path that can be loaded directly by XCTestConfiguration
- @return builder
- */
-- (instancetype)saveAs:(NSString *)savePath;
-
-/**
- @param error If there is an error, upon return contains an NSError object that describes the problem.
- @return prepared test configuration if the operation succeeds, otherwise nil.
- */
-- (FBTestConfiguration *)buildWithError:(NSError **)error;
-
-@end
+NS_ASSUME_NONNULL_END
