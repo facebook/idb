@@ -63,38 +63,6 @@
   return installResult;
 }
 
-- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  NSParameterAssert(bundleID);
-
-  // Confirm the app is suitable to be uninstalled.
-  if ([self.simulator isSystemApplicationWithBundleID:bundleID error:nil]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  NSError *innerError = nil;
-  if (![self.simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
-      causedBy:innerError]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  // Kill the app if it's running
-  [self killApplicationWithBundleID:bundleID error:nil];
-  // Then uninstall for real.
-  if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
-    return [[[[FBSimulatorError
-      describeFormat:@"Failed to uninstall '%@'", bundleID]
-      causedBy:innerError]
-      inSimulator:self.simulator]
-      failBool:error];
-  }
-  return YES;
-}
-
 - (BOOL)isApplicationInstalledWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
   return [self.simulator installedApplicationWithBundleID:bundleID error:error] != nil;
@@ -136,52 +104,41 @@
   return [applications copy];
 }
 
-- (BOOL)installExtractedApplicationWithPath:(NSString *)path error:(NSError **)error
-{
-  NSError *innerError = nil;
-
-  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&innerError];
-  if (!application) {
-    return [[[FBSimulatorError
-      describeFormat:@"Could not determine Application information for path %@", path]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
-    return YES;
-  }
-
-  NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
-  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
-  if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
-    return [[FBSimulatorError
-      describeFormat:
-        @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
-        [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
-        application.binary.path,
-        [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
-      failBool:error];
-  }
-
-  NSDictionary *options = @{
-    @"CFBundleIdentifier" : application.bundleID
-  };
-  NSURL *appURL = [NSURL fileURLWithPath:application.path];
-
-  if (![self.simulator.device installApplication:appURL withOptions:options error:&innerError]) {
-    return [[[FBSimulatorError
-      describeFormat:@"Failed to install Application %@ with options %@", application, options]
-      causedBy:innerError]
-      failBool:error];
-  }
-
-  return YES;
-}
-
 #pragma mark - FBSimulatorApplicationCommands
 
-#pragma mark Launching / Terminating Applications
+#pragma mark Application Lifecycle
+
+- (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
+{
+  NSParameterAssert(bundleID);
+
+  // Confirm the app is suitable to be uninstalled.
+  if ([self.simulator isSystemApplicationWithBundleID:bundleID error:nil]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Can't uninstall '%@' as it is a system Application", bundleID]
+      inSimulator:self.simulator]
+      failBool:error];
+  }
+  NSError *innerError = nil;
+  if (![self.simulator installedApplicationWithBundleID:bundleID error:&innerError]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Can't uninstall '%@' as it isn't installed", bundleID]
+      causedBy:innerError]
+      inSimulator:self.simulator]
+      failBool:error];
+  }
+  // Kill the app if it's running
+  [self killApplicationWithBundleID:bundleID error:nil];
+  // Then uninstall for real.
+  if (![self.simulator.device uninstallApplication:bundleID withOptions:nil error:&innerError]) {
+    return [[[[FBSimulatorError
+      describeFormat:@"Failed to uninstall '%@'", bundleID]
+      causedBy:innerError]
+      inSimulator:self.simulator]
+      failBool:error];
+  }
+  return YES;
+}
 
 - (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error
 {
@@ -189,12 +146,6 @@
   return [[FBApplicationLaunchStrategy
     strategyWithSimulator:self.simulator]
     launchOrRelaunchApplication:appLaunch error:error] != nil;
-}
-
-- (BOOL)terminateApplication:(FBApplicationBundle *)application error:(NSError **)error
-{
-  NSParameterAssert(application);
-  return [self killApplicationWithBundleID:application.bundleID error:error];
 }
 
 #pragma mark Querying Application State
@@ -311,6 +262,49 @@ static NSString *const KeyDataContainer = @"DataContainer";
     installedApplicationWithBundle:bundle
     installType:[FBInstalledApplication installTypeFromString:typeString]
     dataContainer:dataContainer.path];
+}
+
+- (BOOL)installExtractedApplicationWithPath:(NSString *)path error:(NSError **)error
+{
+  NSError *innerError = nil;
+
+  FBApplicationBundle *application = [FBApplicationBundle applicationWithPath:path error:&innerError];
+  if (!application) {
+    return [[[FBSimulatorError
+      describeFormat:@"Could not determine Application information for path %@", path]
+      causedBy:innerError]
+      failBool:error];
+  }
+
+  if ([self.simulator isSystemApplicationWithBundleID:application.bundleID error:nil]) {
+    return YES;
+  }
+
+  NSSet<NSString *> *binaryArchitectures = application.binary.architectures;
+  NSSet<NSString *> *supportedArchitectures = FBControlCoreConfigurationVariants.baseArchToCompatibleArch[self.simulator.deviceType.simulatorArchitecture];
+  if (![binaryArchitectures intersectsSet:supportedArchitectures]) {
+    return [[FBSimulatorError
+    describeFormat:
+      @"Simulator does not support any of the architectures (%@) of the executable at %@. Simulator Archs (%@)",
+      [FBCollectionInformation oneLineDescriptionFromArray:binaryArchitectures.allObjects],
+      application.binary.path,
+      [FBCollectionInformation oneLineDescriptionFromArray:supportedArchitectures.allObjects]]
+    failBool:error];
+  }
+
+  NSDictionary *options = @{
+                            @"CFBundleIdentifier" : application.bundleID
+                            };
+  NSURL *appURL = [NSURL fileURLWithPath:application.path];
+
+  if (![self.simulator.device installApplication:appURL withOptions:options error:&innerError]) {
+    return [[[FBSimulatorError
+      describeFormat:@"Failed to install Application %@ with options %@", application, options]
+      causedBy:innerError]
+      failBool:error];
+  }
+
+  return YES;
 }
 
 @end

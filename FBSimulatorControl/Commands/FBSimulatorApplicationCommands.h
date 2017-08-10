@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FBSimulatorApplicationCommands <FBApplicationCommands>
 
-#pragma mark Launching / Terminating Applications
+#pragma mark Application Lifecycle
 
 /**
  Uninstalls the given Application.
@@ -42,16 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the command succeeds, NO otherwise,
  */
 - (BOOL)launchOrRelaunchApplication:(FBApplicationLaunchConfiguration *)appLaunch error:(NSError **)error;
-
-/**
- Terminates an Application based on the Application.
- Will fail if a running Application could not be found, or the kill fails.
-
- @param application the Application to terminate.
- @param error an error out for any error that occurs.
- @return YES if the command succeeds, NO otherwise,
- */
-- (BOOL)terminateApplication:(FBApplicationBundle *)application error:(NSError **)error;
 
 #pragma mark Querying Application State
 
