@@ -1028,12 +1028,6 @@ struct FBSimulatorBootConfigurationParser {
         self.scaleParser.fmap(FBSimulatorBootConfiguration.withScale),
         self.localeParser.fmap { FBSimulatorBootConfiguration.withLocalizationOverride(FBLocalizationOverride.withLocale($0)) }
       ])
-      .fmap { configuration in
-        if configuration.options.contains(FBSimulatorBootOptions.enableDirectLaunch) && configuration.framebuffer == nil {
-          return configuration.withFramebuffer(FBFramebufferConfiguration.default())
-        }
-        return configuration
-      }
   }
 
   static var localeParser: Parser<Locale> {

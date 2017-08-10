@@ -260,11 +260,14 @@
   NSError *innerError = nil;
   FBFramebuffer *framebuffer = nil;
   if ([self.options shouldCreateFramebuffer:self.configuration]) {
-    FBFramebufferConfiguration *configuration = [self.configuration.framebuffer inSimulator:self.simulator];
+    // If we require a Framebuffer, but don't have one provided, we should use the default one.
+    FBFramebufferConfiguration *configuration = self.configuration.framebuffer;
     if (!configuration) {
       configuration = FBFramebufferConfiguration.defaultConfiguration;
       [self.simulator.logger logFormat:@"No Framebuffer Launch Configuration provided, but required. Using default of %@", configuration];
     }
+    // Update it to include the relevant paths for *this* simulator.
+    configuration = [configuration inSimulator:self.simulator];
 
     framebuffer = [[FBFramebufferConnectStrategy
       strategyWithConfiguration:configuration]

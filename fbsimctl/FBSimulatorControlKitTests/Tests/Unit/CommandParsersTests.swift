@@ -110,7 +110,6 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
       ["--direct-launch"],
       FBSimulatorBootConfiguration.default
         .withOptions([.enableDirectLaunch, .awaitServices, .useNSWorkspace])
-        .withFramebuffer(FBFramebufferConfiguration.default())
     )
   }
 
@@ -122,7 +121,6 @@ class FBSimulatorBootConfigurationTests : XCTestCase {
         .withLocalizationOverride(FBLocalizationOverride.withLocale(Locale(identifier: "en_GB")))
         .withScale(.scale75)
         .withOptions([.enableDirectLaunch, .connectBridge, .awaitServices, .useNSWorkspace])
-        .withFramebuffer(FBFramebufferConfiguration.default())
     )
   }
 }
@@ -324,7 +322,6 @@ class CommandParserTests : XCTestCase {
     ]
     let launchConfiguration = FBSimulatorBootConfiguration.default
       .withOptions([.enableDirectLaunch, .awaitServices, .useNSWorkspace])
-      .withFramebuffer(FBFramebufferConfiguration.default())
     let diagnoseAction = Action.diagnose(FBDiagnosticQuery.all(), DiagnosticFormat.CurrentFormat)
     let actions: [Action] = [.list, .create(CreationSpecification.iPhone6Configuration), .boot(launchConfiguration), .listen(ListenInterface(stdin: false, http: 8090, hid: nil, handle: nil)), .shutdown, diagnoseAction]
     self.assertParsesImplodingCompoundActions(actions, compoundComponents: compoundComponents)
