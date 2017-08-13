@@ -170,14 +170,6 @@ extension IndividualCreationConfiguration {
   }}
 }
 
-extension FBApplicationBundle {
-  static func findOrExtract(atPath: String) throws -> (String, URL?) {
-    var url: NSURL? = nil
-    let result = try FBApplicationBundle.findOrExtractApplication(atPath: atPath, extractPathOut: &url)
-    return (result, url as URL?)
-  }
-}
-
 extension Bool {
   static func fallback(from: String?, to: Bool) -> Bool {
     guard let from = from else {

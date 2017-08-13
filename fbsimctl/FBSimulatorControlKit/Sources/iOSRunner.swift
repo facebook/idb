@@ -32,17 +32,6 @@ struct iOSActionProvider {
     switch action {
     case .diagnose(let query, let format):
       return DiagnosticsRunner(reporter, query, query, format)
-    case .install(let appPath, let codeSign):
-      return iOSTargetRunner.simple(reporter, .install, ControlCoreSubject(appPath as NSString)) {
-        let (extractedAppPath, cleanupDirectory) = try FBApplicationBundle.findOrExtract(atPath: appPath)
-        if codeSign {
-          try FBCodesignProvider.codeSignCommandWithAdHocIdentity().recursivelySignBundle(atPath: extractedAppPath)
-        }
-        try target.installApplication(withPath: extractedAppPath)
-        if let cleanupDirectory = cleanupDirectory {
-          try? FileManager.default.removeItem(at: cleanupDirectory)
-        }
-      }
     case .uninstall(let appBundleID):
       return iOSTargetRunner.simple(reporter, .uninstall, ControlCoreSubject(appBundleID as NSString)) {
         try target.uninstallApplication(withBundleID: appBundleID)
