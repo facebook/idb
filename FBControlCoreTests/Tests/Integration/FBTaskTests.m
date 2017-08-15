@@ -159,7 +159,7 @@
   [[[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
     build]
-    startAsynchronouslyWithTerminationHandler:^(FBTask *_) {
+    startAsynchronouslyWithTerminationQueue:dispatch_get_main_queue() handler:^(FBTask *_) {
       didCallTerminationHandler = YES;
     }];
 
@@ -175,7 +175,7 @@
   FBTask *task = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
     build]
-    startAsynchronouslyWithTerminationHandler:^(FBTask *_) {
+    startAsynchronouslyWithTerminationQueue:dispatch_get_main_queue() handler:^(FBTask *_) {
       didCallTerminationHandler = YES;
     }];
 

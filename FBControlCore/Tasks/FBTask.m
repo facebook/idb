@@ -354,7 +354,10 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 @property (atomic, assign, readwrite) pid_t processIdentifier;
 @property (atomic, assign, readwrite) BOOL completedTeardown;
 @property (atomic, copy, nullable, readwrite) NSString *emittedError;
+
 @property (atomic, copy, nullable, readwrite) void (^terminationHandler)(FBTask *);
+@property (atomic, strong, nullable, readwrite) dispatch_queue_t terminationQueue;
+
 
 @end
 
@@ -438,17 +441,19 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 - (instancetype)startAsynchronously
 {
-  return [self launchWithTerminationHandler:nil];
+  return [self launchWithTerminationQueue:nil handler:nil];
 }
 
-- (instancetype)startAsynchronouslyWithTerminationHandler:(void (^)(FBTask *task))handler
+- (instancetype)startAsynchronouslyWithTerminationQueue:(dispatch_queue_t)terminationQueue handler:(void (^)(FBTask *task))handler
 {
-  return [self launchWithTerminationHandler:handler];
+  NSParameterAssert(terminationQueue);
+  NSParameterAssert(handler);
+  return [self launchWithTerminationQueue:terminationQueue handler:handler];
 }
 
 - (instancetype)startSynchronouslyWithTimeout:(NSTimeInterval)timeout
 {
-  [self launchWithTerminationHandler:nil];
+  [self launchWithTerminationQueue:nil handler:nil];
 
   NSError *error = nil;
   if (![self waitForCompletionWithTimeout:timeout error:&error]) {
@@ -524,12 +529,13 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 
 #pragma mark Private
 
-- (instancetype)launchWithTerminationHandler:(void (^)(FBTask *task))handler
+- (instancetype)launchWithTerminationQueue:(dispatch_queue_t)queue handler:(void (^)(FBTask *task))handler
 {
   // Since the FBTask may not be returned by anyone and is asynchronous, it needs to be retained.
   // This Retain is matched by a release in -[FBTask completeTermination].
   CFRetain((__bridge CFTypeRef)(self));
 
+  self.terminationQueue = queue;
   self.terminationHandler = handler;
 
   NSError *error = nil;
@@ -617,9 +623,14 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   if (!terminationHandler) {
     return;
   }
-  dispatch_async(dispatch_get_main_queue(), ^{
+  dispatch_queue_t queue = self.terminationQueue;
+  if (!queue) {
+    return;
+  }
+  dispatch_async(queue, ^{
     terminationHandler(self);
   });
+  self.terminationQueue = nil;
   self.terminationHandler = nil;
 }
 

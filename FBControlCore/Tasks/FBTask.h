@@ -55,10 +55,11 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTask;
 /**
  Asynchronously launches the task, returning immediately after the Task has launched.
 
+ @Param terminationQueue the queue to call the termination handler on.
  @param handler the handler to call when the Task has terminated.
  @return the reciever, for chaining.
  */
-- (instancetype)startAsynchronouslyWithTerminationHandler:(void (^)(FBTask *task))handler;
+- (instancetype)startAsynchronouslyWithTerminationQueue:(dispatch_queue_t)terminationQueue handler:(void (^)(FBTask *task))handler;
 
 /**
  Asynchronously launches the task, returning immediately after the Task has launched.
