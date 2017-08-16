@@ -164,7 +164,7 @@
 
 + (NSArray<FBWeakFramework *> *)privateFrameworks
 {
-  NSDecimalNumber *xcodeVersion = FBControlCoreGlobalConfiguration.xcodeVersionNumber;
+  NSDecimalNumber *xcodeVersion = FBXcodeConfiguration.xcodeVersionNumber;
   NSOperatingSystemVersion macOSVersion = NSProcessInfo.processInfo.operatingSystemVersion;
 
   return [FBDeviceControlFrameworkLoader privateFrameworkForMacOSVersion:macOSVersion

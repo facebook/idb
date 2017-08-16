@@ -129,7 +129,7 @@
 
 + (NSString *)xcodeBuildPathWithError:(NSError **)error
 {
-  NSString *path = [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
+  NSString *path = [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"/usr/bin/xcodebuild"];
   if (![NSFileManager.defaultManager fileExistsAtPath:path]) {
     return [[FBDeviceControlError
       describeFormat:@"xcodebuild does not exist at expected path %@", path]

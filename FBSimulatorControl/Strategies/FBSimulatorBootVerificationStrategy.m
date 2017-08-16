@@ -82,7 +82,7 @@
 {
   FBControlCoreProductFamily family = self.simulator.productFamily;
   if (family == FBControlCoreProductFamilyiPhone || family == FBControlCoreProductFamilyiPad) {
-    if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+    if (FBXcodeConfiguration.isXcode9OrGreater) {
       return @[
         @"com.apple.backboardd",
         @"com.apple.mobile.installd",
@@ -90,7 +90,7 @@
         @"com.apple.SpringBoard",
       ];
     }
-    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater ) {
+    if (FBXcodeConfiguration.isXcode8OrGreater ) {
       return @[
         @"com.apple.backboardd",
         @"com.apple.mobile.installd",
@@ -100,7 +100,7 @@
     }
   }
   if (family == FBControlCoreProductFamilyAppleWatch || family == FBControlCoreProductFamilyAppleTV) {
-    if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+    if (FBXcodeConfiguration.isXcode8OrGreater) {
       return @[
         @"com.apple.mobileassetd",
         @"com.apple.nsurlsessiond",

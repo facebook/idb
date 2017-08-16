@@ -12,7 +12,7 @@
 #import <Foundation/Foundation.h>
 
 #import "FBControlCoreError.h"
-#import "FBControlCoreGlobalConfiguration.h"
+#import "FBXcodeConfiguration.h"
 #import "FBControlCoreLogger.h"
 
 @interface FBWeakFramework ()
@@ -31,9 +31,9 @@
 + (NSArray<NSString *> *)xcodeFallbackDirectories
 {
   return @[
-    [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"../Frameworks"],
-    [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"../SharedFrameworks"],
-    [FBControlCoreGlobalConfiguration.developerDirectory stringByAppendingPathComponent:@"../Plugins"],
+    [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"../Frameworks"],
+    [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"../SharedFrameworks"],
+    [FBXcodeConfiguration.developerDirectory stringByAppendingPathComponent:@"../Plugins"],
   ];
 }
 
@@ -52,7 +52,7 @@
 + (instancetype)xcodeFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks
 {
   return [[FBWeakFramework alloc]
-    initWithBasePath:FBControlCoreGlobalConfiguration.developerDirectory
+    initWithBasePath:FBXcodeConfiguration.developerDirectory
     relativePath:relativePath
     fallbackDirectories:self.xcodeFallbackDirectories
     requiredClassNames:requiredClassNames
@@ -67,7 +67,7 @@
 + (instancetype)appleConfigurationFrameworkWithRelativePath:(NSString *)relativePath requiredClassNames:(NSArray<NSString *> *)requiredClassNames requiredFrameworks:(NSArray<FBWeakFramework *> *)requiredFrameworks
 {
   return [[FBWeakFramework alloc]
-    initWithBasePath:FBControlCoreGlobalConfiguration.appleConfiguratorApplicationPath
+    initWithBasePath:FBXcodeConfiguration.appleConfiguratorApplicationPath
     relativePath:relativePath
     fallbackDirectories:@[]
     requiredClassNames:requiredClassNames

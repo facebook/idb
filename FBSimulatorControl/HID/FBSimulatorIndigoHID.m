@@ -34,7 +34,7 @@
 
 + (instancetype)defaultHID
 {
-  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (FBXcodeConfiguration.isXcode9OrGreater) {
     return [self simulatorKit];
   }
   return [self reimplemented];

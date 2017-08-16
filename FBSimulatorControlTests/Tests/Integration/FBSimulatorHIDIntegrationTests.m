@@ -78,7 +78,7 @@
 
 + (BOOL)supportsHIDIntegrationTests
 {
-  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (FBXcodeConfiguration.isXcode9OrGreater) {
     return YES;
   }
   NSLog(@"This test is only supported on Xcode 9 or greater");
@@ -87,7 +87,7 @@
 
 - (void)testButtonPayloads
 {
-  if (!FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (!FBXcodeConfiguration.isXcode9OrGreater) {
     return;
   }
 
@@ -103,7 +103,7 @@
 
 - (void)testKeyboardPayloads
 {
-  if (!FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (!FBXcodeConfiguration.isXcode9OrGreater) {
     return;
   }
 
@@ -117,7 +117,7 @@
 
 - (void)testTouchPayloads
 {
-  if (!FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (!FBXcodeConfiguration.isXcode9OrGreater) {
     return;
   }
 

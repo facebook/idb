@@ -32,36 +32,6 @@ extern NSString *const FBControlCoreDebugLogging;
 @interface FBControlCoreGlobalConfiguration : NSObject <FBJSONSerializable>
 
 /**
- The File Path to of Xcode's /Xcode.app/Contents/Developer directory.
- */
-@property (nonatomic, copy, readonly, class) NSString *developerDirectory;
-
-/**
- The File Path of Apple's 'Apple Configurator' Application, if installed.
- */
-@property (nonatomic, copy, readonly, nullable, class) NSString *appleConfiguratorApplicationPath;
-
-/**
- The Version Number for the Xcode defined by the Developer Directory.
- */
-@property (nonatomic, copy, readonly, class) NSDecimalNumber *xcodeVersionNumber;
-
-/**
- The SDK Version for the Xcode defined by the Developer Directory.
- */
-@property (nonatomic, copy, readonly, class) NSDecimalNumber *iosSDKVersionNumber;
-
-/**
- Formatter for the SDK Version a string
- */
-@property (nonatomic, strong, readonly, class) NSDecimalNumber *iosSDKVersionNumberFormatter;
-
-/**
- The SDK Version of the current Xcode Version as a String.
- */
-@property (nonatomic, copy, readonly, class) NSString *iosSDKVersion;
-
-/**
  A Timeout Value when waiting on events that should happen 'fast'
  */
 @property (nonatomic, assign, readonly, class) NSTimeInterval fastTimeout;
@@ -75,26 +45,6 @@ extern NSString *const FBControlCoreDebugLogging;
  A Timeout Value when waiting on events that will a longer period of time.
  */
 @property (nonatomic, assign, readonly, class) NSTimeInterval slowTimeout;
-
-/**
- YES if Xcode 7 or greater, NO Otherwise.
- */
-@property (nonatomic, assign, readonly, class) BOOL isXcode7OrGreater;
-
-/**
- YES if Xcode 8 or greater, NO Otherwise.
- */
-@property (nonatomic, assign, readonly, class) BOOL isXcode8OrGreater;
-
-/**
- YES if Xcode 9 or greater, NO Otherwise.
- */
-@property (nonatomic, assign, readonly, class) BOOL isXcode9OrGreater;
-
-/**
- YES if passing a custom SimDeviceSet to the Simulator App is Supported.
- */
-@property (nonatomic, assign, readonly, class) BOOL supportsCustomDeviceSets;
 
 /**
  A Description of the Current Configuration.

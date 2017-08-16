@@ -66,7 +66,7 @@
     return YES;
   }
   // In some versions of Xcode 8, it was possible that a direct launch without a bridge could mean applications would not launch.
-  if (!FBControlCoreGlobalConfiguration.isXcode9OrGreater && self.shouldUseDirectLaunch) {
+  if (!FBXcodeConfiguration.isXcode9OrGreater && self.shouldUseDirectLaunch) {
     return YES;
   }
   return NO;
@@ -300,7 +300,7 @@
 - (BOOL)shouldBootWithCoreSimulator
 {
   // Always boot with CoreSimulator on Xcode 9
-  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (FBXcodeConfiguration.isXcode9OrGreater) {
     return YES;
   }
   // Otherwise obey the direct launch config.
@@ -395,7 +395,7 @@
 
   NSString *setPath = simulator.set.deviceSet.setPath;
   if (setPath) {
-    if (!FBControlCoreGlobalConfiguration.supportsCustomDeviceSets) {
+    if (!FBXcodeConfiguration.supportsCustomDeviceSets) {
       return [[[FBSimulatorError describe:@"Cannot use custom Device Set on current platform"] inSimulator:simulator] fail:error];
     }
     [arguments addObjectsFromArray:@[@"-DeviceSetPath", setPath]];
@@ -537,9 +537,9 @@
 
 + (id<FBCoreSimulatorBootOptions>)coreSimulatorBootOptions
 {
-  if (FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (FBXcodeConfiguration.isXcode9OrGreater) {
     return [FBCoreSimulatorBootOptions_Xcode9 new];
-  } else if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  } else if (FBXcodeConfiguration.isXcode8OrGreater) {
     return [FBCoreSimulatorBootOptions_Xcode8 new];
   } else {
     return [FBCoreSimulatorBootOptions_Xcode7 new];
@@ -555,7 +555,7 @@
 
 + (id<FBSimulatorApplicationLaunchOptions>)applicationLaunchOptions
 {
-  return FBControlCoreGlobalConfiguration.isXcode9OrGreater
+  return FBXcodeConfiguration.isXcode9OrGreater
     ? [FBSimulatorApplicationLaunchOptions_Xcode9 new]
     : [FBSimulatorApplicationLaunchOptions_Xcode7 new];
 }

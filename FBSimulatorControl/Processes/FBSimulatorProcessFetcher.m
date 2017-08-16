@@ -186,7 +186,7 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
 
 + (NSPredicate *)coreSimulatorProcessesForCurrentXcode
 {
-  return [FBProcessFetcher processesWithLaunchPath:FBControlCoreGlobalConfiguration.developerDirectory];
+  return [FBProcessFetcher processesWithLaunchPath:FBXcodeConfiguration.developerDirectory];
 }
 
 #pragma mark Private

@@ -76,7 +76,7 @@
 
   // Check the bundle is codesigned (if required).
   NSError *innerError;
-  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater && ![self.codesign cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath error:&innerError]) {
+  if (FBXcodeConfiguration.isXcode8OrGreater && ![self.codesign cdHashForBundleAtPath:self.testLaunchConfiguration.testBundlePath error:&innerError]) {
     return [[[XCTestBootstrapError
       describeFormat:@"Could not determine bundle at path '%@' is codesigned and codesigning is required", self.testLaunchConfiguration.testBundlePath]
       causedBy:innerError]
@@ -111,10 +111,10 @@
       fail:error];
   }
 
-  NSString *IDEBundleInjectionFrameworkPath = [FBControlCoreGlobalConfiguration.developerDirectory
+  NSString *IDEBundleInjectionFrameworkPath = [FBXcodeConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/PrivateFrameworks/IDEBundleInjection.framework"];
 
-  NSString *developerLibraryPath = [FBControlCoreGlobalConfiguration.developerDirectory
+  NSString *developerLibraryPath = [FBXcodeConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library"];
   NSArray<NSString *> *XCTestFrameworksPaths = @[
     [developerLibraryPath stringByAppendingPathComponent:@"Frameworks"],

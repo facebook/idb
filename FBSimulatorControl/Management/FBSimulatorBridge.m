@@ -68,7 +68,7 @@
 + (nullable NSString *)portNameForSimulator:(FBSimulator *)simulator operationOut:(FBSimulatorAgentOperation **)operationOut error:(NSError **)error
 {
   NSString *portName = @"com.apple.iphonesimulator.bridge";
-  if (!FBControlCoreGlobalConfiguration.isXcode9OrGreater) {
+  if (!FBXcodeConfiguration.isXcode9OrGreater) {
     return portName;
   }
   FBBinaryDescriptor *bridgeBinary = [self simulatorBridgeBinaryWithError:error];

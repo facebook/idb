@@ -17,7 +17,7 @@ public struct Fixtures {
   }
 
   static func binary() -> FBSimulatorBinary {
-    let basePath: NSString = FBControlCoreGlobalConfiguration.developerDirectory()
+    let basePath: NSString = FBXcodeConfiguration.developerDirectory()
     return try! FBSimulatorBinary(
       path: basePath.stringByAppendingPathComponent("Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/sbin/launchd_sim")
     )

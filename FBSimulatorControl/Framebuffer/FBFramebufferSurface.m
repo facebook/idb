@@ -333,7 +333,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   if ([self.framebufferService respondsToSelector:@selector(invalidate)]) {
     // The call to this method has been dropped in Xcode 8.1, but exists in Xcode 8.0
     // Don't call it on Xcode 8.1
-    if ([FBControlCoreGlobalConfiguration.xcodeVersionNumber isLessThan:[NSDecimalNumber decimalNumberWithString:@"8.1"]]) {
+    if ([FBXcodeConfiguration.xcodeVersionNumber isLessThan:[NSDecimalNumber decimalNumberWithString:@"8.1"]]) {
       [self.framebufferService invalidate];
     }
   }

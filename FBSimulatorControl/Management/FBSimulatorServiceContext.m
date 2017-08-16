@@ -69,7 +69,7 @@
   Class serviceContextClass = objc_lookUpClass("SimServiceContext");
   if ([serviceContextClass respondsToSelector:@selector(sharedServiceContextForDeveloperDir:error:)]) {
     NSError *innerError = nil;
-    SimServiceContext *serviceContext = [serviceContextClass sharedServiceContextForDeveloperDir:FBControlCoreGlobalConfiguration.developerDirectory error:&innerError];
+    SimServiceContext *serviceContext = [serviceContextClass sharedServiceContextForDeveloperDir:FBXcodeConfiguration.developerDirectory error:&innerError];
     NSAssert(serviceContext, @"Could not create a service context with error %@", innerError);
     return [[FBSimulatorServiceContext_ContextBacked alloc] initWithProcessFetcher:processFetcher serviceContext:serviceContext];
   }

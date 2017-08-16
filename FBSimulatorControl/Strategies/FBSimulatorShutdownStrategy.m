@@ -124,10 +124,10 @@
 
 + (NSInteger)errorCodeForShutdownWhenShuttingDown
 {
-  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (FBXcodeConfiguration.isXcode8OrGreater) {
     return 163;
   }
-  if (FBControlCoreGlobalConfiguration.isXcode7OrGreater) {
+  if (FBXcodeConfiguration.isXcode7OrGreater) {
     return 159;
   }
   return 146;

@@ -9,11 +9,9 @@
 
 #import "FBControlCoreGlobalConfiguration.h"
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 #import "FBControlCoreLogger.h"
-#import "FBTaskBuilder.h"
-#import "FBXcodeDirectory.h"
 
 NSString *const FBControlCoreStderrLogging = @"FBCONTROLCORE_LOGGING";
 NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
@@ -21,69 +19,6 @@ NSString *const FBControlCoreDebugLogging = @"FBCONTROLCORE_DEBUG_LOGGING";
 static id<FBControlCoreLogger> logger;
 
 @implementation FBControlCoreGlobalConfiguration
-
-+ (NSString *)developerDirectory
-{
-  static dispatch_once_t onceToken;
-  static NSString *directory;
-  dispatch_once(&onceToken, ^{
-    directory = [self findXcodeDeveloperDirectoryOrAssert];
-  });
-  return directory;
-}
-
-+ (nullable NSString *)appleConfiguratorApplicationPath
-{
-  static dispatch_once_t onceToken;
-  static NSString *path = nil;
-  dispatch_once(&onceToken, ^{
-    path = [NSWorkspace.sharedWorkspace absolutePathForAppBundleWithIdentifier:@"com.apple.configurator.ui"];
-  });
-  return path;
-}
-
-+ (NSDecimalNumber *)xcodeVersionNumber
-{
-  static dispatch_once_t onceToken;
-  static NSDecimalNumber *versionNumber;
-  dispatch_once(&onceToken, ^{
-    NSString *versionNumberString = [FBControlCoreGlobalConfiguration
-      readValueForKey:@"CFBundleShortVersionString"
-      fromPlistAtPath:FBControlCoreGlobalConfiguration.xcodeInfoPlistPath];
-    versionNumber = [NSDecimalNumber decimalNumberWithString:versionNumberString];
-  });
-  return versionNumber;
-}
-
-+ (NSString *)iosSDKVersion
-{
-  static dispatch_once_t onceToken;
-  static NSString *sdkVersion;
-  dispatch_once(&onceToken, ^{
-    sdkVersion = [FBControlCoreGlobalConfiguration
-      readValueForKey:@"Version"
-      fromPlistAtPath:FBControlCoreGlobalConfiguration.iPhoneSimulatorPlatformInfoPlistPath];
-  });
-  return sdkVersion;
-}
-
-+ (NSDecimalNumber *)iosSDKVersionNumber
-{
-  return [NSDecimalNumber decimalNumberWithString:self.iosSDKVersion];
-}
-
-+ (NSNumberFormatter *)iosSDKVersionNumberFormatter
-{
-  static dispatch_once_t onceToken;
-  static NSNumberFormatter *formatter;
-  dispatch_once(&onceToken, ^{
-    formatter = [NSNumberFormatter new];
-    formatter.numberStyle = NSNumberFormatterDecimalStyle;
-    formatter.minimumFractionDigits = 1;
-    formatter.maximumFractionDigits = 3;
-  });
-  return formatter;
-}
 
 + (NSTimeInterval)fastTimeout
 {
@@ -98,29 +33,6 @@ static id<FBControlCoreLogger> logger;
 + (NSTimeInterval)slowTimeout
 {
   return 120;
-}
-
-+ (BOOL)isXcode7OrGreater
-{
-  return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"7.0"]];
-}
-
-+ (BOOL)isXcode8OrGreater
-{
-  return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"8.0"]];
-}
-
-+ (BOOL)isXcode9OrGreater
-{
-  return [FBControlCoreGlobalConfiguration.xcodeVersionNumber isGreaterThanOrEqualTo:[NSDecimalNumber decimalNumberWithString:@"9.0"]];
-}
-
-+ (BOOL)supportsCustomDeviceSets
-{
-  // Prior to Xcode 7, 'iOS Simulator.app' calls `+[SimDeviceSet defaultSet]` directly
-  // This means that the '-DeviceSetPath' won't do anything for Simulators booted with prior to Xcode 7.
-  // It should be possible to fix this by injecting a shim that swizzles this method in these Xcode versions.
-  return self.isXcode7OrGreater;
 }
 
 + (id<FBControlCoreLogger>)defaultLogger
@@ -153,11 +65,7 @@ static id<FBControlCoreLogger> logger;
 + (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"Developer Directory %@ | Xcode Version %@ | iOS SDK Version %@ | Supports Custom Device Sets %d | Debug Logging Enabled %d",
-    self.developerDirectory,
-    self.xcodeVersionNumber,
-    self.iosSDKVersionNumber,
-    self.supportsCustomDeviceSets,
+    @"Debug Logging Enabled %d",
     self.debugLoggingEnabled
   ];
 }
@@ -171,11 +79,7 @@ static id<FBControlCoreLogger> logger;
 
 - (id)jsonSerializableRepresentation
 {
-  return @{
-     @"developer_directory" : FBControlCoreGlobalConfiguration.developerDirectory,
-     @"xcode_version" : FBControlCoreGlobalConfiguration.xcodeVersionNumber,
-     @"ios_sdk_version" : FBControlCoreGlobalConfiguration.iosSDKVersionNumber,
-  };
+  return @{};
 }
 
 #pragma mark Private
@@ -188,28 +92,6 @@ static id<FBControlCoreLogger> logger;
 + (BOOL)stderrLoggingEnabled
 {
   return [NSProcessInfo.processInfo.environment[FBControlCoreStderrLogging] boolValue] || self.debugLoggingEnabled;
-}
-
-+ (NSString *)iPhoneSimulatorPlatformInfoPlistPath
-{
-  return [[self.developerDirectory
-    stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform"]
-    stringByAppendingPathComponent:@"Info.plist"];
-}
-
-+ (NSString *)xcodeInfoPlistPath
-{
-  return [[self.developerDirectory
-    stringByDeletingLastPathComponent]
-    stringByAppendingPathComponent:@"Info.plist"];
-}
-
-+ (NSString *)findXcodeDeveloperDirectoryOrAssert
-{
-  NSError *error = nil;
-  NSString *directory = [FBXcodeDirectory.xcodeSelectFromCommandLine xcodePathWithError:&error];
-  NSAssert(directory, error.description);
-  return directory;
 }
 
 + (nullable id)readValueForKey:(NSString *)key fromPlistAtPath:(NSString *)plistPath

@@ -69,7 +69,7 @@ static NSString *KeyPlatformMacOS = @"macos";
 
 - (NSString *)xctestPath
 {
-  return [FBControlCoreGlobalConfiguration.developerDirectory
+  return [FBXcodeConfiguration.developerDirectory
     stringByAppendingPathComponent:@"usr/bin/xctest"];
 }
 
@@ -119,7 +119,7 @@ static NSString *KeyPlatformMacOS = @"macos";
 
 - (NSString *)xctestPath
 {
-  return [FBControlCoreGlobalConfiguration.developerDirectory
+  return [FBXcodeConfiguration.developerDirectory
     stringByAppendingPathComponent:@"Platforms/iPhoneSimulator.platform/Developer/Library/Xcode/Agents/xctest"];
 }
 #pragma mark NSObject

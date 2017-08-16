@@ -57,7 +57,7 @@
   if (objc_getClass("SimDeviceIOClient")) {
     return [[FBFramebufferConnectStrategy_IOPortClient alloc] initWithConfiguration:configuration];
   }
-  if (FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (FBXcodeConfiguration.isXcode8OrGreater) {
     return [[FBFramebufferConnectStrategy_Xcode8 alloc] initWithConfiguration:configuration];
   }
   return [[FBFramebufferConnectStrategy_Xcode7 alloc] initWithConfiguration:configuration];

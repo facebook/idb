@@ -334,11 +334,11 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 - (BOOL)shouldCheckForCrashedProcess
 {
-  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (!FBXcodeConfiguration.isXcode8OrGreater) {
     return NO;
   }
 
-  return [NSDate.date isGreaterThanOrEqualTo:[self.lastCrashCheckDate dateByAddingTimeInterval:CrashCheckInterval]];
+  return [NSDate.date compare:[self.lastCrashCheckDate dateByAddingTimeInterval:CrashCheckInterval]] != NSOrderedAscending;
 }
 
 - (nullable FBTestBundleResult *)checkForCrashedProcess

@@ -29,7 +29,7 @@
     return;
   }
   FBSimulatorBootConfiguration *bootConfiguration = self.bootConfiguration;
-  if (!FBControlCoreGlobalConfiguration.isXcode8OrGreater) {
+  if (!FBXcodeConfiguration.isXcode8OrGreater) {
     NSLog(@"Skipping running -[%@ %@] since Xcode 8 or greater is required", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
     return;
   }
