@@ -11,8 +11,6 @@
 
 #import "FBControlCoreGlobalConfiguration.h"
 #import "FBControlCoreLogger.h"
-#import "FBProcessInfo.h"
-#import "FBProcessFetcher.h"
 
 NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 
@@ -137,13 +135,6 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
 {
   self.describeRecursively = NO;
   return self;
-}
-
-- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher
-{
-  return [self
-    extraInfo:[NSString stringWithFormat:@"%d_process", processIdentifier]
-    value:[processFetcher processInfoFor:processIdentifier] ?: @"No Process Info"];
 }
 
 - (instancetype)logger:(id<FBControlCoreLogger>)logger

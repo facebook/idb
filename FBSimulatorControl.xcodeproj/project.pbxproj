@@ -26,6 +26,8 @@
 		3E1499491D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1499471D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m */; };
 		3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14994D1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */; };
+		7352B4DE1F44C16C00B6D0EA /* FBControlCoreError+Process.h in Headers */ = {isa = PBXBuildFile; fileRef = 7352B4DC1F44C16C00B6D0EA /* FBControlCoreError+Process.h */; };
+		7352B4DF1F44C16C00B6D0EA /* FBControlCoreError+Process.m in Sources */ = {isa = PBXBuildFile; fileRef = 7352B4DD1F44C16C00B6D0EA /* FBControlCoreError+Process.m */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */; };
@@ -724,6 +726,8 @@
 		3E1499471D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterTestCase.m; sourceTree = "<group>"; };
 		3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerTestReporterTestCaseFailure.h; sourceTree = "<group>"; };
 		3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterTestCaseFailure.m; sourceTree = "<group>"; };
+		7352B4DC1F44C16C00B6D0EA /* FBControlCoreError+Process.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBControlCoreError+Process.h"; sourceTree = "<group>"; };
+		7352B4DD1F44C16C00B6D0EA /* FBControlCoreError+Process.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBControlCoreError+Process.m"; sourceTree = "<group>"; };
 		877123F21BDA797800530B1E /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
 		AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessTerminationStrategy.h; sourceTree = "<group>"; };
 		AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessTerminationStrategy.m; sourceTree = "<group>"; };
@@ -2923,6 +2927,8 @@
 		EEBD60351C9062E900298A07 /* Processes */ = {
 			isa = PBXGroup;
 			children = (
+				7352B4DC1F44C16C00B6D0EA /* FBControlCoreError+Process.h */,
+				7352B4DD1F44C16C00B6D0EA /* FBControlCoreError+Process.m */,
 				EEBD603A1C9062E900298A07 /* FBProcessFetcher.h */,
 				EEBD603B1C9062E900298A07 /* FBProcessFetcher.m */,
 				EEBD60381C9062E900298A07 /* FBProcessFetcher+Helpers.h */,
@@ -3222,6 +3228,7 @@
 				AA8E937E1E96267A0002F614 /* FBiOSActionRouter.h in Headers */,
 				AAD0DE031CEB064200C28B58 /* FBSubstringUtilities.h in Headers */,
 				EEBD605B1C9062E900298A07 /* FBASLParser.h in Headers */,
+				7352B4DE1F44C16C00B6D0EA /* FBControlCoreError+Process.h in Headers */,
 				AACA33581C96F8D100DC9704 /* FBFileFinder.h in Headers */,
 				EEBD60661C9062E900298A07 /* FBProcessFetcher+Helpers.h in Headers */,
 				AA6D511D1E96BE68003B5582 /* FBiOSActionReader.h in Headers */,
@@ -3895,6 +3902,7 @@
 				EEBD60951C908F8500298A07 /* FBCollectionInformation.m in Sources */,
 				AAF026F11F25ED1A0091FDAB /* FBSocketServer.m in Sources */,
 				AA4B4B211F3DAADD005BD475 /* FBApplicationInstallConfiguration.m in Sources */,
+				7352B4DF1F44C16C00B6D0EA /* FBControlCoreError+Process.m in Sources */,
 				AA391AD31CEF4CBC00817691 /* FBLocalizationOverride.m in Sources */,
 				AAAD5F7C1D5475DE008D3870 /* FBBatchLogSearch.m in Sources */,
 				AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */,

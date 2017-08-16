@@ -10,7 +10,6 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
-@class FBProcessFetcher;
 @class FBSimulator;
 
 @protocol FBControlCoreLogger;
@@ -59,15 +58,6 @@ extern NSString *const FBControlCoreErrorDomain;
  */
 - (instancetype)recursiveDescription;
 - (instancetype)noRecursiveDescription;
-
-/**
- Attaches Process Information to the error.
-
- @param processIdentifier the Process Identifier to find information for.
- @param processFetcher the Process Fetcher object to obtain process information from.
- @return the reciever, for chaining.
- */
-- (instancetype)attachProcessInfoForIdentifier:(pid_t)processIdentifier processFetcher:(FBProcessFetcher *)processFetcher;
 
 /**
  Attaches a Logger to the error.

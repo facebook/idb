@@ -15,6 +15,7 @@
 #import "FBProcessFetcher+Helpers.h"
 #import "FBProcessInfo.h"
 #import "FBControlCoreError.h"
+#import "FBControlCoreError+Process.h"
 #import "FBControlCoreLogger.h"
 #import "FBControlCoreGlobalConfiguration.h"
 
