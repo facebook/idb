@@ -26,6 +26,8 @@
 @property (nonatomic, assign) BOOL shouldInitializeForUITesting;
 @property (nonatomic, copy) NSSet<NSString *> *testsToRun;
 @property (nonatomic, copy) NSSet<NSString *> *testsToSkip;
+@property (nonatomic, copy) NSString *targetApplicationBundleID;
+@property (nonatomic, copy) NSString *targetApplicationPath;
 @end
 
 @implementation FBTestBundleBuilder
@@ -54,6 +56,18 @@
   return self;
 }
 
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  self.targetApplicationBundleID = targetApplicationBundleID;
+  return self;
+}
+
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  self.targetApplicationPath = targetApplicationPath;
+  return self;
+}
+
 - (Class)productClass
 {
   return FBTestBundle.class;
@@ -76,8 +90,11 @@
       uiTesting:self.shouldInitializeForUITesting
       testsToRun:self.testsToRun
       testsToSkip:self.testsToSkip
+      targetApplicationPath:self.targetApplicationPath
+      targetApplicationBundleID:self.targetApplicationBundleID
       savePath:[testBundle.path stringByAppendingPathComponent:testConfigurationFileName]
       error:&innerError];
+
     if (!testBundle.configuration) {
       return [[[XCTestBootstrapError
         describe:@"Failed to generate xtestconfiguration"]

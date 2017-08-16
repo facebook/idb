@@ -137,6 +137,8 @@ static NSString *const FBTestPlanDirectoryName = @"TestPlans";
    uiTesting:self.testBundle.configuration.shouldInitializeForUITesting
    testsToRun:nil
    testsToSkip:nil
+   targetApplicationPath:nil
+   targetApplicationBundleID:nil
    savePath:[localTestPlanDirPath stringByAppendingPathComponent:testConfigurationFileName]
    error:&innerError];
   if (!package.testConfiguration) {

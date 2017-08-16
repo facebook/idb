@@ -51,6 +51,8 @@
     uiTesting:YES
     testsToRun:[NSSet set]
     testsToSkip:[NSSet set]
+    targetApplicationPath:@"targetAppPath"
+    targetApplicationBundleID:@"targetBundleID"
     savePath:savePath
     error:&error];
 

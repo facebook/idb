@@ -16,7 +16,7 @@
 
 @implementation FBTestLaunchConfiguration
 
-- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip
+- (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationPath:(NSString *)targetApplicationPath targetApplicationBundleID:(NSString *)targetApplicaitonBundleID
 {
   self = [super init];
   if (!self) {
@@ -30,6 +30,8 @@
   _shouldInitializeUITesting = initializeUITesting;
   _testsToRun = testsToRun;
   _testsToSkip = testsToSkip;
+  _targetApplicationPath = targetApplicationPath;
+  _targetApplicationBundleID = targetApplicaitonBundleID;
 
   return self;
 }
@@ -37,7 +39,7 @@
 + (instancetype)configurationWithTestBundlePath:(NSString *)testBundlePath
 {
   NSParameterAssert(testBundlePath);
-  return [[FBTestLaunchConfiguration alloc] initWithTestBundlePath:testBundlePath applicationLaunchConfiguration:nil testHostPath:nil timeout:0 initializeUITesting:NO testsToRun:nil testsToSkip:[NSSet set]];
+  return [[FBTestLaunchConfiguration alloc] initWithTestBundlePath:testBundlePath applicationLaunchConfiguration:nil testHostPath:nil timeout:0 initializeUITesting:NO testsToRun:nil testsToSkip:[NSSet set] targetApplicationPath:nil targetApplicationBundleID:nil];
 }
 
 - (instancetype)withApplicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration
@@ -49,7 +51,9 @@
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
     testsToRun:self.testsToRun
-    testsToSkip:self.testsToSkip];
+    testsToSkip:self.testsToSkip
+    targetApplicationPath:self.targetApplicationPath
+    targetApplicationBundleID:self.targetApplicationBundleID];
 }
 
 - (instancetype)withTestHostPath:(NSString *)testHostPath
@@ -61,7 +65,9 @@
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
     testsToRun:self.testsToRun
-    testsToSkip:self.testsToSkip];
+    testsToSkip:self.testsToSkip
+    targetApplicationPath:self.targetApplicationPath
+    targetApplicationBundleID:self.targetApplicationBundleID];
 }
 
 - (instancetype)withTimeout:(NSTimeInterval)timeout
@@ -73,7 +79,9 @@
     timeout:timeout
     initializeUITesting:self.shouldInitializeUITesting
     testsToRun:self.testsToRun
-    testsToSkip:self.testsToSkip];
+    testsToSkip:self.testsToSkip
+    targetApplicationPath:self.targetApplicationPath
+    targetApplicationBundleID:self.targetApplicationBundleID];
 }
 
 - (instancetype)withUITesting:(BOOL)shouldInitializeUITesting
@@ -85,7 +93,9 @@
     timeout:self.timeout
     initializeUITesting:shouldInitializeUITesting
     testsToRun:self.testsToRun
-    testsToSkip:self.testsToSkip];
+    testsToSkip:self.testsToSkip
+    targetApplicationPath:self.targetApplicationPath
+    targetApplicationBundleID:self.targetApplicationBundleID];
 }
 
 - (instancetype)withTestsToRun:(NSSet<NSString *> *)testsToRun
@@ -97,7 +107,9 @@
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
     testsToRun:testsToRun
-    testsToSkip:self.testsToSkip];
+    testsToSkip:self.testsToSkip
+    targetApplicationPath:self.targetApplicationPath
+    targetApplicationBundleID:self.targetApplicationBundleID];
 }
 
 - (instancetype)withTestsToSkip:(NSSet<NSString *> *)testsToSkip
@@ -109,7 +121,37 @@
     timeout:self.timeout
     initializeUITesting:self.shouldInitializeUITesting
     testsToRun:self.testsToRun
-    testsToSkip:testsToSkip];
+    testsToSkip:testsToSkip
+    targetApplicationPath:self.targetApplicationPath
+    targetApplicationBundleID:self.targetApplicationBundleID];
+}
+
+- (instancetype)withTargetApplicationPath:(NSString *)targetApplicationPath
+{
+  return [[FBTestLaunchConfiguration alloc]
+          initWithTestBundlePath:self.testBundlePath
+          applicationLaunchConfiguration:self.applicationLaunchConfiguration
+          testHostPath:self.testHostPath
+          timeout:self.timeout
+          initializeUITesting:self.shouldInitializeUITesting
+          testsToRun:self.testsToRun
+          testsToSkip:self.testsToSkip
+          targetApplicationPath:targetApplicationPath
+          targetApplicationBundleID:self.targetApplicationBundleID];
+}
+
+- (instancetype)withTargetApplicationBundleID:(NSString *)targetApplicationBundleID
+{
+  return [[FBTestLaunchConfiguration alloc]
+          initWithTestBundlePath:self.testBundlePath
+          applicationLaunchConfiguration:self.applicationLaunchConfiguration
+          testHostPath:self.testHostPath
+          timeout:self.timeout
+          initializeUITesting:self.shouldInitializeUITesting
+          testsToRun:self.testsToRun
+          testsToSkip:self.testsToSkip
+          targetApplicationPath:self.targetApplicationPath
+          targetApplicationBundleID:targetApplicationBundleID];
 }
 
 #pragma mark NSCopying
@@ -130,6 +172,8 @@
   return (self.testBundlePath == configuration.testBundlePath || [self.testBundlePath isEqualToString:configuration.testBundlePath]) &&
          (self.applicationLaunchConfiguration == configuration.applicationLaunchConfiguration  || [self.applicationLaunchConfiguration isEqual:configuration.applicationLaunchConfiguration]) &&
          (self.testHostPath == configuration.testHostPath || [self.testHostPath isEqualToString:configuration.testHostPath]) &&
+         (self.targetApplicationBundleID == configuration.targetApplicationBundleID || [self.targetApplicationBundleID isEqualToString:configuration.targetApplicationBundleID]) &&
+         (self.targetApplicationPath == configuration.targetApplicationPath || [self.targetApplicationPath isEqualToString:configuration.targetApplicationPath]) &&
          (self.testsToRun == configuration.testsToRun || [self.testsToRun isEqual:configuration.testsToRun]) &&
          (self.testsToSkip == configuration.testsToSkip || [self.testsToSkip isEqual:configuration.testsToSkip]) &&
          self.timeout == configuration.timeout &&
@@ -138,7 +182,7 @@
 
 - (NSUInteger)hash
 {
-  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ self.testsToRun.hash ^ self.testsToSkip.hash;
+  return self.testBundlePath.hash ^ self.applicationLaunchConfiguration.hash ^ self.testHostPath.hash ^ (unsigned long) self.timeout ^ (unsigned long) self.shouldInitializeUITesting ^ self.testsToRun.hash ^ self.testsToSkip.hash ^ self.targetApplicationPath.hash ^ self.targetApplicationBundleID.hash;
 }
 
 #pragma mark FBDebugDescribeable
@@ -146,13 +190,15 @@
 - (NSString *)description
 {
   return [NSString stringWithFormat:
-    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | TestsToRun %@ | TestsToSkip %@",
+    @"FBTestLaunchConfiguration TestBundlePath %@ | AppConfig %@ | HostPath %@ | UITesting %d | TestsToRun %@ | TestsToSkip %@ | Target application path %@ | Target application bundle id %@",
     self.testBundlePath,
     self.applicationLaunchConfiguration,
     self.testHostPath,
     self.shouldInitializeUITesting,
     self.testsToRun,
-    self.testsToSkip
+    self.testsToSkip,
+    self.targetApplicationPath,
+    self.targetApplicationBundleID
   ];
 }
 
@@ -175,6 +221,8 @@ static NSString *const KeyInitializeUITesting = @"ui_testing";
 static NSString *const KeyTestsToRun = @"tests_to_run";
 static NSString *const KeyTestsToSkip = @"tests_to_skip";
 static NSString *const KeyTimeout = @"timeout";
+static NSString *const KeyTargetApplicationPath = @"targetApplicationPath";
+static NSString *const KeyTargetApplicationBundleID = @"targetApplicationBundleID";
 
 - (NSDictionary *)jsonSerializableRepresentation
 {
@@ -185,17 +233,31 @@ static NSString *const KeyTimeout = @"timeout";
     KeyTimeout : @(self.timeout),
     KeyInitializeUITesting : @(self.shouldInitializeUITesting),
     KeyTestsToRun : self.testsToRun.allObjects ?: NSNull.null,
-    KeyTestsToSkip : self.testsToSkip.allObjects ?: NSNull.null
+    KeyTestsToSkip : self.testsToSkip.allObjects ?: NSNull.null,
+    KeyTargetApplicationPath : self.targetApplicationPath ?: NSNull.null,
+    KeyTargetApplicationBundleID : self.targetApplicationBundleID ?: NSNull.null,
   };
 }
 
 + (nullable instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
+  NSString *targetApplicationPath = [FBCollectionOperations nullableValueForDictionary:json key:KeyTargetApplicationPath];
+  if (targetApplicationPath && ![targetApplicationPath isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a String | Null for %@", targetApplicationPath, KeyBundlePath]
+      fail:error];
+  }
+  NSString *targetApplicationBundleID = [FBCollectionOperations nullableValueForDictionary:json key:KeyTargetApplicationBundleID];
+  if (targetApplicationBundleID && ![targetApplicationBundleID isKindOfClass:NSString.class]) {
+    return [[FBControlCoreError
+             describeFormat:@"%@ is not a String | Null for %@", targetApplicationBundleID, KeyBundlePath]
+            fail:error];
+  }
   NSString *bundlePath = [FBCollectionOperations nullableValueForDictionary:json key:KeyBundlePath];
   if (bundlePath && ![bundlePath isKindOfClass:NSString.class]) {
     return [[FBControlCoreError
-      describeFormat:@"%@ is not a String | Null for %@", bundlePath, KeyBundlePath]
-      fail:error];
+             describeFormat:@"%@ is not a String | Null for %@", bundlePath, KeyBundlePath]
+            fail:error];
   }
   NSDictionary<NSString *, id> *appLaunchDictionary = [FBCollectionOperations nullableValueForDictionary:json key:KeyAppLaunch];
   FBApplicationLaunchConfiguration *appLaunch = nil;
@@ -247,7 +309,9 @@ static NSString *const KeyTimeout = @"timeout";
     timeout:timeout
     initializeUITesting:initializeUITesting
     testsToRun:testsToRun
-    testsToSkip:testsToSkip];
+    testsToSkip:testsToSkip
+    targetApplicationPath:targetApplicationPath
+    targetApplicationBundleID:targetApplicationBundleID];
 }
 
 #pragma mark FBiOSTargetAction
