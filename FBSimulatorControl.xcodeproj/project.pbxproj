@@ -26,10 +26,10 @@
 		3E1499491D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E1499471D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m */; };
 		3E14994C1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h in Headers */ = {isa = PBXBuildFile; fileRef = 3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3E14994D1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m in Sources */ = {isa = PBXBuildFile; fileRef = 3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */; };
+		7352B4DA1F44BE4100B6D0EA /* FBXcodeConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 7352B4D81F44BE4100B6D0EA /* FBXcodeConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7352B4DB1F44BE4100B6D0EA /* FBXcodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 7352B4D91F44BE4100B6D0EA /* FBXcodeConfiguration.m */; };
 		7352B4DE1F44C16C00B6D0EA /* FBControlCoreError+Process.h in Headers */ = {isa = PBXBuildFile; fileRef = 7352B4DC1F44C16C00B6D0EA /* FBControlCoreError+Process.h */; };
 		7352B4DF1F44C16C00B6D0EA /* FBControlCoreError+Process.m in Sources */ = {isa = PBXBuildFile; fileRef = 7352B4DD1F44C16C00B6D0EA /* FBControlCoreError+Process.m */; };
-		7352B4DA1F44BE4100B6D0EA /* FBXcodeConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 7352B4D81F44BE4100B6D0EA /* FBXcodeConfiguration.h */; };
-		7352B4DB1F44BE4100B6D0EA /* FBXcodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 7352B4D91F44BE4100B6D0EA /* FBXcodeConfiguration.m */; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */; };
@@ -728,10 +728,10 @@
 		3E1499471D4C5838005A5C8F /* FBTestManagerTestReporterTestCase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterTestCase.m; sourceTree = "<group>"; };
 		3E14994A1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerTestReporterTestCaseFailure.h; sourceTree = "<group>"; };
 		3E14994B1D4C5D49005A5C8F /* FBTestManagerTestReporterTestCaseFailure.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBTestManagerTestReporterTestCaseFailure.m; sourceTree = "<group>"; };
-		7352B4DC1F44C16C00B6D0EA /* FBControlCoreError+Process.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBControlCoreError+Process.h"; sourceTree = "<group>"; };
-		7352B4DD1F44C16C00B6D0EA /* FBControlCoreError+Process.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBControlCoreError+Process.m"; sourceTree = "<group>"; };
 		7352B4D81F44BE4100B6D0EA /* FBXcodeConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBXcodeConfiguration.h; sourceTree = "<group>"; };
 		7352B4D91F44BE4100B6D0EA /* FBXcodeConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBXcodeConfiguration.m; sourceTree = "<group>"; };
+		7352B4DC1F44C16C00B6D0EA /* FBControlCoreError+Process.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FBControlCoreError+Process.h"; sourceTree = "<group>"; };
+		7352B4DD1F44C16C00B6D0EA /* FBControlCoreError+Process.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FBControlCoreError+Process.m"; sourceTree = "<group>"; };
 		877123F21BDA797800530B1E /* video0.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = video0.mp4; sourceTree = "<group>"; };
 		AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBProcessTerminationStrategy.h; sourceTree = "<group>"; };
 		AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBProcessTerminationStrategy.m; sourceTree = "<group>"; };

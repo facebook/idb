@@ -28,24 +28,19 @@ FBTerminationHandleType const FBTerminationHandleTypeCoreSimulatorNotifier = @"C
 
 @implementation FBCoreSimulatorNotifier
 
-+ (instancetype)notifierForSimulator:(FBSimulator *)simulator block:(void (^)(NSDictionary *info))block
-{
-  return [self notifierForSimDevice:simulator.device block:block];
-}
-
-+ (instancetype)notifierForSimDevice:(SimDevice *)simDevice block:(void (^)(NSDictionary *info))block
++ (instancetype)notifierForSimDevice:(SimDevice *)simDevice queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary *info))block
 {
   id<SimDeviceNotifier> notifier = simDevice.notificationManager;
-  return [[self alloc] initWithNotifier:notifier block:block];
+  return [[self alloc] initWithNotifier:notifier queue:queue block:block];
 }
 
-+ (instancetype)notifierForSet:(FBSimulatorSet *)set block:(void (^)(NSDictionary *info))block;
++ (instancetype)notifierForSet:(FBSimulatorSet *)set queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary *info))block
 {
   id<SimDeviceNotifier> notifier = set.deviceSet.notificationManager;
-  return [[self alloc] initWithNotifier:notifier block:block];
+  return [[self alloc] initWithNotifier:notifier queue:queue block:block];
 }
 
-- (instancetype)initWithNotifier:(id<SimDeviceNotifier>)notifier block:(void (^)(NSDictionary *info))block
+- (instancetype)initWithNotifier:(id<SimDeviceNotifier>)notifier queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary *info))block
 {
   self = [super init];
   if (!self) {
@@ -54,7 +49,7 @@ FBTerminationHandleType const FBTerminationHandleTypeCoreSimulatorNotifier = @"C
 
   _notifier = notifier;
   _handle = [notifier registerNotificationHandler:^(NSDictionary *info) {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(queue, ^{
       block(info);
     });
   }];

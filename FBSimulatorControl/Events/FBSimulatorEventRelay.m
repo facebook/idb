@@ -30,9 +30,10 @@
 @property (nonatomic, assign, readwrite) FBSimulatorState lastKnownState;
 @property (nonatomic, strong, readonly) NSMutableSet *knownLaunchedProcesses;
 
-@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
-@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
 @property (nonatomic, strong, readonly) SimDevice *simDevice;
+@property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
+@property (nonatomic, strong, readonly) id<FBSimulatorEventSink> sink;
 
 @property (nonatomic, strong, readwrite) FBCoreSimulatorNotifier *stateChangeNotifier;
 
@@ -40,22 +41,22 @@
 
 @implementation FBSimulatorEventRelay
 
-- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher sink:(id<FBSimulatorEventSink>)sink
+- (instancetype)initWithSimDevice:(SimDevice *)simDevice launchdProcess:(nullable FBProcessInfo *)launchdProcess containerApplication:(nullable FBProcessInfo *)containerApplication processFetcher:(FBSimulatorProcessFetcher *)processFetcher queue:(dispatch_queue_t)queue sink:(id<FBSimulatorEventSink>)sink
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _sink = sink;
   _simDevice = simDevice;
+  _launchdProcess = launchdProcess;
+  _containerApplication = containerApplication;
   _processFetcher = processFetcher;
+  _queue = queue;
+  _sink = sink;
 
   _knownLaunchedProcesses = [NSMutableSet set];
   _lastKnownState = FBSimulatorStateUnknown;
-
-  _launchdProcess = launchdProcess;
-  _containerApplication = containerApplication;
 
   [self registerSimulatorLifecycleHandlers];
   [self createNotifierForSimDevice:simDevice];
@@ -232,7 +233,7 @@
 - (void)createNotifierForSimDevice:(SimDevice *)device
 {
   __weak typeof(self) weakSelf = self;
-  self.stateChangeNotifier = [FBCoreSimulatorNotifier notifierForSimDevice:device block:^(NSDictionary *info) {
+  self.stateChangeNotifier = [FBCoreSimulatorNotifier notifierForSimDevice:device queue:self.queue block:^(NSDictionary *info) {
     NSNumber *newStateNumber = info[@"new_state"];
     if (!newStateNumber) {
       return;

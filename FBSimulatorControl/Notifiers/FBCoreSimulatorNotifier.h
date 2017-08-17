@@ -28,31 +28,24 @@ extern FBTerminationHandleType const FBTerminationHandleTypeCoreSimulatorNotifie
 @interface FBCoreSimulatorNotifier : NSObject <FBTerminationHandle>
 
 /**
- Creates and returns an FBSimDeviceNotifier for the lifecycle events that the Simulator's SimDevice broadcasts.
-
- @param simulator the FBSimulator to relay events from.
- @param block the block to call when events are sent from the SimDevice.
- @return an instance of FBSimDeviceNotifier for later termination.
- */
-+ (instancetype)notifierForSimulator:(FBSimulator *)simulator block:(void (^)(NSDictionary *info))block;
-
-/**
  Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDevice broadcasts.
 
  @param simDevice the FBSimulator to relay events from.
+ @param queue the queue to call the block on.
  @param block the block to call when events are sent from the SimDevice.
  @return an instance of FBSimDeviceNotifier for later termination.
  */
-+ (instancetype)notifierForSimDevice:(SimDevice *)simDevice block:(void (^)(NSDictionary *info))block;
++ (instancetype)notifierForSimDevice:(SimDevice *)simDevice queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary *info))block;
 
 /**
  Creates and returns an FBSimDeviceNotifier for the lifecycle events that SimDeviceSet broadcasts for the provided Set.
 
  @param set the FBSimulator to relay events from.
+ @param queue the queue to call the block on.
  @param block the block to call when events are sent from the SimDevice.
  @return an instance of FBSimDeviceNotifier for later termination.
  */
-+ (instancetype)notifierForSet:(FBSimulatorSet *)set block:(void (^)(NSDictionary *info))block;
++ (instancetype)notifierForSet:(FBSimulatorSet *)set queue:(dispatch_queue_t)queue block:(void (^)(NSDictionary *info))block;
 
 @end
 
