@@ -129,10 +129,16 @@ extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
  Process Information about the Container Application of the iOS Target. Currently only applies to Simulators.
  */
 @property (nonatomic, copy, nullable, readonly) FBProcessInfo *containerApplication;
+
 /**
  Device operator used to control device. It provides API for XCTestBoostrap to interact with the device.
  */
 @property (nonatomic, nullable, strong, readonly) id<FBDeviceOperator> deviceOperator;
+
+/**
+ The Queue to serialize work on.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`

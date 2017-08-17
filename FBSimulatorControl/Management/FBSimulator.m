@@ -166,6 +166,11 @@
   return self.simulatorDiagnostics;
 }
 
+- (dispatch_queue_t)workQueue
+{
+  return dispatch_get_main_queue();
+}
+
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);

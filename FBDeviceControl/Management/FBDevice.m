@@ -135,6 +135,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
   return [[FBiOSTargetDiagnostics alloc] initWithStorageDirectory:self.auxillaryDirectory];
 }
 
+- (dispatch_queue_t)workQueue
+{
+  return dispatch_get_main_queue();
+}
+
 - (NSComparisonResult)compare:(id<FBiOSTarget>)target
 {
   return FBiOSTargetComparison(self, target);
