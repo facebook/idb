@@ -27,14 +27,16 @@ extern FBTerminationHandleType const FBTerminationHandleTypeDispatchSource;
  Creates and returns an `FBDispatchSourceNotifier` that will call the `handler` when the provided `processIdentifier` quits
 
  @param processIdentifier the Process Identifier of the Process to Monitor
+ @param queue the queue to call back on.
  @param handler the handler to call when the process exits
  */
-+ (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier handler:(void (^)(FBDispatchSourceNotifier *))handler;
++ (instancetype)processTerminationNotifierForProcessIdentifier:(pid_t)processIdentifier queue:(dispatch_queue_t)queue handler:(void (^)(FBDispatchSourceNotifier *))handler;
 
 /**
  Creates and returns an `FBDispatchSourceNotifier` that will call the `handler` at a provided timing interval.
 
  @param timeInterval the time interval to wait for.
+ @param queue the queue to call back on.
  @param handler the handler to call when the process exits
  */
 + (instancetype)timerNotifierNotifierWithTimeInterval:(uint64_t)timeInterval queue:(dispatch_queue_t)queue handler:(void (^)(FBDispatchSourceNotifier *))handler;

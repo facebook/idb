@@ -48,9 +48,12 @@
 - (void)createNotifier
 {
   __weak typeof(self) weakSelf = self;
-  self.notifier = [FBDispatchSourceNotifier processTerminationNotifierForProcessIdentifier:self.process.processIdentifier handler:^(FBDispatchSourceNotifier *_) {
-    [weakSelf.simulator.eventSink applicationDidTerminate:self expected:NO];
-    weakSelf.notifier = nil;
+  self.notifier = [FBDispatchSourceNotifier
+    processTerminationNotifierForProcessIdentifier:self.process.processIdentifier
+    queue:self.simulator.workQueue
+    handler:^(FBDispatchSourceNotifier *_) {
+      [weakSelf.simulator.eventSink applicationDidTerminate:self expected:NO];
+      weakSelf.notifier = nil;
   }];
 }
 
