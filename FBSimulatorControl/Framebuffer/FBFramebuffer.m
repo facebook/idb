@@ -46,11 +46,12 @@
 @interface FBFramebuffer ()
 
 @property (nonatomic, strong, readonly) FBFramebufferConfiguration *configuration;
+@property (nonatomic, strong, readonly) dispatch_queue_t eventQueue;
 @property (nonatomic, strong, readonly) id<FBSimulatorEventSink> eventSink;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, strong, readonly) FBFramebufferFrameGenerator *frameGenerator;
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -97,10 +98,10 @@
       queue:queue
       logger:logger];
 
-    return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
+    return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventQueue:simulator.workQueue eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
   }
   FBFramebufferBackingStoreFrameGenerator *frameGenerator = [FBFramebufferBackingStoreFrameGenerator generatorWithFramebufferService:framebufferService scale:configuration.scaleValue queue:queue logger:logger];
-  return [[FBFramebuffer_FramebufferService alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:nil logger:logger];
+  return [[FBFramebuffer_FramebufferService alloc] initWithConfiguration:configuration eventQueue:simulator.workQueue eventSink:simulator.eventSink frameGenerator:frameGenerator surface:nil logger:logger];
 }
 
 + (instancetype)framebufferWithRenderable:(FBFramebufferSurface *)surface configuration:(FBFramebufferConfiguration *)configuration simulator:(FBSimulator *)simulator
@@ -114,10 +115,10 @@
     scale:configuration.scaleValue
     queue:queue
     logger:logger];
-  return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
+  return [[FBFramebuffer_IOSurface alloc] initWithConfiguration:configuration eventQueue:simulator.workQueue eventSink:simulator.eventSink frameGenerator:frameGenerator surface:surface logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithConfiguration:(FBFramebufferConfiguration *)configuration eventQueue:(dispatch_queue_t)eventQueue eventSink:(id<FBSimulatorEventSink>)eventSink frameGenerator:(FBFramebufferFrameGenerator *)frameGenerator surface:(nullable FBFramebufferSurface *)surface logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -125,6 +126,7 @@
   }
 
   _configuration = configuration;
+  _eventQueue = eventQueue;
   _eventSink = eventSink;
   _frameGenerator = frameGenerator;
   _surface = surface;
@@ -198,7 +200,7 @@
 
 - (FBSimulatorImage *)createImage
 {
-  return [FBSimulatorImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventSink:self.eventSink];
+  return [FBSimulatorImage imageWithFilePath:self.configuration.imagePath frameGenerator:self.frameGenerator eventQueue:self.eventQueue eventSink:self.eventSink];
 }
 
 - (FBSimulatorVideo *)createVideo
@@ -224,7 +226,7 @@
 
 - (FBSimulatorImage *)createImage
 {
-  return [FBSimulatorImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventSink:self.eventSink];
+  return [FBSimulatorImage imageWithFilePath:self.configuration.imagePath surface:self.surface eventQueue:self.eventQueue eventSink:self.eventSink];
 }
 
 - (FBSimulatorVideo *)createVideo
