@@ -45,8 +45,9 @@
 @interface FBSimulatorHID_SimulatorKit : FBSimulatorHID
 
 @property (nonatomic, strong, nullable, readonly) SimDeviceLegacyClient *client;
+@property (nonatomic, strong, readonly) dispatch_queue_t queue;
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize client:(SimDeviceLegacyClient *)client;
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client;
 
 @end
 
@@ -76,7 +77,8 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
       fail:error];
   }
   CGSize mainScreenSize = simulator.device.deviceType.mainScreenSize;
-  return [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize client:client];
+  dispatch_queue_t queue = dispatch_queue_create("com.facebook.fbsimulatorcontrol.hid", DISPATCH_QUEUE_SERIAL);
+  return [[FBSimulatorHID_SimulatorKit alloc] initWithIndigo:FBSimulatorIndigoHID.defaultHID mainScreenSize:mainScreenSize queue:queue client:client];
 }
 
 + (instancetype)reimplementedHidPortForSimulator:(FBSimulator *)simulator error:(NSError **)error
@@ -323,7 +325,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
 
 #pragma mark Initializers
 
-- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize client:(SimDeviceLegacyClient *)client
+- (instancetype)initWithIndigo:(FBSimulatorIndigoHID *)indigo mainScreenSize:(CGSize)mainScreenSize queue:(dispatch_queue_t)queue client:(SimDeviceLegacyClient *)client
 {
   self = [super initWithIndigo:indigo mainScreenSize:mainScreenSize];
   if (!self) {
@@ -331,6 +333,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   }
 
   _client = client;
+  _queue = queue;
 
   return self;
 }
@@ -371,7 +374,7 @@ static const char *SimulatorHIDClientClassName = "SimulatorKit.SimDeviceLegacyHI
   IndigoMessage *message = malloc(size);
   memcpy(message, data.bytes, size);
 
-  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:dispatch_get_main_queue() completion:^(id _){}];
+  [self.client sendWithMessage:message freeWhenDone:YES completionQueue:self.queue completion:^(id _){}];
   return YES;
 }
 
