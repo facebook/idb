@@ -10,6 +10,7 @@
 #import "FBXcodeBuildOperation.h"
 
 #import "FBXCTestCommands.h"
+#import "FBTestLaunchConfiguration.h"
 
 static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_DEVICE_IDENTIFIER";
 
@@ -102,6 +103,23 @@ static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_D
     }
   }
   return YES;
+}
+
++ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch
+{
+  return @{
+    @"StubBundleId" : @{
+      @"TestHostPath" : testLaunch.testHostPath,
+      @"TestBundlePath" : testLaunch.testBundlePath,
+      @"UseUITargetAppProvidedByTests" : @YES,
+      @"IsUITestBundle" : @YES,
+      @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,
+      @"TestingEnvironmentVariables": @{
+        @"DYLD_FRAMEWORK_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+        @"DYLD_LIBRARY_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
+      },
+    }
+  };
 }
 
 @end

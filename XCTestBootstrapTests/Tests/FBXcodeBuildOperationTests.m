@@ -8,16 +8,17 @@
  */
 
 #import <XCTest/XCTest.h>
-#import <FBDeviceControl/FBDeviceControl.h>
 
-@interface FBDeviceXCTestCommandsTest : XCTestCase
+#import <XCTestBootstrap/XCTestBootstrap.h>
+
+@interface FBXcodeBuildOperationTests : XCTestCase
 
 @end
 
-@implementation FBDeviceXCTestCommandsTest
+@implementation FBXcodeBuildOperationTests
 
-- (void)testBuildXCTestRunProperties {
-
+- (void)testUITestConfiguration
+{
   NSString *testHostPath = @"/tmp/test_host_path.app";
   NSString *testBundlePath = @"/tmp/test_host_path.app/test_bundle_path.xctest";
 
@@ -34,7 +35,7 @@
     withTestHostPath:testHostPath]
     withApplicationLaunchConfiguration:appLaunch];
 
-  NSDictionary *properties = [FBDeviceXCTestCommands xctestRunProperties:configuration];
+  NSDictionary *properties = [FBXcodeBuildOperation xctestRunProperties:configuration];
   NSDictionary *stubBundleProperties = properties[@"StubBundleId"];
 
   XCTAssertNotNil(stubBundleProperties);

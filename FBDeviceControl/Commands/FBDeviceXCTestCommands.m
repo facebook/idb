@@ -26,6 +26,8 @@
 
 @implementation FBDeviceXCTestCommands
 
+#pragma mark Initializers
+
 + (instancetype)commandsWithDevice:(FBDevice *)device
 {
   return [[self alloc] initWithDevice:device workingDirectory:NSTemporaryDirectory()];
@@ -45,22 +47,7 @@
   return self;
 }
 
-+ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch
-{
-  return @{
-    @"StubBundleId" : @{
-      @"TestHostPath" : testLaunch.testHostPath,
-      @"TestBundlePath" : testLaunch.testBundlePath,
-      @"UseUITargetAppProvidedByTests" : @YES,
-      @"IsUITestBundle" : @YES,
-      @"CommandLineArguments": testLaunch.applicationLaunchConfiguration.arguments,
-      @"TestingEnvironmentVariables": @{
-            @"DYLD_FRAMEWORK_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
-            @"DYLD_LIBRARY_PATH": @"__TESTROOT__:__PLATFORMS__/iPhoneOS.platform/Developer/Library/Frameworks",
-      },
-    }
-  };
-}
+#pragma mark Public
 
 - (id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
 {
@@ -113,12 +100,14 @@
   return YES;
 }
 
+#pragma mark Private
+
 - (nullable NSString *)createXCTestRunFileFromConfiguration:(FBTestLaunchConfiguration *)configuration error:(NSError **)error
 {
   NSString *fileName = [NSProcessInfo.processInfo.globallyUniqueString stringByAppendingPathExtension:@"xctestrun"];
   NSString *path = [self.workingDirectory stringByAppendingPathComponent:fileName];
 
-  NSDictionary *testRunProperties = [FBDeviceXCTestCommands xctestRunProperties:configuration];
+  NSDictionary *testRunProperties = [FBXcodeBuildOperation xctestRunProperties:configuration];
   if (![testRunProperties writeToFile:path atomically:false]) {
     return [[FBDeviceControlError
       describeFormat:@"Failed to write to file %@", path]

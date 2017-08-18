@@ -28,14 +28,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)commandsWithDevice:(FBDevice *)device;
 
-/**
- The xctest.xctestrun properties for a test launch.
-
- @param testLaunch the test launch to base off.
- @return the xctest.xctestrun properties.
- */
-+ (NSDictionary<NSString *, NSDictionary<NSString *, NSObject *> *> *)xctestRunProperties:(FBTestLaunchConfiguration *)testLaunch;
-
 @end
 
 NS_ASSUME_NONNULL_END
