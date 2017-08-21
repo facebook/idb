@@ -87,6 +87,11 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 #pragma mark Private
 
+- (dispatch_queue_t)actionQueue
+{
+  return self.router.target.workQueue;
+}
+
 - (void)runBuffer
 {
   NSData *lineData = self.lineBuffer.consumeLineData;
@@ -98,8 +103,6 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 - (void)dispatchLine:(NSData *)line
 {
-  NSParameterAssert(NSThread.isMainThread == NO);
-
   NSError *error = nil;
   id json = [NSJSONSerialization JSONObjectWithData:line options:0 error:&error];
   if (!json) {
@@ -121,14 +124,12 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 - (void)dispatchAction:(id<FBiOSTargetAction>)action
 {
-  NSParameterAssert(NSThread.isMainThread == NO);
-
   FBiOSActionReader *reader = self.reader;
   id<FBiOSTarget> target = self.router.target;
 
   // Notify Delegate of the start of the Action.
   __block NSString *response = nil;
-  dispatch_sync(dispatch_get_main_queue(), ^{
+  dispatch_sync(self.actionQueue, ^{
     response = [self.delegate reader:reader willStartPerformingAction:action onTarget:target];
   });
   [self reportString:response];
@@ -136,7 +137,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
   // Run the action, on the main queue
   __block NSError *error = nil;
   __block BOOL success = NO;
-  dispatch_sync(dispatch_get_main_queue(), ^{
+  dispatch_sync(self.actionQueue, ^{
     success = [action runWithTarget:target delegate:self error:&error];
   });
 
@@ -149,12 +150,11 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 - (void)dispatchUploadStarted:(FBUploadHeader *)header
 {
-  NSParameterAssert(NSThread.isMainThread == NO);
   NSParameterAssert(self.uploadBuffer == nil);
 
   self.uploadBuffer = [FBUploadBuffer bufferWithHeader:header workingDirectory:self.router.target.auxillaryDirectory];
   __block NSString *response = nil;
-  dispatch_sync(dispatch_get_main_queue(), ^{
+  dispatch_sync(self.actionQueue, ^{
     response = [self.delegate reader:self.reader willStartReadingUpload:header];
   });
   [self reportString:response];
@@ -166,12 +166,11 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 - (void)dispatchUploadCompleted:(FBUploadedDestination *)destination
 {
-  NSParameterAssert(NSThread.isMainThread == NO);
   NSParameterAssert(self.uploadBuffer != nil);
 
   self.uploadBuffer = nil;
   __block NSString *response = nil;
-  dispatch_sync(dispatch_get_main_queue(), ^{
+  dispatch_sync(self.actionQueue, ^{
     response = [self.delegate reader:self.reader didFinishUpload:destination];
   });
   [self reportString:response];
@@ -179,11 +178,9 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 - (void)dispatchParseError:(NSData *)lineData error:(NSError *)error
 {
-  NSParameterAssert(NSThread.isMainThread == NO);
-
   NSString *line = [[NSString alloc] initWithData:lineData encoding:NSUTF8StringEncoding];
   __block NSString *response = nil;
-  dispatch_sync(dispatch_get_main_queue(), ^{
+  dispatch_sync(self.actionQueue, ^{
     response = [self.delegate reader:self.reader failedToInterpretInput:line error:error];
   });
   if (!response) {
@@ -194,8 +191,6 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 - (void)reportString:(nullable NSString *)string
 {
-  NSParameterAssert(NSThread.isMainThread == NO);
-
   if (!string) {
     return;
   }
