@@ -11,8 +11,6 @@
 
 #import "FBDeviceOperator.h"
 #import "FBTestManagerAPIMediator.h"
-#import "FBTestManagerProcessInteractionDelegate.h"
-#import "FBTestManagerProcessInteractionOperator.h"
 #import "FBTestManagerContext.h"
 #import "FBTestManagerResult.h"
 
@@ -20,7 +18,6 @@
 
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
 @property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
-@property (nonatomic, strong, readonly) FBTestManagerProcessInteractionOperator *processOperator;
 
 @end
 
@@ -30,18 +27,16 @@
 
 + (instancetype)testManagerWithContext:(FBTestManagerContext *)context iosTarget:(id<FBiOSTarget>)iosTarget reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withIOSTarget:iosTarget];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
     mediatorWithContext:context
     target:iosTarget
-    processDelegate:processOperator
     reporter:reporter
     logger:logger];
 
-  return [[FBTestManager alloc] initWithContext:context mediator:mediator processOperator:processOperator];
+  return [[FBTestManager alloc] initWithContext:context mediator:mediator];
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context mediator:(FBTestManagerAPIMediator *)mediator processOperator:(FBTestManagerProcessInteractionOperator *)processOperator
+- (instancetype)initWithContext:(FBTestManagerContext *)context mediator:(FBTestManagerAPIMediator *)mediator
 {
   self = [super init];
   if (!self) {
@@ -50,7 +45,6 @@
 
   _mediator = mediator;
   _context = context;
-  _processOperator = processOperator;
 
   return self;
 }

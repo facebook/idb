@@ -40,12 +40,11 @@ extern const NSInteger FBProtocolMinimumVersion;
 
  @param context the Context of the Test Manager.
  @param target the target.
- @param processDelegate the Delegate to handle application interactivity.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
  @return Prepared FBTestRunnerConfiguration
  */
-+ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 #pragma mark Lifecycle
 
