@@ -9,18 +9,19 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBTestManagerContext;
 @class FBTestManagerResult;
 
+@protocol FBControlCoreLogger;
+@protocol FBiOSTarget;
 @protocol FBTestManagerProcessInteractionDelegate;
 @protocol FBTestManagerTestReporter;
-@protocol FBControlCoreLogger;
-@protocol FBDeviceOperator;
 
 extern const NSInteger FBProtocolVersion;
 extern const NSInteger FBProtocolMinimumVersion;
 
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.
@@ -32,27 +33,21 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBTestManagerAPIMediator : NSObject
 
-/**
- Delegate object used to handle application install & launch request
- */
-@property (nonatomic, weak, readonly) id<FBTestManagerProcessInteractionDelegate> processDelegate;
-
-/**
- Logger object to log events to, may be nil.
- */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
+#pragma mark Initializers
 
 /**
  Creates and returns a mediator with given paramenters
 
  @param context the Context of the Test Manager.
- @param deviceOperator a device operator for device that test runner is running on
+ @param target the target.
  @param processDelegate the Delegate to handle application interactivity.
  @param reporter the (optional) delegate to report test progress too.
  @param logger the (optional) logger to events to.
  @return Prepared FBTestRunnerConfiguration
  */
-+ (instancetype)mediatorWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)mediatorWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target processDelegate:(id<FBTestManagerProcessInteractionDelegate>)processDelegate reporter:(id<FBTestManagerTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
+
+#pragma mark Lifecycle
 
 /**
  Establishes a connection between the host, testmanagerd and the Test Bundle.
@@ -96,6 +91,18 @@ NS_ASSUME_NONNULL_BEGIN
  @return the TestManager Result.
  */
 - (FBTestManagerResult *)disconnectTestRunnerAndTestManagerDaemon;
+
+#pragma mark Properties
+
+/**
+ Delegate object used to handle application install & launch request
+ */
+@property (nonatomic, weak, readonly) id<FBTestManagerProcessInteractionDelegate> processDelegate;
+
+/**
+ Logger object to log events to, may be nil.
+ */
+@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @end
 

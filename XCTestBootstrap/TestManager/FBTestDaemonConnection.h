@@ -9,36 +9,40 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class DTXConnection;
 @class DVTDevice;
 @class FBTestDaemonResult;
 @class FBTestManagerContext;
 @class XCTestBootstrapError;
 
+@protocol FBControlCoreLogger;
+@protocol FBiOSTarget;
+@protocol XCTestDriverInterface;
 @protocol XCTestManager_DaemonConnectionInterface;
 @protocol XCTestManager_IDEInterface;
-@protocol FBControlCoreLogger;
-@protocol XCTestDriverInterface;
-@protocol FBDeviceOperator;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Connection to a Test Daemon.
  */
 @interface FBTestDaemonConnection : NSObject
 
+#pragma mark Initializers
+
 /**
  Creates a Strategy for the provided Transport.
 
  @param context the Context of the Test Manager.
- @param deviceOperator the device operator used to connect with device.
+ @param target the iOS Target.
  @param interface the interface to delegate to.
  @param queue the dispatch queue to serialize asynchronous events on.
  @param logger the logger to log to.
  @return a new Strategy
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
+
+#pragma mark Lifecycle
 
 /**
  Synchronously Connects the Daemon.
@@ -76,9 +80,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTestDaemonResult *)disconnect;
 
-/**
- Properties from the Constructor.
- */
+#pragma mark Properties
 
 /**
  Properties populated during the connection.

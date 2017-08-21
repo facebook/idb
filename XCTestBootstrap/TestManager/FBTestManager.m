@@ -33,7 +33,7 @@
   FBTestManagerProcessInteractionOperator *processOperator = [FBTestManagerProcessInteractionOperator withIOSTarget:iosTarget];
   FBTestManagerAPIMediator *mediator = [FBTestManagerAPIMediator
     mediatorWithContext:context
-    deviceOperator:iosTarget.deviceOperator
+    target:iosTarget
     processDelegate:processOperator
     reporter:reporter
     logger:logger];

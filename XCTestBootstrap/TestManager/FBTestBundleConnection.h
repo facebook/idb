@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class DTXConnection;
 @class DVTDevice;
 @class FBTestBundleResult;
@@ -16,28 +18,30 @@
 @class XCTestBootstrapError;
 
 @protocol FBControlCoreLogger;
+@protocol FBiOSTarget;
 @protocol XCTestDriverInterface;
 @protocol XCTestManager_IDEInterface;
-@protocol FBDeviceOperator;
-
-NS_ASSUME_NONNULL_BEGIN
 
 /**
  A Strategy for Connecting.
  */
 @interface FBTestBundleConnection : NSObject
 
+#pragma mark Initializers
+
 /**
  Constructs a Test Bundle Connection.
 
  @param context the Context of the Test Manager.
- @param deviceOperator the device operator used to connect with device.
+ @param target the iOS Target.
  @param interface the interface to delegate to.
  @param queue the queue for asynchronous deliver.
  @param logger the Logger to Log to.
  @return a new Bundle Connection instance.
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
+
+#pragma mark Lifecycle
 
 /**
  Synchonously Connects the to the Bundle
@@ -69,6 +73,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (FBTestBundleResult *)disconnect;
 
+#pragma mark Properties
+
 /**
  Properties set through the Constructor.
  */
@@ -76,7 +82,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 @property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 
 /**
  Properties set from a connection.

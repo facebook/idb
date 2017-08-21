@@ -86,12 +86,12 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   return _clientProcessDisplayPath;
 }
 
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithWithContext:context deviceOperator:deviceOperator interface:interface queue:queue logger:logger];
+  return [[self alloc] initWithWithContext:context target:target interface:interface queue:queue logger:logger];
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -99,10 +99,10 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   }
 
   _context = context;
-  _deviceOperator = deviceOperator;
+  _target = target;
   _interface = interface;
   _queue = queue;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", target.udid]];
 
   _state = FBTestBundleConnectionStateNotConnected;
   _lastCrashCheckDate = NSDate.distantPast;
@@ -224,7 +224,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   [self.logger log:@"Connecting Test Bundle"];
   dispatch_async(self.queue, ^{
     NSError *error;
-    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
+    DTXTransport *transport = [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
     if (error || !transport) {
       XCTestBootstrapError *realError = [[XCTestBootstrapError
         describe:@"Failed to create transport"]
@@ -347,13 +347,13 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   self.lastCrashCheckDate = NSDate.date;
 
   NSError *innerError;
-  pid_t pid = [self.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:&innerError];
+  pid_t pid = [self.target.deviceOperator processIDWithBundleID:self.context.testRunnerBundleID error:&innerError];
   if (pid >= 1) {
     return nil;
   }
   // It make some time for the diagnostic to appear.
   FBDiagnostic *diagnostic = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilExists:^ FBDiagnostic * {
-    return [self.deviceOperator
+    return [self.target.deviceOperator
       attemptToFindCrashLogForProcess:self.context.testRunnerPID
       bundleID:self.context.testRunnerBundleID
       sinceDate:self.applicationLaunchDate];
@@ -426,7 +426,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
     [self concludeWithResult:[FBTestBundleResult failedInError:error]];
     return nil;
   }
-  if (!self.deviceOperator.requiresTestDaemonMediationForTestHostConnection) {
+  if (!self.target.deviceOperator.requiresTestDaemonMediationForTestHostConnection) {
     XCTestBootstrapError *error = [[XCTestBootstrapError
       describe:@"Test Bundle Connection cannot handle a Device that doesn't require daemon mediation"]
       code:XCTestBootstrapErrorCodeStartupFailure];

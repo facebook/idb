@@ -50,7 +50,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 
 @property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
 @property (nonatomic, strong, readonly) FBTestManagerContext *context;
-@property (nonatomic, strong, readonly) id<FBDeviceOperator> deviceOperator;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) dispatch_queue_t queue;
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
@@ -66,12 +66,12 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 
 #pragma mark Initializers
 
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithWithContext:context deviceOperator:deviceOperator interface:interface queue:queue logger:logger];
+  return [[self alloc] initWithWithContext:context target:target interface:interface queue:queue logger:logger];
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context deviceOperator:(id<FBDeviceOperator>)deviceOperator interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -79,10 +79,10 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
   }
 
   _context = context;
-  _deviceOperator = deviceOperator;
+  _target = target;
   _interface = interface;
   _queue = queue;
-  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", deviceOperator.udid]];
+  _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", target.udid]];
 
   _state = FBTestDaemonConnectionStateNotConnected;
 
@@ -208,7 +208,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
   [self.logger log:@"Starting the daemon connection"];
   dispatch_async(self.queue, ^{
     NSError *innerError = nil;
-    DTXTransport *transport = [self.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&innerError];
+    DTXTransport *transport = [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&innerError];
     if (innerError || !transport) {
       XCTestBootstrapError *error = [[XCTestBootstrapError
         describe:@"Failed to created secondary test manager transport"]
