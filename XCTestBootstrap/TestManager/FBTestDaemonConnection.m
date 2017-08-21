@@ -232,7 +232,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
   DTXProxyChannel *channel = [connection
     makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
     exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [channel setExportedObject:self queue:dispatch_get_main_queue()];
+  [channel setExportedObject:self queue:self.target.workQueue];
   self.daemonProxy = (id<XCTestManager_DaemonConnectionInterface>)channel.remoteObjectProxy;
 
   [self.logger logFormat:@"Whitelisting test process ID %d", self.context.testRunnerPID];

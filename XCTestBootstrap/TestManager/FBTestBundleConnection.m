@@ -233,7 +233,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
       return;
     }
     DTXConnection *connection = [self setupTestBundleConnectionWithTransport:transport];
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(self.target.workQueue, ^{
       [self sendStartSessionRequestWithConnection:connection];
     });
   });
@@ -253,7 +253,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
    peerInterface:@protocol(XCTestDriverInterface)
    handler:^(DTXProxyChannel *channel){
      [self.logger logFormat:@"Got proxy channel request from test bundle"];
-     [channel setExportedObject:self queue:dispatch_get_main_queue()];
+     [channel setExportedObject:self queue:self.target.workQueue];
      id<XCTestDriverInterface> interface = channel.remoteObjectProxy;
      self.testBundleProxy = interface;
    }];
@@ -269,7 +269,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   DTXProxyChannel *proxyChannel = [self.testBundleConnection
     makeProxyChannelWithRemoteInterface:@protocol(XCTestManager_DaemonConnectionInterface)
     exportedInterface:@protocol(XCTestManager_IDEInterface)];
-  [proxyChannel setExportedObject:self queue:dispatch_get_main_queue()];
+  [proxyChannel setExportedObject:self queue:self.target.workQueue];
   id<XCTestManager_DaemonConnectionInterface> remoteProxy = (id<XCTestManager_DaemonConnectionInterface>) proxyChannel.remoteObjectProxy;
 
   [self.logger logFormat:@"Starting test session with ID %@", self.context.sessionIdentifier.UUIDString];
@@ -311,7 +311,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 - (void)bundleDisconnectedWithState:(FBTestBundleConnectionState)state
 {
-  dispatch_async(dispatch_get_main_queue(), ^{
+  dispatch_async(self.target.workQueue, ^{
     [self.logger logFormat:@"Bundle Connection Disconnected in state '%@'", [FBTestBundleConnection stateStringForState:state]];
 
     if (self.result) {
