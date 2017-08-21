@@ -31,13 +31,13 @@
 #import "FBTestReporterForwarder.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
-#import "FBTestManagerProcessInteractionDelegate.h"
 #import "FBTestBundleConnection.h"
 #import "FBTestDaemonConnection.h"
 #import "FBTestManagerContext.h"
 #import "FBTestBundleResult.h"
 #import "FBTestManagerResult.h"
 #import "FBTestDaemonResult.h"
+#import "FBTestApplicationLaunchStrategy.h"
 
 const NSInteger FBProtocolVersion = 0x16;
 const NSInteger FBProtocolMinimumVersion = 0x8;
@@ -208,7 +208,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     waitForDebugger:NO
     output:FBProcessOutputConfiguration.outputToDevNull];
 
-  if (![self.processDelegate testManagerMediator:self launchApplication:launch atPath:path error:&error]) {
+  if (![[FBTestApplicationLaunchStrategy strategyWithTarget:self.target] launchApplication:launch atPath:path error:&error]) {
     [receipt invokeCompletionWithReturnValue:nil error:error];
   }
   else {
@@ -244,7 +244,7 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
                                   code:0x2
                               userInfo:@{NSLocalizedDescriptionKey : @"Invalid or expired token: no matching operation was found."}];
     } else {
-      [self.processDelegate testManagerMediator:self killApplicationWithBundleID:bundleID error:&error];
+      [self.target killApplicationWithBundleID:bundleID error:&error];
     }
   }
   if (error) {

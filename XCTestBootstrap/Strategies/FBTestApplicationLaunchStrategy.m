@@ -7,19 +7,25 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBTestManagerProcessInteractionOperator.h"
+#import "FBTestApplicationLaunchStrategy.h"
 
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBDeviceOperator.h"
 
-@implementation FBTestManagerProcessInteractionOperator
+@interface FBTestApplicationLaunchStrategy ()
+
+@property (nonatomic, strong, readonly) id<FBiOSTarget> iosTarget;
+
+@end
+
+@implementation FBTestApplicationLaunchStrategy
 
 #pragma mark - Initializers
 
-+ (instancetype)withIOSTarget:(id<FBiOSTarget>)iosTarget;
++ (instancetype)strategyWithTarget:(id<FBiOSTarget>)iosTarget
 {
-  return [[FBTestManagerProcessInteractionOperator alloc] initWithIOSTarget:iosTarget];
+  return [[FBTestApplicationLaunchStrategy alloc] initWithIOSTarget:iosTarget];
 }
 
 - (instancetype)initWithIOSTarget:(id<FBiOSTarget>)iosTarget
@@ -34,9 +40,9 @@
   return self;
 }
 
-#pragma mark - FBTestManagerMediatorDelegate
+#pragma mark Public Methods
 
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error
+- (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error
 {
   if (!path && ![self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
     return NO;
@@ -55,11 +61,6 @@
     return NO;
   }
   return YES;
-}
-
-- (BOOL)testManagerMediator:(FBTestManagerAPIMediator *)mediator killApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error
-{
-  return [self.iosTarget killApplicationWithBundleID:bundleID error:error];
 }
 
 @end
