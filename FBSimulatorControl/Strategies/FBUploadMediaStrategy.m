@@ -14,6 +14,7 @@
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBAddVideoPolyfill.h"
+#import "NSPredicate+FBSimulatorControl.h"
 
 @interface FBUploadMediaStrategy ()
 
