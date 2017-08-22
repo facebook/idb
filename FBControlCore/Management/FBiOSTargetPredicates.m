@@ -67,6 +67,20 @@
   }];
 }
 
++ (NSPredicate *)udidsOfType:(FBiOSTargetType)targetType
+{
+  NSMutableString *format = [@"FALSEPREDICATE" mutableCopy];
+  if (targetType & FBiOSTargetTypeDevice) {
+    [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{40}$'"];
+  }
+  if (targetType & FBiOSTargetTypeSimulator) {
+    [format appendString:@" OR SELF MATCHES '^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}$'"];
+  }
+  NSPredicate *predicate = [NSPredicate predicateWithFormat:format];
+
+  return predicate;
+}
+
 + (NSPredicate *)devices:(NSArray<FBDeviceModel> *)deviceConfigurations
 {
   NSSet<FBDeviceModel> *deviceConfigurationSet = [NSSet setWithArray:deviceConfigurations];

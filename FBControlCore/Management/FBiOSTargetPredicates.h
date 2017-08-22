@@ -86,6 +86,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSPredicate *)udids:(NSArray<NSString *> *)udids;
 
 /**
+ Predicate for matching against UDIDs matching a specific target type.
+
+ @param targetType the Target Type Option Set to match against.
+ @return an NSPredicate.
+ */
++ (NSPredicate *)udidsOfType:(FBiOSTargetType)targetType;
+
+/**
  Predicate for matching against many Device Configurations.
 
  @param deviceConfigurations the Device Configurations to match against.
