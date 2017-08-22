@@ -29,9 +29,9 @@
 
 @implementation FBSimulatorAgentCommands
 
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithTarget:(FBSimulator *)targets
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:targets];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator

@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Commands to perform on a Simulator, related to XCTest.
  */
-@protocol FBSimulatorXCTestCommands <NSObject, FBXCTestCommands>
+@protocol FBSimulatorXCTestCommands <NSObject, FBXCTestCommands, FBiOSTargetCommand>
 
 /**
  Starts testing application using test bundle.
@@ -63,14 +63,6 @@ NS_ASSUME_NONNULL_BEGIN
  The implementation of the FBSimulatorXCTestCommands instance.
  */
 @interface FBSimulatorXCTestCommands : NSObject <FBSimulatorXCTestCommands>
-
-/**
- The Designated Initializer.
-
- @param simulator the simulator to run against.
- @return a new Simulator XCTest Commands Instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

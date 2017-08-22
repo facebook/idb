@@ -10,13 +10,15 @@
 #import <FBSimulatorControl/FBSimulator.h>
 #import <FBSimulatorControl/FBSimulatorEventSink.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class FBMutableSimulatorEventSink;
 @class FBSimulatorEventRelay;
 @class FBSimulatorProcessFetcher;
 @class FBSimulatorResourceManager;
-@protocol FBControlCoreLogger;
+@class FBiOSTargetCommandForwarder;
 
-NS_ASSUME_NONNULL_BEGIN
+@protocol FBControlCoreLogger;
 
 @interface FBSimulator ()
 
@@ -24,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nullable) FBMutableSimulatorEventSink *mutableSink;
 @property (nonatomic, strong, readonly) FBSimulatorResourceManager *resourceSink;
 @property (nonatomic, strong, readonly) FBSimulatorProcessFetcher *processFetcher;
+@property (nonatomic, strong, readonly) FBiOSTargetCommandForwarder *forwarder;
 
 @property (nonatomic, copy, readwrite) FBSimulatorConfiguration *configuration;
 @property (nonatomic, weak, readwrite, nullable) FBSimulatorPool *pool;

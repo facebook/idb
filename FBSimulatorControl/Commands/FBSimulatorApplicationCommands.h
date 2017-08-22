@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Simulator-Specific Application Commands.
  */
-@protocol FBSimulatorApplicationCommands <FBApplicationCommands>
+@protocol FBSimulatorApplicationCommands <FBApplicationCommands, FBiOSTargetCommand>
 
 #pragma mark Application Lifecycle
 
@@ -87,14 +87,6 @@ NS_ASSUME_NONNULL_BEGIN
  Implementation of FBApplicationCommands for Simulators.
  */
 @interface FBSimulatorApplicationCommands : NSObject <FBSimulatorApplicationCommands>
-
-/**
- Creates a FBSimulatorApplicationCommands instance.
-
- @param simulator the Simulator to perform actions on.
- @return a new FBSimulatorApplicationCommands instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

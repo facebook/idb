@@ -20,14 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBDeviceApplicationCommands : NSObject <FBApplicationCommands>
 
-/**
- The Designated Initializers.
-
- @param device the Device to use.
- @return an implemented of FBApplicationCommands.
- */
-+ (instancetype)commandsWithDevice:(FBDevice *)device;
-
 @end
 
 NS_ASSUME_NONNULL_END

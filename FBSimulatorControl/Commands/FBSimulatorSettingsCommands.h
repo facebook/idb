@@ -9,17 +9,18 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationBundle;
 @class FBLocalizationOverride;
 @class FBSimulator;
-@class FBSimulatorBootConfiguration;
 
 /**
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
-@protocol FBSimulatorSettingsCommands <NSObject>
+@protocol FBSimulatorSettingsCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Overrides the Global Localization of the Simulator.
@@ -76,14 +77,6 @@ NS_ASSUME_NONNULL_BEGIN
  Modifies the Settings, Preferences & Defaults of a Simulator.
  */
 @interface FBSimulatorSettingsCommands : NSObject <FBSimulatorSettingsCommands>
-
-/**
- Creates and returns a new Commmands Instance.
-
- @param simulator the Simulator to operate on.
- @return a strategy for the provided Simulator.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

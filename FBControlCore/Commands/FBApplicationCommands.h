@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
@@ -17,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Defines an interface for interacting with iOS Applications.
  */
-@protocol FBApplicationCommands <NSObject>
+@protocol FBApplicationCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Installs application at given path on the host.

@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Interactions for the Lifecycle of the Simulator.
  */
-@protocol FBSimulatorLifecycleCommands <NSObject>
+@protocol FBSimulatorLifecycleCommands <NSObject, FBiOSTargetCommand>
 
 #pragma mark Boot/Shutdown
 
@@ -169,14 +169,6 @@ NS_ASSUME_NONNULL_BEGIN
  The Implementation of FBSimulatorLifecycleCommands
  */
 @interface FBSimulatorLifecycleCommands : NSObject <FBSimulatorLifecycleCommands>
-
-/**
- The Designated Intializer
-
- @param simulator the Simulator.
- @return a new Simulator Lifecycle Commands Instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

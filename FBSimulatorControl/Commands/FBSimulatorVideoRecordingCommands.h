@@ -21,14 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorVideoRecordingCommands : NSObject <FBVideoRecordingCommands, FBBitmapStreamingCommands>
 
-/**
- Creates a FBSimulatorApplicationCommands instance.
-
- @param simulator the Simulator to perform actions on.
- @return a new FBSimulatorApplicationCommands instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
-
 @end
 
 NS_ASSUME_NONNULL_END

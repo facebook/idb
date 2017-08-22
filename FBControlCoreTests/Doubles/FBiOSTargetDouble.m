@@ -15,6 +15,11 @@
 @synthesize deviceOperator;
 @synthesize logger;
 
++ (instancetype)commandsWithTarget:(id<FBiOSTarget>)target
+{
+  return nil;
+}
+
 #pragma mark FBDebugDescribeable
 
 - (NSString *)description

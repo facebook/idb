@@ -82,6 +82,7 @@
   _processFetcher = processFetcher;
   _auxillaryDirectory = auxillaryDirectory;
   _logger = logger;
+  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBSimulator.commandResponders memoize:NO];
 
   return self;
 }
@@ -286,12 +287,7 @@
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  for (Class class in FBSimulator.commandResponders) {
-    if ([class instancesRespondToSelector:selector]) {
-      return [class commandsWithSimulator:self];
-    }
-  }
-  return [super forwardingTargetForSelector:selector];
+  return [self.forwarder forwardingTargetForSelector:selector];
 }
 
 + (NSArray<Class> *)commandResponders

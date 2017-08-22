@@ -48,6 +48,7 @@
 #import <FBControlCore/FBiOSActionRouter.h>
 #import <FBControlCore/FBiOSTarget.h>
 #import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
 #import <FBControlCore/FBiOSTargetDiagnostics.h>
 #import <FBControlCore/FBiOSTargetFormat.h>
 #import <FBControlCore/FBiOSTargetPredicates.h>

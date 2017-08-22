@@ -63,7 +63,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
   _set = set;
   _amDevice = amDevice;
   _logger = [logger withPrefix:[NSString stringWithFormat:@"%@: ", amDevice.udid]];
-  _commands = [NSMutableDictionary dictionary];
+  _forwarder = [FBiOSTargetCommandForwarder forwarderWithTarget:self commandClasses:FBDevice.commandResponders memoize:YES];
 
   return self;
 }
@@ -220,21 +220,11 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (id)forwardingTargetForSelector:(SEL)selector
 {
-  // If we have a command instance, use it.
-  for (id command in self.commands.allKeys) {
-    if ([command respondsToSelector:selector]) {
-      return command;
-    }
-  }
-  // Then find if there is a non-instantiated class for doing this.
-  for (Class class in FBDevice.commandResponders) {
-    if (![class instancesRespondToSelector:selector]) {
-      continue;
-    }
-    id command = [class commandsWithDevice:self];
-    self.commands[NSStringFromClass(class)] = command;
+  // Try the forwarder.
+  id command = [self.forwarder forwardingTargetForSelector:selector];
+  if (command) {
     return command;
- }
+  }
   // Otherwise try the operator
   if ([FBiOSDeviceOperator instancesRespondToSelector:selector]) {
     return self.deviceOperator;

@@ -28,7 +28,7 @@
 
 #pragma mark Initializers
 
-+ (instancetype)commandsWithDevice:(FBDevice *)device
++ (instancetype)commandsWithTarget:(FBDevice *)device
 {
   return [[self alloc] initWithDevice:device];
 }

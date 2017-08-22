@@ -9,15 +9,17 @@
 
 #import <Foundation/Foundation.h>
 
-@class FBProcessInfo;
-@class FBSimulator;
+#import <FBControlCore/FBControlCore.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBProcessInfo;
+@class FBSimulator;
 
 /**
  Protocol for interacting with a Simulator's launchctl
  */
-@protocol FBSimulatorLaunchCtlCommands
+@protocol FBSimulatorLaunchCtlCommands <NSObject, FBiOSTargetCommand>
 
 #pragma mark Processes
 
@@ -94,16 +96,6 @@ q
  An Interface to a Simulator's launchctl.
  */
 @interface FBSimulatorLaunchCtlCommands : NSObject <FBSimulatorLaunchCtlCommands>
-
-#pragma mark Intializers
-
-/**
- Creates a FBSimulatorLaunchCtl instance for the provided Simulator
-
- @param simulator the Simulator to create a launchctl wrapper for.
- @return a new FBSimulatorLaunchCtl instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

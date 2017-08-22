@@ -15,11 +15,12 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBAMDevice;
 @class FBDeviceVideoRecordingCommands;
 @class FBDeviceXCTestCommands;
+@class FBiOSTargetCommandForwarder;
 @protocol FBDeviceOperator;
 
 @interface FBDevice ()
 
-@property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, id> *commands;
+@property (nonatomic, strong, readonly) FBiOSTargetCommandForwarder *forwarder;
 @property (nonatomic, strong, readonly) FBAMDevice *amDevice;
 
 - (instancetype)initWithSet:(FBDeviceSet *)set amDevice:(FBAMDevice *)device logger:(id<FBControlCoreLogger>)logger;

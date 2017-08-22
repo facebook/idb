@@ -41,12 +41,12 @@
   return [FBBinaryDescriptor binaryWithPath:path error:error];
 }
 
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithTarget:(FBSimulator *)target
 {
   NSError *error = nil;
-  FBBinaryDescriptor *launchCtlBinary = [self launchCtlBinaryForSimulator:simulator error:&error];
+  FBBinaryDescriptor *launchCtlBinary = [self launchCtlBinaryForSimulator:target error:&error];
   NSAssert(launchCtlBinary, @"Could not find path for launchctl binary with error %@", error);
-  return [[FBSimulatorLaunchCtlCommands alloc] initWithSimulator:simulator launchCtlBinary:launchCtlBinary];
+  return [[FBSimulatorLaunchCtlCommands alloc] initWithSimulator:target launchCtlBinary:launchCtlBinary];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator launchCtlBinary:(FBBinaryDescriptor *)launchCtlBinary

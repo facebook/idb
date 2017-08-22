@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Commands relating to the launching of Agents on a Simulator.
  */
-@protocol FBSimulatorAgentCommands <NSObject>
+@protocol FBSimulatorAgentCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Launches the provided Agent with the given Configuration.
@@ -37,14 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
  An Implementation of FBSimulatorAgentCommands.
  */
 @interface FBSimulatorAgentCommands : NSObject <FBSimulatorAgentCommands>
-
-/**
- The Designated Intializer
-
- @param simulator the Simulator.
- @return a new Simulator Agent Commands Instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
 
 @end
 

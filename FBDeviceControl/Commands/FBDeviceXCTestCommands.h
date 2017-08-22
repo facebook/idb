@@ -11,22 +11,14 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-@class FBDevice;
-
 NS_ASSUME_NONNULL_BEGIN
+
+@class FBDevice;
 
 /**
  An implementation of FBXCTestCommands, for Devices.
  */
 @interface FBDeviceXCTestCommands : NSObject <FBXCTestCommands>
-
-/**
- The Designated Initializer.
-
- @param device the Device.
- @return a new Device Commands Instance.
- */
-+ (instancetype)commandsWithDevice:(FBDevice *)device;
 
 @end
 

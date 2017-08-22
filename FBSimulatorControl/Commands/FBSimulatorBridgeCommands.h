@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBSimulator;
@@ -34,15 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  The implementation of FBSimulatorBridgeCommands
  */
-@interface FBSimulatorBridgeCommands : NSObject <FBSimulatorBridgeCommands>
-
-/**
- The Designated Intializer
-
- @param simulator the Simulator.
- @return a new Simulator Bridge Commands Instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
+@interface FBSimulatorBridgeCommands : NSObject <FBSimulatorBridgeCommands, FBiOSTargetCommand>
 
 @end
 

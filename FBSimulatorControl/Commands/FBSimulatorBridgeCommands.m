@@ -26,9 +26,9 @@
 
 @implementation FBSimulatorBridgeCommands
 
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator
++ (instancetype)commandsWithTarget:(FBSimulator *)target
 {
-  return [[self alloc] initWithSimulator:simulator];
+  return [[self alloc] initWithSimulator:target];
 }
 
 - (instancetype)initWithSimulator:(FBSimulator *)simulator

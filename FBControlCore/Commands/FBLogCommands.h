@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Commands for obtaining logs.
  */
-@protocol FBLogCommands <NSObject>
+@protocol FBLogCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Starts tailing the log of a Simulator to a consumer.

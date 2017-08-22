@@ -18,15 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An implementation of Log Commands for Simulators.
  */
-@interface FBSimulatorLogCommands : NSObject <FBLogCommands>
-
-/**
- The Designated Initializer.
-
- @param simulator the Simulator.
- @return a new Commands Instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
+@interface FBSimulatorLogCommands : NSObject <FBLogCommands, FBiOSTargetCommand>
 
 @end
 

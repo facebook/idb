@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBApplicationLaunchConfiguration;
@@ -17,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Defines an interface for interacting with the Data Container of Applications.
  */
-@protocol FBApplicationDataCommands <NSObject>
+@protocol FBApplicationDataCommands <NSObject, FBiOSTargetCommand>
 
 /**
  Relocate Data inside the Application Data Container.

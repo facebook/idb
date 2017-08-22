@@ -152,6 +152,8 @@
 		AA4242FE1C529366008ABD80 /* FBSimulatorVideo.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4242FC1C529366008ABD80 /* FBSimulatorVideo.m */; };
 		AA4243041C5295FC008ABD80 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA4243031C5295FC008ABD80 /* CoreMedia.framework */; };
 		AA4243061C529644008ABD80 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA4243051C529644008ABD80 /* CoreVideo.framework */; };
+		AA4424CC1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.h in Headers */ = {isa = PBXBuildFile; fileRef = AA4424CA1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA4424CD1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m in Sources */ = {isa = PBXBuildFile; fileRef = AA4424CB1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m */; };
 		AA44AF681E792F7500185844 /* FBSimulatorBitmapStream.h in Headers */ = {isa = PBXBuildFile; fileRef = AA44AF661E792F7500185844 /* FBSimulatorBitmapStream.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA44AF691E792F7500185844 /* FBSimulatorBitmapStream.m in Sources */ = {isa = PBXBuildFile; fileRef = AA44AF671E792F7500185844 /* FBSimulatorBitmapStream.m */; };
 		AA46BF601D6DDC6A00C41DAF /* FBTestManagerContext.h in Headers */ = {isa = PBXBuildFile; fileRef = AA46BF5E1D6DDC6A00C41DAF /* FBTestManagerContext.h */; };
@@ -974,6 +976,8 @@
 		AA4242FC1C529366008ABD80 /* FBSimulatorVideo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorVideo.m; sourceTree = "<group>"; };
 		AA4243031C5295FC008ABD80 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		AA4243051C529644008ABD80 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		AA4424CA1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBiOSTargetCommandForwarder.h; sourceTree = "<group>"; };
+		AA4424CB1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBiOSTargetCommandForwarder.m; sourceTree = "<group>"; };
 		AA44AF661E792F7500185844 /* FBSimulatorBitmapStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBSimulatorBitmapStream.h; sourceTree = "<group>"; };
 		AA44AF671E792F7500185844 /* FBSimulatorBitmapStream.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBSimulatorBitmapStream.m; sourceTree = "<group>"; };
 		AA46BF5E1D6DDC6A00C41DAF /* FBTestManagerContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FBTestManagerContext.h; sourceTree = "<group>"; };
@@ -1655,6 +1659,8 @@
 				AA1174B11CEA17DB00EB699E /* FBApplicationCommands.h */,
 				AA3EA84F1F31B0DA003FBDC1 /* FBApplicationDataCommands.h */,
 				AA4D30721E799C1900A9FBD0 /* FBBitmapStreamingCommands.h */,
+				AA4424CA1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.h */,
+				AA4424CB1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m */,
 				AA805F7E1F0D0E0000AB31DE /* FBLogCommands.h */,
 				AA14B5551DF73EFF00085855 /* FBVideoRecordingCommands.h */,
 				AA8C8AD51E7688BF008A23C2 /* FBVideoRecordingCommands.m */,
@@ -3246,6 +3252,7 @@
 				AA6A3B091CC0C96E00E016C4 /* FBCollectionOperations.h in Headers */,
 				EEBD60941C908F8500298A07 /* FBCollectionInformation.h in Headers */,
 				EEBD60641C9062E900298A07 /* FBProcessInfo.h in Headers */,
+				AA4424CC1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.h in Headers */,
 				AAC706F51EFD2E4100BF8303 /* FBScale.h in Headers */,
 				AA805F871F0D14D800AB31DE /* FBLogTailConfiguration.h in Headers */,
 				AA0F63431F25E81D00C2C763 /* FBSocketReader.h in Headers */,
@@ -3852,6 +3859,7 @@
 				AA19D7D11F14BC9600E436CD /* FBApplicationBundle.m in Sources */,
 				AA5CB9151E8A45200099F048 /* FBAgentLaunchConfiguration.m in Sources */,
 				AABBF3241DAC110000E2B6AF /* FBTaskBuilder.m in Sources */,
+				AA4424CD1F4C11A9006B5E5D /* FBiOSTargetCommandForwarder.m in Sources */,
 				AAEA9C261DB4EB16009642CB /* FBDiagnosticQuery.m in Sources */,
 				EE9E1E4A1D6CB2CC00860830 /* FBProcessLaunchConfiguration.m in Sources */,
 				AA58F88D1D95917D006F8D81 /* FBBundleDescriptor.m in Sources */,

@@ -28,9 +28,9 @@
 
 #pragma mark Initializers
 
-+ (instancetype)commandsWithDevice:(FBDevice *)device
++ (instancetype)commandsWithTarget:(FBDevice *)target
 {
-  return [[self alloc] initWithDevice:device workingDirectory:NSTemporaryDirectory()];
+  return [[self alloc] initWithDevice:target workingDirectory:NSTemporaryDirectory()];
 }
 
 - (instancetype)initWithDevice:(FBDevice *)device workingDirectory:(NSString *)workingDirectory

@@ -18,15 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An implementation of FBApplicationDataCommands for Simulators
  */
-@interface FBSimulatorApplicationDataCommands : NSObject <FBApplicationDataCommands>
-
-/**
- Creates a FBApplicationDataCommands instance.
-
- @param simulator the Simulator to perform actions on.
- @return a new FBApplicationDataCommands instance.
- */
-+ (instancetype)commandsWithSimulator:(FBSimulator *)simulator;
+@interface FBSimulatorApplicationDataCommands : NSObject <FBApplicationDataCommands, FBiOSTargetCommand>
 
 @end
 
