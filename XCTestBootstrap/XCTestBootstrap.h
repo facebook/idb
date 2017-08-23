@@ -12,7 +12,7 @@
 #import <XCTestBootstrap/FBDeviceTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBJSONTestReporter.h>
 #import <XCTestBootstrap/FBListTestStrategy.h>
-#import <XCTestBootstrap/FBLogicTestProcess.h>
+#import <XCTestBootstrap/FBXCTestProcess.h>
 #import <XCTestBootstrap/FBLogicTestRunner.h>
 #import <XCTestBootstrap/FBMacXCTestProcessExecutor.h>
 #import <XCTestBootstrap/FBProductBundle.h>

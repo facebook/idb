@@ -14,16 +14,17 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBFileConsumer;
 @protocol FBXCTestProcessExecutor;
 
-@class FBLogicTestProcess;
 @class FBSimulator;
+@class FBXCTestProcess;
 
 /**
- A Process wrapper for running Logic Tests.
+ A Platform-Agnostic wrapper responsible for managing an xctest process.
+ Driven by an executor, which implements the platform-specific responsibilities of launching an xctest process.
  */
-@interface FBLogicTestProcess : NSObject
+@interface FBXCTestProcess : NSObject
 
 /**
- A Logic Test Process.
+ The Designated Initializer.
 
  @param launchPath the Launch Path of the executable
  @param arguments the Arguments to the executable.
@@ -31,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param stdOutReader the Reader of the Stdout.
  @param stdErrReader the Reader of the Stderr.
  @param executor the executor for running the test process.
- @return a new Logic Test Process
+ @return a new xctest process.
  */
 + (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor;
 

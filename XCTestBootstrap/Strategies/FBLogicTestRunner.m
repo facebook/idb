@@ -101,7 +101,7 @@
   otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
 
   // Construct and start the process
-  FBLogicTestProcess *process = [self testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader];
+  FBXCTestProcess *process = [self testProcessWithLaunchPath:launchPath arguments:arguments environment:environment stdOutReader:stdOutReader stdErrReader:stdErrReader];
   pid_t pid = [process startWithError:error];
   if (!pid) {
     return NO;
@@ -153,9 +153,9 @@
 
 #pragma mark Private
 
-- (FBLogicTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
+- (FBXCTestProcess *)testProcessWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader
 {
-  return [FBLogicTestProcess
+  return [FBXCTestProcess
     processWithLaunchPath:launchPath
     arguments:arguments
     environment:[self.configuration buildEnvironmentWithEntries:environment]

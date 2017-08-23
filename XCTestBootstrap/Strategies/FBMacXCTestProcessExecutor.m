@@ -13,7 +13,7 @@
 
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestShimConfiguration.h"
-#import "FBLogicTestProcess.h"
+#import "FBXCTestProcess.h"
 
 @interface FBMacXCTestProcessExecutor ()
 
@@ -41,7 +41,7 @@
   return self;
 }
 
-- (pid_t)logicTestProcess:(FBLogicTestProcess *)process startWithError:(NSError **)error
+- (pid_t)xctestProcess:(FBXCTestProcess *)process startWithError:(NSError **)error
 {
   self.task = [[[[[[[[FBTaskBuilder
     withLaunchPath:process.launchPath]
@@ -64,12 +64,12 @@
   return self.task.processIdentifier;
 }
 
-- (void)terminateLogicTestProcess:(FBLogicTestProcess *)process;
+- (void)terminateXctestProcess:(FBXCTestProcess *)process;
 {
   [self.task terminate];
 }
 
-- (BOOL)logicTestProcess:(FBLogicTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (BOOL)xctestProcess:(FBXCTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   if (!self.task) {
     return [[FBControlCoreError

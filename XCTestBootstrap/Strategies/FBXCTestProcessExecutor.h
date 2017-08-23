@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBLogicTestProcess;
+@class FBXCTestProcess;
 
 /**
  A protocol for defining the platform-specific implementation of running an xctest process.
@@ -25,14 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return the process identifier of the launched process.
  */
-- (pid_t)logicTestProcess:(FBLogicTestProcess *)process startWithError:(NSError **)error;
+- (pid_t)xctestProcess:(FBXCTestProcess *)process startWithError:(NSError **)error;
 
 /**
  Terminate the Underlying xctest process.
  
  @param process the process to terminate.
  */
-- (void)terminateLogicTestProcess:(FBLogicTestProcess *)process;
+- (void)terminateXctestProcess:(FBXCTestProcess *)process;
 
 /**
  Await the completion of the xctest process.
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error out for any error that occurs.
  @return YES if successful, NO otherwise
  */
-- (BOOL)logicTestProcess:(FBLogicTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
+- (BOOL)xctestProcess:(FBXCTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 /**
  The path to the Shim dylib used for reporting test output.

@@ -45,7 +45,7 @@
   return self;
 }
 
-- (pid_t)logicTestProcess:(FBLogicTestProcess *)process startWithError:(NSError **)error
+- (pid_t)xctestProcess:(FBXCTestProcess *)process startWithError:(NSError **)error
 {
   FBProcessOutputConfiguration *output = [FBProcessOutputConfiguration
     configurationWithStdOut:process.stdOutReader
@@ -90,12 +90,12 @@
   return self.operation.process.processIdentifier;
 }
 
-- (void)terminateLogicTestProcess:(FBLogicTestProcess *)process
+- (void)terminateXctestProcess:(FBXCTestProcess *)process
 {
 
 }
 
-- (BOOL)logicTestProcess:(FBLogicTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+- (BOOL)xctestProcess:(FBXCTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   BOOL waitSuccessful = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
     return self.operation.hasTerminated;

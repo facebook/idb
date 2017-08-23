@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBLogicTestProcess.h"
+#import "FBXCTestProcess.h"
 
 #import <sys/wait.h>
 
@@ -18,18 +18,18 @@
 
 static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
-@interface FBLogicTestProcess ()
+@interface FBXCTestProcess ()
 
 @property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
 @property (nonatomic, copy, readwrite, nullable) NSDate *startDate;
 
 @end
 
-@implementation FBLogicTestProcess
+@implementation FBXCTestProcess
 
 + (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor
 {
-  return [[FBLogicTestProcess alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment waitForDebugger:waitForDebugger stdOutReader:stdOutReader stdErrReader:stdErrReader executor:executor];
+  return [[FBXCTestProcess alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment waitForDebugger:waitForDebugger stdOutReader:stdOutReader stdErrReader:stdErrReader executor:executor];
 }
 
 - (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor
@@ -54,24 +54,24 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 {
   // Construct and launch the task.
   self.startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
-  return [self.executor logicTestProcess:self startWithError:error];
+  return [self.executor xctestProcess:self startWithError:error];
 }
 
 - (void)terminate
 {
-  [self.executor terminateLogicTestProcess:self];
+  [self.executor terminateXctestProcess:self];
 }
 
 - (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.executor logicTestProcess:self waitForCompletionWithTimeout:timeout error:error];
+  return [self.executor xctestProcess:self waitForCompletionWithTimeout:timeout error:error];
 }
 
 - (BOOL)processDidTerminateNormallyWithProcessIdentifier:(pid_t)processIdentifier didTimeout:(BOOL)didTimeout exitCode:(int)exitCode error:(NSError **)error
 {
   // If the xctest process has stalled, we should sample it (if possible), then terminate it.
   if (didTimeout) {
-    NSString *sample = [FBLogicTestProcess sampleStalledProcess:processIdentifier];
+    NSString *sample = [FBXCTestProcess sampleStalledProcess:processIdentifier];
     [self terminate];
     return [[FBXCTestError
       describeFormat:@"The xctest process stalled: %@", sample]
@@ -80,7 +80,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
   // If exited abnormally, check for a crash log
   if (exitCode != 0 && exitCode != 1) {
-    FBCrashLogInfo *crashLogInfo = [FBLogicTestProcess crashLogsForChildProcessOf:processIdentifier since:self.startDate];
+    FBCrashLogInfo *crashLogInfo = [FBXCTestProcess crashLogsForChildProcessOf:processIdentifier since:self.startDate];
     if (crashLogInfo) {
       FBDiagnostic *diagnosticCrash = [crashLogInfo toDiagnostic:FBDiagnosticBuilder.builder];
       return [[FBXCTestError
