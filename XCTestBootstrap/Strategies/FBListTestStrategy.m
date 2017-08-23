@@ -17,27 +17,31 @@
 
 @interface FBListTestStrategy ()
 
+@property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
 @property (nonatomic, strong, readonly) FBListTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
 @implementation FBListTestStrategy
 
-+ (instancetype)macOSStrategyWithConfiguration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
++ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithConfiguration:configuration reporter:reporter];
+  return [[self alloc] initWithExecutor:executor configuration:configuration reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithConfiguration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter
+- (instancetype)initWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _executor = executor;
   _configuration = configuration;
   _reporter = reporter;
+  _logger = logger;
 
   return self;
 }
@@ -47,7 +51,7 @@
   [self.reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
-  NSString *otestQueryPath = self.configuration.shims.macOSQueryShimPath;
+  NSString *otestQueryPath = self.executor.queryShimPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
 
   if (mkfifo([otestQueryOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {
@@ -61,14 +65,25 @@
     @"OTEST_QUERY_OUTPUT_FILE": otestQueryOutputPath,
     @"OtestQueryBundlePath": self.configuration.testBundlePath,
   };
+  id<FBControlCoreLogger> logger = self.logger;
+  id<FBFileConsumer> logConsumer =  [FBLineFileConsumer asynchronousReaderWithConsumer:^(NSString *line) {
+    [logger log:line];
+  }];
 
-  FBTask *task = [[[[[FBTaskBuilder
-    withLaunchPath:xctestPath]
-    withArguments:arguments]
-    withEnvironmentAdditions:environment]
-    build]
-    startAsynchronously];
+  FBXCTestProcess *process = [FBXCTestProcess
+    processWithLaunchPath:xctestPath
+    arguments:arguments
+    environment:environment
+    waitForDebugger:NO
+    stdOutReader:logConsumer
+    stdErrReader:logConsumer
+    executor:self.executor];
 
+  // Start the process.
+  pid_t processIdentifier = [process startWithError:error];
+  if (!processIdentifier) {
+    return NO;
+  }
   FBAccumilatingFileConsumer *consumer = [FBAccumilatingFileConsumer new];
   FBFileReader *reader = [FBFileReader readerWithFilePath:otestQueryOutputPath consumer:consumer error:error];
   if (![reader startReadingWithError:error]) {
@@ -79,7 +94,7 @@
   // Then make sure that the file has finished being read.
   NSTimeInterval timeout = FBControlCoreGlobalConfiguration.slowTimeout;
   NSError *innerError = nil;
-  BOOL waitSuccess = [task waitForCompletionWithTimeout:timeout error:&innerError];
+  BOOL waitSuccess = [process waitForCompletionWithTimeout:timeout error:&innerError];
   if (![reader stopReadingWithError:error]) {
     return NO;
   }
@@ -90,10 +105,10 @@
       causedBy:innerError]
       failBool:error];
   }
-  if (!task.wasSuccessful) {
+  if (![process processDidTerminateNormallyWithProcessIdentifier:processIdentifier didTimeout:!waitSuccess exitCode:0 error:&innerError]) {
     return [[[FBXCTestError
-      describeFormat:@"The Listing of Tests Failed: %@", task.error.localizedDescription]
-      causedBy:task.error]
+      describeFormat:@"The Listing of Tests Failed: %@", innerError.localizedDescription]
+      causedBy:innerError]
       failBool:error];
   }
 
