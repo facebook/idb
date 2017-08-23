@@ -20,8 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) DVTDeviceManager *deviceManager;
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
-- (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid;
-
 @end
 
 NS_ASSUME_NONNULL_END

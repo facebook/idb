@@ -48,7 +48,6 @@ void (*FBAMDSetLogLevel)(int32_t level);
 @implementation FBDevice
 
 @synthesize deviceOperator = _deviceOperator;
-@synthesize dvtDevice = _dvtDevice;
 @synthesize logger = _logger;
 
 #pragma mark Initializers
@@ -171,14 +170,6 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 #pragma mark Properties
 
-- (DVTiOSDevice *)dvtDevice
-{
-  if (_dvtDevice == nil) {
-    _dvtDevice = [self.set dvtDeviceWithUDID:self.udid];
-  }
-  return _dvtDevice;
-}
-
 - (id<FBDeviceOperator>)deviceOperator
 {
   if (_deviceOperator == nil) {
@@ -195,11 +186,6 @@ void (*FBAMDSetLogLevel)(int32_t level);
 - (NSString *)systemVersion
 {
   return self.amDevice.systemVersion;
-}
-
-- (NSSet *)supportedArchitectures
-{
-  return self.dvtDevice.supportedArchitectures.set;
 }
 
 #pragma mark Forwarding

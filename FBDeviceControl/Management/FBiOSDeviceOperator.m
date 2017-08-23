@@ -31,6 +31,7 @@
 
 #import "FBDevice.h"
 #import "FBDevice+Private.h"
+#import "FBDeviceSet.h"
 #import "FBDeviceControlError.h"
 #import "FBAMDevice+Private.h"
 #import "FBDeviceControlError.h"
@@ -49,9 +50,21 @@
 
 @property (nonatomic, strong, readonly) FBDevice *device;
 
+// The DVTDevice corresponding to the receiver.
+@property (nonatomic, nullable, strong, readonly) DVTiOSDevice *dvtDevice;
+
 @end
 
 @implementation FBiOSDeviceOperator
+
+@synthesize dvtDevice = _dvtDevice;
+- (DVTiOSDevice *)dvtDevice
+{
+  if (_dvtDevice == nil) {
+    _dvtDevice = [self dvtDeviceWithUDID:self.udid];
+  }
+  return _dvtDevice;
+}
 
 + (instancetype)forDevice:(FBDevice *)device
 {
@@ -91,9 +104,9 @@
 
 - (void)fetchApplications
 {
-  if (!self.device.dvtDevice.applications) {
+  if (!self.dvtDevice.applications) {
     [FBRunLoopSpinner spinUntilBlockFinished:^id{
-      DVTFuture *future = self.device.dvtDevice.token.fetchApplications;
+      DVTFuture *future = self.dvtDevice.token.fetchApplications;
       [future waitUntilFinished];
       return nil;
     }];
@@ -103,7 +116,7 @@
 - (id<DVTApplication>)installedApplicationWithBundleIdentifier:(NSString *)bundleID
 {
   [self fetchApplications];
-  return [self.device.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
+  return [self.dvtDevice installedApplicationWithBundleIdentifier:bundleID];
 }
 
 - (FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error
@@ -127,7 +140,7 @@
 {
   __block NSError *innerError = nil;
   BOOL result = [[FBRunLoopSpinner spinUntilBlockFinished:^id{
-    return @([self.device.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:&innerError]);
+    return @([self.dvtDevice uploadApplicationDataWithPath:path forInstalledApplicationWithBundleIdentifier:bundleID error:&innerError]);
   }] boolValue];
   *error = innerError;
   return result;
@@ -137,8 +150,8 @@
 {
   id returnObject =
   [FBRunLoopSpinner spinUntilBlockFinished:^id{
-    if ([self.device.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
-      return [self.device.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
+    if ([self.dvtDevice installedApplicationWithBundleIdentifier:bundleIdentifier]) {
+      return [self.dvtDevice uninstallApplicationWithBundleIdentifierSync:bundleIdentifier];
     }
     return nil;
   }];
@@ -151,6 +164,38 @@
   return YES;
 }
 
+#pragma mark - DVTDevice support
+
+- (nullable DVTiOSDevice *)dvtDeviceWithUDID:(NSString *)udid
+{
+  [self primeDVTDeviceManager];
+  NSDictionary<NSString *, DVTiOSDevice *> *dvtDevices = [[self class] keyDVTDevicesByUDID:[objc_lookUpClass("DVTiOSDevice") alliOSDevices]];
+  return dvtDevices[udid];
+}
+
++ (NSDictionary<NSString *, DVTiOSDevice *> *)keyDVTDevicesByUDID:(NSArray<DVTiOSDevice *> *)devices
+{
+  NSMutableDictionary<NSString *, DVTiOSDevice *> *dictionary = [NSMutableDictionary dictionary];
+  for (DVTiOSDevice *device in devices) {
+    dictionary[device.identifier] = device;
+  }
+  return [dictionary copy];
+}
+
+static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
+- (void)primeDVTDeviceManager
+{
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    // It seems that searching for a device that does not exist will cause all available devices/simulators etc. to be cached.
+    // There's probably a better way of fetching all the available devices, but this appears to work well enough.
+    // This means that all the cached available devices can then be found.
+    [FBDeviceControlFrameworkLoader.xcodeFrameworks loadPrivateFrameworksOrAbort];
+
+    DVTDeviceManager *deviceManager = [objc_lookUpClass("DVTDeviceManager") defaultDeviceManager];
+    [deviceManager searchForDevicesWithType:nil options:@{@"id" : @"I_DONT_EXIST_AT_ALL"} timeout:FBiOSDeviceOperatorDVTDeviceManagerTickleTime error:nil];
+  });
+}
 
 #pragma mark - FBDeviceOperator protocol
 
@@ -190,7 +235,7 @@
 
 - (BOOL)requiresTestDaemonMediationForTestHostConnection
 {
-  return self.device.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
+  return self.dvtDevice.requiresTestDaemonMediationForTestHostConnection;
 }
 
 - (BOOL)waitForDeviceToBecomeAvailableWithError:(NSError **)error
@@ -199,7 +244,7 @@
            timeout:5 * 60]
           timeoutErrorMessage:@"Device was locked"]
          reminderMessage:@"Please unlock device!"]
-        spinUntilTrue:^BOOL{ return ![self.device.dvtDevice isPasscodeLocked]; } error:error])
+        spinUntilTrue:^BOOL{ return ![self.dvtDevice isPasscodeLocked]; } error:error])
   {
     return NO;
   }
@@ -208,7 +253,7 @@
            timeout:5 * 60]
           timeoutErrorMessage:@"Device did not become available"]
          reminderMessage:@"Waiting for device to become available!"]
-        spinUntilTrue:^BOOL{ return [self.device.dvtDevice isAvailable]; }])
+        spinUntilTrue:^BOOL{ return [self.dvtDevice isAvailable]; }])
   {
     return NO;
   }
@@ -217,7 +262,7 @@
            timeout:5 * 60]
           timeoutErrorMessage:@"Failed to gain access to device"]
          reminderMessage:@"Allow device access!"]
-        spinUntilTrue:^BOOL{ return [self.device.dvtDevice deviceReady]; } error:error])
+        spinUntilTrue:^BOOL{ return [self.dvtDevice deviceReady]; } error:error])
   {
     return NO;
   }
@@ -244,13 +289,13 @@
     return NO;
   }
 
-  if (!self.device.dvtDevice.supportsXPCServiceDebugging) {
+  if (!self.dvtDevice.supportsXPCServiceDebugging) {
     return [[FBDeviceControlError
       describe:@"Device does not support XPC service debugging"]
       failBool:error];
   }
 
-  if (!self.device.dvtDevice.serviceHubProcessControlChannel) {
+  if (!self.dvtDevice.serviceHubProcessControlChannel) {
     return [[FBDeviceControlError
       describe:@"Failed to create HUB control channel"]
       failBool:error];
@@ -275,7 +320,7 @@
 
 - (NSString *)consoleString
 {
-  return [self.device.dvtDevice.token.deviceConsoleController consoleString];
+  return [self.dvtDevice.token.deviceConsoleController consoleString];
 }
 
 - (BOOL)observeProcessWithID:(NSInteger)processID error:(NSError **)error
@@ -393,7 +438,7 @@
   id result = [FBRunLoopSpinner spinUntilBlockFinished:^id{
     __block id responseObject;
 
-    DTXChannel *channel = self.device.dvtDevice.serviceHubProcessControlChannel;
+    DTXChannel *channel = self.dvtDevice.serviceHubProcessControlChannel;
     DTXMessage *message = [[objc_lookUpClass("DTXMessage") alloc] initWithSelector:aSelector firstArg:arg remainingObjectArgs:(__bridge id)(*arguments)];
     [channel sendControlSync:message replyHandler:^(DTXMessage *responseMessage){
       if (responseMessage.errorStatus) {
