@@ -72,8 +72,8 @@
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
     return [[FBListTestStrategy macOSStrategyWithConfiguration:(FBListTestConfiguration *)self.configuration reporter:self.context.reporter] executeWithError:error];
   }
-  id<FBLogicTestStrategy> strategy = [FBMacLogicTestStrategy strategyWithConfiguration:(FBLogicTestConfiguration *)self.configuration];
-  return [[FBLogicTestRunner runnerWithStrategy:strategy configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+  id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithConfiguration:(FBLogicTestConfiguration *)self.configuration];
+  return [[FBLogicTestRunner runnerWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
 }
 
 - (BOOL)runiOSTestWithError:(NSError **)error
@@ -98,8 +98,8 @@
 - (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
   if ([self.configuration isKindOfClass:FBLogicTestConfiguration.class]) {
-    id<FBLogicTestStrategy> strategy = [FBSimulatorLogicTestStrategy strategyWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration];
-    return [[FBLogicTestRunner runnerWithStrategy:strategy configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+    id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration];
+    return [[FBLogicTestRunner runnerWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
   }
   return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
 }

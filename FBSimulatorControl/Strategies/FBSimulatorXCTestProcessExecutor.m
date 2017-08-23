@@ -7,17 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBSimulatorLogicTestStrategy.h"
+#import "FBSimulatorXCTestProcessExecutor.h"
 
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulatorAgentOperation.h"
 
-@interface FBSimulatorLogicTestStrategy ()
+@interface FBSimulatorXCTestProcessExecutor ()
 
 @property (nonatomic, strong, readonly) FBSimulator *simulator;
-@property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 
 @property (nonatomic, strong, readwrite) FBSimulatorAgentOperation *operation;
 
@@ -25,14 +25,14 @@
 
 @end
 
-@implementation FBSimulatorLogicTestStrategy
+@implementation FBSimulatorXCTestProcessExecutor
 
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
++ (instancetype)executorWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
 {
   return [[self alloc] initWithSimulator:simulator configuration:configuration];
 }
 
-- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration
+- (instancetype)initWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration
 {
   self = [super init];
   if (!self) {
@@ -109,6 +109,11 @@
 }
 
 - (NSString *)shimPath
+{
+  return self.configuration.shims.iOSSimulatorTestShimPath;
+}
+
+- (NSString *)queryShimPath
 {
   return self.configuration.shims.iOSSimulatorTestShimPath;
 }

@@ -7,28 +7,29 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBMacLogicTestStrategy.h"
+#import "FBMacXCTestProcessExecutor.h"
 
 #import <FBControlCore/FBControlCore.h>
 
 #import "FBXCTestConfiguration.h"
 #import "FBXCTestShimConfiguration.h"
+#import "FBLogicTestProcess.h"
 
-@interface FBMacLogicTestStrategy ()
+@interface FBMacXCTestProcessExecutor ()
 
-@property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
+@property (nonatomic, strong, readonly) FBXCTestConfiguration *configuration;
 @property (nonatomic, strong, readwrite, nullable) FBTask *task;
 
 @end
 
-@implementation FBMacLogicTestStrategy
+@implementation FBMacXCTestProcessExecutor
 
-+ (instancetype)strategyWithConfiguration:(FBLogicTestConfiguration *)configuration
++ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration
 {
   return [[self alloc] initWithConfiguration:configuration];
 }
 
-- (instancetype)initWithConfiguration:(FBLogicTestConfiguration *)configuration
+- (instancetype)initWithConfiguration:(FBXCTestConfiguration *)configuration
 {
   self = [super init];
   if (!self) {
@@ -92,6 +93,11 @@
 - (NSString *)shimPath
 {
   return self.configuration.shims.macOSTestShimPath;
+}
+
+- (NSString *)queryShimPath
+{
+  return self.configuration.shims.macOSQueryShimPath;
 }
 
 @end

@@ -16,18 +16,18 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBSimulator;
 
 /**
- A Logic Test Strategy for Simulators.
+ An Executor of XCTest Processes for Simulators.
  */
-@interface FBSimulatorLogicTestStrategy : NSObject <FBLogicTestStrategy>
+@interface FBSimulatorXCTestProcessExecutor : NSObject <FBXCTestProcessExecutor>
 
 /**
- The designated initializer.
+ The Designated Initializer
 
  @param simulator the simulator.
  @param configuration the configuration.
  @return a new Logic Test Strategy for Simulators.
  */
-+ (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBLogicTestConfiguration *)configuration;
++ (instancetype)executorWithSimulator:(FBSimulator *)simulator configuration:(FBXCTestConfiguration *)configuration;
 
 @end
 

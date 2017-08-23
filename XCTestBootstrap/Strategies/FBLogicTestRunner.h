@@ -27,10 +27,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Creates a Logic Test Runner for iOS with the Provided Parameters.
 
+ @param executor the executor.
  @param configuration the Configuration to use.
+ @param reporter the reporter to report to.
+ @param logger the logger to use.
  @return a new Logic Test Runner.
  */
-+ (instancetype)runnerWithStrategy:(id<FBLogicTestStrategy>)strategy configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)runnerWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 

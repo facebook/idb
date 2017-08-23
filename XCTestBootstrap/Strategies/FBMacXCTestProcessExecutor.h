@@ -9,18 +9,24 @@
 
 #import <Foundation/Foundation.h>
 
-#import <XCTestBootstrap/FBLogicTestProcess.h>
+#import <XCTestBootstrap/FBXCTestProcessExecutor.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FBLogicTestConfiguration;
+@class FBXCTestConfiguration;
 
 /**
  A Logic Test Strategy for macOS.
  */
-@interface FBMacLogicTestStrategy : NSObject <FBLogicTestStrategy>
+@interface FBMacXCTestProcessExecutor : NSObject <FBXCTestProcessExecutor>
 
-+ (instancetype)strategyWithConfiguration:(FBLogicTestConfiguration *)configuration;
+/**
+ The Designated Initializer.
+
+ @param configuration the configuration to wrap.
+ @return a new FBXCTestProcessExecutor.
+ */
++ (instancetype)executorWithConfiguration:(FBXCTestConfiguration *)configuration;
 
 @end
 

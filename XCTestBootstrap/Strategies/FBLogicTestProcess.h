@@ -12,43 +12,10 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBFileConsumer;
+@protocol FBXCTestProcessExecutor;
 
 @class FBLogicTestProcess;
 @class FBSimulator;
-
-/**
- An abstraction for running logic tests.
- */
-@protocol FBLogicTestStrategy <NSObject>
-
-/**
- Starts the Logic Test.
-
- @param error an error out for any error that occurs.
- @return the process identifier of the launched process.
- */
-- (pid_t)logicTestProcess:(FBLogicTestProcess *)process startWithError:(NSError **)error;
-
-/**
- Terminate the Underlying Process.
- */
-- (void)terminateLogicTestProcess:(FBLogicTestProcess *)process;
-
-/**
- Await the completion of the test process.
-
- @param timeout the timeout to wait for.
- @param error an error out for any error that occurs.
- @return YES if successful, NO otherwise
- */
-- (BOOL)logicTestProcess:(FBLogicTestProcess *)process waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
-
-/**
- The path to the Shim dylib used for reporting test output.
- */
-@property (nonatomic, copy, readonly) NSString *shimPath;
-
-@end
 
 /**
  A Process wrapper for running Logic Tests.
@@ -63,10 +30,10 @@ NS_ASSUME_NONNULL_BEGIN
  @param environment the Environment Variables to set.
  @param stdOutReader the Reader of the Stdout.
  @param stdErrReader the Reader of the Stderr.
- @param strategy a logic test process strategy.
+ @param executor the executor for running the test process.
  @return a new Logic Test Process
  */
-+ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader strategy:(id<FBLogicTestStrategy>)strategy;
++ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor;
 
 /**
  Starts the Process.

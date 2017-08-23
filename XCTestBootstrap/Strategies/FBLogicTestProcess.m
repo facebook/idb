@@ -14,24 +14,25 @@
 #import <FBControlCore/FBControlCore.h>
 
 #import "XCTestBootstrapError.h"
+#import "FBXCTestProcessExecutor.h"
 
 static NSTimeInterval const CrashLogStartDateFuzz = -10;
 
 @interface FBLogicTestProcess ()
 
-@property (nonatomic, strong, readonly) id<FBLogicTestStrategy> strategy;
+@property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
 @property (nonatomic, copy, readwrite, nullable) NSDate *startDate;
 
 @end
 
 @implementation FBLogicTestProcess
 
-+ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader strategy:(id<FBLogicTestStrategy>)strategy
++ (instancetype)processWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor
 {
-  return [[FBLogicTestProcess alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment waitForDebugger:waitForDebugger stdOutReader:stdOutReader stdErrReader:stdErrReader strategy:strategy];
+  return [[FBLogicTestProcess alloc] initWithLaunchPath:launchPath arguments:arguments environment:environment waitForDebugger:waitForDebugger stdOutReader:stdOutReader stdErrReader:stdErrReader executor:executor];
 }
 
-- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader strategy:(id<FBLogicTestStrategy>)strategy
+- (instancetype)initWithLaunchPath:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger stdOutReader:(id<FBFileConsumer>)stdOutReader stdErrReader:(id<FBFileConsumer>)stdErrReader executor:(id<FBXCTestProcessExecutor>)executor
 {
   self = [super init];
   if (!self) {
@@ -44,7 +45,7 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
   _waitForDebugger = waitForDebugger;
   _stdOutReader = stdOutReader;
   _stdErrReader = stdErrReader;
-  _strategy = strategy;
+  _executor = executor;
 
   return self;
 }
@@ -53,17 +54,17 @@ static NSTimeInterval const CrashLogStartDateFuzz = -10;
 {
   // Construct and launch the task.
   self.startDate = [NSDate.date dateByAddingTimeInterval:CrashLogStartDateFuzz];
-  return [self.strategy logicTestProcess:self startWithError:error];
+  return [self.executor logicTestProcess:self startWithError:error];
 }
 
 - (void)terminate
 {
-  [self.strategy terminateLogicTestProcess:self];
+  [self.executor terminateLogicTestProcess:self];
 }
 
 - (BOOL)waitForCompletionWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
-  return [self.strategy logicTestProcess:self waitForCompletionWithTimeout:timeout error:error];
+  return [self.executor logicTestProcess:self waitForCompletionWithTimeout:timeout error:error];
 }
 
 - (BOOL)processDidTerminateNormallyWithProcessIdentifier:(pid_t)processIdentifier didTimeout:(BOOL)didTimeout exitCode:(int)exitCode error:(NSError **)error

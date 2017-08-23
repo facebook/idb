@@ -17,7 +17,7 @@
 
 @interface FBLogicTestRunner ()
 
-@property (nonatomic, strong, readonly) id<FBLogicTestStrategy> strategy;
+@property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
 @property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
 @property (nonatomic, strong, readonly) id<FBXCTestReporter> reporter;
 @property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
@@ -28,19 +28,19 @@
 
 #pragma mark Initializers
 
-+ (instancetype)runnerWithStrategy:(id<FBLogicTestStrategy>)strategy configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)runnerWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBLogicTestRunner alloc] initWithStrategy:strategy configuration:configuration reporter:reporter logger:logger];
+  return [[FBLogicTestRunner alloc] initWithExecutor:executor configuration:configuration reporter:reporter logger:logger];
 }
 
-- (instancetype)initWithStrategy:(id<FBLogicTestStrategy>)strategy configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
+- (instancetype)initWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
-  _strategy = strategy;
+  _executor = executor;
   _configuration = configuration;
   _reporter = reporter;
   _logger = logger;
@@ -58,7 +58,7 @@
   [reporter didBeginExecutingTestPlan];
 
   NSString *xctestPath = self.configuration.destination.xctestPath;
-  NSString *shimPath = self.strategy.shimPath;
+  NSString *shimPath = self.executor.shimPath;
 
   // The fifo is used by the shim to report events from within the xctest framework.
   NSString *otestShimOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"shim-output-pipe"];
@@ -162,7 +162,7 @@
     waitForDebugger:self.configuration.waitForDebugger
     stdOutReader:stdOutReader
     stdErrReader:stdErrReader
-    strategy:self.strategy];
+    executor:self.executor];
 }
 
 @end

@@ -14,7 +14,7 @@
 #import <XCTestBootstrap/FBListTestStrategy.h>
 #import <XCTestBootstrap/FBLogicTestProcess.h>
 #import <XCTestBootstrap/FBLogicTestRunner.h>
-#import <XCTestBootstrap/FBMacLogicTestStrategy.h>
+#import <XCTestBootstrap/FBMacXCTestProcessExecutor.h>
 #import <XCTestBootstrap/FBProductBundle.h>
 #import <XCTestBootstrap/FBSimulatorTestPreparationStrategy.h>
 #import <XCTestBootstrap/FBTestApplicationLaunchStrategy.h>
@@ -41,6 +41,7 @@
 #import <XCTestBootstrap/FBXCTestDestination.h>
 #import <XCTestBootstrap/FBXCTestLogger.h>
 #import <XCTestBootstrap/FBXCTestManagerLoggingForwarder.h>
+#import <XCTestBootstrap/FBXCTestProcessExecutor.h>
 #import <XCTestBootstrap/FBXCTestReporter.h>
 #import <XCTestBootstrap/FBXCTestReporterAdapter.h>
 #import <XCTestBootstrap/FBXCTestRunner.h>
