@@ -14,8 +14,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBXCTestReporter;
-@protocol FBXCTestProcessExecutor;
-@protocol FBControlCoreLogger;
 
 @class FBListTestConfiguration;
 @class FBXCTestContext;
@@ -28,13 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Create and return a new Runner for listing tests on macOS.
 
- @param executor the Process Executor.
  @param configuration the the configuration to use.
  @param reporter the reporter to use.
- @param logger the logger to use.
- @return a new FBListTestStrategy instance.
  */
-+ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)macOSStrategyWithConfiguration:(FBListTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter;
 
 @end
 
