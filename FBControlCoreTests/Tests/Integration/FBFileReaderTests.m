@@ -34,10 +34,11 @@
   NSData *expected = [@"Foo Bar Baz" dataUsingEncoding:NSUTF8StringEncoding];
   [pipe.fileHandleForWriting writeData:expected];
   [pipe.fileHandleForWriting closeFile];
-  success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (id _, id __) {
     return [expected isEqualToData:consumer.data];
   }];
-  XCTAssertTrue(success);
+  XCTestExpectation *expectation = [self expectationForPredicate:predicate evaluatedWithObject:self handler:nil];
+  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 
   // Stop reading
   success = [writer stopReadingWithError:&error];

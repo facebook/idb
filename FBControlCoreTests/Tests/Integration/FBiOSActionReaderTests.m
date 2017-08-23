@@ -81,15 +81,57 @@ NS_ASSUME_NONNULL_BEGIN
   return [XCTestSuite testSuiteWithName:@"Ignoring Base Class"];
 }
 
+- (NSPredicate *)predicateForStarted:(id<FBiOSTargetAction>)action
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
+    return [tests.startedActions containsObject:action];
+  }];
+}
+
+- (NSPredicate *)predicateForFinished:(id<FBiOSTargetAction>)action
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
+    return [tests.finishedActions containsObject:action];
+  }];
+}
+
+- (NSPredicate *)predicateForFailed:(id<FBiOSTargetAction>)action
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
+    return [tests.failedActions containsObject:action];
+  }];
+}
+
+- (NSPredicate *)predicateForBadInputCount:(NSUInteger)count
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
+    return tests.badInput.count == count;
+  }];
+}
+
+- (NSPredicate *)predicateForUploadCount:(NSUInteger)count
+{
+  return [NSPredicate predicateWithBlock:^ BOOL (FBiOSActionReaderTests *tests, id __) {
+    return tests.uploads.count == count;
+  }];
+}
+
+- (void)waitForPredicates:(NSArray<NSPredicate *> *)predicates
+{
+  NSPredicate *predicate = [NSCompoundPredicate andPredicateWithSubpredicates:predicates];
+  XCTestExpectation *expectation = [self expectationForPredicate:predicate evaluatedWithObject:self handler:nil];
+  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+}
+
 - (void)testPassingAction
 {
   FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:YES];
   [self.consumer consumeData:[self actionLine:inputAction]];
 
-  BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    return [self.startedActions containsObject:inputAction] && [self.finishedActions containsObject:inputAction];
-  }];
-  XCTAssertTrue(succeeded);
+  [self waitForPredicates:@[
+    [self predicateForStarted:inputAction],
+    [self predicateForFinished:inputAction],
+  ]];
 }
 
 - (void)testFailingAction
@@ -97,10 +139,10 @@ NS_ASSUME_NONNULL_BEGIN
   FBiOSTargetActionDouble *inputAction = [[FBiOSTargetActionDouble alloc] initWithIdentifier:@"Foo" succeed:NO];
   [self.consumer consumeData:[self actionLine:inputAction]];
 
-  BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    return [self.startedActions containsObject:inputAction] && [self.failedActions containsObject:inputAction];
-  }];
-  XCTAssertTrue(succeeded);
+  [self waitForPredicates:@[
+    [self predicateForStarted:inputAction],
+    [self predicateForFailed:inputAction],
+  ]];
 }
 
 - (void)testInterpretedInputWithGarbageInput
@@ -108,10 +150,9 @@ NS_ASSUME_NONNULL_BEGIN
   NSData *data = [@"asdaad asasd asda d\n" dataUsingEncoding:NSUTF8StringEncoding];
   [self.consumer consumeData:data];
 
-  BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    return self.badInput.count == 1;
-  }];
-  XCTAssertTrue(succeeded);
+  [self waitForPredicates:@[
+    [self predicateForBadInputCount:1],
+  ]];
 }
 
 - (void)testCanUploadBinary
@@ -122,10 +163,9 @@ NS_ASSUME_NONNULL_BEGIN
   [self.consumer consumeData:header];
   [self.consumer consumeData:transmit];
 
-  BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    return self.uploads.count == 1;
-  }];
-  XCTAssertTrue(succeeded);
+  [self waitForPredicates:@[
+    [self predicateForUploadCount:1],
+  ]];
 
   NSData *fileData = [NSData dataWithContentsOfFile:self.uploads.firstObject.path];
   XCTAssertEqualObjects(transmit, fileData);
@@ -141,20 +181,17 @@ NS_ASSUME_NONNULL_BEGIN
   [self.consumer consumeData:transmit];
   [self.consumer consumeData:[self actionLine:inputAction]];
 
-  BOOL succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    return self.uploads.count == 1;
-  }];
-  XCTAssertTrue(succeeded);
+  [self waitForPredicates:@[
+    [self predicateForUploadCount:1],
+  ]];
 
   NSData *fileData = [NSData dataWithContentsOfFile:self.uploads.firstObject.path];
   XCTAssertEqualObjects(transmit, fileData);
 
-  succeeded = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
-    return [self.startedActions containsObject:inputAction] && [self.finishedActions containsObject:inputAction];
-  }];
-  XCTAssertTrue(succeeded);
-  XCTAssertEqual(self.badInput.count, 0u);
-  XCTAssertEqual(self.failedActions.count, 0u);
+  [self waitForPredicates:@[
+    [self predicateForStarted:inputAction],
+    [self predicateForFinished:inputAction],
+  ]];
 }
 
 #pragma mark Delegate

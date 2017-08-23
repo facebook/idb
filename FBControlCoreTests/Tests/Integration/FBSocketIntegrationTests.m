@@ -115,9 +115,11 @@
   XCTAssertNil(error);
   XCTAssertTrue(success);
 
-  success = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^BOOL{
+  NSPredicate *predicate = [NSPredicate predicateWithBlock:^ BOOL (id _, id __) {
     return [delegate.consumer.recieve isEqualToData:data];
   }];
+  XCTestExpectation *expectation = [self expectationForPredicate:predicate evaluatedWithObject:self handler:nil];
+  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
   XCTAssertTrue(success);
 }
 

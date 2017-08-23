@@ -134,10 +134,8 @@
     build]
     startAsynchronously];
 
-  BOOL didUpdateTerminationState = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
-    return task.hasTerminated;
-  }];
-  XCTAssertTrue(didUpdateTerminationState);
+  XCTestExpectation *expectation = [self keyValueObservingExpectationForObject:task keyPath:@"completedTeardown" expectedValue:@YES];
+  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
 - (void)testAwaitingTerminationOfShortLivedProcess
@@ -155,43 +153,35 @@
 
 - (void)testCallsHandlerWithAsynchronousTermination
 {
-  __block BOOL didCallTerminationHandler = NO;
+  XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
   [[[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1"]]
     build]
     startAsynchronouslyWithTerminationQueue:dispatch_get_main_queue() handler:^(FBTask *_) {
-      didCallTerminationHandler = YES;
+      [expectation fulfill];
     }];
 
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
-    return didCallTerminationHandler;
-  }];
-  XCTAssertTrue(didCallTerminationHandler);
+  [self waitForExpectations:@[expectation] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
 }
 
 - (void)testAwaitingTerminationDoesNotTerminateStalledTask
 {
-  __block BOOL didCallTerminationHandler = NO;
+  XCTestExpectation *expectation = [[XCTestExpectation alloc] initWithDescription:@"Termination Handler Called"];
+  expectation.inverted = YES;
   FBTask *task = [[[FBTaskBuilder
     withLaunchPath:@"/bin/sleep" arguments:@[@"1000"]]
     build]
     startAsynchronouslyWithTerminationQueue:dispatch_get_main_queue() handler:^(FBTask *_) {
-      didCallTerminationHandler = YES;
+      [expectation fulfill];
     }];
 
   NSError *error = nil;
   BOOL waitSuccess = [task waitForCompletionWithTimeout:2 error:&error];
   XCTAssertFalse(waitSuccess);
   XCTAssertNotNil(error);
-  XCTAssertFalse(didCallTerminationHandler);
   XCTAssertFalse(task.hasTerminated);
 
-  [task terminate];
-  [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:FBControlCoreGlobalConfiguration.fastTimeout untilTrue:^ BOOL {
-    return didCallTerminationHandler;
-  }];
-  XCTAssertTrue(didCallTerminationHandler);
-  XCTAssertTrue(task.hasTerminated);
+  [self waitForExpectations:@[expectation] timeout:2];
 }
 
 - (void)testWaitingSynchronouslyDoesTerminateStalledTask
