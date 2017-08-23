@@ -16,12 +16,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol FBControlCoreLogger;
 @protocol FBiOSTarget;
-@protocol FBTestManagerProcessInteractionDelegate;
 @protocol FBTestManagerTestReporter;
 
 extern const NSInteger FBProtocolVersion;
 extern const NSInteger FBProtocolMinimumVersion;
-
 
 /**
  This is a simplified re-implementation of Apple's _IDETestManagerAPIMediator class.
@@ -90,18 +88,6 @@ extern const NSInteger FBProtocolMinimumVersion;
  @return the TestManager Result.
  */
 - (FBTestManagerResult *)disconnectTestRunnerAndTestManagerDaemon;
-
-#pragma mark Properties
-
-/**
- Delegate object used to handle application install & launch request
- */
-@property (nonatomic, weak, readonly) id<FBTestManagerProcessInteractionDelegate> processDelegate;
-
-/**
- Logger object to log events to, may be nil.
- */
-@property (nonatomic, strong, nullable, readonly) id<FBControlCoreLogger> logger;
 
 @end
 

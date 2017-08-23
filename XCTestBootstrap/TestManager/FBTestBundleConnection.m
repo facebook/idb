@@ -49,6 +49,12 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
 @interface FBTestBundleConnection () <XCTestManager_IDEInterface>
 
+@property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
+@property (nonatomic, strong, readonly) FBTestManagerContext *context;
+@property (nonatomic, weak, readonly) id<XCTestManager_IDEInterface, NSObject> interface;
+@property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
+
 @property (atomic, assign, readwrite) FBTestBundleConnectionState state;
 @property (atomic, strong, readwrite) FBTestBundleResult *result;
 
@@ -86,12 +92,12 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   return _clientProcessDisplayPath;
 }
 
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
-  return [[self alloc] initWithWithContext:context target:target interface:interface queue:queue logger:logger];
+  return [[self alloc] initWithWithContext:context target:target interface:interface requestQueue:requestQueue logger:logger];
 }
 
-- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger
+- (instancetype)initWithWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -101,7 +107,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
   _context = context;
   _target = target;
   _interface = interface;
-  _queue = queue;
+  _requestQueue = requestQueue;
   _logger = [logger withPrefix:[NSString stringWithFormat:@"%@:", target.udid]];
 
   _state = FBTestBundleConnectionStateNotConnected;
@@ -180,7 +186,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 
   [self.logger log:@"Bundle Connection scheduling start of Test Plan"];
   self.state = FBTestBundleConnectionStateAwaitingStartOfTestPlan;
-  dispatch_async(self.queue, ^{
+  dispatch_async(self.requestQueue, ^{
     [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
   });
   return nil;
@@ -222,7 +228,7 @@ typedef NS_ENUM(NSUInteger, FBTestBundleConnectionState) {
 {
   self.state = FBTestBundleConnectionStateConnecting;
   [self.logger log:@"Connecting Test Bundle"];
-  dispatch_async(self.queue, ^{
+  dispatch_async(self.requestQueue, ^{
     NSError *error;
     DTXTransport *transport = [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
     if (error || !transport) {

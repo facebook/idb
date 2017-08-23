@@ -31,7 +31,7 @@
 		7352B4DE1F44C16C00B6D0EA /* FBControlCoreError+Process.h in Headers */ = {isa = PBXBuildFile; fileRef = 7352B4DC1F44C16C00B6D0EA /* FBControlCoreError+Process.h */; };
 		7352B4DF1F44C16C00B6D0EA /* FBControlCoreError+Process.m in Sources */ = {isa = PBXBuildFile; fileRef = 7352B4DD1F44C16C00B6D0EA /* FBControlCoreError+Process.m */; };
 		73D584301F4585CA00226CB8 /* NSPredicate+FBSimulatorControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 73D5842F1F4585CA00226CB8 /* NSPredicate+FBSimulatorControl.m */; };
-		73D584311F458B0500226CB8 /* NSPredicate+FBSimulatorControl.h in Headers */ = {isa = PBXBuildFile; fileRef = 73D5842E1F4585AE00226CB8 /* NSPredicate+FBSimulatorControl.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		73D584311F458B0500226CB8 /* NSPredicate+FBSimulatorControl.h in Headers */ = {isa = PBXBuildFile; fileRef = 73D5842E1F4585AE00226CB8 /* NSPredicate+FBSimulatorControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		877123F31BDA797800530B1E /* video0.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 877123F21BDA797800530B1E /* video0.mp4 */; };
 		AA0080D71DB4CCFD009A25CB /* FBProcessTerminationStrategy.h in Headers */ = {isa = PBXBuildFile; fileRef = AA0080D51DB4CCFD009A25CB /* FBProcessTerminationStrategy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0080D81DB4CCFD009A25CB /* FBProcessTerminationStrategy.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0080D61DB4CCFD009A25CB /* FBProcessTerminationStrategy.m */; };

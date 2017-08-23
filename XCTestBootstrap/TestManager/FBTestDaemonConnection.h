@@ -36,11 +36,11 @@ NS_ASSUME_NONNULL_BEGIN
  @param context the Context of the Test Manager.
  @param target the iOS Target.
  @param interface the interface to delegate to.
- @param queue the dispatch queue to serialize asynchronous events on.
+ @param requestQueue the dispatch queue to serialize asynchronous events on.
  @param logger the logger to log to.
  @return a new Strategy
  */
-+ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface queue:(dispatch_queue_t)queue logger:(nullable id<FBControlCoreLogger>)logger;
++ (instancetype)connectionWithContext:(FBTestManagerContext *)context target:(id<FBiOSTarget>)target interface:(id<XCTestManager_IDEInterface, NSObject>)interface requestQueue:(dispatch_queue_t)requestQueue logger:(nullable id<FBControlCoreLogger>)logger;
 
 #pragma mark Lifecycle
 
@@ -79,15 +79,6 @@ NS_ASSUME_NONNULL_BEGIN
  @return a Result.
  */
 - (FBTestDaemonResult *)disconnect;
-
-#pragma mark Properties
-
-/**
- Properties populated during the connection.
- */
-@property (atomic, assign, readonly) long long daemonProtocolVersion;
-@property (atomic, nullable, strong, readonly) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
-@property (atomic, nullable, strong, readonly) DTXConnection *daemonConnection;
 
 @end
 
