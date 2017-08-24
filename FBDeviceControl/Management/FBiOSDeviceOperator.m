@@ -305,7 +305,6 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 - (pid_t)processIDWithBundleID:(NSString *)bundleID error:(NSError **)error
 {
-  NSAssert(error, @"error is required for hub commands");
   return
   [[self executeHubProcessControlSelector:NSSelectorFromString(@"processIdentifierForBundleIdentifier:")
                                     error:error
@@ -427,9 +426,10 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
 
 #pragma mark - Helpers
 
-- (id)executeHubProcessControlSelector:(SEL)aSelector error:(NSError **)error arguments:(id)arg, ...
+- (id)executeHubProcessControlSelector:(SEL)aSelector
+                                 error:(NSError *_Nullable *)error
+                             arguments:(id)arg, ...
 {
-  NSAssert(error, @"error is required for hub commands");
   va_list _arguments;
   va_start(_arguments, arg);
   va_list *arguments = &_arguments;
@@ -450,7 +450,9 @@ static const NSTimeInterval FBiOSDeviceOperatorDVTDeviceManagerTickleTime = 2;
     return responseObject;
   }];
   va_end(_arguments);
-  *error = innerError;
+  if (error) {
+    *error = innerError;
+  }
   return result;
 }
 

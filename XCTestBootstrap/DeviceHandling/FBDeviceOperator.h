@@ -57,7 +57,8 @@ NS_ASSUME_NONNULL_BEGIN
  @param error If there is an error, upon return contains an NSError object that describes the problem.
  @return applicationBundle if application is installed, otherwise nil
  */
-- (nullable FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID error:(NSError **)error;
+- (nullable FBProductBundle *)applicationBundleWithBundleID:(NSString *)bundleID
+                                                      error:(NSError *_Nullable *)error;
 
 /**
  Returns PID of application with given bundleID
