@@ -34,16 +34,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (instancetype)contextWithReporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger;
 
-/**
- The Context for a Test Run.
- If a Simulator is required, the provided one will be used.
-
- @param reporter the reporter to report to.
- @param logger the logger to log with.
- @return a new context.
- */
-+ (instancetype)contextWithSimulator:(FBSimulator *)simulator reporter:(nullable id<FBXCTestReporter>)reporter logger:(nullable FBXCTestLogger *)logger;
-
 #pragma mark Properties
 
 /**
