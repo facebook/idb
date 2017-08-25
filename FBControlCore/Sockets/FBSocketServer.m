@@ -13,7 +13,6 @@
 
 @interface FBSocketServer ()
 
-@property (nonatomic, assign, readonly) in_port_t port;
 @property (nonatomic, strong, readonly) id<FBSocketServerDelegate> delegate;
 
 @property (nonatomic, strong, readwrite) NSFileHandle *socketHandle;
@@ -114,6 +113,13 @@
   // Start reading socket.
   self.socketHandle = [[NSFileHandle alloc] initWithFileDescriptor:socketHandle closeOnDealloc:YES];
   dispatch_resume(self.acceptSource);
+
+  // Update port
+  struct sockaddr_in6 address = {0};
+  socklen_t sockaddrlen = sizeof(address);
+  getsockname(socketHandle, (struct sockaddr*)(&address), &sockaddrlen);
+  _port = ntohs(address.sin6_port);
+
   return YES;
 }
 

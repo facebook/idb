@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSocketServer : NSObject
 
+@property (nonatomic, assign, readonly) in_port_t port;
+
 /**
  Creates and returns a socket reader for the provided port and consumer.
 
