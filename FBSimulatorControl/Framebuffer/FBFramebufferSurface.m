@@ -269,10 +269,15 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
     [self.ioClient attachConsumer:forwarder withUUID:forwarder.consumerUUID toPort:self.port errorQueue:queue errorHandler:^(NSError *error){}];
   } else if ([self.ioClient respondsToSelector:@selector(attachConsumer:toPort:)]) {
     [self.ioClient attachConsumer:forwarder toPort:self.port];
-  } else if (surface) {
-    [self.logger logFormat:@"IOClient %@ does not require attachment, obtained Surface %@ directly", self.ioClient, surface];
   } else {
-    NSAssert(NO, @"IOClient %@ does not respond to any known attachment selectors and none could be obtained from the client", self.ioClient);
+    [self.surface registerCallbackWithUUID:forwarder.consumerUUID ioSurfaceChangeCallback:^(id next) {
+      [forwarder didChangeIOSurface:next];
+    }];
+    [self.surface registerCallbackWithUUID:forwarder.consumerUUID damageRectanglesCallback:^(NSArray<NSValue *> *rects) {
+      for (NSValue *value in rects) {
+        [forwarder didReceiveDamageRect:value.rectValue];
+      }
+    }];
   }
 
   return surface;
@@ -287,7 +292,8 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   if ([self.ioClient respondsToSelector:@selector(detachConsumer:fromPort:)]) {
     [self.ioClient detachConsumer:forwarder fromPort:self.port];
   } else {
-    [self.logger logFormat:@"IOClient %@ does not require detachment.", self.ioClient];
+    [self.surface unregisterIOSurfaceChangeCallbackWithUUID:forwarder.consumerUUID];
+    [self.surface unregisterDamageRectanglesCallbackWithUUID:forwarder.consumerUUID];
   }
 }
 
