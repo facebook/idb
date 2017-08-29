@@ -74,12 +74,15 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
   NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
   NSAssert(fileHandle, @"Could not create a writable file handle for file at path %@", fileHandle);
 
-  id<FBControlCoreLogger> baseLogger = [FBControlCoreLogger systemLoggerWritingToFileHandle:fileHandle withDebugLogging:YES];
+  id<FBControlCoreLogger> baseLogger = [FBControlCoreLogger compositeLoggerWithLoggers:@[
+    [FBControlCoreLogger systemLoggerWritingToStderrr:YES withDebugLogging:YES],
+    [FBControlCoreLogger systemLoggerWritingToFileHandle:fileHandle withDebugLogging:YES],
+  ]];
 
-  return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory filePath:path fileHandle:fileHandle];
+  return [[self alloc] initWithBaseLogger:baseLogger logDirectory:directory];
 }
 
-- (instancetype)initWithBaseLogger:(id<FBControlCoreLogger>)baseLogger logDirectory:(NSString *)logDirectory filePath:(NSString *)filePath fileHandle:(NSFileHandle *)fileHandle
+- (instancetype)initWithBaseLogger:(id<FBControlCoreLogger>)baseLogger logDirectory:(NSString *)logDirectory
 {
   self = [super init];
   if (!self) {
@@ -88,31 +91,8 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 
   _baseLogger = baseLogger;
   _logDirectory = logDirectory;
-  _filePath = filePath;
-  _fileHandle = fileHandle;
 
   return self;
-}
-
-- (nullable NSString *)lastLinesOfOutput:(NSUInteger)lineCount
-{
-  NSString *output = [self allLinesOfOutput];
-  if (!output) {
-    return nil;
-  }
-  NSArray<NSString *> *lines = [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
-  NSUInteger startPosition = lines.count < lineCount ? 0 : lines.count - lineCount;
-  NSRange requestedRange = NSMakeRange(startPosition, lineCount);
-  NSRange entireRange = NSMakeRange(0, lines.count);
-  NSRange availableRange = NSIntersectionRange(requestedRange, entireRange);
-  return [[lines
-    subarrayWithRange:availableRange]
-    componentsJoinedByString:@"\n"];
-}
-
-- (nullable NSString *)allLinesOfOutput
-{
-  return [NSString stringWithContentsOfFile:self.filePath encoding:NSUTF8StringEncoding error:nil];
 }
 
 #pragma mark Protocol Implementation
@@ -137,45 +117,35 @@ static NSString *const xctoolOutputLogDirectoryEnv = @"XCTOOL_TEST_ENV_FB_LOG_DI
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger info]
-    logDirectory:self.logDirectory
-    filePath:self.filePath
-    fileHandle:self.fileHandle];
+    logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)debug
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger debug]
-    logDirectory:self.logDirectory
-    filePath:self.filePath
-    fileHandle:self.fileHandle];
+    logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)error
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger error]
-    logDirectory:self.logDirectory
-    filePath:self.filePath
-    fileHandle:self.fileHandle];
+    logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)onQueue:(dispatch_queue_t)queue
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger onQueue:queue]
-    logDirectory:self.logDirectory
-    filePath:self.filePath
-    fileHandle:self.fileHandle];
+    logDirectory:self.logDirectory];
 }
 
 - (id<FBControlCoreLogger>)withPrefix:(NSString *)prefix
 {
   return [[self.class alloc]
     initWithBaseLogger:[self.baseLogger withPrefix:prefix]
-    logDirectory:self.logDirectory
-    filePath:self.filePath
-    fileHandle:self.fileHandle];
+    logDirectory:self.logDirectory];
 }
 
 - (id<FBFileConsumer>)logConsumptionToFile:(id<FBFileConsumer>)consumer outputKind:(NSString *)outputKind udid:(NSUUID *)uuid

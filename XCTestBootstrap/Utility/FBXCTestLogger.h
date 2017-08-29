@@ -51,21 +51,6 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)loggerInDirectory:(NSString *)directory name:(NSString *)name;
 
 /**
- Returns the last n lines of logger output, for debugging purposes.
-
- @param lineCount the number of lines to output.
- @return the output, if it could be fetched.
- */
-- (nullable NSString *)lastLinesOfOutput:(NSUInteger)lineCount;
-
-/**
- Returns all the lines of logger output, for debugging purposes.
-
- @return the output, if it could be fetched.
- */
-- (nullable NSString *)allLinesOfOutput;
-
-/**
  Logs the Consumption of the consumer to a file
 
  @param consumer the consumer to wrap.

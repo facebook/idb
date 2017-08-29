@@ -80,11 +80,6 @@
   if (message) {
     fputs(message.UTF8String, stderr);
   }
-  message = [self.logger allLinesOfOutput];
-  if (message) {
-    fputs(message.UTF8String, stderr);
-  }
-
   fflush(stderr);
   return NO;
 }
