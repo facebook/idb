@@ -284,7 +284,11 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   if (!forwarder) {
     return;
   }
-  [self.ioClient detachConsumer:forwarder fromPort:self.port];
+  if ([self.ioClient respondsToSelector:@selector(detachConsumer:fromPort:)]) {
+    [self.ioClient detachConsumer:forwarder fromPort:self.port];
+  } else {
+    [self.logger logFormat:@"IOClient %@ does not require detachment.", self.ioClient];
+  }
 }
 
 - (CGRect)fullDamageRect
