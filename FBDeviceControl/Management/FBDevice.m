@@ -101,7 +101,7 @@ void (*FBAMDSetLogLevel)(int32_t level);
 
 - (FBSimulatorState)state
 {
-  return FBSimulatorStateUnknown;
+  return FBSimulatorStateBooted;
 }
 
 - (FBiOSTargetType)targetType
