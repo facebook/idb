@@ -138,6 +138,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 @interface FBFramebufferSurface ()
 
 @property (nonatomic, strong, readonly) NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *forwarders;
+@property (nonatomic, strong, readonly) id<FBControlCoreLogger> logger;
 
 @end
 
@@ -147,7 +148,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 @property (nonatomic, strong, readonly) id<SimDeviceIOPortInterface> port;
 @property (nonatomic, strong, readonly) id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable> surface;
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface;
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -156,7 +157,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 @property (nonatomic, strong, readonly) SimDeviceFramebufferService *framebufferService;
 @property (nonatomic, strong, readonly) dispatch_queue_t clientQueue;
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService;
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
@@ -164,7 +165,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 #pragma mark Initializers
 
-+ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient error:(NSError **)error
++ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
 {
   for (id<SimDeviceIOPortInterface> port in ioClient.ioPorts) {
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
@@ -177,19 +178,19 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
     if (![surface conformsToProtocol:@protocol(SimDisplayIOSurfaceRenderable)]) {
       continue;
     }
-    return [[FBFramebufferSurface_IOClient alloc] initWithIOClient:ioClient port:port surface:surface];
+    return [[FBFramebufferSurface_IOClient alloc] initWithIOClient:ioClient port:port surface:surface logger:logger];
   }
   return [[FBSimulatorError
     describeFormat:@"Could not find the Main Screen Surface for IO Client %@", ioClient]
     fail:error];
 }
 
-+ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService
++ (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBFramebufferSurface_FramebufferService alloc] initWithFramebufferService:framebufferService];
+  return [[FBFramebufferSurface_FramebufferService alloc] initWithFramebufferService:framebufferService logger:logger];
 }
 
-- (instancetype)initWithForwarders:(NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *)forwarders
+- (instancetype)initWithForwarders:(NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *)forwarders logger:(id<FBControlCoreLogger>)logger
 {
   self = [super init];
   if (!self) {
@@ -197,16 +198,17 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
   }
 
   _forwarders = forwarders;
+  _logger = logger;
 
   return self;
 }
 
-- (instancetype)init
+- (instancetype)initWithLogger:(id<FBControlCoreLogger>)logger
 {
   NSMapTable<id<FBFramebufferSurfaceConsumer>, id> *forwarders = [NSMapTable
     mapTableWithKeyOptions:NSPointerFunctionsWeakMemory
     valueOptions:NSPointerFunctionsStrongMemory];
-  return [self initWithForwarders:forwarders];
+  return [self initWithForwarders:forwarders logger:logger];
 }
 
 #pragma mark Public Methods
@@ -235,9 +237,9 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 @implementation FBFramebufferSurface_IOClient
 
-- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface
+- (instancetype)initWithIOClient:(SimDeviceIOClient *)ioClient port:(id<SimDeviceIOPortInterface>)port surface:(id<SimDisplayIOSurfaceRenderable, SimDisplayRenderable>)surface logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super init];
+  self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }
@@ -267,7 +269,9 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
     [self.ioClient attachConsumer:forwarder withUUID:forwarder.consumerUUID toPort:self.port errorQueue:queue errorHandler:^(NSError *error){}];
   } else if ([self.ioClient respondsToSelector:@selector(attachConsumer:toPort:)]) {
     [self.ioClient attachConsumer:forwarder toPort:self.port];
-  } else if (!surface) {
+  } else if (surface) {
+    [self.logger logFormat:@"IOClient %@ does not require attachment, obtained Surface %@ directly", self.ioClient, surface];
+  } else {
     NSAssert(NO, @"IOClient %@ does not respond to any known attachment selectors and none could be obtained from the client", self.ioClient);
   }
 
@@ -293,9 +297,9 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 @implementation FBFramebufferSurface_FramebufferService
 
-- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService
+- (instancetype)initWithFramebufferService:(SimDeviceFramebufferService *)framebufferService logger:(id<FBControlCoreLogger>)logger
 {
-  self = [super init];
+  self = [super initWithLogger:logger];
   if (!self) {
     return nil;
   }

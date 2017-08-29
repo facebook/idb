@@ -91,7 +91,7 @@
   id<FBControlCoreLogger> logger = [self loggerForSimulator:simulator queue:queue];
 
   if (FBXcodeConfiguration.isXcode8OrGreater) {
-    FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForFramebufferService:framebufferService];
+    FBFramebufferSurface *surface = [FBFramebufferSurface mainScreenSurfaceForFramebufferService:framebufferService logger:simulator.logger];
     FBFramebufferFrameGenerator *frameGenerator = [FBFramebufferIOSurfaceFrameGenerator
       generatorWithRenderable:surface
       scale:configuration.scaleValue
