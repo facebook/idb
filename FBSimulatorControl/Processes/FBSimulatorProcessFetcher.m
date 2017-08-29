@@ -101,12 +101,12 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
 
 - (NSDictionary<NSString *, FBProcessInfo *> *)launchdProcessesByUDIDs:(NSArray<NSString *> *)udids
 {
-  NSDictionary<NSString *, NSString *> *launchdSimServiceNames = [FBSimulatorProcessFetcher launchdSimServiceNamesForUDIDs:udids];
-  NSDictionary<NSString *, NSDictionary<NSString *, id> *> *jobs = [FBServiceManagement jobInformationForUserServicesNamed:launchdSimServiceNames.allValues];
+  NSDictionary<NSString *, NSString *> *serviceNameToUDID = [FBSimulatorProcessFetcher launchdSimServiceNamesToUDIDs:udids];
+  NSDictionary<NSString *, NSDictionary<NSString *, id> *> *jobs = [FBServiceManagement jobInformationForUserServicesNamed:serviceNameToUDID.allKeys];
 
   NSMutableDictionary<NSString *, FBProcessInfo *> *processes = [NSMutableDictionary dictionary];
-  for (NSString *udid in launchdSimServiceNames.allKeys) {
-    NSString *serviceName = launchdSimServiceNames[udid];
+  for (NSString *serviceName in serviceNameToUDID.allKeys) {
+    NSString *udid = serviceNameToUDID[serviceName];
     NSDictionary<NSString *, id> *job = jobs[serviceName];
     if (!job) {
       continue;
@@ -253,18 +253,26 @@ NSString *const FBSimulatorControlSimulatorLaunchEnvironmentDeviceSetPath = @"FB
   return characterSet;
 }
 
-+ (NSDictionary<NSString *, NSString *> *)launchdSimServiceNamesForUDIDs:(NSArray<NSString *> *)udids
++ (NSDictionary<NSString *, NSString *> *)launchdSimServiceNamesToUDIDs:(NSArray<NSString *> *)udids
 {
   NSMutableDictionary<NSString *, NSString *> *dictionary = [NSMutableDictionary dictionary];
   for (NSString *udid in udids) {
-    dictionary[udid] = [self launchdSimServiceNameForUDID:udid];
+    NSString *serviceName = [self xcode8LaunchdSimServiceNameForUDID:udid];
+    dictionary[serviceName] = udid;
+    serviceName = [self xcode9LaunchdSimServiceNameForUDID:udid];
+    dictionary[serviceName] = udid;
   }
   return [dictionary copy];
 }
 
-+ (NSString *)launchdSimServiceNameForUDID:(NSString *)udid
++ (NSString *)xcode8LaunchdSimServiceNameForUDID:(NSString *)udid
 {
   return [NSString stringWithFormat:@"com.apple.CoreSimulator.SimDevice.%@.launchd_sim", udid];
+}
+
++ (NSString *)xcode9LaunchdSimServiceNameForUDID:(NSString *)udid
+{
+  return [NSString stringWithFormat:@"com.apple.CoreSimulator.SimDevice.%@", udid];
 }
 
 + (NSSet<NSString *> *)launchdSimEnvironmentSubtractableComponents
