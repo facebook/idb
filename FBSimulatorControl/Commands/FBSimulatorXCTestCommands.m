@@ -11,12 +11,13 @@
 
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
+#import "FBApplicationTestRunStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulator.h"
 #import "FBSimulatorError.h"
 #import "FBSimulatorResourceManager.h"
 #import "FBSimulatorTestRunStrategy.h"
-#import "FBApplicationTestRunStrategy.h"
+#import "FBSimulatorXCTestProcessExecutor.h"
 
 @interface FBSimulatorXCTestCommands ()
 
@@ -61,6 +62,29 @@
   return [[FBApplicationTestRunStrategy
     strategyWithSimulator:self.simulator configuration:configuration reporter:reporter logger:self.simulator.logger]
     executeWithError:error];
+}
+
+- (nullable NSArray<NSString *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  FBXCTestShimConfiguration *shims = [FBXCTestShimConfiguration defaultShimConfigurationWithError:error];
+  if (!shims) {
+    return nil;
+  }
+  FBXCTestDestination *destination = [[FBXCTestDestinationiPhoneSimulator alloc] initWithModel:self.simulator.deviceType.model version:self.simulator.osVersion.name];
+  FBListTestConfiguration *configuration = [FBListTestConfiguration
+    configurationWithDestination:destination
+    shims:shims
+    environment:@{}
+    workingDirectory:self.simulator.auxillaryDirectory
+    testBundlePath:bundlePath
+    waitForDebugger:NO
+    timeout:timeout];
+
+  return [[FBListTestStrategy
+    strategyWithExecutor:[FBSimulatorXCTestProcessExecutor executorWithSimulator:self.simulator configuration:configuration]
+    configuration:configuration
+    logger:self.simulator.logger]
+    listTestsWithTimeout:timeout error:error];
 }
 
 #pragma mark Private

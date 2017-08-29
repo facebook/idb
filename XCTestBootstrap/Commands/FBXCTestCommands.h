@@ -53,6 +53,15 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
  */
 - (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error;
 
+/**
+ Lists the testables for a provided test bundle.
+
+ @param bundlePath the bundle path of the test bundle
+ @param error an error out for any error that occurs.
+ @return an array of strings for the test names if successful, NO otherwise.
+ */
+- (nullable NSArray<NSString *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout error:(NSError **)error;
+
 @end
 
 NS_ASSUME_NONNULL_END
