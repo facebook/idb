@@ -71,7 +71,7 @@
   }
   id<FBXCTestProcessExecutor> executor = [FBMacXCTestProcessExecutor executorWithConfiguration:self.configuration];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] executeWithError:error];
   }
   return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
 }
@@ -99,7 +99,7 @@
   }
   id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:self.configuration];
   if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+    return [[[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration logger:self.context.logger] wrapInReporter:self.context.reporter] executeWithError:error];
   }
   return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
 }
