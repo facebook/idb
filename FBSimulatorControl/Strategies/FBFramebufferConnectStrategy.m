@@ -87,9 +87,11 @@
 
 - (nullable FBFramebuffer *)connect:(FBSimulator *)simulator error:(NSError **)error
 {
-  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io];
-  FBFramebuffer *framebuffer = [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
-  return framebuffer;
+  FBFramebufferSurface *renderable = [FBFramebufferSurface mainScreenSurfaceForClient:(SimDeviceIOClient *)simulator.device.io error:error];
+  if (!renderable) {
+    return nil;
+  }
+  return [FBFramebuffer framebufferWithRenderable:renderable configuration:self.configuration simulator:simulator];
 }
 
 @end

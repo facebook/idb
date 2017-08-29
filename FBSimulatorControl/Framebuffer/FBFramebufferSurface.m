@@ -30,6 +30,8 @@
 #import <SimulatorKit/SimDisplayIOSurfaceRenderable-Protocol.h>
 #import <SimulatorKit/SimDisplayRenderable-Protocol.h>
 
+#import "FBSimulatorError.h"
+
 static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 {
   // Return the Surface Immediately, if one is immediately available.
@@ -162,7 +164,7 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
 
 #pragma mark Initializers
 
-+ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient
++ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient error:(NSError **)error
 {
   for (id<SimDeviceIOPortInterface> port in ioClient.ioPorts) {
     if (![port conformsToProtocol:@protocol(SimDeviceIOPortInterface)]) {
@@ -177,7 +179,9 @@ static IOSurfaceRef extractSurfaceFromUnknown(id unknown)
     }
     return [[FBFramebufferSurface_IOClient alloc] initWithIOClient:ioClient port:port surface:surface];
   }
-  return nil;
+  return [[FBSimulatorError
+    describeFormat:@"Could not find the Main Screen Surface for IO Client %@", ioClient]
+    fail:error];
 }
 
 + (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService

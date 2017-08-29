@@ -48,13 +48,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBFramebufferSurface : NSObject
 
+#pragma mark Initializers
+
 /**
  Obtains an IOSurface from the SimDeviceIOClient.
 
  @param ioClient the IOClient to attach to.
  @return a new FBFramebufferSurface.
  */
-+ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient;
++ (nullable instancetype)mainScreenSurfaceForClient:(SimDeviceIOClient *)ioClient error:(NSError **)error;
 
 /**
  Obtains an IOSurface from the SimDeviceFramebufferService.
@@ -63,6 +65,8 @@ NS_ASSUME_NONNULL_BEGIN
  @return a new FBFramebufferSurface.
  */
 + (instancetype)mainScreenSurfaceForFramebufferService:(SimDeviceFramebufferService *)framebufferService;
+
+#pragma mark Public Methods
 
 /**
  Attaches a Consumer.
