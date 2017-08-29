@@ -88,6 +88,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (id<FBControlCoreLogger>)systemLoggerWritingToFileDescriptor:(int)fileDescriptor withDebugLogging:(BOOL)debugLogging;
 
+/**
+ Compose multiple loggers into one.
+ 
+ @param loggers the loggers to compose.
+ @return the composite logger.
+ */
++ (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -328,7 +328,7 @@ const char *NewLine = "\n";
     return [self aslLoggerWritingToFileDescriptor:fileDescriptor withDebugLogging:debugLogging];
   }
   FBControlCoreLogger_ASL *aslLogger = [self aslLoggerWritingToFileDescriptor:-1 withDebugLogging:debugLogging];
-  return [[FBControlCoreLogger_Composite alloc] initWithLoggers:@[
+  return [self compositeLoggerWithLoggers:@[
     aslLogger,
     [[FBControlCoreLogger_File alloc] initWithFileDescriptor:fileDescriptor],
   ]];
@@ -340,6 +340,11 @@ const char *NewLine = "\n";
   asl_object_t client = [clientManager clientHandleForQueue:dispatch_get_main_queue()];
   FBControlCoreLogger_ASL *logger = [[FBControlCoreLogger_ASL alloc] initWithClientManager:clientManager client:client currentLevel:ASL_LEVEL_INFO prefix:nil];
   return logger;
+}
+
++ (id<FBControlCoreLogger>)compositeLoggerWithLoggers:(NSArray<id<FBControlCoreLogger>> *)loggers
+{
+  return [[FBControlCoreLogger_Composite alloc] initWithLoggers:loggers];
 }
 
 @end
