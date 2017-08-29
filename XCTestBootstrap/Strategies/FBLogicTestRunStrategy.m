@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import "FBLogicTestRunner.h"
+#import "FBLogicTestRunStrategy.h"
 
 #import <sys/types.h>
 #import <sys/stat.h>
@@ -15,7 +15,7 @@
 #import <FBControlCore/FBControlCore.h>
 #import <XCTestBootstrap/XCTestBootstrap.h>
 
-@interface FBLogicTestRunner ()
+@interface FBLogicTestRunStrategy ()
 
 @property (nonatomic, strong, readonly) id<FBXCTestProcessExecutor> executor;
 @property (nonatomic, strong, readonly) FBLogicTestConfiguration *configuration;
@@ -24,13 +24,13 @@
 
 @end
 
-@implementation FBLogicTestRunner
+@implementation FBLogicTestRunStrategy
 
 #pragma mark Initializers
 
-+ (instancetype)runnerWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
++ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger
 {
-  return [[FBLogicTestRunner alloc] initWithExecutor:executor configuration:configuration reporter:reporter logger:logger];
+  return [[FBLogicTestRunStrategy alloc] initWithExecutor:executor configuration:configuration reporter:reporter logger:logger];
 }
 
 - (instancetype)initWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger

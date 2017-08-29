@@ -14,7 +14,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBLogicTestConfiguration;
-@class FBSimulator;
 
 @protocol FBControlCoreLogger;
 @protocol FBXCTestReporter;
@@ -22,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  A Runner for Logic Tests
  */
-@interface FBLogicTestRunner : NSObject <FBXCTestRunner>
+@interface FBLogicTestRunStrategy : NSObject <FBXCTestRunner>
 
 /**
  Creates a Logic Test Runner for iOS with the Provided Parameters.
@@ -31,9 +30,9 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the Configuration to use.
  @param reporter the reporter to report to.
  @param logger the logger to use.
- @return a new Logic Test Runner.
+ @return a new Logic Test Strategy.
  */
-+ (instancetype)runnerWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
++ (instancetype)strategyWithExecutor:(id<FBXCTestProcessExecutor>)executor configuration:(FBLogicTestConfiguration *)configuration reporter:(id<FBXCTestReporter>)reporter logger:(id<FBControlCoreLogger>)logger;
 
 @end
 
