@@ -31,6 +31,8 @@
 
 @implementation FBVideoEncoderSimulatorKit
 
+#pragma mark Initializers
+
 + (instancetype)encoderWithRenderable:(FBFramebufferSurface *)surface videoPath:(NSString *)videoPath logger:(nullable id<FBControlCoreLogger>)logger
 {
   NSURL *fileURL = [NSURL fileURLWithPath:videoPath];
@@ -64,6 +66,13 @@
     // This should be used as a semaphore for the stopRecording: dispatch_group.
     // As it stands, the behaviour is currently the same as before.
   }];
+}
+
+#pragma mark NSObject
+
+- (NSString *)description
+{
+  return [NSString stringWithFormat:@"SimulatorKit Encoder %@", self.writer];
 }
 
 #pragma mark Public
@@ -100,7 +109,12 @@
   [self.logger log:@"Start Writing in Video Writer"];
   [self.writer startWriting];
   [self.logger log:@"Attaching Consumer in Video Writer"];
-  [self.surface attachConsumer:self onQueue:self.mediaQueue];
+  IOSurfaceRef surface = [self.surface attachConsumer:self onQueue:self.mediaQueue];
+  if (surface) {
+    dispatch_async(self.mediaQueue, ^{
+      [self didChangeIOSurface:surface];
+    });
+  }
 
   return YES;
 }
@@ -133,9 +147,13 @@
     [self.writer didChangeIOSurface:NULL];
     return;
   }
-  xpc_object_t xpcSurface = IOSurfaceCreateXPCObject(surface);
-  [self.logger log:@"IOSurface Changed"];
-  [self.writer didChangeIOSurface:xpcSurface];
+  [self.logger logFormat:@"IOSurface for Encoder %@ changed to %@", self, surface];
+  if (FBXcodeConfiguration.isXcode9OrGreater) {
+    [self.writer didChangeIOSurface:(__bridge id) surface];
+  } else {
+    xpc_object_t xpcSurface = IOSurfaceCreateXPCObject(surface);
+    [self.writer didChangeIOSurface:xpcSurface];
+  }
 }
 
 - (void)didReceiveDamageRect:(CGRect)rect
