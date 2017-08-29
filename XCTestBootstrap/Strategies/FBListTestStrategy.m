@@ -89,20 +89,13 @@
   // Then make sure that the file has finished being read.
   NSTimeInterval timeout = FBControlCoreGlobalConfiguration.slowTimeout;
   NSError *innerError = nil;
-  BOOL waitSuccess = [process waitForCompletionWithTimeout:timeout error:&innerError];
+  BOOL completedSuccessfully = [process waitForCompletionWithTimeout:timeout error:&innerError];
   if (![reader stopReadingWithError:error]) {
     return NO;
   }
-
-  if (!waitSuccess) {
+  if (!completedSuccessfully) {
     return [[[FBXCTestError
       describeFormat:@"Waited %f seconds for list-test task to terminate", timeout]
-      causedBy:innerError]
-      failBool:error];
-  }
-  if (![process processDidTerminateNormallyWithProcessIdentifier:processIdentifier didTimeout:!waitSuccess exitCode:0 error:&innerError]) {
-    return [[[FBXCTestError
-      describeFormat:@"The Listing of Tests Failed: %@", innerError.localizedDescription]
       causedBy:innerError]
       failBool:error];
   }

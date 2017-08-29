@@ -78,9 +78,6 @@
 
 - (BOOL)runiOSTestWithError:(NSError **)error
 {
-  if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
-    return [[FBXCTestError describe:@"Listing tests is only supported for macosx tests."] failBool:error];
-  }
   FBSimulator *simulator = [self.context simulatorForiOSTestRun:self.configuration error:error];
   if (!simulator) {
     return NO;
@@ -97,11 +94,14 @@
 
 - (BOOL)runTestWithSimulator:(FBSimulator *)simulator error:(NSError **)error
 {
-  if ([self.configuration isKindOfClass:FBLogicTestConfiguration.class]) {
-    id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:(FBLogicTestConfiguration *)self.configuration];
-    return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+  if ([self.configuration isKindOfClass:FBApplicationTestConfiguration.class]) {
+    return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
   }
-  return [[FBApplicationTestRunStrategy strategyWithSimulator:simulator configuration:(FBApplicationTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+  id<FBXCTestProcessExecutor> executor = [FBSimulatorXCTestProcessExecutor executorWithSimulator:simulator configuration:self.configuration];
+  if ([self.configuration isKindOfClass:FBListTestConfiguration.class]) {
+    return [[FBListTestStrategy strategyWithExecutor:executor configuration:(FBListTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
+  }
+  return [[FBLogicTestRunStrategy strategyWithExecutor:executor configuration:(FBLogicTestConfiguration *)self.configuration reporter:self.context.reporter logger:self.context.logger] executeWithError:error];
 }
 
 @end
