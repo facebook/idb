@@ -77,13 +77,13 @@
   setsockopt(socketHandle, SOL_SOCKET, SO_REUSEADDR, &flagTrue, sizeof(flagTrue));
 
   // Bind the Socket.
-  struct sockaddr_in6 sockaddr6;
-  memset(&sockaddr6, 0, sizeof(sockaddr6));
-  sockaddr6.sin6_len = sizeof(sockaddr6);
-  sockaddr6.sin6_family = AF_INET6;
-  sockaddr6.sin6_port = htons(self.port);
-  sockaddr6.sin6_addr = in6addr_any;
-  int result = bind(socketHandle, (struct sockaddr *)&sockaddr6, sizeof(sockaddr6));
+  struct sockaddr_in6 address;
+  memset(&address, 0, sizeof(address));
+  address.sin6_len = sizeof(address);
+  address.sin6_family = AF_INET6;
+  address.sin6_port = htons(self.port);
+  address.sin6_addr = in6addr_any;
+  int result = bind(socketHandle, (struct sockaddr *)&address, sizeof(address));
   if (result != 0) {
     return [[FBControlCoreError
       describeFormat:@"Failed to bind the socket with errno %d", errno]
@@ -115,9 +115,9 @@
   dispatch_resume(self.acceptSource);
 
   // Update port
-  struct sockaddr_in6 address = {0};
-  socklen_t sockaddrlen = sizeof(address);
-  getsockname(socketHandle, (struct sockaddr*)(&address), &sockaddrlen);
+  memset(&address, 0, sizeof(address));
+  socklen_t addresslen = sizeof(address);
+  getsockname(socketHandle, (struct sockaddr*)(&address), &addresslen);
   _port = ntohs(address.sin6_port);
 
   return YES;
