@@ -9,17 +9,24 @@
 
 #import "FBWeakFramework.h"
 
+#import <dlfcn.h>
 #import <Foundation/Foundation.h>
 
 #import "FBControlCoreError.h"
 #import "FBXcodeConfiguration.h"
 #import "FBControlCoreLogger.h"
 
+typedef NS_ENUM(NSInteger, FBWeakFrameworkType) {
+  FBWeakFrameworkTypeFramework,
+  FBWeakFrameworkDylib,
+};
+
 @interface FBWeakFramework ()
 
 @property (nonatomic, copy, readonly) NSString *name;
 @property (nonatomic, copy, readonly) NSString *basePath;
 @property (nonatomic, copy, readonly) NSString *relativePath;
+@property (nonatomic, assign, readonly) FBWeakFrameworkType type;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *fallbackDirectories;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *requiredClassNames;
 @property (nonatomic, copy, readonly) NSArray<FBWeakFramework *> *requiredFrameworks;
@@ -91,12 +98,16 @@
     return nil;
   }
 
+  NSString *filename = [basePath stringByAppendingPathComponent:relativePath].lastPathComponent;
+
   _basePath = basePath;
   _relativePath = relativePath;
   _fallbackDirectories = fallbackDirectories;
   _requiredClassNames = requiredClassNames;
   _requiredFrameworks = requiredFrameworks;
-  _name = [basePath stringByAppendingPathComponent:relativePath].lastPathComponent.stringByDeletingPathExtension;
+  _name = filename.stringByDeletingPathExtension;
+  _type = ([filename.pathExtension isEqualToString:@"dylib"] ?
+           FBWeakFrameworkDylib : FBWeakFrameworkTypeFramework);
 
   return self;
 }
@@ -110,9 +121,8 @@
 
 #pragma mark Private
 
-+ (NSString *)missingFrameworkNameWithRPathError:(NSError *)error
++ (NSString *)missingFrameworkNameWithErrorDescription:(NSString *)description
 {
-  NSString *description = error.userInfo[@"NSDebugDescription"];
   if (!description) {
     return nil;
   }
@@ -121,7 +131,19 @@
   if (rpathRange.location == NSNotFound) {
     return nil;
   }
-  NSRange frameworkRange = [description rangeOfString:@".framework" options:NSCaseInsensitiveSearch range:NSMakeRange(rpathRange.location, description.length - rpathRange.location)];
+
+  NSRange searchRange = NSMakeRange(rpathRange.location, description.length - rpathRange.location);
+
+  NSRange frameworkRange = [description rangeOfString:@".dylib"
+                                              options:NSCaseInsensitiveSearch
+                                                range:searchRange];
+
+  if (frameworkRange.location == NSNotFound) {
+    frameworkRange = [description rangeOfString:@".framework"
+                                        options:NSCaseInsensitiveSearch
+                                          range:searchRange];
+  }
+
   if (frameworkRange.location == NSNotFound) {
     frameworkRange = [description rangeOfString:@".ideplugin" options:NSCaseInsensitiveSearch range:NSMakeRange(rpathRange.location, description.length - rpathRange.location)];
     if (frameworkRange.location == NSNotFound) {
@@ -172,17 +194,35 @@
       failBool:error];
   }
 
-  NSBundle *bundle = [NSBundle bundleWithPath:path];
-  if (!bundle) {
-    return [[FBControlCoreError
-      describeFormat:@"Failed to load the bundle for path %@", path]
-      failBool:error];
-  }
+  NSError *innerError = nil;
+  switch (self.type) {
+    case FBWeakFrameworkTypeFramework: {
+      NSBundle *bundle = [NSBundle bundleWithPath:path];
+      if (!bundle) {
+        return [[FBControlCoreError
+                 describeFormat:@"Failed to load the bundle for path %@", path]
+                failBool:error];
+      }
 
-  NSError *innerError;
-  [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
-  if (![self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
-    return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+      [logger.debug logFormat:@"%@: Loading from %@ ", self.name, path];
+      if (![self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:&innerError]) {
+        return [FBControlCoreError failBoolWithError:innerError errorOut:error];
+      }
+    }
+      break;
+
+    case FBWeakFrameworkDylib:
+      if (![self loadDylibNamed:self.relativePath
+              relativeDirectory:relativeDirectory
+            fallbackDirectories:fallbackDirectories
+                         logger:logger
+                          error:error]) {
+        return [[FBControlCoreError describeFormat:@"Failed to load %@", self.relativePath] failBool:error];
+      }
+      break;
+
+    default:
+      break;
   }
 
   [logger.debug logFormat:@"%@: Successfully loaded", self.name];
@@ -213,7 +253,8 @@
 
   // If it is linking issue, try to determine missing framework
   [logger.debug logFormat:@"%@: Bundle could not be loaded from %@, attempting to find the Framework name", self.name, bundle.bundlePath];
-  NSString *missingFrameworkName = [self.class missingFrameworkNameWithRPathError:innerError];
+  NSString *description = innerError.userInfo[@"NSDebugDescription"];
+  NSString *missingFrameworkName = [self.class missingFrameworkNameWithErrorDescription:description];
   if (!missingFrameworkName) {
     return [[[FBControlCoreError
       describeFormat:@"Could not determine the missing framework name from %@", bundle.bundlePath]
@@ -221,6 +262,54 @@
       failBool:error];
   }
 
+  if (![self loadMissingFrameworkNamed:missingFrameworkName
+                   fallbackDirectories:fallbackDirectories
+                                logger:logger
+                                 error:error]) {
+    return [[FBControlCoreError describeFormat:@"Could not load missing framework %@", missingFrameworkName]
+            failBool:error];
+  }
+  return [self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error];
+
+  // Uncategorizable Error, return the original error
+  return [[FBControlCoreError
+    describeFormat:@"Missing Framework %@ could not be loaded from any fallback directories", missingFrameworkName]
+    failBool:error];
+}
+
+- (BOOL)loadDylibNamed:(NSString *)dylibName
+     relativeDirectory:(NSString *)relativeDirectory
+   fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories
+                logger:(id<FBControlCoreLogger>)logger
+                 error:(NSError **)error
+{
+  NSString *path = [relativeDirectory.stringByStandardizingPath stringByAppendingPathComponent:dylibName];
+  if (!dlopen(path.UTF8String, RTLD_LAZY)) {
+    // Error may be
+    NSString *errorString = [NSString stringWithUTF8String:dlerror()];
+    NSString *missingFrameworkName = [[self class] missingFrameworkNameWithErrorDescription:errorString];
+    if (![self loadMissingFrameworkNamed:missingFrameworkName
+                     fallbackDirectories:fallbackDirectories
+                                  logger:logger
+                                   error:error]) {
+      return [[FBControlCoreError describeFormat:@"Failed to load dylib %@ dependency %@",
+               dylibName, missingFrameworkName]
+              failBool:error];
+    }
+    // Dependency loaded - retry
+    return [self loadDylibNamed:dylibName
+              relativeDirectory:relativeDirectory
+            fallbackDirectories:fallbackDirectories
+                         logger:logger
+                   error:error];
+  }
+  return YES;
+}
+
+- (BOOL)loadMissingFrameworkNamed:(NSString *)missingFrameworkName
+              fallbackDirectories:(NSArray<NSString *> *)fallbackDirectories
+                           logger:(id<FBControlCoreLogger>)logger error:(NSError **)error
+{
   // Try to load missing framework with locations from
   FBWeakFramework *missingFramework = [FBWeakFramework xcodeFrameworkWithRelativePath:missingFrameworkName];
   [logger.debug logFormat:@"Attempting to load missing framework %@", missingFrameworkName];
@@ -231,13 +320,8 @@
       continue;
     }
     [logger.debug logFormat:@"%@ has been loaded from fallback directory '%@', re-attempting to load %@", missingFrameworkName, directory, self.name];
-    return [self loadBundle:bundle fallbackDirectories:fallbackDirectories logger:logger error:error];
   }
-
-  // Uncategorizable Error, return the original error
-  return [[FBControlCoreError
-    describeFormat:@"Missing Framework %@ could not be loaded from any fallback directories", missingFrameworkName]
-    failBool:error];
+  return YES;
 }
 
 /**
