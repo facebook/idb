@@ -9,6 +9,7 @@
 
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
 #import <FBControlCore/FBApplicationBundle.h>
+#import <FBControlCore/FBApplicationBundle+Install.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationDataCommands.h>
 #import <FBControlCore/FBApplicationInstallConfiguration.h>

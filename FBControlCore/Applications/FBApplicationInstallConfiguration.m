@@ -13,6 +13,7 @@
 #import "FBControlCoreError.h"
 #import "FBCollectionInformation.h"
 #import "FBApplicationBundle.h"
+#import "FBApplicationBundle+Install.h"
 #import "FBCodesignProvider.h"
 
 FBiOSTargetActionType const FBiOSTargetActionTypeInstall = @"install";
