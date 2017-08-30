@@ -427,9 +427,9 @@
   NSString *setPath = simulator.set.deviceSet.setPath;
   return @[
     @"--args",
-    @"-DeviceSetPath", setPath, // Always pass the Device Set Path
-    @"-DetatchOnAppQuit", @"1", // Shutdown Sims on Quitting the App, just like in < Xcode 9
-    @"-DetachOnWindowClose", @"1",  // Same as closing the window
+    @"-DeviceSetPath", setPath, // Always pass the Device Set Path.
+    @"-DetatchOnAppQuit", @"0", // Shutdown Sims on Quitting the App, just like in < Xcode 9.
+    @"-DetachOnWindowClose", @"0",  // As above, but for windows.
     @"-AttachBootedOnStart", @"1",  // Always attach to running sims, so that they have an open window.
     @"-StartLastDeviceOnLaunch", @"0", // *never* let SimulatorApp boot on our behalf.
  ];
