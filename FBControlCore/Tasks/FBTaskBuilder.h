@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FBControlCoreLogger;
 @protocol FBFileConsumer;
 
+@class FBFuture;
+
 /**
  An interface to building FBTask instances
  */
@@ -230,6 +232,13 @@ NS_ASSUME_NONNULL_BEGIN
  @return The stdout of the process if successful, nil otherwise.
  */
 - (nullable NSString *)executeReturningError:(NSError **)error;
+
+/**
+ Builds the Task, as a Future
+
+ @return a Future
+ */
+- (FBFuture<FBTask *> *)buildFuture;
 
 @end
 

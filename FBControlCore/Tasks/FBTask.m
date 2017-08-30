@@ -643,6 +643,13 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
   ];
 }
 
+#pragma mark FBFuture
+
+- (BOOL)hasCompleted
+{
+  return self.hasTerminated;
+}
+
 @end
 
 #pragma clang diagnostic pop

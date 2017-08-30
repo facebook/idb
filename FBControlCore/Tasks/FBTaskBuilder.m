@@ -207,15 +207,6 @@
 
 #pragma mark - Private
 
-+ (NSError *)errorForDescription:(NSString *)description
-{
-  NSParameterAssert(description);
-  return [NSError
-    errorWithDomain:FBTaskErrorDomain
-    code:0
-    userInfo:@{NSLocalizedDescriptionKey : description}];
-}
-
 + (NSDictionary<NSString *, NSString *> *)defaultEnvironmentForSubprocess
 {
   static dispatch_once_t onceToken;
@@ -251,6 +242,21 @@
     *error = [task error];
   }
   return [task stdOut];
+}
+
+- (FBTask *)buildFuture
+{
+  FBMutableFuture *future = FBMutableFuture.future;
+  return [[self build]
+    startAsynchronouslyWithTerminationQueue:dispatch_queue_create("com.facebook.fbcontrolcore.task.future", DISPATCH_QUEUE_SERIAL)
+    handler:^(FBTask *task) {
+      NSError *error = task.error;
+      if (error) {
+        [future resolveWithError:task.error];
+        return;
+      }
+      [future resolveWithResult:task];
+    }];
 }
 
 @end
