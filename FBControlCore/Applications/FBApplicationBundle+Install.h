@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBBundleDescriptor.h>
+#import <FBControlCore/FBApplicationBundle.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

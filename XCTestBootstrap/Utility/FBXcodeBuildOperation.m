@@ -9,8 +9,7 @@
 
 #import "FBXcodeBuildOperation.h"
 
-#import "FBXCTestCommands.h"
-#import "FBTestLaunchConfiguration.h"
+#import <FBControlCore/FBControlCore.h>
 
 static NSString *XcodebuildSubprocessEnvironmentIdentifier = @"FBDEVICECONTROL_DEVICE_IDENTIFIER";
 

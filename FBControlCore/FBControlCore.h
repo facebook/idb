@@ -7,15 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#import <FBControlCore/FBASLParser.h>
 #import <FBControlCore/FBAgentLaunchConfiguration.h>
-#import <FBControlCore/FBApplicationBundle.h>
 #import <FBControlCore/FBApplicationBundle+Install.h>
+#import <FBControlCore/FBApplicationBundle.h>
 #import <FBControlCore/FBApplicationCommands.h>
 #import <FBControlCore/FBApplicationDataCommands.h>
 #import <FBControlCore/FBApplicationInstallConfiguration.h>
 #import <FBControlCore/FBApplicationLaunchConfiguration.h>
 #import <FBControlCore/FBArchitecture.h>
-#import <FBControlCore/FBASLParser.h>
 #import <FBControlCore/FBBatchLogSearch.h>
 #import <FBControlCore/FBBinaryDescriptor.h>
 #import <FBControlCore/FBBinaryParser.h>
@@ -46,15 +46,6 @@
 #import <FBControlCore/FBFileWriter.h>
 #import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBInstalledApplication.h>
-#import <FBControlCore/FBiOSActionReader.h>
-#import <FBControlCore/FBiOSActionRouter.h>
-#import <FBControlCore/FBiOSTarget.h>
-#import <FBControlCore/FBiOSTargetAction.h>
-#import <FBControlCore/FBiOSTargetCommandForwarder.h>
-#import <FBControlCore/FBiOSTargetDiagnostics.h>
-#import <FBControlCore/FBiOSTargetFormat.h>
-#import <FBControlCore/FBiOSTargetPredicates.h>
-#import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBJSONEnums.h>
 #import <FBControlCore/FBLineBuffer.h>
@@ -81,10 +72,21 @@
 #import <FBControlCore/FBTask.h>
 #import <FBControlCore/FBTaskBuilder.h>
 #import <FBControlCore/FBTerminationHandle.h>
+#import <FBControlCore/FBTestLaunchConfiguration.h>
 #import <FBControlCore/FBUploadBuffer.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
 #import <FBControlCore/FBWeakFramework+ApplePrivateFrameworks.h>
 #import <FBControlCore/FBWeakFrameworkLoader.h>
+#import <FBControlCore/FBXCTestCommands.h>
 #import <FBControlCore/FBXcodeConfiguration.h>
 #import <FBControlCore/FBXcodeDirectory.h>
+#import <FBControlCore/FBiOSActionReader.h>
+#import <FBControlCore/FBiOSActionRouter.h>
+#import <FBControlCore/FBiOSTarget.h>
+#import <FBControlCore/FBiOSTargetAction.h>
+#import <FBControlCore/FBiOSTargetCommandForwarder.h>
+#import <FBControlCore/FBiOSTargetDiagnostics.h>
+#import <FBControlCore/FBiOSTargetFormat.h>
+#import <FBControlCore/FBiOSTargetPredicates.h>
+#import <FBControlCore/FBiOSTargetQuery.h>
 #import <FBControlCore/NSPredicate+FBControlCore.h>

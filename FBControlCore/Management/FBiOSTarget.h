@@ -15,6 +15,7 @@
 #import <FBControlCore/FBDebugDescribeable.h>
 #import <FBControlCore/FBJSONConversion.h>
 #import <FBControlCore/FBVideoRecordingCommands.h>
+#import <FBControlCore/FBXCTestCommands.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -63,7 +64,7 @@ extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
 /**
  Common Properties of Devices & Simulators.
  */
-@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBVideoRecordingCommands>
+@protocol FBiOSTarget <NSObject, FBJSONSerializable, FBDebugDescribeable, FBApplicationCommands, FBBitmapStreamingCommands, FBVideoRecordingCommands, FBXCTestCommands>
 
 /**
  The Target's Logger.

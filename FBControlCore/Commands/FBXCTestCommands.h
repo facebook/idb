@@ -9,7 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import <FBControlCore/FBControlCore.h>
+#import <FBControlCore/FBTestLaunchConfiguration.h>
+#import <FBControlCore/FBTerminationHandle.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

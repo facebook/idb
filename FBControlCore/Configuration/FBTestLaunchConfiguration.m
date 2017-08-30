@@ -11,9 +11,6 @@
 
 #import <FBControlCore/FBControlCore.h>
 
-#import "FBXCTestCommands.h"
-#import "XCTestBootstrapError.h"
-
 @implementation FBTestLaunchConfiguration
 
 - (instancetype)initWithTestBundlePath:(NSString *)testBundlePath applicationLaunchConfiguration:(FBApplicationLaunchConfiguration *)applicationLaunchConfiguration testHostPath:(NSString *)testHostPath timeout:(NSTimeInterval)timeout initializeUITesting:(BOOL)initializeUITesting testsToRun:(NSSet<NSString *> *)testsToRun testsToSkip:(NSSet<NSString *> *)testsToSkip targetApplicationPath:(NSString *)targetApplicationPath targetApplicationBundleID:(NSString *)targetApplicaitonBundleID
@@ -325,7 +322,7 @@ static NSString *const KeyTargetApplicationBundleID = @"targetApplicationBundleI
 {
   id<FBXCTestCommands> commands = (id<FBXCTestCommands> ) target;
   if (![commands conformsToProtocol:@protocol(FBXCTestCommands)]) {
-    return [[FBXCTestError
+    return [[FBControlCoreError
       describeFormat:@"%@ does not conform to %@", target, NSStringFromProtocol(@protocol(FBXCTestCommands))]
       failBool:error];
   }

@@ -101,4 +101,19 @@
   return nil;
 }
 
+- (id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error
+{
+  return nil;
+}
+
+- (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return NO;
+}
+
+- (NSArray<NSString *> *)listTestsForBundleAtPath:(NSString *)bundlePath timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  return nil;
+}
+
 @end
