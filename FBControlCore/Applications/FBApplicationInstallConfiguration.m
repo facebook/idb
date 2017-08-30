@@ -112,7 +112,7 @@ static NSString *const KeyCodesign = @"codesign";
   if (![FBApplicationBundle findOrExtractApplicationAtPath:applicationPath extractPathOut:&extractPath error:error]) {
     return NO;
   }
-  if (![FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:applicationPath error:error]) {
+  if (self.codesign && ![FBCodesignProvider.codeSignCommandWithAdHocIdentity recursivelySignBundleAtPath:applicationPath error:error]) {
     return NO;
   }
   if (![target installApplicationWithPath:applicationPath error:error]) {
