@@ -36,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param options the options for Simulator Management.
  @param deviceSetPath the Path to the Device Set. If nil, the default Device Set will be used.
- @returns a new Configuration Object with the arguments applied.
+ @return a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithDeviceSetPath:(nullable NSString *)deviceSetPath options:(FBSimulatorManagementOptions)options;
 

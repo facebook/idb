@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param appName the System Application to fetch.
  @param simulator the Simulator to fetch for.
  @param error any error that occurred in fetching the application.
- @returns FBApplicationBundle instance if one could for the given name could be found, nil otherwise.
+ @return FBApplicationBundle instance if one could for the given name could be found, nil otherwise.
  */
 + (nullable instancetype)systemApplicationNamed:(NSString *)appName simulator:(FBSimulator *)simulator error:(NSError **)error;
 

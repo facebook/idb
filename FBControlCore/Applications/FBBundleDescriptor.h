@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param path The Path to the Application Bundle. Must not be nil.
  @param bundleID the Bundle ID of the Application. Must not be nil.
  @param binary the Path to the binary inside the Application. Must not be nil.
- @returns a new FBBundleDescriptor instance.
+ @return a new FBBundleDescriptor instance.
  */
 - (instancetype)initWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(nullable FBBinaryDescriptor *)binary;
 
@@ -42,7 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param path The Path to the Application Bundle. May be nil.
  @param bundleID the Bundle ID of the Application. May be nil.
  @param binary the Path to the binary inside the Application. May be nil.
- @returns a new FBBundleDescriptor instance, if all arguments are non-nil. Nil otherwise
+ @return a new FBBundleDescriptor instance, if all arguments are non-nil. Nil otherwise
  */
 + (nullable instancetype)withName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID binary:(FBBinaryDescriptor *)binary;
 

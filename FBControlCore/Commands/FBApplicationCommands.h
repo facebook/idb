@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param bundleID the bundle id of the application to uninstall.
  @param error an error out for any error that occurs.
- @returns YES if the command succeeds, NO otherwise.
+ @return YES if the command succeeds, NO otherwise.
  */
 - (BOOL)uninstallApplicationWithBundleID:(NSString *)bundleID error:(NSError **)error;
 

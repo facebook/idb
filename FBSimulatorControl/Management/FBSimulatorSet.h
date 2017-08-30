@@ -38,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param deviceSet the Device Set to wrap.
  @param logger the logger to use to verbosely describe what is going on. May be nil.
  @param error any error that occurred during the creation of the pool.
- @returns a new FBSimulatorPool.
+ @return a new FBSimulatorPool.
  */
 + (instancetype)setWithConfiguration:(FBSimulatorControlConfiguration *)configuration deviceSet:(SimDeviceSet *)deviceSet logger:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 

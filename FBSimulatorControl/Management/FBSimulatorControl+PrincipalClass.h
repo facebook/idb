@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param configuration the Configuration to setup the instance with.
  @param logger the logger to use to verbosely describe what is going on. May be nil.
  @param error any error that occurred during instantiation.
- @returns a new FBSimulatorControl instance.
+ @return a new FBSimulatorControl instance.
  */
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration logger:(id<FBControlCoreLogger>)logger error:(NSError **)error;
 
@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param configuration the Configuration to setup the instance with.
  @param error any error that occurred during instantiation.
- @returns a new FBSimulatorControl instance.
+ @return a new FBSimulatorControl instance.
  */
 + (nullable instancetype)withConfiguration:(FBSimulatorControlConfiguration *)configuration error:(NSError **)error;
 

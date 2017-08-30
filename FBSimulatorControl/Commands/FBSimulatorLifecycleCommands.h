@@ -61,7 +61,7 @@ NS_ASSUME_NONNULL_BEGIN
  Calls `freeSimulator:error:` on this device's pool, with the reciever as the first argument.
 
  @param error an error out for any error that occured.
- @returns YES if the freeing of the device was successful, NO otherwise.
+ @return YES if the freeing of the device was successful, NO otherwise.
  */
 - (BOOL)freeFromPoolWithError:(NSError **)error;
 
@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
  Synchronously waits on the provided state.
 
  @param state the state to wait on
- @returns YES if the Simulator transitioned to the given state with the default timeout, NO otherwise
+ @return YES if the Simulator transitioned to the given state with the default timeout, NO otherwise
  */
 - (BOOL)waitOnState:(FBSimulatorState)state;
 
@@ -88,7 +88,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param state the state to wait on
  @param timeout timeout
- @returns YES if the Simulator transitioned to the given state with the timeout, NO otherwise
+ @return YES if the Simulator transitioned to the given state with the timeout, NO otherwise
  */
 - (BOOL)waitOnState:(FBSimulatorState)state timeout:(NSTimeInterval)timeout;
 
@@ -97,7 +97,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param state the state to wait on
  @param error an error out for a timeout error if one occurred
- @returns YES if the Simulator transitioned to the given state with the timeout, NO otherwise
+ @return YES if the Simulator transitioned to the given state with the timeout, NO otherwise
  */
 - (BOOL)waitOnState:(FBSimulatorState)state error:(NSError **)error;
 

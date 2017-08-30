@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name The name of the executable. Must not be nil.
  @param path The path to the executable. Must not be nil.
  @param architectures The supported architectures of the executable. Must not be nil.
- @returns a new FBBinaryDescriptor instance.
+ @return a new FBBinaryDescriptor instance.
  */
 - (instancetype)initWithName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures;
 
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name The name of the executable. May be nil.
  @param path The path to the executable. May be nil.
  @param architectures The supported architectures of the executable. Must not be nil.
- @returns a new FBBinaryDescriptor instance, if all arguments are non-nil. Nil otherwise.
+ @return a new FBBinaryDescriptor instance, if all arguments are non-nil. Nil otherwise.
  */
 + (nullable instancetype)withName:(NSString *)name path:(NSString *)path architectures:(NSSet *)architectures;
 

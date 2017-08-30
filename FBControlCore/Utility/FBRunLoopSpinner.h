@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @oaram timeout the Timeout in Seconds.
  @param untilTrue the condition to meet.
- @returns YES if the condition was met, NO if the timeout was reached first.
+ @return YES if the condition was met, NO if the timeout was reached first.
  */
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilTrue:( BOOL (^)(void) )untilTrue;
 
@@ -88,7 +88,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @oaram timeout the Timeout in Seconds.
  @param untilExists the mapping to a value.
- @returns the return value of untilTrue, or nil if a timeout was reached.
+ @return the return value of untilTrue, or nil if a timeout was reached.
  */
 - (nullable id)spinRunLoopWithTimeout:(NSTimeInterval)timeout untilExists:( id (^)(void) )untilExists;
 

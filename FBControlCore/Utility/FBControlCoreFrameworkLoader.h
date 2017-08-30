@@ -54,7 +54,7 @@ void *FBGetSymbolFromHandle(void *handle, const char *name);
 
  @param logger the Logger to log events to.
  @param error any error that occurred during performing the preconditions.
- @returns YES if FBSimulatorControl is usable, NO otherwise.
+ @return YES if FBSimulatorControl is usable, NO otherwise.
  */
 - (BOOL)loadPrivateFrameworks:(nullable id<FBControlCoreLogger>)logger error:(NSError **)error;
 

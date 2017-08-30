@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
  @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
  @param output the output configuration for the launched process.
- @returns a new Configuration Object with the arguments applied.
+ @return a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithApplication:(FBApplicationBundle *)application arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
 
@@ -45,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param environment a NSDictionary<NSString *, NSString *> of the Environment of the launched Application process. Must not be nil.
  @param waitForDebugger a boolean describing whether the Application should stop after Launch and wait for a debugger to be attached.
  @param output the output configuration for the launched process.
- @returns a new Configuration Object with the arguments applied.
+ @return a new Configuration Object with the arguments applied.
  */
 + (instancetype)configurationWithBundleID:(NSString *)bundleID bundleName:(nullable NSString *)bundleName arguments:(NSArray<NSString *> *)arguments environment:(NSDictionary<NSString *, NSString *> *)environment waitForDebugger:(BOOL)waitForDebugger output:(FBProcessOutputConfiguration *)output;
 

@@ -45,7 +45,7 @@ typedef NS_OPTIONS(NSUInteger, FBSimulatorAllocationOptions){
 
  @param set the FBSimulatorSet to Manage.
  @param logger the logger to use to verbosely describe what is going on. May be nil.
- @returns a new FBSimulatorPool.
+ @return a new FBSimulatorPool.
  */
 + (instancetype)poolWithSet:(FBSimulatorSet *)set logger:(id<FBControlCoreLogger>)logger;
 

@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param name the name of the application
  @param path the path of the application
  @param bundleID the bundle id of the application
- @returns a FBApplicationBundle instance.
+ @return a FBApplicationBundle instance.
  */
 + (instancetype)applicationWithName:(NSString *)name path:(NSString *)path bundleID:(NSString *)bundleID;
 
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param path the path of the applocation to construct.
  @param error an error out.
- @returns a FBApplicationBundle instance if one could be constructed, nil otherwise.
+ @return a FBApplicationBundle instance if one could be constructed, nil otherwise.
  */
 + (nullable instancetype)applicationWithPath:(NSString *)path error:(NSError **)error;
 

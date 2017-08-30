@@ -24,7 +24,7 @@
  @param applicationPath path to tested application (.app)
  @param applicationDataPath path to application data bundle (.xcappdata)
  @param testLaunchConfiguration configuration used to launch test
- @returns Prepared FBLocalDeviceTestRunStrategy
+ @return Prepared FBLocalDeviceTestRunStrategy
  */
 + (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
                         applicationDataPath:(NSString *)applicationDataPath
@@ -37,7 +37,7 @@
  @param applicationDataPath path to application data bundle (.xcappdata)
  @param testLaunchConfiguration configuration used to launch test
  @param fileManager file manager used to prepare all bundles
- @returns Prepared FBLocalDeviceTestRunStrategy
+ @return Prepared FBLocalDeviceTestRunStrategy
  */
 + (instancetype)strategyWithApplicationPath:(NSString *)applicationPath
                         applicationDataPath:(NSString *)applicationDataPath
