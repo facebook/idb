@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class FBFuture;
+
 @interface FBRunLoopSpinner : NSObject
 
 /**
@@ -100,6 +102,16 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES if the group completed before the timeout, NO otherwise.
  */
 - (BOOL)spinRunLoopWithTimeout:(NSTimeInterval)timeout notifiedBy:(dispatch_group_t)group onQueue:(dispatch_queue_t)queue;
+
+/**
+ Spins the Run Loop until the future resolves, or times out.
+
+ @param future the future to resolve.
+ @param timeout the Timeout in Seconds.
+ @param error an error out for any future error, or timeout.
+ @return the Future result if successful, NO otherwise.
+ */
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 @end
 

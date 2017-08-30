@@ -12,6 +12,7 @@
 #import <libkern/OSAtomic.h>
 #import <objc/runtime.h>
 
+#import "FBFuture.h"
 #import "FBControlCoreError.h"
 
 @interface FBRunLoopSpinner ()
@@ -136,6 +137,25 @@
   return [self spinRunLoopWithTimeout:timeout untilTrue:^ BOOL {
     return didFinish == 1;
   }];
+}
+
+- (nullable id)awaitCompletionOfFuture:(FBFuture *)future timeout:(NSTimeInterval)timeout error:(NSError **)error
+{
+  BOOL completed = [self spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
+    return future.hasCompleted;
+  }];
+  if (!completed) {
+    return [[FBControlCoreError
+      describeFormat:@"Timed out waiting for future %@ in %f seconds", future, timeout]
+      fail:error];
+  }
+  if (future.error) {
+    if (error) {
+      *error = future.error;
+    }
+    return nil;
+  }
+  return future.result;
 }
 
 @end
