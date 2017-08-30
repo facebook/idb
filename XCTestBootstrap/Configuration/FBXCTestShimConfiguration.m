@@ -87,7 +87,7 @@ static NSString *const ConfirmShimsAreSignedEnv = @"FBXCTEST_CONFIRM_SIGNED_SHIM
   }
 
   // Otherwise, attempt to use the bundled shims
-  NSString *bundlePath = [[NSBundle bundleForClass:self].bundlePath stringByAppendingPathComponent:@"Resources"];
+  NSString *bundlePath = [NSBundle bundleForClass:self].resourcePath;
   return [self confirmExistenceOfRequiredShimsInDirectory:bundlePath error:error];
 }
 

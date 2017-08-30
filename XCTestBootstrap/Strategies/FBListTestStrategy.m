@@ -96,6 +96,7 @@
   NSString *xctestPath = self.configuration.destination.xctestPath;
   NSString *otestQueryPath = self.executor.queryShimPath;
   NSString *otestQueryOutputPath = [self.configuration.workingDirectory stringByAppendingPathComponent:@"query-output-pipe"];
+  [NSFileManager.defaultManager removeItemAtPath:otestQueryOutputPath error:nil];
 
   if (mkfifo([otestQueryOutputPath UTF8String], S_IWUSR | S_IRUSR) != 0) {
     NSError *posixError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
