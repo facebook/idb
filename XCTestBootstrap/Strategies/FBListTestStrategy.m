@@ -146,11 +146,8 @@
       fail:error];
   }
 
-  NSString *output = [[NSString alloc] initWithData:consumer.data encoding:NSUTF8StringEncoding];
-  NSArray<NSString *> *lines = [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
   NSMutableArray<NSString *> *testNames = [NSMutableArray array];
-
-  for (NSString *line in lines) {
+  for (NSString *line in consumer.lines) {
     if (line.length == 0) {
       // Ignore empty lines
       continue;

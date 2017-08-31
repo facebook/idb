@@ -196,6 +196,12 @@
   }
 }
 
+- (NSArray<NSString *> *)lines
+{
+  NSString *output = [[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding];
+  return [output componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet];
+}
+
 @end
 
 @interface FBCompositeFileConsumer ()

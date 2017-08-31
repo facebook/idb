@@ -119,6 +119,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (atomic, copy, readonly) NSData *data;
 
+/**
+ Obtains a copy of the current output data.
+ */
+@property (atomic, copy, readonly) NSArray<NSString *> *lines;
+
 @end
 
 /**
