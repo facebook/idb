@@ -54,6 +54,8 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  */
 @interface FBBatchLogSearch : NSObject <NSCopying, FBJSONSerializable, FBJSONDeserializable>
 
+#pragma mark Initializers
+
 /**
  Constructs a Batch Log Search for the provided mapping of log names to predicates.
  The provided mapping is an NSDictionary where:
@@ -65,7 +67,9 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  @param error an error out for any error in the mapping format.
  @return an FBBatchLogSearch instance if the mapping is valid, nil otherwise.
  */
-+ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error;
++ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error;
+
+#pragma mark Public Methods
 
 /**
  Runs the Reciever over an array of Diagnostics.
@@ -84,6 +88,19 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  @return a NSDictionary specified by -[FBBatchLogSearchResult mapping].
  */
 + (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options;
+
+#pragma mark Properties
+
+/**
+ The Search Mapping.
+ Described in the Initializer.
+ */
+@property (nonatomic, copy, readonly) NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *mapping;
+
+/**
+ Options for the Search.
+ */
+@property (nonatomic, assign, readonly) FBBatchLogSearchOptions options;
 
 @end
 

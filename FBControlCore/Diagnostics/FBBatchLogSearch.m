@@ -92,13 +92,6 @@
 
 @end
 
-@interface FBBatchLogSearch ()
-
-@property (nonatomic, copy, readonly) NSDictionary *mapping;
-@property (nonatomic, assign, readonly) FBBatchLogSearchOptions options;
-
-@end
-
 @implementation FBBatchLogSearch
 
 static NSString *const KeyLines = @"lines";
@@ -107,7 +100,7 @@ static NSString *const KeyMapping = @"mapping";
 
 #pragma mark Initializers
 
-+ (instancetype)withMapping:(NSDictionary<NSArray<FBDiagnosticName> *, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error
++ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:mapping keyClass:NSString.class valueClass:NSArray.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary<string, string>", mapping] fail:error];
@@ -188,13 +181,13 @@ static NSString *const KeyMapping = @"mapping";
 
     predicateMapping[key] = [predicates copy];
   }
-  return [self withMapping:[predicateMapping copy] options:options error:error];
+  return [self searchWithMapping:[predicateMapping copy] options:options error:error];
 }
 
 - (id)jsonSerializableRepresentation
 {
   NSMutableDictionary *mappingDictionary = [NSMutableDictionary dictionary];
-  for (NSArray *key in self.mapping) {
+  for (FBDiagnosticName key in self.mapping) {
     mappingDictionary[key] = [self.mapping[key] valueForKey:@"jsonSerializableRepresentation"];
   }
   BOOL lines = self.options & FBBatchLogSearchOptionsFullLines;
@@ -292,9 +285,12 @@ static NSString *const KeyMapping = @"mapping";
   return result;
 }
 
-+ (NSDictionary *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options
++ (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options
 {
-  return [[[self withMapping:@{@[] : @[predicate]} options:options error:nil] search:diagnostics] mapping];
+  return [[[self
+    searchWithMapping:@{@"" : @[predicate]} options:options error:nil]
+    search:diagnostics]
+    mapping];
 }
 
 + (NSArray<NSString *> *)search:(FBDiagnosticLogSearch *)search withOptions:(FBBatchLogSearchOptions)options
