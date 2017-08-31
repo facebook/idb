@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  An implementation of FBXCTestCommands, for Devices.
  */
-@interface FBDeviceXCTestCommands : NSObject <FBXCTestCommands>
+@interface FBDeviceXCTestCommands : NSObject <FBXCTestCommands, FBiOSTargetCommand>
 
 @end
 
