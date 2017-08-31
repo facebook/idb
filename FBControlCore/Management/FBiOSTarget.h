@@ -138,8 +138,16 @@ extern FBSimulatorStateString const FBSimulatorStateStringUnknown;
 
 /**
  The Queue to serialize work on.
+ This is a serial queue that should act as a lock for other tasks that will mutate the state of the target.
+ Mutually Exclusive operations should use this queue.
  */
 @property (nonatomic, strong, readonly) dispatch_queue_t workQueue;
+
+/**
+ A queue for independent operations to execute on.
+ Examples of these operations are transforming an immutable data structure.
+ */
+@property (nonatomic, strong, readonly) dispatch_queue_t asyncQueue;
 
 /**
  A Comparison Method for `sortedArrayUsingSelector:`
