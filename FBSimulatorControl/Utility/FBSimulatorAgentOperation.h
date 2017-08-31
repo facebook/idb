@@ -45,6 +45,12 @@ extern FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent;
 @property (nonatomic, copy, readonly) FBAgentLaunchConfiguration *configuration;
 
 /**
+ A future represnetation of this operation.
+ The value of the future is the stat_loc value.
+ */
+@property (nonatomic, strong, readonly) FBFuture<NSNumber *> *future;
+
+/**
  The stdout File Handle.
  */
 @property (nonatomic, strong, nullable, readonly) FBProcessOutput *stdOut;
