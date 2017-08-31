@@ -13,6 +13,8 @@
 #import "FBDiagnosticQuery.h"
 
 FBDiagnosticName const FBDiagnosticNameVideo = @"video";
+FBDiagnosticName const FBDiagnosticNameSyslog = @"system_log";
+FBDiagnosticName const FBDiagnosticNameScreenshot = @"screenshot";
 
 @interface FBDiagnosticQuery (FBiOSTargetDiagnostics)
 

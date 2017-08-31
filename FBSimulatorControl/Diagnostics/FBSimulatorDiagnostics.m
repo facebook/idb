@@ -17,10 +17,8 @@
 #import "FBSimulator.h"
 #import "FBProcessLaunchConfiguration+Simulator.h"
 
-NSString *const FBDiagnosticNameSyslog = @"system_log";
-NSString *const FBDiagnosticNameCoreSimulator = @"coresimulator";
-NSString *const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap";
-NSString *const FBDiagnosticNameScreenshot = @"screenshot";
+FBDiagnosticName const FBDiagnosticNameCoreSimulator = @"coresimulator";
+FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap = @"launchd_bootstrap";
 
 @interface FBDiagnosticQuery (Simulators)
 

@@ -20,11 +20,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- The Name of the Syslog.
- */
-extern FBDiagnosticName const FBDiagnosticNameSyslog;
-
-/**
  The Name of the Core Simulator Log.
  */
 extern FBDiagnosticName const FBDiagnosticNameCoreSimulator;
@@ -33,11 +28,6 @@ extern FBDiagnosticName const FBDiagnosticNameCoreSimulator;
  The Name of the Simulator Bootstrap.
  */
 extern FBDiagnosticName const FBDiagnosticNameSimulatorBootstrap;
-
-/**
- The Name of the Screenshot Log.
- */
-extern FBDiagnosticName const FBDiagnosticNameScreenshot;
 
 /**
  Exposes Simulator Logs & Diagnsotics as FBDiagnostic instances.
