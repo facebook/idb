@@ -182,7 +182,7 @@ static NSString *const KeyRegex = @"regex";
 
 + (instancetype)inflateFromJSON:(NSDictionary<NSString *, id> *)json error:(NSError **)error
 {
-  if (![FBCollectionInformation isArrayHeterogeneous:json.allKeys withClass:NSString.class]) {
+  if (![FBCollectionInformation isDictionaryHeterogeneous:json keyClass:NSString.class valueClass:NSObject.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not a dictionary<string, id>", json] fail:error];
   }
 
