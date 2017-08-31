@@ -29,6 +29,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable id<FBTerminationHandle>)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer error:(NSError **)error;
 
+/**
+ Runs the log command, returning the results as an array of strings.
+
+ @param arguments the arguments to the log command.
+ @return a Future wrapping the log lines.
+ */
+- (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments;
+
 @end
 
 NS_ASSUME_NONNULL_END

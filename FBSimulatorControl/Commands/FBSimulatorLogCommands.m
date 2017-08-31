@@ -47,6 +47,31 @@
 
 - (nullable id<FBTerminationHandle>)tailLog:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
 {
+  return [self runLogCommand:[@[@"stream"] arrayByAddingObjectsFromArray:arguments] consumer:consumer error:error];
+}
+
+- (FBFuture<NSArray<NSString *> *> *)logLinesWithArguments:(NSArray<NSString *> *)arguments
+{
+  NSError *error = nil;
+  FBAccumilatingFileConsumer *consumer = FBAccumilatingFileConsumer.new;
+  FBSimulatorAgentOperation *operation = [self runLogCommand:arguments consumer:consumer error:&error];
+  if (!operation) {
+    return [FBFuture futureWithError:error];
+  }
+  return [operation.future onQueue:self.simulator.asyncQueue map:^NSArray<NSString *> *(NSNumber *_) {
+    // Slice off the head of the output, this is the header.
+    NSArray<NSString *> *lines = consumer.lines;
+    if (lines.count < 2) {
+      return @[];
+    }
+    return [lines subarrayWithRange:NSMakeRange(1, lines.count - 1)];
+  }];
+}
+
+#pragma mark Private
+
+- (nullable FBSimulatorAgentOperation *)runLogCommand:(NSArray<NSString *> *)arguments consumer:(id<FBFileConsumer>)consumer error:(NSError **)error
+{
   FBBinaryDescriptor *binary = [self logBinaryDescriptorWithError:error];
   if (!binary) {
     return nil;
@@ -61,7 +86,7 @@
 
   FBAgentLaunchConfiguration *configuration = [FBAgentLaunchConfiguration
     configurationWithBinary:binary
-    arguments:[@[@"stream"] arrayByAddingObjectsFromArray:arguments]
+    arguments:arguments
     environment:@{}
     output:output];
 
@@ -69,8 +94,6 @@
     strategyWithSimulator:self.simulator]
     launchAgent:configuration error:error];
 }
-
-#pragma mark Private
 
 - (FBBinaryDescriptor *)logBinaryDescriptorWithError:(NSError **)error
 {
