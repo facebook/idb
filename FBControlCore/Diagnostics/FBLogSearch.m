@@ -199,6 +199,24 @@ static NSString *const KeyRegex = @"regex";
   return [[FBControlCoreError describeFormat:@"%@ does not contain a valid predicate", json] fail:error];
 }
 
+#pragma mark Helpers
+
++ (nullable NSString *)logAgumentsFromPredicates:(NSArray<FBLogSearchPredicate *> *)predicates error:(NSError **)error
+{
+  NSMutableArray<NSString *> *tokens = [NSMutableArray array];
+  for (FBLogSearchPredicate_Substrings *predicate in predicates) {
+    if (![predicate isKindOfClass:FBLogSearchPredicate_Substrings.class]) {
+      return [[FBControlCoreError
+        describeFormat:@"Could not compile %@ as a log(1) predicate", predicate]
+        fail:error];
+    }
+    for (NSString *substring in predicate.substrings) {
+      [tokens addObject:[NSString stringWithFormat:@"eventMessage contains '%@'", substring]];
+    }
+  }
+  return [tokens componentsJoinedByString:@" || "];
+}
+
 #pragma mark Public API
 
 - (NSString *)match:(NSString *)line

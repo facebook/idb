@@ -100,6 +100,18 @@
   XCTAssertNil(searcher.firstMatchingLine);
 }
 
+- (void)testCompilesSubstringMatchingArgumentsForLogCommand
+{
+  NSArray<FBLogSearchPredicate *> *predicates = @[
+    [FBLogSearchPredicate substrings:@[@"foo", @"bar"]],
+    [FBLogSearchPredicate substrings:@[@"baz"]],
+  ];
+  NSError *error = nil;
+  NSString *string = [FBLogSearchPredicate logAgumentsFromPredicates:predicates error:&error];
+  XCTAssertNil(error);
+  XCTAssertEqualObjects(string, @"eventMessage contains 'foo' || eventMessage contains 'bar' || eventMessage contains 'baz'");
+}
+
 @end
 
 @interface FBBatchLogSearcherTests : FBControlCoreValueTestCase
