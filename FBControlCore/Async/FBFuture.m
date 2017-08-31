@@ -161,6 +161,16 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return self;
 }
 
+- (instancetype)notifyOfCancellationOnQueue:(dispatch_queue_t)queue handler:(void (^)(FBFuture *))handler
+{
+  return [self notifyOfCompletionOnQueue:queue handler:^(FBFuture *future) {
+    if (future.state != FBFutureStateCompletedWithCancellation) {
+      return;
+    }
+    handler(future);
+  }];
+}
+
 - (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(id result))chain
 {
   FBMutableFuture *chained = FBMutableFuture.future;
