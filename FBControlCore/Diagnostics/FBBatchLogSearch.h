@@ -64,10 +64,11 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
 
  @param mapping the mapping to search with.
  @param options the options to search with.
+ @param since the date to search from. If nil then the log will be searched from the beginning.
  @param error an error out for any error in the mapping format.
  @return an FBBatchLogSearch instance if the mapping is valid, nil otherwise.
  */
-+ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error;
++ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options since:(nullable NSDate *)since error:(NSError **)error;
 
 #pragma mark Public Methods
 
@@ -101,6 +102,11 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  Options for the Search.
  */
 @property (nonatomic, assign, readonly) FBBatchLogSearchOptions options;
+
+/**
+ The start date to search from
+ */
+@property (nonatomic, strong, nullable, readonly) NSDate *since;
 
 @end
 

@@ -162,14 +162,15 @@
 - (NSArray *)batches
 {
   return @[
-    [FBBatchLogSearch searchWithMapping:self.complexMapping options:FBBatchLogSearchOptionsFirstMatch error:nil],
-    [FBBatchLogSearch searchWithMapping:self.complexMapping options:FBBatchLogSearchOptionsFullLines error:nil],
-    [FBBatchLogSearch searchWithMapping:self.complexMapping options:(FBBatchLogSearchOptionsFirstMatch |FBBatchLogSearchOptionsFullLines) error:nil],
-    [FBBatchLogSearch searchWithMapping:self.complexMapping options:0 error:nil],
-    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFirstMatch error:nil],
-    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFullLines error:nil],
-    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:(FBBatchLogSearchOptionsFirstMatch |FBBatchLogSearchOptionsFullLines) error:nil],
-    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:0 error:nil],
+    [FBBatchLogSearch searchWithMapping:self.complexMapping options:FBBatchLogSearchOptionsFirstMatch since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.complexMapping options:FBBatchLogSearchOptionsFullLines since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.complexMapping options:(FBBatchLogSearchOptionsFirstMatch |FBBatchLogSearchOptionsFullLines) since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.complexMapping options:0 since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFirstMatch since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFullLines since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:(FBBatchLogSearchOptionsFirstMatch |FBBatchLogSearchOptionsFullLines) since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:0 since:nil error:nil],
+    [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:0 since:[NSDate dateWithTimeIntervalSince1970:1231] error:nil],
   ];
 }
 
@@ -193,7 +194,7 @@
 
 - (void)testBatchSearchFindsLinesAcrossMultipleDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:FBBatchLogSearchOptionsFullLines error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:FBBatchLogSearchOptionsFullLines since:nil error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 99u);
@@ -207,7 +208,7 @@
 
 - (void)testBatchSearchFindsFirstLineAcrossMultipleDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:(FBBatchLogSearchOptionsFirstMatch | FBBatchLogSearchOptionsFullLines) error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:(FBBatchLogSearchOptionsFirstMatch | FBBatchLogSearchOptionsFullLines) since:nil error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 3u);
@@ -219,7 +220,7 @@
 
 - (void)testBatchSearchFindsExtractsAcrossMultipleDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:0 error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:0 since:nil error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 99u);
@@ -233,7 +234,7 @@
 
 - (void)testSearchAllFindsAcrossAllDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFullLines error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFullLines since:nil error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 100u);
@@ -243,7 +244,7 @@
 
 - (void)testSearchAllFindsFirstAcrossAllDiagnostics
 {
-  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFirstMatch error:nil];
+  FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFirstMatch since:nil error:nil];
   NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 4u);

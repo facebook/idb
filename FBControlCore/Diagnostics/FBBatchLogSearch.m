@@ -10,6 +10,7 @@
 #import "FBBatchLogSearch.h"
 
 #import "FBCollectionInformation.h"
+#import "FBCollectionOperations.h"
 #import "FBConcurrentCollectionOperations.h"
 #import "FBControlCoreError.h"
 #import "FBDiagnostic.h"
@@ -97,10 +98,11 @@
 static NSString *const KeyLines = @"lines";
 static NSString *const KeyFirst = @"first";
 static NSString *const KeyMapping = @"mapping";
+static NSString *const KeySince = @"since";
 
 #pragma mark Initializers
 
-+ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options error:(NSError **)error
++ (instancetype)searchWithMapping:(NSDictionary<FBDiagnosticName, NSArray<FBLogSearchPredicate *> *> *)mapping options:(FBBatchLogSearchOptions)options since:(nullable NSDate *)since error:(NSError **)error
 {
   if (![FBCollectionInformation isDictionaryHeterogeneous:mapping keyClass:NSString.class valueClass:NSArray.class]) {
     return [[FBControlCoreError describeFormat:@"%@ is not an dictionary<string, string>", mapping] fail:error];
@@ -111,10 +113,10 @@ static NSString *const KeyMapping = @"mapping";
       return [[FBControlCoreError describeFormat:@"%@ value is not an array of log search predicates", value] fail:error];
     }
   }
-  return [[FBBatchLogSearch alloc] initWithMapping:mapping options:options];
+  return [[FBBatchLogSearch alloc] initWithMapping:mapping options:options since:since];
 }
 
-- (instancetype)initWithMapping:(NSDictionary *)mapping options:(FBBatchLogSearchOptions)options
+- (instancetype)initWithMapping:(NSDictionary *)mapping options:(FBBatchLogSearchOptions)options since:(nullable NSDate *)since
 {
   self = [super init];
   if (!self) {
@@ -123,6 +125,7 @@ static NSString *const KeyMapping = @"mapping";
 
   _mapping = mapping;
   _options = options;
+  _since = since;
 
   return self;
 }
@@ -160,6 +163,13 @@ static NSString *const KeyMapping = @"mapping";
   if (first.boolValue) {
     options = options | FBBatchLogSearchOptionsFirstMatch;
   }
+  NSNumber *sinceTimestamp = [FBCollectionOperations nullableValueForDictionary:json key:KeySince] ?: nil;
+  if (sinceTimestamp && ![sinceTimestamp isKindOfClass:NSNumber.class]) {
+    return [[FBControlCoreError
+      describeFormat:@"%@ is not a timestamp for '%@'", sinceTimestamp, KeySince]
+      fail:error];
+  }
+  NSDate *since = sinceTimestamp ? [NSDate dateWithTimeIntervalSince1970:sinceTimestamp.doubleValue] : nil;
 
   NSDictionary<NSString *, NSArray *> *jsonMapping = json[KeyMapping];
   if (![FBCollectionInformation isDictionaryHeterogeneous:jsonMapping keyClass:NSString.class valueClass:NSArray.class]) {
@@ -181,7 +191,7 @@ static NSString *const KeyMapping = @"mapping";
 
     predicateMapping[key] = [predicates copy];
   }
-  return [self searchWithMapping:[predicateMapping copy] options:options error:error];
+  return [self searchWithMapping:[predicateMapping copy] options:options since:since error:error];
 }
 
 - (id)jsonSerializableRepresentation
@@ -196,6 +206,7 @@ static NSString *const KeyMapping = @"mapping";
     KeyLines: @(lines),
     KeyFirst: @(first),
     KeyMapping: [mappingDictionary copy],
+    KeySince: self.since ? @(self.since.timeIntervalSince1970) : NSNull.null,
   };
 }
 
@@ -207,12 +218,14 @@ static NSString *const KeyMapping = @"mapping";
     return NO;
   }
 
-  return self.options == object.options && [self.mapping isEqualToDictionary:object.mapping];
+  return self.options == object.options &&
+         [self.mapping isEqualToDictionary:object.mapping] &&
+         (self.since == object.since || [self.since isEqualToDate:object.since]);
 }
 
 - (NSUInteger)hash
 {
-  return (NSUInteger) self.options ^ self.mapping.hash;
+  return (NSUInteger) self.options ^ self.mapping.hash ^ self.since.hash;
 }
 
 - (NSString *)description
@@ -288,7 +301,7 @@ static NSString *const KeyMapping = @"mapping";
 + (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options
 {
   return [[[self
-    searchWithMapping:@{@"" : @[predicate]} options:options error:nil]
+    searchWithMapping:@{@"" : @[predicate]} options:options since:nil error:nil]
     search:diagnostics]
     mapping];
 }
