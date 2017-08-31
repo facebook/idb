@@ -185,7 +185,7 @@
 - (void)testValueSemanticsOfResult
 {
   for (FBBatchLogSearch *batch in self.batches) {
-    FBBatchLogSearchResult *result = [batch search:self.diagnostics];
+    FBBatchLogSearchResult *result = [batch searchDiagnostics:self.diagnostics];
     [self assertEqualityOfCopy:@[result]];
     [self assertJSONSerialization:@[result]];
     [self assertJSONDeserialization:@[result]];
@@ -195,7 +195,7 @@
 - (void)testBatchSearchFindsLinesAcrossMultipleDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:FBBatchLogSearchOptionsFullLines since:nil error:nil];
-  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
+  NSDictionary *results = [[batchSearch searchDiagnostics:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 99u);
   XCTAssertEqual([results[@"tree"] count], 1u);
@@ -209,7 +209,7 @@
 - (void)testBatchSearchFindsFirstLineAcrossMultipleDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:(FBBatchLogSearchOptionsFirstMatch | FBBatchLogSearchOptionsFullLines) since:nil error:nil];
-  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
+  NSDictionary *results = [[batchSearch searchDiagnostics:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 3u);
   XCTAssertEqual([results[@"tree"] count], 1u);
@@ -221,7 +221,7 @@
 - (void)testBatchSearchFindsExtractsAcrossMultipleDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.complexMapping options:0 since:nil error:nil];
-  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
+  NSDictionary *results = [[batchSearch searchDiagnostics:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 99u);
   XCTAssertEqual([results[@"tree"] count], 1u);
@@ -235,7 +235,7 @@
 - (void)testSearchAllFindsAcrossAllDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFullLines since:nil error:nil];
-  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
+  NSDictionary *results = [[batchSearch searchDiagnostics:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 100u);
   XCTAssertEqual([results[@"tree"] count], 1u);
@@ -245,7 +245,7 @@
 - (void)testSearchAllFindsFirstAcrossAllDiagnostics
 {
   FBBatchLogSearch *batchSearch = [FBBatchLogSearch searchWithMapping:self.searchAllMapping options:FBBatchLogSearchOptionsFirstMatch since:nil error:nil];
-  NSDictionary *results = [[batchSearch search:self.diagnostics] mapping];
+  NSDictionary *results = [[batchSearch searchDiagnostics:self.diagnostics] mapping];
   XCTAssertNotNil(results);
   XCTAssertEqual([results[@"simulator_system"] count], 4u);
   XCTAssertEqual([results[@"tree"] count], 1u);

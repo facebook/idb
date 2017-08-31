@@ -10,12 +10,15 @@
 #import <Foundation/Foundation.h>
 
 #import <FBControlCore/FBDiagnostic.h>
+#import <FBControlCore/FBFuture.h>
 #import <FBControlCore/FBJSONConversion.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @class FBDiagnostic;
 @class FBLogSearchPredicate;
 
-NS_ASSUME_NONNULL_BEGIN
+@protocol FBiOSTarget;
 
 /**
  Options for the Log Search.
@@ -78,7 +81,15 @@ typedef NS_OPTIONS(NSUInteger, FBBatchLogSearchOptions) {
  @param diagnostics an NSArray of FBDiagnostics to search.
  @return a search result
  */
-- (FBBatchLogSearchResult *)search:(NSArray<FBDiagnostic *> *)diagnostics;
+- (FBBatchLogSearchResult *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics;
+
+/**
+ Runs the Reciever over an iOS Target.
+
+ @param target the target to search.
+ @return a search result, wrapped in a future.
+ */
+- (FBFuture<FBBatchLogSearchResult *> *)searchOnTarget:(id<FBiOSTarget>)target;
 
 /**
  Convenience method for searching an array of diagnostics with a single predicate.

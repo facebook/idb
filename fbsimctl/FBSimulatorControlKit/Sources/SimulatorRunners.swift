@@ -104,8 +104,6 @@ struct SimulatorActionRunner : Runner {
       return iOSTargetRunner.simple(reporter, .relaunch, ControlCoreSubject(appLaunch)) {
         try simulator.launchOrRelaunchApplication(appLaunch)
       }
-    case .search(let search):
-      return SearchRunner(reporter, search)
     case .serviceInfo(let identifier):
       return ServiceInfoRunner(reporter: reporter, identifier: identifier)
     case .shutdown:
@@ -125,24 +123,6 @@ struct SimulatorActionRunner : Runner {
     default:
       return CommandResultRunner.unimplementedActionRunner(action, target: simulator, format: context.format)
     }
-  }
-}
-
-private struct SearchRunner : Runner {
-  let reporter: SimulatorReporter
-  let search: FBBatchLogSearch
-
-  init(_ reporter: SimulatorReporter, _ search: FBBatchLogSearch) {
-    self.reporter = reporter
-    self.search = search
-  }
-
-  func run() -> CommandResult {
-    let simulator = self.reporter.simulator
-    let diagnostics = simulator.diagnostics.allDiagnostics()
-    let results = search.search(diagnostics)
-    self.reporter.report(.search, .discrete, ControlCoreSubject(results))
-    return .success(nil)
   }
 }
 

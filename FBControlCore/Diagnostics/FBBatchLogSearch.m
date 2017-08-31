@@ -16,6 +16,8 @@
 #import "FBDiagnostic.h"
 #import "NSPredicate+FBControlCore.h"
 #import "FBLogSearch.h"
+#import "FBiOSTarget.h"
+#import "FBiOSTargetDiagnostics.h"
 
 @implementation FBBatchLogSearchResult
 
@@ -238,7 +240,7 @@ static NSString *const KeySince = @"since";
 
 #pragma mark Public API
 
-- (FBBatchLogSearchResult *)search:(NSArray<FBDiagnostic *> *)diagnostics
+- (FBBatchLogSearchResult *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics
 {
   NSParameterAssert([FBCollectionInformation isArrayHeterogeneous:diagnostics withClass:FBDiagnostic.class]);
 
@@ -298,13 +300,20 @@ static NSString *const KeySince = @"since";
   return result;
 }
 
+- (FBFuture<FBBatchLogSearchResult *> *)searchOnTarget:(id<FBiOSTarget>)target
+{
+  return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+}
+
 + (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options
 {
   return [[[self
     searchWithMapping:@{@"" : @[predicate]} options:options since:nil error:nil]
-    search:diagnostics]
+    searchDiagnostics:diagnostics]
     mapping];
 }
+
+#pragma mark Private
 
 + (NSArray<NSString *> *)search:(FBDiagnosticLogSearch *)search withOptions:(FBBatchLogSearchOptions)options
 {
