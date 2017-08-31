@@ -94,7 +94,16 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
  @param chain the chaining handler.
  @return a chained future
  */
-- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(id result))chain;
+- (FBFuture *)onQueue:(dispatch_queue_t)queue chain:(FBFuture * (^)(T result))chain;
+
+/**
+ Map a future's result to a new value
+
+ @param queue the queue to map on.
+ @param map the mapping block.
+ @return a mapped future
+ */
+- (FBFuture *)onQueue:(dispatch_queue_t)queue map:(id (^)(T result))map;
 
 #pragma mark Properties
 

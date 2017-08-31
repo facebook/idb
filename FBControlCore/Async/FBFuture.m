@@ -180,6 +180,14 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return chained;
 }
 
+- (FBFuture *)onQueue:(dispatch_queue_t)queue map:(nonnull id (^)(id result))map
+{
+  return [self onQueue:queue chain:^FBFuture *(id result) {
+    id next = map(result);
+    return [FBFuture futureWithResult:next];
+  }];
+}
+
 - (BOOL)hasCompleted
 {
   FBFutureState state = self.state;
