@@ -18,6 +18,8 @@
 #import "FBLogSearch.h"
 #import "FBiOSTarget.h"
 #import "FBiOSTargetDiagnostics.h"
+#import "FBLogCommands.h"
+#import "FBRunLoopSpinner.h"
 
 @implementation FBBatchLogSearchResult
 
@@ -302,7 +304,25 @@ static NSString *const KeySince = @"since";
 
 - (FBFuture<FBBatchLogSearchResult *> *)searchOnTarget:(id<FBiOSTarget>)target
 {
-  return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  // We can perform a special search using the log commands, if the search is relevant.
+  id<FBLogCommands> log = (id<FBLogCommands>) target;
+  if (![log conformsToProtocol:@protocol(FBLogCommands)]) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  if (![self.mapping.allKeys isEqualToArray:@[FBDiagnosticNameSyslog]]) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  NSArray<NSString *> *arguments = [self.class argumentsForLogCommand:self.mapping[FBDiagnosticNameSyslog] since:self.since error:nil];
+  if (!arguments) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  return [[log
+    logLinesWithArguments:arguments]
+    onQueue:target.asyncQueue map:^(NSArray<NSString *> *lines) {
+      return [[FBBatchLogSearchResult alloc] initWithMapping:@{
+         FBDiagnosticNameSyslog: lines,
+      }];
+    }];
 }
 
 + (NSDictionary<FBDiagnosticName, NSArray<NSString *> *> *)searchDiagnostics:(NSArray<FBDiagnostic *> *)diagnostics withPredicate:(FBLogSearchPredicate *)predicate options:(FBBatchLogSearchOptions)options
@@ -315,6 +335,17 @@ static NSString *const KeySince = @"since";
 
 #pragma mark Private
 
++ (NSDateFormatter *)logCommandDateFormatter
+{
+  static dispatch_once_t onceToken;
+  static NSDateFormatter *dateFormatter;
+  dispatch_once(&onceToken, ^{
+    dateFormatter = [[NSDateFormatter alloc] init];
+    dateFormatter.dateFormat = @"YYYY-MM-DD HH:MM:SS";
+  });
+  return dateFormatter;
+}
+
 + (NSArray<NSString *> *)search:(FBDiagnosticLogSearch *)search withOptions:(FBBatchLogSearchOptions)options
 {
   BOOL lines = options & FBBatchLogSearchOptionsFullLines;
@@ -325,6 +356,24 @@ static NSString *const KeySince = @"since";
   } else {
     return lines ? search.matchingLines : search.allMatches;
   }
+}
+
++ (NSArray<NSString *> *)argumentsForLogCommand:(NSArray<FBLogSearchPredicate *> *)predicates since:(nullable NSDate *)since error:(NSError **)error
+{
+  NSString *compiled = [FBLogSearchPredicate logAgumentsFromPredicates:predicates error:error];
+  if (!compiled) {
+    return nil;
+  }
+  NSMutableArray<NSString *> *arguments = [NSMutableArray arrayWithObject:@"show"];
+  if (since) {
+    [arguments addObjectsFromArray:@[
+       @"--start", [FBBatchLogSearch.logCommandDateFormatter stringFromDate:since],
+    ]];
+  }
+  [arguments addObjectsFromArray:@[
+     @"--predicate", compiled,
+  ]];
+  return arguments;
 }
 
 @end
