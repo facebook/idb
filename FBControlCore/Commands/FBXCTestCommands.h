@@ -14,6 +14,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol FBTestManagerTestReporter;
+
 /**
  The Termination Handle Type.
  */
@@ -42,6 +44,17 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
  @return a Test Operation if successful, nil otherwise.
  */
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error;
+
+/**
+ Bootstraps a test run using a Test Launch Configuration.
+ It will use the iOS Targets's auxillaryDirectory as a working directory.
+
+ @param testLaunchConfiguration the configuration used for the test launch.
+ @param error an error out for any error that occurs.
+ @param reporter unused
+ @return a Test Operation if successful, nil otherwise.
+ */
+- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error;
 
 /**
  Calling -[FBXCTestCommands startTestWithLaunchConfiguration:error:] will start the execution of the test run.

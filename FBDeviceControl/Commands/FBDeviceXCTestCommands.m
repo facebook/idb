@@ -82,6 +82,11 @@
   return _operation;
 }
 
+- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error
+{
+  return [self startTestWithLaunchConfiguration:testLaunchConfiguration error:error];
+}
+
 - (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   if (!self.operation) {
