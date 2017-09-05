@@ -105,11 +105,12 @@
   NSArray<FBLogSearchPredicate *> *predicates = @[
     [FBLogSearchPredicate substrings:@[@"foo", @"bar"]],
     [FBLogSearchPredicate substrings:@[@"baz"]],
+    [FBLogSearchPredicate regex:@"ban(t|s)"],
   ];
   NSError *error = nil;
   NSString *string = [FBLogSearchPredicate logAgumentsFromPredicates:predicates error:&error];
   XCTAssertNil(error);
-  XCTAssertEqualObjects(string, @"eventMessage contains 'foo' || eventMessage contains 'bar' || eventMessage contains 'baz'");
+  XCTAssertEqualObjects(string, @"eventMessage contains 'foo' || eventMessage contains 'bar' || eventMessage contains 'baz' || eventMessage MATCHES 'ban(t|s)'");
 }
 
 @end

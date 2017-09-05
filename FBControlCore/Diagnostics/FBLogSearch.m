@@ -204,15 +204,20 @@ static NSString *const KeyRegex = @"regex";
 + (nullable NSString *)logAgumentsFromPredicates:(NSArray<FBLogSearchPredicate *> *)predicates error:(NSError **)error
 {
   NSMutableArray<NSString *> *tokens = [NSMutableArray array];
-  for (FBLogSearchPredicate_Substrings *predicate in predicates) {
-    if (![predicate isKindOfClass:FBLogSearchPredicate_Substrings.class]) {
-      return [[FBControlCoreError
-        describeFormat:@"Could not compile %@ as a log(1) predicate", predicate]
-        fail:error];
+  for (FBLogSearchPredicate *predicate in predicates) {
+    if ([predicate isKindOfClass:FBLogSearchPredicate_Substrings.class]) {
+      for (NSString *substring in ((FBLogSearchPredicate_Substrings *)predicate).substrings) {
+        [tokens addObject:[NSString stringWithFormat:@"eventMessage contains '%@'", substring]];
+      }
+      continue;
     }
-    for (NSString *substring in predicate.substrings) {
-      [tokens addObject:[NSString stringWithFormat:@"eventMessage contains '%@'", substring]];
+    if ([predicate isKindOfClass:FBLogSearchPredicate_Regex.class]) {
+      [tokens addObject:[NSString stringWithFormat:@"eventMessage MATCHES '%@'", ((FBLogSearchPredicate_Regex *) predicate).regularExpression.pattern]];
+      continue;
     }
+    return [[FBControlCoreError
+      describeFormat:@"Could not compile %@ as a log(1) predicate", predicate]
+      fail:error];
   }
   return [tokens componentsJoinedByString:@" || "];
 }
