@@ -40,10 +40,32 @@
   return self;
 }
 
+- (FBInstalledApplication *)installedAppWithBundleID:(NSString *)bundleID
+{
+  NSArray<FBInstalledApplication *> *apps = [self.iosTarget installedApplicationsWithError:nil];
+  if (!apps) {
+    return nil;
+  }
+
+  for (FBInstalledApplication *app in apps) {
+    if ([app.bundle.bundleID isEqualToString:bundleID]) {
+      return app;
+    }
+  }
+
+  return nil;
+}
+
 #pragma mark Public Methods
 
 - (BOOL)launchApplication:(FBApplicationLaunchConfiguration *)configuration atPath:(NSString *)path error:(NSError **)error
 {
+  // Check if path points to installed app
+  FBInstalledApplication *app = [self installedAppWithBundleID:configuration.bundleID];
+  if (app && [app.bundle.path isEqualToString:path]) {
+    return [self.iosTarget launchApplication:configuration error:error];
+  }
+
   if (!path && ![self.iosTarget isApplicationInstalledWithBundleID:configuration.bundleID error:error]) {
     return NO;
   }
