@@ -61,7 +61,7 @@ FBTerminationHandleType const FBTerminationHandleTypeDispatchSource = @"Dispatch
   }
 }
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeDispatchSource;
 }

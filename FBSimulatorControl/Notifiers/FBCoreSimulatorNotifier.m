@@ -62,7 +62,7 @@ FBTerminationHandleType const FBTerminationHandleTypeCoreSimulatorNotifier = @"C
   [self.notifier unregisterNotificationHandler:self.handle error:nil];
 }
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeCoreSimulatorNotifier;
 }

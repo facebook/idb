@@ -240,7 +240,7 @@ extension ListenInterface : EventReporterSubject {
     }
     var handleValue = JSON.null
     if let handle = self.handle {
-      handleValue = JSON.string(type(of: handle).handleType.rawValue)
+      handleValue = JSON.string(handle.handleType.rawValue)
     }
 
     return JSON.dictionary([
@@ -269,7 +269,7 @@ extension ListenInterface : EventReporterSubject {
     }
     description += " stdin: \(self.stdin)"
     if let handle = self.handle {
-      description += " due to \(type(of: handle).handleType.rawValue)"
+      description += " due to \(handle.handleType.rawValue)"
     }
     return description
   }}
@@ -281,7 +281,7 @@ extension ListenInterface : EventReporterSubject {
     guard  let handle = self.handle else {
       return nil
     }
-    return type(of: handle).handleType.listenDescription
+    return handle.handleType.listenDescription
   }}
 
   var isEmptyListen: Bool { get {

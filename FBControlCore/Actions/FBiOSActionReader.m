@@ -303,7 +303,7 @@ FBTerminationHandleType const FBTerminationHandleTypeActionReader = @"action_rea
 
 #pragma mark FBTerminationAwaitable
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeActionReader;
 }

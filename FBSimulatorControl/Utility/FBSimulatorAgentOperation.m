@@ -104,7 +104,7 @@ FBTerminationHandleType const FBTerminationHandleTypeSimulatorAgent = @"agent";
 
 #pragma mark FBTerminationAwaitable
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeSimulatorAgent;
 }

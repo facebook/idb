@@ -62,7 +62,7 @@ FBTerminationHandleType const FBTerminationHandleTypeProcessOutput = @"process_o
 {
 }
 
-+ (FBTerminationHandleType)handleType
+- (FBTerminationHandleType)handleType
 {
   return FBTerminationHandleTypeProcessOutput;
 }

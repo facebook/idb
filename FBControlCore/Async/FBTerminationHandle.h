@@ -9,6 +9,10 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
+@class FBFuture;
+
 /**
  Extensible Diagnostic Name Enumeration.
  */
@@ -27,7 +31,7 @@ typedef NSString *FBTerminationHandleType NS_EXTENSIBLE_STRING_ENUM;
 /**
  The Type of Termination Handle.
  */
-@property (nonatomic, copy, class, readonly) FBTerminationHandleType handleType;
+@property (nonatomic, copy, readonly) FBTerminationHandleType handleType;
 
 @end
 
@@ -42,3 +46,22 @@ typedef NSString *FBTerminationHandleType NS_EXTENSIBLE_STRING_ENUM;
 @property (nonatomic, assign, readonly) BOOL hasTerminated;
 
 @end
+
+/**
+ Bridging existing types.
+ */
+@interface FBTerminationAwaitableFuture : NSObject
+
+/**
+ Bridge a Future to an Awaitable.
+
+ @param future the future to bridge.
+ @param handleType the handle to bridge
+ @param error an error out if an error of the future is present
+ @return a wrapping Termination Awaitable, nil if the future has errored
+ */
++ (nullable id<FBTerminationAwaitable>)awaitableFromFuture:(FBFuture *)future handleType:(FBTerminationHandleType)handleType error:(NSError **)error;
+
+@end
+
+NS_ASSUME_NONNULL_END
