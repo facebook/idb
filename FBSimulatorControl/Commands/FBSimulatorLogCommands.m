@@ -15,6 +15,7 @@
 #import "FBAgentLaunchStrategy.h"
 #import "FBSimulator+Private.h"
 #import "FBSimulatorAgentOperation.h"
+#import "FBSimulatorError.h"
 
 @interface FBSimulatorLogCommands ()
 
@@ -58,13 +59,19 @@
   if (!operation) {
     return [FBFuture futureWithError:error];
   }
-  return [operation.future onQueue:self.simulator.asyncQueue map:^NSArray<NSString *> *(NSNumber *_) {
+  return [operation.future onQueue:self.simulator.asyncQueue chain:^FBFuture<NSArray<NSString *> *> *(NSNumber *statLoc) {
+    // Check the exit code.
+    int value = statLoc.intValue;
+    int exitCode = WEXITSTATUS(value);
+    if (exitCode != 0) {
+      return [FBFuture futureWithError:[FBSimulatorError errorForFormat:@"log exited with code %d, arguments %@", exitCode, arguments]];
+    }
     // Slice off the head of the output, this is the header.
     NSArray<NSString *> *lines = consumer.lines;
     if (lines.count < 2) {
-      return @[];
+      return [FBFuture futureWithResult:@[]];
     }
-    return [lines subarrayWithRange:NSMakeRange(1, lines.count - 1)];
+    return [FBFuture futureWithResult:[lines subarrayWithRange:NSMakeRange(1, lines.count - 1)]];
   }];
 }
 

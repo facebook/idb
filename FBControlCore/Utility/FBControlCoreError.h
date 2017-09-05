@@ -101,6 +101,11 @@ extern NSString *const FBControlCoreErrorDomain;
 + (NSError *)errorForDescription:(NSString *)description;
 
 /**
+ Construct an error from a format string.
+ */
++ (NSError *)errorForFormat:(NSString *)format, ... NS_FORMAT_FUNCTION(1,2);
+
+/**
  Return NO, wrapping `failureCause` in the FBControlCore domain.
  */
 + (BOOL)failBoolWithError:(NSError *)failureCause errorOut:(NSError **)errorOut;

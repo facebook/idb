@@ -212,6 +212,15 @@ NSString *const FBControlCoreErrorDomain = @"com.facebook.FBControlCore";
   return [[self describe:description] build];
 }
 
++ (NSError *)errorForFormat:(NSString *)format, ...
+{
+  va_list args;
+  va_start(args, format);
+  NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+  va_end(args);
+  return [self errorForDescription:string];
+}
+
 + (id)failWithErrorMessage:(NSString *)errorMessage errorOut:(NSError **)errorOut
 {
   return [[self describe:errorMessage] fail:errorOut];
