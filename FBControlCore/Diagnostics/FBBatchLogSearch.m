@@ -20,6 +20,7 @@
 #import "FBiOSTargetDiagnostics.h"
 #import "FBLogCommands.h"
 #import "FBRunLoopSpinner.h"
+#import "FBControlCoreConfigurationVariants.h"
 
 @implementation FBBatchLogSearchResult
 
@@ -304,14 +305,24 @@ static NSString *const KeySince = @"since";
 
 - (FBFuture<FBBatchLogSearchResult *> *)searchOnTarget:(id<FBiOSTarget>)target
 {
-  // We can perform a special search using the log commands, if the search is relevant.
+  // Only use the specialized logging on iOS.
+    if (target.deviceType.family != FBControlCoreProductFamilyiPhone && target.deviceType.family != FBControlCoreProductFamilyiPad) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  // Only use specialized logging on iOS 11 or greater.
+  if ([target.osVersion.number isLessThan:[NSDecimalNumber numberWithInt:11]]) {
+    return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
+  }
+  // Perform a special search using the log commands, if the search is relevant.
   id<FBLogCommands> log = (id<FBLogCommands>) target;
   if (![log conformsToProtocol:@protocol(FBLogCommands)]) {
     return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
   }
+  // Only perform if we only care about the syslog
   if (![self.mapping.allKeys isEqualToArray:@[FBDiagnosticNameSyslog]]) {
     return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
   }
+  // Also, the search must represent a compilable predicate for the command.
   NSArray<NSString *> *arguments = [self.class argumentsForLogCommand:self.mapping[FBDiagnosticNameSyslog] since:self.since error:nil];
   if (!arguments) {
     return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
