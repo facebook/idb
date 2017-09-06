@@ -327,7 +327,7 @@ static NSString *const KeyTargetApplicationBundleID = @"targetApplicationBundleI
       failBool:error];
   }
 
-  id<FBXCTestOperation> operation = [commands startTestWithLaunchConfiguration:self error:error];
+  id<FBXCTestOperation> operation = [commands startTestWithLaunchConfiguration:self reporter:nil error:error];
   if (!operation) {
     return NO;
   }

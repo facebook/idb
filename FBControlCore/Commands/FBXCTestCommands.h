@@ -41,17 +41,7 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTestOperation;
 
  @param testLaunchConfiguration the configuration used for the test launch.
  @param error an error out for any error that occurs.
- @return a Test Operation if successful, nil otherwise.
- */
-- (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration error:(NSError **)error;
-
-/**
- Bootstraps a test run using a Test Launch Configuration.
- It will use the iOS Targets's auxillaryDirectory as a working directory.
-
- @param testLaunchConfiguration the configuration used for the test launch.
- @param error an error out for any error that occurs.
- @param reporter unused
+ @param reporter a reporter for optionally reporting to.
  @return a Test Operation if successful, nil otherwise.
  */
 - (nullable id<FBXCTestOperation>)startTestWithLaunchConfiguration:(FBTestLaunchConfiguration *)testLaunchConfiguration reporter:(nullable id<FBTestManagerTestReporter>)reporter error:(NSError **)error;
