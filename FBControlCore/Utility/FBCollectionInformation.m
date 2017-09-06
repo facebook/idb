@@ -32,7 +32,7 @@
 {
   NSMutableString *string = [NSMutableString stringWithString:@"{"];
   for (NSString *key in dictionary.allKeys) {
-    [string stringByAppendingFormat:@"%@ => %@, ", key, dictionary[key]];
+    [string appendFormat:@"%@ => %@, ", key, dictionary[key]];
   }
   [string appendString:@"}"];
   return string;
