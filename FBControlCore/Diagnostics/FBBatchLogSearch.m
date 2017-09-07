@@ -352,7 +352,7 @@ static NSString *const KeySince = @"since";
   static NSDateFormatter *dateFormatter;
   dispatch_once(&onceToken, ^{
     dateFormatter = [[NSDateFormatter alloc] init];
-    dateFormatter.dateFormat = @"YYYY-MM-DD HH:MM:SS";
+    dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
   });
   return dateFormatter;
 }
