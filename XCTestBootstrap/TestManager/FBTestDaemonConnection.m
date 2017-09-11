@@ -30,17 +30,13 @@
 #import "FBTestManagerContext.h"
 #import "FBTestDaemonResult.h"
 
-/**
- An Enumeration of Mutually-Exclusive Test Daemon States.
- */
-typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
-  FBTestDaemonConnectionStateNotConnected = 0,
-  FBTestDaemonConnectionStateConnecting = 1,
-  FBTestDaemonConnectionStateReadyToExecuteTestPlan = 2,
-  FBTestDaemonConnectionStateRunningTestPlan = 3,
-  FBTestDaemonConnectionStateEndedTestPlan = 4,
-  FBTestDaemonConnectionStateResultAvailable = 5,
-};
+typedef NSString *FBTestDaemonConnectionState NS_STRING_ENUM;
+static FBTestDaemonConnectionState const FBTestDaemonConnectionStateNotConnected = @"not connected";
+static FBTestDaemonConnectionState const FBTestDaemonConnectionStateConnecting = @"connecting";
+static FBTestDaemonConnectionState const FBTestDaemonConnectionStateReadyToExecuteTestPlan = @"ready to execute test plan";
+static FBTestDaemonConnectionState const FBTestDaemonConnectionStateExecutingTestPlan = @"executing test plan";
+static FBTestDaemonConnectionState const FBTestDaemonConnectionStateEndedTestPlan = @"ended test plan";
+static FBTestDaemonConnectionState const FBTestDaemonConnectionStateResultAvailable = @"result available";
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wprotocol"
@@ -54,7 +50,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 @property (nonatomic, strong, readonly) dispatch_queue_t requestQueue;
 @property (nonatomic, nullable, strong, readonly) id<FBControlCoreLogger> logger;
 
-@property (atomic, assign, readwrite) FBTestDaemonConnectionState state;
+@property (atomic, strong, readwrite) FBTestDaemonConnectionState state;
 @property (atomic, assign, readwrite) long long daemonProtocolVersion;
 @property (atomic, nullable, strong, readwrite) FBTestDaemonResult *result;
 @property (atomic, nullable, strong, readwrite) id<XCTestManager_DaemonConnectionInterface> daemonProxy;
@@ -93,10 +89,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 
 - (NSString *)description
 {
-  return [NSString stringWithFormat:
-    @"Test Daemon Connection %@",
-    [FBTestDaemonConnection stringForDaemonConnectionState:self.state]
-  ];
+  return [NSString stringWithFormat:@"Test Daemon Connection %@", self.state];
 }
 
 #pragma mark Delegate Forwarding
@@ -128,7 +121,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
     return self.result;
   }
   if (self.state != FBTestDaemonConnectionStateNotConnected) {
-    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", [FBTestDaemonConnection stringForDaemonConnectionState:FBTestDaemonConnectionStateNotConnected], [FBTestDaemonConnection stringForDaemonConnectionState:self.state]];
+    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateNotConnected, self.state];
     return [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
   }
 
@@ -145,7 +138,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
   }
   if (self.state != FBTestDaemonConnectionStateReadyToExecuteTestPlan) {
     XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"Daemon not in expected state '%@', was in state '%@'", [FBTestDaemonConnection stringForDaemonConnectionState:FBTestDaemonConnectionStateReadyToExecuteTestPlan], [FBTestDaemonConnection stringForDaemonConnectionState:self.state]];
+      describeFormat:@"Daemon not in expected state '%@', was in state '%@'", FBTestDaemonConnectionStateReadyToExecuteTestPlan, self.state];
     return [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
   }
   return nil;
@@ -154,19 +147,19 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 - (nullable FBTestDaemonResult *)notifyTestPlanStarted
 {
   if (self.state != FBTestDaemonConnectionStateReadyToExecuteTestPlan) {
-    XCTestBootstrapError *error =  [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", [FBTestDaemonConnection stringForDaemonConnectionState:FBTestDaemonConnectionStateReadyToExecuteTestPlan], [FBTestDaemonConnection stringForDaemonConnectionState:self.state]];
+    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateReadyToExecuteTestPlan, self.state];
     return [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
   }
 
   [self.logger log:@"Daemon Notified of start of test plan"];
-  self.state = FBTestDaemonConnectionStateRunningTestPlan;
+  self.state = FBTestDaemonConnectionStateExecutingTestPlan;
   return nil;
 }
 
 - (nullable FBTestDaemonResult *)notifyTestPlanEnded
 {
-  if (self.state != FBTestDaemonConnectionStateRunningTestPlan) {
-    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", [FBTestDaemonConnection stringForDaemonConnectionState:FBTestDaemonConnectionStateRunningTestPlan], [FBTestDaemonConnection stringForDaemonConnectionState:self.state]];
+  if (self.state != FBTestDaemonConnectionStateExecutingTestPlan) {
+    XCTestBootstrapError *error = [XCTestBootstrapError describeFormat:@"State should be '%@' got '%@", FBTestDaemonConnectionStateExecutingTestPlan, self.state];
     return [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
   }
 
@@ -182,7 +175,7 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 
 - (FBTestDaemonResult *)disconnect
 {
-  [self.logger logFormat:@"Disconnecting Daemon from state '%@'", [FBTestDaemonConnection stringForDaemonConnectionState:self.state]];
+  [self.logger logFormat:@"Disconnecting Daemon from state '%@'", self.state];
 
   FBTestDaemonResult *result = nil;
   if (self.state == FBTestDaemonConnectionStateEndedTestPlan) {
@@ -253,13 +246,13 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
 
 - (FBTestDaemonResult *)daemonDisconnectedWithState:(FBTestDaemonConnectionState)state
 {
-  [self.logger logFormat:@"Notified that daemon disconnected from state '%@'", [FBTestDaemonConnection stringForDaemonConnectionState:state]];
+  [self.logger logFormat:@"Notified that daemon disconnected from state '%@'", state];
   if (self.result) {
     return self.result;
   }
   if (state != FBTestDaemonConnectionStateEndedTestPlan) {
     XCTestBootstrapError *error = [XCTestBootstrapError
-      describeFormat:@"Disconnected with state %@", [FBTestDaemonConnection stringForDaemonConnectionState:state]];
+      describeFormat:@"Disconnected with state %@", state];
     return [self concludeWithResult:[FBTestDaemonResult failedInError:error]];
   }
   return [self concludeWithResult:FBTestDaemonResult.success];
@@ -279,26 +272,6 @@ typedef NS_ENUM(NSUInteger, FBTestDaemonConnectionState) {
     self.state = FBTestDaemonConnectionStateReadyToExecuteTestPlan;
   }];
   return receipt;
-}
-
-+ (NSString *)stringForDaemonConnectionState:(FBTestDaemonConnectionState)state
-{
-  switch (state) {
-    case FBTestDaemonConnectionStateNotConnected:
-      return @"not connected";
-    case FBTestDaemonConnectionStateConnecting:
-      return @"connecting";
-    case FBTestDaemonConnectionStateReadyToExecuteTestPlan:
-      return @"ready to execute test plan";
-    case FBTestDaemonConnectionStateRunningTestPlan:
-      return @"executing test plan";
-    case FBTestDaemonConnectionStateEndedTestPlan:
-      return @"ended test plan";
-    case FBTestDaemonConnectionStateResultAvailable:
-      return @"result available";
-    default:
-      return @"unknown";
-  }
 }
 
 - (FBTestDaemonResult *)concludeWithResult:(FBTestDaemonResult *)result
