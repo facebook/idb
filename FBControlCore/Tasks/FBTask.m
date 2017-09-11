@@ -352,6 +352,7 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
 @property (nonatomic, copy, nullable, readwrite) NSString *configurationDescription;
 
 @property (atomic, assign, readwrite) pid_t processIdentifier;
+@property (atomic, assign, readwrite) int exitCode;
 @property (atomic, assign, readwrite) BOOL completedTeardown;
 @property (atomic, copy, nullable, readwrite) NSString *emittedError;
 
@@ -502,14 +503,15 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
     return nil;
   }
 
-  FBControlCoreError *error = [[[[FBControlCoreError
+  FBControlCoreError *error = [[[[[FBControlCoreError
     describe:self.emittedError]
     inDomain:FBTaskErrorDomain]
     extraInfo:@"stdout" value:self.stdOut]
-    extraInfo:@"stderr" value:self.stdErr];
+    extraInfo:@"stderr" value:self.stdErr]
+    extraInfo:@"pid" value:@(self.processIdentifier)];
 
   if (!self.process.isRunning) {
-    [error extraInfo:@"exitcode" value:@(self.process.terminationStatus)];
+    [error extraInfo:@"exitcode" value:@(self.exitCode)];
   }
   return [error build];
 }
@@ -566,7 +568,8 @@ FBTerminationHandleType const FBTerminationHandleTypeTask = @"Task";
     [self.process mountStandardIn:stdIn];
   }
 
-  pid_t pid = [self.process launchWithError:&error terminationHandler:^(id<FBTaskProcess>_) {
+  pid_t pid = [self.process launchWithError:&error terminationHandler:^(id<FBTaskProcess> process) {
+    self.exitCode = process.terminationStatus;
     [self terminateWithErrorMessage:nil];
   }];
   if (pid < 1) {

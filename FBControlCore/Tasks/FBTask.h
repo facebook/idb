@@ -88,6 +88,11 @@ extern FBTerminationHandleType const FBTerminationHandleTypeTask;
 - (pid_t)processIdentifier;
 
 /**
+ Returns the Exit Code of the Process
+ */
+- (int)exitCode;
+
+/**
  Returns a copy of the current state of stdout. May be called from any thread.
  The types of these values are defined in FBTaskConfiguration.
  */

@@ -244,19 +244,29 @@
   return [task stdOut];
 }
 
-- (FBTask *)buildFuture
+- (FBFuture<FBTask *> *)buildFuture
+{
+  pid_t processIdentifier = 0;
+  return [self buildFutureWithProcessIdentifierOut:&processIdentifier];
+}
+
+- (FBFuture<FBTask *> *)buildFutureWithProcessIdentifierOut:(pid_t *)processIdentifierOut
 {
   FBMutableFuture *future = FBMutableFuture.future;
-  return [[self build]
+  FBTask *task = [[self build]
     startAsynchronouslyWithTerminationQueue:dispatch_queue_create("com.facebook.fbcontrolcore.task.future", DISPATCH_QUEUE_SERIAL)
-    handler:^(FBTask *task) {
-      NSError *error = task.error;
+    handler:^(FBTask *completedTask) {
+      NSError *error = completedTask.error;
       if (error) {
-        [future resolveWithError:task.error];
+        [future resolveWithError:error];
         return;
       }
-      [future resolveWithResult:task];
+      [future resolveWithResult:completedTask];
     }];
+  if (processIdentifierOut) {
+    *processIdentifierOut = task.processIdentifier;
+  }
+  return future;
 }
 
 @end

@@ -234,11 +234,19 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSString *)executeReturningError:(NSError **)error;
 
 /**
- Builds the Task, as a Future
+ Builds the Task, wrapping it in a future.
 
- @return a Future
+ @return a Future, encapsulating the task on completion.
  */
 - (FBFuture<FBTask *> *)buildFuture;
+
+/**
+ Builds the Task, wrapping it in a future.
+
+ @param processIdentifierOut the process identifier of the launched process.
+ @return a Future, encapsulating the task on completion.
+ */
+- (FBFuture<FBTask *> *)buildFutureWithProcessIdentifierOut:(pid_t *)processIdentifierOut;
 
 @end
 
