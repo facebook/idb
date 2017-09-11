@@ -62,12 +62,12 @@
 @end
 
 @interface FBTestDaemonResult_EndedInError : FBTestDaemonResult
-@property (nonatomic, strong, readonly) NSError *underlyingError;
+@property (nonatomic, strong, readonly) XCTestBootstrapError *underlyingError;
 @end
 
 @implementation FBTestDaemonResult_EndedInError
 
-- (instancetype)initWithError:(NSError *)error
+- (instancetype)initWithError:(XCTestBootstrapError *)error
 {
   self = [super init];
   if (!self) {
@@ -86,7 +86,9 @@
 
 - (NSError *)error
 {
-  return self.underlyingError;
+  return [[self.underlyingError
+    extraInfo:XCTestBootstrapResultErrorKey value:self]
+    build];
 }
 
 @end
@@ -107,7 +109,7 @@
 
 + (instancetype)failedInError:(XCTestBootstrapError *)error
 {
-  return [[FBTestDaemonResult_EndedInError alloc] initWithError:error.build];
+  return [[FBTestDaemonResult_EndedInError alloc] initWithError:error];
 }
 
 #pragma mark Public Methods

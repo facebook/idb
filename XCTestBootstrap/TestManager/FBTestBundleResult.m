@@ -89,8 +89,9 @@
 
 - (NSError *)error
 {
-  return [[XCTestBootstrapError
+  return [[[XCTestBootstrapError
     describe:@"The Test Bundle Crashed during the Test Run"]
+    extraInfo:XCTestBootstrapResultErrorKey value:self]
     build];
 }
 
@@ -107,12 +108,12 @@
 @end
 
 @interface FBTestBundleResult_FailedInError : FBTestBundleResult
-@property (nonatomic, strong, readonly) NSError *underlyingError;
+@property (nonatomic, strong, readonly) XCTestBootstrapError *underlyingError;
 @end
 
 @implementation FBTestBundleResult_FailedInError
 
-- (instancetype)initWithError:(NSError *)error
+- (instancetype)initWithError:(XCTestBootstrapError *)error
 {
   self = [super init];
   if (!self) {
@@ -130,7 +131,9 @@
 
 - (NSError *)error
 {
-  return self.underlyingError;
+  return [[self.underlyingError
+    extraInfo:XCTestBootstrapResultErrorKey value:self]
+    build];
 }
 
 - (FBDiagnostic *)diagnostic
@@ -166,7 +169,7 @@
 
 + (instancetype)failedInError:(XCTestBootstrapError *)error
 {
-  return [[FBTestBundleResult_FailedInError alloc] initWithError:error.build];
+  return [[FBTestBundleResult_FailedInError alloc] initWithError:error];
 }
 
 #pragma mark Public Methods
