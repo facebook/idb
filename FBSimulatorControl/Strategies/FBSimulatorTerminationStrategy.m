@@ -118,7 +118,7 @@
     // Disconnect any Test Managers connected to the Simulator.
     // If a TestManager Deallocates during the shutdown of a Simulator, the calling thread can deadlock.
     for (FBTestManager *testManager in simulator.resourceSink.testManagers) {
-      [testManager disconnect];
+      [testManager terminate];
       [simulator.eventSink testmanagerDidDisconnect:testManager];
     }
 

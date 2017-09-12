@@ -95,12 +95,10 @@
     reporter:self.reporter
     logger:self.logger];
 
-  FBTestManagerResult *result = [testManager connectWithTimeout:FBControlCoreGlobalConfiguration.regularTimeout];
-  if (result) {
-    return[[[XCTestBootstrapError
-      describeFormat:@"Test Manager Connection Failed: %@", result.description]
-      causedBy:result.error]
-      fail:error];
+  FBTestManagerResult *result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:testManager.connect timeout:FBControlCoreGlobalConfiguration.regularTimeout error:&innerError];
+  innerError = innerError ?: result.error;
+  if (innerError) {
+    return [XCTestBootstrapError failWithError:innerError errorOut:error];
   }
   return testManager;
 }

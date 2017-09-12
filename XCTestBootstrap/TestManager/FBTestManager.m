@@ -16,8 +16,9 @@
 
 @interface FBTestManager ()
 
-@property (nonatomic, strong, readonly) FBTestManagerContext *context;
+@property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
+@property (nonatomic, strong, readonly) FBMutableFuture *terminationFuture;
 
 @end
 
@@ -33,41 +34,39 @@
     reporter:reporter
     logger:logger];
 
-  return [[FBTestManager alloc] initWithContext:context mediator:mediator];
+  return [[FBTestManager alloc] initWithTarget:iosTarget mediator:mediator];
 }
 
-- (instancetype)initWithContext:(FBTestManagerContext *)context mediator:(FBTestManagerAPIMediator *)mediator
+- (instancetype)initWithTarget:(id<FBiOSTarget>)target mediator:(FBTestManagerAPIMediator *)mediator
 {
   self = [super init];
   if (!self) {
     return nil;
   }
 
+  _target = target;
   _mediator = mediator;
-  _context = context;
+  _terminationFuture = [FBMutableFuture future];
 
   return self;
 }
 
 #pragma mark Public
 
-- (nullable FBTestManagerResult *)connectWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<FBTestManagerResult *> *)connect
 {
-  FBTestManagerResult *result = [self.mediator connectToTestManagerDaemonAndBundleWithTimeout:timeout];
-  if (result) {
-    return result;
-  }
-  return [self.mediator executeTestPlanWithTimeout:timeout];
+  return [self.mediator.connect
+    notifyOfCancellationOnQueue:self.target.workQueue handler:^(FBFuture *_) {
+      [self terminate];
+    }];
 }
 
-- (FBTestManagerResult *)waitUntilTestingHasFinishedWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<FBTestManagerResult *> *)execute
 {
-  return [self.mediator waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:timeout];
-}
-
-- (FBTestManagerResult *)disconnect
-{
-  return [self.mediator disconnectTestRunnerAndTestManagerDaemon];
+  return [self.mediator.execute
+    notifyOfCancellationOnQueue:self.target.workQueue handler:^(FBFuture *_) {
+      [self terminate];
+    }];
 }
 
 - (NSString *)description
@@ -84,12 +83,13 @@
 
 - (void)terminate
 {
-  [self disconnect];
+  [self.mediator disconnect];
+  [self.terminationFuture cancel];
 }
 
 - (BOOL)hasTerminated
 {
-  return [self.mediator checkForResult] != nil;
+  return self.terminationFuture.hasCompleted;
 }
 
 @end

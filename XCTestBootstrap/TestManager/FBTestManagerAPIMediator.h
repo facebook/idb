@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class FBTestManagerContext;
@@ -50,10 +52,9 @@ extern const NSInteger FBProtocolMinimumVersion;
  Establishes a connection between the host, testmanagerd and the Test Bundle.
  This connection is established synchronously, until a timeout occurs.
 
- @param timeout a maximum time to wait for the connection to be established.
  @return A TestManager Result if an early-error occured, nil otherwise.
  */
-- (nullable FBTestManagerResult *)connectToTestManagerDaemonAndBundleWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<FBTestManagerResult *> *)connect;
 
 /**
  Executes the Test Plan over the established connection.
@@ -61,33 +62,16 @@ extern const NSInteger FBProtocolMinimumVersion;
  has successfully completed.
  Events will be delivered to the reporter asynchronously.
 
- @param timeout a maximum time to wait for the connection to be established.
  @return A TestManager Result if an early-error occured, nil otherwise.
  */
-- (nullable FBTestManagerResult *)executeTestPlanWithTimeout:(NSTimeInterval)timeout;
-
-/**
- Checks Whether a Result is Available
-
- @return A TestManager Result, if one is available.
- */
-- (nullable FBTestManagerResult *)checkForResult;
-
-/**
- Connecting mediator does not wait till test execution has finished.
- This method can be used in order to wait till test execution has finished.
-
- @param timeout the the maximum time to wait for tests to finish.
- @return A TestManager Result.
- */
-- (FBTestManagerResult *)waitUntilTestRunnerAndTestManagerDaemonHaveFinishedExecutionWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<FBTestManagerResult *> *)execute;
 
 /**
  Terminates connection between test runner(XCTest bundle) and testmanagerd.
 
  @return the TestManager Result.
  */
-- (FBTestManagerResult *)disconnectTestRunnerAndTestManagerDaemon;
+- (FBFuture<FBTestManagerResult *> *)disconnect;
 
 @end
 

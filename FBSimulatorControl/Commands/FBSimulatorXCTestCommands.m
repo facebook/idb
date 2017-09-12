@@ -95,7 +95,7 @@
 - (BOOL)waitUntilAllTestRunnersHaveFinishedTestingWithTimeout:(NSTimeInterval)timeout error:(NSError **)error
 {
   for (FBTestManager *testManager in self.simulator.resourceSink.testManagers.copy) {
-    FBTestManagerResult *result = [testManager waitUntilTestingHasFinishedWithTimeout:timeout];
+    FBTestManagerResult *result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:testManager.execute timeout:timeout error:error];
     if (!result.didEndSuccessfully) {
       return NO;
     }

@@ -38,25 +38,16 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Connects to the 'testmanagerd' daemon and to the test bundle.
 
- @param timeout the amount of time to wait for the connection to be established.
  @return A TestManager Result if an early-error occured, nil otherwise.
  */
-- (nullable FBTestManagerResult *)connectWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<FBTestManagerResult *> *)connect;
 
 /**
- Waits until testing has finished.
+ Connects to the 'testmanagerd' daemon and to the test bundle.
 
- @param timeout the the maximum time to wait for test to finish.
- @return The TestManager Result.
+ @return A TestManager Result if an early-error occured, nil otherwise.
  */
-- (FBTestManagerResult *)waitUntilTestingHasFinishedWithTimeout:(NSTimeInterval)timeout;
-
-/**
- Disconnects from the 'testmanagerd' daemon.
-
- @return The TestManager Result.
- */
-- (FBTestManagerResult *)disconnect;
+- (FBFuture<FBTestManagerResult *> *)execute;
 
 @end
 
