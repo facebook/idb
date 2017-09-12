@@ -111,9 +111,13 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     [self.logger.error log:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"];
     return self.result;
   }
-  FBTestBundleResult *bundleResult = [self.bundleConnection connectWithTimeout:timeout];
-  if (bundleResult) {
-    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
+  NSError *error = nil;
+  FBTestBundleResult *bundleResult = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.bundleConnection.connect timeout:timeout error:&error];
+  if (!bundleResult) {
+    return [self concludeWithResult:[FBTestManagerResult timedOutAfter:timeout]];
+  }
+  if (bundleResult.error) {
+    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:error.userInfo[XCTestBootstrapResultErrorKey]]];
   }
   FBTestDaemonResult *daemonResult = [self.daemonConnection connectWithTimeout:timeout];
   if (daemonResult) {
@@ -124,13 +128,21 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (nullable FBTestManagerResult *)executeTestPlanWithTimeout:(NSTimeInterval)timeout
 {
-  FBTestBundleResult *bundleResult = [self.bundleConnection startTestPlan];
-  if (bundleResult) {
-    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
+  FBFuture<FBTestBundleResult *> *startTestPlan = self.bundleConnection.startTestPlan;
+  if (startTestPlan.error) {
+    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:startTestPlan.error.userInfo[XCTestBootstrapResultErrorKey]]];
   }
   FBTestDaemonResult *daemonResult = [self.daemonConnection notifyTestPlanStarted];
   if (daemonResult) {
     return [self concludeWithResult:[FBTestManagerResult daemonConnectionFailed:daemonResult]];
+  }
+  NSError *error = nil;
+  FBTestBundleResult *bundleResult = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:startTestPlan timeout:timeout error:&error];
+  if (!bundleResult) {
+    return [self concludeWithResult:[FBTestManagerResult timedOutAfter:timeout]];
+  }
+  if (bundleResult.error) {
+    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
   }
   return nil;
 }
@@ -170,9 +182,12 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
 
 - (nullable FBTestManagerResult *)obtainResult
 {
-  FBTestBundleResult *bundleResult = [self.bundleConnection checkForResult];
-  if (bundleResult && !bundleResult.didEndSuccessfully) {
-    return [FBTestManagerResult bundleConnectionFailed:bundleResult];
+  FBFuture<FBTestBundleResult *> *bundleResult = self.bundleConnection.completeTestRun;
+  if (!bundleResult.hasCompleted) {
+    return nil;
+  }
+  if (bundleResult.error) {
+    return [FBTestManagerResult bundleConnectionFailed:bundleResult.error.userInfo[XCTestBootstrapResultErrorKey]];
   }
   FBTestDaemonResult *daemonResult = [self.daemonConnection checkForResult];
   if (daemonResult && !daemonResult.didEndSuccessfully) {

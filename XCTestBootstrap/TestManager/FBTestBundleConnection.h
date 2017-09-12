@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class DTXConnection;
@@ -17,8 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 @class FBTestManagerContext;
 @class XCTestBootstrapError;
 
-@protocol FBControlCoreLogger;
-@protocol FBiOSTarget;
 @protocol XCTestDriverInterface;
 @protocol XCTestManager_IDEInterface;
 
@@ -44,34 +44,33 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Lifecycle
 
 /**
- Synchonously Connects the to the Bundle
+ Asynchronously Connects the to the Bundle
 
- @param timeout the amount of time to wait for the connection to be established.
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Bundle Connection is established.
  */
-- (nullable FBTestBundleResult *)connectWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<FBTestBundleResult *> *)connect;
 
 /**
  Starts the Test Plan.
  Test Events will be delivered asynchronously to the interface.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Test Plan has completed.
  */
-- (nullable FBTestBundleResult *)startTestPlan;
+- (FBFuture<FBTestBundleResult *> *)startTestPlan;
 
 /**
- Checks that a Result is available.
+ A future for the end of the test run.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Test Run has completed.
  */
-- (nullable FBTestBundleResult *)checkForResult;
+- (FBFuture<FBTestBundleResult *> *)completeTestRun;
 
 /**
  Disconnects any active connection.
 
- @return a Result.
+ @return a Future that resolves when the connection has been disconnected.
  */
-- (FBTestBundleResult *)disconnect;
+- (FBFuture *)disconnect;
 
 @end
 

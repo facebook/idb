@@ -54,6 +54,10 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 @property (atomic, strong, readwrite) FBTestBundleConnectionState state;
 @property (atomic, strong, readwrite) FBTestBundleResult *result;
 
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *connectFuture;
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *testPlanFuture;
+@property (nonatomic, strong, nullable, readwrite) FBMutableFuture *disconnectFuture;
+
 @property (atomic, assign, readwrite) long long testBundleProtocolVersion;
 @property (atomic, nullable, strong, readwrite) id<XCTestDriverInterface> testBundleProxy;
 @property (atomic, nullable, strong, readwrite) DTXConnection *testBundleConnection;
@@ -110,6 +114,10 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   _lastCrashCheckDate = NSDate.distantPast;
   _applicationLaunchDate = NSDate.date;
 
+  _connectFuture = FBMutableFuture.new;
+  _testPlanFuture = FBMutableFuture.new;
+  _disconnectFuture = FBMutableFuture.new;
+
   return self;
 }
 
@@ -143,38 +151,28 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 
 #pragma mark Public
 
-- (nullable FBTestBundleResult *)connectWithTimeout:(NSTimeInterval)timeout
+- (FBFuture<FBTestBundleResult *> *)connect
 {
-  NSAssert(NSThread.isMainThread, @"-[%@ %@] should be called from the main thread", NSStringFromClass(self.class), NSStringFromSelector(_cmd));
+  // Fail-fast if the connection state is incorrect.
   if (self.state != FBTestBundleConnectionStateNotConnected) {
     XCTestBootstrapError *error = [XCTestBootstrapError
       describeFormat:@"Cannot connect, state must be %@ but is %@", FBTestBundleConnectionStateNotConnected, self.state];
-    return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+    [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+    return self.connectFuture;
   }
 
-  [self connect];
-  BOOL waitSuccess = [NSRunLoop.currentRunLoop spinRunLoopWithTimeout:timeout untilTrue:^BOOL{
-    return self.state != FBTestBundleConnectionStateConnecting;
-  }];
-
-  if (!waitSuccess) {
-    XCTestBootstrapError *error = [[XCTestBootstrapError
-      describe:@"Timeout establishing connection"]
-      code:XCTestBootstrapErrorCodeStartupTimeout];
-    return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
-  }
-  if (self.state == FBTestBundleConnectionStateResultAvailable) {
-    return self.result;
-  }
-  return nil;
+  [self doConnect];
+  return self.connectFuture;
 }
 
-- (nullable FBTestBundleResult *)startTestPlan
+- (FBFuture<FBTestBundleResult *> *)startTestPlan
 {
+  // Fail-fast if the connection state is incorrect.
   if (self.state != FBTestBundleConnectionStateTestBundleReady) {
     XCTestBootstrapError *error = [XCTestBootstrapError
       describeFormat:@"State should be '%@' got '%@", FBTestBundleConnectionStateTestBundleReady, self.state];
-    return [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+    [self concludeWithResult:[FBTestBundleResult failedInError:error]];
+    return self.testPlanFuture;
   }
 
   [self.logger log:@"Bundle Connection scheduling start of Test Plan"];
@@ -182,21 +180,15 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   dispatch_async(self.requestQueue, ^{
     [self.testBundleProxy _IDE_startExecutingTestPlanWithProtocolVersion:@(FBProtocolVersion)];
   });
-  return nil;
+  return self.testPlanFuture;
 }
 
-- (nullable FBTestBundleResult *)checkForResult
+- (FBFuture<FBTestBundleResult *> *)completeTestRun
 {
-  if (self.result) {
-    return self.result;
-  }
-  if (self.shouldCheckForCrashedProcess) {
-    return [self checkForCrashedProcess];
-  }
-  return nil;
+  return self.testPlanFuture;
 }
 
-- (FBTestBundleResult *)disconnect
+- (FBFuture<FBTestBundleResult *> *)disconnect
 {
   [self.logger logFormat:@"Disconnecting Test Bundle in state '%@'", self.state];
 
@@ -212,15 +204,16 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   self.testBundleProxy = nil;
   self.testBundleProtocolVersion = 0;
 
-  return result;
+  return self.disconnectFuture;
 }
 
 #pragma mark Private
 
-- (void)connect
+- (void)doConnect
 {
   self.state = FBTestBundleConnectionStateConnecting;
   [self.logger log:@"Connecting Test Bundle"];
+
   dispatch_async(self.requestQueue, ^{
     NSError *error;
     DTXTransport *transport = [self.target.deviceOperator makeTransportForTestManagerServiceWithLogger:self.logger error:&error];
@@ -372,6 +365,19 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   [self.logger logFormat:@"Test Completed with Result: %@", result];
   self.result = result;
   self.state = FBTestBundleConnectionStateResultAvailable;
+
+  // Fire the futures
+  NSError *error = result.error;
+  if (error) {
+    [self.connectFuture resolveWithError:error];
+    [self.testPlanFuture resolveWithError:error];
+    [self.disconnectFuture resolveWithError:error];
+  } else {
+    [self.connectFuture resolveWithResult:result];
+    [self.testPlanFuture resolveWithResult:result];
+    [self.disconnectFuture resolveWithResult:result];
+  }
+
   return result;
 }
 
@@ -400,6 +406,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
   }
   [self.logger logFormat:@"Test Plan Ended"];
   self.state = FBTestBundleConnectionStateEndedTestPlan;
+  [self.testPlanFuture resolveWithResult:FBTestBundleResult.success];
   return [self.interface _XCT_didFinishExecutingTestPlan];
 }
 
@@ -435,6 +442,7 @@ static FBTestBundleConnectionState const FBTestBundleConnectionStateResultAvaila
 
   [self.logger logFormat:@"Test Bundle is Ready"];
   self.state = FBTestBundleConnectionStateTestBundleReady;
+  [self.connectFuture resolveWithResult:FBTestBundleResult.success];
   return [self.interface _XCT_testBundleReadyWithProtocolVersion:protocolVersion minimumVersion:minimumVersion];
 }
 
