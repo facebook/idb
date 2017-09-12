@@ -111,38 +111,33 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
     [self.logger.error log:@"FBTestManager does not support reconnecting to testmanagerd. You should create new FBTestManager to establish new connection"];
     return self.result;
   }
+  FBFuture *connectFuture = [self.bundleConnection.connect
+    onQueue:self.target.workQueue
+    chain:^FBFuture *(FBTestBundleResult *result) {
+      NSError *error = result.error;
+      if (error) {
+        return [FBFuture futureWithResult:[FBTestManagerResult bundleConnectionFailed:error.userInfo[XCTestBootstrapResultErrorKey]]];
+      }
+      return self.daemonConnection.connect;
+    }];
   NSError *error = nil;
-  FBTestBundleResult *bundleResult = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:self.bundleConnection.connect timeout:timeout error:&error];
-  if (!bundleResult) {
+  FBTestManagerResult *result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:connectFuture timeout:timeout error:&error];
+  if (!result) {
     return [self concludeWithResult:[FBTestManagerResult timedOutAfter:timeout]];
   }
-  if (bundleResult.error) {
-    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:error.userInfo[XCTestBootstrapResultErrorKey]]];
-  }
-  FBTestDaemonResult *daemonResult = [self.daemonConnection connectWithTimeout:timeout];
-  if (daemonResult) {
-    return [self concludeWithResult:[FBTestManagerResult daemonConnectionFailed:daemonResult]];
+  if (result.error) {
+    return [self concludeWithResult:result];
   }
   return nil;
 }
 
 - (nullable FBTestManagerResult *)executeTestPlanWithTimeout:(NSTimeInterval)timeout
 {
-  FBFuture<FBTestBundleResult *> *startTestPlan = self.bundleConnection.startTestPlan;
-  if (startTestPlan.error) {
-    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:startTestPlan.error.userInfo[XCTestBootstrapResultErrorKey]]];
-  }
-  FBTestDaemonResult *daemonResult = [self.daemonConnection notifyTestPlanStarted];
-  if (daemonResult) {
-    return [self concludeWithResult:[FBTestManagerResult daemonConnectionFailed:daemonResult]];
-  }
+  FBFuture *future = [FBFuture futureWithFutures:@[self.bundleConnection.startTestPlan, self.daemonConnection.notifyTestPlanStarted]];
   NSError *error = nil;
-  FBTestBundleResult *bundleResult = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:startTestPlan timeout:timeout error:&error];
-  if (!bundleResult) {
-    return [self concludeWithResult:[FBTestManagerResult timedOutAfter:timeout]];
-  }
-  if (bundleResult.error) {
-    return [self concludeWithResult:[FBTestManagerResult bundleConnectionFailed:bundleResult]];
+  FBTestManagerResult *result = [NSRunLoop.currentRunLoop awaitCompletionOfFuture:future timeout:timeout error:&error];
+  if (!result) {
+    return [self concludeWithResult:error.userInfo[XCTestBootstrapResultErrorKey]];
   }
   return nil;
 }
@@ -189,9 +184,12 @@ const NSInteger FBProtocolMinimumVersion = 0x8;
   if (bundleResult.error) {
     return [FBTestManagerResult bundleConnectionFailed:bundleResult.error.userInfo[XCTestBootstrapResultErrorKey]];
   }
-  FBTestDaemonResult *daemonResult = [self.daemonConnection checkForResult];
-  if (daemonResult && !daemonResult.didEndSuccessfully) {
-    return [FBTestManagerResult daemonConnectionFailed:daemonResult];
+  FBFuture<FBTestDaemonResult *> *daemonResult = self.daemonConnection.completed;
+  if (!daemonResult.hasCompleted) {
+    return nil;
+  }
+  if (daemonResult.error) {
+    return [FBTestManagerResult daemonConnectionFailed:daemonResult.error.userInfo[XCTestBootstrapResultErrorKey]];
   }
   if (daemonResult && bundleResult) {
     return FBTestManagerResult.success;

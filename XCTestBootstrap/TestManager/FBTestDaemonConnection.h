@@ -9,6 +9,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <FBControlCore/FBControlCore.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class DTXConnection;
@@ -45,38 +47,39 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark Lifecycle
 
 /**
- Synchronously Connects the Daemon.
+ Asynchronously Connects the Daemon.
 
- @param timeout the time to wait for connection to appear.
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the Daemon Connection is established.
  */
-- (nullable FBTestDaemonResult *)connectWithTimeout:(NSTimeInterval)timeout;
+- (FBFuture<FBTestDaemonResult *> *)connect;
 
 /**
  Notifies the Connection that the Test Plan has started.
  Test Events will be delivered asynchronously to the interface.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the notification is successful.
  */
-- (nullable FBTestDaemonResult *)notifyTestPlanStarted;
+- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanStarted;
 
 /**
  Notifies the Connection that the Test Plan has ended.
  Test Events will be delivered asynchronously to the interface.
 
- @return a Result if unsuccessful, nil otherwise.
+ @return a Future that resolves when the notification is successful.
  */
-- (nullable FBTestDaemonResult *)notifyTestPlanEnded;
+- (FBFuture<FBTestDaemonResult *> *)notifyTestPlanEnded;
 
 /**
  Checks that a Result is available.
+ 
+ @return a Future that resolves when the daemon has completed it's work.
  */
-- (nullable FBTestDaemonResult *)checkForResult;
+- (FBFuture<FBTestDaemonResult *> *)completed;
 
 /**
  Disconnects any active connection.
 
- @return a Result.
+ @return a Future that resolves when the disconnection has completed.
  */
 - (FBTestDaemonResult *)disconnect;
 
