@@ -254,10 +254,11 @@ static NSString *const KeyDataContainer = @"DataContainer";
       fail:error];
   }
 
-  FBApplicationBundle *bundle = [FBApplicationBundle
-    applicationWithName:appName
-    path:appPath
-    bundleID:bundleIdentifier];
+  FBApplicationBundle *bundle = [FBApplicationBundle applicationWithPath:appPath error:error];
+  if (!bundle) {
+    return nil;
+  }
+
   return [FBInstalledApplication
     installedApplicationWithBundle:bundle
     installType:[FBInstalledApplication installTypeFromString:typeString]
