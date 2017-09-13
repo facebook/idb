@@ -11,6 +11,7 @@
 
 #import <XCTest/XCTestManager_IDEInterface-Protocol.h>
 
+#import "FBActivityRecord.h"
 #import "FBTestManagerAPIMediator.h"
 #import "FBTestManagerTestReporter.h"
 #import "FBTestManagerResultSummary.h"
@@ -117,6 +118,24 @@
   FBTestManagerResultSummary *summary = [FBTestManagerResultSummary fromTestSuite:testSuite finishingAt:time runCount:runCount failures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
   [self.reporter testManagerMediator:self.mediator finishedWithSummary:summary];
   return [self.mediator _XCT_testSuite:testSuite didFinishAt:time runCount:runCount withFailures:failures unexpected:unexpected testDuration:testDuration totalDuration:totalDuration];
+}
+
+- (id)_XCT_testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(XCActivityRecord *)activity
+{
+  FBActivityRecord *wrapped = [FBActivityRecord from:activity];
+  if ([self.reporter respondsToSelector:@selector(testManagerMediator:testCase:method:didFinishActivity:)]) {
+    [self.reporter testManagerMediator:self.mediator testCase:testClass method:method didFinishActivity:wrapped];
+  }
+  return [self.mediator _XCT_testCase:testClass method:method didFinishActivity:activity];
+}
+
+- (id)_XCT_testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(XCActivityRecord *)activity
+{
+  FBActivityRecord *wrapped = [FBActivityRecord from:activity];
+  if ([self.reporter respondsToSelector:@selector(testManagerMediator:testCase:method:willStartActivity:)]) {
+    [self.reporter testManagerMediator:self.mediator testCase:testClass method:method willStartActivity:wrapped];
+  }
+  return [self.mediator _XCT_testCase:testClass method:method willStartActivity:activity];
 }
 
 @end

@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import <XCTestBootstrap/FBTestManagerResultSummary.h>
+#import <XCTestBootstrap/FBActivityRecord.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -104,6 +105,25 @@ NS_ASSUME_NONNULL_BEGIN
  @param error an error for an error that occurs.
  */
 - (BOOL)printReportWithError:(NSError **)error;
+
+@optional
+/**
+ Called when a activity has started
+
+ @param testClass the current test class
+ @param method the current test method
+ @param activity information about the activity
+ */
+- (void)testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity;
+
+/**
+ Called when a activity has finished
+
+ @param testClass the current test class
+ @param method the current test method
+ @param activity information about the activity
+ */
+- (void)testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
 
 @end
 

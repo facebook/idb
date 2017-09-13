@@ -103,4 +103,12 @@
 {
 }
 
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity
+{
+}
+
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity
+{
+}
+
 @end

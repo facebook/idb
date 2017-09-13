@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 
+@class FBActivityRecord;
 @class FBTestManagerAPIMediator;
 @class FBTestManagerResultSummary;
 
@@ -96,5 +97,26 @@ typedef NS_ENUM(NSUInteger, FBTestReportStatus) {
  @param mediator the test mediator.
  */
 - (void)testManagerMediatorDidFinishExecutingTestPlan:(FBTestManagerAPIMediator *)mediator;
+
+@optional
+/**
+ Called when a activity has started
+
+ @param mediator the test mediator
+ @param testClass the current test class
+ @param method the current test method
+ @param activity information about the activity
+ */
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator  testCase:(NSString *)testClass method:(NSString *)method willStartActivity:(FBActivityRecord *)activity;
+
+/**
+ Called when a activity has finished
+
+ @param mediator the test mediator
+ @param testClass the current test class
+ @param method the current test method
+ @param activity information about the activity
+ */
+- (void)testManagerMediator:(FBTestManagerAPIMediator *)mediator  testCase:(NSString *)testClass method:(NSString *)method didFinishActivity:(FBActivityRecord *)activity;
 
 @end
