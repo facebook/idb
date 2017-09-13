@@ -23,16 +23,20 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FBSimulatorTestRunStrategy : NSObject
 
+#pragma mark Initializers
+
 /**
  Creates and returns a new Test Run Strategy.
 
-@param simulator the Simulator to use.
+ @param simulator the Simulator to use.
  @param configuration the configuration to use.
  @param reporter the reporter to use.
  @param workingDirectory a directory which can be used for storage of temporary files.
  @return a new Test Run Strategy instance.
  */
 + (instancetype)strategyWithSimulator:(FBSimulator *)simulator configuration:(FBTestLaunchConfiguration *)configuration workingDirectory:(NSString *)workingDirectory reporter:(id<FBTestManagerTestReporter>)reporter;
+
+#pragma mark Public Methods
 
 /**
  Starts the Connection to the Test Host.

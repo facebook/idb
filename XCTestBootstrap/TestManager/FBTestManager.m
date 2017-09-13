@@ -18,6 +18,9 @@
 
 @property (nonatomic, strong, readonly) id<FBiOSTarget> target;
 @property (nonatomic, strong, readonly) FBTestManagerAPIMediator *mediator;
+
+@property (nonatomic, strong, nullable, readonly) FBFuture<FBTestManagerResult *> *connectFuture;
+@property (nonatomic, strong, nullable, readonly) FBFuture<FBTestManagerResult *> *executeFuture;
 @property (nonatomic, strong, readonly) FBMutableFuture *terminationFuture;
 
 @end
@@ -55,18 +58,26 @@
 
 - (FBFuture<FBTestManagerResult *> *)connect
 {
-  return [self.mediator.connect
+  if (self.connectFuture) {
+    return self.connectFuture;
+  }
+  _connectFuture = [self.mediator.connect
     notifyOfCancellationOnQueue:self.target.workQueue handler:^(FBFuture *_) {
       [self terminate];
     }];
+  return self.connectFuture;
 }
 
 - (FBFuture<FBTestManagerResult *> *)execute
 {
-  return [self.mediator.execute
+  if (self.executeFuture) {
+    return self.executeFuture;
+  }
+  _executeFuture = [self.mediator.execute
     notifyOfCancellationOnQueue:self.target.workQueue handler:^(FBFuture *_) {
       [self terminate];
     }];
+  return self.executeFuture;
 }
 
 - (NSString *)description

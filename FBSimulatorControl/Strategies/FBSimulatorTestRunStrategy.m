@@ -92,6 +92,12 @@
       fail:error];
   }
   [simulator.eventSink testmanagerDidConnect:testManager];
+
+  FBFuture<FBTestManagerResult *> *execute = [testManager execute];
+  if (execute.error) {
+    return [FBSimulatorError failWithError:execute.error errorOut:error];
+  }
+
   return testManager;
 }
 
