@@ -310,7 +310,7 @@ static NSString *const KeySince = @"since";
     return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
   }
   // Only use specialized logging on iOS 11 or greater.
-  if ([target.osVersion.number isLessThan:[NSDecimalNumber numberWithInt:11]]) {
+  if ([target.osVersion.number compare:[NSDecimalNumber numberWithInt:11]] == NSOrderedAscending) {
     return [FBFuture futureWithResult:[self searchDiagnostics:target.diagnostics.allDiagnostics]];
   }
   // Perform a special search using the log commands, if the search is relevant.
