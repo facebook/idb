@@ -487,4 +487,32 @@
   XCTAssertEqualObjects(raceFuture.error, error);
 }
 
+- (void)testAsyncConstructor
+{
+  XCTestExpectation *resultCalled = [[XCTestExpectation alloc] initWithDescription:@"Result Future"];
+  XCTestExpectation *errorCalled = [[XCTestExpectation alloc] initWithDescription:@"Error Future"];
+  XCTestExpectation *cancelCalled = [[XCTestExpectation alloc] initWithDescription:@"Cancel Future"];
+
+  NSError *error = [NSError errorWithDomain:@"foo" code:0 userInfo:nil];
+  FBFuture *resultFuture = [FBFuture onQueue:self.queue resolve:^FBFuture *{
+    [resultCalled fulfill];
+    return [FBFuture futureWithResult:@0];
+  }];
+  FBFuture *errorFuture = [FBFuture onQueue:self.queue resolve:^FBFuture *{
+    [errorCalled fulfill];
+    return [FBFuture futureWithError:error];
+  }];
+  FBFuture *cancelFuture = [FBFuture onQueue:self.queue resolve:^FBFuture *{
+    [cancelCalled fulfill];
+    FBMutableFuture *future = [FBMutableFuture future];
+    [future cancel];
+    return future;
+  }];
+
+  [self waitForExpectations:@[resultCalled, errorCalled, cancelCalled] timeout:FBControlCoreGlobalConfiguration.fastTimeout];
+  XCTAssertEqual(resultFuture.state, FBFutureStateCompletedWithResult);
+  XCTAssertEqual(errorFuture.state, FBFutureStateCompletedWithError);
+  XCTAssertEqual(cancelFuture.state, FBFutureStateCompletedWithCancellation);
+}
+
 @end

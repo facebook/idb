@@ -80,6 +80,31 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state)
   return [future resolveWithError:error];
 }
 
++ (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:( id(^)(NSError **) )resolve;
+{
+  FBMutableFuture *future = [self new];
+  dispatch_async(queue, ^{
+    NSError *error = nil;
+    id result = resolve(&error);
+    if (!result) {
+      NSCAssert(error, @"Error must be set on nil return");
+      [future resolveWithError:error];
+    }
+    [future resolveWithResult:result];
+  });
+  return future;
+}
+
++ (instancetype)onQueue:(dispatch_queue_t)queue resolve:( FBFuture *(^)(void) )resolve
+{
+  FBMutableFuture *future = [self new];
+  dispatch_async(queue, ^{
+    FBFuture *resolved = resolve();
+    [future resolveFromFuture:resolved];
+  });
+  return future;
+}
+
 + (FBFuture *)futureWithFutures:(NSArray<FBFuture *> *)futures
 {
   NSParameterAssert(futures.count > 0);
@@ -386,6 +411,32 @@ static NSString *KeyPathHasCompleted = @"hasCompleted";
     });
   }
   [self.handlers removeAllObjects];
+}
+
+- (instancetype)resolveFromFuture:(FBFuture *)future
+{
+  void (^resolve)(FBFuture *future) = ^(FBFuture *resolvedFuture){
+    FBFutureState state = resolvedFuture.state;
+    switch (state) {
+      case FBFutureStateCompletedWithError:
+        [self resolveWithError:resolvedFuture.error];
+        return;
+      case FBFutureStateCompletedWithResult:
+        [self resolveWithResult:resolvedFuture.result];
+        return;
+      case FBFutureStateCompletedWithCancellation:
+        [self cancel];
+        return;
+      default:
+        NSCAssert(NO, @"Invalid State %lu", (unsigned long)state);
+    }
+  };
+  if (future.hasCompleted) {
+    resolve(future);
+  } else {
+    [future notifyOfCompletionOnQueue:self.queue handler:resolve];
+  }
+  return self;
 }
 
 @end

@@ -60,6 +60,24 @@ FBFutureStateString FBFutureStateStringFromState(FBFutureState state);
 + (FBFuture *)futureWithError:(NSError *)error;
 
 /**
+ Resolve a future asynchronously, by value.
+
+ @param queue to resolve on.
+ @param resolve the the block to resolve the future.
+ @return the reciever, for chaining.
+ */
++ (instancetype)onQueue:(dispatch_queue_t)queue resolveValue:( T(^)(NSError **) )resolve;
+
+/**
+ Resolve a future asynchronously, by returning a future.
+
+ @param queue to resolve on.
+ @param resolve the the block to resolve the future.
+ @return the reciever, for chaining.
+ */
++ (instancetype)onQueue:(dispatch_queue_t)queue resolve:( FBFuture *(^)(void) )resolve;
+
+/**
  Constructs a Future from an Array of Futures.
  The future will resolve when all futures in the array have resolved.
  If any future results in an error, the first one will be progated and results of succeful
