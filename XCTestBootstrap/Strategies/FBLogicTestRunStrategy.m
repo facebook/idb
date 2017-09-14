@@ -93,18 +93,17 @@
 
   // Consumes the test output. Separate Readers are used as consuming an EOF will invalidate the reader.
   NSUUID *uuid = [NSUUID UUID];
-  dispatch_queue_t queue = dispatch_get_main_queue();
 
-  id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> stdOutReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   stdOutReader = [logger logConsumptionToFile:stdOutReader outputKind:@"out" udid:uuid];
-  id<FBFileConsumer> stdErrReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> stdErrReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter testHadOutput:[line stringByAppendingString:@"\n"]];
   }];
   stdErrReader = [logger logConsumptionToFile:stdErrReader outputKind:@"err" udid:uuid];
   // Consumes the shim output.
-  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:queue consumer:^(NSString *line){
+  id<FBFileConsumer> otestShimLineReader = [FBLineFileConsumer asynchronousReaderWithQueue:self.executor.workQueue consumer:^(NSString *line){
     [reporter handleExternalEvent:line];
   }];
   otestShimLineReader = [logger logConsumptionToFile:otestShimLineReader outputKind:@"shim" udid:uuid];
